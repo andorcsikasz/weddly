@@ -2919,6 +2919,7 @@ const es: LocaleMessages = {
       download_options: "Opciones del PDF",
       download_title: "Descargar lista",
       download_body: "Elige qué quieres incluir en el PDF imprimible.",
+      pdf_language: "Idioma del PDF",
       pdf_progress: "Incluir mi progreso",
       pdf_blank: "Lista imprimible en blanco",
       include_dates: "Incluir fechas recomendadas",

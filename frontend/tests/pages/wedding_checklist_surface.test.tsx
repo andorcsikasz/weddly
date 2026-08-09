@@ -3,7 +3,7 @@ import "../setup";
 import { checklistSections } from "@shared/wedding_checklist";
 import type { PlanningItem } from "@shared/types";
 import { describe, expect, it } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { AppProviders } from "@/components/ui/AppProviders";
 import { WeddingChecklist } from "@/components/WeddingChecklist";
 import { I18nProvider } from "@/lib/i18n";
@@ -70,6 +70,12 @@ describe("Wedding checklist Planning surface", () => {
       "false",
     );
     expect(screen.getAllByRole("checkbox")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "PDF options" }));
+    for (const language of ["English", "Magyar", "Español", "Hrvatski", "Deutsch"]) {
+      expect(screen.getByRole("radio", { name: language })).toBeInTheDocument();
+    }
+    fireEvent.click(screen.getByRole("radio", { name: "Magyar" }));
+    expect(screen.getByRole("radio", { name: "Magyar" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Mark not done" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Mark done" })).not.toBeChecked();
   });

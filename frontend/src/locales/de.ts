@@ -2922,6 +2922,7 @@ const de: LocaleMessages = {
       download_options: "PDF-Einstellungen",
       download_title: "Checkliste herunterladen",
       download_body: "Wählt aus, was im druckbaren PDF enthalten sein soll.",
+      pdf_language: "PDF-Sprache",
       pdf_progress: "Meinen Fortschritt einbeziehen",
       pdf_blank: "Leere Checkliste zum Ausdrucken",
       include_dates: "Empfohlene Termine einbeziehen",

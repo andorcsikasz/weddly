@@ -2861,6 +2861,7 @@ const en: LocaleMessages = {
       download_options: "PDF options",
       download_title: "Download checklist",
       download_body: "Choose what you'd like in your printable PDF.",
+      pdf_language: "PDF language",
       pdf_progress: "Include my progress",
       pdf_blank: "Blank printable checklist",
       include_dates: "Include recommended dates",

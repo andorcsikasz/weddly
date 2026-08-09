@@ -2888,6 +2888,7 @@ const hu: LocaleMessages = {
       download_options: "PDF beállításai",
       download_title: "Ellenőrzőlista letöltése",
       download_body: "Válasszátok ki, mi kerüljön a nyomtatható PDF-be.",
+      pdf_language: "A PDF nyelve",
       pdf_progress: "Saját haladás megjelenítése",
       pdf_blank: "Üres, nyomtatható lista",
       include_dates: "Ajánlott dátumokkal",

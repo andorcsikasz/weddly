@@ -12,7 +12,7 @@ import {
   SlidersHorizontal,
   UserRound,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   fetchPdfBlob,
   planningApi,
@@ -20,7 +20,7 @@ import {
   weddingChecklistPdfUrl,
 } from "../lib/endpoints";
 import { useToast } from "./ui";
-import { type Locale, useT } from "../lib/i18n";
+import { type Locale, LOCALES, LOCALE_NAMES, useT } from "../lib/i18n";
 
 type ChecklistFilter = "all" | "todo" | "done";
 
@@ -62,10 +62,13 @@ export function WeddingChecklist({
   const [savingIds, setSavingIds] = useState<Set<number>>(() => new Set());
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [pdfLocale, setPdfLocale] = useState<Locale>(locale);
   const [pdfMode, setPdfMode] = useState<"progress" | "blank">("progress");
   const [includeDates, setIncludeDates] = useState(false);
   const [includeOwners, setIncludeOwners] = useState(false);
   const [remainingOnly, setRemainingOnly] = useState(false);
+
+  useEffect(() => setPdfLocale(locale), [locale]);
 
   const taskByTemplateId = useMemo(
     () =>
@@ -134,7 +137,7 @@ export function WeddingChecklist({
     try {
       const blob = await fetchPdfBlob(
         weddingChecklistPdfUrl({
-          locale,
+          locale: pdfLocale,
           blank: pdfMode === "blank",
           dates: includeDates,
           owners: includeOwners,
@@ -273,7 +276,30 @@ export function WeddingChecklist({
               <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">
                 {t("planning.checklist.download_body")}
               </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <fieldset className="mt-5">
+                <legend className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-500 dark:text-umber-300">
+                  {t("planning.checklist.pdf_language")}
+                </legend>
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-ink-900/15 bg-ink-900/10 sm:grid-cols-5 dark:border-paper-50/15 dark:bg-paper-50/10">
+                  {LOCALES.map((option) => (
+                    <label
+                      key={option}
+                      className={`flex min-h-11 cursor-pointer items-center justify-center px-3 py-2 text-center text-sm font-semibold transition-colors ${pdfLocale === option ? "bg-neutral-950 text-white dark:bg-paper-100 dark:text-umber-900" : "bg-paper-50 text-ink-600 hover:bg-ink-50 hover:text-ink-900 dark:bg-umber-800 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="checklist-pdf-locale"
+                        value={option}
+                        checked={pdfLocale === option}
+                        onChange={() => setPdfLocale(option)}
+                        className="sr-only"
+                      />
+                      {LOCALE_NAMES[option]}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label
                   className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-md border p-4 transition-colors ${pdfMode === "progress" ? "border-neutral-950 bg-neutral-950 text-white dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900" : "border-ink-900/15 text-ink-900 hover:border-ink-900/40 dark:border-paper-50/15 dark:text-paper-50 dark:hover:border-paper-50/40"}`}
                 >

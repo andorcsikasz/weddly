@@ -85,7 +85,13 @@ describe("wedding checklist", () => {
     const { token } = await bootstrapCouple();
     await req("POST", "/api/planning/checklist/initialize", { locale: "hr" }, { token });
     const base = `http://localhost:${process.env.PORT ?? "8791"}`;
-    for (const query of ["locale=hr", "locale=de&mode=blank&dates=1&owners=1&remaining=1"]) {
+    for (const query of [
+      "locale=en",
+      "locale=hu",
+      "locale=es",
+      "locale=hr",
+      "locale=de&mode=blank&dates=1&owners=1&remaining=1",
+    ]) {
       const response = await fetch(`${base}/api/print/wedding-checklist?${query}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

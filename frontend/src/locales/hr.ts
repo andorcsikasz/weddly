@@ -2862,6 +2862,7 @@ const hr: LocaleMessages = {
       download_options: "Postavke PDF-a",
       download_title: "Preuzmi popis",
       download_body: "Odaberite što želite u PDF-u za ispis.",
+      pdf_language: "Jezik PDF-a",
       pdf_progress: "Uključi moj napredak",
       pdf_blank: "Prazan popis za ispis",
       include_dates: "Uključi preporučene datume",

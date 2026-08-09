@@ -45,6 +45,7 @@ const COPY: Record<
     generated: string;
     date: string;
     owner: string;
+    continued: string;
   }
 > = {
   en: {
@@ -54,6 +55,7 @@ const COPY: Record<
     generated: "Generated with Weddly",
     date: "Recommended",
     owner: "Owner",
+    continued: "continued",
   },
   hu: {
     eyebrow: "WEDDLY",
@@ -62,6 +64,7 @@ const COPY: Record<
     generated: "Készült a Weddlyvel",
     date: "Ajánlott",
     owner: "Felelős",
+    continued: "folytatás",
   },
   es: {
     eyebrow: "WEDDLY",
@@ -70,6 +73,7 @@ const COPY: Record<
     generated: "Creado con Weddly",
     date: "Recomendado",
     owner: "Responsable",
+    continued: "continuación",
   },
   hr: {
     eyebrow: "WEDDLY",
@@ -78,6 +82,7 @@ const COPY: Record<
     generated: "Izrađeno uz Weddly",
     date: "Preporučeno",
     owner: "Zadužen/a",
+    continued: "nastavak",
   },
   de: {
     eyebrow: "WEDDLY",
@@ -86,6 +91,7 @@ const COPY: Record<
     generated: "Erstellt mit Weddly",
     date: "Empfohlen",
     owner: "Verantwortlich",
+    continued: "Fortsetzung",
   },
 };
 
@@ -95,6 +101,121 @@ const MUTED = rgb(0.275, 0.341, 0.478); // ink-500 #46577a
 const BORDER = rgb(0.878, 0.835, 0.702); // paper-300 #e3d9bf
 const ACCENT = rgb(0.631, 0.553, 0.365); // paper-600 #a18d5d
 const COMPLETE = rgb(0.11, 0.4, 0.2); // sage-700
+
+const HEADER_LINE_HEIGHT = mm(4);
+const HEADER_BOTTOM_GAP = mm(2.5);
+const SECTION_GAP = mm(3.5);
+
+export interface ChecklistLayoutMetric {
+  height: number;
+  sectionIndex: number;
+  itemIndex: number;
+  sectionLength: number;
+  headerHeight: number;
+  continuationHeaderHeight: number;
+}
+
+export interface ChecklistColumnLayout {
+  start: number;
+  end: number;
+  height: number;
+}
+
+export interface ChecklistPageLayout {
+  left: ChecklistColumnLayout;
+  right: ChecklistColumnLayout | null;
+}
+
+function columnLayoutOptions(
+  items: ChecklistLayoutMetric[],
+  start: number,
+  capacity: number,
+): ChecklistColumnLayout[] {
+  const options: ChecklistColumnLayout[] = [];
+  let height = 0;
+  let tasksAfterHeader = 0;
+  let tasksRequiredWithHeader = 0;
+
+  for (let index = start; index < items.length; index += 1) {
+    const item = items[index];
+    if (!item) break;
+    const previous = index > start ? items[index - 1] : null;
+    const startsSectionBlock = index === start || previous?.sectionIndex !== item.sectionIndex;
+
+    if (startsSectionBlock) {
+      const gap = index === start ? 0 : SECTION_GAP;
+      const isContinuation = index === start && item.itemIndex > 0;
+      const headerHeight = isContinuation ? item.continuationHeaderHeight : item.headerHeight;
+      if (height + gap + headerHeight + item.height > capacity) break;
+      height += gap + headerHeight;
+      tasksAfterHeader = 0;
+      tasksRequiredWithHeader = Math.min(2, item.sectionLength - item.itemIndex);
+    }
+
+    if (height + item.height > capacity) break;
+    height += item.height;
+    tasksAfterHeader += 1;
+
+    const finishesSection = item.itemIndex === item.sectionLength - 1;
+    if (finishesSection || tasksAfterHeader >= tasksRequiredWithHeader) {
+      options.push({ start, end: index + 1, height });
+    }
+  }
+
+  return options;
+}
+
+function planChecklistPdfPage(
+  items: ChecklistLayoutMetric[],
+  start: number,
+  capacity: number,
+): ChecklistPageLayout {
+  const leftOptions = columnLayoutOptions(items, start, capacity);
+  if (leftOptions.length === 0) {
+    throw new Error("A wedding checklist block is taller than the printable column");
+  }
+
+  let best: ChecklistPageLayout | null = null;
+  let bestEnd = -1;
+  let bestImbalance = Number.POSITIVE_INFINITY;
+
+  for (const left of leftOptions) {
+    const rightOptions =
+      left.end >= items.length
+        ? [null]
+        : columnLayoutOptions(items, left.end, capacity).map((option) => option);
+    if (rightOptions.length === 0) continue;
+
+    for (const right of rightOptions) {
+      const end = right?.end ?? left.end;
+      const imbalance = Math.abs(left.height - (right?.height ?? 0));
+      if (end > bestEnd || (end === bestEnd && imbalance < bestImbalance)) {
+        best = { left, right };
+        bestEnd = end;
+        bestImbalance = imbalance;
+      }
+    }
+  }
+
+  if (!best) throw new Error("Unable to paginate the wedding checklist");
+  return best;
+}
+
+export function planChecklistPdfPages(
+  items: ChecklistLayoutMetric[],
+  firstPageCapacity: number,
+  continuationPageCapacity = firstPageCapacity,
+): ChecklistPageLayout[] {
+  const pages: ChecklistPageLayout[] = [];
+  let start = 0;
+  while (start < items.length) {
+    const capacity = pages.length === 0 ? firstPageCapacity : continuationPageCapacity;
+    const page = planChecklistPdfPage(items, start, capacity);
+    pages.push(page);
+    start = page.right?.end ?? page.left.end;
+  }
+  return pages;
+}
 
 function formatDate(value: string, locale: UiLocale): string {
   const date = new Date(`${value}T12:00:00Z`);
@@ -172,16 +293,78 @@ export async function renderWeddingChecklistPdf(
   const footerY = mm(10);
   const gutter = mm(8);
   const columnW = (pageW - marginX * 2 - gutter) / 2;
-  const topY = pageH - mm(48);
+  const firstPageTopY = pageH - mm(48);
+  const continuationPageTopY = pageH - mm(41);
   const bottomY = mm(18);
-  let page!: PDFPage;
-  let column = 0;
-  let y = topY;
-  let pageNumber = 0;
 
-  const addPage = () => {
-    page = pdf.addPage([pageW, pageH]);
-    pageNumber += 1;
+  interface MeasuredItem {
+    source: ChecklistPdfItem;
+    titleLines: string[];
+    metaLines: string[];
+    metric: ChecklistLayoutMetric;
+    headerLines: string[];
+    continuationHeaderLines: string[];
+  }
+
+  const measuredItems: MeasuredItem[] = [];
+  const visibleSections = input.sections
+    .map((section) => ({
+      ...section,
+      items: input.remainingOnly ? section.items.filter((entry) => !entry.done) : section.items,
+    }))
+    .filter((section) => section.items.length > 0);
+
+  visibleSections.forEach((section, sectionIndex) => {
+    const headerLabel = section.title.toLocaleUpperCase(input.locale);
+    const continuationLabel = `${section.title} – ${copy.continued}`.toLocaleUpperCase(
+      input.locale,
+    );
+    const headerLines = wrap(bold, headerLabel, 9, columnW);
+    const continuationHeaderLines = wrap(bold, continuationLabel, 9, columnW);
+    const headerHeight = headerLines.length * HEADER_LINE_HEIGHT + HEADER_BOTTOM_GAP;
+    const continuationHeaderHeight =
+      continuationHeaderLines.length * HEADER_LINE_HEIGHT + HEADER_BOTTOM_GAP;
+
+    section.items.forEach((entry, itemIndex) => {
+      const metaParts: string[] = [];
+      if (input.includeDates && entry.dueDate) {
+        metaParts.push(`${copy.date}: ${formatDate(entry.dueDate, input.locale)}`);
+      }
+      if (input.includeOwners && entry.owner) metaParts.push(`${copy.owner}: ${entry.owner}`);
+      const titleLines = wrap(regular, entry.title, 8.2, columnW - mm(6));
+      const metaLines = metaParts.length
+        ? wrap(regular, metaParts.join(" · "), 6.8, columnW - mm(6))
+        : [];
+      const height = Math.max(
+        mm(5.4),
+        titleLines.length * mm(4.2) + metaLines.length * mm(3.4) + mm(1.1),
+      );
+      measuredItems.push({
+        source: entry,
+        titleLines,
+        metaLines,
+        headerLines,
+        continuationHeaderLines,
+        metric: {
+          height,
+          sectionIndex,
+          itemIndex,
+          sectionLength: section.items.length,
+          headerHeight,
+          continuationHeaderHeight,
+        },
+      });
+    });
+  });
+
+  const layouts = planChecklistPdfPages(
+    measuredItems.map((entry) => entry.metric),
+    firstPageTopY - bottomY,
+    continuationPageTopY - bottomY,
+  );
+
+  const addPage = (pageNumber: number) => {
+    const page = pdf.addPage([pageW, pageH]);
     page.drawRectangle({ x: 0, y: 0, width: pageW, height: pageH, color: PAPER });
     page.drawText(copy.eyebrow, {
       x: marginX,
@@ -253,57 +436,48 @@ export async function renderWeddingChecklistPdf(
       font: regular,
       color: MUTED,
     });
-    column = 0;
-    y = topY;
+    return page;
   };
 
-  const nextColumn = () => {
-    if (column === 0) {
-      column = 1;
-      y = topY;
-    } else addPage();
-  };
-  const columnX = () => marginX + column * (columnW + gutter);
-  addPage();
+  const drawColumn = (
+    page: PDFPage,
+    layout: ChecklistColumnLayout,
+    column: number,
+    topY: number,
+  ) => {
+    const x = marginX + column * (columnW + gutter);
+    let y = topY;
 
-  for (const section of input.sections) {
-    const visibleItems = input.remainingOnly
-      ? section.items.filter((entry) => !entry.done)
-      : section.items;
-    if (visibleItems.length === 0) continue;
-    const minimumSectionHeight = mm(9) + Math.min(visibleItems.length, 2) * mm(6);
-    if (y - minimumSectionHeight < bottomY) nextColumn();
-    let x = columnX();
-    page.drawText(section.title.toLocaleUpperCase(input.locale), {
-      x,
-      y,
-      size: 9,
-      font: bold,
-      color: ACCENT,
-    });
-    y -= mm(6.5);
-
-    for (const entry of visibleItems) {
-      const metaParts: string[] = [];
-      if (input.includeDates && entry.dueDate)
-        metaParts.push(`${copy.date}: ${formatDate(entry.dueDate, input.locale)}`);
-      if (input.includeOwners && entry.owner) metaParts.push(`${copy.owner}: ${entry.owner}`);
-      const titleLines = wrap(regular, entry.title, 8.2, columnW - mm(6));
-      const metaLines = metaParts.length
-        ? wrap(regular, metaParts.join(" · "), 6.8, columnW - mm(6))
-        : [];
-      const itemHeight = Math.max(
-        mm(5.4),
-        titleLines.length * mm(4.2) + metaLines.length * mm(3.4) + mm(1.1),
-      );
-      if (y - itemHeight < bottomY) {
-        nextColumn();
-        x = columnX();
+    for (let index = layout.start; index < layout.end; index += 1) {
+      const measured = measuredItems[index];
+      if (!measured) continue;
+      const previous = index > layout.start ? measuredItems[index - 1] : null;
+      const startsSectionBlock =
+        index === layout.start || previous?.metric.sectionIndex !== measured.metric.sectionIndex;
+      if (startsSectionBlock) {
+        if (index > layout.start) y -= SECTION_GAP;
+        const isContinuation = index === layout.start && measured.metric.itemIndex > 0;
+        const headerLines = isContinuation
+          ? measured.continuationHeaderLines
+          : measured.headerLines;
+        for (const line of headerLines) {
+          page.drawText(line, {
+            x,
+            y,
+            size: 9,
+            font: bold,
+            color: ACCENT,
+          });
+          y -= HEADER_LINE_HEIGHT;
+        }
+        y -= HEADER_BOTTOM_GAP;
       }
+
+      const entry = measured.source;
       drawCheckbox(page, x, y + 1, input.includeProgress && entry.done);
       const textX = x + mm(5.2);
       let lineY = y;
-      for (const line of titleLines) {
+      for (const line of measured.titleLines) {
         page.drawText(line, {
           x: textX,
           y: lineY,
@@ -322,7 +496,7 @@ export async function renderWeddingChecklistPdf(
         }
         lineY -= mm(4.2);
       }
-      for (const line of metaLines) {
+      for (const line of measured.metaLines) {
         page.drawText(line, {
           x: textX,
           y: lineY + mm(0.5),
@@ -332,9 +506,20 @@ export async function renderWeddingChecklistPdf(
         });
         lineY -= mm(3.4);
       }
-      y -= itemHeight;
+      y -= measured.metric.height;
     }
-    y -= mm(3.5);
+  };
+
+  layouts.forEach((layout, pageIndex) => {
+    const pageNumber = pageIndex + 1;
+    const page = addPage(pageNumber);
+    const topY = pageIndex === 0 ? firstPageTopY : continuationPageTopY;
+    drawColumn(page, layout.left, 0, topY);
+    if (layout.right) drawColumn(page, layout.right, 1, topY);
+  });
+
+  if (layouts.length === 0) {
+    addPage(1);
   }
 
   pdf.setTitle(copy.title);
