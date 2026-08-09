@@ -63,7 +63,7 @@ const ORPHAN_SEGMENT_SQL = `
   AND u.email != ?2`;
 
 // ── Signed per-send opt-out token ─────────────────────────────────────────────
-// The List-Unsubscribe link is `<sendId>.<hmac>`: worthless if leaked,
+// The legacy signed opt-out link is `<sendId>.<hmac>`: worthless if leaked,
 // unforgeable, resolves to the send row we suppress. Namespaced "onbcamp_" so a
 // token minted here can never resolve against a vendor / personal-invite send.
 
@@ -503,7 +503,6 @@ async function sendOne(
       trackingPixelUrl: pixelUrl(row.id),
       guest: { email: row.email, full_name: row.name || row.email },
       guestLocale: locale,
-      outreachUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/onboarding-optout/${makeOnboardingOptOutToken(row.id)}`,
     },
   );
   const status = result.status;

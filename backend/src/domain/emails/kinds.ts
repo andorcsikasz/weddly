@@ -304,9 +304,8 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   community_supplier_reported: "outreach",
   // Outreach: the purest case in the catalogue. WE initiate, the recipient has
   // no Weddly account, and they never asked for anything. Carries its own
-  // address-level opt-out (email_optouts) since there is no user row to hold a
-  // preferences token, plus the List-Unsubscribe headers Gmail's bulk-sender
-  // rules expect.
+  // address-level suppression (email_optouts) since there is no user row to
+  // hold a preferences token.
   // TRANSACTIONAL, and the classification is load-bearing rather than
   // cosmetic. Recording the removal writes the address tombstone, and the
   // non-transactional branch of `sendKind` is gated on exactly that tombstone —
@@ -320,8 +319,8 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   vendor_review_campaign_reminder: "outreach",
   personal_invite: "outreach",
   // Bulk re-engagement to registered-but-not-onboarded couples. Outreach (not
-  // lifecycle) so it rides the address-level email_optouts + List-Unsubscribe
-  // suppression, matching the other admin campaigns.
+  // lifecycle) so it rides the address-level email_optouts suppression,
+  // matching the other admin campaigns.
   onboarding_campaign: "outreach",
   onboarding_campaign_reminder: "outreach",
   // Outreach: anyone (no auth required) can hit /api/vendor/claim/start with a

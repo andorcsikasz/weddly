@@ -71,7 +71,7 @@ async function createCampaign(slug: string, dailyCap = 50): Promise<PersonalInvi
 }
 
 describe("personal-invite campaign", () => {
-  test("the Hungarian invite renders the referral copy, register CTA and email-use note", () => {
+  test("the Hungarian invite renders the personal-source copy, register CTA and email-use note", () => {
     const built = buildEmail(
       "personal_invite",
       {
@@ -84,11 +84,11 @@ describe("personal-invite campaign", () => {
 
     const text = built.rendered.text;
     const opener =
-      "Azért írunk, mert a Weddly egyik felhasználója megadta az e-mail-címedet: úgy gondolta, hogy te vagy valaki a környezetedben éppen esküvőt szervez.";
+      "A Weddly csapatából személyesen ismerünk, ezért szeretnénk röviden bemutatni nektek a Weddlyt.";
     const forward =
       "Ha pedig egy családtagod vagy barátod szervezi az esküvőjét, küldd tovább neki ezt a levelet – lehet, hogy pont jókor érkezik.";
     expect(text).toContain(opener);
-    expect(text).toContain("Ha te készülsz a nagy napra, ismerd meg a Weddlyt:");
+    expect(text).toContain("Ha te vagy valaki a környezetedben esküvőt szervez, nézz körül:");
     expect(text).toContain("Regisztrálok a Weddlyre:");
     expect(text).toContain(forward);
     expect(text).toContain(
@@ -97,7 +97,7 @@ describe("personal-invite campaign", () => {
     expect(text).toContain("Üdv,\na Weddly csapata");
     expect(text.indexOf(opener)).toBeLessThan(text.indexOf("Regisztrálok a Weddlyre:"));
     expect(text.indexOf("Regisztrálok a Weddlyre:")).toBeLessThan(text.indexOf(forward));
-    expect(built.rendered.html).not.toContain("Azért kapod ezt a levelet, mert ismerjük egymást");
+    expect(text).not.toContain("a Weddly egyik felhasználója megadta az e-mail-címedet");
   });
 
   test("every admin endpoint is admin-only", async () => {

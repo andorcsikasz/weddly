@@ -89,7 +89,7 @@ export function detectLocale(name: string, email: string): "hu" | "en" {
 }
 
 // ── Signed per-send opt-out token ─────────────────────────────────────────────
-// The List-Unsubscribe link is `<sendId>.<hmac>`: worthless if leaked,
+// The legacy signed opt-out link is `<sendId>.<hmac>`: worthless if leaked,
 // unforgeable, and it resolves to the send row we suppress. Namespaced with
 // "invite_" so a token minted here can never resolve against a vendor campaign.
 
@@ -529,7 +529,6 @@ async function sendOne(
       guest: { email: row.email, full_name: row.name || row.email },
       guestLocale: locale,
       trackingPixelUrl: pixelUrl(row.id),
-      outreachUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/invite-optout/${makeInviteOptOutToken(row.id)}`,
     },
   );
   if (result.status === "skipped_opt_out") {

@@ -329,7 +329,6 @@ export async function inviteSuggestedPlanner(
     },
     {
       user: { id: userId, email, full_name: row.fullName },
-      outreachUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/planner-optout/${makePlannerInviteOptOutToken(userId)}`,
     },
   );
 

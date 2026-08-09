@@ -109,9 +109,6 @@ export interface SendTarget {
    * caller is responsible for signing whatever token it embeds.
    */
   trackingPixelUrl?: string;
-  /** Signed per-send opt-out URL for outreach campaigns. It is rendered in the
-   *  footer and attached as the RFC 8058 one-click unsubscribe endpoint. */
-  outreachUnsubscribeUrl?: string;
   /**
    * Force the FROM mailbox for this one send. Only needed for a kind the
    * worker also fires on its own (verify_resend, partner_invite_reminder,
@@ -216,7 +213,6 @@ async function sendKindInner<K extends EmailKind>(
     return { status: "skipped_opt_out" };
   }
 
-  let unsubscribeToken: string | undefined;
   // Guest-bound mail (no user) keeps `null` → bilingual fallback render until
   // we capture a per-guest locale. Lookup happens against `users.locale`.
   // A pending signup has no users row yet but did tell us its locale on the
@@ -258,7 +254,6 @@ async function sendKindInner<K extends EmailKind>(
       });
       return { status: "skipped_opt_out" };
     }
-    unsubscribeToken = prefs.unsubscribe_token;
   }
 
   const trackingPixelUrl =
@@ -273,27 +268,6 @@ async function sendKindInner<K extends EmailKind>(
     primaryLocaleHint,
     trackingPixelUrl,
   });
-
-  // RFC 8058 one-click unsubscribe headers. Gmail's bulk-sender requirements
-  // (Feb 2024) require both `List-Unsubscribe` and `List-Unsubscribe-Post`
-  // for any sender > 5k recipients/day. The header URL points at the backend
-  // endpoint (no JS, returns a tiny HTML confirmation on GET, flips the flag
-  // silently on POST) so Gmail's auto-unsubscribe bot can complete in one hit.
-  //
-  // Lifecycle uses the account preference token; address-level campaigns pass
-  // their own signed per-send URL. Both paths honour a one-click request before
-  // any later send through the shared suppression table.
-  const extraHeaders: Record<string, string> = {};
-  if (category === "lifecycle" && unsubscribeToken) {
-    extraHeaders["List-Unsubscribe"] =
-      `<${CONFIG.frontendBaseUrl}/api/unsubscribe/${unsubscribeToken}>`;
-    extraHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
-  } else if (category === "outreach" && target.outreachUnsubscribeUrl) {
-    extraHeaders["List-Unsubscribe"] = `<${target.outreachUnsubscribeUrl}>`;
-    extraHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
-  }
-  const headers: Record<string, string> | undefined =
-    Object.keys(extraHeaders).length > 0 ? extraHeaders : undefined;
 
   // Where a reply lands. A per-kind override (supplier_outreach points it at
   // the couple owner so a vendor's answer skips us entirely) wins; otherwise
@@ -351,7 +325,6 @@ async function sendKindInner<K extends EmailKind>(
       html: built.rendered.html,
       text: built.rendered.text,
       replyTo,
-      headers,
     });
     return { status: "skipped_no_provider" };
   }
@@ -364,7 +337,6 @@ async function sendKindInner<K extends EmailKind>(
       html: built.rendered.html,
       text: built.rendered.text,
       replyTo,
-      headers,
     });
     recordEmailAttempt({
       user_id: target.user?.id ?? null,

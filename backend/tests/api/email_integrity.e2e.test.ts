@@ -22,10 +22,9 @@ describe("email integrity scan", () => {
   });
 });
 
-// No email of ours talks the reader out of being here. Lifecycle and outreach
-// keep the transport-level List-Unsubscribe header, but the visible body does
-// not promote an exit. "If this wasn't you, ignore this" on security/verify
-// mail is different and stays: it is anti-phishing copy, not an exit sign.
+// No email of ours talks the reader out of being here. "If this wasn't you,
+// ignore this" on security/verify mail is different and stays: it is
+// anti-phishing copy, not an exit sign.
 describe("email copy: nothing that talks the reader out of staying", () => {
   const BANNED: Array<{ pattern: RegExp; why: string }> = [
     { pattern: /leiratkozhat/i, why: "offers the reader an unsubscribe" },
@@ -113,24 +112,18 @@ describe("email copy: the offer is hospitality, not a price of zero", () => {
   });
 });
 
-// Lifecycle and outreach campaigns carry RFC 8058 headers. The shared
-// email_optouts tombstone then suppresses every later non-transactional send
-// to that address, while the message body keeps the control out of view.
-describe("campaign mail offers a one-click exit", () => {
+describe("unsubscribe controls stay out of campaign messages", () => {
   const emailsDir = join(import.meta.dir, "..", "..", "src", "domain", "emails");
   const stripComments = (src: string): string =>
     src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-  test("lifecycle and tokenised outreach attach List-Unsubscribe", () => {
+  test("the dispatcher omits List-Unsubscribe headers", () => {
     const src = stripComments(readFileSync(join(emailsDir, "send.ts"), "utf8"));
-    expect(src).toContain("outreachUnsubscribeUrl");
-    const writes = [...src.matchAll(/extraHeaders\["List-Unsubscribe(?:-Post)?"\]/g)];
-    expect(writes.length).toBe(4);
-    expect(src).toContain('category === "outreach" && target.outreachUnsubscribeUrl');
+    expect(src).not.toContain("List-Unsubscribe");
+    expect(src).not.toContain("outreachUnsubscribeUrl");
   });
 
   test("the shared template hides the outreach opt-out URL", () => {
-    const optOutUrl = "https://weddly.test/email-optout/signed-token";
     const templateSource = stripComments(readFileSync(join(emailsDir, "template.ts"), "utf8"));
     const rendered = renderEmail({
       hu: { greeting: "Szia!", paragraphs: ["Bemutatkozás."], cta: "Megnyitás" },
@@ -140,8 +133,6 @@ describe("campaign mail offers a one-click exit", () => {
       recipientLocale: "hu",
     });
     expect(templateSource).not.toContain("outreachUnsubscribeUrl");
-    expect(rendered.html).not.toContain(optOutUrl);
-    expect(rendered.text).not.toContain(optOutUrl);
     expect(rendered.text).not.toContain("Leiratkozás");
   });
 });
