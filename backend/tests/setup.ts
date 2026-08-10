@@ -8,12 +8,23 @@
 // May 2026. The only escape hatches are `BUN_TEST_PORT` / `BUN_TEST_DB_PATH`
 // for worktree-parallel testing; everything else is unconditional.
 import { existsSync, rmSync } from "node:fs";
+import { basename, resolve } from "node:path";
 
 process.env.NODE_ENV = "test";
 // Worktree-parallel escape hatch: pass BUN_TEST_PORT / BUN_TEST_DB_PATH on the
 // bun-test invocation to run two worktrees side-by-side. Plain .env values
 // (PORT, DB_PATH) deliberately NEVER win — that's the regression guard.
-process.env.DB_PATH = process.env.BUN_TEST_DB_PATH ?? "./data/test-weddly.db";
+const requestedTestDbPath = process.env.BUN_TEST_DB_PATH ?? "./data/test-weddly.db";
+const resolvedTestDbPath = resolve(requestedTestDbPath);
+// The suite calls wipeAll() and deliberately inserts corrupt fixtures. Refuse
+// an override that does not advertise itself as a test/spec database so a
+// leaked Railway/dev DB_PATH can never turn an E2E run into production writes.
+if (!/(test|spec)/i.test(basename(resolvedTestDbPath))) {
+  throw new Error(
+    `Unsafe BUN_TEST_DB_PATH: ${resolvedTestDbPath}. The database filename must contain "test" or "spec".`,
+  );
+}
+process.env.DB_PATH = resolvedTestDbPath;
 process.env.PORT = process.env.BUN_TEST_PORT ?? "8791";
 process.env.UPLOADS_DIR = "./data/test-uploads";
 process.env.JWT_SECRET = "test-jwt-secret-0123456789abcdef0123456789abcdef0123456789abcdef";

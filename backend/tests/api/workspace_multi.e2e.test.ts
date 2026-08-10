@@ -1,6 +1,6 @@
 import "../setup";
 
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
 import { db } from "../../src/db";
 import { foundingSlotsUsed } from "../../src/domain/billing";
@@ -1064,6 +1064,10 @@ describe("workspace_multi: partner auto-propagation", () => {
 // "account without email" report: an orphan couple (no member joining a live
 // user) rendered as a blank name/email row in the admin overview.
 describe("orphan workspace integrity", () => {
+  // These tests intentionally write invalid rows. Clean even when one fails or
+  // is run in isolation so the fixture cannot survive in the test database.
+  afterEach(() => wipeAll());
+
   /** Insert a couples row directly, bypassing the create path, to simulate a
    *  workspace whose owner is gone. `partnerAId` points at a user that does
    *  not exist; no couple_members row is written. */
@@ -1122,6 +1126,26 @@ describe("orphan workspace integrity", () => {
       .prepare("SELECT COUNT(*) AS n FROM couple_members WHERE couple_id = ?")
       .get(healthy) as { n: number };
     expect(members.n).toBeGreaterThan(0);
+  });
+
+  test("the admin API never presents an active orphan as an email-less account", async () => {
+    wipeAll();
+    const orphanId = seedOrphanCouple("Kylee & Marci");
+    const admin = await registerAndVerify({
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Ádám Nagy",
+    });
+
+    const result = await req<{ couples: { id: number }[] }>(
+      "GET",
+      "/api/admin/couples",
+      undefined,
+      { token: admin.data.token },
+    );
+
+    expect(result.status).toBe(200);
+    expect(result.data.couples.some((c) => c.id === orphanId)).toBe(false);
   });
 
   test("reconcileOrphanCouples is idempotent and leaves demo orphans alone", async () => {

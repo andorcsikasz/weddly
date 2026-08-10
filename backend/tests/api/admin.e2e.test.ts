@@ -1099,6 +1099,30 @@ describe("admin couples — multi-workspace member resolution", () => {
     expect(rowA?.partners.map((p) => p.email)).toContain("multiws-owner@weddly.test");
     expect(rowB?.partners.map((p) => p.email)).toContain("multiws-owner@weddly.test");
   });
+
+  test("couple partners retain their email when the users endpoint filters their account type", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token, coupleId } = await bootstrapCouple("converted-owner@weddly.test");
+    const me = await req<{ user: { id: number } }>("GET", "/api/auth/me", undefined, { token });
+
+    // Real vendor/planner accounts intentionally live on dedicated admin
+    // pages and are therefore omitted from /api/admin/users. Their historical
+    // couple workspace must still get identity from /api/admin/couples.
+    db.prepare("UPDATE users SET role = 'vendor' WHERE id = ?").run(me.data.user.id);
+
+    const users = await req<{ users: { id: number }[] }>("GET", "/api/admin/users", undefined, {
+      token: adminToken,
+    });
+    expect(users.data.users.some((u) => u.id === me.data.user.id)).toBe(false);
+
+    const couples = await req<CouplesWithPartners>("GET", "/api/admin/couples", undefined, {
+      token: adminToken,
+    });
+    const row = couples.data.couples.find((c) => c.id === coupleId);
+    expect(row?.partners).toContainEqual(
+      expect.objectContaining({ id: me.data.user.id, email: "converted-owner@weddly.test" }),
+    );
+  });
 });
 
 // A paused workspace is on a 30-day delete countdown, and the exit dialog asks

@@ -184,7 +184,26 @@ function listAllUsers(): UserRow[] {
 }
 
 function listAllCouples(): CoupleRow[] {
-  return db.prepare("SELECT * FROM couples ORDER BY created_at DESC").all() as CoupleRow[];
+  // A non-demo workspace without a live member is an integrity tombstone, not
+  // an account an admin can act on. Boot reconciliation purges these, but this
+  // read-side guard also covers the window between a runtime corruption and
+  // the next reconciliation/restart. Keep already-deleting rows in the API for
+  // audit/E2E callers; the admin UI intentionally hides those tombstones.
+  return db
+    .prepare(
+      `SELECT c.* FROM couples c
+        WHERE c.status = 'deleting'
+           OR c.is_demo = 1
+           OR EXISTS (
+                SELECT 1
+                  FROM couple_members cm
+                  JOIN users u ON u.id = cm.user_id
+                 WHERE cm.couple_id = c.id
+                   AND u.email NOT LIKE '%@purged.local'
+              )
+        ORDER BY c.created_at DESC`,
+    )
+    .all() as CoupleRow[];
 }
 
 interface PartnerRow {
@@ -204,6 +223,7 @@ function partnersForCouple(coupleId: number): PartnerRow[] {
          FROM couple_members cm
          JOIN users u ON u.id = cm.user_id
         WHERE cm.couple_id = ?
+          AND u.email NOT LIKE '%@purged.local'
         ORDER BY u.id ASC`,
     )
     .all(coupleId) as PartnerRow[];

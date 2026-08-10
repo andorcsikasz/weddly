@@ -74,6 +74,25 @@ function workspaceLabel(c: AdminCoupleView): string {
   return a || b || `#${c.id}`;
 }
 
+export interface ResolvedAdminWorkspaceMember {
+  partner: AdminCoupleView["partners"][number];
+  /** Full admin user data is absent for account types intentionally filtered
+   * from /api/admin/users. Identity still comes from the couple projection. */
+  user: AdminUserView | null;
+}
+
+/** The couple endpoint is the source of truth for workspace membership. The
+ * users endpoint is only an enrichment/action source and deliberately omits
+ * real vendor/planner accounts, so a failed lookup must never erase identity. */
+export function resolveAdminWorkspaceMembers(
+  c: AdminCoupleView,
+  userById: ReadonlyMap<number, AdminUserView>,
+): ResolvedAdminWorkspaceMember[] {
+  return c.partners
+    .filter((p) => p.email && !p.email.endsWith("@purged.local"))
+    .map((partner) => ({ partner, user: userById.get(partner.id) ?? null }));
+}
+
 export default function AdminUsersPage() {
   const { t, locale } = useT();
   const { user: currentAdmin } = useAuth();
@@ -208,8 +227,8 @@ export default function AdminUsersPage() {
         case "name":
           return workspaceLabel(a).localeCompare(workspaceLabel(b), "hu") * sign;
         case "members": {
-          const aCount = a.partners.filter((p) => userById.has(p.id)).length;
-          const bCount = b.partners.filter((p) => userById.has(p.id)).length;
+          const aCount = resolveAdminWorkspaceMembers(a, userById).length;
+          const bCount = resolveAdminWorkspaceMembers(b, userById).length;
           return (aCount - bCount) * sign;
         }
         case "wedding_date": {
@@ -338,7 +357,7 @@ export default function AdminUsersPage() {
       const workspaces = [...items].sort((a, b) => a.created_at - b.created_at || a.id - b.id);
       const primary = workspaces[0];
       if (!primary) continue;
-      const paired = primary.partners.filter((p) => userById.has(p.id)).length >= 2;
+      const paired = resolveAdminWorkspaceMembers(primary, userById).length >= 2;
       groups.push({ key, ownerId: primary.owner_user_id, workspaces, primary, paired });
     }
     return groups;
@@ -939,6 +958,17 @@ export default function AdminUsersPage() {
     );
   }
 
+  function renderPartnerIdentity(partner: AdminCoupleView["partners"][number]) {
+    return (
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+        <span className="font-medium text-neutral-900 dark:text-paper-50">{partner.full_name}</span>
+        <span className="min-w-0 truncate text-xs text-neutral-500 dark:text-umber-300">
+          {partner.email}
+        </span>
+      </div>
+    );
+  }
+
   /** Right-side per-user action cluster. Rendered into the dedicated
    *  "MŰVELETEK" grid column on the workspace list and the orphans table
    *  so every row's icons line up in the same vertical column. */
@@ -1098,11 +1128,7 @@ export default function AdminUsersPage() {
    *  (renderCoupleCard) or stacked with siblings inside a shared owner band
    *  (renderOwnerBand), so the two layouts share identical row markup. */
   function renderCoupleCardBody(c: AdminCoupleView) {
-    // Server returns partners scrubbed of users we already know are missing
-    // (rare race); fall back to userById for the freshest local state.
-    const members = c.partners
-      .map((p) => userById.get(p.id))
-      .filter((u): u is AdminUserView => u != null);
+    const members = resolveAdminWorkspaceMembers(c, userById);
     const statusLabel = c.status === "paused" ? t("admin.workspace_status_paused") : null;
 
     // Shared clusters — composed into a 6-column grid on md+ and into a
@@ -1225,9 +1251,9 @@ export default function AdminUsersPage() {
               <span className="text-xs text-neutral-500 dark:text-umber-300">-</span>
             ) : (
               <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
-                {members.map((u) => (
-                  <li key={u.id} className="py-1 first:pt-0 last:pb-0">
-                    {renderUserInfo(u)}
+                {members.map(({ partner, user }) => (
+                  <li key={partner.id} className="py-1 first:pt-0 last:pb-0">
+                    {user ? renderUserInfo(user) : renderPartnerIdentity(partner)}
                   </li>
                 ))}
               </ul>
@@ -1245,11 +1271,13 @@ export default function AdminUsersPage() {
           <div>
             {members.length === 0 ? null : (
               <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
-                {members.map((u) => (
-                  <li key={u.id} className="py-1 first:pt-0 last:pb-0">
-                    {renderUserActions(u, {
-                      remindCouple: members.length === 1 ? c : undefined,
-                    })}
+                {members.map(({ partner, user }) => (
+                  <li key={partner.id} className="py-1 first:pt-0 last:pb-0">
+                    {user
+                      ? renderUserActions(user, {
+                          remindCouple: members.length === 1 ? c : undefined,
+                        })
+                      : null}
                   </li>
                 ))}
               </ul>
@@ -1266,15 +1294,19 @@ export default function AdminUsersPage() {
           </div>
           {members.length > 0 && (
             <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
-              {members.map((u) => (
+              {members.map(({ partner, user }) => (
                 <li
-                  key={u.id}
+                  key={partner.id}
                   className="flex items-start justify-between gap-2 py-1.5 first:pt-0 last:pb-0"
                 >
-                  <div className="min-w-0">{renderUserInfo(u)}</div>
-                  {renderUserActions(u, {
-                    remindCouple: members.length === 1 ? c : undefined,
-                  })}
+                  <div className="min-w-0">
+                    {user ? renderUserInfo(user) : renderPartnerIdentity(partner)}
+                  </div>
+                  {user
+                    ? renderUserActions(user, {
+                        remindCouple: members.length === 1 ? c : undefined,
+                      })
+                    : null}
                 </li>
               ))}
             </ul>
@@ -1289,7 +1321,9 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        <div className="px-0.5">{members.map((u) => renderEmailLogPanel(u.id))}</div>
+        <div className="px-0.5">
+          {members.map(({ user }) => (user ? renderEmailLogPanel(user.id) : null))}
+        </div>
       </>
     );
   }
@@ -1918,10 +1952,8 @@ export default function AdminUsersPage() {
                           </p>
                           <ul className="space-y-1.5">
                             {filteredDemoCouples.map((c) => {
-                              const members = c.partners
-                                .map((p) => userById.get(p.id))
-                                .filter((u): u is AdminUserView => u != null);
-                              const firstMemberEmail = members[0]?.email ?? "-";
+                              const firstMemberEmail =
+                                resolveAdminWorkspaceMembers(c, userById)[0]?.partner.email ?? "-";
                               // Feature-usage chips: sort by event count desc, show the
                               // top 6 inline + a "+N more" pill when the demo went deep.
                               const counts = c.demo_feature_counts ?? {};
