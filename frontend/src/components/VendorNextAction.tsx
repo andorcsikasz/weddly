@@ -39,7 +39,10 @@ export const ACTION_ANCHOR: Partial<Record<VendorActionKey, string>> = {
   reply: "vc-thread",
   follow_up: "vc-thread",
   request_review: "vc-thread",
-  record_contract: "vc-crm",
+  // The contract action targets the amount itself, not merely its section.
+  // Targeting `vc-crm` made the generic focus search land on the status select,
+  // which is a different decision and a particularly risky place to type.
+  record_contract: "vc-contract",
   add_schedule: "vc-payments",
   chase_payment: "vc-payments",
   release_or_extend: "vc-hold",
@@ -65,9 +68,10 @@ export function scrollToActionTarget(anchor: string): void {
   const el = document.getElementById(anchor);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "start" });
-  const focusable = el.querySelector<HTMLElement>(
-    "textarea, input:not([type=hidden]), select, button:not([disabled])",
-  );
+  const selector = "textarea, input:not([type=hidden]), select, button:not([disabled])";
+  const focusable = el.matches(selector)
+    ? (el as HTMLElement)
+    : el.querySelector<HTMLElement>(selector);
   focusable?.focus({ preventScroll: true });
 }
 
@@ -126,6 +130,10 @@ export function NextActionBar({ client }: { client: VendorClientView }) {
   const Icon = ACTION_ICON[action];
   const anchor = ACTION_ANCHOR[action];
   const passive = PASSIVE_ACTIONS.has(action);
+  // The heading says WHAT is next; the control says WHAT TO DO. Repeating the
+  // same sentence in both places made the primary card look duplicated.
+  const ctaLabel =
+    action === "record_contract" ? t("vendor.next.cta_record_contract") : label(action);
   if (action === "none") return null;
 
   return (
@@ -155,7 +163,7 @@ export function NextActionBar({ client }: { client: VendorClientView }) {
           onClick={() => scrollToActionTarget(anchor)}
           className="btn btn-sm shrink-0 self-start bg-blush-500 text-white hover:bg-blush-600 sm:self-auto"
         >
-          {label(action)}
+          {ctaLabel}
           <ArrowRight size={15} aria-hidden="true" className="ml-1.5" />
         </button>
       ) : null}

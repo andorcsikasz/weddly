@@ -234,6 +234,14 @@ describe("vendor clients — /api/vendor/clients + payment tracking", () => {
     expect(r.data.client.deposit_paid).toBe(150000);
     expect(r.data.client.balance).toBe(350000);
 
+    // Status changes go through the booking state machine: the first response
+    // stamp is what powers response-time stats and must not be bypassed by the
+    // vendor CRM endpoint.
+    const booking = db
+      .prepare("SELECT first_response_at FROM supplier_bookings WHERE id = ?")
+      .get(bookingId) as { first_response_at: number | null };
+    expect(booking.first_response_at).not.toBeNull();
+
     // The mutation is audited (append-only log).
     const audit = db
       .prepare(
@@ -241,6 +249,74 @@ describe("vendor clients — /api/vendor/clients + payment tracking", () => {
       )
       .get(bookingId) as { n: number };
     expect(audit.n).toBe(1);
+  });
+
+  test("PATCH rejects an unknown booking status without changing the client", async () => {
+    wipeAll();
+    const { vendorToken, listingId, accountId } = await bootstrapVendor("clients-status-guard");
+    upgradeToPro(accountId);
+    const { coupleId } = await bootstrapCouple("couple-status-guard@weddly.test");
+    const bookingId = await createInboundBooking(listingId, coupleId, "2030-08-10");
+
+    const invalid = await req<{ error: string; detail?: { code?: string } }>(
+      "PATCH",
+      `/api/vendor/clients/${bookingId}`,
+      { status: "paid" },
+      { token: vendorToken },
+    );
+    expect(invalid.status).toBe(400);
+    expect(invalid.data.detail?.code).toBe("invalid_booking_status");
+
+    const detail = await req<VendorClientDetail>(
+      "GET",
+      `/api/vendor/clients/${bookingId}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(detail.data.status).toBe("requested");
+  });
+
+  test("PATCH rejects a deposit above the resulting contract value", async () => {
+    wipeAll();
+    const { vendorToken, listingId, accountId } = await bootstrapVendor("clients-money-validation");
+    upgradeToPro(accountId);
+    const { coupleId } = await bootstrapCouple("couple-money-validation@weddly.test");
+    const bookingId = await createInboundBooking(listingId, coupleId, "2030-08-09");
+
+    const initial = await req<{ client: VendorClientDetail }>(
+      "PATCH",
+      `/api/vendor/clients/${bookingId}`,
+      { contract_value: 500000, deposit_paid: 150000 },
+      { token: vendorToken },
+    );
+    expect(initial.status).toBe(200);
+
+    const excessiveDeposit = await req<{ error: string; detail?: { code?: string } }>(
+      "PATCH",
+      `/api/vendor/clients/${bookingId}`,
+      { deposit_paid: 500001 },
+      { token: vendorToken },
+    );
+    expect(excessiveDeposit.status).toBe(400);
+    expect(excessiveDeposit.data.detail?.code).toBe("deposit_exceeds_contract");
+
+    const reducedContract = await req<{ error: string; detail?: { code?: string } }>(
+      "PATCH",
+      `/api/vendor/clients/${bookingId}`,
+      { contract_value: 149999 },
+      { token: vendorToken },
+    );
+    expect(reducedContract.status).toBe(400);
+    expect(reducedContract.data.detail?.code).toBe("deposit_exceeds_contract");
+
+    const detail = await req<VendorClientDetail>(
+      "GET",
+      `/api/vendor/clients/${bookingId}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(detail.data.contract_value).toBe(500000);
+    expect(detail.data.deposit_paid).toBe(150000);
   });
 
   test("payment schedule: add → toggle paid → delete (PRO)", async () => {

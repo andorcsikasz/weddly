@@ -21,7 +21,7 @@
 // means "you can act on this" and nothing else, and a message someone sent is
 // not a control. The only accent in here is the send button, which is a control.
 
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import {
   Bot,
   CalendarClock,
@@ -215,11 +215,18 @@ function SystemEvent({ event, locale }: { event: BookingTimelineEvent; locale: L
   const text = useEventText()(event);
   const Icon = EVENT_ICON[event.kind as Exclude<TimelineEventKind, "message">] ?? Inbox;
   return (
-    <li className="flex justify-center">
-      <span className="flex max-w-[90%] items-center gap-1.5 py-0.5 text-center text-[11px] leading-relaxed text-ink-500 dark:text-paper-400">
-        <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-        <span className="min-w-0">{text}</span>
-        <span className="shrink-0 tabular-nums opacity-70">{formatTs(event.at, locale)}</span>
+    <li className="flex justify-center px-1">
+      <span className="grid max-w-full grid-cols-[auto_minmax(0,1fr)] items-start gap-x-1.5 py-0.5 text-[11px] leading-relaxed text-ink-500 dark:text-paper-400">
+        <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+        <span className="min-w-0 break-words text-center">
+          {text}{" "}
+          <time
+            className="whitespace-nowrap tabular-nums opacity-70"
+            dateTime={new Date(event.at).toISOString()}
+          >
+            {formatTs(event.at, locale)}
+          </time>
+        </span>
       </span>
     </li>
   );
@@ -243,7 +250,6 @@ export function BookingThreadPanel({
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   /** ONE scroll, in the server's order. A `message` event names a row this
@@ -279,12 +285,6 @@ export function BookingThreadPanel({
     for (const m of messages) if (!rendered.has(m.id)) out.push({ message: m });
     return out;
   }, [events, messages]);
-
-  // Keyed on the merged list, not on the messages: a system event arriving at
-  // the bottom moves the scroll too.
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "nearest" });
-  }, [rows.length]);
 
   const pickFiles = (picked: FileList | null) => {
     if (!picked) return;
@@ -379,7 +379,10 @@ export function BookingThreadPanel({
       {rows.length === 0 ? (
         <p className="text-sm text-ink-500 dark:text-paper-400">{t("thread.empty")}</p>
       ) : (
-        <ul className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+        /* The conversation belongs to the page's reading flow. A nested,
+         * fixed-height scroller trapped mouse-wheel and touch gestures at its
+         * bottom, hiding every section that followed it. */
+        <ul className="space-y-3">
           {rows.map((row) =>
             row.message ? (
               bubble(row.message, row.event?.payload.automated === true)
@@ -387,7 +390,6 @@ export function BookingThreadPanel({
               <SystemEvent key={row.event.id} event={row.event} locale={locale} />
             ) : null,
           )}
-          <div ref={bottomRef} />
         </ul>
       )}
 
@@ -469,6 +471,7 @@ export function BookingThreadPanel({
               </>
             ) : null}
             <textarea
+              aria-label={t("thread.placeholder")}
               rows={2}
               value={draft}
               maxLength={MESSAGE_BODY_MAX_LEN}

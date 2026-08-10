@@ -198,11 +198,10 @@ export function VendorPointsRail({
   const { status, rankLine } = pointsCopy(t, points);
   const rank = points.category_rank;
 
-  // basis-full keeps the block on its own row until the rail turns vertical at
-  // lg. As a plain flex item it wrapped in beside the last tab, so around
-  // 660-700px the score sat 4px from "Vélemények" and read as another tab.
+  // Keep the full card in the desktop rail; narrower layouts use the compact
+  // header chip instead.
   return (
-    <div className="mt-4 w-full basis-full border-t border-paper-300 pt-2 lg:mt-1 lg:w-auto lg:basis-auto lg:pt-1 dark:border-umber-700">
+    <div className="mt-4 hidden w-full basis-full border-t border-paper-300 pt-2 lg:mt-1 lg:block lg:w-auto lg:basis-auto lg:pt-1 dark:border-umber-700">
       <button
         type="button"
         onClick={() => setOpen(true)}

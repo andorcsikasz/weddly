@@ -11,8 +11,9 @@
 
 import type { VendorClientDetail, VendorClientPayment } from "@shared/vendor_clients";
 import { SNOOZE_DAYS } from "@shared/vendor_next_action";
+import type { BookingStatus } from "@shared/suppliers";
 import { addAuditLog } from "../lib/audit";
-import type { BookingRow } from "../domain/supplier_bookings";
+import { type BookingRow, updateBookingStatus } from "../domain/supplier_bookings";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
 import {
@@ -44,6 +45,24 @@ function parseOptionalString(raw: unknown): string | null | undefined {
   if (typeof raw !== "string") throw new HttpError(400, "Expected a string or null");
   const trimmed = raw.trim();
   return trimmed.length === 0 ? null : trimmed;
+}
+
+const CLIENT_STATUSES: ReadonlySet<BookingStatus> = new Set([
+  "requested",
+  "vendor_seen",
+  "confirmed",
+  "declined",
+  "cancelled",
+  "expired",
+]);
+
+function parseOptionalStatus(raw: unknown): BookingStatus | undefined {
+  const parsed = parseOptionalString(raw) ?? undefined;
+  if (parsed === undefined) return undefined;
+  if (!CLIENT_STATUSES.has(parsed as BookingStatus)) {
+    throw new HttpError(400, "Invalid booking status", { code: "invalid_booking_status" });
+  }
+  return parsed as BookingStatus;
 }
 
 function parseOptionalInt(raw: unknown, label: string): number | null | undefined {
@@ -143,13 +162,31 @@ async function handlePatchClient(ctx: Ctx): Promise<Response> {
   // `status` is the only field that's never nulled — an empty string clears a
   // status, which the booking state machine has no slot for, so coalesce to
   // undefined (no-op) instead.
+  const status = parseOptionalStatus(body.status);
   const patch = {
-    status: parseOptionalString(body.status) ?? undefined,
     stage: parseOptionalString(body.stage),
     vendorNotes: parseOptionalString(body.vendor_notes),
     contractValue: parseOptionalInt(body.contract_value, "contract_value"),
     depositPaid: parseOptionalInt(body.deposit_paid, "deposit_paid"),
   };
+  if (patch.contractValue !== undefined || patch.depositPaid !== undefined) {
+    const current = crmSnapshot(before);
+    const nextContract =
+      patch.contractValue === undefined ? current.contract_value : patch.contractValue;
+    const nextDeposit = patch.depositPaid === undefined ? current.deposit_paid : patch.depositPaid;
+    if (
+      typeof nextContract === "number" &&
+      typeof nextDeposit === "number" &&
+      nextDeposit > nextContract
+    ) {
+      throw new HttpError(400, "deposit_paid cannot exceed contract_value", {
+        code: "deposit_exceeds_contract",
+      });
+    }
+  }
+  if (status !== undefined && updateBookingStatus(bookingId, status) === null) {
+    throw new HttpError(404, "Client not found");
+  }
   updateVendorClientFields(bookingId, patch);
   markVendorCalendarDirty(account.id);
   const refreshed = getOwnedBooking(account.id, bookingId);

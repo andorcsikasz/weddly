@@ -309,7 +309,6 @@ function VendorProfileMenu({
   }, [open]);
 
   // Auto-close on navigation.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: close on path change
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
@@ -334,9 +333,8 @@ function VendorProfileMenu({
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-50 text-xs font-semibold uppercase text-steel-700 dark:bg-paper-100 dark:text-steel-900">
           {initialsOf(displayName)}
         </span>
-        <span className="hidden max-w-[10rem] truncate text-sm font-medium sm:inline">
-          {displayName}
-        </span>
+        {/* The full name lives in the menu panel. Keeping it beside an avatar
+            whose initials repeat a one-letter business name rendered "W W". */}
         <ChevronDown size={15} aria-hidden="true" className="text-steel-200" />
       </button>
 
@@ -638,7 +636,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Weddly Points — fetched once here and handed to both surfaces: the rail
-  // block from md up, the header chip below it.
+  // block from lg up, the header chip below it.
   const points = useVendorPoints();
 
   // New-inquiry badge on the Ügyfelek nav item: inquiries still 'requested'
@@ -735,6 +733,12 @@ export function VendorShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen overflow-x-clip bg-white dark:bg-umber-900">
+      <a
+        href="#main-content"
+        className="sr-only rounded-md bg-steel-900 px-3 py-2 text-sm font-medium text-paper-50 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-paper-100 focus:ring-offset-2 focus:ring-offset-steel-700"
+      >
+        {t("landing.skip_to_main")}
+      </a>
       <VendorDemoOverlay />
       {/* The chrome carries the portal's steel accent rather than sitting on
           the same white as the page. A vendor lives in this thing all day and a
@@ -804,9 +808,9 @@ export function VendorShell({ children }: { children: ReactNode }) {
                 <Moon size={18} aria-hidden="true" />
               )}
             </button>
-            {/* Phone only: from md the same score is a block in the rail, and
-                two copies of one number in one viewport is one too many. */}
-            <VendorPointsChip points={points} className="md:hidden" />
+            {/* Below lg the compact chip replaces the full rail card so the
+                reward UI never competes with client content. */}
+            <VendorPointsChip points={points} className="lg:hidden" />
             <VendorNotificationBell
               newInquiries={newInquiries}
               upcomingWeek={upcomingWeek}
@@ -915,9 +919,9 @@ export function VendorShell({ children }: { children: ReactNode }) {
               );
             })}
 
-            {/* Weddly Points, docked under the nav. Collapses to the ring
-                alone on the icon rail; stays a full block on mobile, where
-                there is no collapsed state. */}
+            {/* Weddly Points, docked under the desktop nav. Collapses to the
+                ring alone on the icon rail; narrower layouts use the compact
+                header chip instead. */}
             <VendorPointsRail collapsed={collapsed} points={points} />
 
             {/* No profile chip at the foot of the rail: the same avatar, the
@@ -926,7 +930,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
                 the rail end on account housekeeping rather than on the work. */}
           </nav>
         </aside>
-        <main id="main-content" className="min-w-0 flex-1 focus:outline-none">
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
           {children}
         </main>
       </div>

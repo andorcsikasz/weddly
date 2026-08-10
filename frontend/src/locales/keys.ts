@@ -1258,11 +1258,18 @@ export interface LocaleMessages {
       stage_hint: string;
       contract_value: string;
       deposit_paid: string;
+      deposit_exceeds_contract: string;
       balance: string;
       notes_label: string;
       notes_placeholder: string;
       contact_email: string;
       no_contact_email: string;
+      value_missing: string;
+      unsaved_changes: string;
+      /** Receives `{status}` — the translated target status. */
+      status_confirm_title: string;
+      status_confirm_body: string;
+      status_confirm_action: string;
       save: string;
       saving: string;
       saved: string;
@@ -1305,6 +1312,8 @@ export interface LocaleMessages {
       action_follow_up: string;
       action_await: string;
       action_record_contract: string;
+      /** Action wording used on the record-contract CTA (the heading stays descriptive). */
+      cta_record_contract: string;
       action_add_schedule: string;
       action_chase_payment: string;
       action_release_or_extend: string;
@@ -1433,6 +1442,7 @@ export interface LocaleMessages {
       valid_until_field: string;
       message_field: string;
       message_placeholder: string;
+      required_hint: string;
       saved: string;
       save_failed: string;
       send: string;
@@ -1478,6 +1488,9 @@ export interface LocaleMessages {
       /** Receives `{count}` - option labels in the length picker. */
       duration_hours: string;
       duration_days: string;
+      /** Receives `{date}` — the concrete local date and time calculated from the picker. */
+      expires_preview: string;
+      calendar_effect: string;
       /** Primary CTA, and the same control once a hold exists. */
       place: string;
       extend: string;

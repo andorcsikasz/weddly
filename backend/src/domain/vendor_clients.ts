@@ -513,7 +513,6 @@ export function deletePayment(paymentId: number): void {
 }
 
 export interface UpdateVendorClientInput {
-  status?: string;
   stage?: string | null;
   vendorNotes?: string | null;
   contractValue?: number | null;
@@ -525,10 +524,6 @@ export interface UpdateVendorClientInput {
 export function updateVendorClientFields(bookingId: number, patch: UpdateVendorClientInput): void {
   const sets: string[] = [];
   const vals: (string | number | null)[] = [];
-  if (patch.status !== undefined) {
-    sets.push("status = ?");
-    vals.push(patch.status);
-  }
   if (patch.stage !== undefined) {
     sets.push("stage = ?");
     vals.push(patch.stage);

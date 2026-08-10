@@ -34,12 +34,13 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
   Button,
   DateField,
   Dialog,
+  FieldError,
   Skeleton,
   TextField,
   useConfirm,
@@ -54,7 +55,14 @@ import {
   vendorBillingApi,
   vendorClientsApi,
 } from "../../lib/endpoints";
-import { formatDate, formatDateMs, formatMoney, intlLocale } from "../../lib/format";
+import {
+  currencySymbol,
+  digitsOnly,
+  formatDate,
+  formatDateMs,
+  formatMoney,
+  intlLocale,
+} from "../../lib/format";
 import { BookingQuoteCard } from "../../components/BookingQuoteCard";
 import { InquiryAssistant } from "../../components/InquiryAssistant";
 import { BookingThreadPanel } from "../../components/BookingThreadPanel";
@@ -64,17 +72,6 @@ import type { BookingMessage, VendorMessageTemplate } from "@shared/booking_mess
 import type { BookingTimelineEvent } from "@shared/booking_timeline";
 import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
-
-/** The booking statuses a vendor can set. Labels come from the vendor.* i18n
- *  namespace (status_<value>); see the integration note in the return summary. */
-const STATUS_OPTIONS = [
-  "requested",
-  "vendor_seen",
-  "confirmed",
-  "declined",
-  "cancelled",
-  "expired",
-] as const;
 
 /** The four states a vendor actually TRIAGES an inquiry into, as one-tap
  *  actions. `requested` and `expired` are omitted deliberately: neither is a
@@ -140,6 +137,16 @@ function groupDigits(raw: string, locale: Locale): string {
   return new Intl.NumberFormat(intlLocale(locale)).format(n);
 }
 
+function formatDateTimeMs(ms: number, locale: Locale): string {
+  return new Date(ms).toLocaleString(intlLocale(locale), {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 /** Money input that shows the same thousand-separated formatting as the
  *  read-only summaries: grouped while resting, raw digits while focused so
  *  the caret behaves. Plain text input (type="number" rejects separators). */
@@ -149,24 +156,56 @@ function MoneyField({
   value,
   onValueChange,
   locale,
+  currency,
+  required = false,
+  errorText,
 }: {
   id: string;
   label: string;
   value: string;
   onValueChange: (raw: string) => void;
   locale: Locale;
+  currency: Currency;
+  required?: boolean;
+  errorText?: string;
 }) {
   const [focused, setFocused] = useState(false);
+  const errorId = errorText ? `${id}-error` : undefined;
   return (
-    <TextField
-      id={id}
-      label={label}
-      inputMode="numeric"
-      value={focused ? value : groupDigits(value, locale)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      onChange={(e) => onValueChange(e.target.value.replace(/[\s  ,]/g, ""))}
-    />
+    <div className="block">
+      <label htmlFor={id} className="field-label">
+        {label}
+        {required ? (
+          <span aria-hidden="true" className="ml-0.5 text-blush-700 dark:text-blush-300">
+            *
+          </span>
+        ) : null}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="off"
+          aria-required={required || undefined}
+          aria-invalid={errorText ? true : undefined}
+          aria-describedby={errorId}
+          className={`input scroll-mt-24 pr-14 ${errorText ? "input-invalid" : ""}`}
+          value={focused ? value : groupDigits(value, locale)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onChange={(e) => onValueChange(digitsOnly(e.target.value))}
+        />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-ink-500 dark:text-paper-400"
+        >
+          {currencySymbol(currency, locale)}
+        </span>
+      </div>
+      {errorText ? <FieldError id={errorId as string}>{errorText}</FieldError> : null}
+    </div>
   );
 }
 
@@ -185,7 +224,6 @@ export default function VendorClientDetailPage() {
   useDocumentTitle(detail?.couple_display_name ?? t("vendor.clients.page_title"));
 
   // CRM editor form state (mirrors the editable booking columns).
-  const [status, setStatus] = useState("");
   const [stage, setStage] = useState("");
   const [contractValue, setContractValue] = useState("");
   const [depositPaid, setDepositPaid] = useState("");
@@ -194,6 +232,7 @@ export default function VendorClientDetailPage() {
   // The status being written by a one-tap action, so only that button shows a
   // pending state rather than the whole row going dead.
   const [quickStatusBusy, setQuickStatusBusy] = useState<string | null>(null);
+  const notesRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Message thread state. Loaded alongside the detail; sending is PRO, reading
   // is not, so the panel renders on FREE with the composer swapped for a nudge.
@@ -235,7 +274,6 @@ export default function VendorClientDetailPage() {
   const [busyPaymentId, setBusyPaymentId] = useState<number | null>(null);
 
   const hydrateForm = useCallback((client: VendorClientDetail) => {
-    setStatus(client.status);
     setStage(client.stage ?? "");
     setContractValue(moneyToInput(client.contract_value));
     setDepositPaid(moneyToInput(client.deposit_paid));
@@ -399,6 +437,43 @@ export default function VendorClientDetailPage() {
     return cv - dp;
   }, [contractValue, depositPaid]);
 
+  const crmDirty = useMemo(() => {
+    if (!detail) return false;
+    return (
+      stage.trim() !== (detail.stage ?? "") ||
+      notes.trim() !== (detail.vendor_notes ?? "") ||
+      parseIntOrNull(contractValue) !== detail.contract_value ||
+      parseIntOrNull(depositPaid) !== detail.deposit_paid
+    );
+  }, [contractValue, depositPaid, detail, notes, stage]);
+
+  const depositExceedsContract = useMemo(() => {
+    const contract = parseIntOrNull(contractValue);
+    const deposit = parseIntOrNull(depositPaid);
+    return contract !== null && deposit !== null && deposit > contract;
+  }, [contractValue, depositPaid]);
+
+  // A long private note grows to fit, and contracts again when its contents
+  // are removed. Capping it keeps a pasted document from turning the whole
+  // client page into one enormous field.
+  useEffect(() => {
+    const el = notesRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, 96), 384)}px`;
+    el.style.overflowY = el.scrollHeight > 384 ? "auto" : "hidden";
+  }, [notes]);
+
+  useEffect(() => {
+    if (!crmDirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [crmDirty]);
+
   const paymentTotals = useMemo(() => {
     let total = 0;
     let paid = 0;
@@ -415,16 +490,25 @@ export default function VendorClientDetailPage() {
   );
 
   /** One-tap triage from the summary card. Sends ONLY the status, so it can't
-   *  carry half-typed edits from the CRM form below into the row, and re-seeds
-   *  the form from the server's answer so the select and these buttons can
-   *  never disagree about the current state. */
+   *  carry or erase half-typed edits from the CRM form below. */
   async function onQuickStatus(next: string) {
     if (!detail || next === detail.status || quickStatusBusy !== null) return;
+    if (["confirmed", "declined", "cancelled"].includes(next)) {
+      const ok = await confirm({
+        title: t("vendor.clients.status_confirm_title", {
+          status: t(`vendor.clients.status_${next}`),
+        }),
+        body: t("vendor.clients.status_confirm_body"),
+        confirmLabel: t("vendor.clients.status_confirm_action"),
+        cancelLabel: t("common.cancel"),
+        destructive: next === "declined" || next === "cancelled",
+      });
+      if (!ok) return;
+    }
     setQuickStatusBusy(next);
     try {
       const res = await vendorClientsApi.update(detail.id, { status: next });
       setDetail(res.client);
-      hydrateForm(res.client);
       // Confirming or declining moves what the dashboard counts, and the rail
       // badge is only re-fetched on navigation.
       notifyVendorStatsStale();
@@ -437,13 +521,12 @@ export default function VendorClientDetailPage() {
   }
 
   async function onSaveCrm() {
-    if (!detail) return;
+    if (!detail || depositExceedsContract) return;
     setSaving(true);
     try {
       const trimmedStage = stage.trim();
       const trimmedNotes = notes.trim();
       const res = await vendorClientsApi.update(detail.id, {
-        status,
         stage: trimmedStage === "" ? null : trimmedStage,
         vendor_notes: trimmedNotes === "" ? null : trimmedNotes,
         contract_value: parseIntOrNull(contractValue),
@@ -473,6 +556,20 @@ export default function VendorClientDetailPage() {
     return out;
   }, [qLines]);
 
+  const quoteCanSave = useMemo(() => {
+    if (qTitle.trim() === "") return false;
+    const filled = qLines.filter((line) => line.label.trim() !== "" || line.unit.trim() !== "");
+    return (
+      filled.length > 0 &&
+      filled.every(
+        (line) =>
+          line.label.trim() !== "" &&
+          line.unit.trim() !== "" &&
+          (parseIntOrNull(line.qty) ?? 0) >= 1,
+      )
+    );
+  }, [qLines, qTitle]);
+
   const draftTotal = useMemo(() => quoteTotal(quoteLineInputs), [quoteLineInputs]);
 
   /** Local today, not UTC: a validity date the vendor picks is a calendar day
@@ -483,6 +580,8 @@ export default function VendorClientDetailPage() {
     const day = String(d.getDate()).padStart(2, "0");
     return `${d.getFullYear()}-${mo}-${day}`;
   }, []);
+
+  const holdUntilPreview = useMemo(() => Date.now() + holdHours * 3_600_000, [holdHours]);
 
   /** Say a refusal in the vendor's language when the server named one. */
   const quoteError = useCallback(
@@ -594,7 +693,7 @@ export default function VendorClientDetailPage() {
 
   async function onSaveQuote() {
     const title = qTitle.trim();
-    if (title === "" || quoteLineInputs.length === 0) return;
+    if (!quoteCanSave) return;
     const trimmedMessage = qMessage.trim();
     setSavingQuote(true);
     try {
@@ -817,9 +916,12 @@ export default function VendorClientDetailPage() {
           label={t("vendor.clients.status_label")}
           value={
             <div className="space-y-2">
-              <span className="block">{t(`vendor.clients.status_${detail.status}`)}</span>
               {canEditCrm ? (
-                <div className="flex flex-wrap gap-1.5">
+                <div
+                  className="flex flex-wrap gap-1.5"
+                  role="group"
+                  aria-label={t("vendor.clients.status_label")}
+                >
                   {QUICK_STATUSES.map(({ value, Icon }) => {
                     const active = detail.status === value;
                     return (
@@ -841,6 +943,9 @@ export default function VendorClientDetailPage() {
                     );
                   })}
                 </div>
+              ) : null}
+              {!canEditCrm || !QUICK_STATUSES.some(({ value }) => value === detail.status) ? (
+                <span className="block">{t(`vendor.clients.status_${detail.status}`)}</span>
               ) : null}
             </div>
           }
@@ -867,13 +972,17 @@ export default function VendorClientDetailPage() {
         />
         <SummaryItem
           label={t("vendor.clients.contract_value")}
-          value={detail.contract_value === null ? "-" : fmt(detail.contract_value)}
+          value={
+            detail.contract_value === null
+              ? t("vendor.clients.value_missing")
+              : fmt(detail.contract_value)
+          }
         />
         <SummaryItem
           label={t("vendor.clients.balance")}
           value={
             detail.balance === null ? (
-              "-"
+              t("vendor.clients.value_missing")
             ) : ["declined", "cancelled", "expired"].includes(detail.status) ? (
               // A dead inquiry's balance is context, not money owed.
               <span className="text-ink-400 line-through dark:text-umber-400">
@@ -981,35 +1090,45 @@ export default function VendorClientDetailPage() {
         ) : null}
 
         {canHoldDates ? (
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="block">
-              <label htmlFor="vc-hold-hours" className="field-label">
-                {t("vendor.holds.duration_label")}
-              </label>
-              <select
-                id="vc-hold-hours"
-                className="input w-44"
-                value={holdHours}
-                onChange={(e) => setHoldHours(Number(e.target.value))}
-              >
-                {HOLD_OPTIONS_HOURS.map((h) => (
-                  <option key={h} value={h}>
-                    {h < 48
-                      ? t("vendor.holds.duration_hours", { count: h })
-                      : t("vendor.holds.duration_days", { count: Math.floor(h / 24) })}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Button onClick={onHoldDate} loading={holdBusy} loadingLabel={t("common.saving")}>
-              {hold?.state === "live" ? t("vendor.holds.extend") : t("vendor.holds.place")}
-            </Button>
-            {hold?.state === "live" ? (
-              <Button variant="outline" onClick={onReleaseHold} disabled={holdBusy}>
-                {t("vendor.holds.release")}
+          <>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="block">
+                <label htmlFor="vc-hold-hours" className="field-label">
+                  {t("vendor.holds.duration_label")}
+                </label>
+                <select
+                  id="vc-hold-hours"
+                  className="input w-44"
+                  value={holdHours}
+                  onChange={(e) => setHoldHours(Number(e.target.value))}
+                >
+                  {HOLD_OPTIONS_HOURS.map((h) => (
+                    <option key={h} value={h}>
+                      {h < 48
+                        ? t("vendor.holds.duration_hours", { count: h })
+                        : t("vendor.holds.duration_days", { count: Math.floor(h / 24) })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="pb-0.5 text-sm text-ink-600 dark:text-paper-300">
+                {t("vendor.holds.expires_preview", {
+                  date: formatDateTimeMs(holdUntilPreview, locale),
+                })}
+              </p>
+              <Button onClick={onHoldDate} loading={holdBusy} loadingLabel={t("common.saving")}>
+                {hold?.state === "live" ? t("vendor.holds.extend") : t("vendor.holds.place")}
               </Button>
-            ) : null}
-          </div>
+              {hold?.state === "live" ? (
+                <Button variant="outline" onClick={onReleaseHold} disabled={holdBusy}>
+                  {t("vendor.holds.release")}
+                </Button>
+              ) : null}
+            </div>
+            <p className="text-xs text-ink-500 dark:text-paper-400">
+              {t("vendor.holds.calendar_effect")}
+            </p>
+          </>
         ) : (
           <UpgradeCard
             title={t("vendor.holds.locked_title")}
@@ -1084,7 +1203,7 @@ export default function VendorClientDetailPage() {
               onClick={onSaveQuote}
               loading={savingQuote}
               loadingLabel={t("common.saving")}
-              disabled={qTitle.trim() === "" || quoteLineInputs.length === 0}
+              disabled={!quoteCanSave}
             >
               {t("common.save")}
             </Button>
@@ -1097,6 +1216,7 @@ export default function VendorClientDetailPage() {
             label={t("vendor.quotes.title_field")}
             placeholder={t("vendor.quotes.title_placeholder")}
             maxLength={QUOTE_TITLE_MAX}
+            required
             value={qTitle}
             onChange={(e) => setQTitle(e.target.value)}
           />
@@ -1112,6 +1232,7 @@ export default function VendorClientDetailPage() {
                   label={t("vendor.quotes.line_label")}
                   placeholder={t("vendor.quotes.line_placeholder")}
                   maxLength={QUOTE_LINE_LABEL_MAX}
+                  required
                   value={line.label}
                   onChange={(e) =>
                     setQLines((prev) =>
@@ -1123,6 +1244,7 @@ export default function VendorClientDetailPage() {
                   id={`vq-line-qty-${line.key}`}
                   label={t("vendor.quotes.line_qty")}
                   inputMode="numeric"
+                  required
                   value={line.qty}
                   onChange={(e) =>
                     setQLines((prev) =>
@@ -1140,6 +1262,8 @@ export default function VendorClientDetailPage() {
                     setQLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, unit: raw } : l)))
                   }
                   locale={locale}
+                  currency={currency}
+                  required
                 />
                 <Button
                   variant="ghost"
@@ -1163,6 +1287,10 @@ export default function VendorClientDetailPage() {
             </Button>
           </div>
 
+          <p className="text-xs text-ink-500 dark:text-paper-400">
+            {t("vendor.quotes.required_hint")}
+          </p>
+
           {/* The total moves as the vendor types, so the number they are about
               to commit to is never a surprise on the sent card. */}
           <div className="flex items-baseline justify-between rounded-xl bg-paper-100 px-4 py-3 dark:bg-umber-900">
@@ -1179,6 +1307,7 @@ export default function VendorClientDetailPage() {
               value={qDeposit}
               onValueChange={setQDeposit}
               locale={locale}
+              currency={currency}
             />
             <DateField
               id="vq-valid-until"
@@ -1216,24 +1345,6 @@ export default function VendorClientDetailPage() {
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="block">
-              <label htmlFor="vc-status" className="field-label">
-                {t("vendor.clients.status_label")}
-              </label>
-              <select
-                id="vc-status"
-                className="input"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {t(`vendor.clients.status_${opt}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             <TextField
               id="vc-stage"
               label={t("vendor.clients.stage_label")}
@@ -1249,6 +1360,7 @@ export default function VendorClientDetailPage() {
               value={contractValue}
               onValueChange={setContractValue}
               locale={locale}
+              currency={currency}
             />
 
             <MoneyField
@@ -1257,13 +1369,17 @@ export default function VendorClientDetailPage() {
               value={depositPaid}
               onValueChange={setDepositPaid}
               locale={locale}
+              currency={currency}
+              errorText={
+                depositExceedsContract ? t("vendor.clients.deposit_exceeds_contract") : undefined
+              }
             />
           </div>
 
           <div className="flex items-baseline justify-between rounded-xl bg-paper-100 px-4 py-3 dark:bg-umber-900">
             <span className="field-label mb-0">{t("vendor.clients.balance")}</span>
             <span className="text-lg font-semibold text-ink-900 dark:text-paper-50">
-              {liveBalance === null ? "-" : fmt(liveBalance)}
+              {liveBalance === null ? t("vendor.clients.value_missing") : fmt(liveBalance)}
             </span>
           </div>
 
@@ -1272,17 +1388,32 @@ export default function VendorClientDetailPage() {
               {t("vendor.clients.notes_label")}
             </label>
             <textarea
+              ref={notesRef}
               id="vc-notes"
               rows={4}
-              className="input min-h-[6rem] resize-y leading-relaxed"
+              className="input min-h-[6rem] resize-none leading-relaxed"
               placeholder={t("vendor.clients.notes_placeholder")}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={onSaveCrm} loading={saving} loadingLabel={t("vendor.clients.saving")}>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {crmDirty ? (
+              <span
+                role="status"
+                aria-live="polite"
+                className="text-xs font-medium text-amber-700 dark:text-amber-300"
+              >
+                {t("vendor.clients.unsaved_changes")}
+              </span>
+            ) : null}
+            <Button
+              onClick={onSaveCrm}
+              loading={saving}
+              loadingLabel={t("vendor.clients.saving")}
+              disabled={!crmDirty || depositExceedsContract}
+            >
               {t("vendor.clients.save")}
             </Button>
           </div>
@@ -1406,6 +1537,7 @@ export default function VendorClientDetailPage() {
               value={payAmount}
               onValueChange={setPayAmount}
               locale={locale}
+              currency={currency}
             />
             <DateField
               id="vc-pay-due"
