@@ -55,6 +55,7 @@ import {
 import { CurrencySelect } from "../components/CurrencySelect";
 import { IncomeSection } from "../components/IncomeSection";
 import { InfoHint } from "../components/InfoHint";
+import { LastUpdatedBy } from "../components/LastUpdatedBy";
 import { PaymentsDuePanel } from "../components/PaymentsDuePanel";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -72,9 +73,12 @@ import {
   planCategoryPlanned,
 } from "../lib/budget";
 import {
+  type CostPlanningSaveStatus,
   hydrateCostPlanningCount,
   readCostPlanningCount,
+  readCostPlanningSaveStatus,
   subscribeCostPlanningCount,
+  subscribeCostPlanningSaveStatus,
   writeCostPlanningCount,
 } from "../lib/cost_planning";
 import { fireConfetti } from "../lib/confetti";
@@ -188,6 +192,13 @@ export default function BudgetPage() {
   // Slider state lives here so saveSnapshot() can read the current scenario
   // headcount and seed the snapshot-name suggestion.
   const [count, setCount] = useState<number | null>(null);
+  const [countSaveStatus, setCountSaveStatus] = useState<CostPlanningSaveStatus>("idle");
+  const [countChanged, setCountChanged] = useState(false);
+  const [countUndo, setCountUndo] = useState<{ from: number; to: number } | null>(null);
+  const countGestureStartRef = useRef<number | null>(null);
+  const countGestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Snapshot id currently being restored — disables both action buttons on
    *  the affected card and shows an inline spinner. Null when idle. */
   const [restoringId, setRestoringId] = useState<number | null>(null);
@@ -317,6 +328,12 @@ export default function BudgetPage() {
     });
   }, [couple]);
 
+  useEffect(() => {
+    if (!couple) return;
+    setCountSaveStatus(readCostPlanningSaveStatus(couple.id));
+    return subscribeCostPlanningSaveStatus(couple.id, setCountSaveStatus);
+  }, [couple]);
+
   // Persist every slider commit so /app/suppliers' Vendégszám filter picks
   // it up on the next mount. Self-tab navigation reads on mount; other tabs
   // see the change via the `storage` event handled above.
@@ -324,6 +341,15 @@ export default function BudgetPage() {
     if (!couple || count === null) return;
     writeCostPlanningCount(couple.id, count);
   }, [couple, count]);
+
+  useEffect(
+    () => () => {
+      if (countGestureTimerRef.current) clearTimeout(countGestureTimerRef.current);
+      if (countHighlightTimerRef.current) clearTimeout(countHighlightTimerRef.current);
+      if (countUndoTimerRef.current) clearTimeout(countUndoTimerRef.current);
+    },
+    [],
+  );
 
   const cap = budgetCap(couple);
   const baseline = baselineGuestCount(couple);
@@ -348,6 +374,42 @@ export default function BudgetPage() {
     baselineRef.current = baseline;
     effectiveCountRef.current = effectiveCount;
   });
+
+  const handleCountChange = useCallback((next: number) => {
+    const previous = effectiveCountRef.current;
+    if (next === previous) return;
+    if (countGestureStartRef.current === null) countGestureStartRef.current = previous;
+    effectiveCountRef.current = next;
+    setCount(next);
+    setCountChanged(true);
+
+    if (countHighlightTimerRef.current) clearTimeout(countHighlightTimerRef.current);
+    countHighlightTimerRef.current = setTimeout(() => setCountChanged(false), 1_200);
+
+    if (countGestureTimerRef.current) clearTimeout(countGestureTimerRef.current);
+    countGestureTimerRef.current = setTimeout(() => {
+      const from = countGestureStartRef.current;
+      countGestureStartRef.current = null;
+      countGestureTimerRef.current = null;
+      if (from === null || from === next) return;
+      setCountUndo({ from, to: next });
+      if (countUndoTimerRef.current) clearTimeout(countUndoTimerRef.current);
+      countUndoTimerRef.current = setTimeout(() => setCountUndo(null), 6_000);
+    }, 500);
+  }, []);
+
+  const undoCountChange = useCallback(() => {
+    const undo = countUndo;
+    if (!undo) return;
+    if (countUndoTimerRef.current) clearTimeout(countUndoTimerRef.current);
+    setCountUndo(null);
+    countGestureStartRef.current = null;
+    effectiveCountRef.current = undo.from;
+    setCount(undo.from);
+    setCountChanged(true);
+    if (countHighlightTimerRef.current) clearTimeout(countHighlightTimerRef.current);
+    countHighlightTimerRef.current = setTimeout(() => setCountChanged(false), 1_200);
+  }, [countUndo]);
 
   /** Centralised error handler — turns a typed ApiError into the right
    *  toast and triggers a refresh ONLY for concurrency conflicts (so the
@@ -1027,9 +1089,12 @@ export default function BudgetPage() {
         data-tour-target="budget-header"
         className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2"
       >
-        <div className="flex min-w-0 items-center gap-2">
-          <h1 className="font-grotesk">{t("budget.title")}</h1>
-          <InfoHint text={t("budget.sub")} />
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="font-grotesk">{t("budget.title")}</h1>
+            <InfoHint text={t("budget.sub")} />
+          </div>
+          <LastUpdatedBy actionPrefixes={["budget.", "couple.planning_count"]} />
         </div>
         <div className="shrink-0">
           <CurrencySelect
@@ -1058,7 +1123,11 @@ export default function BudgetPage() {
         countLocked={couple?.planning_count_locked ?? false}
         onCountLockToggle={toggleCountLock}
         currency={currency}
-        onCountChange={setCount}
+        onCountChange={handleCountChange}
+        countSaveStatus={countSaveStatus}
+        countUndoAvailable={countUndo !== null}
+        onUndoCountChange={undoCountChange}
+        headcountChanged={countChanged}
         onBoundsChange={saveBounds}
         onEditPlanned={setAggregatedPlanned}
         onCapChange={saveCap}

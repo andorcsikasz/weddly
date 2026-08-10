@@ -31,6 +31,10 @@ const cache = new Map<number, number | null>();
 const listeners = new Map<number, Set<(next: number | null) => void>>();
 // Debounce handle per couple — slider drags collapse into one server write.
 const pendingWrite = new Map<number, ReturnType<typeof setTimeout>>();
+export type CostPlanningSaveStatus = "idle" | "saving" | "saved" | "error";
+const saveStatuses = new Map<number, CostPlanningSaveStatus>();
+const saveStatusListeners = new Map<number, Set<(status: CostPlanningSaveStatus) => void>>();
+const savedStatusTimers = new Map<number, ReturnType<typeof setTimeout>>();
 // Migration-already-attempted set so a hydrated null doesn't try to upload
 // the same legacy localStorage value twice.
 const migrated = new Set<number>();
@@ -40,6 +44,23 @@ const knownCouples = new Set<number>();
 let crossTabInstalled = false;
 
 const WRITE_DEBOUNCE_MS = 300;
+
+function setSaveStatus(coupleId: number, status: CostPlanningSaveStatus): void {
+  const timer = savedStatusTimers.get(coupleId);
+  if (timer) {
+    clearTimeout(timer);
+    savedStatusTimers.delete(coupleId);
+  }
+  saveStatuses.set(coupleId, status);
+  for (const cb of saveStatusListeners.get(coupleId) ?? []) cb(status);
+  if (status === "saved") {
+    const nextTimer = setTimeout(() => {
+      savedStatusTimers.delete(coupleId);
+      if (saveStatuses.get(coupleId) === "saved") setSaveStatus(coupleId, "idle");
+    }, 2_000);
+    savedStatusTimers.set(coupleId, nextTimer);
+  }
+}
 
 function emit(coupleId: number) {
   const subs = listeners.get(coupleId);
@@ -159,6 +180,7 @@ async function performWrite(coupleId: number, value: number | null): Promise<voi
     cache.set(coupleId, r.couple.planning_count);
     emit(coupleId);
     publish("planning_count:changed");
+    setSaveStatus(coupleId, "saved");
   } catch (e) {
     // On a 409 (stale couple) silently refetch and retry once. The slider
     // is too low-stakes to bubble a "stale couple" toast.
@@ -169,26 +191,61 @@ async function performWrite(coupleId: number, value: number | null): Promise<voi
         cache.set(coupleId, r.couple.planning_count);
         emit(coupleId);
         publish("planning_count:changed");
+        setSaveStatus(coupleId, "saved");
         return;
       } catch {
         // Final fall-through: refetch and let the UI reflect the server.
-        await refetchCouple(coupleId);
+        setSaveStatus(coupleId, "error");
+        try {
+          await refetchCouple(coupleId);
+        } catch {
+          // Keep the optimistic value visible when even the recovery read is
+          // offline; the error state makes clear that it was not persisted.
+        }
         return;
       }
     }
     // Any other error: refetch so the slider snaps back to the server's view.
-    await refetchCouple(coupleId);
+    setSaveStatus(coupleId, "error");
+    try {
+      await refetchCouple(coupleId);
+    } catch {
+      // See above: a failed recovery read must not swallow the save error.
+    }
   }
 }
 
 function scheduleWrite(coupleId: number, value: number | null): void {
   const cur = pendingWrite.get(coupleId);
   if (cur) clearTimeout(cur);
+  setSaveStatus(coupleId, "saving");
   const handle = setTimeout(() => {
     pendingWrite.delete(coupleId);
     void performWrite(coupleId, value);
   }, WRITE_DEBOUNCE_MS);
   pendingWrite.set(coupleId, handle);
+}
+
+export function readCostPlanningSaveStatus(coupleId: number): CostPlanningSaveStatus {
+  return saveStatuses.get(coupleId) ?? "idle";
+}
+
+export function subscribeCostPlanningSaveStatus(
+  coupleId: number,
+  cb: (status: CostPlanningSaveStatus) => void,
+): () => void {
+  let bucket = saveStatusListeners.get(coupleId);
+  if (!bucket) {
+    bucket = new Set();
+    saveStatusListeners.set(coupleId, bucket);
+  }
+  bucket.add(cb);
+  return () => {
+    const current = saveStatusListeners.get(coupleId);
+    if (!current) return;
+    current.delete(cb);
+    if (current.size === 0) saveStatusListeners.delete(coupleId);
+  };
 }
 
 /** Persist a new planning count for the couple. Updates the cache + fires

@@ -67,6 +67,7 @@ import { NotificationBell } from "./NotificationBell";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
+import { CollaborationActivityProvider } from "./CollaborationActivity";
 
 /** `group` partitions the sidebar into four logical phases of the wedding
  *  journey, with a thin section header between each:
@@ -1627,7 +1628,9 @@ function BottomLink({
 export function AppShellLayout() {
   return (
     <AppShell>
-      <Outlet />
+      <CollaborationActivityProvider>
+        <Outlet />
+      </CollaborationActivityProvider>
     </AppShell>
   );
 }

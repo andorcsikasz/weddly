@@ -68,6 +68,7 @@ import { publish, subscribe } from "../lib/sync";
 import { computeSymmetricLayout, tableFootprintMm } from "./seating/layout";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
 import { isCurrentSessionDemo } from "../lib/demoSession";
+import { LastUpdatedBy } from "../components/LastUpdatedBy";
 
 // Demo workspace canvas — 10 × 15 m portrait. Sized for the intimate
 // 15-guest fairytale wedding: head table + 3 round tables fit comfortably
@@ -1647,7 +1648,10 @@ export default function SeatingPage() {
       </span>
       {/* Single toolbar row: title (left) → tabs (flex-1) → icon strip + add table (right) */}
       <div className="seating-toolbar mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h1 className="shrink-0 font-grotesk">{t("seating.title")}</h1>
+        <div className="shrink-0">
+          <h1 className="font-grotesk">{t("seating.title")}</h1>
+          <LastUpdatedBy actionPrefixes={["table.", "seat.", "conflict."]} />
+        </div>
 
         {/* Mode tabs — stretch to fill the remaining space */}
         <div

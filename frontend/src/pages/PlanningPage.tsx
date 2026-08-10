@@ -69,6 +69,7 @@ import {
 import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
 import { WeddingChecklist } from "../components/WeddingChecklist";
 import { MoneyInput } from "../components/MoneyInput";
+import { PlanningRouteLinks } from "../components/PlanningRouteLinks";
 import { setSelection } from "../lib/supplier_selection";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -227,7 +228,7 @@ const TASK_TITLE_TO_GROUP = (() => {
   return map;
 })();
 
-type TaskGroupOrOther = TaskTemplateGroupId | "other";
+type TaskGroupOrOther = TaskTemplateGroupId | "after_wedding" | "other";
 
 /** Resolve which list a task belongs to. Explicit `topic` on the row wins
  *  (newer rows tagged by the wand / editor); title-lookup against the wand
@@ -279,9 +280,16 @@ function BodyWithLinks({ text }: { text: string }) {
   );
 }
 
-function taskGroupOf(item: PlanningItem): TaskGroupOrOther {
-  if (item.topic === "wedding" || item.topic === "honeymoon") return item.topic;
-  return TASK_TITLE_TO_GROUP.get(item.title) ?? "other";
+function taskGroupOf(item: PlanningItem, weddingDate: string | null): TaskGroupOrOther {
+  const templateGroup = TASK_TITLE_TO_GROUP.get(item.title);
+  // Honeymoon is already an explicit phase and should not be swallowed by the
+  // generic post-wedding bucket just because its due date follows the wedding.
+  if (item.topic === "honeymoon" || templateGroup === "honeymoon") return "honeymoon";
+  // A task dated after the wedding is operationally a follow-up, regardless
+  // of whether it came from a template or was typed by the couple.
+  if (weddingDate && item.due_date && item.due_date > weddingDate) return "after_wedding";
+  if (item.topic === "wedding" || templateGroup === "wedding") return "wedding";
+  return "other";
 }
 
 /** i18n key for the section header above each task group. The bare "Egyéb"
@@ -290,6 +298,7 @@ function taskGroupOf(item: PlanningItem): TaskGroupOrOther {
  *  sections. */
 const TASK_GROUP_LABEL_KEY: Record<TaskGroupOrOther, string> = {
   wedding: "planning.task_group_wedding",
+  after_wedding: "planning.task_group_after_wedding",
   honeymoon: "planning.task_group_honeymoon",
   other: "planning.task_group_other",
 };
@@ -502,13 +511,14 @@ export default function PlanningPage() {
     }
     const byGroup: Record<TaskGroupOrOther, PlanningItem[]> = {
       wedding: [],
+      after_wedding: [],
       honeymoon: [],
       other: [],
     };
-    for (const i of scoped) byGroup[taskGroupOf(i)].push(i);
-    const order: TaskGroupOrOther[] = ["wedding", "honeymoon", "other"];
+    for (const i of scoped) byGroup[taskGroupOf(i, weddingDate)].push(i);
+    const order: TaskGroupOrOther[] = ["wedding", "after_wedding", "honeymoon", "other"];
     return order.map((g) => ({ group: g, items: byGroup[g] })).filter((s) => s.items.length > 0);
-  }, [activeKind, scoped]);
+  }, [activeKind, scoped, weddingDate]);
 
   /** Counts per priority level for the filter-pill badges. Computed once
    *  per items/tab change so the pill labels stay in sync as the user
@@ -651,11 +661,11 @@ export default function PlanningPage() {
    *  rendered as separate to-do lists, so a wedding row can never move past
    *  the first honeymoon row and vice versa. Ideas use kind-wide scope. */
   async function onMove(item: PlanningItem, direction: "up" | "down") {
-    const itemGroup = item.kind === "task" ? taskGroupOf(item) : null;
+    const itemGroup = item.kind === "task" ? taskGroupOf(item, weddingDate) : null;
     const list = items
       .filter((i) => {
         if (i.kind !== item.kind) return false;
-        if (item.kind === "task") return taskGroupOf(i) === itemGroup;
+        if (item.kind === "task") return taskGroupOf(i, weddingDate) === itemGroup;
         return true;
       })
       .sort((a, b) => {
@@ -986,6 +996,7 @@ export default function PlanningPage() {
             {t("planning.title")}
           </h1>
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{t("planning.sub")}</p>
+          <PlanningRouteLinks className="mt-3" />
         </header>
 
         {/* Tabs and the per-tab actions share one row to keep the header
@@ -1355,7 +1366,9 @@ export default function PlanningPage() {
                   // Section header only on the tasks tab AND only when there are
                   // at least two distinct groups visible — a single-group list
                   // doesn't need a label, that's just noise.
-                  const showHeader = activeKind === "task" && taskSections.length > 1;
+                  const showHeader =
+                    activeKind === "task" &&
+                    (taskSections.length > 1 || section.group === "after_wedding");
                   const groupDone = section.items.filter((i) => i.done).length;
                   return (
                     <section key={section.group}>

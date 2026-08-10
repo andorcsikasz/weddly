@@ -46,6 +46,7 @@ export interface LocaleMessages {
     /** The one control a toast can carry (`toast.undo`). Reverses the change
      *  on the SERVER, never just on screen. */
     undo: string;
+    last_updated_by: string;
     /** Generic "Remove {label}" aria-label for chip/tag close buttons. */
     remove_item: string;
     /** Bare "Remove" word — short close-button aria-labels with no target. */
@@ -3350,6 +3351,7 @@ export interface LocaleMessages {
       hide_dismissed: string;
       /** Overall decision progress line above the personalization strip. */
       progress_label: string;
+      progress_scope_hint: string;
       /** Personalization "setup strip": kicker + answered-count chip + collapse bar. */
       setup_start_here: string;
       setup_answered: string;
@@ -3432,6 +3434,7 @@ export interface LocaleMessages {
     /** Section headers above the strictly-separated task groups on the
      *  Tasks tab. Only rendered when at least two groups have items. */
     task_group_wedding: string;
+    task_group_after_wedding: string;
     task_group_honeymoon: string;
     task_group_other: string;
     /** "{done}/{total} done" completion pill on each task group header. */
@@ -5302,6 +5305,8 @@ export interface LocaleMessages {
     cost_planning_baseline_note: string;
     /** Standalone "vendég" / "guests" label rendered under the big count tile. */
     cost_planning_unit_label: string;
+    cost_planning_saved: string;
+    cost_planning_save_error: string;
     /** Aria-label + tooltip on the big guest-count tile when it's currently
      *  unlocked. Clicking the tile pins the headcount slider; the lock badge
      *  rotates from open → closed and the slider tucks itself away. */

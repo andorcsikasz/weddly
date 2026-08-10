@@ -57,6 +57,7 @@ import {
 import { Link } from "react-router-dom";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
+import { PlanningRouteLinks } from "../components/PlanningRouteLinks";
 import { ApiError } from "../lib/api";
 import {
   coupleApi,
@@ -390,7 +391,7 @@ export default function SchedulePage() {
 
   return (
     <>
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <header className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-2">
           <h1 className="font-grotesk">{t("schedule.title")}</h1>
           <InfoHint text={t("schedule.sub")} />
@@ -467,6 +468,7 @@ export default function SchedulePage() {
           </button>
         </div>
       </header>
+      <PlanningRouteLinks className="mb-6" />
 
       {!loading && couple && sortedEvents.length > 0 && (
         <ScheduleSummaryCard

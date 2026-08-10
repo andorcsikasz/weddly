@@ -77,26 +77,29 @@ export function ProfileMenu({
     setOpen(false);
   }, [location.pathname]);
 
-  // Hydrate partner once per signed-in session. We don't need realtime
-  // updates here — a refresh picks up "partner joined" when their session
-  // actually goes live, and the absence of the second circle while invited
-  // is itself a useful "they haven't accepted yet" signal.
+  // Refresh the lightweight session-presence signal periodically. The backend
+  // deliberately calls this "signed in", not "online": an unexpired session
+  // is useful collaboration context without pretending to be heartbeat-level
+  // realtime presence.
   useEffect(() => {
     let cancelled = false;
     if (!user) {
       setPartner(null);
       return;
     }
-    (async () => {
+    const refreshPartner = async () => {
       try {
         const res = await coupleApi.partner();
         if (!cancelled) setPartner(res.partner);
       } catch {
         if (!cancelled) setPartner(null);
       }
-    })();
+    };
+    void refreshPartner();
+    const interval = window.setInterval(refreshPartner, 30_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [user]);
 
@@ -129,18 +132,25 @@ export function ProfileMenu({
           {showPartner && (
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-blush-700 text-xs font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-blush-500 dark:ring-umber-800"
-              title={partner?.full_name ?? ""}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-blush-700 text-xs font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-blush-500 dark:ring-umber-800"
+              title={`${partner?.full_name ?? ""} · ${t(`profile.partner_status_${partner?.status ?? "joined"}`)}`}
             >
               {partnerInitials}
+              <span
+                className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-paper-50 dark:border-umber-800 ${
+                  partner?.status === "active" ? "bg-sage-500" : "bg-umber-400"
+                }`}
+              />
             </span>
           )}
           <span
-            className={`flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900 dark:bg-umber-600 dark:text-paper-50 dark:group-hover:bg-umber-500 ${
+            title={`${user.full_name || user.email} · ${t("profile.partner_status_active")}`}
+            className={`relative flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900 dark:bg-umber-600 dark:text-paper-50 dark:group-hover:bg-umber-500 ${
               showPartner ? "-ml-3 ring-2 ring-paper-50 dark:ring-umber-800" : ""
             }`}
           >
             {initials}
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-paper-50 bg-sage-500 dark:border-umber-800" />
           </span>
         </span>
         <ChevronDownIcon />

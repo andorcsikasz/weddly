@@ -79,6 +79,7 @@ type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string 
 
 import { CATEGORY_ICON } from "../lib/category_icons";
 import { GoogleCalendarConnect } from "../components/GoogleCalendarConnect";
+import { PlanningRouteLinks } from "../components/PlanningRouteLinks";
 
 /** Lightweight directory-shape for the contact panel. Covers curated +
  *  community (`DirectorySupplier`) plus DIY (`CoupleSupplier`) entries
@@ -367,6 +368,7 @@ export default function TimelinePage() {
               <CountdownChip weddingDate={weddingDate} />
             </div>
           </div>
+          <PlanningRouteLinks className="mt-3" />
         </header>
 
         <ChartCard

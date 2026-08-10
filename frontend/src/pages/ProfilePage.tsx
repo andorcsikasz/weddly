@@ -50,6 +50,7 @@ import { MoneyInput } from "../components/MoneyInput";
 import { PauseReasonDialog } from "../components/PauseReasonDialog";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
+import { ActivityPanel } from "../components/ActivityPanel";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import {
@@ -133,6 +134,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
   const [exporting, setExporting] = useState(false);
   const [csvExporting, setCsvExporting] = useState(false);
   const [documents, setDocuments] = useState<DataExportSummary[]>([]);
+  const [activity, setActivity] = useState<CoupleActivityEntry[]>([]);
   const [redownloading, setRedownloading] = useState<number | null>(null);
   /** Two-click delete arming state — the id whose "Delete" button is armed
    *  and waiting for the second confirming click. Times out after 4s. */
@@ -219,6 +221,13 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
   useEffect(() => {
     refresh();
   }, []);
+  useEffect(() => {
+    if (tab !== "data") return;
+    void coupleApi
+      .activity()
+      .then((r) => setActivity(Array.isArray(r.entries) ? r.entries : []))
+      .catch(() => setActivity([]));
+  }, [tab]);
 
   // Pausing is a two-step off-ramp: the mini exit form asks WHY (captured on
   // the pause request for churn analysis), then the type-the-phrase
@@ -1114,6 +1123,16 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
       )}
 
       {showAccount && <EmailPreferencesCard t={t} />}
+
+      {tab === "data" && (
+        <ActivityPanel
+          entries={activity}
+          currentUserId={authUser?.id ?? null}
+          locale={locale}
+          currency={currency}
+          t={t}
+        />
+      )}
 
       {showData && (
         <section className="card mt-6">

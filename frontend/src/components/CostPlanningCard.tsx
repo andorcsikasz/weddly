@@ -46,6 +46,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { isSupplierManagedLine, supplierManagedCategories } from "../lib/budget";
+import type { CostPlanningSaveStatus } from "../lib/cost_planning";
 import { formatMoney, formatNumber, moneySliderStep } from "../lib/format";
 import { useT } from "../lib/i18n";
 
@@ -68,7 +69,7 @@ function rangeFillStyle(
   min: number,
   max: number,
   thumbPx = 14,
-): { background: string } {
+): { backgroundImage: string } {
   const span = max - min;
   const pct = span > 0 ? Math.max(0, Math.min(100, ((value - min) / span) * 100)) : 0;
   // offset = thumbW * (0.5 − pct/100). At pct=0 → +thumbW/2 (clear of left
@@ -76,7 +77,7 @@ function rangeFillStyle(
   const offsetPx = thumbPx * (0.5 - pct / 100);
   const stop = `calc(${pct}% + ${offsetPx.toFixed(3)}px)`;
   return {
-    background: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${stop}, var(--range-fill-remainder) ${stop}, var(--range-fill-remainder) 100%)`,
+    backgroundImage: `linear-gradient(to right, var(--range-fill-amount) 0%, var(--range-fill-amount) ${stop}, var(--range-fill-remainder) ${stop}, var(--range-fill-remainder) 100%)`,
   };
 }
 
@@ -273,6 +274,10 @@ export function CostPlanningCard({
   onCountLockToggle,
   currency = "HUF",
   onCountChange,
+  countSaveStatus = "idle",
+  countUndoAvailable = false,
+  onUndoCountChange,
+  headcountChanged = false,
   onBoundsChange,
   onEditPlanned,
   onCapChange,
@@ -308,6 +313,13 @@ export function CostPlanningCard({
    *  — when omitted the big number is a non-interactive display. */
   onCountLockToggle?: () => void | Promise<void>;
   onCountChange: (n: number) => void;
+  /** Truthful server persistence state for the shared headcount scenario. */
+  countSaveStatus?: CostPlanningSaveStatus;
+  /** Short-lived undo for the most recent completed headcount gesture. */
+  countUndoAvailable?: boolean;
+  onUndoCountChange?: () => void;
+  /** Highlights only rows whose planned amount changed with headcount. */
+  headcountChanged?: boolean;
   /** Called when the user commits a new min or max on the bounds inputs.
    *  The parent persists `guest_count_goal = { kind: "range", min, max }`
    *  so both pages stay synchronised. Optional — bounds become read-only
@@ -718,7 +730,7 @@ export function CostPlanningCard({
             step={1}
             value={count}
             onChange={(e) => onCountChange(Number(e.target.value))}
-            className="range-fill block w-full"
+            className="range-fill range-fill-touch block w-full"
             style={rangeFillStyle(count, minCount, maxCount)}
             aria-label={t("budget.cost_planning_title")}
             tabIndex={countLocked ? -1 : undefined}
@@ -755,6 +767,34 @@ export function CostPlanningCard({
               readOnly={!onBoundsChange || countLocked}
             />
           </div>
+          <div
+            className="mt-1 flex min-h-5 items-center justify-center gap-2 text-[11px]"
+            role="status"
+            aria-live="polite"
+          >
+            {countSaveStatus === "saving" && (
+              <span className="text-ink-500 dark:text-umber-300">{t("common.saving")}</span>
+            )}
+            {countSaveStatus === "saved" && (
+              <span className="text-sage-700 dark:text-sage-300">
+                {t("budget.cost_planning_saved")}
+              </span>
+            )}
+            {countSaveStatus === "error" && (
+              <span className="text-blush-700 dark:text-blush-300">
+                {t("budget.cost_planning_save_error")}
+              </span>
+            )}
+            {countUndoAvailable && onUndoCountChange && (
+              <button
+                type="button"
+                onClick={onUndoCountChange}
+                className="font-medium text-ink-700 underline underline-offset-2 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50"
+              >
+                {t("common.undo")}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -788,6 +828,7 @@ export function CostPlanningCard({
             onSettle={settleCategoryDrag}
             amountLinkTo={amountLinkTo}
             showActualOverlay={showActualOverlay && hasAnyActual}
+            highlighted={headcountChanged && b.scales}
             linkTo={b.category === "honeymoon" ? "/app/honeymoon" : undefined}
           />
         ))}
@@ -808,6 +849,7 @@ export function CostPlanningCard({
             onDrag={handleCustomDrag}
             onSettle={settleCustomDrag}
             showActualOverlay={showActualOverlay && hasAnyActual}
+            highlighted={headcountChanged && c.scales}
           />
         ))}
         {onAddCustomRow && <AddCustomRow onAdd={onAddCustomRow} />}
@@ -913,6 +955,7 @@ function CategoryRowInner({
   onSettle,
   amountLinkTo,
   showActualOverlay = false,
+  highlighted = false,
   linkTo,
 }: {
   category: BudgetCategory;
@@ -963,6 +1006,8 @@ function CategoryRowInner({
    *  slider showing the actual spend (sum of `actual_huf` for this category)
    *  scaled by the same `widthAnchor`. Toggled via the panel header. */
   showActualOverlay?: boolean;
+  /** Brief feedback after a headcount change for rows that were recalculated. */
+  highlighted?: boolean;
   /** When set, the row is non-interactive (no slider drag) and the whole
    *  row clicks through to this internal route. Used for honeymoon — its
    *  sub-categories live on /app/honeymoon, so we route there instead of
@@ -1149,11 +1194,10 @@ function CategoryRowInner({
   // across rows; with the hint on its own line the rail length is the
   // same for every row and "x px = y HUF" reads correctly.
   // The "actual / planned" pair (e.g. "120 000 / 350 000") only fits on the
-  // narrow mobile right-column when both halves are tiny. Hiding the actual
-  // prefix on `<sm` lets us tighten the right column from 8rem → 5.5rem and
-  // hand those 2.5rem back to the slider — a noticeable gain in the bar
-  // chart's effective length on a 360 px viewport. The actual spend is
-  // still visible in the budget table and reappears on `sm:` widths.
+  // narrow mobile right-column when both halves are tiny. The pair stays
+  // visible at every width: dropping the actual half on phones was data loss,
+  // not responsive compression. The rail already wraps to its own row on
+  // mobile, so the amount can use the header width without shrinking it.
   // Names both halves of the pair on hover / for assistive tech. The slash is
   // dense enough to scan but says nothing about which number is which, and a
   // per-row visible label would cost more width than the pair itself.
@@ -1168,7 +1212,7 @@ function CategoryRowInner({
     <span className="flex flex-col items-end leading-tight" title={pairTitle}>
       <span className="whitespace-nowrap">
         {actual > 0 && (
-          <span className="hidden text-ink-400 sm:inline dark:text-umber-300">
+          <span className="text-ink-400 dark:text-umber-300">
             {formatMoney(actual, currency, locale)} /{" "}
           </span>
         )}
@@ -1295,11 +1339,9 @@ function CategoryRowInner({
       <li>
         <Link
           to={linkTo}
-          /* Mobile columns shrunk to `5rem` (label, with 8-char truncation)
-           * and `4.5rem` (amount, sans the "actual/" prefix that's hidden
-           * `<sm`) — the slider rail picks up the extra 3rem and the
-           * progress is readable at a glance instead of squashed. */
-          className={`${ROW_GRID} -mx-2 rounded-md px-2 py-1.5 transition hover:bg-paper-50 dark:hover:bg-umber-700`}
+          /* The compact grid keeps the visual rail readable on phones; the
+           * actual/planned amount pair remains visible in the amount cell. */
+          className={`${ROW_GRID} -mx-2 rounded-md px-2 py-1.5 transition-colors duration-500 hover:bg-paper-50 dark:hover:bg-umber-700 ${highlighted ? "bg-sage-50 ring-1 ring-inset ring-sage-200 dark:bg-sage-400/10 dark:ring-sage-400/20" : ""}`}
           aria-label={categoryLabel}
         >
           <span
@@ -1324,7 +1366,10 @@ function CategoryRowInner({
   }
 
   return (
-    <li id={`cat-${category}`} className={`${ROW_GRID} scroll-mt-24 py-1.5`}>
+    <li
+      id={`cat-${category}`}
+      className={`${ROW_GRID} -mx-2 scroll-mt-24 rounded-md px-2 py-1.5 transition-colors duration-500 ${highlighted ? "bg-sage-50 ring-1 ring-inset ring-sage-200 dark:bg-sage-400/10 dark:ring-sage-400/20" : ""}`}
+    >
       {leftTile}
       <div className={`${ROW_TRACK_CELL} w-full`}>
         {trackEl}
@@ -1361,6 +1406,7 @@ function CustomRowInner({
   onDrag,
   onSettle,
   showActualOverlay,
+  highlighted = false,
 }: {
   line: BudgetLine;
   liveDisplay: number;
@@ -1381,6 +1427,7 @@ function CustomRowInner({
   /** Fires once this row's own commit has landed — see CategoryRow. */
   onSettle?: (lineId: number, baselineValue: number) => void;
   showActualOverlay?: boolean;
+  highlighted?: boolean;
 }) {
   const { t, locale } = useT();
 
@@ -1458,7 +1505,9 @@ function CustomRowInner({
   }
 
   return (
-    <li className={`${ROW_GRID} py-1.5`}>
+    <li
+      className={`${ROW_GRID} -mx-2 rounded-md px-2 py-1.5 transition-colors duration-500 ${highlighted ? "bg-sage-50 ring-1 ring-inset ring-sage-200 dark:bg-sage-400/10 dark:ring-sage-400/20" : ""}`}
+    >
       <span
         className={`${ROW_LABEL_CELL} flex min-w-0 items-center gap-1.5 text-ink-700 dark:text-paper-100`}
       >
@@ -1536,7 +1585,7 @@ function CustomRowInner({
         >
           <span className="whitespace-nowrap">
             {line.actual_huf > 0 && (
-              <span className="hidden text-ink-400 sm:inline dark:text-umber-300">
+              <span className="text-ink-400 dark:text-umber-300">
                 {formatMoney(line.actual_huf, currency, locale)} /{" "}
               </span>
             )}

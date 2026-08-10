@@ -101,6 +101,7 @@ import {
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+import { LastUpdatedBy } from "../components/LastUpdatedBy";
 
 interface ImportResult {
   created_count: number;
@@ -960,7 +961,10 @@ export default function GuestsPage() {
     <>
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-          <h1 className="font-grotesk">{t("guests.title")}</h1>
+          <div className="shrink-0">
+            <h1 className="font-grotesk">{t("guests.title")}</h1>
+            <LastUpdatedBy actionPrefixes={["guest.", "household.", "rsvp."]} />
+          </div>
           {listableGuests.length > 0 ? (
             <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
               {plannedGuests !== null && (
@@ -2884,15 +2888,15 @@ function HouseholdLabelEditor({
         setEditing(true);
       }}
       aria-label={t("guests.household_label")}
-      className={`inline-flex max-w-full items-baseline gap-1.5 truncate rounded text-left text-base font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400 dark:focus-visible:outline-umber-600 ${
+      className={`flex max-w-full items-start gap-1.5 rounded text-left text-base font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400 dark:focus-visible:outline-umber-600 ${
         onDark
           ? "text-paper-50 hover:text-paper-200"
           : "text-ink-900 hover:text-ink-700 dark:text-paper-50 dark:hover:text-paper-100"
       }`}
     >
-      <span className="truncate">{household.label}</span>
+      <span className="min-w-0 break-words">{household.label}</span>
       <span
-        className={`text-sm font-normal ${onDark ? "text-paper-200/80" : "text-ink-500 dark:text-umber-300"}`}
+        className={`shrink-0 text-sm font-normal ${onDark ? "text-paper-200/80" : "text-ink-500 dark:text-umber-300"}`}
       >
         ({count})
       </span>

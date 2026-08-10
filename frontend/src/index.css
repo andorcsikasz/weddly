@@ -1383,6 +1383,22 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     outline: 2px solid theme("colors.ink.300");
     outline-offset: 2px;
   }
+  /* Keep the compact 14px thumb, but give the headcount control a real 44px
+     hit box on touch-sized viewports. The gradient is only the visual rail;
+     background-size keeps it at 6px while the native input owns the larger
+     interactive rectangle. */
+  .range-fill-touch {
+    height: 44px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100% 6px;
+  }
+  @media (min-width: 640px) {
+    .range-fill-touch {
+      height: 6px;
+      background-size: 100% 6px;
+    }
+  }
   /* Slim variant for per-category rows where 15 sliders need to feel light. */
   .range-fill-thin {
     height: 4px;

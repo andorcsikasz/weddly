@@ -236,6 +236,9 @@ export function DecisionsPanel({
             style={{ width: `${decisionProgress.pct}%` }}
           />
         </div>
+        <p className="mt-1.5 text-[11px] text-ink-400 dark:text-umber-300">
+          {t("planning.decisions.progress_scope_hint")}
+        </p>
       </div>
 
       {/* Intake questions — non-blocking, persist answers that tune which
