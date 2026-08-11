@@ -3401,6 +3401,7 @@ const hu: LocaleMessages = {
     film_activated: "A film feloldva. Akár 200 vendég.",
     film_upgrade_body: "{{cap}} vendég fér erre a filmre.",
     film_upgrade_cta: "200-ra fel",
+    film_upgrade_unavailable: "A bővítés most nem elérhető",
     gallery_title: "A film",
     gallery_empty: "Még üres. Az első kép ide kerül.",
     gallery_show_all: "Mind a {{n}}",
@@ -3910,6 +3911,7 @@ const hu: LocaleMessages = {
     addon_unlock_body:
       "Az esküvőtöket a tervező kezeli, ezért a munkaterületetek csak olvasható. A saját vendégoldalatokat azonban a 70% kedvezményes kiegészítővel szerkeszthetitek.",
     addon_unlock_cta: "Vendégoldal szerkesztés feloldása (70% kedvezmény)",
+    addon_unavailable: "A vásárlás jelenleg nem elérhető",
     addon_opening: "Megnyitás…",
     addon_error: "Nem sikerült elindítani a fizetést. Próbáljátok újra.",
     preview_live_label: "Élő előnézet",
@@ -5877,29 +5879,98 @@ const hu: LocaleMessages = {
     tab_analytics: "Analitika",
     fin_title: "Pénzügyi tervező",
     fin_subtitle: "Élő előfizetési bevétel és egy modellezhető előrejelzés.",
-    fin_enforce_title: "Fizetés élesítése",
+    fin_launch_title: "Fizetési termékek élesítése",
+    fin_launch_note:
+      "Minden fizetési felület külön élesíthető vagy szüneteltethető. Az élesítés csak akkor elérhető, ha minden szükséges Stripe-beállítási érték meg van adva.",
+    fin_launch_live_count: "{live} / {total} éles",
+    fin_launch_paywall_separate:
+      "Ezek a kapcsolók csak az új fizetési folyamatokat engedélyezik vagy tiltják. A szüneteltetés nem módosítja a hozzáférést, az ügyfélportált, a meglévő megújításokat vagy a már megnyitott Checkout-oldalakat. A globális hozzáférés-korlátozás a külön vezérlő alatta.",
+    fin_launch_loading: "Fizetési élesítések betöltése",
+    fin_launch_retry: "Újrapróbálás",
+    fin_launch_refresh: "Állapotok frissítése",
+    fin_launch_load_error_title: "Nem sikerült betölteni az élesítési állapotokat",
+    fin_launch_load_error_body:
+      "Egyetlen fizetési kapcsoló sem módosítható, amíg nem ismert a szerver aktuális állapota. Művelet előtt próbáld újra.",
+    fin_launch_state_live: "Éles",
+    fin_launch_state_blocked: "Élesítés kérve · blokkolva",
+    fin_launch_state_off: "Kikapcsolva",
+    fin_launch_ready: "Szükséges környezet megvan",
+    fin_launch_not_ready: "Hiányos konfiguráció",
+    fin_launch_missing: "Hiányzik:",
+    fin_launch_last_changed: "Utolsó módosítás: {date}",
+    fin_launch_revision: "{version}. verzió",
+    fin_launch_enable: "Élesítés",
+    fin_launch_disable: "Új fizetések szüneteltetése",
+    fin_launch_fix_config: "Előbb javítsd a konfigurációt",
+    fin_launch_updating: "Frissítés…",
+    fin_launch_confirm_on_title: "Élesíted: {product}?",
+    fin_launch_confirm_on_body:
+      "Ettől a termék fizetési folyamata azonnal elérhetővé válik az ügyfeleknek. A globális csak olvasható paywallt nem kapcsolja be.",
+    fin_launch_confirm_off_title: "Szünetelteted: {product}?",
+    fin_launch_confirm_off_body:
+      "Ettől nem indulhat új fizetési folyamat ehhez a termékhez. Nem módosítja a hozzáférést, az ügyfélportált, a meglévő megújításokat vagy a már megnyitott Checkout-oldalakat.",
+    fin_launch_disable_paywall_body:
+      "Mivel a globális paywall be van kapcsolva, ennek a szükséges előfizetésnek a szüneteltetése a paywallt is kikapcsolja, hogy senki ne maradjon előfizetési lehetőség nélkül kizárva.",
+    fin_launch_on_success: "A(z) {product} mostantól éles.",
+    fin_launch_off_success: "A(z) {product} új fizetései szünetelnek.",
+    fin_launch_update_error:
+      "Nem sikerült módosítani az élesítést. A konfiguráció állapota frissítve lett.",
+    fin_launch_overview_refresh_error:
+      "A termék állapota megváltozott, de a globális paywall állapotát nem sikerült frissíteni. Újabb módosítás előtt töltsd újra az oldalt.",
+    fin_launch_conflict:
+      "Egy másik admin módosította ezt a terméket, miközben átnézted. A legfrissebb állapot látható; újrapróbálás előtt ellenőrizd.",
+    fin_launch_smoke_title: "Élesítés előtti próba",
+    fin_launch_smoke_warning:
+      "A jelvény csak a szükséges környezeti értékek meglétét mutatja. Élesítéskor a szerver ellenőrzi a Stripe módot, fiókot és árakat; a webhook kézbesítését és az aktiválást továbbra is ezzel a próbával kell igazolni.",
+    fin_launch_smoke_account:
+      "A kiválasztott ügyféltípushoz nem admin tesztfiókot használj; az admin kivételek elfedhetik a hozzáférési hibákat.",
+    fin_launch_smoke_checkout:
+      "Stripe tesztmódban végezd el a Checkoutot 3DS ellenőrzéssel és egy elutasított fizetéssel is. Jóváhagyás előtt ellenőrizd az összeget, pénznemet és gyakoriságot.",
+    fin_launch_smoke_webhook:
+      "Ellenőrizd a Stripe 2xx webhook válaszát, és hogy a Weddly csak sikeres fizetés után adja meg az előfizetést vagy egyszeri feloldást.",
+    fin_launch_smoke_manage:
+      "Előfizetésnél próbáld ki a kártyacserét és lemondást az ügyfélportálon. Egyszeri terméknél ellenőrizd a visszatérítési és hozzáférési szabályt.",
+    fin_launch_smoke_pause:
+      "Szüneteltesd újra, és ellenőrizd, hogy új fizetés nem indul, miközben a meglévő hozzáférés, portál és megújítás működik. Nyilvános indulás előtt ismételd meg egy kontrollált élő tranzakcióval.",
+    fin_launch_product_couple_subscriptions: "Páros előfizetések",
+    fin_launch_product_couple_subscriptions_note:
+      "Ismétlődő Stripe Checkout-előfizetés a páros munkaterületeknek.",
+    fin_launch_product_planner_subscriptions: "Esküvőszervezői előfizetések",
+    fin_launch_product_planner_subscriptions_note:
+      "Ismétlődő Essentials, Pro és Studio csomagok az esküvőszervezőknek.",
+    fin_launch_product_vendor_billing: "Szolgáltatói fizetés",
+    fin_launch_product_vendor_billing_note:
+      "Kártyarögzítés és ismétlődő szolgáltatói díj az ingyenes érdeklődések után.",
+    fin_launch_product_film_checkout: "Esküvői film fizetés",
+    fin_launch_product_film_checkout_note: "Egyszeri esküvői filmvásárlás és aktiválás.",
+    fin_launch_product_guest_page_addon: "Vendégoldal-kiegészítő",
+    fin_launch_product_guest_page_addon_note:
+      "Egyszeri vendégoldal-feloldás a szervező által kezelt pároknak.",
+    fin_enforce_title: "Globális fizetős hozzáférés korlátozása",
     fin_enforce_state_on: "Bekapcsolva",
     fin_enforce_state_off: "Kikapcsolva",
     fin_enforce_note_on:
       "A fizetős időszak él: a lejárt próbaidős párok csak olvasható módba kerülnek. A beta tesztelők és az adminok mindig ingyenesek.",
     fin_enforce_note_off:
       "A fizetős időszak még nincs élesítve: jelenleg senki nem kerül csak olvasható módba. A párok adatai biztonságban, csak a paywall vár.",
-    fin_enforce_turn_off: "Kikapcsolás",
-    fin_enforce_go_live: "Fizetés élesítése",
+    fin_enforce_launch_prereq:
+      "A globális paywall előtt élesítsd a páros, esküvőszervezői és szolgáltatói előfizetést, mindegyiket kész konfigurációval.",
+    fin_enforce_turn_off: "Globális paywall kikapcsolása",
+    fin_enforce_go_live: "Globális paywall bekapcsolása",
     fin_enforce_not_ready: "Várj a 200 párra ({n} / {cap})",
     fin_enforce_below_cap: "Még nincs meg a 200 pár ({n} / {cap}). Így is élesítheted.",
     fin_enforce_impact:
       "Ha most élesíted, {couples} pár, {vendors} szolgáltató és {planners} tervező kerül csak olvasható módba.",
     fin_enforce_progress_label: "Párok a 200-as keretből",
-    fin_enforce_ready_signal: "Megvan a 200 pár - készen áll a fizetés élesítésére.",
-    fin_enforce_confirm_on_title: "Élesíted a fizetést?",
+    fin_enforce_ready_signal: "Megvan a 200 pár - bekapcsolható a fizetős hozzáférés korlátozása.",
+    fin_enforce_confirm_on_title: "Bekapcsolod a globális paywallt?",
     fin_enforce_confirm_on_body:
       "Ettől a lejárt próbaidős párok csak olvasható módba kerülnek, amíg elő nem fizetnek. A beta tesztelők és az adminok továbbra is ingyenesek. Bármikor visszakapcsolható.",
-    fin_enforce_confirm_off_title: "Kikapcsolod a fizetést?",
+    fin_enforce_confirm_off_title: "Kikapcsolod a globális paywallt?",
     fin_enforce_confirm_off_body:
       "Ettől senki nem kerül csak olvasható módba: minden pár újra szerkeszthet, függetlenül a próbaidőtől.",
-    fin_enforce_on_success: "A fizetős időszak élesítve.",
-    fin_enforce_off_success: "A fizetős időszak kikapcsolva.",
+    fin_enforce_on_success: "A globális fizetős hozzáférés-korlátozás bekapcsolva.",
+    fin_enforce_off_success: "A globális fizetős hozzáférés-korlátozás kikapcsolva.",
     fin_monthly_breakdown: "Havi bontás",
     fin_kpi_mrr: "MRR (EUR)",
     fin_kpi_mrr_hint:

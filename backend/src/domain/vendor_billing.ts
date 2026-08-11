@@ -24,6 +24,7 @@ import {
   vendorOfferForSlots,
   type VendorSubscriptionStatus,
 } from "@shared/vendor_billing";
+import { subscriptionStatusFromStripe } from "@shared/billing";
 import type { Currency } from "@shared/types";
 import { billingEnforcementOn, db, now } from "../db";
 import { getVendorAccountByOwnerUserId } from "./vendor_accounts";
@@ -36,6 +37,7 @@ export interface VendorSubRow {
   is_founding_member: number;
   is_early_member: number;
   current_period_end: number | null;
+  past_due_since: number | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   card_on_file: number;
@@ -149,6 +151,7 @@ export function toVendorBilling(row: VendorSubRow, nowMs: number = Date.now()): 
   let { entitled, reason } = computeVendorEntitlement(status, {
     trial_ends_at: row.trial_ends_at,
     founding_until: row.founding_until,
+    past_due_since: row.past_due_since,
     lead_credits_used: row.lead_credits_used,
     billing_starts_at: row.billing_starts_at,
     nowMs,
@@ -172,6 +175,7 @@ export function toVendorBilling(row: VendorSubRow, nowMs: number = Date.now()): 
     is_founding_member: row.is_founding_member === 1,
     is_early_member: row.is_early_member === 1,
     current_period_end: row.current_period_end,
+    past_due_since: row.past_due_since,
     card_on_file: row.card_on_file === 1,
     lead_credits_used: row.lead_credits_used,
     lead_credits_total: VENDOR_FREE_LEAD_CREDITS,
@@ -229,11 +233,14 @@ export function recordVendorLeadCredit(vendorAccountId: number, nowMs: number = 
     }
     const used = sub.lead_credits_used + 1;
     const startsBilling = used >= VENDOR_FREE_LEAD_CREDITS;
+    const billingStartsAt = startsBilling
+      ? Math.max(startOfNextUtcMonth(nowMs), nowMs + 1000 * 60 * 60)
+      : null;
     db.prepare(
       `UPDATE vendor_subscriptions
           SET lead_credits_used = ?, billing_starts_at = ?, updated_at = ?
         WHERE vendor_account_id = ?`,
-    ).run(used, startsBilling ? startOfNextUtcMonth(nowMs) : null, nowMs, vendorAccountId);
+    ).run(used, billingStartsAt, nowMs, vendorAccountId);
     return startsBilling;
   });
   return spend();
@@ -260,30 +267,34 @@ export function getVendorByStripeCustomer(customerId: string): number | null {
  *  our-status mapping as the couple side. */
 export function applyVendorSubscriptionState(
   vendorAccountId: number,
-  opts: { subscriptionId: string | null; stripeStatus: string; currentPeriodEnd: number | null },
+  opts: {
+    subscriptionId: string | null;
+    stripeStatus: string;
+    currentPeriodEnd: number | null;
+    observedAt?: number; // Stripe event creation time; server time for direct reads
+  },
 ): void {
-  let mapped: SubscriptionStatus;
-  switch (opts.stripeStatus) {
-    case "active":
-    case "trialing":
-      mapped = "active";
-      break;
-    case "past_due":
-    case "unpaid":
-      mapped = "past_due";
-      break;
-    case "canceled":
-    case "incomplete_expired":
-      mapped = "canceled";
-      break;
-    default:
-      mapped = "past_due";
-  }
+  const mapped: SubscriptionStatus = subscriptionStatusFromStripe(opts.stripeStatus);
+  const ts = now();
+  const observedAt = opts.observedAt ?? ts;
   db.prepare(
     `UPDATE vendor_subscriptions
-        SET subscription_status = ?, stripe_subscription_id = ?, current_period_end = ?, updated_at = ?
+        SET subscription_status = ?, stripe_subscription_id = ?, current_period_end = ?,
+            past_due_since = CASE
+              WHEN ? = 'past_due' THEN COALESCE(past_due_since, ?)
+              ELSE NULL
+            END,
+            updated_at = ?
       WHERE vendor_account_id = ?`,
-  ).run(mapped, opts.subscriptionId, opts.currentPeriodEnd, now(), vendorAccountId);
+  ).run(
+    mapped,
+    opts.subscriptionId,
+    opts.currentPeriodEnd,
+    mapped,
+    observedAt,
+    ts,
+    vendorAccountId,
+  );
 }
 
 // ── Entitlement gate ────────────────────────────────────────────────────────

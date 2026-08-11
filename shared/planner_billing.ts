@@ -65,6 +65,8 @@ export interface PlannerBilling {
   is_founding_member: boolean;
   /** Epoch ms — paid period end from Stripe. Null when not a paying sub. */
   current_period_end: UnixMs | null;
+  /** Epoch ms — first transition into the current past-due episode. */
+  past_due_since?: UnixMs | null;
   currency: Currency;
   /** Computed: does the planner have edit access right now? When false the
    *  planner workspace goes read-only (402 on mutations). */
@@ -75,9 +77,11 @@ export interface PlannerBilling {
 /** Response of GET /api/planner/billing — everything the planner billing surface
  *  needs. */
 export interface PlannerBillingStatus {
-  /** Whether planner Stripe billing is wired server-side. False before the
-   *  Stripe prices are configured — checkout is unavailable and the page says so. */
+  /** Whether planner Stripe billing is wired server-side. Existing customers
+   * may use the billing portal when true; new Checkout availability is separate. */
   enabled: boolean;
+  /** Whether a NEW planner subscription Checkout may be created. */
+  checkout_enabled: boolean;
   billing: PlannerBilling;
   currency: Currency;
   /** Per-tier monthly price in `currency`, for rendering the plan cards. */

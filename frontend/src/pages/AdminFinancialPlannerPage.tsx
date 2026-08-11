@@ -10,8 +10,13 @@ import {
   DollarSign,
   Euro,
   Info,
+  LoaderCircle,
+  ListChecks,
   Lock,
   LockOpen,
+  RefreshCw,
+  Rocket,
+  ShieldAlert,
   X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
@@ -19,6 +24,9 @@ import {
   type AdminFinancialPlannerOverview,
   type ForecastAssumptions,
   type FxRates,
+  type PaymentLaunchesResponse,
+  type PaymentLaunchProduct,
+  type PaymentLaunchState,
   projectRevenue,
   type StripeHealth,
   type SubscriptionUnitEconomics,
@@ -27,6 +35,7 @@ import {
 import { FOUNDING_CAP, type SubscriptionStatus } from "@shared/billing";
 import { AdminPageHeader, Pill } from "../components/admin";
 import { useConfirm, useToast } from "../components/ui";
+import { ApiError } from "../lib/api";
 import { adminFinancialPlannerApi } from "../lib/endpoints";
 import { formatMoney, intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -150,6 +159,10 @@ export default function AdminFinancialPlannerPage() {
   useDocumentMeta("admin.fin_title", "admin.fin_subtitle");
   const [data, setData] = useState<AdminFinancialPlannerOverview | null>(null);
   const [enforcing, setEnforcing] = useState(false);
+  const [launches, setLaunches] = useState<PaymentLaunchesResponse | null>(null);
+  const [launchesLoading, setLaunchesLoading] = useState(true);
+  const [launchesFailed, setLaunchesFailed] = useState(false);
+  const [launchBusy, setLaunchBusy] = useState<PaymentLaunchProduct | null>(null);
   const [a, setA] = useState<ForecastAssumptions>(DEFAULT_ASSUMPTIONS);
   // Költséghányad (a bevétel hány %-a a levonható költség) a profitalapú
   // adóformákhoz. Csak a KFT-sorokat befolyásolja.
@@ -164,6 +177,22 @@ export default function AdminFinancialPlannerPage() {
       .overview()
       .then(setData)
       .catch(() => setData(null));
+  }, []);
+
+  async function loadPaymentLaunches() {
+    setLaunchesLoading(true);
+    setLaunchesFailed(false);
+    try {
+      setLaunches(await adminFinancialPlannerApi.paymentLaunches());
+    } catch {
+      setLaunchesFailed(true);
+    } finally {
+      setLaunchesLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadPaymentLaunches();
   }, []);
 
   useEffect(() => {
@@ -235,6 +264,64 @@ export default function AdminFinancialPlannerPage() {
     }
   }
 
+  async function onTogglePaymentLaunch(product: PaymentLaunchProduct, next: boolean) {
+    const item = launches?.products[product];
+    if (!item || (!item.ready && next)) return;
+    const productName = t(`admin.fin_launch_product_${product}`);
+    const disablesActivePaywall =
+      !next &&
+      data?.billing_enforcement_on === true &&
+      (["couple_subscriptions", "planner_subscriptions", "vendor_billing"] as const).includes(
+        product as "couple_subscriptions" | "planner_subscriptions" | "vendor_billing",
+      );
+    const ok = await confirm({
+      title: next
+        ? t("admin.fin_launch_confirm_on_title", { product: productName })
+        : t("admin.fin_launch_confirm_off_title", { product: productName }),
+      body: next
+        ? t("admin.fin_launch_confirm_on_body")
+        : `${t("admin.fin_launch_confirm_off_body")}${
+            disablesActivePaywall ? ` ${t("admin.fin_launch_disable_paywall_body")}` : ""
+          }`,
+      confirmLabel: next ? t("admin.fin_launch_enable") : t("admin.fin_launch_disable"),
+      cancelLabel: t("common.cancel"),
+      destructive: next,
+    });
+    if (!ok) return;
+
+    setLaunchBusy(product);
+    try {
+      const freshLaunches = await adminFinancialPlannerApi.setPaymentLaunch(
+        product,
+        next,
+        item.version,
+      );
+      setLaunches(freshLaunches);
+      toast.success(
+        next
+          ? t("admin.fin_launch_on_success", { product: productName })
+          : t("admin.fin_launch_off_success", { product: productName }),
+      );
+      try {
+        setData(await adminFinancialPlannerApi.overview());
+      } catch {
+        toast.error(t("admin.fin_launch_overview_refresh_error"));
+      }
+    } catch (error) {
+      toast.error(
+        isPaymentLaunchConflict(error)
+          ? t("admin.fin_launch_conflict")
+          : t("admin.fin_launch_update_error"),
+      );
+      // A stale-write conflict means another admin won the compare-and-swap;
+      // other failures can also mean readiness changed after this snapshot.
+      // Refresh in both cases and make the operator review before retrying.
+      await loadPaymentLaunches();
+    } finally {
+      setLaunchBusy(null);
+    }
+  }
+
   if (!data) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
@@ -247,9 +334,24 @@ export default function AdminFinancialPlannerPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
       <AdminPageHeader title={t("admin.fin_title")} subtitle={t("admin.fin_subtitle")} />
 
-      {/* Fizetés go-live vezérlő: a globális read-only paywall kapcsolója */}
+      {/* Product checkout switches. These deliberately do not change access
+          enforcement: accepting money and freezing unpaid workspaces have
+          different blast radii and therefore separate operator controls. */}
+      <PaymentLaunchesCard
+        snapshot={launches}
+        loading={launchesLoading}
+        failed={launchesFailed}
+        busyProduct={launchBusy}
+        onRetry={() => void loadPaymentLaunches()}
+        onToggle={(product, enabled) => void onTogglePaymentLaunch(product, enabled)}
+        t={t}
+        locale={locale}
+      />
+
+      {/* Globális read-only paywall: separate from checkout availability. */}
       <BillingLaunchCard
         data={data}
+        launches={launches}
         busy={enforcing}
         onToggle={onToggleEnforcement}
         t={t}
@@ -546,6 +648,255 @@ export default function AdminFinancialPlannerPage() {
             </table>
           </div>
         </section>
+      )}
+    </div>
+  );
+}
+
+export function isPaymentLaunchConflict(error: unknown): boolean {
+  if (!(error instanceof ApiError) || error.status !== 409) return false;
+  const detail = error.detail && typeof error.detail === "object" ? error.detail : null;
+  return (detail as { code?: string } | null)?.code === "payment_launch_conflict";
+}
+
+const PAYMENT_LAUNCH_ORDER: readonly PaymentLaunchProduct[] = [
+  "couple_subscriptions",
+  "planner_subscriptions",
+  "vendor_billing",
+  "film_checkout",
+  "guest_page_addon",
+];
+
+/** Independent checkout kill switches. A product can only be launched when
+ * the backend has verified its required Stripe configuration; an already-live
+ * product can always be shut down, even after configuration becomes unhealthy. */
+export function PaymentLaunchesCard({
+  snapshot,
+  loading,
+  failed,
+  busyProduct,
+  onRetry,
+  onToggle,
+  t,
+  locale,
+}: {
+  snapshot: PaymentLaunchesResponse | null;
+  loading: boolean;
+  failed: boolean;
+  busyProduct: PaymentLaunchProduct | null;
+  onRetry: () => void;
+  onToggle: (product: PaymentLaunchProduct, next: boolean) => void;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  locale: Locale;
+}) {
+  const products = snapshot?.products;
+  const liveCount = products
+    ? PAYMENT_LAUNCH_ORDER.filter(
+        (product) => products[product]?.enabled && products[product]?.ready,
+      ).length
+    : 0;
+
+  return (
+    <section className="admin-card mt-6" aria-labelledby="payment-launches-title">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2
+            id="payment-launches-title"
+            className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-paper-50"
+          >
+            <Rocket size={15} aria-hidden />
+            {t("admin.fin_launch_title")}
+            {products && (
+              <Pill tone={liveCount > 0 ? "sage" : "muted"}>
+                {t("admin.fin_launch_live_count", {
+                  live: liveCount,
+                  total: PAYMENT_LAUNCH_ORDER.length,
+                })}
+              </Pill>
+            )}
+          </h2>
+          <p className="mt-1 max-w-2xl text-xs text-neutral-500 dark:text-umber-300">
+            {t("admin.fin_launch_note")}
+          </p>
+        </div>
+        {(products || (!loading && failed)) && (
+          <button
+            type="button"
+            onClick={onRetry}
+            disabled={loading}
+            className="btn-ghost btn-sm shrink-0"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : undefined} aria-hidden />
+            {failed ? t("admin.fin_launch_retry") : t("admin.fin_launch_refresh")}
+          </button>
+        )}
+      </div>
+
+      <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+        <span className="inline-flex items-start gap-2">
+          <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden />
+          <span>{t("admin.fin_launch_paywall_separate")}</span>
+        </span>
+      </div>
+
+      {loading && !products && (
+        <div className="mt-4 grid gap-2" aria-label={t("admin.fin_launch_loading")}>
+          {PAYMENT_LAUNCH_ORDER.map((product) => (
+            <div
+              key={product}
+              className="h-20 animate-pulse rounded-xl bg-paper-100 dark:bg-umber-800"
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && failed && !products && (
+        <div className="mt-4 rounded-xl border border-blush-200 bg-blush-50 p-4 dark:border-blush-400/30 dark:bg-blush-400/10">
+          <p className="text-sm font-semibold text-blush-900 dark:text-blush-100">
+            {t("admin.fin_launch_load_error_title")}
+          </p>
+          <p className="mt-1 text-xs text-blush-800 dark:text-blush-200">
+            {t("admin.fin_launch_load_error_body")}
+          </p>
+        </div>
+      )}
+
+      {products && (
+        <div className="mt-4 divide-y divide-paper-200 overflow-hidden rounded-xl border border-paper-200 dark:divide-umber-700 dark:border-umber-700">
+          {PAYMENT_LAUNCH_ORDER.map((product) => (
+            <PaymentLaunchRow
+              key={product}
+              item={products[product]}
+              busy={busyProduct === product}
+              onToggle={onToggle}
+              t={t}
+              locale={locale}
+            />
+          ))}
+        </div>
+      )}
+
+      <details className="group mt-4 rounded-xl border border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-900/40">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-neutral-900 dark:text-paper-50">
+          <ListChecks size={16} aria-hidden />
+          {t("admin.fin_launch_smoke_title")}
+          <ChevronRight
+            size={14}
+            className="ml-auto transition-transform group-open:rotate-90"
+            aria-hidden
+          />
+        </summary>
+        <div className="border-t border-paper-200 px-4 py-3 dark:border-umber-700">
+          <p className="text-xs font-medium text-blush-700 dark:text-blush-300">
+            {t("admin.fin_launch_smoke_warning")}
+          </p>
+          <ol className="mt-3 list-decimal space-y-2 pl-5 text-xs leading-relaxed text-neutral-600 dark:text-umber-200">
+            <li>{t("admin.fin_launch_smoke_account")}</li>
+            <li>{t("admin.fin_launch_smoke_checkout")}</li>
+            <li>{t("admin.fin_launch_smoke_webhook")}</li>
+            <li>{t("admin.fin_launch_smoke_manage")}</li>
+            <li>{t("admin.fin_launch_smoke_pause")}</li>
+          </ol>
+        </div>
+      </details>
+    </section>
+  );
+}
+
+function PaymentLaunchRow({
+  item,
+  busy,
+  onToggle,
+  t,
+  locale,
+}: {
+  item: PaymentLaunchState;
+  busy: boolean;
+  onToggle: (product: PaymentLaunchProduct, next: boolean) => void;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  locale: Locale;
+}) {
+  const canEnable = item.ready && !item.enabled;
+  const live = item.enabled && item.ready;
+  const blocked = item.enabled && !item.ready;
+  const timestamp = item.updated_at
+    ? new Date(item.updated_at < 1_000_000_000_000 ? item.updated_at * 1000 : item.updated_at)
+    : null;
+  const updated =
+    timestamp && !Number.isNaN(timestamp.getTime())
+      ? new Intl.DateTimeFormat(intlLocale(locale), {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(timestamp)
+      : null;
+
+  return (
+    <div className="flex flex-col gap-3 bg-white p-4 dark:bg-umber-900/40 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
+            {t(`admin.fin_launch_product_${item.product}`)}
+          </h3>
+          <Pill tone={live ? "sage" : blocked ? "blush" : "muted"}>
+            {live
+              ? t("admin.fin_launch_state_live")
+              : blocked
+                ? t("admin.fin_launch_state_blocked")
+                : t("admin.fin_launch_state_off")}
+          </Pill>
+          <Pill tone={item.ready ? "verified" : "blush"}>
+            {item.ready ? t("admin.fin_launch_ready") : t("admin.fin_launch_not_ready")}
+          </Pill>
+        </div>
+        <p className="mt-1 text-xs text-neutral-500 dark:text-umber-300">
+          {t(`admin.fin_launch_product_${item.product}_note`)}
+        </p>
+        {!item.ready && item.missing.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-blush-800 dark:text-blush-200">
+            <span>{t("admin.fin_launch_missing")}</span>
+            {item.missing.map((key) => (
+              <code
+                key={key}
+                className="rounded bg-blush-100 px-1.5 py-0.5 font-mono text-[11px] dark:bg-blush-400/15"
+              >
+                {key}
+              </code>
+            ))}
+          </div>
+        )}
+        <p className="mt-1.5 text-[11px] text-neutral-400 dark:text-umber-400">
+          {updated && <>{t("admin.fin_launch_last_changed", { date: updated })} · </>}
+          {t("admin.fin_launch_revision", { version: item.version })}
+        </p>
+      </div>
+
+      {item.enabled ? (
+        <button
+          type="button"
+          className="btn-ghost btn-sm shrink-0"
+          aria-pressed="true"
+          disabled={busy}
+          onClick={() => onToggle(item.product, false)}
+        >
+          {busy && <LoaderCircle size={14} className="animate-spin" aria-hidden />}
+          {busy ? t("admin.fin_launch_updating") : t("admin.fin_launch_disable")}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="btn-primary btn-sm shrink-0"
+          aria-pressed="false"
+          disabled={!canEnable || busy}
+          title={!item.ready ? t("admin.fin_launch_fix_config") : undefined}
+          onClick={() => onToggle(item.product, true)}
+        >
+          {busy && <LoaderCircle size={14} className="animate-spin" aria-hidden />}
+          {busy
+            ? t("admin.fin_launch_updating")
+            : item.ready
+              ? t("admin.fin_launch_enable")
+              : t("admin.fin_launch_fix_config")}
+        </button>
       )}
     </div>
   );
@@ -950,12 +1301,14 @@ function RuleOfThumb({
  *  200-couple cohort fills) to start the payment period. */
 function BillingLaunchCard({
   data,
+  launches,
   busy,
   onToggle,
   t,
   locale,
 }: {
   data: AdminFinancialPlannerOverview;
+  launches: PaymentLaunchesResponse | null;
   busy: boolean;
   onToggle: (next: boolean) => void;
   t: (k: string, vars?: Record<string, string | number>) => string;
@@ -965,6 +1318,12 @@ function BillingLaunchCard({
   const total = data.total_couples;
   const pct = Math.min(100, Math.round((total / FOUNDING_CAP) * 100));
   const ready = data.enforcement_ready;
+  const subscriptionLaunchesReady = (
+    ["couple_subscriptions", "planner_subscriptions", "vendor_billing"] as const
+  ).every((product) => {
+    const item = launches?.products[product];
+    return item?.enabled === true && item.ready === true;
+  });
   return (
     <section className="admin-card mt-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -996,7 +1355,8 @@ function BillingLaunchCard({
           <button
             type="button"
             onClick={() => onToggle(true)}
-            disabled={busy}
+            disabled={busy || !subscriptionLaunchesReady}
+            title={!subscriptionLaunchesReady ? t("admin.fin_enforce_launch_prereq") : undefined}
             className="btn-primary btn-sm shrink-0"
           >
             {t("admin.fin_enforce_go_live")}
@@ -1028,6 +1388,11 @@ function BillingLaunchCard({
         {!on && !ready && (
           <p className="mt-2 text-xs text-neutral-500 dark:text-umber-300">
             {t("admin.fin_enforce_below_cap", { n: total, cap: FOUNDING_CAP })}
+          </p>
+        )}
+        {!on && !subscriptionLaunchesReady && (
+          <p className="mt-2 text-xs font-medium text-blush-700 dark:text-blush-300">
+            {t("admin.fin_enforce_launch_prereq")}
           </p>
         )}
         {/* The blast radius, on the card rather than only in the confirm: the

@@ -1014,6 +1014,7 @@ CREATE TABLE IF NOT EXISTS vendor_subscriptions (
   founding_until INTEGER,                             -- epoch ms; end of the 1-year founding window
   is_founding_member INTEGER NOT NULL DEFAULT 0,      -- first-100 badge; permanent (slot spent on grant)
   current_period_end INTEGER,                         -- epoch ms from Stripe
+  past_due_since INTEGER,                             -- epoch ms; first transition into the current dunning episode
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
   currency TEXT NOT NULL,                             -- HUF | EUR, pinned at activation from owner locale
@@ -1041,6 +1042,7 @@ CREATE TABLE IF NOT EXISTS planner_subscriptions (
   founding_until INTEGER,                             -- epoch ms; end of the 2-year founding window
   is_founding_member INTEGER NOT NULL DEFAULT 0,      -- first-25 badge; permanent (slot spent on grant)
   current_period_end INTEGER,                         -- epoch ms from Stripe
+  past_due_since INTEGER,                             -- epoch ms; first transition into the current dunning episode
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
   currency TEXT NOT NULL,                             -- HUF | EUR, pinned at activation from user locale
@@ -1631,6 +1633,25 @@ CREATE TABLE IF NOT EXISTS billing_control (
   enforced_by_user_id INTEGER
 );
 
+-- Per-product payment launch switches. These answer "may this surface create a
+-- new Stripe payment?" and are intentionally independent from billing_control,
+-- which answers "should expired accounts be made read-only?". New rows default
+-- OFF so a deployment can never expose an unreviewed payment path merely by
+-- receiving Stripe environment variables.
+CREATE TABLE IF NOT EXISTS payment_launch_control (
+  product TEXT PRIMARY KEY CHECK (product IN (
+    'couple_subscriptions',
+    'planner_subscriptions',
+    'vendor_billing',
+    'film_checkout',
+    'guest_page_addon'
+  )),
+  enabled INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
+  version INTEGER NOT NULL DEFAULT 0 CHECK (version >= 0),
+  updated_at INTEGER,
+  updated_by_user_id INTEGER
+);
+
 -- ── Wishlist / gift-registry ────────────────────────────────────────────────
 --
 -- The couple authors a list of things they'd love — a 'gift' (concrete thing
@@ -1783,6 +1804,18 @@ CREATE TABLE IF NOT EXISTS stripe_webhook_events (
   event_id TEXT PRIMARY KEY,
   event_type TEXT,
   received_at INTEGER NOT NULL
+);
+
+-- Delivery-level Stripe idempotency. A Stripe event can be sent to all three
+-- independently signed endpoints, so event_id alone is not globally unique for
+-- our consumers. Claims are deleted when processing fails, allowing Stripe's
+-- retry to perform the work instead of treating a failed first attempt as done.
+CREATE TABLE IF NOT EXISTS stripe_webhook_deliveries (
+  event_id TEXT NOT NULL,
+  consumer TEXT NOT NULL CHECK (consumer IN ('couple', 'planner', 'vendor')),
+  event_type TEXT NOT NULL,
+  received_at INTEGER NOT NULL,
+  PRIMARY KEY (event_id, consumer)
 );
 
 -- Referral reward ledger. One row per unique referred entity (a couple or a

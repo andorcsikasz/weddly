@@ -10,6 +10,7 @@
 // are part of the contract with `interpolate()` and must survive verbatim.
 
 import type { LocaleMessages } from "./keys";
+import { ADMIN_PAYMENT_LAUNCH_DE } from "./adminPaymentLaunches";
 
 const de: LocaleMessages = {
   common: {
@@ -3443,6 +3444,7 @@ const de: LocaleMessages = {
     film_activated: "Film freigeschaltet. Bis zu 200 Gäste.",
     film_upgrade_body: "{{cap}} Gäste auf diesem Film.",
     film_upgrade_cta: "200 freischalten",
+    film_upgrade_unavailable: "Erweiterung derzeit nicht verfügbar",
     gallery_title: "Der Film",
     gallery_empty: "Noch nichts da. Die erste Aufnahme landet hier.",
     gallery_show_all: "Alle {{n}} anzeigen",
@@ -3990,6 +3992,7 @@ const de: LocaleMessages = {
     addon_unlock_body:
       "Ihr Planer führt die Hochzeit, deshalb ist Ihr Arbeitsbereich schreibgeschützt. Ihre eigene Gästeseite können Sie mit dem Add-on zu 70 % Rabatt trotzdem bearbeiten.",
     addon_unlock_cta: "Gästeseite freischalten (70 % Rabatt)",
+    addon_unavailable: "Kauf derzeit nicht verfügbar",
     addon_opening: "Wird geöffnet…",
     addon_error: "Die Zahlung konnte nicht gestartet werden. Bitte erneut versuchen.",
     preview_live_label: "Live-Vorschau",
@@ -5716,6 +5719,7 @@ const de: LocaleMessages = {
     },
   },
   admin: {
+    ...ADMIN_PAYMENT_LAUNCH_DE,
     nav_label: "Admin",
     enter_admin_view: "Zur Admin-Ansicht wechseln",
     exit_admin_view: "Zurück zur Nutzeransicht",

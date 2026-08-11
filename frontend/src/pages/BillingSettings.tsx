@@ -134,7 +134,7 @@ export default function BillingSettings() {
   }
   if (!data) return null;
 
-  const { billing, enabled } = data;
+  const { billing, enabled, checkout_enabled: checkoutEnabled } = data;
   const status = billing.subscription_status;
   const priceStr = formatMoney(data.price, data.currency, locale);
 
@@ -182,26 +182,25 @@ export default function BillingSettings() {
             </span>
           </p>
 
-          {enabled &&
-            (showManage ? (
-              <button
-                type="button"
-                onClick={() => go("portal")}
-                disabled={busy !== "idle"}
-                className="btn-outline btn-lg w-full sm:ml-auto sm:w-auto"
-              >
-                {busy === "portal" ? t("billing.opening") : t("billing.manage_cta")}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => go("checkout")}
-                disabled={busy !== "idle"}
-                className="btn-primary btn-lg w-full sm:ml-auto sm:w-auto"
-              >
-                {busy === "checkout" ? t("billing.opening") : t("billing.subscribe_cta")}
-              </button>
-            ))}
+          {showManage && enabled ? (
+            <button
+              type="button"
+              onClick={() => go("portal")}
+              disabled={busy !== "idle"}
+              className="btn-outline btn-lg w-full sm:ml-auto sm:w-auto"
+            >
+              {busy === "portal" ? t("billing.opening") : t("billing.manage_cta")}
+            </button>
+          ) : !showManage && checkoutEnabled ? (
+            <button
+              type="button"
+              onClick={() => go("checkout")}
+              disabled={busy !== "idle"}
+              className="btn-primary btn-lg w-full sm:ml-auto sm:w-auto"
+            >
+              {busy === "checkout" ? t("billing.opening") : t("billing.subscribe_cta")}
+            </button>
+          ) : null}
         </div>
 
         {/* Card on file — read-only brand/last-4/expiry pulled from Stripe.
@@ -228,7 +227,7 @@ export default function BillingSettings() {
           </p>
         )}
 
-        {!enabled && (
+        {!showManage && !checkoutEnabled && (
           <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">
             {t("billing.disabled_note")}
           </p>

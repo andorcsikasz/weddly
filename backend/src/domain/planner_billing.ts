@@ -18,6 +18,7 @@ import {
   plannerCurrencyForLocale,
   type SubscriptionStatus,
 } from "@shared/planner_billing";
+import { subscriptionStatusFromStripe } from "@shared/billing";
 import type { Currency, PlannerPlan } from "@shared/types";
 import { CONFIG } from "../config";
 import { billingEnforcementOn, db, now } from "../db";
@@ -31,6 +32,7 @@ export interface PlannerSubRow {
   founding_until: number | null;
   is_founding_member: number;
   current_period_end: number | null;
+  past_due_since: number | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   currency: string;
@@ -121,6 +123,7 @@ export function toPlannerBilling(
   let { entitled, reason } = computeEntitlement(status, {
     trial_ends_at: row.trial_ends_at,
     founding_until: row.founding_until,
+    past_due_since: row.past_due_since,
     nowMs,
   });
   if (!entitled && !billingEnforcementOn()) {
@@ -134,6 +137,7 @@ export function toPlannerBilling(
     founding_until: row.founding_until,
     is_founding_member: row.is_founding_member === 1,
     current_period_end: row.current_period_end,
+    past_due_since: row.past_due_since,
     currency: row.currency as Currency,
     entitled,
     reason,
@@ -196,30 +200,22 @@ export function applyPlannerSubscriptionState(
     stripeStatus: string;
     currentPeriodEnd: number | null;
     tier: PlannerPlan | null;
+    observedAt?: number; // Stripe event creation time; server time for direct reads
   },
 ): void {
-  let mapped: SubscriptionStatus;
-  switch (opts.stripeStatus) {
-    case "active":
-    case "trialing":
-      mapped = "active";
-      break;
-    case "past_due":
-    case "unpaid":
-      mapped = "past_due";
-      break;
-    case "canceled":
-    case "incomplete_expired":
-      mapped = "canceled";
-      break;
-    default:
-      mapped = "past_due";
-  }
+  const mapped = subscriptionStatusFromStripe(opts.stripeStatus);
+  const ts = now();
+  const observedAt = opts.observedAt ?? ts;
   db.prepare(
     `UPDATE planner_subscriptions
-        SET subscription_status = ?, stripe_subscription_id = ?, current_period_end = ?, updated_at = ?
+        SET subscription_status = ?, stripe_subscription_id = ?, current_period_end = ?,
+            past_due_since = CASE
+              WHEN ? = 'past_due' THEN COALESCE(past_due_since, ?)
+              ELSE NULL
+            END,
+            updated_at = ?
       WHERE user_id = ?`,
-  ).run(mapped, opts.subscriptionId, opts.currentPeriodEnd, now(), userId);
+  ).run(mapped, opts.subscriptionId, opts.currentPeriodEnd, mapped, observedAt, ts, userId);
   // Only move the tier for live subscriptions — a cancel shouldn't silently
   // change which tier the planner is remembered on (they revert to read-only,
   // not to a different plan).

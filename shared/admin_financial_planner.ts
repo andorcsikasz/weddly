@@ -122,6 +122,46 @@ export interface StripeHealth {
   checkedAt: number;
 }
 
+/** Independently deployable payment surfaces. These controls decide whether a
+ * new Stripe Checkout/setup/subscription may be created; they are deliberately
+ * separate from the global entitlement enforcement switch. */
+export const PAYMENT_LAUNCH_PRODUCTS = [
+  "couple_subscriptions",
+  "planner_subscriptions",
+  "vendor_billing",
+  "film_checkout",
+  "guest_page_addon",
+] as const;
+
+export type PaymentLaunchProduct = (typeof PAYMENT_LAUNCH_PRODUCTS)[number];
+
+export interface PaymentLaunchState {
+  product: PaymentLaunchProduct;
+  /** Monotonic optimistic-concurrency token. Starts at 0 and increments only
+   * when enabled actually changes. */
+  version: number;
+  /** Operator-controlled launch state persisted in SQLite. */
+  enabled: boolean;
+  /** Whether every environment prerequisite for this surface is present. */
+  ready: boolean;
+  /** Missing environment variable names. Empty when ready=true. */
+  missing: string[];
+  updated_at: number | null;
+  updated_by_user_id: number | null;
+}
+
+export interface PaymentLaunchesResponse {
+  generated_at: number;
+  products: Record<PaymentLaunchProduct, PaymentLaunchState>;
+}
+
+export interface SetPaymentLaunchRequest {
+  product: PaymentLaunchProduct;
+  enabled: boolean;
+  /** Version last read by the admin. A stale value is rejected with 409. */
+  expected_version: number;
+}
+
 /** Editable forecast assumptions, all surfaced as sliders on the page. */
 export interface ForecastAssumptions {
   months: number;

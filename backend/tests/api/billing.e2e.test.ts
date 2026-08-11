@@ -12,13 +12,22 @@ import "../setup";
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { AdminFinancialPlannerOverview } from "@shared/admin_financial_planner";
 import type { AdminCoupleView } from "@shared/types";
-import { type BillingStatusResponse, MONTHLY_PRICE, PAID_LAUNCH_DATE } from "@shared/billing";
+import {
+  type BillingStatusResponse,
+  computeEntitlement,
+  MONTHLY_PRICE,
+  PAID_LAUNCH_DATE,
+  PAST_DUE_GRACE_MS,
+  subscriptionStatusFromStripe,
+} from "@shared/billing";
 import type { Couple } from "@shared/types";
 import { db } from "../../src/db";
 import {
   activatePartnerFreeWindow,
+  applySubscriptionState,
   claimStripeEvent,
   foundingSlotsUsed,
+  releaseStripeEvent,
   setBillingEnforcement,
 } from "../../src/domain/billing";
 import { FOUNDING_CAP } from "@shared/billing";
@@ -317,49 +326,170 @@ describe("billing state machine", () => {
     const forbidden = await setEnforce(true, userToken);
     expect(forbidden.status).toBe(403);
 
-    // Below 200 couples the endpoint used to 400. It no longer does: when we
-    // start charging is a date the founder picks, not a headcount the app
-    // reaches, and the guard that protects anyone is the impact count stated in
-    // the admin confirm. `enforcement_ready` survives as the readiness signal
-    // only, and is false here while the flip still succeeds.
+    // Static Stripe config and all three subscription product launches are a
+    // hard precondition. The test environment has none, so the endpoint fails
+    // closed regardless of cohort size.
     const early = await setEnforce(true, adminToken);
-    expect(early.status).toBe(200);
-    expect(early.data.billing_enforcement_on).toBe(true);
-    expect(early.data.enforcement_ready).toBe(false);
-    await setEnforce(false, adminToken);
+    expect(early.status).toBe(409);
 
-    // Filling the cohort flips the signal, and go-live still works.
+    // Domain setup simulates an already-on deployment so rollback remains
+    // covered: OFF is always allowed even if Stripe config later disappears.
+    setBillingEnforcement(true, 1);
+    const offEarly = await setEnforce(false, adminToken);
+    expect(offEarly.status).toBe(200);
+    expect(offEarly.data.billing_enforcement_on).toBe(false);
+
+    // Filling the cohort flips the separate readiness signal but cannot bypass
+    // the payment-launch prerequisite.
     seedCouples(200);
     const on = await setEnforce(true, adminToken);
-    expect(on.status).toBe(200);
-    expect(on.data.billing_enforcement_on).toBe(true);
-    expect(on.data.enforcement_ready).toBe(true);
-
-    // And turn it back off.
-    const off = await setEnforce(false, adminToken);
-    expect(off.status).toBe(200);
-    expect(off.data.billing_enforcement_on).toBe(false);
+    expect(on.status).toBe(409);
+    const overview = await req<AdminFinancialPlannerOverview>(
+      "GET",
+      "/api/admin/financial-planner/overview",
+      undefined,
+      { token: adminToken },
+    );
+    expect(overview.data.enforcement_ready).toBe(true);
+    expect(overview.data.billing_enforcement_on).toBe(false);
   });
 
-  test("stripe webhook events are claimed once (replay is a no-op)", () => {
+  test("stripe webhook claims are isolated per consumer and retryable after failure", () => {
     wipeAll();
-    // First delivery of an event id is claimed (process it); every replay of the
-    // same id is rejected (skip it) so a redelivered subscription event can't
-    // re-apply stale state. The handler calls this right after verifying the
-    // Stripe signature.
-    expect(claimStripeEvent("evt_replay_1", "customer.subscription.updated")).toBe(true);
-    expect(claimStripeEvent("evt_replay_1", "customer.subscription.updated")).toBe(false);
-    expect(claimStripeEvent("evt_replay_1", "customer.subscription.deleted")).toBe(false);
-    // A different event id is independent.
-    expect(claimStripeEvent("evt_replay_2", "customer.subscription.updated")).toBe(true);
+    expect(claimStripeEvent("evt_replay_1", "customer.subscription.updated", "couple")).toBe(true);
+    expect(claimStripeEvent("evt_replay_1", "customer.subscription.updated", "couple")).toBe(false);
+    // Stripe may deliver the same event to independently signed endpoints;
+    // one endpoint must never consume another endpoint's delivery.
+    expect(claimStripeEvent("evt_replay_1", "customer.subscription.updated", "planner")).toBe(true);
+    expect(claimStripeEvent("evt_replay_1", "customer.subscription.updated", "vendor")).toBe(true);
+    // A thrown handler releases its claim so Stripe's retry can do the work.
+    releaseStripeEvent("evt_replay_1", "couple");
+    expect(claimStripeEvent("evt_replay_1", "customer.subscription.updated", "couple")).toBe(true);
+  });
+
+  test("Stripe subscription mapping fails closed and past-due access is bounded", () => {
+    for (const status of ["unpaid", "incomplete", "incomplete_expired", "paused", "mystery"]) {
+      expect(subscriptionStatusFromStripe(status)).toBe("canceled");
+    }
+    expect(subscriptionStatusFromStripe("active")).toBe("active");
+    expect(subscriptionStatusFromStripe("trialing")).toBe("active");
+    expect(subscriptionStatusFromStripe("past_due")).toBe("past_due");
+
+    const pastDueSince = 1_000_000;
+    const base = { trial_ends_at: null, founding_until: null, past_due_since: pastDueSince };
+    expect(
+      computeEntitlement("past_due", {
+        ...base,
+        nowMs: pastDueSince + PAST_DUE_GRACE_MS - 1,
+      }).entitled,
+    ).toBe(true);
+    expect(
+      computeEntitlement("past_due", {
+        ...base,
+        nowMs: pastDueSince + PAST_DUE_GRACE_MS,
+      }).entitled,
+    ).toBe(false);
+    expect(
+      computeEntitlement("past_due", {
+        trial_ends_at: null,
+        founding_until: null,
+        past_due_since: null,
+        nowMs: 1,
+      }).entitled,
+    ).toBe(false);
+  });
+
+  test("past_due is bounded from its transition even when current_period_end is a month ahead", async () => {
+    const { token, coupleId } = await bootstrapCouple("past-due-bound@weddly.test");
+    const monthAhead = Date.now() + 30 * 86_400_000;
+    // Simulate a delayed Stripe delivery. The grace period must be anchored to
+    // when Stripe observed the transition, not when our webhook processed it.
+    const delayedObservedAt = Date.now() - (PAST_DUE_GRACE_MS + 86_400_000);
+    applySubscriptionState(coupleId, {
+      subscriptionId: "sub_past_due_bound",
+      stripeStatus: "past_due",
+      currentPeriodEnd: monthAhead,
+      observedAt: delayedObservedAt,
+    });
+    const first = db.prepare("SELECT past_due_since FROM couples WHERE id = ?").get(coupleId) as {
+      past_due_since: number;
+    };
+    expect(first.past_due_since).toBe(delayedObservedAt);
+
+    // A repeated update must not restart dunning or derive it from the future
+    // billing-period end.
+    applySubscriptionState(coupleId, {
+      subscriptionId: "sub_past_due_bound",
+      stripeStatus: "past_due",
+      currentPeriodEnd: monthAhead,
+      observedAt: Date.now(),
+    });
+    setBillingEnforcement(true, 1);
+    const status = await req<BillingStatusResponse>("GET", "/api/billing/status", undefined, {
+      token,
+    });
+    expect(status.data.billing.current_period_end).toBe(monthAhead);
+    expect(status.data.billing.past_due_since).toBe(delayedObservedAt);
+    expect(status.data.billing.entitled).toBe(false);
+
+    applySubscriptionState(coupleId, {
+      subscriptionId: "sub_past_due_bound",
+      stripeStatus: "active",
+      currentPeriodEnd: monthAhead,
+    });
+    const cleared = db.prepare("SELECT past_due_since FROM couples WHERE id = ?").get(coupleId) as {
+      past_due_since: number | null;
+    };
+    expect(cleared.past_due_since).toBeNull();
   });
 
   test("checkout + webhook degrade gracefully while Stripe is unconfigured", async () => {
     const { token } = await bootstrapCouple("nostripe@weddly.test");
-    const checkout = await req("POST", "/api/billing/checkout", {}, { token });
+    const checkout = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/billing/checkout",
+      {},
+      { token },
+    );
     expect(checkout.status).toBe(503);
+    expect(checkout.data.detail?.code).toBe("payment_not_launched");
     const webhook = await req("POST", "/api/billing/webhook", {});
     expect(webhook.status).toBe(503);
+  });
+
+  test("checkout rejects an existing local or Stripe-linked subscription", async () => {
+    const { token, coupleId } = await bootstrapCouple("duplicate-checkout@weddly.test");
+    for (const state of [
+      { status: "active", subscriptionId: null },
+      { status: "past_due", subscriptionId: null },
+      { status: "trialing", subscriptionId: "sub_existing_trial" },
+    ]) {
+      db.prepare(
+        "UPDATE couples SET subscription_status = ?, stripe_subscription_id = ? WHERE id = ?",
+      ).run(state.status, state.subscriptionId, coupleId);
+      const checkout = await req<{ detail?: { code?: string } }>(
+        "POST",
+        "/api/billing/checkout",
+        {},
+        { token },
+      );
+      expect(checkout.status).toBe(409);
+      expect(checkout.data.detail?.code).toBe("already_subscribed");
+    }
+
+    // A terminal subscription id may remain for history; canceled can start a
+    // fresh Checkout and therefore falls through to the (OFF) launch control.
+    db.prepare(
+      "UPDATE couples SET subscription_status = 'canceled', stripe_subscription_id = 'sub_old' WHERE id = ?",
+    ).run(coupleId);
+    const canceled = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/billing/checkout",
+      {},
+      { token },
+    );
+    expect(canceled.status).toBe(503);
+    expect(canceled.data.detail?.code).toBe("payment_not_launched");
   });
 
   test("payment-method returns a clean {card:null} when there's no Stripe customer", async () => {

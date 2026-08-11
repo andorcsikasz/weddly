@@ -22,13 +22,15 @@ import {
   guestPageAddonPriceId,
   markGuestPagePrepaid,
   priceIdForCurrency,
+  releaseStripeEvent,
   setStripeCustomerId,
   stripe,
 } from "../domain/billing";
-import { getCoupleForUser, toCoupleBilling } from "../domain/couples";
+import { billingAnchorRow, getCoupleForUser, toCoupleBilling } from "../domain/couples";
 import { activateFilmAlbum } from "../domain/film";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { getUserById } from "../domain/users";
+import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment_launch";
 import {
   type Ctx,
   HttpError,
@@ -61,6 +63,8 @@ function handleStatus(ctx: Ctx): Response {
   const currency = normaliseCurrency(couple.currency);
   const body: BillingStatusResponse = {
     enabled: STRIPE_ENABLED,
+    checkout_enabled: paymentProductAvailable("couple_subscriptions"),
+    guest_page_addon_checkout_enabled: paymentProductAvailable("guest_page_addon"),
     billing: toCoupleBilling(couple),
     currency,
     price: monthlyPrice(currency),
@@ -73,8 +77,21 @@ function handleStatus(ctx: Ctx): Response {
 // ── POST /api/billing/checkout ──────────────────────────────────────────────
 async function handleCheckout(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
-  const couple = getCoupleForUser(userId);
-  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const workspace = getCoupleForUser(userId);
+  if (!workspace) throw new HttpError(400, "No couple workspace yet");
+  // Multi-workspace owners share one billing anchor. Checkout, customer reuse,
+  // and the duplicate guard must all resolve against that same row or a
+  // secondary wedding could create a second subscription for the same owner.
+  const couple = billingAnchorRow(workspace);
+  const status = couple.subscription_status;
+  const hasLiveStripeSubscription =
+    couple.stripe_subscription_id !== null && status !== "canceled" && status !== "none";
+  if (status === "active" || status === "past_due" || hasLiveStripeSubscription) {
+    throw new HttpError(409, "Already subscribed; manage the existing subscription", {
+      code: "already_subscribed",
+    });
+  }
+  requirePaymentLaunch("couple_subscriptions");
   const user = getUserById(userId);
   const currency = normaliseCurrency(couple.currency);
 
@@ -82,28 +99,36 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
   // and the portal stay on one record.
   let customerId = couple.stripe_customer_id;
   if (!customerId) {
-    const customer = await stripe().customers.create({
-      email: user?.email ?? undefined,
-      name: couple.display_name,
-      metadata: { couple_id: String(couple.id) },
-    });
+    const customer = await stripe().customers.create(
+      {
+        email: user?.email ?? undefined,
+        name: couple.display_name,
+        metadata: { couple_id: String(couple.id) },
+      },
+      { idempotencyKey: `couple-customer-${couple.id}` },
+    );
     customerId = customer.id;
     setStripeCustomerId(couple.id, customerId);
   }
 
-  const session = await stripe().checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: priceIdForCurrency(currency), quantity: 1 }],
-    // Stamp the couple id on BOTH the session and the subscription so the
-    // webhook can resolve the couple from either object.
-    subscription_data: { metadata: { couple_id: String(couple.id) } },
-    client_reference_id: String(couple.id),
-    metadata: { couple_id: String(couple.id) },
-    allow_promotion_codes: true,
-    success_url: `${CONFIG.frontendBaseUrl}/app/settings/billing?checkout=success`,
-    cancel_url: `${CONFIG.frontendBaseUrl}/app/settings/billing?checkout=cancel`,
-  });
+  const session = await stripe().checkout.sessions.create(
+    {
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: priceIdForCurrency(currency), quantity: 1 }],
+      // Stamp the couple id on BOTH the session and the subscription so the
+      // webhook can resolve the couple from either object.
+      subscription_data: { metadata: { couple_id: String(couple.id) } },
+      client_reference_id: String(couple.id),
+      metadata: { couple_id: String(couple.id) },
+      allow_promotion_codes: true,
+      success_url: `${CONFIG.frontendBaseUrl}/app/settings/billing?checkout=success`,
+      cancel_url: `${CONFIG.frontendBaseUrl}/app/settings/billing?checkout=cancel`,
+    },
+    {
+      idempotencyKey: `couple-checkout-${couple.id}-${couple.subscription_status}-${couple.stripe_subscription_id ?? "none"}`,
+    },
+  );
   // Top-of-funnel signal: the couple reached the Stripe pay screen. Recorded
   // after the session mints so a Stripe hiccup doesn't inflate the count.
   recordGrowthEventFromRequest("checkout.started", ctx.req, {
@@ -119,30 +144,41 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
  *  couple `guest_page_prepaid`; the planner then switches the add-on on. */
 async function handleGuestPageAddonCheckout(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
+  requirePaymentLaunch("guest_page_addon");
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
+  if (couple.guest_page_prepaid) {
+    throw new HttpError(400, "Guest-page add-on is already paid", { code: "already_paid" });
+  }
   const currency = normaliseCurrency(couple.currency);
   const priceId = guestPageAddonPriceId(currency);
   const user = getUserById(userId);
   let customerId = couple.stripe_customer_id;
   if (!customerId) {
-    const customer = await stripe().customers.create({
-      email: user?.email ?? undefined,
-      name: couple.display_name,
-      metadata: { couple_id: String(couple.id) },
-    });
+    const customer = await stripe().customers.create(
+      {
+        email: user?.email ?? undefined,
+        name: couple.display_name,
+        metadata: { couple_id: String(couple.id) },
+      },
+      { idempotencyKey: `couple-customer-${couple.id}` },
+    );
     customerId = customer.id;
     setStripeCustomerId(couple.id, customerId);
   }
-  const session = await stripe().checkout.sessions.create({
-    mode: "payment",
-    customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    client_reference_id: String(couple.id),
-    metadata: { type: "guest_page_addon", couple_id: String(couple.id) },
-    success_url: `${CONFIG.frontendBaseUrl}/app/guest-page?addon=success`,
-    cancel_url: `${CONFIG.frontendBaseUrl}/app/guest-page?addon=cancel`,
-  });
+  const session = await stripe().checkout.sessions.create(
+    {
+      mode: "payment",
+      payment_method_types: ["card"],
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      client_reference_id: String(couple.id),
+      metadata: { type: "guest_page_addon", couple_id: String(couple.id) },
+      success_url: `${CONFIG.frontendBaseUrl}/app/guest-page?addon=success`,
+      cancel_url: `${CONFIG.frontendBaseUrl}/app/guest-page?addon=cancel`,
+    },
+    { idempotencyKey: `guest-page-addon-checkout-${couple.id}-unpaid` },
+  );
   return json({ url: session.url });
 }
 
@@ -246,65 +282,74 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
   // flip a canceled couple back to active. Claim the event id AFTER the
   // signature check (so only genuine events can write) and skip if we've already
   // processed it. claimStripeEvent is INSERT OR IGNORE + changes(), atomic.
-  if (!claimStripeEvent(event.id, event.type)) {
+  if (!claimStripeEvent(event.id, event.type, "couple")) {
     return json({ received: true, duplicate: true });
   }
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const s = event.data.object as Stripe.Checkout.Session;
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const s = event.data.object as Stripe.Checkout.Session;
 
-      // Guest-page add-on one-time payment (planner-managed couple buys back
-      // editing of their own guest page). Marks the 30% prepayment so the
-      // planner can switch the add-on on.
-      if (s.metadata?.type === "guest_page_addon") {
-        const coupleId = Number(s.metadata.couple_id ?? s.client_reference_id);
-        if (Number.isInteger(coupleId) && coupleId > 0) markGuestPagePrepaid(coupleId);
-        break;
-      }
+        // Guest-page add-on one-time payment (planner-managed couple buys back
+        // editing of their own guest page). Marks the 30% prepayment so the
+        // planner can switch the add-on on.
+        if (s.metadata?.type === "guest_page_addon") {
+          if (s.payment_status !== "paid") break;
+          const coupleId = Number(s.metadata.couple_id ?? s.client_reference_id);
+          if (Number.isInteger(coupleId) && coupleId > 0) markGuestPagePrepaid(coupleId);
+          break;
+        }
 
-      // Film one-time payment — separate path from the subscription flow.
-      if (s.metadata?.type === "film") {
-        const albumId = Number(s.metadata.album_id);
-        if (Number.isInteger(albumId) && albumId > 0) {
-          const paymentIntentId = s.payment_intent ? String(s.payment_intent) : null;
-          activateFilmAlbum(albumId, paymentIntentId);
+        // Film one-time payment — separate path from the subscription flow.
+        if (s.metadata?.type === "film") {
+          if (s.payment_status !== "paid") break;
+          const albumId = Number(s.metadata.album_id);
+          if (Number.isInteger(albumId) && albumId > 0) {
+            const paymentIntentId = s.payment_intent ? String(s.payment_intent) : null;
+            activateFilmAlbum(albumId, paymentIntentId);
+          }
+          break;
+        }
+
+        // Subscription flow (default).
+        const coupleId = Number(s.metadata?.couple_id ?? s.client_reference_id);
+        if (Number.isInteger(coupleId) && coupleId > 0) {
+          if (s.customer) setStripeCustomerId(coupleId, String(s.customer));
+          if (s.subscription) {
+            const sub = await stripe().subscriptions.retrieve(String(s.subscription));
+            applySubscriptionState(coupleId, {
+              subscriptionId: sub.id,
+              stripeStatus: sub.status,
+              currentPeriodEnd: periodEndMs(sub),
+              observedAt: event.created * 1000,
+            });
+          }
         }
         break;
       }
-
-      // Subscription flow (default).
-      const coupleId = Number(s.metadata?.couple_id ?? s.client_reference_id);
-      if (Number.isInteger(coupleId) && coupleId > 0) {
-        if (s.customer) setStripeCustomerId(coupleId, String(s.customer));
-        if (s.subscription) {
-          const sub = await stripe().subscriptions.retrieve(String(s.subscription));
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        const coupleId = resolveCoupleId(sub);
+        if (coupleId) {
           applySubscriptionState(coupleId, {
             subscriptionId: sub.id,
             stripeStatus: sub.status,
             currentPeriodEnd: periodEndMs(sub),
+            observedAt: event.created * 1000,
           });
         }
+        break;
       }
-      break;
+      default:
+        // Ignore the long tail of event types — we only act on the lifecycle ones.
+        break;
     }
-    case "customer.subscription.created":
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted": {
-      const sub = event.data.object as Stripe.Subscription;
-      const coupleId = resolveCoupleId(sub);
-      if (coupleId) {
-        applySubscriptionState(coupleId, {
-          subscriptionId: sub.id,
-          stripeStatus: sub.status,
-          currentPeriodEnd: periodEndMs(sub),
-        });
-      }
-      break;
-    }
-    default:
-      // Ignore the long tail of event types — we only act on the lifecycle ones.
-      break;
+  } catch (error) {
+    releaseStripeEvent(event.id, "couple");
+    throw error;
   }
   return json({ received: true });
 }

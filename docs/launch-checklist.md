@@ -1,8 +1,8 @@
 # Launch checklist — what only you can do
 
-The codebase is launch-ready (see `git log` for what just landed). The boxes
-below are the things a human needs to handle: external services, real-world
-testing, content, and legal sign-off. Group ordering reflects what blocks ship.
+The automated code checks pass, but production launch is not complete until
+the external-service, real-world testing, content, and legal boxes below are
+closed. Group ordering reflects what blocks ship.
 
 ---
 
@@ -117,6 +117,30 @@ Alternative: GitHub Actions scheduled workflow that SSHes into Railway and trigg
 - [ ] **Real-data smoke test:** with a fresh production account, run signup → invite partner B (use a second email you control) → onboarding wizard → add 5 guests → CSV-import 20 more → submit RSVPs at `/rsvp/<code>` → drag guests onto a table → trigger a conflict → export the chart as A4 PDF → download Settings → JSON export.
 - [ ] **Pause flow:** create a throwaway couple, hit Pause, then Cancel. Don't actually wait 30 days — the test suite already covers the purge job.
 
+### F.1 Payment launch drill (required before accepting money)
+
+- [ ] Create all Stripe products/prices in **test mode** using the scripts in
+  `backend/scripts/stripe_setup*.ts`. The guest-page add-on has its own setup
+  script; the film checkout uses inline price data and does not need a Price id.
+- [ ] Configure the three distinct webhook endpoints and signing secrets:
+  `/api/billing/webhook`, `/api/planner/billing/webhook`, and
+  `/api/vendor/billing/webhook`.
+- [ ] Run `STRIPE_PREFLIGHT_MODE=test bun run preflight:stripe`. Fix every
+  failure; warnings require an explicit human decision.
+- [ ] In Admin → Financial planner, launch one test product at a time. Complete
+  checkout, confirm the webhook changed entitlement, open the customer portal,
+  then pause new payments and confirm the portal still works.
+- [ ] Repeat setup and preflight with live credentials:
+  `STRIPE_PREFLIGHT_MODE=live bun run preflight:stripe`.
+- [ ] Make the live preflight a deployment gate and run it on a daily monitor.
+  Alert on a disabled/wrong Price, unavailable charges, or webhook drift; the
+  admin launch check is intentionally not a substitute for ongoing monitoring.
+- [ ] Launch live products in this order: guest-page add-on, film, couple,
+  planner, vendor. Use a real low-value transaction for each, refund it, and
+  confirm the refund/webhook is recorded before launching the next product.
+- [ ] Enable the global paid-access paywall only after couple, planner and
+  vendor subscriptions have passed their live checkout + recovery drill.
+
 ## G. Observability (30 min, optional but recommended)
 
 - [ ] Sentry account → create project for "weddly-backend" + "weddly-frontend".
@@ -135,7 +159,9 @@ Alternative: GitHub Actions scheduled workflow that SSHes into Railway and trigg
 ## What NOT to do at launch
 
 - Don't enable v2 marketplace endpoints — they don't exist yet.
-- Don't ship Stripe — deferred to v2.
+- Don't expose every Stripe flow at once. Configure and verify each product,
+  then launch it independently from Admin → Financial planner. Start with the
+  low-risk one-off add-on and film flows; keep vendor deferred billing for last.
 - Don't add Google Analytics or any analytics SDK that touches PII. Plausible only.
 - Don't run the backup script on top of the live DB without `.backup` (a plain `cp` against a WAL'd DB will produce a corrupt copy).
 - Don't bypass `--no-verify` to push past failing hooks. If a hook fails, fix it.

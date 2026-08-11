@@ -129,10 +129,14 @@ describe("planner-managed billing + guest-page add-on", () => {
 
   test("guest-page add-on checkout is 503 when no add-on price is configured", async () => {
     const { token } = await bootstrapCouple("nostripe@weddly.test");
-    const r = await req("POST", "/api/billing/guest-page-addon/checkout", {}, { token });
-    // Both add-on price vars are pinned empty in tests → 503 addon_price_missing,
-    // regardless of the couple's currency.
+    const r = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/billing/guest-page-addon/checkout",
+      {},
+      { token },
+    );
     expect(r.status).toBe(503);
+    expect(r.data.detail?.code).toBe("payment_not_launched");
   });
 
   test("billing status exposes the planner-managed + add-on flags", async () => {

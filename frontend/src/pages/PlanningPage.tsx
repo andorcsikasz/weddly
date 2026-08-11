@@ -1007,7 +1007,7 @@ export default function PlanningPage() {
             role="tablist"
             data-tour-target="planning-tabs"
             aria-label={t("planning.tabs_aria")}
-            className="grid w-full grid-cols-2 gap-1 rounded-2xl border border-ink-900 bg-paper-100/50 p-1 sm:w-auto sm:grid-cols-4 dark:border-umber-700 dark:bg-umber-700/60"
+            className="grid w-full grid-cols-2 gap-0.5 rounded-xl border border-ink-900 bg-paper-100/50 p-0.5 sm:w-auto sm:grid-cols-4 dark:border-umber-700 dark:bg-umber-700/60"
           >
             {TABS.map((tab) => {
               const active = tab.kind === activeKind;
@@ -1019,14 +1019,14 @@ export default function PlanningPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setActiveKind(tab.kind)}
-                  className={`group relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 transition-colors ${
+                  className={`group relative flex flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-colors ${
                     active
                       ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-umber-900 dark:text-paper-50"
                       : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
                   }`}
                 >
-                  <span className="flex items-center gap-2 text-sm leading-none">
-                    <Icon size={16} aria-hidden="true" />
+                  <span className="flex items-center gap-1.5 whitespace-nowrap text-xs font-medium leading-none">
+                    <Icon size={15} aria-hidden="true" />
                     <span>{t(tab.labelKey)}</span>
                   </span>
                   {/* Instant styled tooltip (same visual language as the guest

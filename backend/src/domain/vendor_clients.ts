@@ -714,6 +714,7 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
         is_founding_member: false,
         is_early_member: false,
         current_period_end: null,
+        past_due_since: null,
         card_on_file: false,
         lead_credits_used: 0,
         lead_credits_total: VENDOR_FREE_LEAD_CREDITS,

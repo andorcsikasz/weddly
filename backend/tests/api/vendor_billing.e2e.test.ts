@@ -21,6 +21,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import type { VendorBilling, VendorBillingDetails, VendorOffer } from "@shared/vendor_billing";
+import { PAST_DUE_GRACE_MS } from "@shared/billing";
 import {
   startOfNextUtcMonth,
   VENDOR_EARLY_CAP,
@@ -36,12 +37,14 @@ import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import {
   currentVendorOffer,
+  applyVendorSubscriptionState,
   initVendorBilling,
   markVendorCardOnFile,
   toVendorBilling,
   vendorEarlySpotsLeft,
   vendorFoundingSpotsLeft,
 } from "../../src/domain/vendor_billing";
+import { ensureVendorScheduledSubscription } from "../../src/routes/vendor_billing";
 import {
   bootstrapCouple,
   enableBillingEnforcement,
@@ -554,18 +557,81 @@ describe("vendor billing: freemium lead window", () => {
       "vendor-disabled@weddly.test",
       "Disabled Stripe Co",
     );
-    const { vendorToken } = await claimVendor(listingId, "vendor-disabled@weddly.test");
+    const { vendorToken, accountId } = await claimVendor(listingId, "vendor-disabled@weddly.test");
 
-    for (const path of [
-      "/api/vendor/billing/setup",
-      "/api/vendor/billing/checkout",
-      "/api/vendor/billing/portal",
-    ]) {
-      const r = await req("POST", path, {}, { token: vendorToken });
+    for (const path of ["/api/vendor/billing/setup", "/api/vendor/billing/checkout"]) {
+      const r = await req<{ detail?: { code?: string } }>(
+        "POST",
+        path,
+        {},
+        {
+          token: vendorToken,
+        },
+      );
       expect(r.status).toBe(503);
+      expect(r.data.detail?.code).toBe("payment_not_launched");
     }
+    // Portal recovery remains separate from new-payment admission.
+    const portal = await req("POST", "/api/vendor/billing/portal", {}, { token: vendorToken });
+    expect(portal.status).toBe(503);
+
+    setVendorSub(accountId, {
+      subscription_status: "lead_window",
+      card_on_file: 1,
+      billing_starts_at: Date.now() + 86_400_000,
+    });
+    await ensureVendorScheduledSubscription(accountId);
+    const scheduled = db
+      .prepare(
+        "SELECT stripe_subscription_id FROM vendor_subscriptions WHERE vendor_account_id = ?",
+      )
+      .get(accountId) as { stripe_subscription_id: string | null };
+    expect(scheduled.stripe_subscription_id).toBeNull();
     const wh = await req("POST", "/api/vendor/billing/webhook", {});
     expect(wh.status).toBe(503);
+  });
+
+  test("vendor dunning timestamp is stable, bounds access, and clears on recovery", async () => {
+    wipeAll();
+    const listingId = await makeApprovedListing(
+      "owner-dunning@weddly.test",
+      "vendor-dunning@weddly.test",
+      "Dunning Vendor",
+    );
+    const { vendorToken, accountId } = await claimVendor(listingId, "vendor-dunning@weddly.test");
+    setVendorSub(accountId, { subscription_status: "trialing" });
+    const monthAhead = Date.now() + 30 * 86_400_000;
+    applyVendorSubscriptionState(accountId, {
+      subscriptionId: "sub_vendor_dunning",
+      stripeStatus: "past_due",
+      currentPeriodEnd: monthAhead,
+    });
+    const eightDaysAgo = Date.now() - (PAST_DUE_GRACE_MS + 86_400_000);
+    db.prepare(
+      "UPDATE vendor_subscriptions SET past_due_since = ? WHERE vendor_account_id = ?",
+    ).run(eightDaysAgo, accountId);
+    applyVendorSubscriptionState(accountId, {
+      subscriptionId: "sub_vendor_dunning",
+      stripeStatus: "past_due",
+      currentPeriodEnd: monthAhead,
+    });
+    enableBillingEnforcement();
+    const status = await req<BillingResponse>("GET", "/api/vendor/billing", undefined, {
+      token: vendorToken,
+    });
+    expect(status.data.billing.current_period_end).toBe(monthAhead);
+    expect(status.data.billing.past_due_since).toBe(eightDaysAgo);
+    expect(status.data.billing.entitled).toBe(false);
+
+    applyVendorSubscriptionState(accountId, {
+      subscriptionId: "sub_vendor_dunning",
+      stripeStatus: "active",
+      currentPeriodEnd: monthAhead,
+    });
+    const cleared = db
+      .prepare("SELECT past_due_since FROM vendor_subscriptions WHERE vendor_account_id = ?")
+      .get(accountId) as { past_due_since: number | null };
+    expect(cleared.past_due_since).toBeNull();
   });
 });
 

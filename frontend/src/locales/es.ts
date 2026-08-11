@@ -1,4 +1,5 @@
 import type { LocaleMessages } from "./keys";
+import { ADMIN_PAYMENT_LAUNCH_ES } from "./adminPaymentLaunches";
 
 const es: LocaleMessages = {
   common: {
@@ -3436,6 +3437,7 @@ const es: LocaleMessages = {
     film_activated: "Película desbloqueada. Hasta 200 invitados.",
     film_upgrade_body: "{{cap}} invitados en esta película.",
     film_upgrade_cta: "Ampliar a 200",
+    film_upgrade_unavailable: "Ampliación no disponible por ahora",
     gallery_title: "La película",
     gallery_empty: "Todavía nada. La primera foto aparecerá aquí.",
     gallery_show_all: "Ver las {{n}}",
@@ -3949,6 +3951,7 @@ const es: LocaleMessages = {
     addon_unlock_body:
       "Tu wedding planner está gestionando la boda, así que tu espacio de trabajo es de solo lectura. Aun así puedes editar tu propia página de la boda con el complemento con un 70 % de descuento.",
     addon_unlock_cta: "Desbloquear la edición de la página de la boda (70 % de descuento)",
+    addon_unavailable: "Compra no disponible por ahora",
     addon_opening: "Abriendo…",
     addon_error: "No pudimos iniciar el pago. Inténtalo de nuevo.",
     preview_live_label: "Vista previa en vivo",
@@ -5663,6 +5666,7 @@ const es: LocaleMessages = {
     },
   },
   admin: {
+    ...ADMIN_PAYMENT_LAUNCH_ES,
     nav_label: "Admin",
     enter_admin_view: "Cambiar a vista de admin",
     exit_admin_view: "Volver a la vista de usuario",

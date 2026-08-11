@@ -161,6 +161,7 @@ interface AdminVendorRow extends VendorAccountRow {
   sub_billing_starts_at: number | null;
   sub_card_on_file: number | null;
   sub_current_period_end: number | null;
+  sub_past_due_since: number | null;
   listing_count: number;
   /** Comma-separated distinct listing categories (SQLite GROUP_CONCAT), or null
    *  when the vendor has no listings yet. */
@@ -200,6 +201,7 @@ export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
       {
         trial_ends_at: row.sub_trial_ends_at,
         founding_until: row.sub_founding_until,
+        past_due_since: row.sub_past_due_since,
         lead_credits_used: row.sub_lead_credits_used ?? 0,
         billing_starts_at: row.sub_billing_starts_at,
         nowMs: Date.now(),
@@ -262,6 +264,7 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
               vs.billing_starts_at    AS sub_billing_starts_at,
               vs.card_on_file         AS sub_card_on_file,
               vs.current_period_end   AS sub_current_period_end,
+              vs.past_due_since       AS sub_past_due_since,
               u.last_seen_at          AS owner_last_seen_at,
               (SELECT COUNT(*) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_count,
               (SELECT GROUP_CONCAT(DISTINCT l.category) FROM listings l WHERE l.vendor_account_id = va.id) AS categories,

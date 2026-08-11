@@ -775,6 +775,8 @@ export interface FilmAccessCheck {
   reason: "loyal_couple" | "paid" | null;
   /** Price in EUR cents if not free. */
   priceEurCents: number;
+  /** Whether a new paid-film Checkout may be created. */
+  checkoutEnabled?: boolean;
 }
 
 export interface Couple {

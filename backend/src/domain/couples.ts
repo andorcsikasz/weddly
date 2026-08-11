@@ -170,6 +170,7 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
     : computeEntitlement(status, {
         trial_ends_at: src.trial_ends_at,
         founding_until: src.founding_until,
+        past_due_since: src.past_due_since,
         nowMs,
         // Couples, and ONLY couples, keep editing for a week past their trial
         // while the trial_ended mail's two routes are still open to them. The
@@ -209,6 +210,7 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
     founding_until: src.founding_until,
     is_founding_member: Boolean(row.is_founding_member),
     current_period_end: src.current_period_end,
+    past_due_since: src.past_due_since,
     entitled,
     reason,
     planner_managed: plannerManaged,
@@ -369,6 +371,7 @@ export interface CoupleRow {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   current_period_end: number | null;
+  past_due_since: number | null;
   /** Planner-managed guest-page edit add-on (see domain/billing.ts). */
   guest_page_prepaid: number;
   guest_page_addon: number;

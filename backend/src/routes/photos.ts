@@ -29,11 +29,12 @@ import type {
   PhotoAlbumPublic,
 } from "@shared/types";
 import { FILM_AESTHETICS, FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
-import { CONFIG, STRIPE_ENABLED } from "../config";
+import { CONFIG } from "../config";
 import { storage } from "../lib/storage";
 import { addAuditLog } from "../lib/audit";
 import { db, now } from "../db";
 import { stripe } from "../domain/billing";
+import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment_launch";
 import { activateFilmAlbum } from "../domain/film";
 import { validateFilmSlug } from "../domain/film_slug";
 import { getCoupleForUser } from "../domain/couples";
@@ -173,18 +174,27 @@ function checkFilmAccess(coupleId: number, coupleCreatedAt: number): FilmAccessC
   const isLoyalCouple = ageMs >= FIVE_MONTHS_MS && memberCount >= 2;
 
   if (isLoyalCouple) {
-    return { free: true, reason: "loyal_couple", priceEurCents: 0 };
+    return {
+      free: true,
+      reason: "loyal_couple",
+      priceEurCents: 0,
+      checkoutEnabled: false,
+    };
   }
-  return { free: false, reason: null, priceEurCents: FILM_TIER_PRICE_EUR_CENTS.ten };
+  return {
+    free: false,
+    reason: null,
+    priceEurCents: FILM_TIER_PRICE_EUR_CENTS.ten,
+    checkoutEnabled: paymentProductAvailable("film_checkout"),
+  };
 }
 
 // ─── authenticated handlers ───────────────────────────────────────────────────
 
 /** POST /api/photo-albums/checkout — Stripe Checkout for the €9.90 film unlock. */
 async function handleFilmCheckout(ctx: Ctx): Promise<Response> {
-  if (!STRIPE_ENABLED) throw new HttpError(503, "Billing not configured");
-
   const userId = requireAuth(ctx);
+  requirePaymentLaunch("film_checkout");
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple found");
 
@@ -197,26 +207,30 @@ async function handleFilmCheckout(ctx: Ctx): Promise<Response> {
   if (!row) throw new HttpError(404, "Create the film first");
   if (row.paid_at !== null) throw new HttpError(400, "Film already activated");
 
-  const session = await stripe().checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      {
-        price_data: {
-          currency: "eur",
-          unit_amount: FILM_TIER_PRICE_EUR_CENTS.ten,
-          product_data: { name: "Wedding Film — Guest Camera" },
+  const session = await stripe().checkout.sessions.create(
+    {
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            unit_amount: FILM_TIER_PRICE_EUR_CENTS.ten,
+            product_data: { name: "Wedding Film — Guest Camera" },
+          },
+          quantity: 1,
         },
-        quantity: 1,
+      ],
+      metadata: {
+        type: "film",
+        album_id: String(row.id),
+        couple_id: String(couple.id),
       },
-    ],
-    metadata: {
-      type: "film",
-      album_id: String(row.id),
-      couple_id: String(couple.id),
+      success_url: `${CONFIG.frontendBaseUrl}/app/media?film=activated`,
+      cancel_url: `${CONFIG.frontendBaseUrl}/app/media`,
     },
-    success_url: `${CONFIG.frontendBaseUrl}/app/media?film=activated`,
-    cancel_url: `${CONFIG.frontendBaseUrl}/app/media`,
-  });
+    { idempotencyKey: `film-checkout-${row.id}-unpaid` },
+  );
 
   return json({ url: session.url });
 }

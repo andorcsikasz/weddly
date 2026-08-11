@@ -12,6 +12,7 @@
 // part of the contract with `interpolate()` and must survive verbatim.
 
 import type { LocaleMessages } from "./keys";
+import { ADMIN_PAYMENT_LAUNCH_HR } from "./adminPaymentLaunches";
 
 const hr: LocaleMessages = {
   common: {
@@ -3374,6 +3375,7 @@ const hr: LocaleMessages = {
     film_activated: "Film je otključan. Do 200 gostiju.",
     film_upgrade_body: "{{cap}} gostiju na ovom filmu.",
     film_upgrade_cta: "Otključajte 200",
+    film_upgrade_unavailable: "Nadogradnja trenutačno nije dostupna",
     gallery_title: "Film",
     gallery_empty: "Još ništa. Prvi snimak stiže ovamo.",
     gallery_show_all: "Prikaži svih {{n}}",
@@ -3915,6 +3917,7 @@ const hr: LocaleMessages = {
     addon_unlock_body:
       "Vaš organizator vodi vjenčanje pa je radni prostor samo za čitanje. Vlastitu stranicu za goste ipak možete uređivati uz dodatak s 70 % popusta.",
     addon_unlock_cta: "Otključajte uređivanje stranice (70 % popusta)",
+    addon_unavailable: "Kupnja trenutačno nije dostupna",
     addon_opening: "Otvaranje…",
     addon_error: "Nismo mogli pokrenuti plaćanje. Pokušajte ponovno.",
     preview_live_label: "Pregled uživo",
@@ -5605,6 +5608,7 @@ const hr: LocaleMessages = {
     },
   },
   admin: {
+    ...ADMIN_PAYMENT_LAUNCH_HR,
     nav_label: "Admin",
     enter_admin_view: "Prijeđi na admin prikaz",
     exit_admin_view: "Natrag na korisnički prikaz",

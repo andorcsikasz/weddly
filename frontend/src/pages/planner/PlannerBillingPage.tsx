@@ -183,7 +183,7 @@ function BillingBody({
           </div>
         )}
 
-        {hasStripeSub && (
+        {billing.enabled && hasStripeSub && (
           <button
             type="button"
             onClick={() => void handlePortal()}
@@ -252,7 +252,7 @@ function BillingBody({
                   <button type="button" disabled className="btn-ghost w-full opacity-60">
                     {t("planner_billing.cta_current")}
                   </button>
-                ) : !billing.enabled ? (
+                ) : !billing.checkout_enabled ? (
                   <p className="text-center text-[11px] text-umber-400 dark:text-umber-500">
                     {t("planner_billing.disabled_note")}
                   </p>

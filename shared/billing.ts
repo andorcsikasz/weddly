@@ -38,6 +38,15 @@ export const SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
   "none",
 ];
 
+/** Fail-closed Stripe lifecycle mapping shared by couples, planners and
+ * vendors. Only confirmed active/trialing subscriptions grant paid access;
+ * `past_due` receives the bounded dunning grace below. */
+export function subscriptionStatusFromStripe(status: string): SubscriptionStatus {
+  if (status === "active" || status === "trialing") return "active";
+  if (status === "past_due") return "past_due";
+  return "canceled";
+}
+
 /** In-app free trial length for non-founding couples. */
 export const TRIAL_DURATION_MS = 1000 * 60 * 60 * 24 * 14; // 14 days
 /** Founding-member free window once both partners have joined. */
@@ -65,6 +74,9 @@ export const PAID_LAUNCH_DATE = Date.UTC(2026, 8, 1);
  *  it — a notice that says "seven days" while the workspace is already frozen
  *  would be a lie the couple reads before the first word. */
 export const TRIAL_GRACE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+/** Maximum edit-access grace after a paid period ends while Stripe retries a
+ * failed renewal. `unpaid`/incomplete subscriptions never receive this grace. */
+export const PAST_DUE_GRACE_MS = 1000 * 60 * 60 * 24 * 7;
 
 /** When a trial's grace window closes. Pure so the entitlement verdict, the
  *  mail's deadline line and the banner countdown quote one number.
@@ -108,6 +120,14 @@ export const MONTHLY_PRICE: Record<BillingCurrency, number> = {
   USD: 7,
 };
 
+/** One-time planner-managed guest-page unlock price in display units. Stripe
+ * stores both EUR and HUF with two decimal places, so setup/preflight scripts
+ * multiply these values by 100 before comparing `unit_amount`. */
+export const GUEST_PAGE_ADDON_PRICE = {
+  HUF: 750,
+  EUR: 2.15,
+} as const;
+
 /** The monthly price shown to a couple on this display currency. */
 export function monthlyPrice(currency: Currency): number {
   return MONTHLY_PRICE[toBillingCurrency(currency)];
@@ -125,6 +145,8 @@ export interface CoupleBilling {
   is_founding_member: boolean;
   /** Epoch ms — paid period end from Stripe. Null when not a paying sub. */
   current_period_end: UnixMs | null;
+  /** Epoch ms — first transition into the current past-due episode. */
+  past_due_since?: UnixMs | null;
   /** Computed: does the couple currently have edit access? When false the
    *  workspace is read-only and edits return 402. NOTE: for a planner-managed
    *  couple this reflects the COUPLE MEMBER's access — the managing planner
@@ -167,9 +189,14 @@ export interface PaymentMethodResponse {
 
 /** Response of GET /api/billing/status — everything the billing page needs. */
 export interface BillingStatusResponse {
-  /** Whether Stripe is configured server-side. When false, checkout/portal
-   *  are unavailable and the page shows a "billing not live yet" note. */
+  /** Whether Stripe is configured server-side. Existing customers may use
+   * the billing portal when true; new Checkout availability is separate. */
   enabled: boolean;
+  /** Whether a NEW couple subscription Checkout may be created. Existing
+   * customers can still manage billing through the portal when this is false. */
+  checkout_enabled: boolean;
+  /** Independent one-time guest-page add-on availability. */
+  guest_page_addon_checkout_enabled: boolean;
   billing: CoupleBilling;
   /** The couple's display currency and the monthly price in that currency. */
   currency: Currency;
@@ -213,6 +240,9 @@ export function computeEntitlement(
   opts: {
     trial_ends_at: number | null;
     founding_until: number | null;
+    /** Start of the current dunning episode. Repeated past_due updates must not
+     * move it; leaving past_due clears it. */
+    past_due_since?: number | null;
     nowMs: number;
     /** Extra editable window after `trial_ends_at`. 0 (the default) is a hard
      *  boundary, which is what vendors and planners want. */
@@ -225,9 +255,15 @@ export function computeEntitlement(
 ): { entitled: boolean; reason: BillingReason } {
   const { trial_ends_at, founding_until, nowMs } = opts;
   const trialGraceMs = opts.trialGraceMs ?? 0;
-  // Paying subscribers (and the dunning grace) always have access.
-  if (status === "active" || status === "past_due") {
+  if (status === "active") {
     return { entitled: true, reason: "subscribed" };
+  }
+  if (status === "past_due") {
+    const pastDueSince = opts.past_due_since;
+    if (pastDueSince && nowMs < pastDueSince + PAST_DUE_GRACE_MS) {
+      return { entitled: true, reason: "subscribed" };
+    }
+    return { entitled: false, reason: "canceled" };
   }
   if (status === "founding") {
     if (founding_until && nowMs < founding_until) return { entitled: true, reason: "founding" };

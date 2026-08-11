@@ -6,13 +6,18 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import {
   type AdminFinancialPlannerOverview,
+  PAYMENT_LAUNCH_PRODUCTS,
+  type PaymentLaunchesResponse,
   type StripeHealth,
   subscriptionUnitEconomics,
 } from "@shared/admin_financial_planner";
 import { MONTHLY_PRICE, TRIAL_GRACE_MS } from "@shared/billing";
+import { CONFIG } from "../../src/config";
 import { db } from "../../src/db";
 import { recordGrowthEvent } from "../../src/domain/growth_events";
 import { runEmailSweep } from "../../src/domain/emails/worker";
+import { paymentPriceValidationIssues } from "../../src/domain/payment_launch";
+import { setBillingEnforcement } from "../../src/domain/billing";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Seed N placeholder non-demo couples (negative ids) so later real couples
@@ -156,9 +161,7 @@ describe("GET /api/admin/financial-planner/overview", () => {
 });
 
 describe("POST /api/admin/financial-planner/enforcement", () => {
-  test("pressing the button starts the clocks: lapsed couples enter grace and get mailed", async () => {
-    // The whole go-live story, end to end, through the endpoint the admin
-    // button actually calls rather than the domain function under it.
+  test("refuses to start paywall clocks before subscription payment products are ready", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("golive-story@weddly.test");
     // A couple whose trial lapsed long ago, i.e. the shape 111 of the 176 live
@@ -180,17 +183,15 @@ describe("POST /api/admin/financial-planner/enforcement", () => {
     expect(beforeOverview.data.enforcement_impact.couples).toBe(1);
     expect(beforeOverview.data.billing_enforcement_on).toBe(false);
 
-    // PRESS.
-    const flip = await req<AdminFinancialPlannerOverview>(
+    const flip = await req(
       "POST",
       "/api/admin/financial-planner/enforcement",
       { on: true },
       { token: adminToken },
     );
-    expect(flip.status).toBe(200);
-    expect(flip.data.billing_enforcement_on).toBe(true);
+    expect(flip.status).toBe(409);
 
-    // AFTER: the clock started, it did not expire. They are still editable...
+    // Refusal leaves the existing free/editable behavior and mail clocks alone.
     const stillEditing = await req(
       "PATCH",
       "/api/couples/current",
@@ -199,15 +200,14 @@ describe("POST /api/admin/financial-planner/enforcement", () => {
     );
     expect(stillEditing.status).toBe(200);
 
-    // ...and the notice goes out on the very next sweep, naming their deadline.
-    expect(runEmailSweep().trialEnded).toBe(1);
+    expect(runEmailSweep().trialEnded).toBe(0);
     const mailed = db
       .prepare("SELECT COUNT(*) AS n FROM email_log WHERE couple_id = ? AND kind = 'trial_ended'")
       .get(coupleId) as { n: number };
-    expect(mailed.n).toBe(1);
+    expect(mailed.n).toBe(0);
   });
 
-  test("go-live is not gated on reaching the 200-couple cap", async () => {
+  test("turning an already-on paywall off is always allowed", async () => {
     wipeAll();
     // Far below FOUNDING_CAP: the readiness signal is false, and the flip must
     // still be allowed — starting to charge is a date the founder picks, not a
@@ -224,14 +224,9 @@ describe("POST /api/admin/financial-planner/enforcement", () => {
     expect(before.data.enforcement_ready).toBe(false);
     expect(before.data.billing_enforcement_on).toBe(false);
 
-    const on = await req<AdminFinancialPlannerOverview>(
-      "POST",
-      "/api/admin/financial-planner/enforcement",
-      { on: true },
-      { token: adminToken },
-    );
-    expect(on.status).toBe(200);
-    expect(on.data.billing_enforcement_on).toBe(true);
+    // Simulate a pre-existing deployment state; a rollback must never depend
+    // on current Stripe readiness.
+    setBillingEnforcement(true, 1);
 
     // And it is reversible, which is what makes the button safe to offer early.
     const off = await req<AdminFinancialPlannerOverview>(
@@ -254,6 +249,337 @@ describe("POST /api/admin/financial-planner/enforcement", () => {
       { token },
     );
     expect(r.status).toBe(403);
+  });
+});
+
+describe("/api/admin/financial-planner/payment-launches", () => {
+  test("price validation rejects wrong mode, amount, cadence and inactive resources", () => {
+    const expected = { currency: "eur" as const, unitAmount: 700, recurring: true, live: true };
+    expect(
+      paymentPriceValidationIssues(expected, {
+        active: true,
+        live: true,
+        currency: "eur",
+        unitAmount: 700,
+        type: "recurring",
+        interval: "month",
+        intervalCount: 1,
+        productActive: true,
+      }),
+    ).toEqual([]);
+    expect(
+      paymentPriceValidationIssues(expected, {
+        active: false,
+        live: false,
+        currency: "huf",
+        unitAmount: 701,
+        type: "recurring",
+        interval: "month",
+        intervalCount: 3,
+        productActive: false,
+      }),
+    ).toEqual([
+      "price inactive",
+      "mode mismatch",
+      "currency must be eur",
+      "amount must be 700",
+      "price must recur every one month",
+      "product inactive or deleted",
+    ]);
+  });
+
+  test("GET is admin-only and returns all products safely OFF with readiness details", async () => {
+    wipeAll();
+    const { token: userToken } = await bootstrapCouple("launch-nonadmin@weddly.test");
+    const forbidden = await req("GET", "/api/admin/financial-planner/payment-launches", undefined, {
+      token: userToken,
+    });
+    expect(forbidden.status).toBe(403);
+    const forbiddenPatch = await req(
+      "PATCH",
+      "/api/admin/financial-planner/payment-launches",
+      { product: "film_checkout", enabled: false },
+      { token: userToken },
+    );
+    expect(forbiddenPatch.status).toBe(403);
+
+    const adminToken = await addAdmin();
+    const r = await req<PaymentLaunchesResponse>(
+      "GET",
+      "/api/admin/financial-planner/payment-launches",
+      undefined,
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(Object.keys(r.data.products).sort()).toEqual([...PAYMENT_LAUNCH_PRODUCTS].sort());
+    for (const product of PAYMENT_LAUNCH_PRODUCTS) {
+      expect(r.data.products[product].enabled).toBe(false);
+      expect(r.data.products[product].version).toBe(0);
+      expect(r.data.products[product].ready).toBe(false);
+      expect(r.data.products[product].missing).toContain("STRIPE_SECRET_KEY");
+    }
+  });
+
+  test("PATCH refuses enable when configuration is incomplete", async () => {
+    wipeAll();
+    const token = await addAdmin();
+    const r = await req(
+      "PATCH",
+      "/api/admin/financial-planner/payment-launches",
+      { product: "film_checkout", enabled: true, expected_version: 0 },
+      { token },
+    );
+    expect(r.status).toBe(409);
+    const stored = db
+      .prepare("SELECT enabled FROM payment_launch_control WHERE product = 'film_checkout'")
+      .get() as { enabled: number };
+    expect(stored.enabled).toBe(0);
+  });
+
+  test("validates PATCH input before touching persisted state", async () => {
+    wipeAll();
+    const token = await addAdmin();
+    const unknown = await req(
+      "PATCH",
+      "/api/admin/financial-planner/payment-launches",
+      { product: "unknown", enabled: false },
+      { token },
+    );
+    expect(unknown.status).toBe(400);
+    const nonBoolean = await req(
+      "PATCH",
+      "/api/admin/financial-planner/payment-launches",
+      { product: "film_checkout", enabled: "yes" },
+      { token },
+    );
+    expect(nonBoolean.status).toBe(400);
+    const missingVersion = await req(
+      "PATCH",
+      "/api/admin/financial-planner/payment-launches",
+      { product: "film_checkout", enabled: false },
+      { token },
+    );
+    expect(missingVersion.status).toBe(400);
+  });
+
+  test("fully configured subscription products can launch, then enable the paywall", async () => {
+    wipeAll();
+    const token = await addAdmin();
+    const old = {
+      stripeSecretKey: CONFIG.stripeSecretKey,
+      stripeWebhookSecret: CONFIG.stripeWebhookSecret,
+      stripePriceEur: CONFIG.stripePriceEur,
+      stripePriceHuf: CONFIG.stripePriceHuf,
+      stripePlannerWebhookSecret: CONFIG.stripePlannerWebhookSecret,
+      stripePricePlanner: structuredClone(CONFIG.stripePricePlanner),
+      stripeVendorWebhookSecret: CONFIG.stripeVendorWebhookSecret,
+      stripePriceVendorEur: CONFIG.stripePriceVendorEur,
+      stripePriceVendorHuf: CONFIG.stripePriceVendorHuf,
+    };
+    try {
+      CONFIG.stripeSecretKey = "sk_test_admin_launch";
+      CONFIG.stripeWebhookSecret = "whsec_couple";
+      CONFIG.stripePriceEur = "price_couple_eur";
+      CONFIG.stripePriceHuf = "price_couple_huf";
+      CONFIG.stripePlannerWebhookSecret = "whsec_planner";
+      for (const tier of ["starter", "pro", "premium"] as const) {
+        CONFIG.stripePricePlanner[tier].EUR = `price_${tier}_eur`;
+        CONFIG.stripePricePlanner[tier].HUF = `price_${tier}_huf`;
+      }
+      CONFIG.stripeVendorWebhookSecret = "whsec_vendor";
+      CONFIG.stripePriceVendorEur = "price_vendor_eur";
+      CONFIG.stripePriceVendorHuf = "price_vendor_huf";
+
+      for (const product of [
+        "couple_subscriptions",
+        "planner_subscriptions",
+        "vendor_billing",
+      ] as const) {
+        const launch = await req<PaymentLaunchesResponse>(
+          "PATCH",
+          "/api/admin/financial-planner/payment-launches",
+          { product, enabled: true, expected_version: 0 },
+          { token },
+        );
+        expect(launch.status).toBe(200);
+        expect(launch.data.products[product]).toMatchObject({ enabled: true, ready: true });
+      }
+
+      const enforcement = await req<AdminFinancialPlannerOverview>(
+        "POST",
+        "/api/admin/financial-planner/enforcement",
+        { on: true },
+        { token },
+      );
+      expect(enforcement.status).toBe(200);
+      expect(enforcement.data.billing_enforcement_on).toBe(true);
+
+      // Emergency-pausing a subscription surface atomically drops the global
+      // wall, so lapsed users are never stranded without a recovery checkout.
+      const pauseVendor = await req<PaymentLaunchesResponse>(
+        "PATCH",
+        "/api/admin/financial-planner/payment-launches",
+        { product: "vendor_billing", enabled: false, expected_version: 1 },
+        { token },
+      );
+      expect(pauseVendor.status).toBe(200);
+      expect(pauseVendor.data.products.vendor_billing.enabled).toBe(false);
+      const afterPause = await req<AdminFinancialPlannerOverview>(
+        "GET",
+        "/api/admin/financial-planner/overview",
+        undefined,
+        { token },
+      );
+      expect(afterPause.data.billing_enforcement_on).toBe(false);
+      const rawControl = db
+        .prepare("SELECT enforcement_on FROM billing_control WHERE id = 1")
+        .get() as { enforcement_on: number };
+      expect(rawControl.enforcement_on).toBe(0);
+      const safetyAudits = db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM audit_log WHERE action = 'admin.billing_enforcement.auto_disabled'",
+        )
+        .get() as { n: number };
+      expect(safetyAudits.n).toBe(1);
+    } finally {
+      CONFIG.stripeSecretKey = old.stripeSecretKey;
+      CONFIG.stripeWebhookSecret = old.stripeWebhookSecret;
+      CONFIG.stripePriceEur = old.stripePriceEur;
+      CONFIG.stripePriceHuf = old.stripePriceHuf;
+      CONFIG.stripePlannerWebhookSecret = old.stripePlannerWebhookSecret;
+      for (const tier of ["starter", "pro", "premium"] as const) {
+        CONFIG.stripePricePlanner[tier].EUR = old.stripePricePlanner[tier].EUR;
+        CONFIG.stripePricePlanner[tier].HUF = old.stripePricePlanner[tier].HUF;
+      }
+      CONFIG.stripeVendorWebhookSecret = old.stripeVendorWebhookSecret;
+      CONFIG.stripePriceVendorEur = old.stripePriceVendorEur;
+      CONFIG.stripePriceVendorHuf = old.stripePriceVendorHuf;
+      setBillingEnforcement(false, 1);
+    }
+  });
+
+  test("PATCH can stop a product and writes an append-only admin audit row", async () => {
+    wipeAll();
+    const token = await addAdmin();
+    db.prepare("UPDATE payment_launch_control SET enabled = 1 WHERE product = ?").run(
+      "film_checkout",
+    );
+    const r = await req<PaymentLaunchesResponse>(
+      "PATCH",
+      "/api/admin/financial-planner/payment-launches",
+      { product: "film_checkout", enabled: false, expected_version: 0 },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.products.film_checkout.enabled).toBe(false);
+    const audit = db
+      .prepare(
+        `SELECT before_json, after_json, note FROM audit_log
+          WHERE action = 'admin.payment_launch.set' ORDER BY id DESC LIMIT 1`,
+      )
+      .get() as { before_json: string; after_json: string; note: string };
+    expect(r.data.products.film_checkout.version).toBe(1);
+    expect(JSON.parse(audit.before_json)).toEqual({
+      product: "film_checkout",
+      enabled: true,
+      version: 0,
+    });
+    expect(JSON.parse(audit.after_json)).toMatchObject({
+      product: "film_checkout",
+      enabled: false,
+      version: 1,
+    });
+    expect(audit.note).toBe("film_checkout");
+  });
+
+  test("a current no-op is idempotent and does not bump version or write audit", async () => {
+    wipeAll();
+    const token = await addAdmin();
+    const r = await req<PaymentLaunchesResponse>(
+      "PATCH",
+      "/api/admin/financial-planner/payment-launches",
+      { product: "film_checkout", enabled: false, expected_version: 0 },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.products.film_checkout).toMatchObject({ enabled: false, version: 0 });
+    expect(r.data.products.film_checkout.updated_at).toBeNull();
+    const audits = db
+      .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'admin.payment_launch.set'")
+      .get() as { n: number };
+    expect(audits.n).toBe(0);
+  });
+
+  test("PATCH rejects a stale version without changing state or adding an audit row", async () => {
+    wipeAll();
+    const token = await addAdmin();
+    db.prepare(
+      "UPDATE payment_launch_control SET enabled = 1, version = 0 WHERE product = 'film_checkout'",
+    ).run();
+
+    const first = await req<PaymentLaunchesResponse>(
+      "PATCH",
+      "/api/admin/financial-planner/payment-launches",
+      { product: "film_checkout", enabled: false, expected_version: 0 },
+      { token },
+    );
+    expect(first.status).toBe(200);
+    expect(first.data.products.film_checkout.version).toBe(1);
+
+    const stale = await req<{
+      detail?: { code?: string; current?: { enabled?: boolean; version?: number } };
+    }>(
+      "PATCH",
+      "/api/admin/financial-planner/payment-launches",
+      { product: "film_checkout", enabled: true, expected_version: 0 },
+      { token },
+    );
+    expect(stale.status).toBe(409);
+    expect(stale.data.detail?.code).toBe("payment_launch_conflict");
+    expect(stale.data.detail?.current).toMatchObject({ enabled: false, version: 1 });
+    const stored = db
+      .prepare(
+        "SELECT enabled, version FROM payment_launch_control WHERE product = 'film_checkout'",
+      )
+      .get() as { enabled: number; version: number };
+    expect(stored).toEqual({ enabled: 0, version: 1 });
+    const audits = db
+      .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'admin.payment_launch.set'")
+      .get() as { n: number };
+    expect(audits.n).toBe(1);
+  });
+
+  test("state update rolls back when its audit insert fails", async () => {
+    wipeAll();
+    const token = await addAdmin();
+    db.prepare(
+      "UPDATE payment_launch_control SET enabled = 1, version = 0 WHERE product = 'film_checkout'",
+    ).run();
+    db.exec(
+      `CREATE TRIGGER test_fail_payment_launch_audit
+         BEFORE INSERT ON audit_log
+         WHEN NEW.action = 'admin.payment_launch.set'
+       BEGIN
+         SELECT RAISE(ABORT, 'forced audit failure');
+       END`,
+    );
+    try {
+      const failed = await req(
+        "PATCH",
+        "/api/admin/financial-planner/payment-launches",
+        { product: "film_checkout", enabled: false, expected_version: 0 },
+        { token },
+      );
+      expect(failed.status).toBe(500);
+      const stored = db
+        .prepare(
+          "SELECT enabled, version FROM payment_launch_control WHERE product = 'film_checkout'",
+        )
+        .get() as { enabled: number; version: number };
+      expect(stored).toEqual({ enabled: 1, version: 0 });
+    } finally {
+      db.exec("DROP TRIGGER IF EXISTS test_fail_payment_launch_audit");
+    }
   });
 });
 

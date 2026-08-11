@@ -8,8 +8,9 @@
 //   on the 1st of the month after the 3rd inquiry → live subscription
 //   (Stripe Billing Portal for card / cancel management).
 //
-// When Stripe isn't configured server-side (enabled=false) every money action
-// falls back to the honest support-mailto state, nothing fakes a payment.
+// Stripe configuration and new-checkout availability are intentionally
+// separate. Pausing launch blocks new setup/subscribe flows, while existing
+// customers keep the hosted portal for card, invoice and cancel management.
 
 import { Check, CreditCard, Crown, Download, Lock, Mail, RefreshCw, Sparkles } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
@@ -80,6 +81,7 @@ export default function VendorBillingPage() {
   const [plan, setPlan] = useState<VendorPlan | null>(null);
   const [features, setFeatures] = useState<VendorFeatureFlags | null>(null);
   const [enabled, setEnabled] = useState(false);
+  const [checkoutEnabled, setCheckoutEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
   const [busyAction, setBusyAction] = useState<MoneyAction | null>(null);
@@ -98,6 +100,7 @@ export default function VendorBillingPage() {
       setPlan(res.plan);
       setFeatures(res.features);
       setEnabled(res.enabled);
+      setCheckoutEnabled(res.checkout_enabled);
       vendorBillingApi
         .details()
         .then(setDetails)
@@ -182,9 +185,11 @@ export default function VendorBillingPage() {
   // states (trial running or expired), classic re-subscribe for lapsed paid /
   // exhausted states, portal for everyone already on a Stripe record.
   const showAddCard =
-    enabled && !billing.card_on_file && (status === "trialing" || status === "none");
+    checkoutEnabled && !billing.card_on_file && (status === "trialing" || status === "none");
   const showResubscribe =
-    enabled && !billing.entitled && (status === "canceled" || billing.reason === "leads_exhausted");
+    checkoutEnabled &&
+    !billing.entitled &&
+    (status === "canceled" || billing.reason === "leads_exhausted");
   const showPortal =
     enabled && (status === "lead_window" || status === "active" || status === "past_due");
 
@@ -370,7 +375,7 @@ export default function VendorBillingPage() {
             youAreHere={t("vendor.billing.you_are_here")}
             footer={
               !isPro ? (
-                enabled ? (
+                checkoutEnabled ? (
                   <MoneyButton
                     label={t(
                       showResubscribe
@@ -519,7 +524,7 @@ export default function VendorBillingPage() {
 
       {/* Billing not configured server-side: keep the calm expectation-setting
           note instead of dead buttons. */}
-      {!enabled && (
+      {!checkoutEnabled && !showPortal && (
         <div className="flex items-start gap-2.5 rounded-2xl border border-paper-300 bg-paper-100 p-4 dark:border-umber-700 dark:bg-blush-500/15">
           <Mail
             size={18}

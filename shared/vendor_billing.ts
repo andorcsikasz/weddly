@@ -136,6 +136,7 @@ export function computeVendorEntitlement(
   opts: {
     trial_ends_at: number | null;
     founding_until: number | null;
+    past_due_since?: number | null;
     lead_credits_used: number;
     billing_starts_at: number | null;
     nowMs: number;
@@ -156,6 +157,7 @@ export function computeVendorEntitlement(
   return computeEntitlement(status, {
     trial_ends_at: opts.trial_ends_at,
     founding_until: opts.founding_until,
+    past_due_since: opts.past_due_since,
     nowMs: opts.nowMs,
   });
 }
@@ -195,6 +197,8 @@ export interface VendorBilling {
   is_early_member: boolean;
   /** Epoch ms — paid period end from Stripe. Null when not a paying sub. */
   current_period_end: UnixMs | null;
+  /** Epoch ms — first transition into the current past-due episode. */
+  past_due_since?: UnixMs | null;
   /** A payment card is saved with Stripe (checkout setup completed). */
   card_on_file: boolean;
   /** Free inquiries delivered so far while in the lead window (0..total). */
@@ -214,10 +218,12 @@ export interface VendorBilling {
 /** Response of GET /api/vendor/billing: everything the vendor billing
  *  surface needs. */
 export interface VendorBillingStatus {
-  /** Whether vendor Stripe billing is wired server-side. When false the
-   *  card-collection / checkout / portal buttons are unavailable and the page
-   *  says so. */
+  /** Whether vendor Stripe billing is configured server-side. Existing
+   * customers may use the portal when true; new payment availability is separate. */
   enabled: boolean;
+  /** Whether NEW card setup/direct Checkout/scheduled billing may be created.
+   * Existing customer portal access remains independent. */
+  checkout_enabled: boolean;
   billing: VendorBilling;
   currency: Currency;
   price: number;

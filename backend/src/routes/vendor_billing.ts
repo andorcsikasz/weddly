@@ -36,7 +36,7 @@ import { CONFIG, STRIPE_ENABLED } from "../config";
 /** One page of history is what a settings tab needs; the Billing Portal holds
  *  the rest. */
 const MAX_INVOICES = 12;
-import { claimStripeEvent, stripe } from "../domain/billing";
+import { claimStripeEvent, releaseStripeEvent, stripe } from "../domain/billing";
 import { getUserById } from "../domain/users";
 import { getVendorAccountById } from "../domain/vendor_accounts";
 import {
@@ -53,6 +53,7 @@ import {
 } from "../domain/vendor_billing";
 import { resolveVendorAccount } from "../domain/vendor_clients";
 import { log } from "../lib/logger";
+import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment_launch";
 import { type Ctx, HttpError, json, type Router } from "../lib/http";
 
 /** The vendor's pinned display currency (fallback: owner locale). */
@@ -88,11 +89,14 @@ async function ensureStripeCustomer(vendorAccountId: number): Promise<string> {
   if (sub?.stripe_customer_id) return sub.stripe_customer_id;
   const account = getVendorAccountById(vendorAccountId);
   const owner = account ? getUserById(account.owner_user_id) : null;
-  const customer = await stripe().customers.create({
-    email: account?.contact_email ?? owner?.email ?? undefined,
-    name: account?.display_name ?? undefined,
-    metadata: { vendor_account_id: String(vendorAccountId) },
-  });
+  const customer = await stripe().customers.create(
+    {
+      email: account?.contact_email ?? owner?.email ?? undefined,
+      name: account?.display_name ?? undefined,
+      metadata: { vendor_account_id: String(vendorAccountId) },
+    },
+    { idempotencyKey: `vendor-customer-${vendorAccountId}` },
+  );
   setVendorStripeCustomerId(vendorAccountId, customer.id);
   return customer.id;
 }
@@ -103,7 +107,7 @@ async function ensureStripeCustomer(vendorAccountId: number): Promise<string> {
  *  promised "next month" date. Idempotent; failures are logged and retried on
  *  the next billing status read. */
 export async function ensureVendorScheduledSubscription(vendorAccountId: number): Promise<void> {
-  if (!STRIPE_ENABLED) return;
+  if (!paymentProductAvailable("vendor_billing")) return;
   const sub = getVendorSub(vendorAccountId);
   if (
     !sub ||
@@ -117,16 +121,48 @@ export async function ensureVendorScheduledSubscription(vendorAccountId: number)
   try {
     const customerId = sub.stripe_customer_id ?? (await ensureStripeCustomer(vendorAccountId));
     const currency = vendorCurrency(sub, getVendorAccountById(vendorAccountId)?.owner_user_id ?? 0);
-    // Stripe wants trial_end comfortably in the future; when the 3rd lead
-    // lands moments before the month boundary, nudge the anchor forward
-    // rather than fail the creation.
-    const trialEndMs = Math.max(sub.billing_starts_at, Date.now() + 1000 * 60 * 60);
-    const created = await stripe().subscriptions.create({
+    // Recover a subscription whose successful create response was lost before
+    // the local id could be persisted. This remains useful after Stripe's
+    // idempotency-key retention window expires.
+    const remote = await stripe().subscriptions.list({
       customer: customerId,
-      items: [{ price: vendorPriceId(currency), quantity: 1 }],
-      trial_end: Math.floor(trialEndMs / 1000),
-      metadata: { vendor_account_id: String(vendorAccountId) },
+      status: "all",
+      limit: 100,
     });
+    const existing = remote.data.find(
+      (candidate) =>
+        candidate.metadata.vendor_account_id === String(vendorAccountId) &&
+        candidate.metadata.billing_starts_at === String(sub.billing_starts_at) &&
+        candidate.status !== "canceled" &&
+        candidate.status !== "incomplete_expired",
+    );
+    if (existing) {
+      applyVendorSubscriptionState(vendorAccountId, {
+        subscriptionId: existing.id,
+        stripeStatus: existing.status,
+        currentPeriodEnd: periodEndMs(existing),
+      });
+      return;
+    }
+    const created = await stripe().subscriptions.create(
+      {
+        customer: customerId,
+        items: [{ price: vendorPriceId(currency), quantity: 1 }],
+        // Persisted when the last free lead lands, including the minimum
+        // one-hour Stripe lead time. Retries therefore send identical params
+        // with the deterministic idempotency key below.
+        trial_end: Math.floor(sub.billing_starts_at / 1000),
+        metadata: {
+          vendor_account_id: String(vendorAccountId),
+          billing_starts_at: String(sub.billing_starts_at),
+        },
+      },
+      {
+        // Concurrent inquiry/status requests converge on the same Stripe
+        // subscription even before either request persists the returned id.
+        idempotencyKey: `vendor-scheduled-${vendorAccountId}-${sub.billing_starts_at}`,
+      },
+    );
     applyVendorSubscriptionState(vendorAccountId, {
       subscriptionId: created.id,
       stripeStatus: created.status,
@@ -152,6 +188,7 @@ function noSubBilling(currency: Currency): VendorBilling {
     is_founding_member: false,
     is_early_member: false,
     current_period_end: null,
+    past_due_since: null,
     card_on_file: false,
     lead_credits_used: 0,
     lead_credits_total: VENDOR_FREE_LEAD_CREDITS,
@@ -173,6 +210,7 @@ async function handleGetBilling(ctx: Ctx): Promise<Response> {
   const features: VendorFeatureFlags = vendorFeatureFlags(plan);
   const status: VendorBillingStatus & { plan: VendorPlan; features: VendorFeatureFlags } = {
     enabled: STRIPE_ENABLED,
+    checkout_enabled: paymentProductAvailable("vendor_billing"),
     billing,
     currency,
     price: vendorPrice(currency),
@@ -189,9 +227,7 @@ async function handleGetBilling(ctx: Ctx): Promise<Response> {
 /** Card collection, no charge: Stripe Checkout in setup mode. The webhook's
  *  checkout.session.completed flips the vendor into the lead window. */
 async function handleSetup(ctx: Ctx): Promise<Response> {
-  if (!STRIPE_ENABLED) {
-    throw new HttpError(503, "Vendor billing is not configured", { code: "billing_disabled" });
-  }
+  requirePaymentLaunch("vendor_billing");
   const account = resolveVendorAccount(ctx);
   const sub = getVendorSub(account.id);
   if (sub && (sub.subscription_status === "active" || sub.subscription_status === "past_due")) {
@@ -200,14 +236,17 @@ async function handleSetup(ctx: Ctx): Promise<Response> {
     });
   }
   const customerId = await ensureStripeCustomer(account.id);
-  const session = await stripe().checkout.sessions.create({
-    mode: "setup",
-    customer: customerId,
-    client_reference_id: String(account.id),
-    metadata: { vendor_account_id: String(account.id) },
-    success_url: `${CONFIG.frontendBaseUrl}/vendor/billing?setup=success`,
-    cancel_url: `${CONFIG.frontendBaseUrl}/vendor/billing?setup=cancel`,
-  });
+  const session = await stripe().checkout.sessions.create(
+    {
+      mode: "setup",
+      customer: customerId,
+      client_reference_id: String(account.id),
+      metadata: { vendor_account_id: String(account.id) },
+      success_url: `${CONFIG.frontendBaseUrl}/vendor/billing?setup=success`,
+      cancel_url: `${CONFIG.frontendBaseUrl}/vendor/billing?setup=cancel`,
+    },
+    { idempotencyKey: `vendor-setup-${account.id}-${sub?.card_on_file ?? 0}` },
+  );
   return json({ url: session.url });
 }
 
@@ -216,9 +255,7 @@ async function handleSetup(ctx: Ctx): Promise<Response> {
  *  leads-exhausted vendor who wants PRO back immediately (charges now, no
  *  free-lead window). */
 async function handleCheckout(ctx: Ctx): Promise<Response> {
-  if (!STRIPE_ENABLED) {
-    throw new HttpError(503, "Vendor billing is not configured", { code: "billing_disabled" });
-  }
+  requirePaymentLaunch("vendor_billing");
   const account = resolveVendorAccount(ctx);
   const sub = getVendorSub(account.id);
   if (sub && (sub.subscription_status === "active" || sub.subscription_status === "past_due")) {
@@ -226,17 +263,22 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
   }
   const currency = vendorCurrency(sub, account.owner_user_id);
   const customerId = await ensureStripeCustomer(account.id);
-  const session = await stripe().checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: vendorPriceId(currency), quantity: 1 }],
-    subscription_data: { metadata: { vendor_account_id: String(account.id) } },
-    client_reference_id: String(account.id),
-    metadata: { vendor_account_id: String(account.id) },
-    allow_promotion_codes: true,
-    success_url: `${CONFIG.frontendBaseUrl}/vendor/billing?checkout=success`,
-    cancel_url: `${CONFIG.frontendBaseUrl}/vendor/billing?checkout=cancel`,
-  });
+  const session = await stripe().checkout.sessions.create(
+    {
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: vendorPriceId(currency), quantity: 1 }],
+      subscription_data: { metadata: { vendor_account_id: String(account.id) } },
+      client_reference_id: String(account.id),
+      metadata: { vendor_account_id: String(account.id) },
+      allow_promotion_codes: true,
+      success_url: `${CONFIG.frontendBaseUrl}/vendor/billing?checkout=success`,
+      cancel_url: `${CONFIG.frontendBaseUrl}/vendor/billing?checkout=cancel`,
+    },
+    {
+      idempotencyKey: `vendor-checkout-${account.id}-${sub?.subscription_status ?? "none"}-${sub?.stripe_subscription_id ?? "none"}`,
+    },
+  );
   return json({ url: session.url });
 }
 
@@ -354,45 +396,52 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
 
   // Idempotency: Stripe delivers at-least-once. Claim the event id AFTER the
   // signature check and skip if already processed (shared global ledger).
-  if (!claimStripeEvent(event.id, event.type)) {
+  if (!claimStripeEvent(event.id, event.type, "vendor")) {
     return json({ received: true, duplicate: true });
   }
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const s = event.data.object as Stripe.Checkout.Session;
-      const vendorId = Number(s.metadata?.vendor_account_id ?? s.client_reference_id);
-      if (Number.isInteger(vendorId) && vendorId > 0) {
-        if (s.customer) setVendorStripeCustomerId(vendorId, String(s.customer));
-        if (s.mode === "setup") {
-          await applyCardSetup(vendorId, s);
-        } else if (s.subscription) {
-          const sub = await stripe().subscriptions.retrieve(String(s.subscription));
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const s = event.data.object as Stripe.Checkout.Session;
+        const vendorId = Number(s.metadata?.vendor_account_id ?? s.client_reference_id);
+        if (Number.isInteger(vendorId) && vendorId > 0) {
+          if (s.customer) setVendorStripeCustomerId(vendorId, String(s.customer));
+          if (s.mode === "setup") {
+            await applyCardSetup(vendorId, s);
+          } else if (s.subscription) {
+            const sub = await stripe().subscriptions.retrieve(String(s.subscription));
+            applyVendorSubscriptionState(vendorId, {
+              subscriptionId: sub.id,
+              stripeStatus: sub.status,
+              currentPeriodEnd: periodEndMs(sub),
+              observedAt: event.created * 1000,
+            });
+          }
+        }
+        break;
+      }
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        const vendorId = resolveVendorId(sub);
+        if (vendorId) {
           applyVendorSubscriptionState(vendorId, {
             subscriptionId: sub.id,
             stripeStatus: sub.status,
             currentPeriodEnd: periodEndMs(sub),
+            observedAt: event.created * 1000,
           });
         }
+        break;
       }
-      break;
+      default:
+        break;
     }
-    case "customer.subscription.created":
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted": {
-      const sub = event.data.object as Stripe.Subscription;
-      const vendorId = resolveVendorId(sub);
-      if (vendorId) {
-        applyVendorSubscriptionState(vendorId, {
-          subscriptionId: sub.id,
-          stripeStatus: sub.status,
-          currentPeriodEnd: periodEndMs(sub),
-        });
-      }
-      break;
-    }
-    default:
-      break;
+  } catch (error) {
+    releaseStripeEvent(event.id, "vendor");
+    throw error;
   }
   return json({ received: true });
 }

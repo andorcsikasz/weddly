@@ -3370,6 +3370,7 @@ const en: LocaleMessages = {
     film_activated: "Film unlocked. Up to 200 guests.",
     film_upgrade_body: "{{cap}} guests on this film.",
     film_upgrade_cta: "Unlock 200",
+    film_upgrade_unavailable: "Upgrade unavailable",
     gallery_title: "The film",
     gallery_empty: "Nothing yet. First shot lands here.",
     gallery_show_all: "Show all {{n}}",
@@ -3876,6 +3877,7 @@ const en: LocaleMessages = {
     addon_unlock_body:
       "Your planner is managing the wedding, so your workspace is view-only. You can still edit your own guest page with the 70% off add-on.",
     addon_unlock_cta: "Unlock guest-page editing (70% off)",
+    addon_unavailable: "Purchase unavailable for now",
     addon_opening: "Opening…",
     addon_error: "We couldn't start checkout. Please try again.",
     preview_live_label: "Live preview",
@@ -5822,29 +5824,98 @@ const en: LocaleMessages = {
     tab_analytics: "Analytics",
     fin_title: "Financial planner",
     fin_subtitle: "Live subscription revenue and a forecast you can model.",
-    fin_enforce_title: "Payment go-live",
+    fin_launch_title: "Payment product launches",
+    fin_launch_note:
+      "Launch or pause each checkout surface independently. A launch is only available after all required Stripe configuration values are present.",
+    fin_launch_live_count: "{live} / {total} live",
+    fin_launch_paywall_separate:
+      "These controls only allow or block new payment sessions. Pausing does not change access, customer portals, existing renewals, or Checkout sessions already open. Global access enforcement is the separate control below.",
+    fin_launch_loading: "Loading payment launch states",
+    fin_launch_retry: "Retry",
+    fin_launch_refresh: "Refresh states",
+    fin_launch_load_error_title: "Launch states could not be loaded",
+    fin_launch_load_error_body:
+      "No payment switch can be changed until the current server state is known. Retry before taking action.",
+    fin_launch_state_live: "Live",
+    fin_launch_state_blocked: "Launch requested · blocked",
+    fin_launch_state_off: "Off",
+    fin_launch_ready: "Required environment present",
+    fin_launch_not_ready: "Configuration incomplete",
+    fin_launch_missing: "Missing:",
+    fin_launch_last_changed: "Last changed {date}",
+    fin_launch_revision: "Revision {version}",
+    fin_launch_enable: "Launch",
+    fin_launch_disable: "Pause new payments",
+    fin_launch_fix_config: "Fix configuration first",
+    fin_launch_updating: "Updating…",
+    fin_launch_confirm_on_title: "Launch {product}?",
+    fin_launch_confirm_on_body:
+      "This immediately makes this product's checkout or billing path available to customers. It does not enable the global read-only paywall.",
+    fin_launch_confirm_off_title: "Pause {product}?",
+    fin_launch_confirm_off_body:
+      "This blocks new payment sessions for this product. It does not change access, customer portals, existing renewals, or Checkout sessions already open.",
+    fin_launch_disable_paywall_body:
+      "Because the global paywall is on, pausing this required subscription product will also turn the paywall off so customers are not locked out without a way to subscribe.",
+    fin_launch_on_success: "{product} is now live.",
+    fin_launch_off_success: "New payments for {product} are paused.",
+    fin_launch_update_error:
+      "The payment launch state could not be changed. Its readiness has been refreshed.",
+    fin_launch_overview_refresh_error:
+      "The product changed, but the global paywall status could not be refreshed. Reload this page before another launch change.",
+    fin_launch_conflict:
+      "Another admin changed this product while you were reviewing it. The latest state is shown; review it before trying again.",
+    fin_launch_smoke_title: "Pre-launch smoke test",
+    fin_launch_smoke_warning:
+      "The badge only shows that required environment values exist. The server validates Stripe mode, account and price details when you launch; webhook delivery and fulfillment still need this smoke test.",
+    fin_launch_smoke_account:
+      "Use a non-admin test account for the selected customer type; admin exemptions can hide entitlement failures.",
+    fin_launch_smoke_checkout:
+      "In Stripe test mode, complete Checkout with a 3DS challenge and a declined-payment attempt. Confirm the amount, currency and cadence before submitting.",
+    fin_launch_smoke_webhook:
+      "Confirm Stripe reports a 2xx webhook and Weddly grants the subscription or one-time unlock only after successful payment.",
+    fin_launch_smoke_manage:
+      "For subscriptions, test card update and cancellation in the customer portal. For one-time products, verify the refund and access policy.",
+    fin_launch_smoke_pause:
+      "Pause again and verify a fresh payment cannot start while existing access, portals and renewals still work. Repeat one controlled transaction in live mode before public launch.",
+    fin_launch_product_couple_subscriptions: "Couple subscriptions",
+    fin_launch_product_couple_subscriptions_note:
+      "Recurring subscription Checkout for couple workspaces.",
+    fin_launch_product_planner_subscriptions: "Planner subscriptions",
+    fin_launch_product_planner_subscriptions_note:
+      "Recurring Essentials, Pro and Studio plans for planners.",
+    fin_launch_product_vendor_billing: "Vendor billing",
+    fin_launch_product_vendor_billing_note:
+      "Card setup and recurring vendor billing after the free-lead allowance.",
+    fin_launch_product_film_checkout: "Wedding film checkout",
+    fin_launch_product_film_checkout_note: "One-time wedding film purchase and activation.",
+    fin_launch_product_guest_page_addon: "Guest-page add-on",
+    fin_launch_product_guest_page_addon_note:
+      "One-time guest-page unlock for planner-managed couples.",
+    fin_enforce_title: "Global paid-access enforcement",
     fin_enforce_state_on: "On",
     fin_enforce_state_off: "Off",
     fin_enforce_note_on:
       "The payment period is live: couples with an expired trial drop to read-only. Beta testers and admins are always free.",
     fin_enforce_note_off:
       "The payment period is not live yet: nobody is in read-only right now. Every couple's data is safe, only the paywall is waiting.",
-    fin_enforce_turn_off: "Turn off",
-    fin_enforce_go_live: "Go live with payments",
+    fin_enforce_launch_prereq:
+      "Launch couple, planner and vendor subscriptions with ready configuration before enabling the global paywall.",
+    fin_enforce_turn_off: "Disable global paywall",
+    fin_enforce_go_live: "Enable global paywall",
     fin_enforce_not_ready: "Waiting for 200 couples ({n} / {cap})",
     fin_enforce_below_cap: "Below the 200-couple mark ({n} / {cap}). You can still go live.",
     fin_enforce_impact:
       "Flipping this now puts {couples} couples, {vendors} vendors and {planners} planners into read-only.",
     fin_enforce_progress_label: "Couples toward the 200 cap",
-    fin_enforce_ready_signal: "200 couples reached - ready to go live with payments.",
-    fin_enforce_confirm_on_title: "Go live with payments?",
+    fin_enforce_ready_signal: "200 couples reached - ready to enable paid-access enforcement.",
+    fin_enforce_confirm_on_title: "Enable the global paywall?",
     fin_enforce_confirm_on_body:
       "This puts couples with an expired trial into read-only until they subscribe. Beta testers and admins stay free. You can turn it back off any time.",
-    fin_enforce_confirm_off_title: "Turn payments off?",
+    fin_enforce_confirm_off_title: "Disable the global paywall?",
     fin_enforce_confirm_off_body:
       "This takes everyone out of read-only: every couple can edit again, regardless of their trial.",
-    fin_enforce_on_success: "Payment period is now live.",
-    fin_enforce_off_success: "Payment period turned off.",
+    fin_enforce_on_success: "Global paid-access enforcement is now on.",
+    fin_enforce_off_success: "Global paid-access enforcement is now off.",
     fin_monthly_breakdown: "Monthly breakdown",
     fin_kpi_mrr: "MRR (EUR)",
     fin_kpi_mrr_hint:

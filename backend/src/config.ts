@@ -13,7 +13,7 @@ const IS_PROD = process.env.NODE_ENV === "production";
 const ON_RAILWAY = Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
 /** True when we must enforce production-grade secrets/hardening regardless of a
  *  possibly-missing NODE_ENV. */
-const REQUIRE_PROD_HARDENING = IS_PROD || ON_RAILWAY;
+export const REQUIRE_PROD_HARDENING = IS_PROD || ON_RAILWAY;
 
 if (
   REQUIRE_PROD_HARDENING &&

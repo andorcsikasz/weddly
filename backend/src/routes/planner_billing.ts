@@ -15,7 +15,7 @@ import {
 import type { Currency, PlannerPlan } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import { db } from "../db";
-import { claimStripeEvent, stripe } from "../domain/billing";
+import { claimStripeEvent, releaseStripeEvent, stripe } from "../domain/billing";
 import { isPlannerPlan } from "../domain/planner";
 import {
   applyPlannerSubscriptionState,
@@ -29,6 +29,7 @@ import {
   toPlannerBilling,
 } from "../domain/planner_billing";
 import { getUserById } from "../domain/users";
+import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment_launch";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 function requirePlannerAuth(ctx: Ctx): number {
@@ -89,6 +90,7 @@ function handleStatus(ctx: Ctx): Response {
   };
   const body: PlannerBillingStatus = {
     enabled: STRIPE_ENABLED,
+    checkout_enabled: paymentProductAvailable("planner_subscriptions"),
     billing: toPlannerBilling(sub, tier),
     currency,
     prices,
@@ -108,33 +110,50 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
   const user = getUserById(userId);
   const currency = plannerCurrency(userId);
   const sub = getPlannerSub(userId) ?? initPlannerBilling(userId);
+  const status = sub.subscription_status;
+  const hasLiveStripeSubscription =
+    sub.stripe_subscription_id !== null && status !== "canceled" && status !== "none";
+  if (status === "active" || status === "past_due" || hasLiveStripeSubscription) {
+    throw new HttpError(409, "Already subscribed; manage the existing subscription", {
+      code: "already_subscribed",
+    });
+  }
+  requirePaymentLaunch("planner_subscriptions");
 
   // Reuse the planner's Stripe customer across re-subscribes so payment history
   // and the portal stay on one record.
   let customerId = sub.stripe_customer_id;
   if (!customerId) {
-    const customer = await stripe().customers.create({
-      email: user?.email ?? undefined,
-      name: user?.full_name ?? undefined,
-      metadata: { planner_user_id: String(userId) },
-    });
+    const customer = await stripe().customers.create(
+      {
+        email: user?.email ?? undefined,
+        name: user?.full_name ?? undefined,
+        metadata: { planner_user_id: String(userId) },
+      },
+      { idempotencyKey: `planner-customer-${userId}` },
+    );
     customerId = customer.id;
     setPlannerStripeCustomerId(userId, customerId);
   }
 
-  const session = await stripe().checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: priceIdForPlannerTier(tier, currency), quantity: 1 }],
-    // Stamp the planner id on BOTH the session and the subscription so the
-    // webhook can resolve the planner from either object.
-    subscription_data: { metadata: { planner_user_id: String(userId) } },
-    client_reference_id: String(userId),
-    metadata: { planner_user_id: String(userId) },
-    allow_promotion_codes: true,
-    success_url: `${CONFIG.frontendBaseUrl}/app/planner/billing?checkout=success`,
-    cancel_url: `${CONFIG.frontendBaseUrl}/app/planner/billing?checkout=cancel`,
-  });
+  const session = await stripe().checkout.sessions.create(
+    {
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: priceIdForPlannerTier(tier, currency), quantity: 1 }],
+      // Stamp the planner id on BOTH the session and the subscription so the
+      // webhook can resolve the planner from either object.
+      subscription_data: { metadata: { planner_user_id: String(userId) } },
+      client_reference_id: String(userId),
+      metadata: { planner_user_id: String(userId) },
+      allow_promotion_codes: true,
+      success_url: `${CONFIG.frontendBaseUrl}/app/planner/billing?checkout=success`,
+      cancel_url: `${CONFIG.frontendBaseUrl}/app/planner/billing?checkout=cancel`,
+    },
+    {
+      idempotencyKey: `planner-checkout-${userId}-${tier}-${sub.subscription_status}-${sub.stripe_subscription_id ?? "none"}`,
+    },
+  );
   return json({ url: session.url });
 }
 
@@ -181,45 +200,52 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
 
   // Idempotency: Stripe delivers at-least-once. Claim the event id AFTER the
   // signature check and skip if already processed (shared global ledger).
-  if (!claimStripeEvent(event.id, event.type)) {
+  if (!claimStripeEvent(event.id, event.type, "planner")) {
     return json({ received: true, duplicate: true });
   }
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const s = event.data.object as Stripe.Checkout.Session;
-      const plannerId = Number(s.metadata?.planner_user_id ?? s.client_reference_id);
-      if (Number.isInteger(plannerId) && plannerId > 0) {
-        if (s.customer) setPlannerStripeCustomerId(plannerId, String(s.customer));
-        if (s.subscription) {
-          const sub = await stripe().subscriptions.retrieve(String(s.subscription));
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const s = event.data.object as Stripe.Checkout.Session;
+        const plannerId = Number(s.metadata?.planner_user_id ?? s.client_reference_id);
+        if (Number.isInteger(plannerId) && plannerId > 0) {
+          if (s.customer) setPlannerStripeCustomerId(plannerId, String(s.customer));
+          if (s.subscription) {
+            const sub = await stripe().subscriptions.retrieve(String(s.subscription));
+            applyPlannerSubscriptionState(plannerId, {
+              subscriptionId: sub.id,
+              stripeStatus: sub.status,
+              currentPeriodEnd: periodEndMs(sub),
+              tier: tierOfSubscription(sub),
+              observedAt: event.created * 1000,
+            });
+          }
+        }
+        break;
+      }
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        const plannerId = resolvePlannerId(sub);
+        if (plannerId) {
           applyPlannerSubscriptionState(plannerId, {
             subscriptionId: sub.id,
             stripeStatus: sub.status,
             currentPeriodEnd: periodEndMs(sub),
             tier: tierOfSubscription(sub),
+            observedAt: event.created * 1000,
           });
         }
+        break;
       }
-      break;
+      default:
+        break;
     }
-    case "customer.subscription.created":
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted": {
-      const sub = event.data.object as Stripe.Subscription;
-      const plannerId = resolvePlannerId(sub);
-      if (plannerId) {
-        applyPlannerSubscriptionState(plannerId, {
-          subscriptionId: sub.id,
-          stripeStatus: sub.status,
-          currentPeriodEnd: periodEndMs(sub),
-          tier: tierOfSubscription(sub),
-        });
-      }
-      break;
-    }
-    default:
-      break;
+  } catch (error) {
+    releaseStripeEvent(event.id, "planner");
+    throw error;
   }
   return json({ received: true });
 }

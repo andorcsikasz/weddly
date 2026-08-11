@@ -10,9 +10,13 @@ import "../setup";
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { type PlannerBillingStatus, PLANNER_FOUNDING_CAP } from "@shared/planner_billing";
+import { PAST_DUE_GRACE_MS } from "@shared/billing";
 import { db, now } from "../../src/db";
 import { setBillingEnforcement } from "../../src/domain/billing";
-import { initPlannerBilling } from "../../src/domain/planner_billing";
+import {
+  applyPlannerSubscriptionState,
+  initPlannerBilling,
+} from "../../src/domain/planner_billing";
 import { registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Register + verify a user, flip them to a planner, and open their billing
@@ -162,9 +166,77 @@ describe("planner subscription billing", () => {
 
   test("checkout + webhook degrade gracefully while Stripe is unconfigured", async () => {
     const { token } = await makePlanner("nostripe@weddly.test");
-    const checkout = await req("POST", "/api/planner/billing/checkout", { tier: "pro" }, { token });
+    const checkout = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/planner/billing/checkout",
+      { tier: "pro" },
+      { token },
+    );
     expect(checkout.status).toBe(503);
+    expect(checkout.data.detail?.code).toBe("payment_not_launched");
     const webhook = await req("POST", "/api/planner/billing/webhook", {});
     expect(webhook.status).toBe(503);
+  });
+
+  test("checkout rejects active, past-due, and Stripe-linked planner subscriptions", async () => {
+    const { token, userId } = await makePlanner("duplicate-planner@weddly.test");
+    for (const state of [
+      { status: "active", subscriptionId: null },
+      { status: "past_due", subscriptionId: null },
+      { status: "trialing", subscriptionId: "sub_planner_trial" },
+    ]) {
+      db.prepare(
+        `UPDATE planner_subscriptions
+            SET subscription_status = ?, stripe_subscription_id = ? WHERE user_id = ?`,
+      ).run(state.status, state.subscriptionId, userId);
+      const checkout = await req<{ detail?: { code?: string } }>(
+        "POST",
+        "/api/planner/billing/checkout",
+        { tier: "pro" },
+        { token },
+      );
+      expect(checkout.status).toBe(409);
+      expect(checkout.data.detail?.code).toBe("already_subscribed");
+    }
+  });
+
+  test("planner dunning timestamp is stable, bounds access, and clears on recovery", async () => {
+    const { token, userId } = await makePlanner("planner-dunning@weddly.test");
+    const monthAhead = Date.now() + 30 * 86_400_000;
+    applyPlannerSubscriptionState(userId, {
+      subscriptionId: "sub_planner_dunning",
+      stripeStatus: "past_due",
+      currentPeriodEnd: monthAhead,
+      tier: "pro",
+    });
+    const eightDaysAgo = Date.now() - (PAST_DUE_GRACE_MS + 86_400_000);
+    db.prepare("UPDATE planner_subscriptions SET past_due_since = ? WHERE user_id = ?").run(
+      eightDaysAgo,
+      userId,
+    );
+    applyPlannerSubscriptionState(userId, {
+      subscriptionId: "sub_planner_dunning",
+      stripeStatus: "past_due",
+      currentPeriodEnd: monthAhead,
+      tier: "pro",
+    });
+    setBillingEnforcement(true, 1);
+    const status = await req<PlannerBillingStatus>("GET", "/api/planner/billing", undefined, {
+      token,
+    });
+    expect(status.data.billing.current_period_end).toBe(monthAhead);
+    expect(status.data.billing.past_due_since).toBe(eightDaysAgo);
+    expect(status.data.billing.entitled).toBe(false);
+
+    applyPlannerSubscriptionState(userId, {
+      subscriptionId: "sub_planner_dunning",
+      stripeStatus: "active",
+      currentPeriodEnd: monthAhead,
+      tier: "pro",
+    });
+    const cleared = db
+      .prepare("SELECT past_due_since FROM planner_subscriptions WHERE user_id = ?")
+      .get(userId) as { past_due_since: number | null };
+    expect(cleared.past_due_since).toBeNull();
   });
 });

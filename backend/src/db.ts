@@ -1188,6 +1188,26 @@ addColumnIfMissing(
 addColumnIfMissing("couples", "stripe_customer_id", "stripe_customer_id TEXT");
 addColumnIfMissing("couples", "stripe_subscription_id", "stripe_subscription_id TEXT");
 addColumnIfMissing("couples", "current_period_end", "current_period_end INTEGER");
+// Start of the CURRENT past-due episode. Unlike current_period_end (which is
+// commonly a month in the future), this gives dunning a real seven-day bound.
+addColumnIfMissing("couples", "past_due_since", "past_due_since INTEGER");
+addColumnIfMissing("planner_subscriptions", "past_due_since", "past_due_since INTEGER");
+addColumnIfMissing("vendor_subscriptions", "past_due_since", "past_due_since INTEGER");
+// Existing past_due rows predate the transition timestamp. Give that legacy
+// cohort one final seven-day window from the first upgraded boot; COALESCE
+// makes this idempotent and prevents every restart from extending it.
+{
+  const migratedAt = Date.now();
+  db.prepare(
+    "UPDATE couples SET past_due_since = ? WHERE subscription_status = 'past_due' AND past_due_since IS NULL",
+  ).run(migratedAt);
+  db.prepare(
+    "UPDATE planner_subscriptions SET past_due_since = ? WHERE subscription_status = 'past_due' AND past_due_since IS NULL",
+  ).run(migratedAt);
+  db.prepare(
+    "UPDATE vendor_subscriptions SET past_due_since = ? WHERE subscription_status = 'past_due' AND past_due_since IS NULL",
+  ).run(migratedAt);
+}
 // Planner-managed billing extra (the "vendégoldal" guest-page edit add-on).
 // A planner-managed couple is viewer-only by default once their own free
 // window lapses; the planner edits. `guest_page_prepaid` = the couple paid
@@ -1344,9 +1364,90 @@ db.prepare(
 // redeploy. INSERT OR IGNORE keeps the existing value on every boot.
 db.exec("INSERT OR IGNORE INTO billing_control (id, enforcement_on) VALUES (1, 0)");
 
+// A new payment surface is never live by accident. INSERT OR IGNORE preserves
+// the operator's runtime choice across deploys while safely seeding products
+// added by a newer release as OFF.
+addColumnIfMissing(
+  "payment_launch_control",
+  "version",
+  "version INTEGER NOT NULL DEFAULT 0 CHECK (version >= 0)",
+);
+for (const product of [
+  "couple_subscriptions",
+  "planner_subscriptions",
+  "vendor_billing",
+  "film_checkout",
+  "guest_page_addon",
+] as const) {
+  db.prepare("INSERT OR IGNORE INTO payment_launch_control (product, enabled) VALUES (?, 0)").run(
+    product,
+  );
+}
+
+/** A paid-access wall is safe only while every affected audience has a working
+ * recovery checkout. Keep this low-level so every entitlement read fails open
+ * if a launch is paused or a required deployment value disappears. */
+function subscriptionRecoveryAvailable(): boolean {
+  const launched = db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM payment_launch_control
+        WHERE enabled = 1 AND product IN (
+          'couple_subscriptions', 'planner_subscriptions', 'vendor_billing'
+        )`,
+    )
+    .get() as { n: number };
+  const configured = [
+    CONFIG.stripeSecretKey,
+    CONFIG.stripeWebhookSecret,
+    CONFIG.stripePriceEur,
+    CONFIG.stripePriceHuf,
+    CONFIG.stripePlannerWebhookSecret,
+    CONFIG.stripePricePlanner.starter.EUR,
+    CONFIG.stripePricePlanner.starter.HUF,
+    CONFIG.stripePricePlanner.pro.EUR,
+    CONFIG.stripePricePlanner.pro.HUF,
+    CONFIG.stripePricePlanner.premium.EUR,
+    CONFIG.stripePricePlanner.premium.HUF,
+    CONFIG.stripeVendorWebhookSecret,
+    CONFIG.stripePriceVendorEur,
+    CONFIG.stripePriceVendorHuf,
+  ].every((value) => value.trim() !== "");
+  return launched.n === 3 && configured;
+}
+
+// A deploy can remove a Stripe value while the persisted paywall flag is ON.
+// Reconcile that invalid state once at boot and leave an append-only system
+// audit trail. Restoring configuration never turns the wall back on by itself.
+const storedBillingControl = db
+  .prepare("SELECT enforcement_on FROM billing_control WHERE id = 1")
+  .get() as { enforcement_on: number } | undefined;
+if (storedBillingControl?.enforcement_on === 1 && !subscriptionRecoveryAvailable()) {
+  db.transaction(() => {
+    db.prepare(
+      `UPDATE billing_control
+          SET enforcement_on = 0, enforced_at = NULL, enforced_by_user_id = NULL
+        WHERE id = 1`,
+    ).run();
+    db.prepare(
+      `INSERT INTO audit_log
+        (actor_user_id, couple_id, action, target_kind, target_id,
+         before_json, after_json, note, created_at)
+       VALUES (NULL, NULL, ?, 'billing_control', 1, ?, ?, ?, ?)`,
+    ).run(
+      "system.billing_enforcement.auto_disabled",
+      JSON.stringify({ enforcement_on: true }),
+      JSON.stringify({ enforcement_on: false }),
+      "Subscription payment recovery was unavailable at boot",
+      Date.now(),
+    );
+  })();
+  console.warn("[billing] global paywall disabled: subscription payment recovery is unavailable");
+}
+
 /** Whether the read-only paywall is currently being enforced. When false the
  *  freeze is deferred and every couple stays editable (see toCoupleBilling). A
- *  single indexed PK read; cheap enough to call per request. */
+ *  boot-time reconciliation and admin mutation invariant guarantee that a
+ *  persisted ON is never retained without subscription recovery. */
 export function billingEnforcementOn(): boolean {
   const row = db.prepare("SELECT enforcement_on FROM billing_control WHERE id = 1").get() as
     | { enforcement_on: number }

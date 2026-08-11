@@ -921,6 +921,7 @@ export default function MediaPage() {
   }, []);
 
   async function handleUpgradeFilm() {
+    if (filmAccess?.checkoutEnabled === false) return;
     try {
       const { url } = await photoAlbumApi.filmCheckout();
       window.location.href = url;
@@ -1571,9 +1572,12 @@ export default function MediaPage() {
                     <button
                       type="button"
                       onClick={handleUpgradeFilm}
+                      disabled={filmAccess?.checkoutEnabled === false}
                       className="shrink-0 rounded-xl bg-amber-800 px-3.5 py-2 font-grotesk text-[13px] font-semibold text-white transition-colors hover:bg-amber-900"
                     >
-                      {t("media.film_upgrade_cta")}
+                      {filmAccess?.checkoutEnabled === false
+                        ? t("media.film_upgrade_unavailable")
+                        : t("media.film_upgrade_cta")}
                     </button>
                   </div>
                 )}

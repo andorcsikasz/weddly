@@ -5,7 +5,7 @@
 // thing they share with guests, with a public top section (anyone with the
 // link) and a deeper post-RSVP-yes block that unlocks for confirmed guests.
 
-import type { CoupleBilling } from "@shared/billing";
+import type { BillingStatusResponse } from "@shared/billing";
 import type { Couple, Household } from "@shared/types";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
@@ -671,7 +671,7 @@ export default function GuestPageEditorPage() {
   // CTA. A planner-managed viewer without the add-on can buy back editing of
   // just this page at 70% off; with the add-on on, the backend already permits
   // /api/couples/current edits, so the editor behaves normally.
-  const [billing, setBilling] = useState<CoupleBilling | null>(null);
+  const [billingStatus, setBillingStatus] = useState<BillingStatusResponse | null>(null);
   const [addonBusy, setAddonBusy] = useState(false);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [isPublic, setIsPublic] = useState(false);
@@ -921,7 +921,7 @@ export default function GuestPageEditorPage() {
     billingApi
       .status()
       .then((s) => {
-        if (!cancelled) setBilling(s.billing);
+        if (!cancelled) setBillingStatus(s);
       })
       .catch(() => undefined);
     return () => {
@@ -933,8 +933,11 @@ export default function GuestPageEditorPage() {
   // show the 70%-off unlock CTA. Once `guest_page_addon` is on the backend
   // permits the guest-page edits, so no CTA and no extra gating here.
   const plannerViewerNoAddon = Boolean(
-    billing && billing.planner_managed && !billing.entitled && !billing.guest_page_addon,
+    billingStatus?.billing.planner_managed &&
+      !billingStatus.billing.entitled &&
+      !billingStatus.billing.guest_page_addon,
   );
+  const addonCheckoutEnabled = billingStatus?.guest_page_addon_checkout_enabled === true;
 
   async function onUnlockGuestPage() {
     setAddonBusy(true);
@@ -1481,11 +1484,13 @@ export default function GuestPageEditorPage() {
               type="button"
               className="btn-primary btn-sm shrink-0"
               onClick={() => void onUnlockGuestPage()}
-              disabled={addonBusy}
+              disabled={addonBusy || !addonCheckoutEnabled}
             >
               {addonBusy
                 ? t("guest_page_editor.addon_opening")
-                : t("guest_page_editor.addon_unlock_cta")}
+                : addonCheckoutEnabled
+                  ? t("guest_page_editor.addon_unlock_cta")
+                  : t("guest_page_editor.addon_unavailable")}
             </button>
           </div>
         </section>

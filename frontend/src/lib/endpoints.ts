@@ -93,6 +93,9 @@ import type {
 import type {
   AdminFinancialPlannerOverview,
   FxRates,
+  PaymentLaunchesResponse,
+  PaymentLaunchProduct,
+  SetPaymentLaunchRequest,
   StripeHealth,
 } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse, PaymentMethodResponse } from "@shared/billing";
@@ -3503,6 +3506,17 @@ export const adminFinancialPlannerApi = {
   /** Stripe connection + config health (admin monitor). Live API ping when a
    *  key is set; config-readiness only when billing isn't wired up yet. */
   stripeHealth: () => apiFetch<StripeHealth>("GET", "/api/admin/financial-planner/stripe-health"),
+  /** Independent kill switches for each money-taking surface. These control
+   *  checkout availability only; the global read-only paywall is a separate
+   *  operator decision exposed by setEnforcement above. */
+  paymentLaunches: () =>
+    apiFetch<PaymentLaunchesResponse>("GET", "/api/admin/financial-planner/payment-launches"),
+  setPaymentLaunch: (product: PaymentLaunchProduct, enabled: boolean, expectedVersion: number) =>
+    apiFetch<PaymentLaunchesResponse>("PATCH", "/api/admin/financial-planner/payment-launches", {
+      product,
+      enabled,
+      expected_version: expectedVersion,
+    } satisfies SetPaymentLaunchRequest),
   /** Live EUR→HUF/USD/CNY rate (server-fetched market mid). null when the
    *  upstream FX feed is unreachable. */
   fx: () => apiFetch<FxRates | null>("GET", "/api/admin/financial-planner/fx"),

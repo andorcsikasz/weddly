@@ -46,6 +46,17 @@ describe("photo-albums API", () => {
     albumToken = r.data.album.uploadToken;
   });
 
+  test("POST /api/photo-albums/checkout is blocked by the film launch control", async () => {
+    const r = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/photo-albums/checkout",
+      {},
+      { token },
+    );
+    expect(r.status).toBe(503);
+    expect(r.data.detail?.code).toBe("payment_not_launched");
+  });
+
   test("POST /api/photo-albums is idempotent — returns existing album", async () => {
     const r = await req<{ album: { uploadToken: string } }>(
       "POST",

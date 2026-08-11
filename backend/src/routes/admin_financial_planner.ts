@@ -5,6 +5,8 @@
 import {
   type AdminFinancialPlannerOverview,
   HUF_PER_EUR,
+  type PaymentLaunchesResponse,
+  type SetPaymentLaunchRequest,
   type StripeHealth,
 } from "@shared/admin_financial_planner";
 import { type SubscriptionStatus, FOUNDING_CAP, MONTHLY_PRICE } from "@shared/billing";
@@ -20,6 +22,12 @@ import {
   stripe,
 } from "../domain/billing";
 import { requireAdmin } from "../domain/users";
+import {
+  isPaymentLaunchProduct,
+  paymentLaunches,
+  setPaymentLaunch,
+  validatePaymentLaunchActivation,
+} from "../domain/payment_launch";
 import { getFxRates } from "../lib/fx";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 
@@ -142,6 +150,21 @@ async function handleSetEnforcement(ctx: Ctx): Promise<Response> {
   if (typeof body.on !== "boolean") {
     throw new HttpError(400, "`on` must be a boolean");
   }
+  if (body.on) {
+    const launches = paymentLaunches();
+    const required = ["couple_subscriptions", "planner_subscriptions", "vendor_billing"] as const;
+    const unavailable = required.filter((product) => {
+      const state = launches.products[product];
+      return !state.enabled || !state.ready;
+    });
+    if (unavailable.length > 0) {
+      throw new HttpError(
+        409,
+        "Launch all subscription payment products before enabling the paywall",
+        { code: "payment_launches_incomplete", products: unavailable },
+      );
+    }
+  }
   // Deliberately NOT gated on the founding cohort being full. It used to 400
   // below FOUNDING_CAP, which made the moment we start charging a function of a
   // headcount rather than a date the founder picks — and left no way to start
@@ -160,6 +183,93 @@ async function handleSetEnforcement(ctx: Ctx): Promise<Response> {
     after: { enforcement_on: body.on },
   });
   return json(overview());
+}
+
+// ── Independent payment-product launches ───────────────────────────────────
+// These switches permit NEW money creation. They do not disable webhooks or
+// customer portals, which must stay available for already-paying customers and
+// operational recovery even after a product is paused.
+
+function handlePaymentLaunches(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(paymentLaunches());
+}
+
+async function handleSetPaymentLaunch(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const body = await readJson<Partial<SetPaymentLaunchRequest>>(ctx.req);
+  if (!isPaymentLaunchProduct(body.product)) {
+    throw new HttpError(400, "Invalid payment launch product");
+  }
+  if (typeof body.enabled !== "boolean") {
+    throw new HttpError(400, "`enabled` must be a boolean");
+  }
+  if (
+    typeof body.expected_version !== "number" ||
+    !Number.isInteger(body.expected_version) ||
+    body.expected_version < 0
+  ) {
+    throw new HttpError(400, "`expected_version` must be a non-negative integer");
+  }
+  const product = body.product;
+  const enabled = body.enabled;
+  const expectedVersion = body.expected_version;
+
+  const current = paymentLaunches().products[product];
+  if (current.version !== expectedVersion) {
+    throw new HttpError(409, "Payment launch state changed; refresh and try again", {
+      code: "payment_launch_conflict",
+      product,
+      current,
+    });
+  }
+  if (enabled && !current.enabled) await validatePaymentLaunchActivation(product);
+
+  const change = db.transaction(() => {
+    const subscriptionProduct =
+      product === "couple_subscriptions" ||
+      product === "planner_subscriptions" ||
+      product === "vendor_billing";
+    const paywallWasOn = billingEnforcementOn();
+    const before = paymentLaunches().products[product];
+    const after = setPaymentLaunch(product, enabled, admin.id, expectedVersion);
+    if (before.enabled !== after.enabled) {
+      addAuditLog({
+        actor_user_id: admin.id,
+        couple_id: null,
+        action: "admin.payment_launch.set",
+        target_kind: "payment_launch_control",
+        target_id: null,
+        before: { product: body.product, enabled: before.enabled, version: before.version },
+        after: {
+          product: body.product,
+          enabled: after.enabled,
+          version: after.version,
+          ready: after.ready,
+          missing: after.missing,
+        },
+        note: product,
+      });
+    }
+    // An emergency payment pause must never strand lapsed users behind a wall
+    // with no recovery checkout. Turn the wall off in the same transaction so
+    // both safety changes either commit together or roll back together.
+    if (!enabled && subscriptionProduct && paywallWasOn) {
+      setBillingEnforcement(false, admin.id);
+      addAuditLog({
+        actor_user_id: admin.id,
+        couple_id: null,
+        action: "admin.billing_enforcement.auto_disabled",
+        target_kind: "billing_control",
+        target_id: 1,
+        before: { enforcement_on: true },
+        after: { enforcement_on: false },
+        note: `Payment launch paused: ${product}`,
+      });
+    }
+    return paymentLaunches() satisfies PaymentLaunchesResponse;
+  });
+  return json(change());
 }
 
 // ── Stripe health monitor ───────────────────────────────────────────────────
@@ -272,5 +382,7 @@ export function registerAdminFinancialPlannerRoutes(router: Router) {
   router.get("/api/admin/financial-planner/overview", handleOverview, true);
   router.post("/api/admin/financial-planner/enforcement", handleSetEnforcement, true);
   router.get("/api/admin/financial-planner/stripe-health", handleStripeHealth, true);
+  router.get("/api/admin/financial-planner/payment-launches", handlePaymentLaunches, true);
+  router.patch("/api/admin/financial-planner/payment-launches", handleSetPaymentLaunch, true);
   router.get("/api/admin/financial-planner/fx", handleFx, true);
 }

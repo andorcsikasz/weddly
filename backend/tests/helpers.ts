@@ -235,6 +235,7 @@ export function wipeAll(): void {
     "vendor_accounts",
     "referral_grants",
     "stripe_webhook_events",
+    "stripe_webhook_deliveries",
     "couple_currency_history",
     "consent_log",
     "supplier_views",
@@ -334,6 +335,16 @@ export function wipeAll(): void {
   try {
     db.exec(
       "UPDATE billing_control SET enforcement_on = 0, enforced_at = NULL, enforced_by_user_id = NULL WHERE id = 1",
+    );
+  } catch {
+    // Table may not exist on a very old DB; ignore.
+  }
+  // New-payment launch switches are independent of entitlement enforcement,
+  // but share the same safe resting state: every test starts with all products
+  // OFF unless it explicitly exercises a launched surface.
+  try {
+    db.exec(
+      "UPDATE payment_launch_control SET enabled = 0, version = 0, updated_at = NULL, updated_by_user_id = NULL",
     );
   } catch {
     // Table may not exist on a very old DB; ignore.

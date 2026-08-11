@@ -30,7 +30,7 @@ export function SubscriptionBanner() {
   const [mode, setMode] = useState<
     "none" | "lapsed" | "founding" | "solo" | "planner_viewer" | "grace"
   >("none");
-  const [enabled, setEnabled] = useState(false);
+  const [checkoutEnabled, setCheckoutEnabled] = useState(false);
   const [foundingUntil, setFoundingUntil] = useState<number | null>(null);
   const [graceEnds, setGraceEnds] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -59,7 +59,7 @@ export function SubscriptionBanner() {
       .status()
       .then((s) => {
         if (!alive) return;
-        setEnabled(s.enabled);
+        setCheckoutEnabled(s.checkout_enabled);
         if (!s.billing.entitled) {
           // Planner-managed couples that have lapsed are VIEWER-ONLY (the planner
           // edits), not "subscribe to unlock" — so they get an explanatory band
@@ -149,7 +149,7 @@ export function SubscriptionBanner() {
           <Link to="/app/profile" className="btn-primary btn-sm">
             {t("billing.grace_banner_cta")}
           </Link>
-          {enabled && (
+          {checkoutEnabled && (
             <button
               type="button"
               onClick={onSubscribe}
@@ -265,7 +265,7 @@ export function SubscriptionBanner() {
           <span className="font-semibold">{t("billing.banner_title")}</span>{" "}
           <span className="text-blush-800 dark:text-blush-200">{t("billing.banner_body")}</span>
         </p>
-        {enabled && (
+        {checkoutEnabled && (
           <button
             type="button"
             onClick={onSubscribe}

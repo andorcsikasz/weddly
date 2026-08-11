@@ -12,6 +12,7 @@ import {
   FOUNDING_DURATION_MS,
   PAID_LAUNCH_DATE,
   partnerFreeWindowEnd,
+  subscriptionStatusFromStripe,
   type SubscriptionStatus,
   TRIAL_DURATION_MS,
   TRIAL_GRACE_MS,
@@ -139,6 +140,7 @@ export function enforcementImpact(nowMs: number = now()): {
     const { entitled } = computeEntitlement(anchor.subscription_status as SubscriptionStatus, {
       trial_ends_at: anchor.trial_ends_at,
       founding_until: anchor.founding_until,
+      past_due_since: anchor.past_due_since,
       nowMs,
       // Same grace the couple gate applies, or the preview would count couples
       // who are still inside their week and overstate the freeze.
@@ -151,13 +153,14 @@ export function enforcementImpact(nowMs: number = now()): {
 
   const vendorRows = db
     .prepare(
-      `SELECT subscription_status, trial_ends_at, founding_until, lead_credits_used,
+      `SELECT subscription_status, trial_ends_at, founding_until, past_due_since, lead_credits_used,
               billing_starts_at FROM vendor_subscriptions`,
     )
     .all() as Array<{
     subscription_status: string;
     trial_ends_at: number | null;
     founding_until: number | null;
+    past_due_since: number | null;
     lead_credits_used: number;
     billing_starts_at: number | null;
   }>;
@@ -166,6 +169,7 @@ export function enforcementImpact(nowMs: number = now()): {
       !computeVendorEntitlement(v.subscription_status as VendorSubscriptionStatus, {
         trial_ends_at: v.trial_ends_at,
         founding_until: v.founding_until,
+        past_due_since: v.past_due_since,
         lead_credits_used: v.lead_credits_used,
         billing_starts_at: v.billing_starts_at,
         nowMs,
@@ -173,17 +177,21 @@ export function enforcementImpact(nowMs: number = now()): {
   ).length;
 
   const plannerRows = db
-    .prepare("SELECT subscription_status, trial_ends_at, founding_until FROM planner_subscriptions")
+    .prepare(
+      "SELECT subscription_status, trial_ends_at, founding_until, past_due_since FROM planner_subscriptions",
+    )
     .all() as Array<{
     subscription_status: string;
     trial_ends_at: number | null;
     founding_until: number | null;
+    past_due_since: number | null;
   }>;
   const planners = plannerRows.filter(
     (p) =>
       !computeEntitlement(p.subscription_status as SubscriptionStatus, {
         trial_ends_at: p.trial_ends_at,
         founding_until: p.founding_until,
+        past_due_since: p.past_due_since,
         nowMs,
       }).entitled,
   ).length;
@@ -276,14 +284,28 @@ function weddingMsOf(weddingDate: string | null): number | null {
 export function claimStripeEvent(
   eventId: string,
   eventType: string,
+  consumer: "couple" | "planner" | "vendor",
   nowMs: number = now(),
 ): boolean {
   const r = db
     .prepare(
-      "INSERT OR IGNORE INTO stripe_webhook_events (event_id, event_type, received_at) VALUES (?, ?, ?)",
+      `INSERT OR IGNORE INTO stripe_webhook_deliveries
+        (event_id, consumer, event_type, received_at) VALUES (?, ?, ?, ?)`,
     )
-    .run(eventId, eventType, nowMs);
+    .run(eventId, consumer, eventType, nowMs);
   return r.changes > 0;
+}
+
+/** Release a delivery claim after processing failed. Stripe retries then get a
+ * fresh chance; successful deliveries keep their row and remain idempotent. */
+export function releaseStripeEvent(
+  eventId: string,
+  consumer: "couple" | "planner" | "vendor",
+): void {
+  db.prepare("DELETE FROM stripe_webhook_deliveries WHERE event_id = ? AND consumer = ?").run(
+    eventId,
+    consumer,
+  );
 }
 
 export function activatePartnerFreeWindow(coupleId: number, nowMs: number = now()): boolean {
@@ -476,30 +498,22 @@ export function applySubscriptionState(
     subscriptionId: string | null;
     stripeStatus: string;
     currentPeriodEnd: number | null; // epoch ms
+    observedAt?: number; // Stripe event creation time; server time for direct reads
   },
 ): void {
-  let mapped: string;
-  switch (opts.stripeStatus) {
-    case "active":
-    case "trialing": // Stripe-side trial → still a committed paying sub for us
-      mapped = "active";
-      break;
-    case "past_due":
-    case "unpaid":
-      mapped = "past_due";
-      break;
-    case "canceled":
-    case "incomplete_expired":
-      mapped = "canceled";
-      break;
-    default:
-      mapped = "past_due"; // incomplete / paused → treat as needs-attention
-  }
+  const mapped = subscriptionStatusFromStripe(opts.stripeStatus);
+  const ts = now();
+  const observedAt = opts.observedAt ?? ts;
   db.prepare(
     `UPDATE couples
-        SET subscription_status = ?, stripe_subscription_id = ?, current_period_end = ?, updated_at = ?
+        SET subscription_status = ?, stripe_subscription_id = ?, current_period_end = ?,
+            past_due_since = CASE
+              WHEN ? = 'past_due' THEN COALESCE(past_due_since, ?)
+              ELSE NULL
+            END,
+            updated_at = ?
       WHERE id = ?`,
-  ).run(mapped, opts.subscriptionId, opts.currentPeriodEnd, now(), coupleId);
+  ).run(mapped, opts.subscriptionId, opts.currentPeriodEnd, mapped, observedAt, ts, coupleId);
 }
 
 // ── Guest-page add-on (planner-managed couples) ─────────────────────────────
