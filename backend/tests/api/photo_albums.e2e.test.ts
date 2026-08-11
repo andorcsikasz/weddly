@@ -378,10 +378,15 @@ async function createAlbum(token: string): Promise<string> {
   return r.data.album.uploadToken;
 }
 
-async function guestUpload(albumPath: string, deviceId: string): Promise<Response> {
+async function guestUpload(
+  albumPath: string,
+  deviceId: string,
+  claimedGuestName?: string,
+): Promise<Response> {
   const fd = new FormData();
   fd.append("file", new File([FAKE_JPEG], "p.jpg", { type: "image/jpeg" }));
   fd.append("device_id", deviceId);
+  if (claimedGuestName !== undefined) fd.append("guest_name", claimedGuestName);
   return fetch(`${BASE}/api/photo-albums/${albumPath}/photos`, { method: "POST", body: fd });
 }
 
@@ -665,6 +670,72 @@ describe("guest participant aggregation", () => {
       { token },
     );
     expect(album.data.album.participantCount).toBe(0);
+  });
+});
+
+describe("per-guest quota and canonical attribution", () => {
+  let token: string;
+  let albumToken: string;
+
+  beforeAll(async () => {
+    wipeFilm();
+    ({ token } = await bootstrapCouple("guest-quota@weddly.test"));
+    albumToken = await createAlbum(token);
+    db.prepare("UPDATE photo_albums SET shots_per_guest = 2 WHERE upload_token = ?").run(
+      albumToken,
+    );
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("same-name sessions share one limit and uploads use the registered name", async () => {
+    const firstRegistration = await req<{ shotCount: number }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "nora-phone", guest_name: "Nóra" },
+    );
+    expect(firstRegistration.status).toBe(200);
+    expect(firstRegistration.data.shotCount).toBe(0);
+
+    const firstUpload = await guestUpload(albumToken, "nora-phone", "Másik vendég");
+    expect(firstUpload.status).toBe(201);
+    expect(((await firstUpload.json()) as { shotCount: number }).shotCount).toBe(1);
+
+    const secondRegistration = await req<{ shotCount: number }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "nora-tablet", guest_name: " nÓRA " },
+    );
+    expect(secondRegistration.status).toBe(200);
+    expect(secondRegistration.data.shotCount).toBe(1);
+
+    const secondUpload = await guestUpload(albumToken, "nora-tablet", "Hamis név");
+    expect(secondUpload.status).toBe(201);
+    expect(((await secondUpload.json()) as { shotCount: number }).shotCount).toBe(2);
+
+    const overLimit = await guestUpload(albumToken, "nora-phone");
+    expect(overLimit.status).toBe(429);
+    expect(((await overLimit.json()) as { detail?: { code?: string } }).detail?.code).toBe(
+      "shot_limit",
+    );
+
+    const storedNames = db
+      .prepare(
+        `SELECT DISTINCT guest_name AS guestName
+           FROM photo_uploads
+          WHERE album_id = (SELECT id FROM photo_albums WHERE upload_token = ?)
+          ORDER BY guest_name`,
+      )
+      .all(albumToken) as Array<{ guestName: string | null }>;
+    expect(storedNames.map((row) => row.guestName)).toEqual(["Nóra", "nÓRA"]);
+
+    const current = await req<{ album: { participantCount: number } }>(
+      "GET",
+      "/api/photo-albums/current",
+      undefined,
+      { token },
+    );
+    expect(current.data.album.participantCount).toBe(1);
   });
 });
 

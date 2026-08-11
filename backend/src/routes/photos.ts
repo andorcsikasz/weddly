@@ -92,6 +92,10 @@ function safeAesthetic(raw: string | null): FilmAesthetic {
   return FILM_AESTHETICS.includes(raw as FilmAesthetic) ? (raw as FilmAesthetic) : "natural";
 }
 
+function guestNameKey(value: string | null): string | null {
+  return value?.trim() ? value.trim().normalize("NFKC").toLocaleLowerCase("hu") : null;
+}
+
 function countPhotos(albumId: number): number {
   // Hidden (purged) uploads (#6) are excluded from every visible count.
   return (
@@ -119,8 +123,8 @@ function countParticipants(albumId: number): number {
                 AND removed_at IS NULL
                 AND source = 'guest'
               GROUP BY CASE
-                WHEN NULLIF(TRIM(guest_name), '') IS NULL THEN 'device:' || device_id
-                ELSE 'name:' || LOWER(TRIM(guest_name))
+                WHEN guest_name_key IS NULL THEN 'device:' || device_id
+                ELSE 'name:' || guest_name_key
               END
            )`,
       )
@@ -136,7 +140,11 @@ function countParticipants(albumId: number): number {
  * guest from resetting the per-person limit by opening the link in a second
  * browser. Hidden uploads intentionally still consume quota, matching the
  * previous per-device behaviour. */
-function countParticipantShots(albumId: number, deviceId: string, guestName: string | null): number {
+function countParticipantShots(
+  albumId: number,
+  deviceId: string,
+  guestName: string | null,
+): number {
   const normalizedName = guestName?.trim() || null;
   if (normalizedName) {
     return (
@@ -149,10 +157,10 @@ function countParticipantShots(albumId: number, deviceId: string, guestName: str
                 SELECT device_id
                   FROM film_devices
                  WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
-                   AND LOWER(TRIM(guest_name)) = LOWER(TRIM(?))
+                   AND guest_name_key = ?
               )`,
         )
-        .get(albumId, albumId, normalizedName) as { c: number }
+        .get(albumId, albumId, guestNameKey(normalizedName)) as { c: number }
     ).c;
   }
 
@@ -593,8 +601,8 @@ async function handleListDevices(ctx: Ctx): Promise<Response> {
           AND pu.hidden_at IS NULL AND pu.source = 'guest'
         WHERE fd.album_id = ? AND fd.removed_at IS NULL AND fd.source = 'guest'
         GROUP BY CASE
-          WHEN NULLIF(TRIM(fd.guest_name), '') IS NULL THEN 'device:' || fd.device_id
-          ELSE 'name:' || LOWER(TRIM(fd.guest_name))
+          WHEN fd.guest_name_key IS NULL THEN 'device:' || fd.device_id
+          ELSE 'name:' || fd.guest_name_key
         END
         ORDER BY MIN(fd.joined_at) ASC`,
     )
@@ -637,9 +645,9 @@ async function handleRemoveDevice(ctx: Ctx): Promise<Response> {
             `SELECT device_id AS deviceId
                FROM film_devices
               WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
-                AND LOWER(TRIM(guest_name)) = LOWER(TRIM(?))`,
+                AND guest_name_key = ?`,
           )
-          .all(row.id, device.guestName)
+          .all(row.id, guestNameKey(device.guestName))
       : db
           .prepare(
             `SELECT device_id AS deviceId
@@ -736,6 +744,7 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
     typeof body.guest_name === "string" && body.guest_name.trim()
       ? body.guest_name.trim().slice(0, 200)
       : null;
+  const normalizedGuestName = guestNameKey(guestName);
 
   // Enforce guest cap — only count new devices, not re-registrations.
   const existingDevice = db
@@ -771,9 +780,9 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
                FROM film_devices
               WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
                 AND device_id <> ?
-                AND LOWER(TRIM(guest_name)) = LOWER(TRIM(?))`,
+                AND guest_name_key = ?`,
           )
-          .get(row.id, deviceId, guestName) as { c: number }
+          .get(row.id, deviceId, normalizedGuestName) as { c: number }
       ).c
     : 0;
 
@@ -784,13 +793,7 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
       oldName === null && guestName === null
         ? true
         : oldName !== null && guestName !== null
-          ? Boolean(
-              (
-                db
-                  .prepare("SELECT LOWER(TRIM(?)) = LOWER(TRIM(?)) AS same")
-                  .get(oldName, guestName) as { same: number }
-              ).same,
-            )
+          ? guestNameKey(oldName) === normalizedGuestName
           : false;
 
     if (sameParticipant) {
@@ -803,9 +806,9 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
                 `SELECT COUNT(*) AS c
                    FROM film_devices
                   WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
-                    AND LOWER(TRIM(guest_name)) = LOWER(TRIM(?))`,
+                    AND guest_name_key = ?`,
               )
-              .get(row.id, oldName) as { c: number }
+              .get(row.id, guestNameKey(oldName)) as { c: number }
           ).c
         : 1;
       participantDelta =
@@ -819,10 +822,13 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
 
   // Upsert device row (update name if guest changes it).
   db.prepare(
-    `INSERT INTO film_devices (album_id, device_id, guest_name, joined_at, source)
-     VALUES (?, ?, ?, ?, 'guest')
-     ON CONFLICT(album_id, device_id) DO UPDATE SET guest_name = excluded.guest_name`,
-  ).run(row.id, deviceId, guestName, now());
+    `INSERT INTO film_devices
+       (album_id, device_id, guest_name, guest_name_key, joined_at, source)
+     VALUES (?, ?, ?, ?, ?, 'guest')
+     ON CONFLICT(album_id, device_id) DO UPDATE SET
+       guest_name = excluded.guest_name,
+       guest_name_key = excluded.guest_name_key`,
+  ).run(row.id, deviceId, guestName, normalizedGuestName, now());
 
   const publicAlbum: PhotoAlbumPublic = {
     displayName: row.display_name,

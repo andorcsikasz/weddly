@@ -687,7 +687,9 @@ function Gallery({ uploads, aesthetic }: { uploads: FilmUpload[]; aesthetic: Fil
               alt={label}
               loading="lazy"
               className="w-full object-cover"
-              style={{ filter: filterStyle((u.filterApplied as FilmAesthetic | null) ?? aesthetic) }}
+              style={{
+                filter: filterStyle((u.filterApplied as FilmAesthetic | null) ?? aesthetic),
+              }}
             />
             {u.source === "couple" && (
               <span className="absolute right-1.5 top-1.5 rounded-full bg-umber-600/90 px-2 py-0.5 font-grotesk text-[10px] font-semibold uppercase tracking-[0.08em] text-paper-50">

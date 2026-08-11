@@ -66,17 +66,6 @@ function errDetailCode(err: unknown): string | undefined {
   return undefined;
 }
 
-type FilmStatus = "live" | "developing" | "revealed";
-
-function getFilmStatus(album: PhotoAlbum): FilmStatus {
-  const ts = Date.now();
-  const eventEnded = album.eventEndsAt !== null && ts >= album.eventEndsAt;
-  const uploading = album.isUploadEnabled && !eventEnded;
-  if (uploading) return "live";
-  if (album.revealAt !== null && ts < album.revealAt) return "developing";
-  return "revealed";
-}
-
 function formatDuration(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(s / 3600);
@@ -662,7 +651,7 @@ function FilmModal({
   album: PhotoAlbum | null;
   couple: Couple | null;
   onClose: () => void;
-  onSaved: (album: PhotoAlbum) => void;
+  onSaved: (album: PhotoAlbum) => void | Promise<void>;
 }) {
   const { t } = useT();
   const toast = useToast();
@@ -724,14 +713,14 @@ function FilmModal({
           ...(endsMs !== null ? { eventEndsAt: endsMs } : {}),
           ...(revealMs !== null ? { revealAt: revealMs } : {}),
         });
-        onSaved(updated);
+        await onSaved(updated);
       } else {
         const { album: created } = await photoAlbumApi.create({
           title: title.trim() || undefined,
           filmAesthetic: aesthetic,
           shotsPerGuest: spg,
         });
-        onSaved(created);
+        await onSaved(created);
       }
       onClose();
     } catch {
@@ -966,6 +955,7 @@ export default function MediaPage() {
   const [savingSlug, setSavingSlug] = useState(false);
   const [rotatingGuestLink, setRotatingGuestLink] = useState(false);
   const [togglingUpload, setTogglingUpload] = useState(false);
+  const [reopenRequested, setReopenRequested] = useState(false);
   const [loading, setLoading] = useState(true);
   const [coupleUploading, setCoupleUploading] = useState(false);
   const [coupleUploadProgress, setCoupleUploadProgress] = useState<{
@@ -1078,7 +1068,6 @@ export default function MediaPage() {
   }
 
   const photographerUrls = couple?.media_links?.photographer ?? [];
-  const albumStatus = album ? getFilmStatus(album) : null;
   const uploadUrl = album ? `${window.location.origin}/photos/${album.uploadToken}` : null;
   // #17: prefer the prettier custom slug for display + copy/share; QR stays on the token.
   const guestLinkUrl =
@@ -1239,6 +1228,24 @@ export default function MediaPage() {
     } finally {
       setTogglingUpload(false);
     }
+  }
+
+  async function handleFilmSaved(updated: PhotoAlbum) {
+    setAlbum(updated);
+    if (!reopenRequested) return;
+
+    // An expired film needs both a future deadline and the upload switch. Do
+    // these as one user action so "Újranyitás" cannot leave a still-closed
+    // film after the settings modal was saved.
+    if (updated.eventEndsAt === null || updated.eventEndsAt <= Date.now()) {
+      throw new Error("A future upload deadline is required to reopen the film");
+    }
+    if (!updated.isUploadEnabled) {
+      const { album: reopened } = await photoAlbumApi.update({ isUploadEnabled: true });
+      setAlbum(reopened);
+    }
+    setReopenRequested(false);
+    toast.success(t("media.early_close_reopen"));
   }
 
   if (loading) return null;
@@ -1507,7 +1514,7 @@ export default function MediaPage() {
                     className="font-serif text-2xl font-medium leading-snug !text-paper-50"
                     style={{ textShadow: "0 2px 10px rgba(0,0,0,0.7)" }}
                   >
-                    {couple?.display_name || album.title || t("media.film_settings_unnamed")}
+                    {album.title || couple?.display_name || t("media.film_settings_unnamed")}
                   </h3>
                   <button
                     type="button"
@@ -1823,6 +1830,7 @@ export default function MediaPage() {
                       if (uploadsOpen) {
                         void handleToggleUpload(false);
                       } else if (filmExpired) {
+                        setReopenRequested(true);
                         setShowFilmModal(true);
                       } else {
                         void handleToggleUpload(true);
@@ -1998,8 +2006,11 @@ export default function MediaPage() {
         open={showFilmModal}
         album={album}
         couple={couple}
-        onClose={() => setShowFilmModal(false)}
-        onSaved={(a) => setAlbum(a)}
+        onClose={() => {
+          setShowFilmModal(false);
+          setReopenRequested(false);
+        }}
+        onSaved={handleFilmSaved}
       />
       {album && guestLinkUrl && (
         <ShareSheet

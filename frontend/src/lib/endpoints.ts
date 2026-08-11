@@ -4043,7 +4043,7 @@ export const photoAlbumApi = {
     token: string,
   ): Promise<
     | { locked: true; revealsAt: number; photoCount: number }
-    | { locked: false; uploads: unknown[]; total: number }
+    | { locked: false; uploads: FilmUpload[]; total: number }
   > => publicFilmFetch(`/api/photo-albums/${token}/photos`),
 
   /** Public: upload a photo. Returns upload id + fileUrl + updated shotCount. */

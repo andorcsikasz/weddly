@@ -1871,6 +1871,7 @@ CREATE TABLE IF NOT EXISTS film_devices (
   album_id INTEGER NOT NULL REFERENCES photo_albums(id) ON DELETE CASCADE,
   device_id TEXT NOT NULL,
   guest_name TEXT,
+  guest_name_key TEXT,
   joined_at INTEGER NOT NULL,
   UNIQUE(album_id, device_id)
 );

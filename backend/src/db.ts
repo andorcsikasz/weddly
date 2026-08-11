@@ -1735,6 +1735,25 @@ db.exec("UPDATE photo_uploads SET source = 'couple' WHERE device_id = 'couple'")
 // Keep its source explicit so legacy couple-upload sessions never consume the
 // guest cap or appear in the host's joined-guests dashboard.
 addColumnIfMissing("film_devices", "source", "source TEXT NOT NULL DEFAULT 'guest'");
+// SQLite's LOWER() is ASCII-only in our build. Store the Unicode-normalized
+// identity key explicitly so Hungarian names group consistently across
+// browsers (`Nóra` and `nÓRA` are one guest).
+addColumnIfMissing("film_devices", "guest_name_key", "guest_name_key TEXT");
+const filmDeviceNames = db
+  .prepare("SELECT id, guest_name AS guestName FROM film_devices")
+  .all() as Array<{ id: number; guestName: string | null }>;
+const backfillFilmDeviceNameKey = db.transaction(
+  (rows: Array<{ id: number; guestName: string | null }>) => {
+    const update = db.prepare("UPDATE film_devices SET guest_name_key = ? WHERE id = ?");
+    for (const row of rows) {
+      const key = row.guestName?.trim()
+        ? row.guestName.trim().normalize("NFKC").toLocaleLowerCase("hu")
+        : null;
+      update.run(key, row.id);
+    }
+  },
+);
+backfillFilmDeviceNameKey(filmDeviceNames);
 db.exec("UPDATE film_devices SET source = 'couple' WHERE device_id = 'couple'");
 db.exec(
   `UPDATE film_devices AS fd

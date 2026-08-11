@@ -34,6 +34,67 @@ function response(body: unknown): Response {
 }
 
 describe("<GuestPhotoPage> host preview", () => {
+  it("persists a first-time guest name on the device before opening the camera", async () => {
+    const registrations: Array<{ device_id: string; guest_name: string | null }> = [];
+    globalThis.fetch = mock((_input: RequestInfo | URL, init?: RequestInit) => {
+      if (typeof init?.body === "string") {
+        registrations.push(
+          JSON.parse(init.body) as { device_id: string; guest_name: string | null },
+        );
+      }
+      return Promise.resolve(
+        response({
+          album: {
+            displayName: "Andor & Sári",
+            weddingDate: "2026-08-08",
+            slug: null,
+            title: null,
+            shotsPerGuest: 5,
+            isUploadEnabled: true,
+            eventEndsAt: null,
+            revealAt: null,
+            filmAesthetic: "natural",
+            coverImageUrl: null,
+          },
+          shotCount: 0,
+        }),
+      );
+    }) as unknown as typeof fetch;
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: undefined,
+    });
+
+    render(
+      <I18nProvider>
+        <MemoryRouter initialEntries={["/photos/new-guest-token"]}>
+          <Routes>
+            <Route path="/photos/:token" element={<GuestPhotoPage />} />
+          </Routes>
+        </MemoryRouter>
+      </I18nProvider>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "A neved" })).toBeInTheDocument(),
+    );
+    expect(registrations).toHaveLength(1);
+    expect(registrations[0]?.guest_name).toBeNull();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "A neved" }), {
+      target: { value: "  Nóra  " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Mehet" }));
+
+    await waitFor(() => expect(screen.getByText("A kamera ki van kapcsolva")).toBeInTheDocument());
+    expect(registrations).toHaveLength(2);
+    expect(registrations[1]).toMatchObject({
+      device_id: registrations[0]?.device_id,
+      guest_name: "Nóra",
+    });
+    expect(localStorage.getItem("weddly.film.new-guest-token.name")).toBe("Nóra");
+  });
+
   it("uses the authenticated read-only endpoint and never starts camera or guest mutations", async () => {
     const requests: Array<{ url: string; method: string }> = [];
     globalThis.fetch = mock((input: RequestInfo | URL, init?: RequestInit) => {
