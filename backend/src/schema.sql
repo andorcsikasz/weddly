@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL DEFAULT 'owner',                          -- 'owner' | 'partner' | 'guest_admin' | 'admin'
   couple_id INTEGER REFERENCES couples(id),                    -- nullable: set after onboarding
   verified_email INTEGER NOT NULL DEFAULT 0,
+  working_presence_at INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );

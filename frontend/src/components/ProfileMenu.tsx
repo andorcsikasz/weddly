@@ -2,7 +2,7 @@
 // button; panel shows name, email, link to /app/profile, and Sign out.
 // Closes on outside click, Escape, route change, or item selection.
 
-import type { CouplePartnerView } from "@shared/types";
+import { type CouplePartnerView, PROFILE_ACTIVE_WINDOW_MS } from "@shared/types";
 import {
   ArrowLeftRight,
   Check,
@@ -57,6 +57,7 @@ export function ProfileMenu({
   // invite" state. Keeping those apart prevents the empty invite slot from
   // flashing for couples who already have a partner while the header loads.
   const [partner, setPartner] = useState<CouplePartnerView | null | undefined>(undefined);
+  const [locallyActive, setLocallyActive] = useState(true);
 
   // Close on outside click + Escape.
   useEffect(() => {
@@ -107,6 +108,58 @@ export function ProfileMenu({
     };
   }, [user]);
 
+  // Presence is deliberately separate from authentication. Only explicit
+  // pointer/keyboard/scroll work refreshes it; notification and partner polls
+  // cannot keep an abandoned tab green. Requests are throttled while the local
+  // timer turns the current avatar muted after the same shared window.
+  useEffect(() => {
+    if (!user) return;
+    let lastHeartbeatAt = 0;
+    let idleTimer: number | undefined;
+
+    const report = (active: boolean) => {
+      void coupleApi.presence(active).catch(() => {
+        // Presence is advisory; a transient network failure must not affect work.
+      });
+    };
+    const markActive = () => {
+      if (document.visibilityState === "hidden") return;
+      const ts = Date.now();
+      setLocallyActive(true);
+      window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(() => {
+        setLocallyActive(false);
+        report(false);
+      }, PROFILE_ACTIVE_WINDOW_MS);
+      if (ts - lastHeartbeatAt >= 30_000) {
+        lastHeartbeatAt = ts;
+        report(true);
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        window.clearTimeout(idleTimer);
+        setLocallyActive(false);
+        report(false);
+      } else {
+        markActive();
+      }
+    };
+
+    markActive();
+    window.addEventListener("pointerdown", markActive);
+    window.addEventListener("keydown", markActive);
+    window.addEventListener("scroll", markActive, { passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearTimeout(idleTimer);
+      window.removeEventListener("pointerdown", markActive);
+      window.removeEventListener("keydown", markActive);
+      window.removeEventListener("scroll", markActive);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [user]);
+
   if (!user) return null;
 
   const inAdminView = location.pathname.startsWith("/app/admin");
@@ -153,20 +206,26 @@ export function ProfileMenu({
               >
                 {partnerInitials}
                 <span
-                  className={`absolute bottom-0 left-0 z-10 h-3 w-3 rounded-full border-2 border-paper-50 dark:border-umber-800 ${
+                  className={`absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full border-2 border-paper-50 dark:border-umber-800 ${
                     partner?.status === "active" ? "bg-sage-500" : "bg-umber-400"
                   }`}
                 />
               </span>
             )}
             <span
-              title={`${user.full_name || user.email} · ${t("profile.partner_status_active")}`}
+              title={`${user.full_name || user.email} · ${t(
+                locallyActive ? "profile.partner_status_active" : "profile.partner_status_joined",
+              )}`}
               className={`relative flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900 dark:bg-umber-600 dark:text-paper-50 dark:group-hover:bg-umber-500 ${
                 showPartner ? "-ml-3 ring-2 ring-paper-50 dark:ring-umber-800" : ""
               }`}
             >
               {initials}
-              <span className="absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full border-2 border-paper-50 bg-sage-500 dark:border-umber-800" />
+              <span
+                className={`absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full border-2 border-paper-50 dark:border-umber-800 ${
+                  locallyActive ? "bg-sage-500" : "bg-umber-400"
+                }`}
+              />
             </span>
           </span>
           <ChevronDownIcon />

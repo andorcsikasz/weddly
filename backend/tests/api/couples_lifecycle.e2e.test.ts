@@ -2,6 +2,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { CURRENCIES } from "@shared/currency";
+import { PROFILE_ACTIVE_WINDOW_MS } from "@shared/types";
 import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
 import { issueSession } from "../../src/auth/session";
 import { db } from "../../src/db";
@@ -695,6 +696,37 @@ describe("couples_lifecycle: partner view status transitions", () => {
     );
     expect(active.data.partner.status).toBe("active");
     expect(active.data.partner.full_name).toBe("Petra Nagy");
+
+    // A valid long-lived login token is not enough for a green dot. Once the
+    // explicit interaction heartbeat is stale, the partner is joined but not
+    // actively working.
+    db.prepare("UPDATE users SET working_presence_at = ? WHERE email = ?").run(
+      Date.now() - PROFILE_ACTIVE_WINDOW_MS - 1,
+      "pv-b@weddly.test",
+    );
+    const idle = await req<{ partner: { status: string } }>(
+      "GET",
+      "/api/couples/partner",
+      undefined,
+      { token: aToken },
+    );
+    expect(idle.data.partner.status).toBe("joined");
+
+    const heartbeat = await req<{ active: boolean }>(
+      "POST",
+      "/api/couples/presence",
+      { active: true },
+      { token: bToken },
+    );
+    expect(heartbeat.status).toBe(200);
+    expect(heartbeat.data.active).toBe(true);
+    const activeAgain = await req<{ partner: { status: string } }>(
+      "GET",
+      "/api/couples/partner",
+      undefined,
+      { token: aToken },
+    );
+    expect(activeAgain.data.partner.status).toBe("active");
 
     // Drop B's sessions → status="joined" (no live token, but account exists).
     db.prepare("DELETE FROM sessions WHERE user_id = (SELECT id FROM users WHERE email = ?)").run(

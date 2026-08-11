@@ -572,6 +572,9 @@ addColumnIfMissing("guests", "partner_role", "partner_role TEXT");
 // hot-loop write on every API call). Powers the admin directory's "Last
 // active" column. NULL means "never logged in since the column was added".
 addColumnIfMissing("users", "last_seen_at", "last_seen_at INTEGER");
+// Explicit, short-lived collaboration presence. Unlike last_seen_at this is
+// refreshed only by user interaction in the app, never by background polling.
+addColumnIfMissing("users", "working_presence_at", "working_presence_at INTEGER");
 
 // Google account linkage. `users.google_sub` is the Google-issued `sub` claim
 // — a stable, opaque user id that never changes even if the user renames the

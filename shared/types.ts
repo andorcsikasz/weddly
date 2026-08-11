@@ -1036,6 +1036,10 @@ export type CouplePartnerStatus =
   /** Partner has an unexpired session — they're signed in somewhere. */
   | "active";
 
+/** A profile counts as actively working only while explicit UI interaction
+ * heartbeats are fresh. An authenticated token alone is not presence. */
+export const PROFILE_ACTIVE_WINDOW_MS = 2 * 60 * 1000;
+
 export interface CouplePartnerView {
   /** Null when status is "invited" — they don't have a name in our system yet. */
   full_name: string | null;

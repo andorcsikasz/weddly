@@ -26,6 +26,9 @@ export function issueSession(userId: number): string {
     created,
     expires,
   );
+  // Signing in is an explicit user action. Subsequent presence is refreshed by
+  // the UI interaction heartbeat, not by background authenticated requests.
+  db.prepare("UPDATE users SET working_presence_at = ? WHERE id = ?").run(created, userId);
   return `${id}.${sign(id)}`;
 }
 

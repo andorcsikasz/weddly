@@ -89,7 +89,7 @@ describe("<ProfileMenu>", () => {
     view.unmount();
   });
 
-  it("keeps both active indicators on the outside edges of the avatar pair", async () => {
+  it("places both active indicators in the same bottom-right position", async () => {
     const { view } = renderMenu({
       full_name: "Csaba Antal",
       email: "csaba@example.test",
@@ -99,8 +99,23 @@ describe("<ProfileMenu>", () => {
     await waitFor(() => {
       expect(view.container.querySelectorAll(".bg-sage-500")).toHaveLength(2);
     });
-    expect(view.container.querySelector(".bg-sage-500.left-0")).toBeInTheDocument();
-    expect(view.container.querySelector(".bg-sage-500.right-0")).toBeInTheDocument();
+    expect(view.container.querySelectorAll(".bg-sage-500.right-0")).toHaveLength(2);
+    expect(view.container.querySelector(".bg-sage-500.left-0")).not.toBeInTheDocument();
+
+    view.unmount();
+  });
+
+  it("keeps an inactive partner muted while the current working profile is green", async () => {
+    const { view } = renderMenu({
+      full_name: "Csaba Antal",
+      email: "csaba@example.test",
+      status: "joined",
+    });
+
+    await waitFor(() => {
+      expect(view.container.querySelectorAll(".bg-sage-500.right-0")).toHaveLength(1);
+    });
+    expect(view.container.querySelector(".bg-umber-400.right-0")).toBeInTheDocument();
 
     view.unmount();
   });

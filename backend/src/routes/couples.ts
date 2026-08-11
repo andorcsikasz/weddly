@@ -17,6 +17,7 @@ import {
   type GuestCountKind,
   INVITE_TTL_MS,
   MAX_PHOTOGRAPHER_LINKS,
+  PROFILE_ACTIVE_WINDOW_MS,
   type MediaLinks,
   type WeddingDateGoal,
   type WeddingDateKind,
@@ -3209,11 +3210,10 @@ function handleDismissDateChange(ctx: Ctx): Response {
  *    - "invited"  → no partner_b account; an unconsumed unexpired invite
  *                   exists. We expose its `invited_email` (if any) so the
  *                   inviter can spot a typo.
- *    - "joined"   → partner_b account exists, no unexpired session
- *                   anywhere. Means they've accepted but signed out since.
- *    - "active"   → partner_b account exists + at least one unexpired
- *                   session row. Means they have an active token (web /
- *                   mobile). We don't track presence beyond this. */
+ *    - "joined"   → partner account exists, but has no live session or recent
+ *                   explicit UI interaction.
+ *    - "active"   → partner has a live session and a fresh interaction
+ *                   heartbeat. A background-open tab is not presence. */
 function handleGetPartner(ctx: Ctx): Response {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -3253,9 +3253,28 @@ function handleGetPartner(ctx: Ctx): Response {
   const partner: CouplePartnerView = {
     full_name: other.full_name,
     email: other.email,
-    status: live ? "active" : "joined",
+    status:
+      live &&
+      other.working_presence_at != null &&
+      other.working_presence_at >= ts - PROFILE_ACTIVE_WINDOW_MS
+        ? "active"
+        : "joined",
   };
   return json({ partner });
+}
+
+/** Explicit collaboration presence, driven only by real UI interaction.
+ * Background polling must never call this endpoint: otherwise an abandoned
+ * open tab would keep the profile dot green indefinitely. */
+async function handleSetWorkingPresence(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const body = (await ctx.req.json().catch(() => ({}))) as Record<string, unknown>;
+  if (typeof body.active !== "boolean") throw new HttpError(400, "active boolean required");
+  db.prepare("UPDATE users SET working_presence_at = ? WHERE id = ?").run(
+    body.active ? now() : null,
+    userId,
+  );
+  return json({ active: body.active });
 }
 
 /** Recent-activity feed for the Profile page. We surface only the events
@@ -3787,6 +3806,7 @@ export function registerCoupleRoutes(router: Router) {
   router.delete("/api/couples/:id", handleDeleteCouple, true);
   router.get("/api/couples/current", handleGetCurrentCouple, true);
   router.get("/api/couples/partner", handleGetPartner, true);
+  router.post("/api/couples/presence", handleSetWorkingPresence, true);
   router.get("/api/couples/current/vendors-to-review", handleVendorsToReview, true);
   router.get("/api/couples/activity", handleGetActivity, true);
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);

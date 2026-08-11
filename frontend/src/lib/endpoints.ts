@@ -778,6 +778,9 @@ export const coupleApi = {
   deleteWorkspace: (coupleId: number) =>
     apiFetch<{ ok: true }>("DELETE", `/api/couples/${coupleId}`),
   partner: () => apiFetch<{ partner: CouplePartnerView | null }>("GET", "/api/couples/partner"),
+  /** Explicit user-interaction heartbeat for the paired header avatars. */
+  presence: (active: boolean) =>
+    apiFetch<{ active: boolean }>("POST", "/api/couples/presence", { active }),
   /** Last 14 days of partner-visible activity (saves, uploads, deletes,
    *  RSVPs, exports). Used by the Profile "activity" panel. */
   activity: () => apiFetch<{ entries: CoupleActivityEntry[] }>("GET", "/api/couples/activity"),

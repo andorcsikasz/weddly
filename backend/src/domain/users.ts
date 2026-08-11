@@ -19,6 +19,8 @@ export interface UserRow {
   updated_at: number;
   /** Additive column (see db.ts) — null for rows that pre-date the field. */
   last_seen_at: number | null;
+  /** Explicit interaction heartbeat used by the header profile indicator. */
+  working_presence_at?: number | null;
   /** Google-issued `sub` claim, set when a user signs in / signs up with
    *  Google. Null for password-only accounts. */
   google_sub?: string | null;
