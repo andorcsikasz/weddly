@@ -21,7 +21,7 @@
 //   gallery       — reveal_at passed; grid of photos
 //   limit_reached — shots_per_guest exhausted
 
-import type { FilmAesthetic, PhotoAlbumPublic } from "@shared/types";
+import type { FilmAesthetic, FilmUpload, PhotoAlbumPublic } from "@shared/types";
 import { FILM_FILTERS } from "@shared/types";
 import { Camera, Check, ImagePlus, SwitchCamera } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -48,6 +48,17 @@ function getStoredName(token: string): string | null {
 
 function storeName(token: string, name: string): void {
   localStorage.setItem(`weddly.film.${token}.name`, name);
+}
+
+const HEIF_MIME_TYPES = new Set([
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
+]);
+
+function isHeifFile(file: File): boolean {
+  return HEIF_MIME_TYPES.has(file.type.toLowerCase()) || /\.hei[cf]$/i.test(file.name);
 }
 
 // ─── device detection ─────────────────────────────────────────────────────────
@@ -77,12 +88,13 @@ type PageState =
   // wifi (so one public IP). Telling that guest their link is dead would be a
   // lie they can't recover from — "try again in a moment" is the truth.
   | { kind: "busy" }
+  | { kind: "preview_unavailable" }
   | { kind: "disabled" }
   | { kind: "name_capture"; album: PhotoAlbumPublic }
   | { kind: "returning_welcome"; album: PhotoAlbumPublic; guestName: string; shotCount: number }
   | { kind: "viewfinder"; album: PhotoAlbumPublic; guestName: string | null; shotCount: number }
   | { kind: "developing"; album: PhotoAlbumPublic }
-  | { kind: "gallery"; album: PhotoAlbumPublic; uploads: unknown[] }
+  | { kind: "gallery"; album: PhotoAlbumPublic; uploads: FilmUpload[] }
   | { kind: "limit_reached"; album: PhotoAlbumPublic };
 
 // ─── CSS filter helper ────────────────────────────────────────────────────────
@@ -168,8 +180,11 @@ const GHOST_BTN =
 function PreviewBanner() {
   const { t } = useT();
   return (
-    <div className="pointer-events-none fixed left-0 right-0 top-0 z-50 flex justify-center px-3 pt-[max(0.5rem,env(safe-area-inset-top))]">
-      <span className="rounded-full bg-umber-600/90 px-3 py-1 text-[11px] font-grotesk font-medium uppercase tracking-[0.12em] text-paper-50 shadow-sm backdrop-blur-sm">
+    <div
+      role="status"
+      className="pointer-events-none fixed left-0 right-0 top-0 z-50 flex justify-center px-3 pt-[max(0.5rem,env(safe-area-inset-top))]"
+    >
+      <span className="rounded-full border border-paper-50/30 bg-umber-700 px-3 py-1.5 text-[11px] font-grotesk font-bold uppercase tracking-[0.1em] text-paper-50 shadow-lg">
         {t("photos.preview_banner")}
       </span>
     </div>
@@ -190,16 +205,20 @@ function PreviewBanner() {
 
 const FIRST_FRAME_TIMEOUT_MS = 5000;
 
-type CameraStatus = "starting" | "live" | "blocked";
+type CameraStatus = "starting" | "live" | "blocked" | "preview";
 type Facing = "environment" | "user";
 
-function useCamera(facing: Facing) {
+function useCamera(facing: Facing, enabled = true) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [status, setStatus] = useState<CameraStatus>("starting");
+  const [status, setStatus] = useState<CameraStatus>(enabled ? "starting" : "preview");
 
   useEffect(() => {
+    if (!enabled) {
+      setStatus("preview");
+      return;
+    }
     const supported =
       typeof navigator !== "undefined" &&
       typeof navigator.mediaDevices?.getUserMedia === "function";
@@ -251,7 +270,7 @@ function useCamera(facing: Facing) {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [facing]);
+  }, [enabled, facing]);
 
   useEffect(
     () => () => {
@@ -316,7 +335,9 @@ function Viewfinder({
   const mobile = isMobileDevice();
   const inApp = isInAppBrowser();
   const [facing, setFacing] = useState<Facing>("environment");
-  const { videoRef, canvasRef, status, capture } = useCamera(facing);
+  // Host preview must not even request camera permission. It renders the same
+  // chrome with a clearly marked, inert viewfinder instead.
+  const { videoRef, canvasRef, status, capture } = useCamera(facing, !preview);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -325,7 +346,7 @@ function Viewfinder({
   // Thank-you screen shown after a successful upload (does not auto-dismiss).
   const [sent, setSent] = useState(false);
   const [sentCount, setSentCount] = useState(0);
-  const deviceId = getDeviceId(token);
+  const deviceId = preview ? "" : getDeviceId(token);
 
   const live = status === "live";
   const blocked = status === "blocked";
@@ -341,8 +362,15 @@ function Viewfinder({
   );
 
   async function shoot(file: File) {
-    if (uploading) return;
+    if (preview || uploading) return;
     setError(null);
+    // There is no HEVC/libheif decoder in either runtime. Fail before sending
+    // multi-megabyte iPhone originals, while the backend independently sniffs
+    // the bytes so renamed/spoofed files receive the same specific guidance.
+    if (isHeifFile(file)) {
+      setError(t("photos.error_heic"));
+      return;
+    }
     setUploading(true);
     setFlash(true);
     setTimeout(() => setFlash(false), 120);
@@ -352,6 +380,7 @@ function Viewfinder({
         deviceId,
         guestName: guestName ?? undefined,
         filterApplied: album.filmAesthetic,
+        preview,
       });
       setLastPhotoUrl((old) => {
         if (old) URL.revokeObjectURL(old);
@@ -368,24 +397,29 @@ function Viewfinder({
       URL.revokeObjectURL(previewUrl);
       const detail = (err as { detail?: unknown })?.detail;
       const code = (detail as { code?: string } | undefined)?.code;
-      if (code === "shot_limit") {
+      if (code === "heic_not_supported") {
+        setError(t("photos.error_heic"));
+      } else if (code === "shot_limit") {
         onLimitReached();
         return;
+      } else {
+        const status = (err as { status?: number })?.status;
+        if (status === 413) setError(t("photos.error_too_large"));
+        else if (status === 400) setError(t("photos.error_bad_type"));
+        else setError(t("photos.error_generic"));
       }
-      const status = (err as { status?: number })?.status;
-      if (status === 413) setError(t("photos.error_too_large"));
-      else if (status === 400) setError(t("photos.error_bad_type"));
-      else setError(t("photos.error_generic"));
     } finally {
       setUploading(false);
     }
   }
 
   function openPicker() {
+    if (preview) return;
     fileInputRef.current?.click();
   }
 
   async function handleShutter() {
+    if (preview) return;
     if (live) {
       const file = await capture(facing === "user");
       if (file) void shoot(file);
@@ -455,6 +489,19 @@ function Viewfinder({
           </div>
         )}
 
+        {/* Preview is intentionally inert: no camera permission and no file picker. */}
+        {preview && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center">
+            <Camera className="h-10 w-10 text-paper-50/45" aria-hidden="true" />
+            <span className="font-grotesk text-[22px] font-bold leading-tight text-paper-50">
+              {t("photos.preview_camera_heading")}
+            </span>
+            <span className="max-w-xs text-[14px] leading-relaxed text-paper-50/60">
+              {t("photos.preview_camera_sub")}
+            </span>
+          </div>
+        )}
+
         {/* Camera refused / absent — one bold line and the upload route. */}
         {blocked && (
           <button
@@ -507,7 +554,7 @@ function Viewfinder({
           <button
             type="button"
             onClick={openPicker}
-            disabled={uploading}
+            disabled={preview || uploading}
             aria-label={t("photos.upload_existing")}
             title={t("photos.upload_existing")}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
@@ -519,7 +566,7 @@ function Viewfinder({
         <div className="flex justify-center">
           <button
             type="button"
-            disabled={uploading || status === "starting"}
+            disabled={preview || uploading || status === "starting"}
             onClick={handleShutter}
             aria-label={t("photos.take_photo")}
             className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-4 border-paper-50/35 bg-paper-50 transition-transform active:scale-90 disabled:opacity-50"
@@ -579,7 +626,8 @@ function Viewfinder({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        disabled={preview}
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
         className="sr-only"
         onChange={handleFileChange}
       />
@@ -618,39 +666,42 @@ function Countdown({ revealsAt, onRevealed }: { revealsAt: number; onRevealed: (
 
 // ─── gallery component ────────────────────────────────────────────────────────
 
-interface UploadItem {
-  id: number;
-  guestName: string | null;
-  fileUrl: string;
-  filterApplied: FilmAesthetic | null;
-  source?: "guest" | "couple";
-}
-
-function Gallery({ uploads, aesthetic }: { uploads: UploadItem[]; aesthetic: FilmAesthetic }) {
-  const { t } = useT();
+function Gallery({ uploads, aesthetic }: { uploads: FilmUpload[]; aesthetic: FilmAesthetic }) {
+  const { t, locale } = useT();
   return (
     <div className="columns-2 gap-2">
-      {uploads.map((u) => (
-        <div key={u.id} className="relative mb-2 overflow-hidden rounded-2xl break-inside-avoid">
-          <img
-            src={u.fileUrl}
-            alt=""
-            loading="lazy"
-            className="w-full object-cover"
-            style={{ filter: filterStyle(u.filterApplied ?? aesthetic) }}
-          />
-          {u.source === "couple" && (
-            <span className="absolute right-1.5 top-1.5 rounded-full bg-umber-600/90 px-2 py-0.5 font-grotesk text-[10px] font-semibold uppercase tracking-[0.08em] text-paper-50">
-              {t("photos.from_couple")}
-            </span>
-          )}
-          {u.guestName && (
-            <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/55 px-2 py-0.5 font-grotesk text-[11px] font-medium text-white backdrop-blur-sm">
-              {u.guestName}
-            </span>
-          )}
-        </div>
-      ))}
+      {uploads.map((u, index) => {
+        const contributor =
+          u.source === "couple"
+            ? t("photos.from_couple")
+            : (u.guestName ?? t("media.film_anonymous"));
+        const label = t("media.gallery_photo_alt", {
+          n: index + 1,
+          name: contributor,
+          date: new Date(u.uploadedAt).toLocaleDateString(intlLocale(locale)),
+        });
+        return (
+          <div key={u.id} className="relative mb-2 overflow-hidden rounded-2xl break-inside-avoid">
+            <img
+              src={u.fileUrl}
+              alt={label}
+              loading="lazy"
+              className="w-full object-cover"
+              style={{ filter: filterStyle((u.filterApplied as FilmAesthetic | null) ?? aesthetic) }}
+            />
+            {u.source === "couple" && (
+              <span className="absolute right-1.5 top-1.5 rounded-full bg-umber-600/90 px-2 py-0.5 font-grotesk text-[10px] font-semibold uppercase tracking-[0.08em] text-paper-50">
+                {t("photos.from_couple")}
+              </span>
+            )}
+            {u.guestName && (
+              <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/55 px-2 py-0.5 font-grotesk text-[11px] font-medium text-white backdrop-blur-sm">
+                {u.guestName}
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -664,12 +715,21 @@ export default function GuestPhotoPage() {
   const preview = searchParams.get("preview") === "1";
   const [state, setState] = useState<PageState>({ kind: "loading" });
   const [nameInput, setNameInput] = useState("");
+  const [nameSubmitting, setNameSubmitting] = useState(false);
 
   useEffect(() => {
     if (!token) {
       setState({ kind: "not_found" });
       return;
     }
+    if (preview) {
+      photoAlbumApi
+        .getPreview(token)
+        .then(({ album }) => setState({ kind: "name_capture", album }))
+        .catch(() => setState({ kind: "preview_unavailable" }));
+      return;
+    }
+
     const deviceId = getDeviceId(token);
     const storedName = getStoredName(token);
 
@@ -709,13 +769,45 @@ export default function GuestPhotoPage() {
         else if (err?.status === 403) setState({ kind: "disabled" });
         else setState({ kind: "not_found" });
       });
-  }, [token]);
+  }, [preview, token]);
 
-  function handleNameSubmit(name: string) {
+  async function handleNameSubmit(name: string) {
     if (state.kind !== "name_capture") return;
     const { album } = state;
-    storeName(token, name);
-    setState({ kind: "viewfinder", album, guestName: name, shotCount: 0 });
+    if (preview) {
+      setState({ kind: "viewfinder", album, guestName: name, shotCount: 0 });
+      return;
+    }
+
+    // The initial anonymous registration only establishes capacity and film
+    // availability. Persist the chosen name server-side before opening the
+    // camera so attribution, merged sessions, and per-person quota all agree.
+    setNameSubmitting(true);
+    try {
+      const registered = await photoAlbumApi.registerDevice(token, getDeviceId(token), name);
+      storeName(token, name);
+      if (
+        registered.album.shotsPerGuest !== null &&
+        registered.shotCount >= registered.album.shotsPerGuest
+      ) {
+        setState({ kind: "limit_reached", album: registered.album });
+      } else {
+        setState({
+          kind: "viewfinder",
+          album: registered.album,
+          guestName: name,
+          shotCount: registered.shotCount,
+        });
+      }
+    } catch (err: unknown) {
+      const status =
+        err && typeof err === "object" && "status" in err
+          ? (err as { status?: unknown }).status
+          : undefined;
+      setState({ kind: status === 403 ? "disabled" : "busy" });
+    } finally {
+      setNameSubmitting(false);
+    }
   }
 
   function handleRevealed() {
@@ -755,6 +847,18 @@ export default function GuestPhotoPage() {
     );
   }
 
+  if (state.kind === "preview_unavailable") {
+    return (
+      <>
+        <PreviewBanner />
+        <FilmSheet>
+          <SheetTitle>{t("photos.preview_unavailable")}</SheetTitle>
+          <SheetBody>{t("photos.preview_unavailable_sub")}</SheetBody>
+        </FilmSheet>
+      </>
+    );
+  }
+
   if (state.kind === "not_found" || state.kind === "disabled") {
     const isClosed = state.kind === "disabled";
     return (
@@ -788,12 +892,21 @@ export default function GuestPhotoPage() {
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
               placeholder={t("photos.name_placeholder")}
-              // biome-ignore lint/a11y/noAutofocus: the field is the only thing on the screen.
+              aria-label={t("photos.name_placeholder")}
               autoFocus
+              disabled={nameSubmitting}
               className="w-full rounded-2xl bg-paper-50/10 px-5 py-4 font-grotesk text-[17px] font-medium text-paper-50 placeholder-paper-50/30 outline-none transition-colors focus:bg-paper-50/15"
             />
-            <button type="submit" disabled={!canSubmit} className={`${PRIMARY_BTN} mt-3`}>
-              {t("photos.name_continue")}
+            <button
+              type="submit"
+              disabled={!canSubmit || nameSubmitting}
+              className={`${PRIMARY_BTN} mt-3`}
+            >
+              {nameSubmitting
+                ? t("common.saving")
+                : preview
+                  ? t("photos.preview_continue")
+                  : t("photos.name_continue")}
             </button>
           </form>
         </FilmSheet>
@@ -849,7 +962,7 @@ export default function GuestPhotoPage() {
   }
 
   if (state.kind === "gallery") {
-    const uploads = state.uploads as UploadItem[];
+    const uploads = state.uploads;
     return (
       <div className="min-h-dvh bg-ink-950 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-12">
         <div className="mx-auto w-full max-w-2xl">

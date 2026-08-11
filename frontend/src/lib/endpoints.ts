@@ -3909,9 +3909,14 @@ async function publicFilmFetch<T>(path: string, init?: RequestInit): Promise<T> 
     let backendCode: string | undefined;
     let msg = "Request failed";
     try {
-      const p = JSON.parse(text) as { code?: string; message?: string };
-      if (p.code) backendCode = p.code;
-      if (p.message) msg = p.message;
+      const p = JSON.parse(text) as {
+        code?: string;
+        message?: string;
+        error?: string;
+        detail?: { code?: string };
+      };
+      backendCode = p.code ?? p.detail?.code;
+      msg = p.message ?? p.error ?? msg;
     } catch {
       /* */
     }
@@ -3979,6 +3984,14 @@ export const photoAlbumApi = {
     return apiFetch<{ album: PhotoAlbum }>("PATCH", "/api/photo-albums/current", body);
   },
 
+  /** Revoke both the canonical guest token and custom slug. Existing QR codes stop working. */
+  rotateGuestLink: (
+    confirmation: "ROTATE_GUEST_LINK",
+  ): Promise<{ album: PhotoAlbum; previousLinkInvalidated: true }> =>
+    apiFetch("POST", "/api/photo-albums/current/rotate-link", {
+      confirmation,
+    }),
+
   /** Host-only: all uploads bypassing reveal lock. */
   listPhotos: (): Promise<{ uploads: FilmUpload[]; total: number }> =>
     apiFetch("GET", "/api/photo-albums/current/photos"),
@@ -4004,6 +4017,10 @@ export const photoAlbumApi = {
   /** Public: fetch album metadata. */
   getPublic: (token: string): Promise<{ album: PhotoAlbumPublic }> =>
     publicFilmFetch<{ album: PhotoAlbumPublic }>(`/api/photo-albums/${token}`),
+
+  /** Authenticated host preview. Read-only and does not register a guest device. */
+  getPreview: (token: string): Promise<{ album: PhotoAlbumPublic; shotCount: 0; readOnly: true }> =>
+    apiFetch("GET", `/api/photo-albums/${encodeURIComponent(token)}/preview`),
 
   /** Public: register guest device before any upload. */
   registerDevice(
@@ -4033,7 +4050,13 @@ export const photoAlbumApi = {
   async upload(
     token: string,
     file: File,
-    opts: { guestName?: string; deviceId: string; filterApplied?: FilmAesthetic },
+    opts: {
+      guestName?: string;
+      deviceId: string;
+      filterApplied?: FilmAesthetic;
+      /** Defense-in-depth marker: the server rejects preview uploads. */
+      preview?: boolean;
+    },
   ): Promise<{ upload: { id: number; fileUrl: string }; shotCount: number }> {
     const form = new FormData();
     form.append("file", file);
@@ -4041,7 +4064,7 @@ export const photoAlbumApi = {
     if (opts.guestName) form.append("guest_name", opts.guestName);
     if (opts.filterApplied) form.append("filter_applied", opts.filterApplied);
     return publicFilmFetch<{ upload: { id: number; fileUrl: string }; shotCount: number }>(
-      `/api/photo-albums/${token}/photos`,
+      `/api/photo-albums/${token}/photos${opts.preview ? "?preview=1" : ""}`,
       { method: "POST", body: form },
     );
   },

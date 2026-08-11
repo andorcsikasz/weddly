@@ -8,6 +8,34 @@
 
 export type SniffedImageMime = "image/jpeg" | "image/png" | "image/webp";
 
+const HEIF_BRANDS = new Set(["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs"]);
+
+/** HEIC/HEIF uses the ISO Base Media File Format. We identify its `ftyp`
+ *  brands separately from supported image formats so callers can explain the
+ *  incompatibility instead of reporting a vague "bad file" error. Generic
+ *  `mif1` is intentionally excluded because AVIF may use it too. */
+export function isHeifImage(bytes: Uint8Array): boolean {
+  if (
+    bytes.length < 12 ||
+    bytes[4] !== 0x66 ||
+    bytes[5] !== 0x74 ||
+    bytes[6] !== 0x79 ||
+    bytes[7] !== 0x70
+  ) {
+    return false;
+  }
+  for (let offset = 8; offset + 3 < bytes.length; offset += 4) {
+    const brand = String.fromCharCode(
+      bytes[offset] ?? 0,
+      bytes[offset + 1] ?? 0,
+      bytes[offset + 2] ?? 0,
+      bytes[offset + 3] ?? 0,
+    );
+    if (HEIF_BRANDS.has(brand)) return true;
+  }
+  return false;
+}
+
 /** Identify a supported image by its magic bytes, or null if it isn't one. */
 export function sniffImageMime(bytes: Uint8Array): SniffedImageMime | null {
   // JPEG: FF D8 FF
@@ -51,4 +79,11 @@ export function sniffImageMime(bytes: Uint8Array): SniffedImageMime | null {
 export async function sniffUploadedImage(file: File): Promise<SniffedImageMime | null> {
   const head = new Uint8Array(await file.arrayBuffer()).subarray(0, 12);
   return sniffImageMime(head);
+}
+
+/** Detect an unsupported HEIC/HEIF upload by content, never by the untrusted
+ *  multipart MIME or filename alone. */
+export async function isUploadedHeif(file: File): Promise<boolean> {
+  const head = new Uint8Array(await file.arrayBuffer()).subarray(0, 32);
+  return isHeifImage(head);
 }

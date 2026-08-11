@@ -87,7 +87,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { guestCountBaseline } from "../lib/budget";
@@ -964,6 +964,13 @@ export default function GuestsPage() {
           <div className="shrink-0">
             <h1 className="font-grotesk">{t("guests.title")}</h1>
             <LastUpdatedBy actionPrefixes={["guest.", "household.", "rsvp."]} />
+            <Link
+              to="/app/media#film-participants"
+              className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-ink-600 underline decoration-ink-300 underline-offset-2 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
+            >
+              <Link2 size={12} aria-hidden />
+              {t("guests.photo_upload_guests_link")}
+            </Link>
           </div>
           {listableGuests.length > 0 ? (
             <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">

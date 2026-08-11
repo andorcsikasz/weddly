@@ -144,12 +144,18 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
  *  couple `guest_page_prepaid`; the planner then switches the add-on on. */
 async function handleGuestPageAddonCheckout(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
-  requirePaymentLaunch("guest_page_addon");
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const billing = toCoupleBilling(couple);
+  if (!billing.planner_managed || billing.entitled) {
+    throw new HttpError(409, "Guest-page add-on is only available in planner-managed viewer mode", {
+      code: "addon_not_available",
+    });
+  }
   if (couple.guest_page_prepaid) {
     throw new HttpError(400, "Guest-page add-on is already paid", { code: "already_paid" });
   }
+  requirePaymentLaunch("guest_page_addon");
   const currency = normaliseCurrency(couple.currency);
   const priceId = guestPageAddonPriceId(currency);
   const user = getUserById(userId);
@@ -185,8 +191,9 @@ async function handleGuestPageAddonCheckout(ctx: Ctx): Promise<Response> {
 // ── POST /api/billing/portal ────────────────────────────────────────────────
 async function handlePortal(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
-  const couple = getCoupleForUser(userId);
-  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const workspace = getCoupleForUser(userId);
+  if (!workspace) throw new HttpError(400, "No couple workspace yet");
+  const couple = billingAnchorRow(workspace);
   if (!couple.stripe_customer_id) {
     throw new HttpError(400, "No subscription to manage", { code: "no_customer" });
   }
@@ -205,8 +212,9 @@ async function handlePortal(ctx: Ctx): Promise<Response> {
  *  Stripe off, no customer yet (trial/founding), or no attached card. */
 async function handlePaymentMethod(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
-  const couple = getCoupleForUser(userId);
-  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const workspace = getCoupleForUser(userId);
+  if (!workspace) throw new HttpError(400, "No couple workspace yet");
+  const couple = billingAnchorRow(workspace);
   const empty: PaymentMethodResponse = { card: null };
   if (!STRIPE_ENABLED || !couple.stripe_customer_id) return json(empty);
 

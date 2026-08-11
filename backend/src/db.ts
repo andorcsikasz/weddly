@@ -1731,6 +1731,27 @@ addColumnIfMissing("photo_uploads", "hidden_at", "hidden_at INTEGER");
 // run AFTER the column add.
 addColumnIfMissing("photo_uploads", "source", "source TEXT NOT NULL DEFAULT 'guest'");
 db.exec("UPDATE photo_uploads SET source = 'couple' WHERE device_id = 'couple'");
+// A device row represents a guest-camera session, not necessarily a guest.
+// Keep its source explicit so legacy couple-upload sessions never consume the
+// guest cap or appear in the host's joined-guests dashboard.
+addColumnIfMissing("film_devices", "source", "source TEXT NOT NULL DEFAULT 'guest'");
+db.exec("UPDATE film_devices SET source = 'couple' WHERE device_id = 'couple'");
+db.exec(
+  `UPDATE film_devices AS fd
+      SET source = 'couple'
+    WHERE EXISTS (
+            SELECT 1 FROM photo_uploads pu
+             WHERE pu.album_id = fd.album_id
+               AND pu.device_id = fd.device_id
+               AND pu.source = 'couple'
+          )
+      AND NOT EXISTS (
+            SELECT 1 FROM photo_uploads pu
+             WHERE pu.album_id = fd.album_id
+               AND pu.device_id = fd.device_id
+               AND pu.source = 'guest'
+          )`,
+);
 addColumnIfMissing("couples", "honeymoon_cover_path", "honeymoon_cover_path TEXT");
 // Which rung of the destination breadcrumb the cached photo is actually of.
 // The cache is keyed by the full saved destination as well as by the place

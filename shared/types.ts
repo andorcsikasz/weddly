@@ -748,10 +748,13 @@ export interface PhotoAlbumPublic {
 }
 
 export interface FilmDevice {
+  /** Representative session id for this guest (used by the remove endpoint). */
   deviceId: string;
   guestName: string | null;
   joinedAt: number;
   shotCount: number;
+  /** Number of browser/device sessions merged into this host-list row. */
+  sessionCount: number;
   /** Soft-remove timestamp (#6); null = active participant. */
   removedAt: number | null;
 }

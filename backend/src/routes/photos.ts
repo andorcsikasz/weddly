@@ -12,8 +12,10 @@
 //   POST /api/photo-albums                      — create album (idempotent)
 //   GET  /api/photo-albums/current              — get current couple's album + stats
 //   PATCH /api/photo-albums/current             — update settings
+//   POST /api/photo-albums/current/rotate-link   — revoke token + slug, issue a new token
 //   GET  /api/photo-albums/current/photos       — all uploads (host bypasses reveal lock)
 //   GET  /api/photo-albums/current/devices      — participant list
+//   GET  /api/photo-albums/:token/preview        — read-only host preview metadata
 
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
@@ -39,7 +41,7 @@ import { activateFilmAlbum } from "../domain/film";
 import { validateFilmSlug } from "../domain/film_slug";
 import { getCoupleForUser } from "../domain/couples";
 import { HttpError, json, requireAuth, type Ctx, type Router } from "../lib/http";
-import { type SniffedImageMime, sniffUploadedImage } from "../lib/image_sniff";
+import { isUploadedHeif, type SniffedImageMime, sniffUploadedImage } from "../lib/image_sniff";
 import { rateLimit } from "../lib/rate_limit";
 
 // ─── constants ───────────────────────────────────────────────────────────────
@@ -102,13 +104,66 @@ function countPhotos(albumId: number): number {
 }
 
 function countParticipants(albumId: number): number {
-  // Soft-removed devices (#6) no longer count toward the participant total/cap.
+  // This is a guest count, not a device/session count. Named sessions are
+  // merged case-insensitively; anonymous sessions remain separate because we
+  // have no stable identity with which to merge them. Couple uploads never
+  // consume guest capacity.
   return (
     db
-      .prepare("SELECT COUNT(*) AS c FROM film_devices WHERE album_id = ? AND removed_at IS NULL")
+      .prepare(
+        `SELECT COUNT(*) AS c
+           FROM (
+             SELECT 1
+               FROM film_devices
+              WHERE album_id = ?
+                AND removed_at IS NULL
+                AND source = 'guest'
+              GROUP BY CASE
+                WHEN NULLIF(TRIM(guest_name), '') IS NULL THEN 'device:' || device_id
+                ELSE 'name:' || LOWER(TRIM(guest_name))
+              END
+           )`,
+      )
       .get(albumId) as {
       c: number;
     }
+  ).c;
+}
+
+/** Count uploads against the same identity model used by the participant list.
+ * Named browser sessions belong to one guest; an anonymous session can only be
+ * identified by its device id. Keeping the quota calculation here prevents a
+ * guest from resetting the per-person limit by opening the link in a second
+ * browser. Hidden uploads intentionally still consume quota, matching the
+ * previous per-device behaviour. */
+function countParticipantShots(albumId: number, deviceId: string, guestName: string | null): number {
+  const normalizedName = guestName?.trim() || null;
+  if (normalizedName) {
+    return (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS c
+             FROM photo_uploads pu
+            WHERE pu.album_id = ? AND pu.source = 'guest'
+              AND pu.device_id IN (
+                SELECT device_id
+                  FROM film_devices
+                 WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
+                   AND LOWER(TRIM(guest_name)) = LOWER(TRIM(?))
+              )`,
+        )
+        .get(albumId, albumId, normalizedName) as { c: number }
+    ).c;
+  }
+
+  return (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS c
+           FROM photo_uploads
+          WHERE album_id = ? AND device_id = ? AND source = 'guest'`,
+      )
+      .get(albumId, deviceId) as { c: number }
   ).c;
 }
 
@@ -443,6 +498,51 @@ async function handleUpdateAlbum(ctx: Ctx): Promise<Response> {
   return json({ album: toAlbum(updated) });
 }
 
+/** POST /api/photo-albums/current/rotate-link — revoke every existing guest
+ *  link (canonical token and custom slug) and issue a fresh canonical token.
+ *  The explicit confirmation phrase makes an accidental/raw API call fail
+ *  closed; the dashboard must pair this with a destructive confirmation that
+ *  explains that printed QR codes need replacing. */
+async function handleRotateGuestLink(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple found");
+
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
+  if (!row) throw new HttpError(404, "No album found");
+
+  const body = (await ctx.req.json().catch(() => ({}))) as Record<string, unknown>;
+  if (body.confirmation !== "ROTATE_GUEST_LINK") {
+    throw new HttpError(400, "Explicit guest-link rotation confirmation required", {
+      code: "rotation_confirmation_required",
+    });
+  }
+
+  const updated = db
+    .prepare(
+      `UPDATE photo_albums
+          SET upload_token = ?, slug = NULL, updated_at = ?
+        WHERE id = ?
+        RETURNING *`,
+    )
+    .get(generateToken(), now(), row.id) as AlbumRow;
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "film.guest_link.rotate",
+    target_kind: "photo_album",
+    target_id: row.id,
+    // Tokens are credentials: record the revocation event, never either value.
+    before: { hadCustomSlug: row.slug !== null },
+    after: { customSlugCleared: true, printedQrMustBeReplaced: true },
+  });
+
+  return json({ album: toAlbum(updated), previousLinkInvalidated: true });
+}
+
 /** GET /api/photo-albums/current/photos — host view, bypasses reveal lock. */
 async function handleListPhotos(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
@@ -481,16 +581,22 @@ async function handleListDevices(ctx: Ctx): Promise<Response> {
 
   const devices = db
     .prepare(
-      `SELECT fd.device_id AS deviceId, fd.guest_name AS guestName, fd.joined_at AS joinedAt,
+      `SELECT MIN(fd.device_id) AS deviceId,
+              MAX(NULLIF(TRIM(fd.guest_name), '')) AS guestName,
+              MIN(fd.joined_at) AS joinedAt,
               fd.removed_at AS removedAt,
-              COUNT(pu.id) AS shotCount
+              COUNT(pu.id) AS shotCount,
+              COUNT(DISTINCT fd.device_id) AS sessionCount
          FROM film_devices fd
          LEFT JOIN photo_uploads pu
            ON pu.album_id = fd.album_id AND pu.device_id = fd.device_id
-          AND pu.hidden_at IS NULL
-        WHERE fd.album_id = ? AND fd.removed_at IS NULL
-        GROUP BY fd.device_id
-        ORDER BY fd.joined_at ASC`,
+          AND pu.hidden_at IS NULL AND pu.source = 'guest'
+        WHERE fd.album_id = ? AND fd.removed_at IS NULL AND fd.source = 'guest'
+        GROUP BY CASE
+          WHEN NULLIF(TRIM(fd.guest_name), '') IS NULL THEN 'device:' || fd.device_id
+          ELSE 'name:' || LOWER(TRIM(fd.guest_name))
+        END
+        ORDER BY MIN(fd.joined_at) ASC`,
     )
     .all(row.id) as FilmDevice[];
 
@@ -513,9 +619,36 @@ async function handleRemoveDevice(ctx: Ctx): Promise<Response> {
   if (!deviceId) throw new HttpError(400, "device_id required");
 
   const device = db
-    .prepare("SELECT 1 AS ok FROM film_devices WHERE album_id = ? AND device_id = ?")
-    .get(row.id, deviceId) as { ok: 1 } | undefined;
+    .prepare(
+      `SELECT guest_name AS guestName, source
+         FROM film_devices
+        WHERE album_id = ? AND device_id = ? AND removed_at IS NULL`,
+    )
+    .get(row.id, deviceId) as { guestName: string | null; source: string } | undefined;
   if (!device) throw new HttpError(404, "Participant not found");
+  if (device.source !== "guest") throw new HttpError(404, "Participant not found");
+
+  // The host list merges named sessions into one guest. Apply removal to the
+  // same group so a second browser/session cannot remain active invisibly.
+  const participantDevices = (
+    device.guestName?.trim()
+      ? db
+          .prepare(
+            `SELECT device_id AS deviceId
+               FROM film_devices
+              WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
+                AND LOWER(TRIM(guest_name)) = LOWER(TRIM(?))`,
+          )
+          .all(row.id, device.guestName)
+      : db
+          .prepare(
+            `SELECT device_id AS deviceId
+               FROM film_devices
+              WHERE album_id = ? AND device_id = ? AND removed_at IS NULL AND source = 'guest'`,
+          )
+          .all(row.id, deviceId)
+  ) as { deviceId: string }[];
+  const participantDeviceIds = participantDevices.map((entry) => entry.deviceId);
 
   // purgePhotos accepted via query (?purgePhotos=true) or JSON body.
   let purgePhotos = ctx.url.searchParams.get("purgePhotos") === "true";
@@ -525,18 +658,19 @@ async function handleRemoveDevice(ctx: Ctx): Promise<Response> {
   }
 
   const ts = now();
-  db.prepare("UPDATE film_devices SET removed_at = ? WHERE album_id = ? AND device_id = ?").run(
-    ts,
-    row.id,
-    deviceId,
-  );
+  const placeholders = participantDeviceIds.map(() => "?").join(", ");
+  db.prepare(
+    `UPDATE film_devices SET removed_at = ?
+      WHERE album_id = ? AND device_id IN (${placeholders})`,
+  ).run(ts, row.id, ...participantDeviceIds);
   let purgedCount = 0;
   if (purgePhotos) {
     purgedCount = db
       .prepare(
-        "UPDATE photo_uploads SET hidden_at = ? WHERE album_id = ? AND device_id = ? AND hidden_at IS NULL",
+        `UPDATE photo_uploads SET hidden_at = ?
+          WHERE album_id = ? AND device_id IN (${placeholders}) AND hidden_at IS NULL`,
       )
-      .run(ts, row.id, deviceId).changes;
+      .run(ts, row.id, ...participantDeviceIds).changes;
   }
 
   addAuditLog({
@@ -545,7 +679,7 @@ async function handleRemoveDevice(ctx: Ctx): Promise<Response> {
     action: "film.device.remove",
     target_kind: "film_device",
     target_id: row.id,
-    after: { deviceId, purgePhotos, purgedCount },
+    after: { deviceId, participantDeviceIds, purgePhotos, purgedCount },
   });
 
   return json({ removed: true, purgedCount });
@@ -572,8 +706,20 @@ function albumWithCoupleQuery(tokenOrSlug: string): AlbumWithCouple | undefined 
     .get(tokenOrSlug, tokenOrSlug) as AlbumWithCouple | undefined;
 }
 
+/** A request carrying the preview marker must never mutate the live film.
+ *  The UI already removes all camera/upload affordances in preview mode, but
+ *  this guard makes that a server-side invariant as well: a stale client or an
+ *  accidentally re-enabled control still cannot register a participant or
+ *  persist a photo. */
+function rejectPreviewMutation(ctx: Ctx): void {
+  if (ctx.url.searchParams.get("preview") === "1") {
+    throw new HttpError(403, "Host preview is read-only", { code: "preview_read_only" });
+  }
+}
+
 /** POST /api/photo-albums/:token/devices — guest registers device before any upload. */
 async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
+  rejectPreviewMutation(ctx);
   const token = ctx.params.token ?? "";
   rateLimit(ctx.clientIp ?? "unknown", "photo:register", { capacity: 10, refillRate: 0.1 });
 
@@ -593,24 +739,88 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
 
   // Enforce guest cap — only count new devices, not re-registrations.
   const existingDevice = db
-    .prepare("SELECT removed_at FROM film_devices WHERE album_id = ? AND device_id = ?")
-    .get(row.id, deviceId) as { removed_at: number | null } | undefined;
+    .prepare(
+      `SELECT removed_at, guest_name AS guestName, source
+         FROM film_devices
+        WHERE album_id = ? AND device_id = ?`,
+    )
+    .get(row.id, deviceId) as
+    | { removed_at: number | null; guestName: string | null; source: string }
+    | undefined;
 
   // A soft-removed device (#6) cannot rejoin the film.
   if (existingDevice && existingDevice.removed_at !== null)
     throw new HttpError(403, "This device was removed from the film", { code: "device_removed" });
 
-  if (!existingDevice) {
-    const participantCount = countParticipants(row.id);
-    if (participantCount >= row.guest_cap) {
-      throw new HttpError(429, "Guest cap reached for this film", { code: "guest_cap_reached" });
+  // A public registration must never claim a legacy session reserved for
+  // couple uploads. Real clients use a random id, so a collision means the
+  // caller should mint a fresh id instead of silently changing its source.
+  if (existingDevice && existingDevice.source !== "guest") {
+    throw new HttpError(409, "Device id unavailable", { code: "device_id_unavailable" });
+  }
+
+  // A named guest opening the camera in another browser creates a new session,
+  // not a new guest. Renaming one session from a multi-session guest can,
+  // however, split it into a new participant. Calculate that count delta so an
+  // existing device cannot bypass a full guest cap by changing its name.
+  const targetOtherCount = guestName
+    ? (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS c
+               FROM film_devices
+              WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
+                AND device_id <> ?
+                AND LOWER(TRIM(guest_name)) = LOWER(TRIM(?))`,
+          )
+          .get(row.id, deviceId, guestName) as { c: number }
+      ).c
+    : 0;
+
+  let participantDelta = targetOtherCount > 0 ? 0 : 1;
+  if (existingDevice) {
+    const oldName = existingDevice.guestName?.trim() || null;
+    const sameParticipant =
+      oldName === null && guestName === null
+        ? true
+        : oldName !== null && guestName !== null
+          ? Boolean(
+              (
+                db
+                  .prepare("SELECT LOWER(TRIM(?)) = LOWER(TRIM(?)) AS same")
+                  .get(oldName, guestName) as { same: number }
+              ).same,
+            )
+          : false;
+
+    if (sameParticipant) {
+      participantDelta = 0;
+    } else {
+      const oldGroupSize = oldName
+        ? (
+            db
+              .prepare(
+                `SELECT COUNT(*) AS c
+                   FROM film_devices
+                  WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
+                    AND LOWER(TRIM(guest_name)) = LOWER(TRIM(?))`,
+              )
+              .get(row.id, oldName) as { c: number }
+          ).c
+        : 1;
+      participantDelta =
+        targetOtherCount > 0 ? (oldGroupSize === 1 ? -1 : 0) : oldGroupSize > 1 ? 1 : 0;
     }
+  }
+
+  if (countParticipants(row.id) + participantDelta > row.guest_cap) {
+    throw new HttpError(429, "Guest cap reached for this film", { code: "guest_cap_reached" });
   }
 
   // Upsert device row (update name if guest changes it).
   db.prepare(
-    `INSERT INTO film_devices (album_id, device_id, guest_name, joined_at)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO film_devices (album_id, device_id, guest_name, joined_at, source)
+     VALUES (?, ?, ?, ?, 'guest')
      ON CONFLICT(album_id, device_id) DO UPDATE SET guest_name = excluded.guest_name`,
   ).run(row.id, deviceId, guestName, now());
 
@@ -627,13 +837,40 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
     coverImageUrl: row.cover_image_url,
   };
 
-  const shotCount = (
-    db
-      .prepare("SELECT COUNT(*) AS c FROM photo_uploads WHERE album_id = ? AND device_id = ?")
-      .get(row.id, deviceId) as { c: number }
-  ).c;
+  const shotCount = countParticipantShots(row.id, deviceId, guestName);
 
   return json({ album: publicAlbum, shotCount }, { status: 200 });
+}
+
+/** GET /api/photo-albums/:token/preview — owner-only, mutation-free metadata.
+ *
+ *  This deliberately does not register a device and it remains available when
+ *  the live film is closed, so the couple can inspect the open guest journey
+ *  without changing participant counts or reopening the real film. */
+async function handleGetHostPreview(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple found");
+
+  const token = ctx.params.token ?? "";
+  const row = albumWithCoupleQuery(token);
+  // Do not reveal whether another workspace's token exists.
+  if (!row || row.couple_id !== couple.id) throw new HttpError(404, "Album not found");
+
+  const album: PhotoAlbumPublic = {
+    displayName: row.display_name,
+    weddingDate: row.wedding_date,
+    slug: row.slug,
+    title: row.title,
+    shotsPerGuest: row.shots_per_guest,
+    isUploadEnabled: row.is_upload_enabled === 1,
+    eventEndsAt: row.event_ends_at,
+    revealAt: row.reveal_at,
+    filmAesthetic: safeAesthetic(row.film_aesthetic),
+    coverImageUrl: row.cover_image_url,
+  };
+
+  return json({ album, shotCount: 0, readOnly: true });
 }
 
 /** GET /api/photo-albums/:token — album info (no reveal-locked photo list here). */
@@ -731,6 +968,7 @@ async function handleGetQr(ctx: Ctx): Promise<Response> {
 
 /** POST /api/photo-albums/:token/photos — guest uploads a photo (multipart). */
 async function handleGuestUpload(ctx: Ctx): Promise<Response> {
+  rejectPreviewMutation(ctx);
   const token = ctx.params.token ?? "";
 
   const row = db
@@ -763,8 +1001,12 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
 
   // Guest must have registered (cap is enforced at register time).
   const registered = db
-    .prepare("SELECT removed_at FROM film_devices WHERE album_id = ? AND device_id = ?")
-    .get(row.id, deviceId) as { removed_at: number | null } | undefined;
+    .prepare(
+      `SELECT removed_at, guest_name AS guestName
+         FROM film_devices
+        WHERE album_id = ? AND device_id = ? AND source = 'guest'`,
+    )
+    .get(row.id, deviceId) as { removed_at: number | null; guestName: string | null } | undefined;
   if (!registered) throw new HttpError(403, "Device not registered — call /devices first");
   // A soft-removed device (#6) can no longer upload.
   if (registered.removed_at !== null)
@@ -772,11 +1014,7 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
 
   // Shot limit check.
   if (row.shots_per_guest !== null) {
-    const used = (
-      db
-        .prepare("SELECT COUNT(*) AS c FROM photo_uploads WHERE album_id = ? AND device_id = ?")
-        .get(row.id, deviceId) as { c: number }
-    ).c;
+    const used = countParticipantShots(row.id, deviceId, registered.guestName);
     if (used >= row.shots_per_guest)
       throw new HttpError(429, "Shot limit reached", { code: "shot_limit" });
   }
@@ -786,7 +1024,14 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   if (raw.size > MAX_PHOTO_BYTES) throw new HttpError(413, "Image too large (max 8 MB)");
 
   const sniffed = await sniffUploadedImage(raw);
-  if (!sniffed) throw new HttpError(400, "Only JPEG, PNG and WebP images accepted");
+  if (!sniffed) {
+    if (await isUploadedHeif(raw)) {
+      throw new HttpError(415, "HEIC and HEIF need conversion before upload", {
+        code: "heic_not_supported",
+      });
+    }
+    throw new HttpError(400, "Only JPEG, PNG and WebP images accepted");
+  }
   const ext = PHOTO_MIME_EXT[sniffed];
 
   const filterApplied = form.get("filter_applied");
@@ -795,11 +1040,10 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
       ? filterApplied
       : row.film_aesthetic;
 
-  const guestNameRaw = form.get("guest_name");
-  const guestName =
-    typeof guestNameRaw === "string" && guestNameRaw.trim()
-      ? guestNameRaw.trim().slice(0, 200)
-      : null;
+  // Attribution comes from the registered device, never from mutable multipart
+  // input. Otherwise a caller could label a photo as another guest and split
+  // identity between the participant list and the gallery.
+  const guestName = registered.guestName?.trim() || null;
 
   const ts = now();
   // Insert first so the row id names the object (stable, collision-free), then
@@ -821,11 +1065,7 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   await storage.write(key, raw);
   db.prepare("UPDATE photo_uploads SET file_path = ? WHERE id = ?").run(publicUrl, uploadRow.id);
 
-  const shotCount = (
-    db
-      .prepare("SELECT COUNT(*) AS c FROM photo_uploads WHERE album_id = ? AND device_id = ?")
-      .get(row.id, deviceId) as { c: number }
-  ).c;
+  const shotCount = countParticipantShots(row.id, deviceId, guestName);
 
   return json({ upload: { id: uploadRow.id, fileUrl: publicUrl }, shotCount }, { status: 201 });
 }
@@ -911,10 +1151,12 @@ export function registerPhotoRoutes(router: Router): void {
   router.post("/api/photo-albums", handleCreateAlbum, true);
   router.get("/api/photo-albums/current", handleGetCurrentAlbum, true);
   router.patch("/api/photo-albums/current", handleUpdateAlbum, true);
+  router.post("/api/photo-albums/current/rotate-link", handleRotateGuestLink, true);
   router.post("/api/photo-albums/current/photos", handleCoupleUpload, true);
   router.get("/api/photo-albums/current/photos", handleListPhotos, true);
   router.get("/api/photo-albums/current/devices", handleListDevices, true);
   router.delete("/api/photo-albums/current/devices/:deviceId", handleRemoveDevice, true);
+  router.get("/api/photo-albums/:token/preview", handleGetHostPreview, true);
 
   // Public endpoints.
   router.post("/api/photo-albums/:token/devices", handleRegisterDevice);

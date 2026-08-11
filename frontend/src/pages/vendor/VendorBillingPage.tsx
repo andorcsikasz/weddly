@@ -46,12 +46,13 @@ const PRO_FEATURES: { feature: VendorFeature; label: TKey }[] = [
 
 type MoneyAction = "setup" | "checkout" | "portal";
 
-/** Stripe reports zero-decimal currencies (HUF, JPY, …) in whole units and
- *  everything else in the minor unit. Only the currencies we bill in matter
- *  here; anything unknown is treated as minor-unit, which is Stripe's default. */
-const ZERO_DECIMAL = new Set(["huf", "jpy", "krw"]);
+/** Stripe invoice charge amounts use the currency's minor unit. HUF is a
+ * two-decimal charge currency (its zero-decimal special case applies only to
+ * payouts), so a 2 490 Ft invoice arrives as 249000 and must be divided by
+ * 100. Only true zero-decimal charge currencies belong here. */
+const ZERO_DECIMAL = new Set(["jpy", "krw"]);
 
-function formatInvoiceAmount(amount: number, currency: string, locale: Locale): string {
+export function formatInvoiceAmount(amount: number, currency: string, locale: Locale): string {
   const major = ZERO_DECIMAL.has(currency.toLowerCase()) ? amount : amount / 100;
   // `intlLocale`, not an inline ternary: a hand-written hu/es/else chain silently
   // hands every locale added afterwards the en-US number format, which is how a

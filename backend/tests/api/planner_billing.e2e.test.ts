@@ -128,7 +128,11 @@ describe("planner-managed billing + guest-page add-on", () => {
   });
 
   test("guest-page add-on checkout is 503 when no add-on price is configured", async () => {
-    const { token } = await bootstrapCouple("nostripe@weddly.test");
+    const { token, coupleId } = await bootstrapCouple("nostripe@weddly.test");
+    const planner = await registerVerified("nostripe-planner@weddly.test");
+    makeManagingPlanner(planner.userId, coupleId, false);
+    lapse(coupleId);
+    setBillingEnforcement(true, 1);
     const r = await req<{ detail?: { code?: string } }>(
       "POST",
       "/api/billing/guest-page-addon/checkout",
@@ -137,6 +141,18 @@ describe("planner-managed billing + guest-page add-on", () => {
     );
     expect(r.status).toBe(503);
     expect(r.data.detail?.code).toBe("payment_not_launched");
+  });
+
+  test("guest-page add-on checkout rejects a couple that is not a planner-managed viewer", async () => {
+    const { token } = await bootstrapCouple("addon-ineligible@weddly.test");
+    const r = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/billing/guest-page-addon/checkout",
+      {},
+      { token },
+    );
+    expect(r.status).toBe(409);
+    expect(r.data.detail?.code).toBe("addon_not_available");
   });
 
   test("billing status exposes the planner-managed + add-on flags", async () => {

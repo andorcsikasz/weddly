@@ -3888,6 +3888,7 @@ export interface LocaleMessages {
     film_settings_reveal_default: string;
     film_settings_reveal_hint: string;
     film_settings_cap: string;
+    film_settings_cap_hint: string;
     film_settings_upload: string;
     film_settings_unnamed: string;
     film_empty_title: string;
@@ -3943,6 +3944,10 @@ export interface LocaleMessages {
     slug_invalid: string;
     slug_saved: string;
     slug_cleared: string;
+    film_rotate_link: string;
+    film_rotate_link_body: string;
+    film_rotate_link_confirm: string;
+    film_rotate_link_done: string;
     participant_remove: string;
     participant_removed: string;
     participant_remove_title: string;
@@ -3957,6 +3962,7 @@ export interface LocaleMessages {
     film_not_set: string;
     film_anonymous: string;
     film_participants_joined: string;
+    film_full_guest_list_link: string;
     film_shots_short: string;
     film_uploading: string;
     film_activated: string;
@@ -3967,7 +3973,10 @@ export interface LocaleMessages {
     gallery_title: string;
     gallery_empty: string;
     gallery_show_all: string;
+    gallery_show_less: string;
     gallery_from_you: string;
+    gallery_dialog_label: string;
+    gallery_photo_alt: string;
     gallery_download: string;
     gallery_prev: string;
     gallery_next: string;
@@ -3989,6 +3998,7 @@ export interface LocaleMessages {
     limit_sub: string;
     error_too_large: string;
     error_bad_type: string;
+    error_heic: string;
     error_generic: string;
     /** Camera controls — labels live in tooltip + aria only. */
     take_photo: string;
@@ -4014,6 +4024,11 @@ export interface LocaleMessages {
     guest_subtitle: string;
     guest_subtitle_plain: string;
     preview_banner: string;
+    preview_camera_heading: string;
+    preview_camera_sub: string;
+    preview_continue: string;
+    preview_unavailable: string;
+    preview_unavailable_sub: string;
     from_couple: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
@@ -4565,6 +4580,8 @@ export interface LocaleMessages {
     addon_unlock_title: string;
     addon_unlock_body: string;
     addon_unlock_cta: string;
+    addon_pending_title: string;
+    addon_pending_body: string;
     addon_unavailable: string;
     addon_opening: string;
     addon_error: string;
@@ -4925,6 +4942,7 @@ export interface LocaleMessages {
   };
   guests: {
     title: string;
+    photo_upload_guests_link: string;
     add: string;
     add_hint: string;
     import_csv: string;

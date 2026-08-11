@@ -18,6 +18,13 @@ function wipeFilm(): void {
 
 // Minimal valid JPEG (magic bytes FF D8 FF + padding).
 const FAKE_JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, ...Array<number>(100).fill(0)]);
+// ISO BMFF `ftyp` + HEIC major brand. It is intentionally not a decodable
+// photo: the upload pipeline only needs the real format signature to route the
+// guest to conversion guidance before storage.
+const FAKE_HEIC = new Uint8Array([
+  0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63, 0x00, 0x00, 0x00, 0x00,
+  0x68, 0x65, 0x69, 0x63,
+]);
 
 describe("photo-albums API", () => {
   let token: string;
@@ -79,6 +86,119 @@ describe("photo-albums API", () => {
     expect(r.data.album.participantCount).toBe(0);
   });
 
+  test("host preview is authenticated, owner-scoped, and does not register a participant", async () => {
+    const unauthenticated = await req("GET", `/api/photo-albums/${albumToken}/preview`);
+    expect(unauthenticated.status).toBe(401);
+
+    const { token: otherWorkspaceToken } = await bootstrapCouple("film-preview-other@weddly.test");
+    const wrongOwner = await req("GET", `/api/photo-albums/${albumToken}/preview`, undefined, {
+      token: otherWorkspaceToken,
+    });
+    expect(wrongOwner.status).toBe(404);
+
+    // Preview remains useful while the real guest film is closed. The response
+    // reports the real setting, while the frontend renders an inert simulation.
+    db.prepare("UPDATE photo_albums SET is_upload_enabled = 0 WHERE upload_token = ?").run(
+      albumToken,
+    );
+    const preview = await req<{
+      album: { isUploadEnabled: boolean };
+      shotCount: number;
+      readOnly: boolean;
+    }>("GET", `/api/photo-albums/${albumToken}/preview`, undefined, { token });
+    expect(preview.status).toBe(200);
+    expect(preview.data.album.isUploadEnabled).toBe(false);
+    expect(preview.data.shotCount).toBe(0);
+    expect(preview.data.readOnly).toBe(true);
+
+    const current = await req<{ album: { participantCount: number } }>(
+      "GET",
+      "/api/photo-albums/current",
+      undefined,
+      { token },
+    );
+    expect(current.data.album.participantCount).toBe(0);
+    db.prepare("UPDATE photo_albums SET is_upload_enabled = 1 WHERE upload_token = ?").run(
+      albumToken,
+    );
+  });
+
+  test("owner can rotate the guest link, revoking both the old token and custom slug", async () => {
+    const slugPatch = await req<{ album: { slug: string } }>(
+      "PATCH",
+      "/api/photo-albums/current",
+      { slug: "rotate-me" },
+      { token },
+    );
+    expect(slugPatch.status).toBe(200);
+    const oldToken = albumToken;
+
+    const missingConfirmation = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/photo-albums/current/rotate-link",
+      {},
+      { token },
+    );
+    expect(missingConfirmation.status).toBe(400);
+    expect(missingConfirmation.data.detail?.code).toBe("rotation_confirmation_required");
+
+    const rotated = await req<{
+      album: { uploadToken: string; slug: null };
+      previousLinkInvalidated: boolean;
+    }>(
+      "POST",
+      "/api/photo-albums/current/rotate-link",
+      { confirmation: "ROTATE_GUEST_LINK" },
+      { token },
+    );
+    expect(rotated.status).toBe(200);
+    expect(rotated.data.previousLinkInvalidated).toBe(true);
+    expect(rotated.data.album.slug).toBeNull();
+    expect(rotated.data.album.uploadToken).not.toBe(oldToken);
+    albumToken = rotated.data.album.uploadToken;
+
+    expect((await req("GET", `/api/photo-albums/${oldToken}`)).status).toBe(404);
+    expect((await req("GET", "/api/photo-albums/rotate-me")).status).toBe(404);
+    expect((await req("GET", `/api/photo-albums/${oldToken}/qr`)).status).toBe(404);
+    expect((await req("GET", `/api/photo-albums/${albumToken}`)).status).toBe(200);
+  });
+
+  test("preview-marked device registration is rejected without mutating the film", async () => {
+    const blocked = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices?preview=1`,
+      { device_id: "preview-device", guest_name: "Host" },
+      { token },
+    );
+    expect(blocked.status).toBe(403);
+    expect(blocked.data.detail?.code).toBe("preview_read_only");
+
+    const row = db
+      .prepare("SELECT COUNT(*) AS c FROM film_devices WHERE device_id = 'preview-device'")
+      .get() as { c: number };
+    expect(row.c).toBe(0);
+  });
+
+  test("guest registration cannot claim a couple-owned legacy device session", async () => {
+    const albumId = (
+      db.prepare("SELECT id FROM photo_albums WHERE upload_token = ?").get(albumToken) as {
+        id: number;
+      }
+    ).id;
+    db.prepare(
+      `INSERT INTO film_devices (album_id, device_id, guest_name, joined_at, source)
+       VALUES (?, 'couple-reserved', 'The couple', ?, 'couple')`,
+    ).run(albumId, Date.now());
+
+    const blocked = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "couple-reserved", guest_name: "Guest" },
+    );
+    expect(blocked.status).toBe(409);
+    expect(blocked.data.detail?.code).toBe("device_id_unavailable");
+  });
+
   test("POST /:token/devices registers a device", async () => {
     const r = await req<{ album: object; shotCount: number }>(
       "POST",
@@ -109,6 +229,47 @@ describe("photo-albums API", () => {
       body: fd,
     });
     expect(res.status).toBe(403);
+  });
+
+  test("preview-marked photo upload is rejected before any file is persisted", async () => {
+    const fd = new FormData();
+    fd.append("file", new File([FAKE_JPEG], "preview.jpg", { type: "image/jpeg" }));
+    fd.append("device_id", "test-device-1");
+    const res = await fetch(`${BASE}/api/photo-albums/${albumToken}/photos?preview=1`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { detail?: { code?: string } };
+    expect(body.detail?.code).toBe("preview_read_only");
+
+    const row = db
+      .prepare(
+        "SELECT COUNT(*) AS c FROM photo_uploads WHERE album_id = (SELECT id FROM photo_albums WHERE upload_token = ?)",
+      )
+      .get(albumToken) as { c: number };
+    expect(row.c).toBe(0);
+  });
+
+  test("HEIC uploads return specific conversion guidance and are not persisted", async () => {
+    const fd = new FormData();
+    fd.append("file", new File([FAKE_HEIC], "iphone.heic", { type: "image/heic" }));
+    fd.append("device_id", "test-device-1");
+    const res = await fetch(`${BASE}/api/photo-albums/${albumToken}/photos`, {
+      method: "POST",
+      body: fd,
+    });
+    expect(res.status).toBe(415);
+    const body = (await res.json()) as { detail?: { code?: string } };
+    expect(body.detail?.code).toBe("heic_not_supported");
+
+    const row = db
+      .prepare(
+        "SELECT COUNT(*) AS c FROM photo_uploads WHERE album_id = (SELECT id FROM photo_albums WHERE upload_token = ?)",
+      )
+      .get(albumToken) as { c: number };
+    expect(row.c).toBe(0);
   });
 
   test("POST /:token/photos accepts registered device upload", async () => {
@@ -380,6 +541,130 @@ describe("participant soft-remove (#6)", () => {
     );
     expect(photos.data.locked).toBe(false);
     expect(photos.data.total).toBe(0);
+  });
+});
+
+// ── Feature B2: guest participant identity (F-03/F-19) ────────────────────────
+
+describe("guest participant aggregation", () => {
+  let token: string;
+  let albumToken: string;
+
+  beforeAll(async () => {
+    wipeFilm();
+    ({ token } = await bootstrapCouple("guest-count@weddly.test"));
+    albumToken = await createAlbum(token);
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("named sessions merge into one guest and couple sessions stay excluded", async () => {
+    await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: "ana-phone",
+      guest_name: "Ana",
+    });
+    await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: "ana-tablet",
+      guest_name: " ana ",
+    });
+    expect((await guestUpload(albumToken, "ana-phone")).status).toBe(201);
+    expect((await guestUpload(albumToken, "ana-tablet")).status).toBe(201);
+
+    const albumId = (
+      db.prepare("SELECT id FROM photo_albums WHERE upload_token = ?").get(albumToken) as {
+        id: number;
+      }
+    ).id;
+    db.prepare(
+      `INSERT INTO film_devices (album_id, device_id, guest_name, joined_at, source)
+       VALUES (?, 'couple-legacy-session', 'The couple', ?, 'couple')`,
+    ).run(albumId, Date.now());
+
+    const list = await req<{
+      devices: Array<{
+        deviceId: string;
+        guestName: string;
+        shotCount: number;
+        sessionCount: number;
+      }>;
+      total: number;
+    }>("GET", "/api/photo-albums/current/devices", undefined, { token });
+    expect(list.status).toBe(200);
+    expect(list.data.total).toBe(1);
+    expect(list.data.devices).toHaveLength(1);
+    expect(list.data.devices[0]?.guestName.toLowerCase()).toBe("ana");
+    expect(list.data.devices[0]?.shotCount).toBe(2);
+    expect(list.data.devices[0]?.sessionCount).toBe(2);
+
+    const album = await req<{ album: { participantCount: number } }>(
+      "GET",
+      "/api/photo-albums/current",
+      undefined,
+      { token },
+    );
+    expect(album.data.album.participantCount).toBe(1);
+  });
+
+  test("the cap counts guests and removing a merged guest removes every session", async () => {
+    db.prepare("UPDATE photo_albums SET guest_cap = 1 WHERE upload_token = ?").run(albumToken);
+
+    // Ana is already counted, so another named session is allowed at the cap.
+    const anotherSession = await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: "ana-laptop",
+      guest_name: "ANA",
+    });
+    expect(anotherSession.status).toBe(200);
+
+    const otherGuest = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "bea-phone", guest_name: "Bea" },
+    );
+    expect(otherGuest.status).toBe(429);
+    expect(otherGuest.data.detail?.code).toBe("guest_cap_reached");
+
+    const splitExistingGuest = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "ana-laptop", guest_name: "Bea" },
+    );
+    expect(splitExistingGuest.status).toBe(429);
+    expect(splitExistingGuest.data.detail?.code).toBe("guest_cap_reached");
+
+    const list = await req<{ devices: Array<{ deviceId: string }>; total: number }>(
+      "GET",
+      "/api/photo-albums/current/devices",
+      undefined,
+      { token },
+    );
+    const representativeId = list.data.devices[0]?.deviceId;
+    expect(representativeId).toBeTruthy();
+    const removed = await req<{ removed: boolean }>(
+      "DELETE",
+      `/api/photo-albums/current/devices/${encodeURIComponent(representativeId ?? "")}`,
+      undefined,
+      { token },
+    );
+    expect(removed.status).toBe(200);
+
+    const activeAnaSessions = (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS c FROM film_devices
+            WHERE album_id = (SELECT id FROM photo_albums WHERE upload_token = ?)
+              AND source = 'guest' AND removed_at IS NULL`,
+        )
+        .get(albumToken) as { c: number }
+    ).c;
+    expect(activeAnaSessions).toBe(0);
+
+    const album = await req<{ album: { participantCount: number } }>(
+      "GET",
+      "/api/photo-albums/current",
+      undefined,
+      { token },
+    );
+    expect(album.data.album.participantCount).toBe(0);
   });
 });
 

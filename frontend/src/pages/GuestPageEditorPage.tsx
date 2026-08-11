@@ -937,6 +937,7 @@ export default function GuestPageEditorPage() {
       !billingStatus.billing.entitled &&
       !billingStatus.billing.guest_page_addon,
   );
+  const addonPaymentPending = billingStatus?.billing.guest_page_prepaid === true;
   const addonCheckoutEnabled = billingStatus?.guest_page_addon_checkout_enabled === true;
 
   async function onUnlockGuestPage() {
@@ -1474,24 +1475,34 @@ export default function GuestPageEditorPage() {
             <div className="min-w-0 flex-1">
               <h2 className="flex items-center gap-2 font-grotesk text-base font-semibold tracking-tight text-blush-900 dark:text-blush-100">
                 <Lock size={16} aria-hidden />
-                {t("guest_page_editor.addon_unlock_title")}
+                {t(
+                  addonPaymentPending
+                    ? "guest_page_editor.addon_pending_title"
+                    : "guest_page_editor.addon_unlock_title",
+                )}
               </h2>
               <p className="mt-1 text-sm text-blush-800 dark:text-blush-200">
-                {t("guest_page_editor.addon_unlock_body")}
+                {t(
+                  addonPaymentPending
+                    ? "guest_page_editor.addon_pending_body"
+                    : "guest_page_editor.addon_unlock_body",
+                )}
               </p>
             </div>
-            <button
-              type="button"
-              className="btn-primary btn-sm shrink-0"
-              onClick={() => void onUnlockGuestPage()}
-              disabled={addonBusy || !addonCheckoutEnabled}
-            >
-              {addonBusy
-                ? t("guest_page_editor.addon_opening")
-                : addonCheckoutEnabled
-                  ? t("guest_page_editor.addon_unlock_cta")
-                  : t("guest_page_editor.addon_unavailable")}
-            </button>
+            {!addonPaymentPending && (
+              <button
+                type="button"
+                className="btn-primary btn-sm shrink-0"
+                onClick={() => void onUnlockGuestPage()}
+                disabled={addonBusy || !addonCheckoutEnabled}
+              >
+                {addonBusy
+                  ? t("guest_page_editor.addon_opening")
+                  : addonCheckoutEnabled
+                    ? t("guest_page_editor.addon_unlock_cta")
+                    : t("guest_page_editor.addon_unavailable")}
+              </button>
+            )}
           </div>
         </section>
       )}
