@@ -20,6 +20,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { isCurrentSessionDemo } from "../lib/demoSession";
 import { coupleApi } from "../lib/endpoints";
 import { LOCALE_NAMES, LOCALES, useT } from "../lib/i18n";
 
@@ -49,11 +50,13 @@ export function ProfileMenu({
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-  // Partner trickle — fetched once the user is signed in so the header
-  // can stack a second monogram circle alongside the current user's once
-  // the partner has actually joined the workspace. Stays null while the
-  // partner is only "invited" (no name yet) or no partner exists.
-  const [partner, setPartner] = useState<CouplePartnerView | null>(null);
+  // Partner trickle — fetched once the user is signed in so the header can
+  // show either the joined partner's monogram or the empty invitation slot.
+  // `undefined` means the request has not completed (or could not be
+  // refreshed); `null` is the server-confirmed "no partner and no pending
+  // invite" state. Keeping those apart prevents the empty invite slot from
+  // flashing for couples who already have a partner while the header loads.
+  const [partner, setPartner] = useState<CouplePartnerView | null | undefined>(undefined);
 
   // Close on outside click + Escape.
   useEffect(() => {
@@ -84,7 +87,7 @@ export function ProfileMenu({
   useEffect(() => {
     let cancelled = false;
     if (!user) {
-      setPartner(null);
+      setPartner(undefined);
       return;
     }
     const refreshPartner = async () => {
@@ -92,7 +95,8 @@ export function ProfileMenu({
         const res = await coupleApi.partner();
         if (!cancelled) setPartner(res.partner);
       } catch {
-        if (!cancelled) setPartner(null);
+        // Preserve the last confirmed state. A temporary request failure must
+        // not turn into a false "invite your partner" affordance.
       }
     };
     void refreshPartner();
@@ -111,50 +115,63 @@ export function ProfileMenu({
   // the partner is "invited" (no name, no account) showing a placeholder
   // would lie about presence.
   const showPartner =
-    partner !== null &&
+    partner != null &&
     (partner.status === "joined" || partner.status === "active") &&
     !!partner.full_name;
+  const showEmptyPartnerSlot = partner === null && !inAdminView && !isCurrentSessionDemo();
   const partnerInitials = showPartner
     ? getInitials(partner.full_name ?? "", partner.email ?? "")
     : "";
 
   return (
     <div ref={wrapRef} className="relative">
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={t("profile.menu_label")}
-        onClick={() => setOpen((v) => !v)}
-        className="group inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-1 text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
-      >
-        <span className="flex items-center">
-          {showPartner && (
-            <span
-              aria-hidden="true"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-blush-700 text-xs font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-blush-500 dark:ring-umber-800"
-              title={`${partner?.full_name ?? ""} · ${t(`profile.partner_status_${partner?.status ?? "joined"}`)}`}
-            >
-              {partnerInitials}
+      <div className="inline-flex items-center">
+        {showEmptyPartnerSlot && (
+          <Link
+            to="/app#invite-partner"
+            aria-label={t("dashboard.invite_partner")}
+            title={t("dashboard.invite_partner")}
+            className="inline-flex h-10 w-10 shrink-0 rounded-full border-2 border-dashed border-ink-300 transition-colors hover:border-ink-500 hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:border-umber-500 dark:hover:border-umber-300 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+          />
+        )}
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={t("profile.menu_label")}
+          onClick={() => setOpen((v) => !v)}
+          className={`group inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-1 text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100 ${
+            showEmptyPartnerSlot ? "ml-1" : ""
+          }`}
+        >
+          <span className="flex items-center">
+            {showPartner && (
               <span
-                className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-paper-50 dark:border-umber-800 ${
-                  partner?.status === "active" ? "bg-sage-500" : "bg-umber-400"
-                }`}
-              />
+                aria-hidden="true"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full bg-blush-700 text-xs font-semibold uppercase text-paper-100 ring-2 ring-paper-50 dark:bg-blush-500 dark:ring-umber-800"
+                title={`${partner?.full_name ?? ""} · ${t(`profile.partner_status_${partner?.status ?? "joined"}`)}`}
+              >
+                {partnerInitials}
+                <span
+                  className={`absolute bottom-0 left-0 z-10 h-3 w-3 rounded-full border-2 border-paper-50 dark:border-umber-800 ${
+                    partner?.status === "active" ? "bg-sage-500" : "bg-umber-400"
+                  }`}
+                />
+              </span>
+            )}
+            <span
+              title={`${user.full_name || user.email} · ${t("profile.partner_status_active")}`}
+              className={`relative flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900 dark:bg-umber-600 dark:text-paper-50 dark:group-hover:bg-umber-500 ${
+                showPartner ? "-ml-3 ring-2 ring-paper-50 dark:ring-umber-800" : ""
+              }`}
+            >
+              {initials}
+              <span className="absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full border-2 border-paper-50 bg-sage-500 dark:border-umber-800" />
             </span>
-          )}
-          <span
-            title={`${user.full_name || user.email} · ${t("profile.partner_status_active")}`}
-            className={`relative flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900 dark:bg-umber-600 dark:text-paper-50 dark:group-hover:bg-umber-500 ${
-              showPartner ? "-ml-3 ring-2 ring-paper-50 dark:ring-umber-800" : ""
-            }`}
-          >
-            {initials}
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-paper-50 bg-sage-500 dark:border-umber-800" />
           </span>
-        </span>
-        <ChevronDownIcon />
-      </button>
+          <ChevronDownIcon />
+        </button>
+      </div>
 
       {open && (
         <div
