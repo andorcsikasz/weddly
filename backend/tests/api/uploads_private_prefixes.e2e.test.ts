@@ -1,6 +1,5 @@
-// `/uploads/*` is a PUBLIC static handler, and the list of private prefixes it
-// refuses is a DENYLIST — so every private upload category is world-readable
-// until someone remembers to add its prefix. This suite is the reminder.
+// `/uploads/*` exposes only an explicit, reviewed allowlist of public media
+// namespaces. Every new storage category is private until deliberately added.
 //
 // The case that prompted it: a vendor waitlist applicant's price list, which is
 // a business's confidential commercial terms, handed over on the strength of a
@@ -9,7 +8,7 @@
 // so before the prefix was added, every applicant's pricing could be walked one
 // integer at a time by a stranger with no account at all.
 //
-// Pairs with server.ts (tryServeStatic's private-prefix guard),
+// Pairs with server.ts (tryServeStatic's public-key allowlist),
 // routes/vendor_waitlist.ts (the admin-gated stream) and
 // domain/vendor_waitlist.ts (priceListUrl).
 
@@ -123,16 +122,39 @@ describe("private uploads are not reachable at a public /uploads/ URL", () => {
   });
 
   test("the couple-side private prefixes are closed too", async () => {
-    // These three were already guarded; they are asserted here so the whole
-    // denylist has one home and a future edit that drops a line fails loudly.
+    // These are asserted together so a future allowlist expansion fails loudly.
     for (const key of [
       "couples/1/budget-docs/1.pdf",
       "couples/1/budget-payments/1.pdf",
       "couples/1/booking-messages/1.pdf",
+      "couples/1/moodboard/1.png",
     ]) {
       const res = await fetch(`${BASE}/uploads/${key}`);
       expect(res.status).not.toBe(200);
       await res.arrayBuffer();
     }
+  });
+
+  test("unknown future namespaces remain private by default", async () => {
+    const key = "future-private-feature/1/sequential-secret.txt";
+    await storage.write(key, new Blob(["must never be public by accident"]));
+    const response = await fetch(`${BASE}/uploads/${key}`);
+    expect(response.status).not.toBe(200);
+    await response.arrayBuffer();
+  });
+
+  test("an unclaimed listing cannot publish operator-imported media", async () => {
+    wipeAll();
+    const ts = Date.now();
+    db.prepare(
+      `INSERT INTO listings
+         (id, source, category, name, city, status, created_at, updated_at)
+       VALUES ('unclaimed-image-test', 'curated', 'photography', 'Unclaimed', 'Budapest', 'active', ?, ?)`,
+    ).run(ts, ts);
+    const key = "listings/unclaimed-image-test/hero.webp";
+    await storage.write(key, new Blob(["unlicensed website image"]));
+    const response = await fetch(`${BASE}/uploads/${key}`);
+    expect(response.status).not.toBe(200);
+    await response.arrayBuffer();
   });
 });

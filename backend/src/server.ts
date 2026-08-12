@@ -3,11 +3,17 @@
 
 import { existsSync } from "node:fs";
 import { join, sep } from "node:path";
-import { extractToken, verifySessionToken } from "./auth/session";
-import { CONFIG } from "./config";
+import {
+  clearSessionCookie,
+  extractToken,
+  SESSION_COOKIE_NAME,
+  sessionCookie,
+  verifySessionToken,
+} from "./auth/session";
+import { CONFIG, REQUIRE_PROD_HARDENING } from "./config";
 import { db } from "./db"; // open DB + apply schema
 import "./init_households"; // idempotent backfill: couple slugs + households
-import { initObservability, captureException } from "./lib/observability";
+import { initObservability, captureException, flushObservability } from "./lib/observability";
 
 initObservability();
 
@@ -20,9 +26,14 @@ import {
   Router,
 } from "./lib/http";
 import { maybeCompress, negotiateEncoding } from "./lib/compression";
-import { redactTokensInPath } from "./lib/log_redact";
 import { log, makeLogger } from "./lib/logger";
-import { GA4_CSP_HASHES, GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } from "./lib/seo_ssr";
+import {
+  GA4_CSP_HASHES,
+  GTM_INLINE_CSP_HASH,
+  hasPublicSeoPage,
+  localeForHost,
+  renderIndexHtml,
+} from "./lib/seo_ssr";
 import { backfillFoundingAnchor, entitlementBlock } from "./domain/billing";
 import { plannerEntitlementBlock } from "./domain/planner_billing";
 import { vendorEntitlementBlock } from "./domain/vendor_billing";
@@ -33,13 +44,12 @@ import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { startBackupWorker } from "./domain/backup";
 import { startGoogleCalendarWorker } from "./domain/google_calendar_worker";
+import { startSupplierBookingWorker } from "./domain/supplier_booking_worker";
 import { backfillVendorPoints } from "./domain/vendor_points";
 import { startVendorPointsWorker } from "./domain/vendor_points_worker";
 import { backfillPlannerPoints } from "./domain/planner_points";
 import { startPlannerPointsWorker } from "./domain/planner_points_worker";
 import { startWishlistImageBackfill } from "./domain/wishlist_image_backfill";
-import { startListingImageBackfill } from "./domain/listing_image_backfill";
-import { startListingGalleryBackfill } from "./domain/listing_gallery_backfill";
 import { registerAccommodationRoutes } from "./routes/accommodations";
 import { registerAdminAnalyticsRoutes } from "./routes/admin_analytics";
 import { registerAdminEmailListRoutes } from "./routes/admin_email_list";
@@ -92,6 +102,7 @@ import { registerCoupleCardsRoutes } from "./routes/couple_cards";
 import { registerEmailVerifyRoutes } from "./routes/email_verify";
 import { registerExportRoutes } from "./routes/export";
 import { registerFeedbackRoutes } from "./routes/feedback";
+import { registerContentNoticeRoutes } from "./routes/content_notices";
 import { registerGoogleCalendarRoutes } from "./routes/google_calendar";
 import { registerVendorGoogleCalendarRoutes } from "./routes/vendor_google_calendar";
 import { registerGrowthRoutes } from "./routes/growth";
@@ -358,9 +369,10 @@ registerVendorAutomationRoutes(router);
 registerVendorBillingRoutes(router);
 registerPlannerBillingRoutes(router);
 registerSeoRoutes(router);
+registerContentNoticeRoutes(router);
 registerDemoRoutes(router);
 
-const IS_PROD = process.env.NODE_ENV === "production";
+const IS_PROD = REQUIRE_PROD_HARDENING;
 
 // CSP: Vite emits hashed assets so `'self'` covers our JS/CSS. Plausible script
 // is loaded from plausible.io; Sentry browser SDK posts to *.sentry.io. The
@@ -387,10 +399,7 @@ const CSP = [
   // banner UI from consentcdn.cookiebot.com; without both the cookie banner
   // (and therefore every consent-gated analytics script) silently fails to
   // load. Microsoft Clarity loads its tag from www.clarity.ms.
-  // Usercentrics Web CMP loads its loader/UI from web.cmp.usercentrics.eu and
-  // pulls config/assets from *.usercentrics.eu; it runs alongside Cookiebot
-  // during the trial evaluation.
-  `script-src 'self' ${GTM_INLINE_CSP_HASH}${GA4_CSP_HASHES ? " " + GA4_CSP_HASHES : ""} https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com https://consent.cookiebot.com https://consentcdn.cookiebot.com https://www.clarity.ms https://web.cmp.usercentrics.eu https://*.usercentrics.eu`,
+  `script-src 'self' ${GTM_INLINE_CSP_HASH}${GA4_CSP_HASHES ? " " + GA4_CSP_HASHES : ""} https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com https://consent.cookiebot.com https://consentcdn.cookiebot.com https://www.clarity.ms`,
   "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com https://appleid.cdn-apple.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.
@@ -413,7 +422,7 @@ const CSP = [
   // img.youtube.com + i.ytimg.com host the vendor video-reel poster thumbnails
   // (hqdefault.jpg) shown before the click-to-play iframe on supplier detail
   // pages; img.youtube.com 302s to i.ytimg.com, so both origins are needed.
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://imgsct.cookiebot.com https://*.clarity.ms https://c.bing.com https://*.usercentrics.eu https://img.youtube.com https://i.ytimg.com",
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://imgsct.cookiebot.com https://*.clarity.ms https://c.bing.com https://img.youtube.com https://i.ytimg.com",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
   // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may
@@ -423,9 +432,7 @@ const CSP = [
   // Cookiebot XHRs the consent state from consentcdn.cookiebot.com; Microsoft
   // Clarity beacons session data to *.clarity.ms and syncs the MUID via
   // c.bing.com.
-  // Usercentrics fetches its settings + records consent against *.usercentrics.eu
-  // and its consent runtime endpoints on *.service.consent.dev.
-  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://*.clarity.ms https://c.bing.com https://*.usercentrics.eu https://*.service.consent.dev",
+  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://*.clarity.ms https://c.bing.com",
   // OSM's /export/embed.html is iframed by the honeymoon map modal.
   // `blob:` is for the /app/seating PDF preview modal — the generated chart
   // is handed to <iframe src="blob:..."> so the browser's native PDF viewer
@@ -436,7 +443,7 @@ const CSP = [
   // reference-video embeds on supplier detail pages; the nocookie host serves
   // the iframe but redirects some players through www.youtube.com, so both are
   // whitelisted.
-  "frame-src https://www.openstreetmap.org https://accounts.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://*.usercentrics.eu https://www.youtube-nocookie.com https://www.youtube.com blob:",
+  "frame-src https://www.openstreetmap.org https://accounts.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://www.youtube-nocookie.com https://www.youtube.com blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -546,6 +553,69 @@ function isPrivateByTokenPath(pathname: string): boolean {
   return w !== null && (w[1] ?? "").length > 0;
 }
 
+function isNoIndexPath(pathname: string): boolean {
+  return (
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/onboarding" ||
+    pathname === "/rsvp" ||
+    pathname === "/suppliers/signup" ||
+    pathname === "/feedback" ||
+    pathname === "/app" ||
+    pathname.startsWith("/app/") ||
+    pathname === "/vendor" ||
+    pathname.startsWith("/vendor/") ||
+    pathname.startsWith("/planner/activate/") ||
+    pathname.startsWith("/photos/") ||
+    isPrivateByTokenPath(pathname) ||
+    /^\/(?:change-email|newsletter\/confirm|newsletter\/unsubscribe|verify-supplier|unsubscribe)\//.test(
+      pathname,
+    ) ||
+    /^\/g\/[^/]+\/[^/]+\/?$/.test(pathname)
+  );
+}
+
+const KNOWN_FRONTEND_EXACT = new Set([
+  "/",
+  "/about",
+  "/blog",
+  "/forgot-password",
+  "/impresszum",
+  "/imprint",
+  "/login",
+  "/onboarding",
+  "/planners",
+  "/privacy",
+  "/register",
+  "/rsvp",
+  "/signup",
+  "/terms",
+  "/terms/vendor-subscription",
+  "/vendor",
+  "/vendor/onboarding",
+  "/suppliers",
+  "/suppliers/browse",
+  "/suppliers/signup",
+]);
+
+function isKnownFrontendPath(pathname: string): boolean {
+  const path = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  if (KNOWN_FRONTEND_EXACT.has(path) || hasPublicSeoPage(path)) return true;
+  if (path === "/app" || path.startsWith("/app/")) return true;
+  if (path === "/vendor" || path.startsWith("/vendor/")) return true;
+  return (
+    /^\/(?:change-email|invite|newsletter\/confirm|newsletter\/unsubscribe|photos|reset-password|unsubscribe|verify-email|verify-supplier)\/[^/]+$/.test(
+      path,
+    ) ||
+    /^\/planner\/activate\/[^/]+$/.test(path) ||
+    /^\/rsvp\/[^/]+$/.test(path) ||
+    /^\/g\/[^/]+\/[^/]+$/.test(path) ||
+    /^\/w\/[^/]+\/[^/]+$/.test(path)
+  );
+}
+
 /** Strip capability tokens that travel in the URL path before the path is
  *  written to request logs or attached to Sentry. An un-consumed token in a log
  *  line (forwarded to a third-party log service) is a replayable credential —
@@ -553,8 +623,6 @@ function isPrivateByTokenPath(pathname: string): boolean {
  *  couple + vendor invites, listing claim, and opt-out generically. Route shape
  *  is preserved. Password reset is unaffected — its token rides in the JSON
  *  body, which is never logged. See lib/log_redact.ts. */
-const redactPath = redactTokensInPath;
-
 /** decodeURIComponent that returns null on malformed percent-encoding (e.g.
  *  `%ZZ`) instead of throwing a URIError. This path runs OUTSIDE the request
  *  try/catch, so an uncaught throw here would emit a 500 with none of the
@@ -575,6 +643,41 @@ function isInsideDir(child: string, base: string): boolean {
   return child === base || child.startsWith(withSep);
 }
 
+/** Public object namespaces are deliberately narrow. Storage is private by
+ * default: adding a new `storage.write()` category does not make it reachable
+ * from `/uploads/` until it is reviewed and added here. */
+function publicUploadKey(key: string): boolean {
+  if (/^blog\/\d+\.(?:jpe?g|png|webp)$/i.test(key)) return true;
+  if (/^destination-photos\/[A-Za-z0-9._-]+$/.test(key)) return true;
+  if (/^planners\/\d+\/(?:avatar\.(?:jpe?g|png|webp)|portfolio\/|packages\/)/i.test(key)) {
+    return true;
+  }
+  // These couple-owned assets are intentionally public-by-URL for a published
+  // wedding page, gift list or random-capability guest album. Private document,
+  // message and moodboard namespaces never match.
+  if (
+    /^couples\/\d+\/(?:cover\.(?:jpe?g|png|webp)|site-photo-[12]\.(?:jpe?g|png|webp)|honeymoon-cover\.(?:jpe?g|png|webp)|wishlist\/[a-f0-9]{16}\.(?:jpe?g|png|webp)|photos\/\d+\/\d+-[a-f0-9]{32}\.(?:jpe?g|png|webp))$/i.test(
+      key,
+    )
+  ) {
+    return true;
+  }
+  const listing = /^listings\/([^/]+)\/(?:hero\.(?:jpe?g|png|webp)|gallery\/|packages\/)/i.exec(
+    key,
+  );
+  if (!listing) return false;
+  const listingId = listing[1];
+  if (!listingId) return false;
+  // No provenance/licence column exists for operator-imported media, so only a
+  // vendor-owned profile may publish listing objects. Unclaimed scraped objects
+  // already present in storage stay inaccessible.
+  return Boolean(
+    db
+      .prepare("SELECT 1 FROM listings WHERE id = ? AND vendor_account_id IS NOT NULL LIMIT 1")
+      .get(listingId),
+  );
+}
+
 async function tryServeStatic(req: Request, pathname: string): Promise<Response | null> {
   if (pathname.startsWith("/api/")) return null;
 
@@ -591,33 +694,8 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
     const rel = cleanPath.slice("/uploads/".length);
     const decodedRel = rel ? safeDecodeURIComponent(rel) : null;
     if (!decodedRel || decodedRel.includes("..")) return null;
-    // Private financial documents (invoices/receipts) are NOT public-by-URL like
-    // photos/moodboard images. They are couple-scoped behind the authenticated
-    // /api/budget/documents/:id/download route; refuse them here so an old
-    // public URL (or an id-enumeration probe) can't read another couple's files.
-    // Message attachments are the same case: a quote or a contract a vendor
-    // sent one couple, readable only through /api/booking-messages/attachments.
-    // A waitlist price list is the same case again, and was the sharpest of the
-    // three: it is a business's confidential commercial terms, it is only ever
-    // shown on /app/admin/vendor-waitlist, and its key is built from a
-    // SEQUENTIAL row id (`vendor_waitlist/<id>/price_list.<ext>`), so before
-    // this line every applicant's pricing could be walked one integer at a time
-    // by a stranger with no account. It streams from
-    // /api/admin/vendor-waitlist/:id/price-list instead.
-    //
-    // This list is a DENYLIST, so a new private upload category is public until
-    // someone remembers to add it here. Adding a `storage.write` key that a
-    // stranger should not be able to guess means adding its prefix in the same
-    // commit. Guarded by uploads_private_prefixes.e2e.test.ts.
-    if (
-      decodedRel.includes("/budget-docs/") ||
-      decodedRel.includes("/budget-payments/") ||
-      decodedRel.includes("/booking-messages/") ||
-      decodedRel.startsWith("vendor_waitlist/")
-    )
-      return null;
     const key = keyFromUploadUrl(decodedRel);
-    if (!key) return null;
+    if (!key || !publicUploadKey(key)) return null;
     return storage.serve(key);
   }
 
@@ -676,6 +754,7 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
   // changes), and stale HTML means users see old chunks 404 and old SSR
   // flashes long after the fix has shipped.
   if (existsSync(FRONTEND_INDEX)) {
+    if (!isKnownFrontendPath(pathname)) return null;
     // EN is the default for every production request — the visitor's
     // Accept-Language header is intentionally NOT forwarded to the SSR
     // renderer, so an HU navigator still gets the EN SSR. The client
@@ -751,6 +830,21 @@ async function handleRequest(req: Request): Promise<Response> {
     });
   }
 
+  // Public terminology is "suppliers" everywhere. Preserve every historic
+  // /vendors link (including profile slugs, query strings and signup) with a
+  // permanent redirect; internal /vendor and /api/vendors routes are separate
+  // product/backend namespaces and intentionally remain unchanged.
+  if (url.pathname === "/vendors" || url.pathname.startsWith("/vendors/")) {
+    const supplierPath = url.pathname.replace(/^\/vendors(?=\/|$)/, "/suppliers");
+    return new Response(null, {
+      status: 301,
+      headers: {
+        Location: `${supplierPath}${url.search}`,
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
+  }
+
   if (req.method === "OPTIONS") return corsPreflight(req);
 
   const cors = corsHeaders(req.headers.get("origin"));
@@ -772,10 +866,43 @@ async function handleRequest(req: Request): Promise<Response> {
     return new Response(r.body, { status: r.status, headers });
   }
 
-  // Auth middleware: verify the bearer token if present, leave userId null otherwise.
+  // Auth middleware accepts the legacy/API Bearer header and the browser's
+  // HttpOnly session cookie. Browser code never needs to persist the bearer.
   let userId: number | null = null;
   const token = extractToken(req);
   if (token) userId = verifySessionToken(token);
+
+  // Cookie-authenticated writes are same-origin only. SameSite=Lax already
+  // blocks ordinary cross-site POSTs; this Origin check also covers same-site
+  // sibling subdomains and keeps the cookie migration from introducing CSRF.
+  const hasBearer = Boolean(req.headers.get("authorization"));
+  const hasSessionCookie = (req.headers.get("cookie") ?? "")
+    .split(";")
+    .some((part) => part.trim().startsWith(`${SESSION_COOKIE_NAME}=`));
+  if (
+    REQUIRE_PROD_HARDENING &&
+    hasSessionCookie &&
+    !hasBearer &&
+    !["GET", "HEAD", "OPTIONS"].includes(req.method)
+  ) {
+    const origin = req.headers.get("origin");
+    const allowedOrigins = new Set(
+      [CONFIG.frontendBaseUrl, process.env.EN_CANONICAL_HOST ?? ""].filter(Boolean).map((value) => {
+        try {
+          return new URL(value.includes("://") ? value : `https://${value}`).origin;
+        } catch {
+          return "";
+        }
+      }),
+    );
+    if (!origin || !allowedOrigins.has(origin)) {
+      const r = httpErr(403, "Cross-site authenticated request rejected");
+      const headers = new Headers(r.headers);
+      for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+      headers.set("x-request-id", requestId);
+      return new Response(r.body, { status: r.status, headers });
+    }
+  }
 
   if (matched.route.requireAuth && userId === null) {
     const r = httpErr(401, "Not authenticated");
@@ -822,7 +949,10 @@ async function handleRequest(req: Request): Promise<Response> {
     return new Response(r.body, { status: r.status, headers });
   }
 
-  const safeRoute = redactPath(url.pathname);
+  // Log the registered route template rather than the concrete pathname. This
+  // prevents every path capability—including short RSVP/household codes and
+  // future token formats—from reaching Railway or Sentry logs.
+  const safeRoute = matched.route.path;
   const reqLog = makeLogger({
     requestId,
     method: req.method,
@@ -843,6 +973,46 @@ async function handleRequest(req: Request): Promise<Response> {
   try {
     const res = await matched.route.handler(ctx);
     const headers = new Headers(res.headers);
+    const sessionRoutes = new Set([
+      "/api/auth/login",
+      "/api/auth/google",
+      "/api/auth/apple",
+      "/api/auth/change-password",
+      "/api/auth/verify/:token",
+      "/api/planner/activation/complete",
+      "/api/vendor/claim/complete",
+      "/api/vendor/register",
+      "/api/vendor/register/google",
+      "/api/vendor/onboard/complete",
+      "/api/demo/start",
+      "/api/demo/planner/start",
+      "/api/demo/vendor/start",
+    ]);
+    if (safeRoute === "/api/auth/logout") {
+      headers.append("Set-Cookie", clearSessionCookie());
+    } else if (sessionRoutes.has(safeRoute) && res.ok) {
+      try {
+        const payload = (await res.clone().json()) as {
+          token?: unknown;
+          session?: { token?: unknown };
+        };
+        const issued =
+          typeof payload.token === "string"
+            ? payload.token
+            : typeof payload.session?.token === "string"
+              ? payload.session.token
+              : null;
+        if (issued) headers.append("Set-Cookie", sessionCookie(issued));
+      } catch {
+        // A session route returning a non-JSON error is handled normally and
+        // never receives a cookie.
+      }
+    } else if (hasBearer && token && userId !== null && !hasSessionCookie) {
+      // One-request migration for existing browsers: their first valid legacy
+      // bearer request receives the HttpOnly cookie, after which the frontend
+      // deletes the localStorage secret.
+      headers.append("Set-Cookie", sessionCookie(token));
+    }
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
     for (const [k, v] of Object.entries(cors)) headers.set(k, v);
     headers.set("x-request-id", requestId);
@@ -927,8 +1097,9 @@ async function serveOne(req: Request): Promise<Response> {
   // same reason the baseline headers do: it must not depend on which branch
   // answered. A private-by-token URL is equally un-indexable whether it came
   // back as SSR HTML, a redirect or a 404.
-  if (isPrivateByTokenPath(new URL(req.url).pathname)) {
-    headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  const responseUrl = new URL(req.url);
+  if (isNoIndexPath(responseUrl.pathname) || responseUrl.search.length > 0) {
+    headers.set("X-Robots-Tag", "noindex, follow, noarchive");
   }
   return new Response(res.body, { status: res.status, headers });
 }
@@ -954,6 +1125,7 @@ if (process.env.NODE_ENV !== "test") {
       log.warn("server.shutdown.drain_timeout", { inflight: inflightRequests });
     }
     db.close();
+    await flushObservability();
     log.info("server.shutdown.done", { signal });
     process.exit(0);
   };
@@ -971,6 +1143,7 @@ if (process.env.NODE_ENV !== "test") {
   // Reconcile couples' Google Calendars whose events changed. No-op unless the
   // Google Calendar integration is configured (GOOGLE_CALENDAR_ENABLED).
   startGoogleCalendarWorker();
+  startSupplierBookingWorker();
   // Drain vendor domain events into the Weddly Points ledger, then replay what
   // existing reviews / bookings / profiles would have earned. The backfill is
   // idempotent (dedupe_key), so booting twice awards nothing twice.
@@ -993,17 +1166,9 @@ if (process.env.NODE_ENV !== "test") {
   // link but no image (created before link-preview shipped). Non-blocking and
   // self-limiting — each row is attempted exactly once. See the module header.
   startWishlistImageBackfill();
-  // One-time sweep: auto-fill supplier listing heroes from each venue's own
-  // website (og:image). Curated venues ship without a photo; this gives their
-  // card a real image instead of the icon placeholder. Non-blocking and
-  // self-limiting — each row is attempted exactly once. See the module header.
-  startListingImageBackfill();
-  // One-time sweep: re-host curated venues' seed portfolio galleries locally.
-  // The seed `gallery_urls` hotlink each venue's own website, which our CSP
-  // img-src blocks in the browser (broken thumbnails); this downloads them once
-  // and serves CSP-safe local copies on the detail page. Non-blocking and
-  // self-limiting — each row is attempted exactly once. See the module header.
-  startListingGalleryBackfill();
+  // Supplier photographs are never scraped or re-hosted automatically. A
+  // claimed vendor may upload its own portfolio; unclaimed listings remain
+  // factual, image-free cards until a documented licence/authorisation exists.
   // Boot-time guard against re-introducing the legacy `sendEmail` direct-call
   // pattern. The May 2026 "phishy email" bug lived for months because nothing
   // flagged it; this scan emits a `mailer.integrity.violation` warning at boot

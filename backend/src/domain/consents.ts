@@ -5,7 +5,12 @@
 
 import { db, now } from "../db";
 
-export type ConsentDocument = "privacy" | "terms" | "vendor_beta_notice";
+export type ConsentDocument =
+  | "privacy"
+  | "terms"
+  | "vendor_terms"
+  | "vendor_terms_highlighted"
+  | "vendor_beta_notice";
 
 interface RecordConsentInput {
   /** Authenticated user id when known (registration flow). Pass null for

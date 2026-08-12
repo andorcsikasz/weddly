@@ -28,6 +28,33 @@ function render(): string {
 afterEach(() => {
   process.env.PLAUSIBLE_DOMAIN = "";
   process.env.GTM_CONTAINER_ID = "";
+  process.env.GA4_MEASUREMENT_ID = "";
+});
+
+describe("seo: direct GA4 injection", () => {
+  test("does not inject GA4 when the measurement id is unset", () => {
+    process.env.GA4_MEASUREMENT_ID = "";
+    expect(render()).not.toContain("googletagmanager.com/gtag/js");
+  });
+
+  test("keeps the loader and config inert until statistics consent", () => {
+    process.env.GA4_MEASUREMENT_ID = "G-ABC123XYZ";
+    const html = render();
+    expect(html).toContain(
+      '<script type="text/plain" data-cookieconsent="statistics" async src="https://www.googletagmanager.com/gtag/js?id=G-ABC123XYZ"></script>',
+    );
+    expect(html).toContain(
+      '<script type="text/plain" data-cookieconsent="statistics">window.dataLayer=',
+    );
+    expect(html).not.toContain(
+      '<script async src="https://www.googletagmanager.com/gtag/js?id=G-ABC123XYZ">',
+    );
+  });
+
+  test("ignores a malformed measurement id", () => {
+    process.env.GA4_MEASUREMENT_ID = "not-a-measurement-id";
+    expect(render()).not.toContain("googletagmanager.com/gtag/js");
+  });
 });
 
 describe("seo: Plausible analytics injection", () => {
@@ -40,7 +67,7 @@ describe("seo: Plausible analytics injection", () => {
     process.env.PLAUSIBLE_DOMAIN = "weddly.hu";
     const html = render();
     expect(html).toContain(
-      '<script defer data-domain="weddly.hu" src="https://plausible.io/js/script.js"></script>',
+      '<script type="text/plain" data-cookieconsent="statistics" defer data-domain="weddly.hu" src="https://plausible.io/js/script.js"></script>',
     );
   });
 

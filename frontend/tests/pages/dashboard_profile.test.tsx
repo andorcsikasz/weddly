@@ -160,6 +160,7 @@ function makeGuest(overrides: Partial<Guest> = {}): Guest {
     accommodation_needed: null,
     notes: null,
     group_tag: null,
+    partner_role: null,
     created_at: Date.now(),
     updated_at: Date.now(),
     ...overrides,
@@ -374,8 +375,9 @@ describe("<DashboardPage>", () => {
     renderPage("dashboard");
 
     await waitFor(() => expect(screen.getByText(/rsvps in/i)).toBeInTheDocument());
-    // Target is 80, 2 are yes — "of 80 confirmed" sits under the headline.
-    expect(screen.getByText(/of 80 confirmed/i)).toBeInTheDocument();
+    // The headline counts replies against the real invite list (not the
+    // onboarding target and not only the guests who answered yes).
+    expect(screen.getByText(/of 3 invited replied/i)).toBeInTheDocument();
   });
 
   it("renders the budget spent vs cap KPI", async () => {
@@ -399,38 +401,32 @@ describe("<DashboardPage>", () => {
     await waitFor(() => expect(screen.getByText(/cost \/ guest/i)).toBeInTheDocument());
   });
 
-  it("renders all expected setup-checklist items", async () => {
+  it("renders the outstanding setup nudges in the upcoming-tasks card", async () => {
     globalThis.fetch = buildFetch({});
     renderPage("dashboard");
 
-    await waitFor(() => expect(screen.getByText(/setup checklist/i)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getAllByText(/add at least one guest/i).length).toBeGreaterThan(0),
+    );
 
-    // Spot-check several rows from the derived task list. Some labels also
-    // get echoed in the "Next step: {label}" CTA at the top, so we use
-    // getAllByText for the labels that the next-action button can mirror.
-    expect(screen.getAllByText(/lock the wedding date/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/define the budget/i)).toBeInTheDocument();
-    expect(screen.getByText(/estimate the guest count/i)).toBeInTheDocument();
+    // Completed setup steps disappear; only outstanding nudges are merged
+    // into the normal upcoming-tasks surface.
+    expect(screen.queryByText(/lock the wedding date/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/define the budget/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/estimate the guest count/i)).not.toBeInTheDocument();
     expect(screen.getAllByText(/add at least one guest/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/plan a budget line/i)).toBeInTheDocument();
     expect(screen.getByText(/add a seating table/i)).toBeInTheDocument();
-    expect(screen.getByText(/seat all confirmed guests/i)).toBeInTheDocument();
   });
 
-  it("marks completed checklist items with a checkmark icon", async () => {
-    // partner_b_id present → task_invite_partner is done (checkmark renders).
-    // The DOM check is structural — done rows get an inline <svg> inside the
-    // round badge; undone rows render an empty badge.
+  it("removes completed setup nudges", async () => {
     globalThis.fetch = buildFetch({});
     renderPage("dashboard");
 
-    await waitFor(() => expect(screen.getByText(/setup checklist/i)).toBeInTheDocument());
-    // "Lock the wedding date" is done (wedding_date_goal is exact). Find its
-    // <li> and confirm an svg checkmark exists inside.
-    const dateRow = screen.getByText(/lock the wedding date/i).closest("li");
-    expect(dateRow).not.toBeNull();
-    const svg = dateRow?.querySelector("svg");
-    expect(svg).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getAllByText(/add at least one guest/i).length).toBeGreaterThan(0),
+    );
+    expect(screen.queryByText(/lock the wedding date/i)).not.toBeInTheDocument();
   });
 
   it("renders the quick-links row with at least 4 destination pills", async () => {
@@ -527,9 +523,9 @@ describe("<DashboardPage>", () => {
     renderPage("dashboard");
 
     // Day-of panel headline copy:
-    await waitFor(() => expect(screen.getByText(/it's the big day/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText(/it's the big day/i).length).toBeGreaterThan(0));
     // And the planning-mode KPI grid is swapped out for the jumbo today/tomorrow label.
-    expect(screen.getByText(/^today$/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/^today$/i).length).toBeGreaterThan(0);
   });
 
   it("Place-cards print button (day-of) calls /api/print/place-cards", async () => {
@@ -681,7 +677,7 @@ describe("<DashboardPage>", () => {
     globalThis.fetch = buildFetch({ couple: makeCouple({ partner_b_id: 2 }) });
     renderPage("dashboard");
 
-    await waitFor(() => expect(screen.getByText(/setup checklist/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/shortcuts/i)).toBeInTheDocument());
     expect(document.getElementById("invite-partner")).toBeNull();
   });
 });

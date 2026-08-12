@@ -616,7 +616,10 @@ describe("Weddly Points: ledger + engine", () => {
     // Twice the cap's worth of confirmations inside one month.
     const wanted = 2 * Math.ceil(MAX_BOOKING_POINTS_PER_MONTH / POINTS_BY_EVENT.booking_confirmed);
     for (let i = 0; i < wanted; i++) {
-      updateBookingStatus(insertBooking(v, coupleId), "confirmed");
+      updateBookingStatus(
+        insertBooking(v, coupleId, `2027-05-${String(i + 1).padStart(2, "0")}`),
+        "confirmed",
+      );
     }
     processVendorEventOutbox();
     expect(pointsFor(v.accountId, "booking_confirmed")).toBe(MAX_BOOKING_POINTS_PER_MONTH);
@@ -625,9 +628,10 @@ describe("Weddly Points: ledger + engine", () => {
   test("the retired repeat-booking rule pays nothing and is off the rulebook", async () => {
     const v = await bootstrapVendor("legacy");
     const { coupleId } = await bootstrapCouple("legacy-couple@test.test");
-    // Two confirmed bookings from the SAME couple: the old rule's trigger.
-    updateBookingStatus(insertBooking(v, coupleId), "confirmed");
-    updateBookingStatus(insertBooking(v, coupleId), "confirmed");
+    // Two confirmed bookings from the SAME couple on distinct dates: the old
+    // rule's trigger, without violating the one-vendor/one-date invariant.
+    updateBookingStatus(insertBooking(v, coupleId, "2027-05-01"), "confirmed");
+    updateBookingStatus(insertBooking(v, coupleId, "2027-05-02"), "confirmed");
     processVendorEventOutbox();
 
     expect(pointsFor(v.accountId, "repeat_booking")).toBe(0);

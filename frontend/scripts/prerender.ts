@@ -113,6 +113,14 @@ function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
   // diff between SSR + JS pass stays trivial.
   return [
     `<header>`,
+    `  <nav aria-label="${escape(locale === "hu" ? "Fő navigáció" : "Main navigation")}">`,
+    `    <a href="/eskuvoi-vendeglista">Esküvői vendéglista</a> ·`,
+    `    <a href="/eskuvoi-koltsegvetes-tervezo">Esküvői költségvetés</a> ·`,
+    `    <a href="/eskuvoi-ultetesi-rend-tervezo">Ültetési rend</a> ·`,
+    `    <a href="/online-eskuvoi-rsvp">Online RSVP</a> ·`,
+    `    <a href="/eskuvoi-szolgaltatok">Esküvői szolgáltatók</a> ·`,
+    `    <a href="/utmutato">Útmutatók</a>`,
+    `  </nav>`,
     `  <h1>${escape(l.hero_title)}</h1>`,
     `  <p>${escape(l.hero_sub)}</p>`,
     `  <p>`,
@@ -152,11 +160,16 @@ function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
     `</section>`,
     `<footer aria-label="${escape(locale === "hu" ? "Oldaltérkép" : "Sitemap")}">`,
     `  <nav><h3>${escape(l.footer_couples)}</h3><ul>`,
+    `    <li><a href="/eskuvoi-vendeglista">Esküvői vendéglista</a></li>`,
+    `    <li><a href="/eskuvoi-koltsegvetes-tervezo">Esküvői költségvetés tervező</a></li>`,
+    `    <li><a href="/eskuvoi-ultetesi-rend-tervezo">Esküvői ültetési rend tervező</a></li>`,
+    `    <li><a href="/online-eskuvoi-rsvp">Online esküvői RSVP</a></li>`,
+    `    <li><a href="/utmutato">Esküvőszervezési útmutatók</a></li>`,
     `    <li><a href="/signup">${escape(l.footer_couples_signup)}</a></li>`,
     `    <li><a href="/login">${escape(l.footer_couples_signin)}</a></li>`,
     `  </ul></nav>`,
     `  <nav><h3>${escape(l.footer_vendors)}</h3><ul>`,
-    `    <li><a href="/vendors">${escape(l.footer_vendors_waitlist)}</a></li>`,
+    `    <li><a href="/suppliers">${escape(l.footer_vendors_waitlist)}</a></li>`,
     `  </ul></nav>`,
     `  <nav><h3>${escape(l.footer_guests)}</h3><ul>`,
     `    <li><a href="${rsvpHref}">${escape(l.footer_guests_enter)}</a></li>`,
@@ -213,7 +226,10 @@ function main(): void {
   const template = readFileSync(INDEX_HTML, "utf-8");
 
   const huHtml = injectIntoRoot(template, buildBody(hu, "hu"));
-  const enHtml = injectIntoRoot(template, buildBody(en, "en"));
+  const enHtml = injectIntoRoot(template, buildBody(en, "en")).replace(
+    'data-default-locale="hu"',
+    'data-default-locale="en"',
+  );
 
   // HU is the canonical default (overwrites Vite's empty root).
   writeFileSync(INDEX_HTML, huHtml);

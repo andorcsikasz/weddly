@@ -314,7 +314,7 @@ export default function SupplierDetailPage() {
     // URL — the whole point is that someone outside Weddly can open it. Use the
     // pretty, name-based public id (`magyar-foto-v12`) so the shared link reads
     // as the business, not an opaque `v12`.
-    const url = `${window.location.origin}/vendors/${encodeURIComponent(
+    const url = `${window.location.origin}/suppliers/${encodeURIComponent(
       vendorPublicId(detail.id, detail.name),
     )}`;
     const shareText = t("suppliers.detail.cta.shareText", { name: detail.name });

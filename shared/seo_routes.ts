@@ -13,6 +13,8 @@
 // flash. Tailwind-styled React replaces the body once the bundle hydrates,
 // so this is purely an SEO surface.
 
+import { MARKETING_PAGES } from "./marketing_pages";
+
 export type SeoLocale = "hu" | "en";
 
 export interface RouteSeoEntry {
@@ -46,15 +48,15 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Egy magyar pár vagyunk, akik saját kezűleg építik a Wēddly-t. Hisszük, hogy az esküvőtervezés legyen nyugodt, közös és kézbe vehető, ezért egy közös felületen tartjuk a költségvetést, vendéglistát, RSVP-t és ültetést, és nem osztogatunk PDF-eket éjfélkor.",
     },
     en: {
-      title: "About · Weddly",
+      title: "About · Wēddly",
       description:
         "A small Hungarian couple building a calm wedding-planning workspace. Weddly's story, why we make it, and how we work.",
-      h1: "About Weddly",
+      h1: "About Wēddly",
       intro:
         "We're a Hungarian couple building Weddly by hand. We believe wedding planning should be calm, shared and manageable, so we keep the budget, guest list, RSVP and seating in one shared workspace, instead of trading PDFs at midnight.",
     },
   },
-  "/vendors/browse": {
+  "/suppliers/browse": {
     hu: {
       title: "Esküvői szolgáltatók · Wēddly",
       description:
@@ -64,15 +66,15 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Helyszínek, fotósok, videósok, zenekarok, DJ-k, catering, dekor és minden más, amire egy esküvőhöz szükség van. Szűrj városra és kategóriára, nézd meg a képeket és a véleményeket, aztán vedd fel a kapcsolatot azzal, aki tetszik. A böngészéshez nem kell fiók.",
     },
     en: {
-      title: "Wedding vendors · Weddly",
+      title: "Wedding suppliers · Wēddly",
       description:
         "Browse over a thousand wedding venues, photographers, bands and caterers, filtered by city and category. Photos, price bands and reviews, no sign-up needed.",
-      h1: "Wedding vendors",
+      h1: "Wedding suppliers",
       intro:
         "Venues, photographers, videographers, bands, DJs, catering, flowers and everything else a wedding needs. Filter by city and category, look at the photographs and the reviews, then get in touch with whoever fits. Browsing needs no account.",
     },
   },
-  "/vendors": {
+  "/suppliers": {
     hu: {
       title: "Szolgáltatóknak · Wēddly",
       description:
@@ -82,7 +84,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "A Wēddlyn a párok a vendéglistát, a büdzsét és az ütemtervet vezetik. Amikor a te kategóriádra kerül a sor, helyszínre, fotóra, cateringre, zenére vagy dekorra, ebből a válogatott listából választanak. Ehhez a listához adunk hozzáférést.",
     },
     en: {
-      title: "For vendors · Weddly",
+      title: "For suppliers · Wēddly",
       description:
         "Get in front of couples who already have a date and a budget. How to get onto Weddly's curated directory of wedding suppliers.",
       h1: "Get in front of couples who already have a date and a budget.",
@@ -100,7 +102,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Ez az oldal bemutatja, milyen adatokat gyűjt a Wēddly, miért gyűjtjük, meddig őrizzük meg, és mit kérhettek velük kapcsolatban. Egy kis, nyílt bétás termék vagyunk, ezért igyekszünk a szabályzatot rövidnek és pontosnak tartani.",
     },
     en: {
-      title: "Privacy policy · Weddly",
+      title: "Privacy policy · Wēddly",
       description:
         "How Weddly handles your data: what we collect, retention windows, GDPR rights, cookies and third-party processors.",
       h1: "Privacy policy",
@@ -118,7 +120,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Ez a dokumentum a Wēddly használatának feltételeit írja le: mit jelent használni a szolgáltatást, mit vállalunk mi és mit vártok el ti, hogyan változtathatunk rajtuk és mit jelent a nyílt béta státusz.",
     },
     en: {
-      title: "Terms of use · Weddly",
+      title: "Terms of use · Wēddly",
       description:
         "How Weddly's service works: what we promise, what we expect, limits, the open-beta status and how to get in touch.",
       h1: "Terms of use",
@@ -136,7 +138,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Ez a dokumentum a Wēddly szolgáltatói várólistájához és a v2-ben induló fizetős profilokhoz tartozó előfizetési feltételek tervezete. Egyelőre tájékoztató jellegű, a fizetős szolgáltatás indulása előtt fogjuk véglegesíteni.",
     },
     en: {
-      title: "Vendor subscription terms (draft) · Weddly",
+      title: "Supplier subscription terms (draft) · Wēddly",
       description:
         "Draft subscription terms for Weddly's vendor waitlist and the v2 paid profiles. Informational only until the paid service launches.",
       h1: "Vendor subscription terms (draft)",
@@ -154,7 +156,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "A Wēddly üzemeltetőjének kötelező impresszum-adatai: operátor neve, elérhetőségei, technikai szolgáltatók és a vonatkozó magyar és uniós jogszabályok alapján kötelező közlések.",
     },
     en: {
-      title: "Imprint · Weddly",
+      title: "Imprint · Wēddly",
       description:
         "Weddly's operator information: name, contact details, technical providers, as required by Hungarian and EU disclosure rules.",
       h1: "Imprint",
@@ -172,7 +174,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Lépjetek be a Wēddly páros workspace-etekre. Folytatjátok ott, ahol abbahagytátok, közös költségvetés, vendéglista, RSVP linkek és ültetési vászon kettőtöknek.",
     },
     en: {
-      title: "Sign in · Weddly",
+      title: "Sign in · Wēddly",
       description:
         "Sign in to your shared Weddly workspace. Pick up where you left off, budget, guest list, RSVP, seating.",
       h1: "Sign in",
@@ -190,7 +192,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Magyar esküvős átlagokra szabott élő kalkulátor: húzd a vendégszámot és a keretet, kategóriánként újraszámolódik. A számokat egy kattintással átvihetitek a saját workspace-etekbe.",
     },
     en: {
-      title: "Wedding budget calculator · Weddly",
+      title: "Wedding budget calculator · Wēddly",
       description:
         "How much does a wedding cost in Hungary in 2026? Drag the guest count and budget, every category recalculates live. Free, no signup needed.",
       h1: "Wedding budget calculator",
@@ -208,7 +210,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Add meg az esküvőtök dátumát, Élőben látod a maradék napok, hetek, hónapok számát, és egy mérföldkő-listát hogy mit érdemes intézni mikor.",
     },
     en: {
-      title: "Wedding countdown, days remaining | Weddly",
+      title: "Wedding countdown, days remaining | Wēddly",
       description:
         "How many days, weeks, months until your wedding? Pick a date and get a milestone timeline: what to plan 12, 9, 6, 3, 1 month and 1 week out.",
       h1: "Wedding countdown",
@@ -226,7 +228,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Töltsd le a CSV-sablont, töltsd ki Excel-ben vagy Sheets-ben, vagy importáld közvetlenül a Wēddly-be. 8 példasorral.",
     },
     en: {
-      title: "Wedding guest list template, CSV (free) | Weddly",
+      title: "Wedding guest list template, CSV (free) | Wēddly",
       description:
         "Downloadable wedding guest-list CSV template: last name, email, phone, household, diet, plus-one, RSVP. Imports straight into Weddly.",
       h1: "Wedding guest list template",
@@ -244,7 +246,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Interaktív ültetési vászon: asztalok, vendégek drag-and-drop, automatikus konfliktus-jelzés, és nyomtatható PDF A4 / A6 (ültetőkártya) / A3 (bejárati tábla) méretben.",
     },
     en: {
-      title: "Wedding seating chart maker, free | Weddly",
+      title: "Wedding seating chart maker, free | Wēddly",
       description:
         "Canvas, tables, guests, drag onto seats and export to PDF at A4 / A6 / A3 at exact mm. Tailored for Hungarian weddings, free during the open beta.",
       h1: "Wedding seating chart maker",
@@ -262,7 +264,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Töltsd ki a nevet, dátumot, helyszínt és RSVP-határidőt, három stílusban (klasszikus, hétköznapi, költői) generálunk kész RSVP-szöveget. Másolható egy kattintással.",
     },
     en: {
-      title: "Wedding RSVP wording generator | Weddly",
+      title: "Wedding RSVP wording generator | Wēddly",
       description:
         "RSVP wording for wedding invitations: enter your names, date, venue and deadline, get ready-to-use wording in formal, casual or poetic styles.",
       h1: "Wedding RSVP wording, generator",
@@ -280,7 +282,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Négy pakli, paklinként 25 beszélgetésindító kérdés jegyes pároknak. Válasszatok paklit, húzzatok egy kártyát, és menjetek bele a beszélgetésbe. Ingyenes, regisztráció nélkül.",
     },
     en: {
-      title: "100 Questions Before You Say Yes · couple conversation cards | Weddly",
+      title: "100 Questions Before You Say Yes · couple conversation cards | Wēddly",
       description:
         "Four decks of 25 deep questions for engaged couples: roots, the everyday, closeness, deep water. Draw a card and start the conversation.",
       h1: "100 Questions Before You Say Yes",
@@ -298,7 +300,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Rövid, gyakorlati írások az esküvőtervezés legtöbb idő- és pénzigényes részeiről: költségvetés-felosztás, ültetési rend, RSVP utánajárás. Minden poszt egy konkrét döntésen segít át.",
     },
     en: {
-      title: "Blog · Weddly",
+      title: "Blog · Wēddly",
       description:
         "Budget, guest list, seating, RSVP. Practical articles for couples planning a wedding.",
       h1: "Blog",
@@ -316,7 +318,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Pár perc, és kettőtöknek lesz egy közös felülete az esküvőtervezéshez: élő költségvetés, vendéglista, RSVP linkek, ültetési vászon és nyomtatható kártyák. A nyílt béta alatt ingyenes.",
     },
     en: {
-      title: "Create your couple workspace · Weddly",
+      title: "Create your couple workspace · Wēddly",
       description:
         "Open one shared workspace for both of you and start planning in minutes. Free throughout the open beta.",
       h1: "Open your couple workspace",
@@ -325,6 +327,20 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
     },
   },
 };
+
+// The Hungarian feature and guide pages intentionally have no partial English
+// alternative. They remain Hungarian in both slots so locale selection cannot
+// produce metadata that disagrees with their visible body, and no EN hreflang
+// is emitted for them.
+for (const page of Object.values(MARKETING_PAGES)) {
+  const entry: RouteSeoEntry = {
+    title: page.title,
+    description: page.description,
+    h1: page.h1,
+    intro: page.intro,
+  };
+  ROUTE_SEO[page.path] = { hu: entry, en: entry };
+}
 
 /** HU/EN slug pairs for the public tool pages. Both halves of each pair
  *  mount the same React component in `App.tsx`, share the same bilingual

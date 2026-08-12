@@ -21,7 +21,7 @@ function handleGet(ctx: Ctx): Response {
   const body: ReferralStatusResponse = {
     ...info,
     couple_url: `${base}/signup?ref_code=${info.code}`,
-    vendor_url: `${base}/vendors?ref_code=${info.code}`,
+    vendor_url: `${base}/suppliers?ref_code=${info.code}`,
   };
   return json(body);
 }

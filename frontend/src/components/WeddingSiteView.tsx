@@ -609,6 +609,9 @@ export function WeddingSiteView({
     "--wt-bg": view.design.background,
     "--wt-text": view.design.text,
     "--wt-heading-font": view.design.heading_font,
+    // A deliberate floor for Bodoni on the guest web surface. Its thin strokes
+    // and Hungarian ő/ű marks do not survive small/light rendering reliably.
+    "--wt-heading-weight": view.design.heading_font.includes("Bodoni Moda") ? "600" : "inherit",
     "--wt-body-font": view.design.body_font,
     "--wt-card-radius": view.design.website_card_radius,
     "--wt-card-shadow": view.design.website_shadow,

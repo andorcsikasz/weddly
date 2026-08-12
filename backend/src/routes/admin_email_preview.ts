@@ -272,11 +272,11 @@ const STUBS: KindPayload = {
   },
   vendor_removal_confirmed: {
     businessName: "Bloom Studio",
-    registerUrl: `${BASE_URL}/vendors`,
+    registerUrl: `${BASE_URL}/suppliers`,
   },
   vendor_profile_share: {
     businessName: "Bloom Studio",
-    shareUrl: `${BASE_URL}/vendors/v11`,
+    shareUrl: `${BASE_URL}/suppliers/v11`,
     editUrl: `${BASE_URL}/vendor/listing`,
     reviewsUrl: `${BASE_URL}/vendor/reviews`,
     missing: { photos: true, bio: false, packages: true },
@@ -335,7 +335,7 @@ const STUBS: KindPayload = {
   },
   community_supplier_published: {
     supplierName: "Bloom Studio",
-    listingUrl: `${BASE_URL}/vendors/bloom-studio`,
+    listingUrl: `${BASE_URL}/suppliers/bloom-studio`,
   },
   community_supplier_rejected: {
     supplierName: "Bloom Studio",
@@ -352,7 +352,7 @@ const STUBS: KindPayload = {
     categoryLabel: "Fotó",
     city: "Budapest",
     inviteUrl: `${BASE_URL}/r/vendor-invite/preview`,
-    listingUrl: `${BASE_URL}/vendors/bloom-studio-c1`,
+    listingUrl: `${BASE_URL}/suppliers/bloom-studio-c1`,
     freeMonths: 12,
     locale: "hu",
   },
@@ -361,14 +361,14 @@ const STUBS: KindPayload = {
     categoryLabel: "Fotó",
     city: "Budapest",
     inviteUrl: `${BASE_URL}/r/vendor-invite/preview`,
-    listingUrl: `${BASE_URL}/vendors/bloom-studio-c1`,
+    listingUrl: `${BASE_URL}/suppliers/bloom-studio-c1`,
     freeMonths: 3,
     locale: "hu",
   },
   vendor_review_campaign: {
     businessName: "Bloom Studio",
-    reviewUrl: `${BASE_URL}/vendors/bloom-studio-v12`,
-    shareUrl: `${BASE_URL}/vendors/bloom-studio-v12?review=1`,
+    reviewUrl: `${BASE_URL}/suppliers/bloom-studio-v12`,
+    shareUrl: `${BASE_URL}/suppliers/bloom-studio-v12?review=1`,
     ctaUrl: `${BASE_URL}/r/vendor-review/preview`,
     whatsappUrl: "https://wa.me/?text=preview",
     mailtoUrl: "mailto:?subject=preview",
@@ -392,8 +392,8 @@ const STUBS: KindPayload = {
   },
   vendor_review_campaign_reminder: {
     businessName: "Bloom Studio",
-    reviewUrl: `${BASE_URL}/vendors/bloom-studio-v12`,
-    shareUrl: `${BASE_URL}/vendors/bloom-studio-v12?review=1`,
+    reviewUrl: `${BASE_URL}/suppliers/bloom-studio-v12`,
+    shareUrl: `${BASE_URL}/suppliers/bloom-studio-v12?review=1`,
     ctaUrl: `${BASE_URL}/r/vendor-review/preview`,
     whatsappUrl: "https://wa.me/?text=preview",
     mailtoUrl: "mailto:?subject=preview",
@@ -464,7 +464,7 @@ const STUBS: KindPayload = {
   vendor_review_request: {
     vendorName: "Magyar Fotó Stúdió",
     eventDate: "2027-06-20",
-    reviewUrl: "https://tryweddly.com/vendors/magyar-foto-studio-v12?review=1",
+    reviewUrl: "https://tryweddly.com/suppliers/magyar-foto-studio-v12?review=1",
   },
   couple_message: {
     coupleName: "Mia & Lucas",

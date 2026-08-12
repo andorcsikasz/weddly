@@ -61,7 +61,7 @@ export default function VendorsPage() {
   // copy-to-clipboard fallback everywhere else. The link points at the vendor
   // site itself, where the "suggest a supplier" entry lives.
   async function shareRecommendPrompt() {
-    const url = `${window.location.origin}/vendors`;
+    const url = `${window.location.origin}/suppliers`;
     const message = t("vendors.recommend_share_message");
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
@@ -114,7 +114,7 @@ export default function VendorsPage() {
               Stacked full-width on mobile so neither is a small tap target. */}
           <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
             <Link
-              to="/vendors/signup"
+              to="/suppliers/signup"
               className="btn-primary btn-lg inline-flex items-center justify-center gap-2 shadow-sm"
             >
               {t("vendors.signup_cta")}
@@ -269,7 +269,7 @@ function ClosingBand() {
           page without signing up is exactly who the demo is for. */}
       <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
         <Link
-          to="/vendors/signup"
+          to="/suppliers/signup"
           className="btn-primary btn-lg inline-flex items-center justify-center gap-2 shadow-sm"
         >
           {t("vendors.closing_cta")}

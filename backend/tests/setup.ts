@@ -8,7 +8,7 @@
 // May 2026. The only escape hatches are `BUN_TEST_PORT` / `BUN_TEST_DB_PATH`
 // for worktree-parallel testing; everything else is unconditional.
 import { existsSync, rmSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 process.env.NODE_ENV = "test";
 // Worktree-parallel escape hatch: pass BUN_TEST_PORT / BUN_TEST_DB_PATH on the
@@ -26,7 +26,9 @@ if (!/(test|spec)/i.test(basename(resolvedTestDbPath))) {
 }
 process.env.DB_PATH = resolvedTestDbPath;
 process.env.PORT = process.env.BUN_TEST_PORT ?? "8791";
-process.env.UPLOADS_DIR = "./data/test-uploads";
+process.env.UPLOADS_DIR = resolve(
+  process.env.BUN_TEST_UPLOADS_DIR ?? join("./data", `test-uploads-${process.pid}`),
+);
 process.env.JWT_SECRET = "test-jwt-secret-0123456789abcdef0123456789abcdef0123456789abcdef";
 process.env.FRONTEND_BASE_URL = "http://localhost:5173";
 process.env.RESEND_API_KEY = ""; // ensure email is no-op

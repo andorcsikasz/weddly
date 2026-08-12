@@ -235,7 +235,7 @@ describe("WishlistEditorPage", () => {
     expect(screen.getByText("A weekend away")).toBeInTheDocument();
   });
 
-  it("collapses the Gifts section when its header chevron is clicked", async () => {
+  it("keeps the Gifts section visible while switching its item layout", async () => {
     on(
       ({ url, method }) => method === "GET" && url.includes("/api/couples/current"),
       () => jsonResponse(200, { couple: makeCouple() }),
@@ -248,14 +248,11 @@ describe("WishlistEditorPage", () => {
     await renderPage(<WishlistEditorPage />);
     expect(await screen.findByText("Espresso machine")).toBeInTheDocument();
 
-    // The section header is a toggle button labelled by its title ("Gifts");
-    // clicking it collapses the body and hides the item. (The add button is
-    // labelled "Gift", so the exact-name query targets the header, not it.)
-    const toggle = screen.getByRole("button", { name: "Gifts" });
+    const toggle = screen.getByRole("button", { name: /card view|list view/i });
     await act(async () => {
       fireEvent.click(toggle);
     });
-    expect(screen.queryByText("Espresso machine")).not.toBeInTheDocument();
+    expect(screen.getByText("Espresso machine")).toBeInTheDocument();
   });
 
   it("adding an item POSTs the title + kind (EUR amount → minor units ×100)", async () => {
@@ -479,8 +476,12 @@ describe("WishlistEditorPage", () => {
     await renderPage(<WishlistEditorPage />);
 
     await screen.findByText("Espresso machine");
-    // The trash button shares the generic "Remove" aria-label.
-    const removeBtn = screen.getByRole("button", { name: /^Remove$/i });
+    const itemMenu = screen.getByRole("button", { name: /actions/i });
+    await act(async () => {
+      fireEvent.click(itemMenu);
+      await Promise.resolve();
+    });
+    const removeBtn = screen.getByRole("menuitem", { name: /^Remove$/i });
     await act(async () => {
       fireEvent.click(removeBtn);
       await Promise.resolve();
@@ -576,7 +577,7 @@ describe("GuestPortalView wishlist deck", () => {
     );
     // Soft chip-in count line.
     expect(screen.getByText(/2 households are chipping in/i)).toBeInTheDocument();
-    const btn = screen.getByRole("button", { name: /I'd like to help/i });
+    const btn = screen.getByRole("button", { name: /I'm interested/i });
     fireEvent.click(btn);
     expect(onToggle).toHaveBeenCalledTimes(1);
     expect(onToggle.mock.calls[0]?.[0]).toBe(42);

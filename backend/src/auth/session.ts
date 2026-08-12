@@ -5,6 +5,8 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 
+export const SESSION_COOKIE_NAME = "weddly_session";
+
 interface SessionRow {
   id: string;
   user_id: number;
@@ -89,5 +91,25 @@ export function revokeSession(token: string): void {
 export function extractToken(req: Request): string | null {
   const auth = req.headers.get("authorization");
   if (auth && auth.toLowerCase().startsWith("bearer ")) return auth.slice(7).trim();
+  const cookie = req.headers.get("cookie");
+  if (cookie) {
+    for (const part of cookie.split(";")) {
+      const [name, ...value] = part.trim().split("=");
+      if (name === SESSION_COOKIE_NAME) {
+        const token = value.join("=").trim();
+        if (token) return token;
+      }
+    }
+  }
   return null;
+}
+
+export function sessionCookie(token: string): string {
+  const secure = CONFIG.frontendBaseUrl.startsWith("https:") ? "; Secure" : "";
+  return `${SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.floor(CONFIG.sessionTtlMs / 1000)}${secure}`;
+}
+
+export function clearSessionCookie(): string {
+  const secure = CONFIG.frontendBaseUrl.startsWith("https:") ? "; Secure" : "";
+  return `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
 }

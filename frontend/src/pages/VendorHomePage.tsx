@@ -513,7 +513,7 @@ export default function VendorHomePage() {
             </fieldset>
 
             <div className="flex items-center justify-between gap-3 pt-2">
-              <Link to="/vendors" className="btn-ghost">
+              <Link to="/suppliers" className="btn-ghost">
                 {t("vendor_home.back_to_directory")}
               </Link>
               <button type="submit" className="btn-accent" disabled={saving}>

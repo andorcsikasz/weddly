@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -7,6 +8,16 @@ import "./index.css";
 import { AuthProvider } from "./lib/auth";
 import { applyDensity, getStoredDensity } from "./lib/density";
 import { I18nProvider } from "./lib/i18n";
+
+const sentryDsn = (import.meta.env.VITE_SENTRY_DSN ?? "").trim();
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: import.meta.env.MODE,
+    sendDefaultPii: false,
+    tracesSampleRate: 0,
+  });
+}
 
 // Apply the saved density class on <html> *before* React mounts so the
 // first paint already has the right text sizes — otherwise a comfortable
@@ -41,7 +52,7 @@ createRoot(root).render(
   <StrictMode>
     <I18nProvider>
       <AppProviders>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter>
           <AuthProvider>
             <App />
           </AuthProvider>

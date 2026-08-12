@@ -849,7 +849,7 @@ export default function VendorListingPage() {
                 bounces a vendor back to /vendor). Opens in a new tab so the
                 vendor's in-progress, unsaved editor edits are never blown away. */}
             <Link
-              to={`/vendors/${view.listing.id}`}
+              to={`/suppliers/${view.listing.id}`}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t("vendor_home.preview_open")}
@@ -1583,7 +1583,7 @@ export default function VendorListingPage() {
                 desktop-width form — which reads as a rendering fault between
                 the price card and the one below it, not as a toolbar. */}
             <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-              <Link to="/vendors" className="btn-ghost">
+              <Link to="/suppliers" className="btn-ghost">
                 {t("vendor_home.back_to_directory")}
               </Link>
               <button

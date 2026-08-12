@@ -141,7 +141,7 @@ describe("supplier detail gallery is CSP-safe", () => {
     expect(urls.some((u) => u.startsWith("http"))).toBe(false);
   });
 
-  test("re-hosted photos surface as local URLs, replacing the seed hotlinks", async () => {
+  test("unclaimed re-hosted photos stay private until a vendor owns the listing", async () => {
     const { id } = curatedWithGallery();
     db.prepare("UPDATE listings SET hero_image_url = ? WHERE id = ?").run(
       "/uploads/listings/x/hero.jpg",
@@ -159,10 +159,10 @@ describe("supplier detail gallery is CSP-safe", () => {
     );
     expect(res.status).toBe(200);
     const urls = res.data.gallery_urls ?? [];
-    // Hero first, then the two re-hosted photos — all local, no seed hotlinks.
-    expect(urls[0]).toBe("/uploads/listings/x/hero.jpg");
-    expect(urls).toContain("/uploads/listings/x/gallery/seed-1.jpg");
-    expect(urls).toContain("/uploads/listings/x/gallery/seed-2.jpg");
+    // A crawler-created/unclaimed record does not establish a publication
+    // licence. Stored objects become public only after the vendor claims the
+    // listing and explicitly manages its media.
+    expect(urls).toEqual([]);
     expect(urls.some((u) => u.startsWith("http"))).toBe(false);
   });
 });

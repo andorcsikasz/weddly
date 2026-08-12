@@ -21,7 +21,7 @@ export function VendorShareDialog({
   listingName: string;
 }) {
   const { t, locale } = useT();
-  const url = `${window.location.origin}/vendors/${vendorPublicId(listingId, listingName)}`;
+  const url = `${window.location.origin}/suppliers/${vendorPublicId(listingId, listingName)}`;
   const message =
     locale === "hu"
       ? `Itt találsz meg minket a Weddlyn: ${url}`

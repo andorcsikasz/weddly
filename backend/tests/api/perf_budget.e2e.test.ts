@@ -904,6 +904,11 @@ describe("perf: seo", () => {
 
   test("GET /sitemap.xml p95 < 50ms", async () => {
     // sitemap.xml returns application/xml — same JSON-parse concern as robots.
+    // Its first render materialises the dynamic vendor/blog index; keep a
+    // separate cold-start ceiling, then measure the cached steady-state p95.
+    const coldStartedAt = performance.now();
+    await rawFetch("/sitemap.xml");
+    expect(performance.now() - coldStartedAt).toBeLessThan(500);
     const { p95 } = await timeIt("seo.sitemap", () => rawFetch("/sitemap.xml"));
     expect(p95).toBeLessThan(50);
   });

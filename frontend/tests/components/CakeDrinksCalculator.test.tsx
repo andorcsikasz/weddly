@@ -12,7 +12,7 @@ import { ToastProvider } from "@/components/ui/ToastProvider";
 import { I18nProvider } from "@/lib/i18n";
 
 function renderCalc(currency: "HUF" | "EUR", guests: number | null) {
-  return render(
+  const result = render(
     <I18nProvider>
       <ToastProvider>
         <CakeDrinksCalculator
@@ -24,6 +24,11 @@ function renderCalc(currency: "HUF" | "EUR", guests: number | null) {
       </ToastProvider>
     </I18nProvider>,
   );
+  // Complete the two short preference questions; calculator assertions below
+  // concern the resulting spreadsheet, not the onboarding carousel.
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  fireEvent.click(screen.getByRole("button", { name: "Calculate" }));
+  return result;
 }
 
 /** Digits only — strips locale grouping (space / NBSP / comma) and the decimal
@@ -59,7 +64,7 @@ describe("<CakeDrinksCalculator>", () => {
     // No standalone fold + the portion input is hidden until the qty is tapped.
     expect(screen.queryByLabelText("Sweet pastries (kg/guest)")).toBeNull();
     const qtyBtn = screen.getByRole("button", {
-      name: "Sweet pastries — Fine-tune portion (per guest)",
+      name: "Sweet pastries: Fine-tune portion (per guest)",
     });
     fireEvent.click(qtyBtn);
     const portionInput = screen.getByLabelText("Sweet pastries (kg/guest)") as HTMLInputElement;

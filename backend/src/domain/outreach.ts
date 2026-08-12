@@ -447,7 +447,7 @@ function outreachModeFor(contact: SupplierContact, deliveredTo: Set<string>): Su
 function outreachCtaUrlFor(contact: SupplierContact, mode: SupplierOutreachMode): string {
   if (mode === "in_account") return `${CONFIG.frontendBaseUrl}/vendor/clients`;
   if (mode === "account") return `${CONFIG.frontendBaseUrl}/vendor`;
-  return `${CONFIG.frontendBaseUrl}/vendors/${contact.id}`;
+  return `${CONFIG.frontendBaseUrl}/suppliers/${contact.id}`;
 }
 
 export interface CreateCampaignResult {

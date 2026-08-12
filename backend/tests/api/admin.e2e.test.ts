@@ -2327,7 +2327,8 @@ describe("admin analytics", () => {
     expect(r.data.couples_with_guests).toBe(0);
     expect(r.data.response_rate).toBe(0);
     expect(r.data.acceptance_rate).toBe(0);
-    expect(r.data.guests_with_dietary).toBe(0);
+    expect(r.data).not.toHaveProperty("guests_with_dietary");
+    expect(r.data).not.toHaveProperty("dietary");
   });
 
   test("guests — RSVP funnel, kinds, plus-one, dietary keyword buckets", async () => {
@@ -2359,10 +2360,7 @@ describe("admin analytics", () => {
     expect(r.data.accommodation_needed_count).toBe(1);
     expect(r.data.song_request_count).toBe(1);
     // "gluténmentes" → gluten bucket; "vegan, no dairy" → vegan + lactose.
-    expect(r.data.dietary.gluten).toBe(1);
-    expect(r.data.dietary.vegan).toBe(1);
-    expect(r.data.dietary.lactose).toBe(1);
-    expect(r.data.guests_with_dietary).toBe(2);
+    expect(r.data).not.toHaveProperty("dietary");
   });
 
   test("weddings/honeymoon/guests — demo workspaces are excluded", async () => {

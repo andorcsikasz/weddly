@@ -102,7 +102,7 @@ export function VendorDirectoryTeaser({
         {vendors.map((v) => (
           <Link
             key={v.id}
-            to={`/vendors/${encodeURIComponent(v.id)}`}
+            to={`/suppliers/${encodeURIComponent(v.id)}`}
             className="group w-40 shrink-0 snap-start rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 sm:w-48 dark:focus-visible:ring-paper-100"
           >
             <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-paper-200 dark:bg-umber-700">
@@ -138,7 +138,7 @@ export function VendorDirectoryTeaser({
           {t("landing.demo_vendors_cta")}
         </Link>
         <Link
-          to="/vendors/browse"
+          to="/suppliers/browse"
           className="text-sm font-medium text-umber-700 underline-offset-2 hover:underline dark:text-umber-200"
         >
           {t("landing.demo_vendors_browse")}

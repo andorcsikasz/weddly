@@ -1,3 +1,4 @@
+import { captureException } from "@sentry/react";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Button } from "./ui/Button";
 import { useT } from "../lib/i18n";
@@ -9,15 +10,6 @@ interface Props {
 interface State {
   error: Error | null;
   reloading: boolean;
-}
-
-declare global {
-  interface Window {
-    // Set by the optional Sentry browser SDK once VITE_SENTRY_DSN is wired up.
-    // We only call it defensively so the boundary works whether Sentry is
-    // initialized or not.
-    Sentry?: { captureException: (e: unknown, ctx?: unknown) => void };
-  }
 }
 
 // Most render crashes are transient (stale chunk after deploy, race on first
@@ -61,7 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
     const attempt = prior + 1;
     writeAttempt(attempt);
 
-    window.Sentry?.captureException(error, {
+    captureException(error, {
       contexts: { react: { componentStack: info.componentStack } },
       tags: { autoReloadAttempt: String(attempt) },
     });

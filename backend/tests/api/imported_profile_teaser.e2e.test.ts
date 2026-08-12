@@ -114,7 +114,7 @@ describe("imported profiles are redacted until claimed", () => {
   test("the SSR share card carries no bio", () => {
     // Redacting the API and then baking the bio into the page source would
     // publish it anyway, and to crawlers first.
-    const meta = lookupVendorPageMeta(`/vendors/${IMPORTED_ID}`);
+    const meta = lookupVendorPageMeta(`/suppliers/${IMPORTED_ID}`);
     expect(meta).toBeTruthy();
     expect(meta?.blurbHu).toBe("");
     expect(meta?.blurbEn).toBe("");

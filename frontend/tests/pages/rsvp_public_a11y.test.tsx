@@ -140,7 +140,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     renderCheckin();
     expect(screen.getByLabelText(/jegyes pár/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/kód/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /check-in/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /belépés|check-in/i })).toBeInTheDocument();
   });
 
   it("submitting the form calls GET /api/rsvp/lookup", async () => {
@@ -156,7 +156,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
   });
@@ -169,7 +169,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "BADSLUG" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "9999" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     // Page maps "couple" / "code" patterns onto field-specific copy. We can't
     // use `getByRole("alert")` directly because the ToastProvider mounts two
@@ -190,7 +190,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     await waitFor(() => {
       expect(screen.getByText("Kovács család")).toBeInTheDocument();
@@ -208,7 +208,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
     // One radiogroup per member. The aria-label interpolates the member name
@@ -230,7 +230,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
 
@@ -245,7 +245,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     // The meal section appears with one radio per MealChoice (6 total).
     // The HU label is "Étrend" (not "Étel"); EN is "Meal".
     await waitFor(() => {
-      const mealGroup = screen.getByRole("radiogroup", { name: /étrend|meal/i });
+      const mealGroup = screen.getAllByRole("radiogroup", { name: /étrend|meal/i })[0]!;
       expect(within(mealGroup).getAllByRole("radio").length).toBe(6);
     });
   });
@@ -299,7 +299,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
     // Click "Igen" on Anna so the +1 section becomes visible.
@@ -326,7 +326,8 @@ describe("RsvpCheckinPage — lookup form", () => {
     const captured: { url: string; body: unknown }[] = [];
     globalThis.fetch = mock(async (url: string | URL, init?: RequestInit) => {
       const u = typeof url === "string" ? url : url.toString();
-      if (u.includes("/api/rsvp/lookup")) return jsonResponse(200, { rsvp: makeView() });
+      if (u.includes("/api/rsvp/lookup"))
+        return jsonResponse(200, { rsvp: makeView({ rsvp_collects_meal: false }) });
       if (u.includes("/api/rsvp/checkin")) {
         captured.push({ url: u, body: JSON.parse((init?.body as string) ?? "{}") });
         return jsonResponse(200, { rsvp: makeView() });
@@ -362,7 +363,8 @@ describe("RsvpCheckinPage — lookup form", () => {
   it("5xx submit failure surfaces an inline error and keeps the form editable", async () => {
     globalThis.fetch = mock(async (url: string | URL) => {
       const u = typeof url === "string" ? url : url.toString();
-      if (u.includes("/api/rsvp/lookup")) return jsonResponse(200, { rsvp: makeView() });
+      if (u.includes("/api/rsvp/lookup"))
+        return jsonResponse(200, { rsvp: makeView({ rsvp_collects_meal: false }) });
       // All retries return 500 so the eventual rejection bubbles up to the
       // page-level error handler. POST is not retried by default so this
       // ends up as a single failing call.
@@ -400,9 +402,12 @@ describe("RsvpCheckinPage — lookup form", () => {
   it("successful submit shows the 'thanks' confirmation view", async () => {
     globalThis.fetch = mock(async (url: string | URL) => {
       const u = typeof url === "string" ? url : url.toString();
-      if (u.includes("/api/rsvp/lookup")) return jsonResponse(200, { rsvp: makeView() });
+      if (u.includes("/api/rsvp/lookup"))
+        return jsonResponse(200, { rsvp: makeView({ rsvp_collects_meal: false }) });
       if (u.includes("/api/rsvp/checkin")) {
-        return jsonResponse(200, { rsvp: makeView({ rsvp_offers_accommodation: false }) });
+        return jsonResponse(200, {
+          rsvp: makeView({ rsvp_offers_accommodation: false, rsvp_collects_meal: false }),
+        });
       }
       return jsonResponse(404, { error: "unmocked" });
     }) as unknown as typeof fetch;
@@ -421,15 +426,9 @@ describe("RsvpCheckinPage — lookup form", () => {
     await waitFor(() => expect(screen.getByText(/igen, beküldöm/i)).toBeInTheDocument());
     fireEvent.click(screen.getByText(/igen, beküldöm/i));
 
-    // checkin_done_title = "Sikeres check-in" / "Checked in" — assert the
-    // thanks body is rendered (locale-agnostic substring "tervezzétek" etc.
-    // is brittle, so just check the page reached the done branch via the
-    // bold title text).
-    await waitFor(() => {
-      // strong wraps the i18n title; querying by text grabs the rendered span.
-      const node = document.querySelector("strong");
-      expect(node?.textContent).toBeTruthy();
-    });
+    await waitFor(() =>
+      expect(screen.getByText(/sikeres check-in|checked in/i)).toBeInTheDocument(),
+    );
   });
 
   it("collapses the inputs and runs the redirect countdown after a self-serve submit", async () => {
@@ -474,7 +473,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
     const yes = within(screen.getAllByRole("radiogroup")[0]!)
@@ -505,7 +504,7 @@ describe("RsvpCheckinPage — lookup form", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     await waitFor(() => {
       expect(screen.getByText("MIALUCAS")).toBeInTheDocument();
@@ -524,23 +523,23 @@ describe("RsvpCheckinPage — i18n", () => {
     expect(screen.getByText(/írd be a jegyes pár nevét/i)).toBeInTheDocument();
   });
 
-  it("renders the EN→HU locale toggle button on the form view", () => {
+  it("renders the language picker on the form view", () => {
     renderCheckin();
-    // Locale button text is the OPPOSITE locale label — i.e. on HU we see "EN".
-    expect(screen.getByRole("button", { name: "EN" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /nyelv váltása/i })).toBeInTheDocument();
   });
 
   it("clicking the locale toggle re-renders the form in English", () => {
     renderCheckin();
-    fireEvent.click(screen.getByRole("button", { name: "EN" }));
+    fireEvent.click(screen.getByRole("button", { name: /nyelv váltása/i }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "English" }));
     expect(screen.getByText(/type the couple's name/i)).toBeInTheDocument();
-    // And the toggle now offers the inverse hop.
-    expect(screen.getByRole("button", { name: "HU" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /switch language/i })).toBeInTheDocument();
   });
 
   it("persists the chosen locale to localStorage so the next visit honours it", () => {
     renderCheckin();
-    fireEvent.click(screen.getByRole("button", { name: "EN" }));
+    fireEvent.click(screen.getByRole("button", { name: /nyelv váltása/i }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "English" }));
     expect(localStorage.getItem("weddly.locale")).toBe("en");
   });
 });
@@ -559,7 +558,7 @@ describe("RsvpCheckinPage — a11y", () => {
 
   it("the submit button is type=submit and tab-reachable on the lookup form", () => {
     renderCheckin();
-    const submit = screen.getByRole("button", { name: /check-in/i });
+    const submit = screen.getByRole("button", { name: /belépés|check-in/i });
     expect(submit.getAttribute("type")).toBe("submit");
     // happy-dom doesn't tab between inputs the way browsers do, so this
     // asserts that the button is not disabled / hidden / tabindex=-1 —
@@ -576,7 +575,7 @@ describe("RsvpCheckinPage — a11y", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "MIALUCAS" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "1234" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     await waitFor(() => expect(screen.getByText("Anna Kovács")).toBeInTheDocument());
     const yes = within(screen.getAllByRole("radiogroup")[0]!)
@@ -603,7 +602,7 @@ describe("RsvpCheckinPage — a11y", () => {
     renderCheckin();
     fireEvent.change(screen.getByLabelText(/jegyes pár/i), { target: { value: "BADSLUG" } });
     fireEvent.change(screen.getByLabelText(/kód/i), { target: { value: "0000" } });
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
 
     await waitFor(() => {
       const alerts = screen.getAllByRole("alert");
@@ -613,7 +612,7 @@ describe("RsvpCheckinPage — a11y", () => {
 
   it("local validation surfaces an alert when both fields are empty on submit", () => {
     renderCheckin();
-    fireEvent.click(screen.getByRole("button", { name: /check-in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /belépés|check-in/i }));
     // checkin_lookup_missing HU = "Mindkét mezőt töltsd ki…". ToastProvider
     // mounts two empty role=alert regions, so we filter by message.
     const alerts = screen.getAllByRole("alert");

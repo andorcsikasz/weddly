@@ -266,6 +266,20 @@ async function renderPage(node: ReactNode) {
   return utils;
 }
 
+async function openFloorPlan() {
+  await act(async () => {
+    fireEvent.click(screen.getByRole("tab", { name: /floor plan/i }));
+    await Promise.resolve();
+  });
+}
+
+async function openScheduleList() {
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: /^list$/i }));
+    await Promise.resolve();
+  });
+}
+
 // ─── SeatingPage tests ────────────────────────────────────────────────────
 
 describe("<SeatingPage>", () => {
@@ -297,6 +311,7 @@ describe("<SeatingPage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SeatingPage />);
+    await openFloorPlan();
 
     // "No tables yet" → render the stationery empty card.
     expect(await screen.findByText("No tables yet")).toBeInTheDocument();
@@ -318,6 +333,7 @@ describe("<SeatingPage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SeatingPage />);
+    await openFloorPlan();
 
     // Exact-match the toolbar button; the empty-state CTA has a different
     // label ("Add your first table") to keep accessible names distinct.
@@ -347,6 +363,7 @@ describe("<SeatingPage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SeatingPage />);
+    await openFloorPlan();
 
     // Each table renders both in the floor-plan map AND as a TableCard.
     // findAllByText copes with that duplication without forcing us to query
@@ -363,6 +380,7 @@ describe("<SeatingPage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SeatingPage />);
+    await openFloorPlan();
 
     // The "empty editor" hint is rendered until a table is selected.
     expect(screen.getByText("Pick a table on the map to edit its details.")).toBeInTheDocument();
@@ -403,6 +421,7 @@ describe("<SeatingPage>", () => {
     await renderPage(<SeatingPage />);
 
     // Find the TableCard (NOT the SeatingMap SVG group, which also matches
+    await openFloorPlan();
     // role="button"). The TableCard's h3 uses `font-serif text-xl` — we walk
     // up from that to the role=button ancestor.
     const labelEls = await screen.findAllByText("Doomed");
@@ -446,7 +465,7 @@ describe("<SeatingPage>", () => {
 
     // Panel header is unique even though the guests appear in multiple panes
     // (the partner-name fallback labels — Bride / Groom — also appear here).
-    expect(await screen.findByText("Unassigned guests")).toBeInTheDocument();
+    expect(await screen.findByText("Unassigned")).toBeInTheDocument();
     expect(screen.getByText("Alice Solo")).toBeInTheDocument();
     expect(screen.getByText("Bob Solo")).toBeInTheDocument();
   });
@@ -467,6 +486,7 @@ describe("<SeatingPage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SeatingPage />);
+    await openFloorPlan();
 
     // Export is a single Print button that opens a paper-size menu; pick A4.
     const printTrigger = await screen.findByRole("button", { name: /^print$/i });
@@ -499,6 +519,7 @@ describe("<SeatingPage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SeatingPage />);
+    await openFloorPlan();
 
     // Export is a single Print button that opens a paper-size menu; pick A3.
     const printTrigger = await screen.findByRole("button", { name: /^print$/i });
@@ -541,9 +562,8 @@ describe("<SeatingPage>", () => {
 
     await renderPage(<SeatingPage />);
 
-    const helpButton = screen.getByRole("button", { name: /Keyboard shortcuts/i });
     await act(async () => {
-      fireEvent.click(helpButton);
+      fireEvent.keyDown(window, { key: "?" });
       await Promise.resolve();
     });
 
@@ -678,6 +698,7 @@ describe("<SchedulePage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SchedulePage />);
+    await openScheduleList();
 
     // The page exposes each event row as a button with aria-label "Edit
     // event" — the user-visible label sits inside that button. Reading the
@@ -698,6 +719,7 @@ describe("<SchedulePage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SchedulePage />);
+    await openScheduleList();
 
     const editButton = (await screen.findAllByRole("button", { name: /Edit event/i }))[0];
     await act(async () => {
@@ -738,6 +760,7 @@ describe("<SchedulePage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SchedulePage />);
+    await openScheduleList();
 
     const editButton = (await screen.findAllByRole("button", { name: /Edit event/i }))[0];
     await act(async () => {
@@ -774,6 +797,7 @@ describe("<SchedulePage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SchedulePage />);
+    await openScheduleList();
 
     // The row's delete button has aria-label "Delete event".
     const deleteButton = (await screen.findAllByRole("button", { name: /Delete event/i }))[0];
@@ -867,7 +891,7 @@ describe("<SchedulePage>", () => {
 
     await renderPage(<SchedulePage />);
 
-    const wandButton = (await screen.findAllByRole("button", { name: /Suggest timeline/i }))[0];
+    const wandButton = screen.getByRole("button", { name: /generate a timeline/i });
     await act(async () => {
       fireEvent.click(wandButton!);
       await Promise.resolve();
@@ -891,6 +915,7 @@ describe("<SchedulePage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SchedulePage />);
+    await openScheduleList();
 
     const deleteButton = (await screen.findAllByRole("button", { name: /Delete event/i }))[0];
     await act(async () => {
@@ -910,6 +935,7 @@ describe("<SchedulePage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SchedulePage />);
+    await openScheduleList();
 
     const deleteButton = (await screen.findAllByRole("button", { name: /Delete event/i }))[0];
     await act(async () => {

@@ -69,7 +69,7 @@ export function VendorDemoOverlay() {
     setNudgeOpen(false);
   };
 
-  const exitDemo = async (destination: "/vendors" | "/vendors/signup") => {
+  const exitDemo = async (destination: "/suppliers" | "/suppliers/signup") => {
     stampNudgeLastSeen();
     setNudgeOpen(false);
     clearDemoSessionFlag();
@@ -102,7 +102,7 @@ export function VendorDemoOverlay() {
             </div>
             <button
               type="button"
-              onClick={() => exitDemo("/vendors")}
+              onClick={() => exitDemo("/suppliers")}
               className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-ink-700 underline decoration-paper-400 decoration-1 underline-offset-4 transition-colors hover:text-ink-900 hover:decoration-umber-400 dark:text-paper-200 dark:decoration-umber-500 dark:hover:text-paper-50"
             >
               <ArrowLeft size={12} aria-hidden="true" />
@@ -110,7 +110,7 @@ export function VendorDemoOverlay() {
             </button>
             <button
               type="button"
-              onClick={() => exitDemo("/vendors/signup")}
+              onClick={() => exitDemo("/suppliers/signup")}
               className="hidden shrink-0 rounded-full bg-sage-700 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-sage-800 dark:bg-sage-600 dark:text-paper-50 dark:hover:bg-sage-500 sm:inline-flex"
             >
               {t("vendor_demo.banner_cta")}
@@ -128,7 +128,10 @@ export function VendorDemoOverlay() {
       )}
 
       {nudgeOpen && (
-        <VendorDemoNudgeModal onClose={closeNudge} onConvert={() => exitDemo("/vendors/signup")} />
+        <VendorDemoNudgeModal
+          onClose={closeNudge}
+          onConvert={() => exitDemo("/suppliers/signup")}
+        />
       )}
     </>
   );

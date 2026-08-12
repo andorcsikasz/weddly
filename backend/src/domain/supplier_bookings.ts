@@ -9,8 +9,9 @@
 //
 // `event_date` is ISO 'YYYY-MM-DD' (day-granular). State machine:
 //   requested → vendor_seen → (confirmed | declined) | cancelled | expired_14d
-// Multiple `requested` bookings on the same day are allowed; vendor picks one
-// to confirm and the rest auto-decline via a cron sweep (not yet wired).
+// Multiple `requested` bookings on the same day are allowed; confirming one
+// atomically declines the competing open requests. A worker expires open
+// requests after 14 days.
 
 import type { VendorBlockedDay } from "@shared/listings";
 import { MESSAGE_BODY_MAX_LEN } from "@shared/booking_messages";
@@ -29,6 +30,7 @@ import { db, now } from "../db";
 import { HttpError } from "../lib/http";
 import { isVendorEntitled, recordVendorLeadCredit } from "./vendor_billing";
 import { emitVendorEvent } from "./vendor_points";
+import { markVendorCalendarDirty } from "./vendor_google_calendar";
 import {
   getVendorBuffers,
   getVendorSchedule,
@@ -868,15 +870,40 @@ export function updateBookingStatus(id: number, status: BookingStatus): Supplier
   // `first_response_at` is write-once: COALESCE keeps the original stamp, so a
   // vendor who later flips 'confirmed' → 'cancelled' can't reset the clock and
   // re-earn the fast-reply award. `updated_at` moves as it always did.
-  const info = db
-    .prepare(
+  const row = db.transaction(() => {
+    const before = getBookingById(id);
+    if (!before) return null;
+    if (status === "confirmed") {
+      const conflict = db
+        .prepare(
+          `SELECT id FROM supplier_bookings
+            WHERE id != ? AND vendor_account_id = ? AND event_date = ? AND status = 'confirmed'
+            LIMIT 1`,
+        )
+        .get(id, before.vendor_account_id, before.event_date) as { id: number } | undefined;
+      if (conflict) {
+        throw new HttpError(409, "This vendor already has a confirmed booking on that date", {
+          code: "booking_date_conflict",
+          conflicting_booking_id: conflict.id,
+        });
+      }
+    }
+    db.prepare(
       `UPDATE supplier_bookings
           SET status = ?, updated_at = ?, first_response_at = COALESCE(first_response_at, ?)
         WHERE id = ?`,
-    )
-    .run(status, ts, ts, id);
-  if (info.changes === 0) return null;
-  const row = db.prepare("SELECT * FROM supplier_bookings WHERE id = ?").get(id) as BookingRow;
+    ).run(status, ts, ts, id);
+    if (status === "confirmed") {
+      db.prepare(
+        `UPDATE supplier_bookings
+            SET status = 'declined', updated_at = ?
+          WHERE id != ? AND vendor_account_id = ? AND event_date = ?
+            AND status IN ('requested', 'vendor_seen')`,
+      ).run(ts, id, before.vendor_account_id, before.event_date);
+    }
+    return getBookingById(id);
+  })();
+  if (!row) return null;
   // Two separate facts, two separate events: how fast the vendor reacted, and
   // whether this became a confirmed booking. The engine decides what each is
   // worth (and the fast-reply rule re-reads the timestamps server-side).
@@ -884,7 +911,28 @@ export function updateBookingStatus(id: number, status: BookingStatus): Supplier
   if (status === "confirmed") {
     emitVendorEvent(row.vendor_account_id, "booking.confirmed", { booking_id: id });
   }
+  markVendorCalendarDirty(row.vendor_account_id);
   return toBooking(row);
+}
+
+/** Idempotently expire untouched/open inquiries older than fourteen days. */
+export function expireStaleBookings(at = now()): number {
+  const cutoff = at - 14 * 24 * 60 * 60 * 1000;
+  const vendors = db
+    .prepare(
+      `SELECT DISTINCT vendor_account_id FROM supplier_bookings
+        WHERE vendor_account_id IS NOT NULL
+          AND status IN ('requested', 'vendor_seen') AND created_at <= ?`,
+    )
+    .all(cutoff) as Array<{ vendor_account_id: number }>;
+  const result = db
+    .prepare(
+      `UPDATE supplier_bookings SET status = 'expired', updated_at = ?
+        WHERE status IN ('requested', 'vendor_seen') AND created_at <= ?`,
+    )
+    .run(at, cutoff);
+  for (const vendor of vendors) markVendorCalendarDirty(vendor.vendor_account_id);
+  return result.changes;
 }
 
 /** Build the body of an .ics calendar file for a confirmed booking. Day event

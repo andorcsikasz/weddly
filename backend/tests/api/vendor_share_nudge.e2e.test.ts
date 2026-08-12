@@ -105,7 +105,7 @@ describe("vendor profile-share nudge", () => {
       "vendor_profile_share",
       {
         businessName: "Bloom Studio",
-        shareUrl: "https://tryweddly.com/vendors/v11",
+        shareUrl: "https://tryweddly.com/suppliers/v11",
         editUrl: "https://tryweddly.com/vendor/listing",
         reviewsUrl: "https://tryweddly.com/vendor/reviews",
         missing: { photos: true, bio: false, packages: true },
@@ -115,7 +115,7 @@ describe("vendor profile-share nudge", () => {
     const html = built.rendered.html;
     // The share URL is the CTA and is UTM-free (noUtm) so the vendor can paste
     // it into their own channels without an email-attribution tag.
-    expect(html).toContain("https://tryweddly.com/vendors/v11");
+    expect(html).toContain("https://tryweddly.com/suppliers/v11");
     expect(html).not.toContain("utm_source");
     // Only the two empty sections are named; the filled ones are not.
     expect(html).toContain("photos");
@@ -135,7 +135,7 @@ describe("vendor profile-share nudge", () => {
       "vendor_profile_share",
       {
         businessName: "Bloom Studio",
-        shareUrl: "https://tryweddly.com/vendors/v11",
+        shareUrl: "https://tryweddly.com/suppliers/v11",
         editUrl: "https://tryweddly.com/vendor/listing",
         reviewsUrl: "https://tryweddly.com/vendor/reviews",
         missing: { photos: false, bio: false, packages: false },

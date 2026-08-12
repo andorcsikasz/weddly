@@ -1225,7 +1225,7 @@ export default function PlannersPage() {
             <Link to="/" className="btn-outline btn-sm">
               {t("planners.back_home")}
             </Link>
-            <Link to="/vendors" className="btn-outline btn-sm">
+            <Link to="/suppliers" className="btn-outline btn-sm">
               {t("planners.vendor_link")}
             </Link>
           </div>

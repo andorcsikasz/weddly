@@ -906,7 +906,7 @@ async function handleRemovalRequest(ctx: Ctx): Promise<Response> {
     "vendor_removal_confirmed",
     {
       businessName,
-      registerUrl: `${CONFIG.frontendBaseUrl}/vendors`,
+      registerUrl: `${CONFIG.frontendBaseUrl}/suppliers`,
     },
     {
       user: null,

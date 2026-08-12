@@ -383,7 +383,7 @@ describe("vendor review-invite campaign", () => {
     const res = await raw(`/r/vendor-review/${makeReviewClickToken(s.id)}`);
     expect(res.status).toBe(302);
     expect(res.location).toBe(s.review_url);
-    expect(res.location).toContain(`/vendors/`);
+    expect(res.location).toContain(`/suppliers/`);
     expect(res.location).toContain(v.listingId);
     expect(firstSend().clicked_at).not.toBeNull();
   });
@@ -391,7 +391,7 @@ describe("vendor review-invite campaign", () => {
   test("a forged CTA token redirects to the directory, never crashes", async () => {
     const res = await raw(`/r/vendor-review/999.deadbeef`);
     expect(res.status).toBe(302);
-    expect(res.location).toContain("/vendors");
+    expect(res.location).toContain("/suppliers");
   });
 
   test("reminder fires once for an untouched send after the window", async () => {

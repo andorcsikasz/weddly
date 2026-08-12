@@ -115,7 +115,7 @@ describe("<DesignPage> smoke (/app/design/website)", () => {
     }
     // Photos are promoted out of the accordion into their own block.
     expect(screen.getByText("Fotók")).toBeInTheDocument();
-    expect(screen.getByText("1. kép")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /válassz képet/i }).length).toBeGreaterThan(0);
 
     // Sample-content chip (no real schedule/wishlist in the mocks) and the
     // preview rendering the sample schedule beat.

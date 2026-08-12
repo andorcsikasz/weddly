@@ -73,8 +73,8 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
   ],
   en: [
     {
-      q: "What does Weddly replace?",
-      a: "Weddly replaces the spreadsheets, notes, RSVP messages and seating drafts that usually get scattered across phones and laptops. Your budget, guest list, RSVP replies, seating chart and wedding website live in one shared workspace.",
+      q: "What does Wēddly replace?",
+      a: "Wēddly replaces the spreadsheets, notes, RSVP messages and seating drafts that usually get scattered across phones and laptops. Your budget, guest list, RSVP replies, seating chart and wedding website live in one shared workspace.",
     },
     {
       q: "Can both of us use the same wedding plan?",
@@ -82,7 +82,7 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
     },
     {
       q: "Do our guests need an account?",
-      a: "No. Guests open their personal RSVP link, check their details and reply from their phone. They do not need a Weddly account.",
+      a: "No. Guests open their personal RSVP link, check their details and reply from their phone. They do not need a Wēddly account.",
       cta: { href: "/rsvp", label: "Guest? Enter your invite code" },
     },
     {
@@ -100,12 +100,12 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
       a: "Yes. You can pause or delete your workspace from your profile. We keep the data for 30 days in case you change your mind, then delete it permanently. Either partner can undo the request before the deadline.",
     },
     {
-      q: "Can our wedding planner use Weddly too?",
+      q: "Can our wedding planner use Wēddly too?",
       a: "Yes. You can plan as a couple, or invite a wedding planner into the same workspace. They can help with the same live budget, guest list, RSVP replies and seating plan instead of sending files back and forth.",
       cta: { href: "/planners", label: "See the planner workspace" },
     },
     {
-      q: "Is Weddly ready to use today?",
+      q: "Is Wēddly ready to use today?",
       a: "Yes. The core planning flow is live today: budget, guest list, personal RSVP links, visual seating, printable PDFs, day-of schedule, task timeline and your guest page. The curated supplier directory is also live, with direct contact details for every listing.",
       cta: { href: "/signup", label: "See it live" },
     },

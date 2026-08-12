@@ -1,3 +1,4 @@
+import { VENDOR_TERMS_VERSION } from "@shared/legal";
 import { useState } from "react";
 import { PublicShell } from "../components/PublicShell";
 import en from "../locales/en";
@@ -6,7 +7,7 @@ import { useDocumentMeta } from "../lib/seo";
 import { BackLink, H2, LegalHeader, LegalLanguageToggle, LegalSection } from "./PrivacyPage";
 
 /**
- * /terms/vendor-subscription: vendor ÁSZF v1.0 (effective 2026-06-15).
+ * /terms/vendor-subscription: versioned vendor ÁSZF.
  * Click-acceptance binding terms covering free Beta tier and future paid
  * plans (P2B Regulation 2019/1150, DSA, Hungarian consumer law).
  * English is shown by default; the Hungarian text is available via a toggle.
@@ -24,6 +25,8 @@ export default function SubscriptionTermsPage() {
           title={L.subscription_terms.page_title}
           updatedLabel={L.subscription_terms.last_updated_label}
           updatedDate={L.subscription_terms.last_updated_date}
+          version={VENDOR_TERMS_VERSION}
+          versionLabel={L.legal.version_label}
           action={<LegalLanguageToggle showEn={showEn} onToggle={() => setShowEn((v) => !v)} />}
         />
         <SubscriptionBodyForLocale

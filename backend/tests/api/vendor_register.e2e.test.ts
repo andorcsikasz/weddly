@@ -13,6 +13,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import type { VendorListingView } from "@shared/listings";
 import { VENDOR_EARLY_CAP, VENDOR_FOUNDING_CAP } from "@shared/vendor_billing";
@@ -38,7 +39,8 @@ interface RegBody {
   contact_phone?: string;
   website?: string;
   privacy_version?: string | null;
-  terms_version?: string | null;
+  vendor_terms_version?: string | null;
+  highlighted_terms_accepted?: boolean | null;
   locale?: string;
 }
 
@@ -70,6 +72,17 @@ describe("vendor self-serve registration", () => {
       .get("studio@test.test") as { id: number; role: string; verified_email: number };
     expect(user.role).toBe("vendor");
     expect(user.verified_email).toBe(0);
+
+    const accepted = db
+      .prepare(
+        "SELECT document, version FROM user_consents WHERE subject_user_id = ? ORDER BY document",
+      )
+      .all(user.id) as Array<{ document: string; version: string }>;
+    expect(accepted).toEqual([
+      { document: "privacy", version: PRIVACY_VERSION },
+      { document: "vendor_terms", version: VENDOR_TERMS_VERSION },
+      { document: "vendor_terms_highlighted", version: VENDOR_TERMS_VERSION },
+    ]);
 
     // vendor_account exists, owned by the user, with onboarding pending
     const account = db
@@ -132,6 +145,13 @@ describe("vendor self-serve registration", () => {
     // no user was created
     const exists = db.prepare("SELECT 1 FROM users WHERE email = ?").get("studio@test.test");
     expect(exists).toBeNull();
+  });
+
+  test("requires separate acceptance of highlighted vendor terms", async () => {
+    wipeAll();
+    const rejected = await register({ ...baseBody, highlighted_terms_accepted: false });
+    expect(rejected.status).toBe(400);
+    expect(db.prepare("SELECT 1 FROM users WHERE email = ?").get("studio@test.test")).toBeNull();
   });
 
   test("rejects an unknown category with 400", async () => {

@@ -8,8 +8,9 @@
 //
 //   1. `/api/public/vendors` returns the SAME catalogue a signed-in couple
 //      sees, paginated and filterable, with no contact value on any card.
-//   2. The sitemap carries a URL for every vendor page.
-//   3. `/vendors/browse` bakes a crawlable index of vendor links into its SSR
+//   2. The sitemap carries only substantial vendor pages with unique public
+//      content, while thin imported profiles remain browseable but noindex.
+//   3. `/suppliers/browse` bakes a crawlable index of supplier links into its SSR
 //      body, and that index publishes no email or phone either — masking the
 //      API and then printing the values into the HTML would be worse than not
 //      masking at all.
@@ -97,49 +98,53 @@ describe("GET /api/public/vendors — the whole catalogue, for anybody", () => {
 });
 
 describe("the sitemap offers every vendor page", () => {
-  test("a curated vendor's pretty URL is in the file", () => {
+  test("a substantial curated vendor's pretty URL is in the file", () => {
     const xml = renderSitemapXml(null);
-    const entry = DIRECTORY[0];
+    const entry = DIRECTORY.find((candidate) => {
+      const path = `/suppliers/${vendorPublicId(candidate.id, candidate.name)}`;
+      return xml.includes(`<loc>https://tryweddly.com${path}</loc>`);
+    });
     expect(entry).toBeDefined();
-    const path = `/vendors/${vendorPublicId(entry?.id ?? "", entry?.name ?? "")}`;
+    const path = `/suppliers/${vendorPublicId(entry?.id ?? "", entry?.name ?? "")}`;
     expect(xml).toContain(`<loc>https://tryweddly.com${path}</loc>`);
   });
 
   test("the browser hub is in it too, above the vendor-recruitment page", () => {
     const xml = renderSitemapXml(null);
-    expect(xml).toContain("<loc>https://tryweddly.com/vendors/browse</loc>");
+    expect(xml).toContain("<loc>https://tryweddly.com/suppliers/browse</loc>");
   });
 
-  test("the file is now the size of the catalogue, not of the static routes", () => {
+  test("the file includes substantial profiles without mass-indexing thin catalogue rows", () => {
     const xml = renderSitemapXml(null);
     const locs = xml.match(/<loc>/g)?.length ?? 0;
-    expect(locs).toBeGreaterThan(DIRECTORY.length);
+    expect(locs).toBeGreaterThan(100);
+    expect(locs).toBeLessThan(DIRECTORY.length);
   });
 });
 
-describe("/vendors/browse is crawlable without JavaScript", () => {
+describe("/suppliers/browse is crawlable without JavaScript", () => {
   test("the SSR body carries the page's own heading and intro", () => {
-    // No Accept-Language means EN, which is the product-wide default for both
-    // the SSR render and the client (see the i18n note in CLAUDE.md).
-    const body = ssrBody("/vendors/browse");
-    expect(body).toContain("<h1>Wedding vendors</h1>");
-    expect(body).toContain("Filter by city and category");
+    // No Accept-Language means HU: the root domain's canonical public
+    // experience targets Hungary.
+    const body = ssrBody("/suppliers/browse");
+    expect(body).toContain("<h1>Esküvői szolgáltatók</h1>");
+    expect(body).toContain("Szűrj városra és kategóriára");
   });
 
   test("the index names its categories in words, not enum keys", () => {
-    const body = ssrBody("/vendors/browse");
+    const body = ssrBody("/suppliers/browse");
     expect(body).not.toContain("<h3>wedding_decor</h3>");
     expect(body).not.toContain("<h3>mc_celebrant</h3>");
   });
 
   test("it links into real vendor pages, which is the path a crawler follows", () => {
-    const body = ssrBody("/vendors/browse");
-    const links = body.match(/href="\/vendors\/[^"]+"/g) ?? [];
+    const body = ssrBody("/suppliers/browse");
+    const links = body.match(/href="\/suppliers\/[^"]+"/g) ?? [];
     expect(links.length).toBeGreaterThan(10);
   });
 
   test("the crawlable index publishes no email or phone", () => {
-    const body = ssrBody("/vendors/browse");
+    const body = ssrBody("/suppliers/browse");
     // A masked API and a plaintext contact book in the HTML would be the same
     // leak with an extra step.
     expect(body).not.toMatch(/[\w.+-]+@[\w-]+\.[\w.]+/);

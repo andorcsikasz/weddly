@@ -59,7 +59,9 @@ describe("private-by-token pages are never indexable", () => {
     // The same URL plus the household code is that household's private view.
     const gated = await robotsTagFor(`/w/${slug}/${code}`);
     expect(gated).toContain("noindex");
-    expect(gated).toContain("nofollow");
+    // Keep links crawlable so bots can discover canonical public pages while
+    // excluding the user-specific URL itself from search results.
+    expect(gated).toContain("follow");
   });
 
   test("every other URL-as-credential surface carries it too", async () => {
@@ -77,8 +79,9 @@ describe("private-by-token pages are never indexable", () => {
   });
 
   test("ordinary marketing pages stay fully indexable", async () => {
-    for (const path of ["/", "/blog", "/vendors/browse", "/signup"]) {
+    for (const path of ["/", "/blog", "/suppliers/browse"]) {
       expect(await robotsTagFor(path), `${path} must stay indexable`).toBeNull();
     }
+    expect(await robotsTagFor("/signup")).toContain("noindex");
   });
 });

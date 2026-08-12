@@ -116,7 +116,7 @@ function pixelResponse(): Response {
 function handleInviteRedirect(ctx: Ctx): Response {
   const token = (ctx.params as { token?: string }).token ?? "";
   if (!token || token.length < 16 || token.length > 128) {
-    return Response.redirect(`${CONFIG.frontendBaseUrl}/vendors`, 302);
+    return Response.redirect(`${CONFIG.frontendBaseUrl}/suppliers`, 302);
   }
   const live = resolveInviteClaimToken(token);
   // No live claim means the listing was claimed already (or is gone). Send them
@@ -165,7 +165,7 @@ function handleReviewRedirect(ctx: Ctx): Response {
   const dest = sendId != null ? markReviewCampaignClicked(sendId) : null;
   // No live destination (unknown/forged token) → the public directory rather
   // than a dead end.
-  return Response.redirect(dest ?? `${CONFIG.frontendBaseUrl}/vendors`, 302);
+  return Response.redirect(dest ?? `${CONFIG.frontendBaseUrl}/suppliers`, 302);
 }
 
 function reviewOptOutEmailFromToken(token: string): string | null {

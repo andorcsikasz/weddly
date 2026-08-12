@@ -2472,15 +2472,6 @@ function GuestsSection({
     { label: t("admin.analytics_guests_kind_child"), count: g.kind_breakdown.child },
     { label: t("admin.analytics_guests_kind_baby"), count: g.kind_breakdown.baby },
   ];
-  const dietaryRows = [
-    { label: t("admin.analytics_guests_diet_vegetarian"), count: g.dietary.vegetarian },
-    { label: t("admin.analytics_guests_diet_vegan"), count: g.dietary.vegan },
-    { label: t("admin.analytics_guests_diet_gluten"), count: g.dietary.gluten },
-    { label: t("admin.analytics_guests_diet_lactose"), count: g.dietary.lactose },
-    { label: t("admin.analytics_guests_diet_nut"), count: g.dietary.nut },
-    { label: t("admin.analytics_guests_diet_other"), count: g.dietary.other_text },
-  ];
-
   return (
     <SectionCard title={title}>
       {g.total_guests === 0 ? (
@@ -2527,7 +2518,7 @@ function GuestsSection({
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <InnerCard title={t("admin.analytics_guests_rsvp_title")}>
               <DistBars
                 rows={rsvpRows}
@@ -2548,19 +2539,6 @@ function GuestsSection({
                   count: formatNumber(g.song_request_count, locale),
                 })}
               </div>
-            </InnerCard>
-            <InnerCard
-              title={t("admin.analytics_guests_dietary_title")}
-              subtitle={t("admin.analytics_guests_dietary_sub", {
-                count: formatNumber(g.guests_with_dietary, locale),
-              })}
-            >
-              <DistBars
-                rows={dietaryRows}
-                locale={locale}
-                emptyLabel={t("admin.analytics_guests_dietary_empty")}
-                labelWidth="6rem"
-              />
             </InnerCard>
           </div>
         </>

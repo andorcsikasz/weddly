@@ -174,8 +174,8 @@ describe("moodboard image upload + delete", () => {
     wipeAll();
   });
 
-  test("uploads images → source 'upload', cache-busted /uploads URLs", async () => {
-    const { token, coupleId } = await bootstrapCouple("mb-upload@weddly.test");
+  test("uploads images → source 'upload', short-lived signed content URLs", async () => {
+    const { token } = await bootstrapCouple("mb-upload@weddly.test");
     const res = await uploadImages(token, [tinyPngBlob(), tinyPngBlob()]);
     expect(res.status).toBe(200);
     const state = (await res.json()) as MoodboardState;
@@ -183,24 +183,36 @@ describe("moodboard image upload + delete", () => {
     expect(state.images).toHaveLength(2);
     for (const img of state.images) {
       expect(img.image_url).toMatch(
-        new RegExp(`^/uploads/couples/${coupleId}/moodboard/\\d+\\.png\\?v=\\d+$`),
+        /^\/api\/moodboard\/images\/\d+\/content\?expires=\d+&sig=[a-f0-9]{64}$/,
       );
     }
   });
 
-  test("an uploaded image is served back from /uploads (200, image/png)", async () => {
-    // Regression guard for the static-serve containment check: `uploadsDir` is
-    // relative in dev/test, so a naive isInsideDir() rejected every real file
-    // (only prod's absolute path dodged it). The byte-serve below would 404
-    // before that fix.
+  test("an uploaded image is served by its signed URL, never the raw storage path", async () => {
     const { token } = await bootstrapCouple("mb-serve@weddly.test");
     const up = await uploadImages(token, [tinyPngBlob()]);
     const state = (await up.json()) as MoodboardState;
-    const url = state.images[0]?.image_url as string;
+    const image = state.images[0];
+    expect(image).toBeDefined();
+    if (!image) throw new Error("uploaded moodboard image missing from state");
+    const url = image.image_url;
     const served = await fetch(`${BASE}${url}`);
     expect(served.status).toBe(200);
     expect(served.headers.get("content-type")).toContain("image/png");
+    expect(served.headers.get("cache-control")).toContain("private");
     expect((await served.arrayBuffer()).byteLength).toBeGreaterThan(0);
+
+    const row = db
+      .prepare("SELECT image_path FROM moodboard_images WHERE id = ?")
+      .get(image.id) as { image_path: string };
+    const raw = await fetch(`${BASE}${row.image_path}`);
+    expect(raw.status).not.toBe(200);
+    await raw.arrayBuffer();
+
+    const tampered = new URL(`${BASE}${url}`);
+    tampered.searchParams.set("sig", "0".repeat(64));
+    const denied = await fetch(tampered);
+    expect(denied.status).toBe(404);
   });
 
   test("missing file field → 400", async () => {

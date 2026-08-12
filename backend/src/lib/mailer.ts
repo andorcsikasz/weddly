@@ -2,6 +2,7 @@
 // to stdout (matching the existing dev pattern documented in .env.example).
 
 import { CONFIG } from "../config";
+import { createHash } from "node:crypto";
 import { log } from "./logger";
 
 export interface SendEmailInput {
@@ -128,11 +129,12 @@ async function dispatchToResend(input: SendEmailInput): Promise<void> {
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const detail = await res.text().catch(() => "");
+    // Upstream bodies can echo addresses or submitted content. Keep only the
+    // status and a stable recipient fingerprint in operational logs.
+    await res.arrayBuffer().catch(() => new ArrayBuffer(0));
     log.error("mailer.resend_failed", {
       status: res.status,
-      body: detail.slice(0, 500),
-      to: input.to,
+      recipient: emailFingerprint(input.to),
     });
     throw new Error(`Email send failed: ${res.status}`);
   }
@@ -144,6 +146,13 @@ export function sendEmail(input: SendEmailInput): Promise<void> {
   // evidence of what production would send, Reply-To included.
   if (!CONFIG.resendApiKey) {
     const payload = buildResendPayload(input);
+    if (process.env.NODE_ENV !== "test") {
+      log.info("mailer.dev_skipped", {
+        recipient: emailFingerprint(input.to),
+        subject: input.subject,
+      });
+      return Promise.resolve();
+    }
     log.info("mailer.dev_print", {
       from: payload.from,
       to: payload.to,
@@ -160,6 +169,10 @@ export function sendEmail(input: SendEmailInput): Promise<void> {
     sendQueue.push({ input, resolve, reject });
     void drainSendQueue();
   });
+}
+
+function emailFingerprint(value: string): string {
+  return createHash("sha256").update(value.trim().toLowerCase()).digest("hex").slice(0, 12);
 }
 
 // Resend liveness probe for /api/health/deep. Hits the cheap api-keys list

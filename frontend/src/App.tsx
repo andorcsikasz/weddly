@@ -5,6 +5,7 @@ import { lazyWithReload } from "./lib/lazy_reload";
 import { VerifyEmailGate } from "./components/VerifyEmailGate";
 import { useAuth } from "./lib/auth";
 import { clearDemoSessionFlag, isCurrentSessionDemo } from "./lib/demoSession";
+import { MARKETING_PAGES } from "@shared/marketing_pages";
 
 // Public routes are eagerly imported — they're FCP-critical and small in
 // aggregate. The signed-in /app/* and admin/* areas, plus low-traffic
@@ -30,6 +31,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import RegisterPage from "./pages/RegisterPage";
 import VendorsPage from "./pages/VendorsPage";
 import PlannersPage from "./pages/PlannersPage";
+import MarketingContentPage from "./pages/MarketingContentPage";
 
 // The four legal pages are the one exception to "public routes ship eagerly",
 // and they earn it by weight rather than by traffic. Each renders the HU and
@@ -44,6 +46,7 @@ const PrivacyPage = lazyWithReload(() => import("./pages/PrivacyPage"));
 const TermsPage = lazyWithReload(() => import("./pages/TermsPage"));
 const SubscriptionTermsPage = lazyWithReload(() => import("./pages/SubscriptionTermsPage"));
 const ImprintPage = lazyWithReload(() => import("./pages/ImprintPage"));
+const ContentNoticePage = lazyWithReload(() => import("./pages/ContentNoticePage"));
 
 const AppShellLayout = lazyWithReload(() =>
   import("./components/AppShell").then((m) => ({ default: m.AppShellLayout })),
@@ -357,6 +360,15 @@ function ScrollToTop() {
   return null;
 }
 
+/** Preserve old public links while consolidating every human-facing supplier
+ * URL on `/suppliers`. Production performs the same redirect at the server
+ * edge; this keeps Vite dev and client-side navigation equally compatible. */
+function LegacyVendorsRedirect() {
+  const { pathname, search, hash } = useLocation();
+  const supplierPath = pathname.replace(/^\/vendors(?=\/|$)/, "/suppliers");
+  return <Navigate to={`${supplierPath}${search}${hash}`} replace />;
+}
+
 export default function App() {
   return (
     <>
@@ -370,8 +382,19 @@ export default function App() {
             </Page>
           }
         />
+        {Object.values(MARKETING_PAGES).map((marketingPage) => (
+          <Route
+            key={marketingPage.path}
+            path={marketingPage.path}
+            element={
+              <Page>
+                <MarketingContentPage page={marketingPage} />
+              </Page>
+            }
+          />
+        ))}
         <Route
-          path="/vendors"
+          path="/suppliers"
           element={
             <Page>
               <VendorsPage />
@@ -379,7 +402,7 @@ export default function App() {
           }
         />
         <Route
-          path="/vendors/signup"
+          path="/suppliers/signup"
           element={
             <RedirectIfAuthed>
               <Page>
@@ -392,24 +415,25 @@ export default function App() {
             sample. Static path, declared before the `:supplier_id` param route
             so it wins. */}
         <Route
-          path="/vendors/browse"
+          path="/suppliers/browse"
           element={
             <Page>
               <VendorBrowsePage />
             </Page>
           }
         />
-        {/* Public, unauthenticated vendor profile — the shareable page a couple
-            sends to someone outside Weddly. Static `/vendors/signup` above wins
+        {/* Public, unauthenticated supplier profile — the shareable page a couple
+            sends to someone outside Wēddly. Static `/suppliers/signup` above wins
             over this param route. */}
         <Route
-          path="/vendors/:supplier_id"
+          path="/suppliers/:supplier_id"
           element={
             <Page>
               <PublicVendorPage />
             </Page>
           }
         />
+        <Route path="/vendors/*" element={<LegacyVendorsRedirect />} />
         <Route
           path="/planners"
           element={
@@ -542,6 +566,14 @@ export default function App() {
           element={
             <Page>
               <SubscriptionTermsPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/report-content"
+          element={
+            <Page>
+              <ContentNoticePage />
             </Page>
           }
         />

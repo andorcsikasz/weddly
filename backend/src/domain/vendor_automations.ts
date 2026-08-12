@@ -708,7 +708,7 @@ async function sendReviewRequest(
       // The pretty, name-prefixed public id, the same link the vendor hands out
       // themselves. `pathSupplierId` canonicalises it at the route boundary, so
       // a review written from here keys on the listing rather than the slug.
-      reviewUrl: `${CONFIG.frontendBaseUrl}/vendors/${vendorPublicId(listing.id, listing.name)}?review=1`,
+      reviewUrl: `${CONFIG.frontendBaseUrl}/suppliers/${vendorPublicId(listing.id, listing.name)}?review=1`,
     },
     { user: owner, couple_id: booking.couple_id },
   );

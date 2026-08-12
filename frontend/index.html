@@ -1,15 +1,10 @@
 <!doctype html>
-<html lang="hu" class="bg-paper-100 text-ink-800">
+<html lang="hu" data-default-locale="hu" class="bg-paper-100 text-ink-800">
   <head>
     <meta charset="UTF-8" />
     <!-- Cookiebot consent manager — must be the first script in <head> so it
          can block other scripts before they fire. CBID is Weddly's account id. -->
     <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="dbc1cd47-eac4-464f-a0ac-bf68a48bab1e" data-blockingmode="auto" type="text/javascript"></script>
-    <!-- Usercentrics Web CMP — added alongside Cookiebot for trial evaluation.
-         Cookiebot stays the active consent gate (data-cookieconsent attributes),
-         so this loads async and does not block. Ruleset id maps to the
-         "Weddly GDPR Configuration" on the tryweddly.com Usercentrics account. -->
-    <script id="usercentrics-cmp" src="https://web.cmp.usercentrics.eu/ui/loader.js" data-ruleset-id="wiCPcu1cOkRtZk" async></script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -20,64 +15,50 @@
          page. The manifest covers Android/Chromium. -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Weddly" />
+    <meta name="apple-mobile-web-app-title" content="Wēddly" />
     <!--
       The SEO head block below is rewritten per request by backend/src/lib/seo_ssr.ts.
-      Single-host deployment (weddly.hu) as of May 2026 — the rewriter
-      always emits weddly.hu as the canonical and skips the EN hreflang.
+      Single-host deployment on tryweddly.com — the rewriter emits the
+      Hungarian canonical and skips incomplete language alternates.
       The static content here is the HU fallback used by Vite dev and any
       direct file access that bypasses the Bun server. Do NOT remove the
       sentinel comments — the rewriter splices between them.
     -->
     <!-- SEO_HEAD_START -->
-    <title>Wēddly · Közös esküvőtervezés egy helyen</title>
+    <title>Esküvőszervező alkalmazás pároknak | Weddly</title>
     <meta
       name="description"
-      content="Tervezzétek együtt az esküvőtöket egy nyugodt, közös felületen: költségvetés, vendégek, RSVP, ültetés, nyomtatható kártyák. Mindkettőtök ugyanazt látja, valós időben."
+      content="Tervezzétek együtt az esküvőt: közös költségvetés, vendéglista, személyes RSVP-linkek és vizuális ültetési rend egy helyen, pároknak."
     />
+    <meta name="robots" content="index,follow" />
     <meta name="application-name" content="Wēddly" />
-    <link rel="canonical" href="https://weddly.hu/" />
+    <link rel="canonical" href="https://tryweddly.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Wēddly" />
     <meta property="og:locale" content="hu_HU" />
     <meta property="og:locale:alternate" content="en_US" />
-    <meta property="og:url" content="https://weddly.hu/" />
-    <meta property="og:title" content="Wēddly · Közös esküvőtervezés egy helyen" />
+    <meta property="og:url" content="https://tryweddly.com/" />
+    <meta property="og:title" content="Esküvőszervező alkalmazás pároknak | Weddly" />
     <meta
       property="og:description"
-      content="Tervezzétek együtt az esküvőtöket egy nyugodt, közös felületen: költségvetés, vendégek, RSVP, ültetés, nyomtatható kártyák. Mindkettőtök ugyanazt látja, valós időben."
+      content="Tervezzétek együtt az esküvőt: közös költségvetés, vendéglista, személyes RSVP-linkek és vizuális ültetési rend egy helyen, pároknak."
     />
-    <meta property="og:image" content="/og.png" />
+    <meta property="og:image" content="https://tryweddly.com/og.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Wēddly — The low-cortisol wedding planner platform." />
+    <meta property="og:image:alt" content="Wēddly · Nyugodt esküvőszervezés, egyetlen közös, naprakész tervvel kettőtöknek." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Wēddly · Közös esküvőtervezés egy helyen" />
+    <meta name="twitter:title" content="Esküvőszervező alkalmazás pároknak | Weddly" />
     <meta
       name="twitter:description"
-      content="Közös felület mindkettőtöknek, egy helyen."
+      content="Tervezzétek együtt az esküvőt: közös költségvetés, vendéglista, személyes RSVP-linkek és vizuális ültetési rend egy helyen, pároknak."
     />
-    <meta name="twitter:image" content="/og.png" />
-    <link rel="alternate" hreflang="hu" href="https://weddly.hu/" />
-    <link rel="alternate" hreflang="x-default" href="https://weddly.hu/" />
+    <meta name="twitter:image" content="https://tryweddly.com/og.png" />
+    <link rel="alternate" hreflang="hu-HU" href="https://tryweddly.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://tryweddly.com/" />
     <!-- SEO_HEAD_END -->
-    <!--
-      Hide the prerendered SEO body from human users. The prerender script
-      (frontend/scripts/prerender.ts) bakes a semantic HTML body inside
-      <div id="root"> so crawlers parsing the HTML directly see real
-      content. Real users used to catch a brief flash of that unstyled
-      block before React's createRoot() wiped it; on slow connections or
-      when the JS bundle is delayed the flash could last seconds and felt
-      like a "raw sitemap" page. Hiding it inline (before any external
-      stylesheet loads) means humans never see it, while Googlebot's
-      rendered crawl (which is what actually drives SPA ranking now) still
-      indexes the React app once it hydrates. Inline <style> is allowed by
-      CSP via 'unsafe-inline' in style-src.
-    -->
     <style>
-      .seo-prerender { display: none !important; }
-
       /* ── Cookiebot consent banner — Weddly brand skin ────────────────────
          Targets the Cookiebot-injected DOM. All overrides need !important
          because Cookiebot's own stylesheet is also !important-heavy.
@@ -311,14 +292,10 @@
       WOFF2 files from /public/fonts and re-introduce @font-face rules
       in src/index.css -- but keep them self-hosted.
     -->
-    <!-- Microsoft Clarity — loaded unconditionally (NOT consent-gated), per
-         product decision, so it starts recording without waiting for the
-         Cookiebot statistics opt-in. `data-cookieconsent="ignore"` exempts it
-         from Cookiebot's auto-blocking (data-blockingmode="auto"), which would
-         otherwise hold clarity.ms back until consent. clarity.ms is
-         allow-listed in the CSP (script-src / connect-src / img-src) in
-         backend/src/server.ts. -->
-    <script type="text/javascript" data-cookieconsent="ignore">
+    <!-- Microsoft Clarity is optional analytics. Keep the bootstrap inert
+         until Cookiebot records statistics consent; loading it before that
+         would contradict both the banner choice and the privacy notice. -->
+    <script type="text/plain" data-cookieconsent="statistics">
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
         t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;

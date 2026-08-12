@@ -706,7 +706,7 @@ describe("vendor campaign — every invite opens with the referral line", () => 
         categoryLabel: "Fotós",
         city: target.city,
         inviteUrl: "https://weddly.test/r/vendor-invite/tok",
-        listingUrl: `https://weddly.test/vendors/${target.listing_id}`,
+        listingUrl: `https://weddly.test/suppliers/${target.listing_id}`,
         freeMonths: 12,
         locale: target.locale,
       },
@@ -745,7 +745,7 @@ describe("vendor campaign — every invite opens with the referral line", () => 
     expect(body).not.toContain("ajánlotta");
     expect(body).toContain("egy év Weddly Pro");
     expect(body).toContain("díjmentesen fent marad");
-    expect(body).toContain("/vendors/curated-one");
+    expect(body).toContain("/suppliers/curated-one");
   });
 
   test("a community listing uses the same truthful campaign copy until provenance is passed", async () => {
@@ -774,7 +774,7 @@ describe("vendor campaign — every invite opens with the referral line", () => 
         categoryLabel: "Wedding venue",
         city: "Como",
         inviteUrl: "https://weddly.test/r/vendor-invite/tok",
-        listingUrl: "https://weddly.test/vendors/lago-fiori",
+        listingUrl: "https://weddly.test/suppliers/lago-fiori",
         freeMonths: 12,
         locale: "en",
       },

@@ -468,7 +468,7 @@ export function listSends(campaignId: number, limit: number): VendorReviewCampai
 /** The vendor's own public page — the shareable review link the whole mail is
  *  built around. Pretty, name-prefixed id so it reads well when they paste it. */
 export function reviewUrlFor(listingId: string, listingName: string): string {
-  return `${CONFIG.frontendBaseUrl}/vendors/${vendorPublicId(listingId, listingName)}`;
+  return `${CONFIG.frontendBaseUrl}/suppliers/${vendorPublicId(listingId, listingName)}`;
 }
 
 /** The `?review=1` variant deep-links a past client straight to the review

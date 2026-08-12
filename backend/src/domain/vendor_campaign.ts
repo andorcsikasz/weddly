@@ -503,7 +503,7 @@ function pixelUrl(sendId: number): string {
  *  (these rows have no account yet, and 42 of the live claimed ones kept their
  *  curated id anyway). */
 function publicListingUrl(listingId: string, listingName: string): string {
-  return `${CONFIG.frontendBaseUrl}/vendors/${vendorPublicId(listingId, listingName)}`;
+  return `${CONFIG.frontendBaseUrl}/suppliers/${vendorPublicId(listingId, listingName)}`;
 }
 
 /** Free-window promise for the invite copy, in months. The claim itself calls

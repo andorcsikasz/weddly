@@ -26,9 +26,14 @@ interface LaunchRow {
 
 function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, value: string]> {
   const secret: [string, string] = ["STRIPE_SECRET_KEY", CONFIG.stripeSecretKey];
+  const legalApproval: [string, string] = [
+    "LEGAL_PAID_LAUNCH_APPROVED",
+    CONFIG.legalPaidLaunchApproved ? "1" : "",
+  ];
   switch (product) {
     case "couple_subscriptions":
       return [
+        legalApproval,
         secret,
         ["STRIPE_WEBHOOK_SECRET", CONFIG.stripeWebhookSecret],
         ["STRIPE_PRICE_EUR", CONFIG.stripePriceEur],
@@ -36,6 +41,7 @@ function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, val
       ];
     case "planner_subscriptions":
       return [
+        legalApproval,
         secret,
         ["STRIPE_PLANNER_WEBHOOK_SECRET", CONFIG.stripePlannerWebhookSecret],
         ["STRIPE_PRICE_PLANNER_STARTER_EUR", CONFIG.stripePricePlanner.starter.EUR],
@@ -47,6 +53,7 @@ function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, val
       ];
     case "vendor_billing":
       return [
+        legalApproval,
         secret,
         ["STRIPE_VENDOR_WEBHOOK_SECRET", CONFIG.stripeVendorWebhookSecret],
         ["STRIPE_PRICE_VENDOR_EUR", CONFIG.stripePriceVendorEur],
@@ -54,9 +61,10 @@ function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, val
       ];
     case "film_checkout":
       // Film uses inline price_data but is fulfilled by the couple webhook.
-      return [secret, ["STRIPE_WEBHOOK_SECRET", CONFIG.stripeWebhookSecret]];
+      return [legalApproval, secret, ["STRIPE_WEBHOOK_SECRET", CONFIG.stripeWebhookSecret]];
     case "guest_page_addon":
       return [
+        legalApproval,
         secret,
         ["STRIPE_WEBHOOK_SECRET", CONFIG.stripeWebhookSecret],
         ["STRIPE_GUEST_PAGE_ADDON_PRICE_EUR", CONFIG.stripeGuestPageAddonPriceEur],

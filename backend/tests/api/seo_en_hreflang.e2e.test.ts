@@ -30,7 +30,7 @@ describe("seo: same-host EN hreflang for paired tool routes", () => {
   test("HU tool page emits an EN alternate pointing at the EN slug on weddly.hu", () => {
     const html = render(HU_TOOL, "hu");
     expect(html).toContain(
-      `<link rel="alternate" hreflang="hu" href="https://tryweddly.com${HU_TOOL}" />`,
+      `<link rel="alternate" hreflang="hu-HU" href="https://tryweddly.com${HU_TOOL}" />`,
     );
     expect(html).toContain(
       `<link rel="alternate" hreflang="en" href="https://tryweddly.com${EN_TOOL}" />`,
@@ -54,7 +54,7 @@ describe("seo: same-host EN hreflang for paired tool routes", () => {
 describe("seo: non-paired routes emit no EN alternate (single URL)", () => {
   test("/about has hu + x-default but no en alternate", () => {
     const html = render("/about", "hu");
-    expect(html).toContain(`hreflang="hu" href="https://tryweddly.com/about"`);
+    expect(html).toContain(`hreflang="hu-HU" href="https://tryweddly.com/about"`);
     expect(html).toContain(`hreflang="x-default" href="https://tryweddly.com/about"`);
     expect(html).not.toContain(`hreflang="en"`);
   });

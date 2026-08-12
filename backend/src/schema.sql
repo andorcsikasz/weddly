@@ -613,6 +613,34 @@ CREATE TABLE IF NOT EXISTS feedback_replies (
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_replies_feedback ON feedback_replies(feedback_id, created_at);
 
+-- DSA notice-and-action case ledger. Public reporters receive the opaque
+-- reference and can use it together with their email address to read the
+-- outcome or lodge one appeal; admins decide cases through authenticated APIs.
+CREATE TABLE IF NOT EXISTS content_notices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  reference TEXT NOT NULL UNIQUE,
+  reporter_name TEXT NOT NULL,
+  reporter_email TEXT NOT NULL,
+  content_url TEXT NOT NULL,
+  illegality TEXT NOT NULL,
+  explanation TEXT NOT NULL,
+  good_faith INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'submitted',                  -- submitted|reviewing|actioned|rejected
+  decision_reason TEXT,
+  decided_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  decided_at INTEGER,
+  appeal_text TEXT,
+  appealed_at INTEGER,
+  appeal_decision TEXT,
+  appeal_decided_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_content_notices_status
+  ON content_notices(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_content_notices_email
+  ON content_notices(reporter_email, created_at DESC);
+
 -- Admin-editable supplier taxonomy. Seeded once from the legacy
 -- SUPPLIER_GROUPS / SupplierCategory TypeScript literals + the matching
 -- `suppliers.group.*` / `suppliers.cat.*` i18n keys (see seed_supplier_taxonomy).

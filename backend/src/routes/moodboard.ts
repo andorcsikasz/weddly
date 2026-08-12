@@ -10,6 +10,9 @@
 // Pinterest scraping is unreliable (private boards, 403s), so own-image upload
 // is the robust path; the preset keeps the page populated out of the box.
 
+import { createHmac, timingSafeEqual } from "node:crypto";
+import type { MoodboardState } from "@shared/types";
+import { CONFIG } from "../config";
 import { storage, keyFromUploadUrl } from "../lib/storage";
 import { db, now } from "../db";
 import { getCoupleForUser } from "../domain/couples";
@@ -20,6 +23,7 @@ import { sniffUploadedImage } from "../lib/image_sniff";
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const MAX_IMAGES_PER_COUPLE = 12;
+const IMAGE_URL_TTL_MS = 24 * 60 * 60 * 1000;
 const SUPPORTED_MIMES: Record<string, "jpg" | "png" | "webp"> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -33,6 +37,22 @@ function requireCouple(ctx: Ctx) {
   return { userId, couple };
 }
 
+function imageSignature(id: number, expires: number): string {
+  return createHmac("sha256", CONFIG.jwtSecret).update(`moodboard.${id}.${expires}`).digest("hex");
+}
+
+function moodboardState(coupleId: number): MoodboardState {
+  const state = getMoodboardState(coupleId);
+  const expires = Date.now() + IMAGE_URL_TTL_MS;
+  return {
+    ...state,
+    images: state.images.map((image) => ({
+      ...image,
+      image_url: `/api/moodboard/images/${image.id}/content?expires=${expires}&sig=${imageSignature(image.id, expires)}`,
+    })),
+  };
+}
+
 async function handlePreview(ctx: Ctx): Promise<Response> {
   const url = new URL(ctx.req.url).searchParams.get("url");
   if (!url) {
@@ -44,7 +64,7 @@ async function handlePreview(ctx: Ctx): Promise<Response> {
 
 async function handleGetState(ctx: Ctx): Promise<Response> {
   const { couple } = requireCouple(ctx);
-  return json(getMoodboardState(couple.id));
+  return json(moodboardState(couple.id));
 }
 
 async function handlePatch(ctx: Ctx): Promise<Response> {
@@ -86,7 +106,7 @@ async function handlePatch(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "source must be 'preset' or 'pinterest'", { code: "invalid_source" });
   }
 
-  return json(getMoodboardState(couple.id));
+  return json(moodboardState(couple.id));
 }
 
 async function handleUploadImages(ctx: Ctx): Promise<Response> {
@@ -170,7 +190,40 @@ async function handleUploadImages(ctx: Ctx): Promise<Response> {
     after: { count: validated.length },
   });
 
-  return json(getMoodboardState(couple.id));
+  return json(moodboardState(couple.id));
+}
+
+/** Serve a couple's private moodboard image through a short-lived capability.
+ * `<img>` cannot attach the bearer token kept by the API client, so the
+ * authenticated state response mints an HMAC URL instead. The raw sequential
+ * `/uploads/couples/:id/moodboard/*` namespace is denied by server.ts. */
+async function handleImageContent(ctx: Ctx): Promise<Response> {
+  const id = Number(ctx.params.id);
+  const expires = Number(ctx.url.searchParams.get("expires"));
+  const supplied = ctx.url.searchParams.get("sig") ?? "";
+  if (!Number.isInteger(id) || !Number.isSafeInteger(expires)) {
+    throw new HttpError(404, "Image not found");
+  }
+  const ts = Date.now();
+  if (expires < ts || expires > ts + IMAGE_URL_TTL_MS + 60_000) {
+    throw new HttpError(404, "Image not found");
+  }
+  const expected = imageSignature(id, expires);
+  const a = Buffer.from(supplied, "hex");
+  const b = Buffer.from(expected, "hex");
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    throw new HttpError(404, "Image not found");
+  }
+  const row = db.prepare("SELECT image_path FROM moodboard_images WHERE id = ?").get(id) as
+    | { image_path: string }
+    | undefined;
+  const key = row ? keyFromUploadUrl(row.image_path) : null;
+  if (!key) throw new HttpError(404, "Image not found");
+  const served = await storage.serve(key);
+  if (!served) throw new HttpError(404, "Image not found");
+  const headers = new Headers(served.headers);
+  headers.set("Cache-Control", "private, max-age=3600");
+  return new Response(served.body, { status: served.status, headers });
 }
 
 async function handleDeleteImage(ctx: Ctx): Promise<Response> {
@@ -220,6 +273,7 @@ async function handleDeleteImage(ctx: Ctx): Promise<Response> {
 
 export function registerMoodboardRoutes(router: Router) {
   router.get("/api/moodboard", handleGetState, true);
+  router.get("/api/moodboard/images/:id/content", handleImageContent);
   router.get("/api/moodboard/preview", handlePreview, true);
   router.patch("/api/moodboard", handlePatch, true);
   router.post("/api/moodboard/images", handleUploadImages, true);

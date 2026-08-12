@@ -17,6 +17,7 @@ export function LocaleSwitcher({
   className = "",
   align = "right",
   dataNavIcon = false,
+  showCode = false,
 }: {
   buttonClassName?: string;
   /** Applied to the positioning wrapper — use for responsive visibility
@@ -28,6 +29,9 @@ export function LocaleSwitcher({
   /** Tags the trigger with `data-nav-icon` so the public header's over-hero CSS
    *  (index.css) recolors it white like the sibling icons. */
   dataNavIcon?: boolean;
+  /** Show the active locale code beside the globe so language selection is
+   *  discoverable without relying on icon recognition alone. */
+  showCode?: boolean;
 }) {
   const { t, locale, setLocale } = useT();
   const [open, setOpen] = useState(false);
@@ -62,6 +66,7 @@ export function LocaleSwitcher({
         {...(dataNavIcon ? { "data-nav-icon": "" } : {})}
       >
         <Languages size={18} aria-hidden="true" />
+        {showCode && <span className="text-xs font-semibold uppercase">{locale}</span>}
       </button>
 
       {open && (

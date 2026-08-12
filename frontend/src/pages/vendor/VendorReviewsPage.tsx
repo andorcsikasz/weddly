@@ -31,7 +31,7 @@ function CollectReviewsCard({
 }) {
   const { t, locale } = useT();
 
-  const reviewUrl = `${window.location.origin}/vendors/${vendorPublicId(listingId, listingName)}`;
+  const reviewUrl = `${window.location.origin}/suppliers/${vendorPublicId(listingId, listingName)}`;
   const shareUrl = `${reviewUrl}?review=1`;
   const msg =
     locale === "hu"

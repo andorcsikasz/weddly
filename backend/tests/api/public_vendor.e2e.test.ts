@@ -460,17 +460,17 @@ async function seedClaimedVendorNoHero(email: string, name: string): Promise<str
   return `v${account.id}`;
 }
 
-describe("per-vendor SSR og:card meta (/vendors/:id)", () => {
-  test("lookupVendorPageMeta resolves a curated id but NOT /vendors or /vendors/signup", () => {
+describe("per-supplier SSR og:card meta (/suppliers/:id)", () => {
+  test("lookupVendorPageMeta resolves a curated id but NOT /suppliers or /suppliers/signup", () => {
     const sid = curatedSupplierId();
     const name = DIRECTORY.find((d) => d.id === sid)?.name ?? "";
-    const meta = lookupVendorPageMeta(`/vendors/${sid}`);
+    const meta = lookupVendorPageMeta(`/suppliers/${sid}`);
     expect(meta).not.toBeNull();
     expect(meta?.name).toBe(name);
     // The static routes must never resolve as a vendor id.
-    expect(lookupVendorPageMeta("/vendors")).toBeNull();
-    expect(lookupVendorPageMeta("/vendors/signup")).toBeNull();
-    expect(lookupVendorPageMeta("/vendors/this-id-does-not-exist")).toBeNull();
+    expect(lookupVendorPageMeta("/suppliers")).toBeNull();
+    expect(lookupVendorPageMeta("/suppliers/signup")).toBeNull();
+    expect(lookupVendorPageMeta("/suppliers/this-id-does-not-exist")).toBeNull();
   });
 
   test("renderIndexHtml injects the vendor name + city into <title> and og:title", () => {
@@ -480,7 +480,7 @@ describe("per-vendor SSR og:card meta (/vendors/:id)", () => {
     const city = base?.city ?? "";
     const html = renderIndexHtml(TEMPLATE, {
       host: "tryweddly.com",
-      pathname: `/vendors/${sid}`,
+      pathname: `/suppliers/${sid}`,
       isRsvp: false,
       acceptLanguage: "en-US,en;q=0.9",
     });
@@ -495,12 +495,12 @@ describe("per-vendor SSR og:card meta (/vendors/:id)", () => {
     addListingPhoto(id, photoUrl);
     addListingPhoto(id, `/uploads/listings/${id}/2.webp`);
 
-    const meta = lookupVendorPageMeta(`/vendors/${id}`);
+    const meta = lookupVendorPageMeta(`/suppliers/${id}`);
     expect(meta?.heroImageUrl).toBe(photoUrl); // first uploaded photo wins
 
     const html = renderIndexHtml(TEMPLATE, {
       host: HU_HOST,
-      pathname: `/vendors/${id}`,
+      pathname: `/suppliers/${id}`,
       isRsvp: false,
       acceptLanguage: "en-US,en;q=0.9",
     });
@@ -513,12 +513,12 @@ describe("per-vendor SSR og:card meta (/vendors/:id)", () => {
   test("og:image falls back to the brand og.png when the vendor has no photos at all", async () => {
     const id = await seedClaimedVendorNoHero("nopics@weddly.test", "No Pics Studio");
 
-    const meta = lookupVendorPageMeta(`/vendors/${id}`);
+    const meta = lookupVendorPageMeta(`/suppliers/${id}`);
     expect(meta?.heroImageUrl).toBeNull();
 
     const html = renderIndexHtml(TEMPLATE, {
       host: HU_HOST,
-      pathname: `/vendors/${id}`,
+      pathname: `/suppliers/${id}`,
       isRsvp: false,
       acceptLanguage: "en-US,en;q=0.9",
     });
@@ -526,7 +526,7 @@ describe("per-vendor SSR og:card meta (/vendors/:id)", () => {
   });
 });
 
-// Pretty, name-based public ids: /vendors/magyar-foto-v12 instead of /vendors/v12.
+// Pretty, name-based public ids: /suppliers/magyar-foto-v12 instead of /suppliers/v12.
 describe("vendor pretty public id (name-based slug)", () => {
   test("slugifyName folds Hungarian accents to a hyphenated ASCII slug", () => {
     expect(slugifyName("Magyar Fotó")).toBe("magyar-foto");
@@ -552,23 +552,23 @@ describe("vendor pretty public id (name-based slug)", () => {
     const id = await seedClaimedVendorNoHero("pretty@weddly.test", "Magyar Fotó");
     const pretty = vendorPublicId(id, "Magyar Fotó"); // magyar-foto-vN
 
-    const byBare = lookupVendorPageMeta(`/vendors/${id}`);
-    const byPretty = lookupVendorPageMeta(`/vendors/${pretty}`);
+    const byBare = lookupVendorPageMeta(`/suppliers/${id}`);
+    const byPretty = lookupVendorPageMeta(`/suppliers/${pretty}`);
     expect(byBare?.name).toBe("Magyar Fotó");
     expect(byPretty?.name).toBe("Magyar Fotó");
     // Both advertise the SAME pretty canonical id.
     expect(byBare?.publicId).toBe(pretty);
     expect(byPretty?.publicId).toBe(pretty);
     // A wrong/stale name in the slug still resolves (the trailing id wins).
-    expect(lookupVendorPageMeta(`/vendors/stale-name-${id}`)?.name).toBe("Magyar Fotó");
+    expect(lookupVendorPageMeta(`/suppliers/stale-name-${id}`)?.name).toBe("Magyar Fotó");
   });
 
   test("the vendor page canonical is the pretty URL, whether reached bare or pretty", async () => {
     const id = await seedClaimedVendorNoHero("canon@weddly.test", "Great Tide Kft.");
     const pretty = vendorPublicId(id, "Great Tide Kft."); // great-tide-kft-vN
-    const expected = `<link rel="canonical" href="https://${HU_HOST}/vendors/${pretty}" />`;
+    const expected = `<link rel="canonical" href="https://${HU_HOST}/suppliers/${pretty}" />`;
 
-    for (const path of [`/vendors/${id}`, `/vendors/${pretty}`, `/vendors/wrong-${id}`]) {
+    for (const path of [`/suppliers/${id}`, `/suppliers/${pretty}`, `/suppliers/wrong-${id}`]) {
       const html = renderIndexHtml(TEMPLATE, {
         host: HU_HOST,
         pathname: path,
@@ -577,7 +577,7 @@ describe("vendor pretty public id (name-based slug)", () => {
       });
       expect(html).toContain(expected);
       expect(html).toContain(
-        `<meta property="og:url" content="https://${HU_HOST}/vendors/${pretty}" />`,
+        `<meta property="og:url" content="https://${HU_HOST}/suppliers/${pretty}" />`,
       );
     }
   });

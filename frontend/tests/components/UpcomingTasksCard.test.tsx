@@ -229,7 +229,7 @@ describe("<UpcomingTasksCard>", () => {
     expect(screen.queryByText("Dismissed prompt")).not.toBeInTheDocument();
   });
 
-  it("caps the list at 5 rows", async () => {
+  it("keeps the full task pool in a five-row scroll window", async () => {
     listResponse = {
       items: Array.from({ length: 8 }, (_, i) =>
         task({ id: i + 1, title: `Task ${i + 1}`, due_date: isoFromToday(i + 1) }),
@@ -241,7 +241,9 @@ describe("<UpcomingTasksCard>", () => {
       </Providers>,
     );
     await flush();
-    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(screen.getAllByRole("listitem")).toHaveLength(8);
+    const list = screen.getAllByRole("list").at(-1)!;
+    expect(list.parentElement?.style.maxHeight).toBe("174px");
   });
 
   it("optimistically completes a task via PATCH and drops it from the list", async () => {

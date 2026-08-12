@@ -2077,24 +2077,13 @@ function handleWeddings(ctx: Ctx): Response {
 
 // ─── /api/admin/analytics/guests ─────────────────────────────────────────
 
-// Free-text dietary keyword buckets. Each entry is a list of lowercase
-// substrings (HU + EN) that map a note into the bucket. A note can match more
-// than one bucket; a non-empty note that matches none falls into `other_text`.
-const DIETARY_KEYWORDS: Record<"gluten" | "lactose" | "nut" | "vegetarian" | "vegan", string[]> = {
-  gluten: ["glut", "gluten", "lisztérz", "coeliac", "celiac"],
-  lactose: ["lakt", "lactose", "tejcuk", "tejérz", "dairy"],
-  nut: ["mogyor", "dió", "dio", "nut", "peanut", "mandula", "almond", "cashew"],
-  vegetarian: ["vegetár", "vegetar", "húsmentes", "veggie"],
-  vegan: ["vegán", "vegan", "növényi"],
-};
-
 function guestAnalytics(audience: AnalyticsAudience): AdminGuestAnalytics {
   // Restrict to guests owned by couples the audience admits. One join keeps
   // demo / admin / test / deleting residue out without a second round-trip.
   const guests = db
     .prepare(
       `SELECT g.couple_id, g.rsvp_status, g.kind, g.plus_one_name, g.accommodation_needed,
-              g.song_request, g.dietary
+              g.song_request
          FROM guests g
          JOIN couples c ON c.id = g.couple_id
         WHERE ${coupleAudienceSql("c", audience)}`,
@@ -2106,18 +2095,15 @@ function guestAnalytics(audience: AnalyticsAudience): AdminGuestAnalytics {
     plus_one_name: string | null;
     accommodation_needed: number;
     song_request: string | null;
-    dietary: string | null;
   }[];
 
   const totalGuests = guests.length;
   const perCouple = new Map<number, number>();
   const rsvp = { pending: 0, yes: 0, no: 0, maybe: 0 };
   const kindBreakdown = { adult: 0, child: 0, baby: 0 };
-  const dietary = { gluten: 0, lactose: 0, nut: 0, vegetarian: 0, vegan: 0, other_text: 0 };
   let plusOne = 0;
   let accommodation = 0;
   let songRequests = 0;
-  let guestsWithDietary = 0;
 
   for (const g of guests) {
     perCouple.set(g.couple_id, (perCouple.get(g.couple_id) ?? 0) + 1);
@@ -2134,20 +2120,6 @@ function guestAnalytics(audience: AnalyticsAudience): AdminGuestAnalytics {
     if (g.plus_one_name?.trim()) plusOne += 1;
     if (g.accommodation_needed === 1) accommodation += 1;
     if (g.song_request?.trim()) songRequests += 1;
-
-    const note = g.dietary?.trim();
-    if (note) {
-      guestsWithDietary += 1;
-      const lower = note.toLowerCase();
-      let matched = false;
-      for (const bucket of ["gluten", "lactose", "nut", "vegetarian", "vegan"] as const) {
-        if (DIETARY_KEYWORDS[bucket].some((kw) => lower.includes(kw))) {
-          dietary[bucket] += 1;
-          matched = true;
-        }
-      }
-      if (!matched) dietary.other_text += 1;
-    }
   }
 
   const answered = rsvp.yes + rsvp.no + rsvp.maybe;
@@ -2164,8 +2136,6 @@ function guestAnalytics(audience: AnalyticsAudience): AdminGuestAnalytics {
     plus_one_count: plusOne,
     accommodation_needed_count: accommodation,
     song_request_count: songRequests,
-    dietary,
-    guests_with_dietary: guestsWithDietary,
   };
 }
 

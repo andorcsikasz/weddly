@@ -10,7 +10,12 @@
 import { expect } from "bun:test";
 
 import { TRIAL_GRACE_MS } from "@shared/billing";
-import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
+import {
+  PRIVACY_VERSION,
+  TERMS_VERSION,
+  VENDOR_BETA_NOTICE_VERSION,
+  VENDOR_TERMS_VERSION,
+} from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import { __testPlaintextForHash } from "../src/auth/tokens";
 import { db, VISITOR_SYSTEM_USER_EMAIL } from "../src/db";
@@ -139,12 +144,19 @@ function withConsentVersions(method: string, path: string, body: unknown): unkno
     path === "/api/vendor/register" ||
     path === "/api/vendor/register/google"
   ) {
-    // Every register path requires BOTH privacy_version and terms_version
+    // Every register path requires the exact policy documents applicable to
+    // that role.
     // for brand-new accounts. Tests probing the "missing version" path
     // pass either field as null to preserve the original probe.
+    const vendorFields = path.startsWith("/api/vendor/")
+      ? {
+          ...("vendor_terms_version" in obj ? {} : { vendor_terms_version: VENDOR_TERMS_VERSION }),
+          ...("highlighted_terms_accepted" in obj ? {} : { highlighted_terms_accepted: true }),
+        }
+      : { ...("terms_version" in obj ? {} : { terms_version: TERMS_VERSION }) };
     return {
       ...("privacy_version" in obj ? {} : { privacy_version: PRIVACY_VERSION }),
-      ...("terms_version" in obj ? {} : { terms_version: TERMS_VERSION }),
+      ...vendorFields,
       ...obj,
     };
   }
@@ -296,6 +308,7 @@ export function wipeAll(): void {
     // admin couple-card analytics counts in a later test.
     "couple_card_feedback",
     "couple_card_suggestions",
+    "content_notices",
     // users MUST come before couples — users.couple_id REFERENCES couples(id)
     // with no CASCADE, so deleting couples first FK-fails (silently swallowed
     // by the try/catch below) and leaves stale rows that bleed into the next

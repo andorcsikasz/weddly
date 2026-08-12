@@ -4,6 +4,7 @@
 import { noteMeaningfulAction } from "./share_activity";
 
 const TOKEN_KEY = "weddly.token";
+const SESSION_MARKER_KEY = "weddly.session";
 
 /** Stable per-browser device id, sent as `X-Weddly-Device` so the backend can
  *  tell "my own laptop again" from "somebody else's machine" without guessing
@@ -90,10 +91,26 @@ export function getToken(): string | null {
   }
 }
 
+/** Non-secret hint used only to decide whether AuthProvider should probe /me.
+ *  Authentication itself lives in an HttpOnly cookie the browser attaches. */
+export function hasSession(): boolean {
+  try {
+    return (
+      localStorage.getItem(SESSION_MARKER_KEY) === "1" || Boolean(localStorage.getItem(TOKEN_KEY))
+    );
+  } catch {
+    return true;
+  }
+}
+
 export function setToken(token: string | null) {
   try {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
+    // Never persist bearer credentials in script-readable storage. `token` is
+    // retained in the public API during the transition because response DTOs
+    // and non-browser API clients still use it; the browser stores only a flag.
+    localStorage.removeItem(TOKEN_KEY);
+    if (token) localStorage.setItem(SESSION_MARKER_KEY, "1");
+    else localStorage.removeItem(SESSION_MARKER_KEY);
   } catch {
     // localStorage may be blocked in some embeds — fail soft.
   }
@@ -183,6 +200,7 @@ export async function apiFetch<T>(
       res = await fetch(path, {
         method,
         headers,
+        credentials: "include",
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
       });

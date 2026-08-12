@@ -42,7 +42,13 @@ export function PrintCardPreview({
   const aspect = portrait ? "aspect-[3/4]" : "aspect-[3/2]";
 
   // The pack's personality, resolved once and reused by every template body.
-  const hCss = headingTreatmentCss(d.heading_style); // name/heading treatment
+  const hCss = {
+    ...headingTreatmentCss(d.heading_style),
+    // Bodoni's hairlines become fragile in small preview thumbnails and around
+    // Hungarian double-acutes. Keep its web preview at the bundled 600 face;
+    // larger output preserves the same family and editorial contrast.
+    ...(d.heading_font.includes("Bodoni Moda") ? { fontWeight: 600 } : {}),
+  }; // name/heading treatment
   const layout = d.card_layout;
   const isLeft = layout === "asymmetric"; // Monochrome drops the centre axis
   const labelColor = layout === "corners" ? d.accent_text : d.text;

@@ -3206,6 +3206,11 @@ export interface LocaleMessages {
     success_body_verified: string;
     /** Step-2 banner when the vendor chose Google on step 1. Takes {email}. */
     google_continue_as: string;
+    legal_accept_prefix: string;
+    legal_accept_link: string;
+    legal_accept_suffix: string;
+    highlighted_accept: string;
+    legal_accept_required: string;
     submit: string;
     continue_to_onboarding: string;
   };
@@ -8561,6 +8566,8 @@ export interface LocaleMessages {
     meal_section_title: string;
     dietary_section_title: string;
     dietary_other_placeholder: string;
+    dietary_privacy_notice: string;
+    dietary_privacy_link: string;
     accommodation_section_title: string;
     accommodation_none: string;
     guest_message_label: string;
@@ -9068,6 +9075,7 @@ export interface LocaleMessages {
      *  they accepted at signup. The value itself comes from
      *  `shared/legal.ts`. */
     version_label: string;
+    report_illegal_content: string;
   };
   privacy: {
     seo_title: string;
@@ -9158,6 +9166,7 @@ export interface LocaleMessages {
     subprocessors_pinterest: string;
     subprocessors_sentry: string;
     subprocessors_google: string;
+    subprocessors_other: string;
     /** Google API user data: the disclosure Google's OAuth verification asks
      *  for, and the one this policy owed anyway once sign-in and the calendar
      *  sync started touching a user's Google account. The Limited Use sentence
@@ -9172,6 +9181,7 @@ export interface LocaleMessages {
     google_data_policy_link: string;
     cookies_title: string;
     cookies_intro: string;
+    cookies_settings: string;
     cookies_locale: string;
     cookies_verify_dismiss: string;
     cookies_session: string;

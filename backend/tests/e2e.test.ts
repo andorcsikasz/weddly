@@ -11156,7 +11156,8 @@ describe("seo: /sitemap.xml", () => {
     const body = await r.text();
     expect(body).toContain(`<loc>https://${HU_HOST}/</loc>`);
     expect(body).toContain(`<loc>https://${HU_HOST}/about</loc>`);
-    expect(body).toContain(`<loc>https://${HU_HOST}/signup</loc>`);
+    // Authentication screens are intentionally absent from the sitemap.
+    expect(body).not.toContain(`<loc>https://${HU_HOST}/signup</loc>`);
     // Every <url> entry must carry a <lastmod>; Google ignores priority/changefreq
     // but uses lastmod to schedule recrawl.
     expect(body).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
@@ -11164,7 +11165,9 @@ describe("seo: /sitemap.xml", () => {
     // list hu + x-default on weddly.hu with no EN alternate, but slug-paired
     // tool routes DO get an EN alternate on the same host (the EN slug is a
     // distinct, real URL) so the EN tool pages surface for indexing.
-    expect(body).toContain(`<xhtml:link rel="alternate" hreflang="hu" href="https://${HU_HOST}/"`);
+    expect(body).toContain(
+      `<xhtml:link rel="alternate" hreflang="hu-HU" href="https://${HU_HOST}/"`,
+    );
     expect(body).toContain(
       `<xhtml:link rel="alternate" hreflang="x-default" href="https://${HU_HOST}/"`,
     );
@@ -11218,7 +11221,7 @@ describe("seo: renderIndexHtml meta injection", () => {
     expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}/" />`);
     expect(html).toContain(`<meta property="og:url" content="https://${HU_HOST}/" />`);
     expect(html).toContain(`<meta property="og:locale" content="en_US" />`);
-    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/"`);
+    expect(html).toContain(`hreflang="hu-HU" href="https://${HU_HOST}/"`);
     expect(html).toContain(`hreflang="x-default" href="https://${HU_HOST}/"`);
     expect(html).not.toContain(`hreflang="en"`);
   });
@@ -11237,7 +11240,7 @@ describe("seo: renderIndexHtml meta injection", () => {
     const html = render("weddly.hu", "/about");
     expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}/about" />`);
     expect(html).toContain(`<meta property="og:url" content="https://${HU_HOST}/about" />`);
-    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/about"`);
+    expect(html).toContain(`hreflang="hu-HU" href="https://${HU_HOST}/about"`);
   });
 
   test("og:image is an absolute URL on the canonical host", () => {
@@ -11293,7 +11296,7 @@ describe("seo: renderIndexHtml meta injection", () => {
     expect(html).toContain(`<meta property="og:locale" content="en_US" />`);
     expect(html).toContain(`<meta property="og:locale:alternate" content="hu_HU" />`);
     // EN brand description / title comes from the EN META block.
-    expect(html).toContain(`Weddly · Your shared wedding-planning workspace`);
+    expect(html).toContain(`Wēddly · Low-cortisol wedding planning`);
     // Canonical + hreflang still point at the single canonical host — single
     // domain, no separate EN URL yet.
     expect(html).toContain(`<link rel="canonical" href="https://${HU_HOST}/" />`);
@@ -11313,7 +11316,7 @@ describe("seo: renderIndexHtml meta injection", () => {
     const html = render("weddly.hu", "/", false, "hu-HU,hu;q=0.9");
     expect(html).toContain(`<html lang="hu"`);
     expect(html).toContain(`<meta property="og:locale" content="hu_HU" />`);
-    expect(html).toContain(`Wēddly · Közös esküvőtervezés egy helyen`);
+    expect(html).toContain(`Esküvőszervező alkalmazás pároknak | Weddly`);
   });
 });
 
@@ -11383,7 +11386,7 @@ describe("seo: multi-host (EN canonical configured)", () => {
       isRsvp: false,
       acceptLanguage: "hu-HU",
     });
-    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/about"`);
+    expect(html).toContain(`hreflang="hu-HU" href="https://${HU_HOST}/about"`);
     expect(html).toContain(`hreflang="en" href="https://${EN_HOST}/about"`);
     expect(html).toContain(`hreflang="x-default" href="https://${HU_HOST}/about"`);
   });
@@ -11396,7 +11399,7 @@ describe("seo: multi-host (EN canonical configured)", () => {
       acceptLanguage: null,
     });
     expect(html).toContain(`<link rel="canonical" href="https://${EN_HOST}/about" />`);
-    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/about"`);
+    expect(html).toContain(`hreflang="hu-HU" href="https://${HU_HOST}/about"`);
     expect(html).toContain(`hreflang="en" href="https://${EN_HOST}/about"`);
   });
 
@@ -11451,7 +11454,7 @@ describe("seo: multi-host (EN canonical configured)", () => {
       acceptLanguage: "hu-HU",
     });
     expect(huHtml).toContain(`<link rel="canonical" href="https://${HU_HOST}${huPath}" />`);
-    expect(huHtml).toContain(`hreflang="hu" href="https://${HU_HOST}${huPath}"`);
+    expect(huHtml).toContain(`hreflang="hu-HU" href="https://${HU_HOST}${huPath}"`);
     expect(huHtml).toContain(`hreflang="en" href="https://${EN_HOST}${enPath}"`);
 
     // Visitor lands on the EN slug on the EN host — canonical points to the
@@ -11462,7 +11465,7 @@ describe("seo: multi-host (EN canonical configured)", () => {
       isRsvp: false,
     });
     expect(enHtml).toContain(`<link rel="canonical" href="https://${EN_HOST}${enPath}" />`);
-    expect(enHtml).toContain(`hreflang="hu" href="https://${HU_HOST}${huPath}"`);
+    expect(enHtml).toContain(`hreflang="hu-HU" href="https://${HU_HOST}${huPath}"`);
     expect(enHtml).toContain(`hreflang="en" href="https://${EN_HOST}${enPath}"`);
   });
 
@@ -11480,7 +11483,7 @@ describe("seo: multi-host (EN canonical configured)", () => {
       `<link rel="canonical" href="https://${EN_HOST}/tools/wedding-budget-calculator" />`,
     );
     expect(html).toContain(
-      `hreflang="hu" href="https://${HU_HOST}/eszkozok/eskuvo-koltsegvetes-kalkulator"`,
+      `hreflang="hu-HU" href="https://${HU_HOST}/eszkozok/eskuvo-koltsegvetes-kalkulator"`,
     );
   });
 
@@ -11506,7 +11509,7 @@ describe("seo: multi-host (EN canonical configured)", () => {
       pathname: "/about",
       isRsvp: false,
     });
-    expect(html).toContain(`hreflang="hu" href="https://${HU_HOST}/about"`);
+    expect(html).toContain(`hreflang="hu-HU" href="https://${HU_HOST}/about"`);
     expect(html).toContain(`hreflang="en" href="https://${EN_HOST}/about"`);
   });
 });
@@ -11658,7 +11661,7 @@ describe("seo: pure renderRobotsTxt / renderSitemapXml", () => {
 
   test("renderSitemapXml lists every public path on the canonical host", () => {
     const urls = (renderSitemapXml("weddly.hu").match(/<loc>([^<]+)<\/loc>/g) ?? []).length;
-    expect(urls).toBeGreaterThanOrEqual(8); // /, /signup, /vendors, /about, /login, /privacy, /terms, /imprint, /subscription-terms
+    expect(urls).toBeGreaterThanOrEqual(8); // /, /signup, /suppliers, /about, /login, /privacy, /terms, /imprint, /subscription-terms
   });
 });
 
@@ -11692,7 +11695,7 @@ describe("seo: per-route uniqueness", () => {
   // after the user picks HU via the locale switcher.
   const PUBLIC_ROUTES = [
     { path: "/about", titleSnippet: "About" },
-    { path: "/vendors", titleSnippet: "For vendors" },
+    { path: "/suppliers", titleSnippet: "For suppliers" },
     { path: "/privacy", titleSnippet: "Privacy" },
     { path: "/terms", titleSnippet: "Terms" },
     { path: "/imprint", titleSnippet: "Imprint" },

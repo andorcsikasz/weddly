@@ -15,7 +15,7 @@
 
 import { CONFIG } from "../../config";
 import { db, now } from "../../db";
-import { sendEmail } from "../../lib/mailer";
+import { sendEmail, type SendEmailInput } from "../../lib/mailer";
 import { reportError } from "../../lib/observability";
 import { makeOpenTrackingToken } from "../../routes/email_track";
 import { type EmailKind, type EmailSender, KIND_CATEGORY, senderForKind } from "./kinds";
@@ -30,6 +30,14 @@ import {
   reservationMatches,
   reserveAdminEmailSend,
 } from "./admin_dedupe";
+
+/** Deliver an exceptional transactional message through the same module
+ * boundary as templated product mail. Legal case notifications have dynamic
+ * case text and therefore do not map to a marketing/lifecycle EmailKind, but
+ * callers must still not bypass this central dispatch boundary. */
+export async function sendTransactionalMessage(input: SendEmailInput): Promise<void> {
+  await sendEmail(input);
+}
 
 /** Map a raw `users.locale` value to one of the two locales our templates
  *  cover. We have HU + EN copy today; anything else (DE/FR/ES …) renders as

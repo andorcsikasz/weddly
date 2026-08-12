@@ -770,7 +770,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
                 for least often. */}
             {listing && (
               <Link
-                to={`/vendors/${listing.id}`}
+                to={`/suppliers/${listing.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`hidden md:inline-flex ${HEADER_ICON_BTN}`}
@@ -980,7 +980,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
                     key: "preview",
                     label: t("vendor_home.preview_open"),
                     icon: <ExternalLink size={18} aria-hidden="true" />,
-                    to: `/vendors/${listing.id}`,
+                    to: `/suppliers/${listing.id}`,
                     external: true,
                   },
                   {

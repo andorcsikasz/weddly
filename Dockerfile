@@ -8,7 +8,7 @@ COPY package.json bun.lock* ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 
-RUN bun install --frozen-lockfile || bun install
+RUN bun install --frozen-lockfile
 
 COPY shared   ./shared
 COPY backend  ./backend
@@ -19,9 +19,15 @@ COPY frontend ./frontend
 ARG VITE_PLAUSIBLE_DOMAIN
 ARG VITE_SENTRY_DSN
 ARG VITE_GOOGLE_CLIENT_ID
+ARG VITE_APPLE_CLIENT_ID
+ARG VITE_APPLE_REDIRECT_URI
+ARG VITE_EN_CANONICAL_HOST
 ENV VITE_PLAUSIBLE_DOMAIN=${VITE_PLAUSIBLE_DOMAIN} \
     VITE_SENTRY_DSN=${VITE_SENTRY_DSN} \
-    VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
+    VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID} \
+    VITE_APPLE_CLIENT_ID=${VITE_APPLE_CLIENT_ID} \
+    VITE_APPLE_REDIRECT_URI=${VITE_APPLE_REDIRECT_URI} \
+    VITE_EN_CANONICAL_HOST=${VITE_EN_CANONICAL_HOST}
 RUN cd frontend && bun run build
 
 # --- runtime image ---

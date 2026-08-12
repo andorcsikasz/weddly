@@ -304,7 +304,7 @@ export default function PublicVendorPage() {
   }, [supplierId]);
 
   useEffect(() => {
-    if (data?.detail) document.title = `${data.detail.name} · Weddly`;
+    if (data?.detail) document.title = `${data.detail.name} · Wēddly`;
   }, [data]);
 
   // Once the page is rendered, a `?review=1` link scrolls the reviews section
@@ -345,7 +345,7 @@ export default function PublicVendorPage() {
           </h1>
           <p className="mt-2 text-ink-600 dark:text-umber-200">{t("publicVendor.notFoundBody")}</p>
           <Link
-            to="/vendors"
+            to="/suppliers"
             className="mt-6 inline-flex rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900"
           >
             {t("publicVendor.browseCta")}
@@ -604,7 +604,7 @@ export default function PublicVendorPage() {
           <Link to="/" className="hover:text-ink-800 dark:hover:text-paper-100">
             {t("publicVendor.footerHome")}
           </Link>
-          <Link to="/vendors" className="hover:text-ink-800 dark:hover:text-paper-100">
+          <Link to="/suppliers" className="hover:text-ink-800 dark:hover:text-paper-100">
             {t("publicVendor.footerVendors")}
           </Link>
           <Link to="/about" className="hover:text-ink-800 dark:hover:text-paper-100">

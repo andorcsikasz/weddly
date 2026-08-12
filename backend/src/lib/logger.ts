@@ -11,6 +11,9 @@
 // requestId + userId). The top-level `log` here is for boot/cron paths
 // that don't have a request context.
 
+import { createHash } from "node:crypto";
+import { redactTokensInPath } from "./log_redact";
+
 export type Level = "debug" | "info" | "warn" | "error";
 
 interface BaseLogger {
@@ -27,12 +30,59 @@ const MIN_RANK = LEVEL_RANK[ENV_LEVEL] ?? LEVEL_RANK.info;
 
 function emit(level: Level, msg: string, fields: Record<string, unknown>) {
   if (LEVEL_RANK[level] < MIN_RANK) return;
-  const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...fields });
+  // Test-only mail capture deliberately exposes the generated message to the
+  // assertions. Every real log path goes through recursive field scrubbing.
+  const safeFields =
+    msg === "mailer.dev_print" && process.env.NODE_ENV === "test"
+      ? fields
+      : redactLogFields(fields);
+  const line = JSON.stringify({
+    ts: new Date().toISOString(),
+    level,
+    msg,
+    ...(safeFields as Record<string, unknown>),
+  });
   // We deliberately use console here so this is the *only* place writing log
   // bytes — everything else goes through this module.
   if (level === "error") console.error(line);
   else if (level === "warn") console.warn(line);
   else console.log(line);
+}
+
+const SECRET_KEY =
+  /(?:password|passwd|token|secret|authorization|cookie|invite_code|household_code)/i;
+const CONTENT_KEY = /^(?:body|text|html|content|upstream_response)$/i;
+const EMAIL_KEY = /(?:^|_)(?:email|recipient|to|from|reply_to)(?:$|_)/i;
+const EMAIL_IN_TEXT = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+
+function fingerprint(value: string): string {
+  return `sha256:${createHash("sha256").update(value.trim().toLowerCase()).digest("hex").slice(0, 12)}`;
+}
+
+function scrubString(value: string): string {
+  return redactTokensInPath(value).replace(EMAIL_IN_TEXT, (email) => fingerprint(email));
+}
+
+export function redactLogFields(value: unknown, key = "", depth = 0): unknown {
+  if (depth > 8) return "[truncated]";
+  if (SECRET_KEY.test(key) || CONTENT_KEY.test(key)) return "[redacted]";
+  if (typeof value === "string") {
+    if (EMAIL_KEY.test(key) || EMAIL_IN_TEXT.test(value)) {
+      EMAIL_IN_TEXT.lastIndex = 0;
+      return EMAIL_KEY.test(key) ? fingerprint(value) : scrubString(value);
+    }
+    return value;
+  }
+  if (Array.isArray(value)) return value.map((item) => redactLogFields(item, key, depth + 1));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([childKey, child]) => [
+        childKey,
+        redactLogFields(child, childKey, depth + 1),
+      ]),
+    );
+  }
+  return value;
 }
 
 function serializeError(e: unknown): Record<string, unknown> {

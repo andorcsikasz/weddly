@@ -348,16 +348,8 @@ describe("<RegisterPage>", () => {
     installFetch((url) => {
       if (url.endsWith("/api/auth/register")) {
         return jsonResponse(200, {
-          token: "t.sig",
-          user: {
-            id: 3,
-            email: "verify-me@x.com",
-            full_name: "Verify Me",
-            role: "user",
-            verified_email: false,
-            status: "active",
-            created_at: 0,
-          },
+          pending: true,
+          email: "verify-me@x.com",
         });
       }
       return jsonResponse(200, { ok: true });
@@ -380,7 +372,7 @@ describe("<RegisterPage>", () => {
       expect(screen.getByText(/check your inbox/i)).toBeInTheDocument();
     });
     expect(screen.getByText("verify-me@x.com")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /continue to planning/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /resend/i })).toBeInTheDocument();
   });
 });
 
@@ -763,6 +755,8 @@ describe("<OnboardingWizard>", () => {
         budget_min: "4000000",
         budget_max: "6000000",
         currency: "HUF",
+        country: "HU",
+        partner_email: "",
         style_tags: [],
       }),
     );
@@ -779,9 +773,9 @@ describe("<OnboardingWizard>", () => {
       </ProviderStack>,
     );
     await waitFor(() => screen.getByLabelText(/bride/i));
-    // Click Next three times: 0→1→2→3 (each step is tbd-valid). Step 3 is
-    // the final step where the Next button is replaced by the Finish button.
-    for (let i = 0; i < 3; i++) {
+    // Advance through date, guest count, budget and country to the optional
+    // partner-invite step, where Next is replaced by Finish.
+    for (let i = 0; i < 5; i++) {
       fireEvent.click(screen.getByRole("button", { name: /^next$/i }));
       // Allow re-render before next click.
       await flush();

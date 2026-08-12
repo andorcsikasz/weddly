@@ -1,6 +1,7 @@
 import { isUiLocale, UI_LOCALES, type UiLocale } from "@shared/locales";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import en from "../locales/en";
+import hu from "../locales/hu";
 import type { LocaleMessages, PartialLocaleMessages } from "../locales/keys";
 
 export type Locale = UiLocale;
@@ -41,7 +42,7 @@ const STORAGE_KEY = "weddly.locale";
 // promise is cached per-locale so a back-and-forth flip doesn't re-fetch.
 // Real non-EN users pay one extra network round trip on the I18nProvider
 // mount; everyone on the EN default saves the full translation chunk.
-const TREES: Partial<Record<Locale, PartialLocaleMessages>> = { en };
+const TREES: Partial<Record<Locale, PartialLocaleMessages>> = { en, hu };
 const lazyPromises: Partial<Record<Locale, Promise<PartialLocaleMessages>>> = {};
 
 /** The dynamic import per lazy locale. Written as a map rather than a ternary
@@ -109,17 +110,18 @@ interface I18nState {
 const I18nContext = createContext<I18nState | null>(null);
 
 function detectInitial(): Locale {
-  // EN is the default everywhere. The product is positioned as
-  // international-first; navigators no longer auto-flip the UI. A user who
-  // explicitly picks a language via the locale switcher saves the choice to
-  // localStorage and it sticks across visits.
+  // An explicit language-switcher choice wins. Otherwise use the locale baked
+  // into the server-rendered shell: tryweddly.com's canonical public HTML sets
+  // this to HU, while an optional dedicated EN host can set it to EN without
+  // changing authenticated users' saved preference.
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (isUiLocale(saved)) return saved;
   } catch {
     // localStorage may be blocked
   }
-  return "en";
+  const shellLocale = document.documentElement.dataset.defaultLocale;
+  return isUiLocale(shellLocale) ? shellLocale : "en";
 }
 
 /** What the user sees when a key resolves in NO tree, not even EN.

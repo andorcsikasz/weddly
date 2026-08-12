@@ -4,7 +4,7 @@
 // in place from the first request.
 
 import * as Sentry from "@sentry/bun";
-import { log } from "./logger";
+import { log, redactLogFields } from "./logger";
 
 const DSN = process.env.SENTRY_DSN ?? "";
 const RELEASE = process.env.RAILWAY_GIT_COMMIT_SHA ?? process.env.GIT_SHA ?? undefined;
@@ -27,6 +27,10 @@ export function initObservability() {
     // first impression in Sentry. Flip on via SENTRY_TRACES_SAMPLE_RATE if
     // you want spans later.
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0),
+    sendDefaultPii: false,
+    beforeSend(event) {
+      return redactLogFields(event) as typeof event;
+    },
   });
   log.info("sentry.initialized", { environment: ENVIRONMENT, release: RELEASE });
 }
@@ -51,15 +55,24 @@ export function captureException(err: unknown, ctx: CaptureContext = {}) {
   });
 }
 
+export async function flushObservability(timeoutMs = 2_000): Promise<boolean> {
+  if (!initialized || !DSN) return true;
+  return Sentry.flush(timeoutMs);
+}
+
 // Process-level safety net for anything that escapes the per-request handler.
-process.on("unhandledRejection", (reason) => {
-  log.error("process.unhandled_rejection", reason);
-  captureException(reason, { extra: { kind: "unhandledRejection" } });
-});
-process.on("uncaughtException", (err) => {
-  log.error("process.uncaught_exception", err);
-  captureException(err, { extra: { kind: "uncaughtException" } });
-});
+if (process.env.NODE_ENV !== "test") {
+  const fatal = (kind: string, err: unknown) => {
+    log.error(`process.${kind}`, err);
+    captureException(err, { extra: { kind } });
+    // Continuing after an uncaught error can leave SQLite or in-memory worker
+    // state inconsistent. Flush telemetry briefly, then let Railway restart a
+    // clean process with a non-zero exit status.
+    void flushObservability().finally(() => process.exit(1));
+  };
+  process.on("unhandledRejection", (reason) => fatal("unhandled_rejection", reason));
+  process.on("uncaughtException", (err) => fatal("uncaught_exception", err));
+}
 
 /**
  * Single chokepoint for fire-and-forget error reporting: structured log line

@@ -295,7 +295,7 @@ function PrivacyBodyForLocale({
         <li>{strings.legal_bases_legal_obligation}</li>
       </ul>
 
-      <H2>{strings.guest_data_title}</H2>
+      <H2 id="guest-data">{strings.guest_data_title}</H2>
       <p>{strings.guest_data_body}</p>
 
       {/* The second Art. 14 case: businesses we listed from public sources.
@@ -353,6 +353,7 @@ function PrivacyBodyForLocale({
         <li>{strings.subprocessors_pinterest}</li>
         <li>{strings.subprocessors_sentry}</li>
         <li>{strings.subprocessors_google}</li>
+        <li>{strings.subprocessors_other}</li>
       </ul>
 
       {/* Google account data gets its own section rather than one more bullet
@@ -401,6 +402,19 @@ function PrivacyBodyForLocale({
         <li>{strings.cookies_saved_suppliers}</li>
         <li>{strings.cookies_onboarding_draft}</li>
       </ul>
+      <button
+        type="button"
+        className="mt-4 underline underline-offset-2"
+        onClick={() =>
+          (
+            window as Window & {
+              Cookiebot?: { renew: () => void };
+            }
+          ).Cookiebot?.renew()
+        }
+      >
+        {strings.cookies_settings}
+      </button>
 
       <H2>{strings.third_parties_title}</H2>
       <p>{strings.third_parties_body}</p>

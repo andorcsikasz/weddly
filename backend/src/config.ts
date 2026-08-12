@@ -32,7 +32,7 @@ if (
 // signs up never receives their verification email. Better to fail loudly at
 // deploy than silently strand users in unverified state. Dev/test keeps the
 // fallback so local runs don't need EMAIL_FROM set.
-if (IS_PROD && process.env.RESEND_API_KEY && (process.env.EMAIL_FROM ?? "") === "") {
+if (REQUIRE_PROD_HARDENING && process.env.RESEND_API_KEY && (process.env.EMAIL_FROM ?? "") === "") {
   console.error(
     "[config] FATAL: RESEND_API_KEY is set but EMAIL_FROM is missing. " +
       "Verify a domain in Resend and set EMAIL_FROM to a sender on that domain " +
@@ -40,13 +40,87 @@ if (IS_PROD && process.env.RESEND_API_KEY && (process.env.EMAIL_FROM ?? "") === 
   );
   process.exit(1);
 }
-if (IS_PROD && process.env.EMAIL_FROM === DEFAULT_EMAIL_FROM) {
+if (REQUIRE_PROD_HARDENING && process.env.EMAIL_FROM === DEFAULT_EMAIL_FROM) {
   console.error(
     "[config] FATAL: EMAIL_FROM is still the resend.dev fallback in production. " +
       "Resend will only deliver to the inbox that owns the API key — every user " +
       "verification will silently fail. Set EMAIL_FROM to a verified-domain sender.",
   );
   process.exit(1);
+}
+
+if (REQUIRE_PROD_HARDENING) {
+  let publicUrl: URL;
+  try {
+    publicUrl = new URL(process.env.FRONTEND_BASE_URL ?? "");
+  } catch {
+    console.error("[config] FATAL: FRONTEND_BASE_URL must be an absolute HTTPS production URL.");
+    process.exit(1);
+  }
+  if (
+    publicUrl.protocol !== "https:" ||
+    publicUrl.hostname === "localhost" ||
+    publicUrl.hostname === "127.0.0.1"
+  ) {
+    console.error("[config] FATAL: FRONTEND_BASE_URL must be a non-local HTTPS URL in production.");
+    process.exit(1);
+  }
+  if (!(process.env.RESEND_API_KEY ?? "").trim()) {
+    console.error(
+      "[config] FATAL: RESEND_API_KEY is required in production; account verification and recovery depend on email delivery.",
+    );
+    process.exit(1);
+  }
+  if (!(process.env.ADMIN_EMAILS ?? "").trim()) {
+    console.error(
+      "[config] FATAL: ADMIN_EMAILS must be explicitly configured in production; no personal-address default is allowed.",
+    );
+    process.exit(1);
+  }
+  if (!(process.env.SUPPORT_EMAIL ?? "").trim()) {
+    console.error(
+      "[config] FATAL: SUPPORT_EMAIL must be explicit in production so replies, privacy requests and complaints reach a monitored mailbox.",
+    );
+    process.exit(1);
+  }
+  if (
+    (process.env.GOOGLE_CLIENT_SECRET ?? "").trim() &&
+    !(process.env.DATA_ENCRYPTION_KEYS ?? "").trim()
+  ) {
+    console.error(
+      "[config] FATAL: DATA_ENCRYPTION_KEYS is required when Google Calendar is enabled; OAuth tokens must not share JWT_SECRET.",
+    );
+    process.exit(1);
+  }
+  if ((process.env.DATA_ENCRYPTION_KEYS ?? "").trim()) {
+    const keys = (process.env.DATA_ENCRYPTION_KEYS ?? "").split(",");
+    if (
+      keys.some((entry) => {
+        const separator = entry.indexOf(":");
+        const id = separator > 0 ? entry.slice(0, separator).trim() : "";
+        const secret = separator > 0 ? entry.slice(separator + 1).trim() : "";
+        return !/^[A-Za-z0-9_-]{1,24}$/.test(id) || secret.length < 32;
+      })
+    ) {
+      console.error(
+        "[config] FATAL: DATA_ENCRYPTION_KEYS must be comma-separated key-id:secret entries; each secret must be at least 32 characters.",
+      );
+      process.exit(1);
+    }
+  }
+  const requireMatchingBuildValue = (serverName: string, buildName: string) => {
+    const serverValue = (process.env[serverName] ?? "").trim();
+    const buildValue = (process.env[buildName] ?? "").trim();
+    if (serverValue !== buildValue) {
+      console.error(
+        `[config] FATAL: ${serverName} and ${buildName} must either both be unset or match exactly.`,
+      );
+      process.exit(1);
+    }
+  };
+  requireMatchingBuildValue("GOOGLE_CLIENT_ID", "VITE_GOOGLE_CLIENT_ID");
+  requireMatchingBuildValue("APPLE_CLIENT_ID", "VITE_APPLE_CLIENT_ID");
+  requireMatchingBuildValue("EN_CANONICAL_HOST", "VITE_EN_CANONICAL_HOST");
 }
 
 /** The From identity for mail an admin sends by hand from `/app/admin/*`.
@@ -80,6 +154,9 @@ export const CONFIG = {
   dbPath: process.env.DB_PATH ?? "./data/weddly.db",
   uploadsDir: process.env.UPLOADS_DIR ?? "./data/uploads",
   jwtSecret: process.env.JWT_SECRET ?? DEV_JWT_SECRET,
+  /** Rotation-capable keyring for OAuth and other encrypted application data.
+   *  First key encrypts; remaining keys decrypt historical ciphertext. */
+  dataEncryptionKeys: process.env.DATA_ENCRYPTION_KEYS ?? "",
   /** 30 days. */
   sessionTtlMs: 1000 * 60 * 60 * 24 * 30,
   frontendBaseUrl: process.env.FRONTEND_BASE_URL ?? "http://localhost:5173",
@@ -98,10 +175,16 @@ export const CONFIG = {
   supportEmail: SUPPORT_EMAIL,
   /** Comma-separated email allowlist. Members get `is_admin: true` on the User
    *  DTO and access to /app/admin/* routes. Reversible via env edit. */
-  adminEmails: (process.env.ADMIN_EMAILS ?? "andor.csikasz@gmail.com,saraazawiasa@gmail.com")
+  adminEmails: (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
+  /** Independent legal/accounting release gate for every path that creates a
+   *  Stripe payment. Production is fail-closed until counsel/accountant review,
+   *  operator registration, invoicing/VAT setup and checkout copy are signed
+   *  off. Development and tests keep the normal payment fixtures usable. */
+  legalPaidLaunchApproved:
+    !REQUIRE_PROD_HARDENING || process.env.LEGAL_PAID_LAUNCH_APPROVED === "1",
   /** Google OAuth web-client id (e.g. "1234-abc.apps.googleusercontent.com").
    *  When empty, `/api/auth/google` returns 503 so the rest of the app keeps
    *  working in dev without Google credentials. Same value is baked into the

@@ -324,6 +324,7 @@ function uploadMultipartWithProgress<T>(
   return new Promise<T>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open(method, path);
+    xhr.withCredentials = true;
     const token = getToken();
     if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     if (onProgress) {
@@ -376,6 +377,7 @@ async function uploadMultipart<T>(
   const token = getToken();
   const res = await fetch(path, {
     method,
+    credentials: "include",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: form,
   });
@@ -2740,7 +2742,8 @@ export const vendorAuthApi = {
     contact_phone?: string;
     website?: string;
     privacy_version: string;
-    terms_version: string;
+    vendor_terms_version: string;
+    highlighted_terms_accepted: true;
     locale?: string;
     referrer?: string;
     utm_source?: string;
@@ -2769,7 +2772,8 @@ export const vendorAuthApi = {
     contact_phone?: string;
     website?: string;
     privacy_version: string;
-    terms_version: string;
+    vendor_terms_version: string;
+    highlighted_terms_accepted: true;
     locale?: string;
     referrer?: string;
     utm_source?: string;

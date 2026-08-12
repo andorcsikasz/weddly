@@ -42,13 +42,14 @@ const de: LocaleMessages = {
     back_home_aria: "Weddly, zurück zur Startseite",
   },
   app: {
-    name: "Weddly",
-    tagline: "Planen Sie Ihre Hochzeit gemeinsam, an einem ruhigen Ort.",
+    name: "Wēddly",
+    tagline: "Stressarme Hochzeitsplanung mit einem gemeinsamen Live-Plan für Sie beide.",
   },
   seo: {
-    home_title: "Weddly · Ihre ganze Hochzeit in einem gemeinsamen Arbeitsbereich",
+    home_title:
+      "Wēddly · Stressarme Hochzeitsplanung mit einem gemeinsamen Live-Plan für Sie beide.",
     home_description:
-      "Budget, Gästeliste, RSVP-Links, visueller Sitzplan und druckfertige Karten in einem gemeinsamen Arbeitsbereich. In Minuten eingerichtet, und die gewonnene Zeit gehört Ihnen beiden.",
+      "Stressarme Hochzeitsplanung mit einem gemeinsamen Live-Plan für Sie beide. Zwei Zugänge halten Budget, Gästeliste, Zusagen und Sitzplan synchron.",
     login_title: "Anmelden · Weddly",
     login_description: "Melden Sie sich in Ihrem Weddly-Arbeitsbereich für Paare an.",
     register_title: "Gemeinsamen Arbeitsbereich anlegen · Weddly",
@@ -2167,8 +2168,9 @@ const de: LocaleMessages = {
     back_home: "Zurück zur Startseite",
   },
   landing: {
-    hero_title: "Ihre ganze\nHochzeit,\nan einem Ort.",
-    hero_sub: "",
+    hero_title: "Stressarme Hochzeitsplanung,\nmit einem gemeinsamen Live-Plan für Sie beide.",
+    hero_sub:
+      "Zwei Zugänge. Ein gemeinsamer Arbeitsbereich. Budget, Gästeliste, Zusagen und Sitzplan sind für Sie beide immer aktuell.",
     cta_signup: "Planung starten",
     cta_login: "Anmelden",
     cta_open_app: "Anmelden",
@@ -2618,6 +2620,12 @@ const de: LocaleMessages = {
       "Wir haben eine Bestätigungsmail an die Adresse unten geschickt. Bestätigen Sie sie und stellen Sie danach Ihr Profil in wenigen Schritten fertig.",
     success_body_verified: "Alles bereit. Stellen Sie Ihr Profil in wenigen Schritten fertig.",
     google_continue_as: "Sie fahren mit Google als {email} fort.",
+    legal_accept_prefix: "Ich habe die",
+    legal_accept_link: "Abonnementbedingungen für Anbieter (ÁSZF)",
+    legal_accept_suffix: "gelesen, nehme sie ausdrücklich an und bestätige den Datenschutzhinweis.",
+    highlighted_accept:
+      "Ich akzeptiere gesondert die hervorgehobenen Klauseln zu automatischer Verlängerung, Haftungsbegrenzung, Gebührenänderungen, Änderungen, Gerichtsstand und gesponserten Platzierungen.",
+    legal_accept_required: "Bitte bestätigen Sie beide Erklärungen, um das Konto zu erstellen.",
     submit: "Konto anlegen",
     continue_to_onboarding: "Weiter",
   },
@@ -6112,7 +6120,7 @@ const de: LocaleMessages = {
     taxonomy_edit_group_title: "Gruppe bearbeiten",
     taxonomy_edit_category_title: "Kategorie bearbeiten",
     waitlist_title: "Dienstleister-Warteliste",
-    waitlist_sub: "Bewerbungen über das Formular unter /vendors.",
+    waitlist_sub: "Bewerbungen über das Formular unter /suppliers.",
     waitlist_filter_new: "Eingang",
     waitlist_filter_under_review: "In Prüfung",
     waitlist_filter_accepted: "Angenommen",
@@ -6362,7 +6370,7 @@ const de: LocaleMessages = {
     flag_tpl_duplicate_label: "Doppeltes Konto",
     flag_tpl_duplicate_body:
       "Unser System zeigt, dass Sie bereits ein weiteres aktives Konto mit derselben E-Mail-Adresse oder ähnlichen Daten haben. Bitte sagen Sie uns, welches bleiben soll, sonst löschen wir das Duplikat in 7 Tagen.",
-    flag_tpl_vendor_abuse_label: "Missbrauch des /vendors-Formulars",
+    flag_tpl_vendor_abuse_label: "Missbrauch des /suppliers-Formulars",
     flag_tpl_vendor_abuse_body:
       "Wir haben in Ihrem Konto einen Missbrauch des Dienstleister-Formulars bemerkt (wiederholte Einreichungen, nicht existierende Betriebe oder Inhalte ohne Bezug). Bitte erklären Sie uns das, sonst löschen wir Ihr Konto in 7 Tagen.",
     flag_tpl_offensive_label: "Beleidigende Inhalte",
@@ -7402,6 +7410,9 @@ const de: LocaleMessages = {
     meal_section_title: "Menü",
     dietary_section_title: "Lebensmittelallergien",
     dietary_other_placeholder: "Etwas anderes? Schreiben Sie es hier",
+    dietary_privacy_notice:
+      "Freiwillige Gesundheitsangabe. Nur die Gastgeber und ihre bevollmächtigte Planung nutzen sie für Verpflegung und Veranstaltungssicherheit.",
+    dietary_privacy_link: "Umgang mit Gästedaten",
     accommodation_section_title: "Wo möchten Sie übernachten?",
     accommodation_none: "Keine Unterkunft nötig",
     guest_message_label: "Nachricht an das Paar",
@@ -7802,6 +7813,7 @@ const de: LocaleMessages = {
     draft_banner_body:
       "Dieser Text beschreibt ehrlich, was Weddly heute tut, ist aber noch nicht von einem Anwalt geprüft. Vor dem Start von 1.0 sieht ein ungarischer Anwalt ihn durch und stellt ihn fertig.",
     version_label: "Version",
+    report_illegal_content: "Illegale Inhalte melden",
   },
   privacy: {
     seo_title: "Datenschutzerklärung · Weddly",
@@ -7915,6 +7927,8 @@ const de: LocaleMessages = {
       "Sentry (USA), Erfassung von Anwendungsfehlern. Im Produktivbetrieb noch nicht aktiviert; wenn wir es einschalten, aktualisieren wir diese Seite. Es würde pseudonymisierte Fehlerprotokolle ohne direkte Identifikatoren erhalten.",
     subprocessors_google:
       "Google Ireland Ltd. / Google LLC (USA), drei getrennte Funktionen: Anmeldung mit Google (wir erhalten Ihren Namen, Ihre E-Mail-Adresse und Ihre Google-Konto-ID), die im nächsten Abschnitt beschriebene optionale Google-Kalender-Synchronisierung sowie Abfragen bei Google Maps Places, die der Reihenfolge im öffentlichen Dienstleisterkatalog dienen (nur Firmennamen, nie Ihre Daten). Grundlage der Übermittlung sind DPF/SCC.",
+    subprocessors_other:
+      "Weitere funktionsbezogene Anbieter können Stripe, Cloudflare R2, Anthropic, Apple, DeepL, MaxMind und Cookiebot sowie—nur nach Statistik-Einwilligung—Plausible, Google Analytics/Tag Manager und Microsoft Clarity sein. Sentry erhält nur bei Aktivierung bereinigte Fehlerdaten.",
     google_data_title: "Daten aus dem Google-Konto (Anmeldung und Kalendersynchronisierung)",
     google_data_body:
       "Beide Funktionen sind optional, und keine startet, bevor Sie sich durch Googles eigenen Einwilligungsbildschirm geklickt haben. Für ein Konto, das nie verbunden wird, gilt nichts von dem Folgenden.",
@@ -7932,6 +7946,7 @@ const de: LocaleMessages = {
     cookies_title: "Cookies und lokale Speicherung",
     cookies_intro:
       "Weddly setzt keine Tracking-Cookies. Die einzige Browser-Speicherung, die wir nutzen, liegt im localStorage auf Ihrem Gerät und gelangt damit nie zu Dritten:",
+    cookies_settings: "Cookie-Auswahl prüfen oder widerrufen",
     cookies_locale:
       "weddly.locale, merkt sich, ob Sie die ungarische oder die englische Oberfläche bevorzugen.",
     cookies_verify_dismiss:
@@ -8146,18 +8161,18 @@ const de: LocaleMessages = {
       "Wir aktualisieren diese Bedingungen von Zeit zu Zeit. Kleinere sprachliche Korrekturen nehmen wir ohne Ankündigung vor. Bei wesentlichen Änderungen (eine neue Gebühr, ein neuer Auftragsverarbeiter, eine Einschränkung unserer Pflichten) informieren wir Sie mindestens 14 Tage vor Inkrafttreten per E-Mail und verlangen, dass Sie die aktualisierten Bedingungen in der App annehmen, ohne Annahme bleiben Teile des Dienstes nicht zugänglich. Zum Ende der offenen Beta erhalten alle Beta-Nutzer eine gesonderte E-Mail zur umfassenden Neufassung.",
     law_title: "Anwendbares Recht",
     law_body:
-      "Für diese Bedingungen gilt ungarisches Recht, zusammen mit den Datenschutz- und Verbraucherschutzvorschriften der EU (insbesondere DSGVO, DSA und EU 524/2013). Streitigkeiten versuchen wir zuerst per E-Mail zu klären. Gelingt das nicht, ist das in Ungarn zuständige Gericht berufen; Ihr verbraucherschutzrechtliches Wahlrecht hinsichtlich des Gerichtsstands bleibt davon unberührt.",
+      "Für diese Bedingungen gelten ungarisches Recht sowie die anwendbaren Datenschutz- und Verbraucherschutzvorschriften der EU, insbesondere DSGVO und DSA. Streitigkeiten versuchen wir zuerst per E-Mail zu klären. Zwingende Verbraucherrechte und Gerichtsstände am gewöhnlichen Aufenthalt bleiben unberührt.",
     contact_title: "Fragen?",
     contact_body: "Schreiben Sie an hello@tryweddly.com oder andor.csikasz@gmail.com.",
     en_section_label: "English",
   },
   subscription_terms: {
-    seo_title: "Abo-Bedingungen für Dienstleister (AGB) v1.1 · Weddly",
+    seo_title: "Abo-Bedingungen für Dienstleister (AGB) · Weddly",
     seo_description:
       "Weddlys AGB für Dienstleister: Entgelte, Abrechnung, Verlängerung, Haftung, Ranking, Beschwerden, ungarisches und EU-Recht.",
     page_title: "Abo-Bedingungen für Dienstleister (AGB)",
     last_updated_label: "Version",
-    last_updated_date: "1.1 · gültig ab 2026-07-28",
+    last_updated_date: "gültig ab 2026-08-12",
     intro:
       "Diese Allgemeinen Geschäftsbedingungen (AGB) regeln das Dienstleister-Abo von Weddly. Sie werden Bestandteil des Vertrags zwischen den Parteien, sobald der Dienstleister sie bei der Registrierung ausdrücklich mit einem Klick auf „Ich akzeptiere“ annimmt. Nach §6:78(2) des ungarischen Zivilgesetzbuchs werden folgende Klauseln ausdrücklich hervorgehoben und mit gesonderter Aufmerksamkeit angenommen: Haftungsbeschränkung, automatische Verlängerung, Entgeltänderungen, einseitige Änderung der AGB, Gerichtsstand und die Kennzeichnung gesponserter Platzierungen.",
     operator_title: "Betreiber und Vertragsparteien",
@@ -8247,9 +8262,9 @@ const de: LocaleMessages = {
     governing_law_title: "Anwendbares Recht und Gerichtsstand",
     governing_law_body:
       "Für diese Bedingungen gilt ungarisches Recht (insbesondere Zivilgesetzbuch, Rechnungslegungsgesetz, Umsatzsteuergesetz, das ungarische Ektv. und die Regierungsverordnung 45/2014.) zusammen mit den einschlägigen EU-Verordnungen (DSGVO, DSA, P2B-Verordnung 2019/1150, ePrivacy). Die Parteien versuchen zunächst eine Lösung über die Abschnitte Internes Beschwerdemanagement und Mediation. Gelingt das nicht, sind die ungarischen Gerichte zuständig; ein Dienstleister mit Verbrauchereigenschaft behält das Recht, vor dem Gericht seines Wohnsitzes zu klagen.",
-    odr_title: "Online-Streitbeilegung (EU 524/2013)",
+    odr_title: "Alternative Streitbeilegung",
     odr_body:
-      "Dienstleister mit Verbrauchereigenschaft können auch eine Online-Streitbeilegung über die Plattform der Europäischen Kommission einleiten: https://ec.europa.eu/consumers/odr. Die Plattform unterstützt die alternative Streitbeilegung zwischen den Parteien. Ungarische Verbraucherbeschwerden können außerdem bei der Schlichtungsstelle Budapest (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) oder bei der Schlichtungsstelle des Komitats Pest (panaszrendezes.hu) eingereicht werden.",
+      "Die EU-Plattform zur Online-Streitbeilegung wurde am 20. Juli 2025 eingestellt. Verbraucher können sich an die zuständige ungarische Schlichtungsstelle wenden; aktuelle Kontaktdaten stehen im Impressum und in unserer Antwort auf eine Beschwerde. Zwingende Verbraucherrechte bleiben unberührt.",
     contact_title: "Kontakt",
     contact_body:
       "Alle Fragen zu den AGB und zu dem Dienst, den Weddly Dienstleistern bietet, richten Sie bitte an hello@tryweddly.com; Beschwerden, Mediationsanfragen und DSA-Meldungen können auch an panasz@weddly.xyz gehen. Die Identifikationsangaben des Betreibers nach §4 Ektv. finden Sie im Impressum.",
@@ -9039,7 +9054,8 @@ const de: LocaleMessages = {
     err_privacy: "Sie müssen die Datenschutzerklärung akzeptieren, um fortzufahren.",
     err_plan: "Bitte wählen Sie einen Tarif, um fortzufahren.",
     features_title: "Alles, was ein Hochzeitsplaner wirklich braucht",
-    features_tagline: "",
+    features_tagline:
+      "Verwalten Sie Kunden, Fristen und Dokumente in einem ruhigen Arbeitsbereich.",
     feature_guestlist_name: "Gästeliste",
     feature_guestlist_desc: "RSVPs, Essenswünsche, Einladungsstatus.",
     feature_seating_name: "Sitzplan",
@@ -9053,11 +9069,12 @@ const de: LocaleMessages = {
     beta_title: "Werden Sie einer der ersten 25 Planer",
     beta_body: "Die ersten 25 Anmeldungen sind zwei Jahre lang unsere Gäste.",
     beta_step_1_title: "Formular ausfüllen",
-    beta_step_1_body: "",
+    beta_step_1_body: "Erzählen Sie uns kurz von Ihrem Unternehmen und Ihrer Arbeitsweise.",
     beta_step_2_title: "Wir melden uns",
-    beta_step_2_body: "",
+    beta_step_2_body: "Wir prüfen Ihre Bewerbung und senden die nächsten Schritte per E-Mail.",
     beta_step_3_title: "Zwei Jahre voller Zugang",
-    beta_step_3_body: "",
+    beta_step_3_body:
+      "Aktivieren Sie Ihren Arbeitsbereich und verwalten Sie Ihre Paare an einem Ort.",
     step_label_contact: "Kontakt",
     form_title: "Bewerben",
     step1_cta: "Weiter zur Anmeldung",

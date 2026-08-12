@@ -974,6 +974,17 @@ export function HouseholdRsvpForm({
                         aria-label={t("rsvp.dietary_other_placeholder")}
                         onChange={(e) => updateMember(d.id, { dietary_free: e.target.value })}
                       />
+                      <p className="mt-2 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
+                        {t("rsvp.dietary_privacy_notice")}{" "}
+                        <a
+                          href="/privacy#guest-data"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline underline-offset-2"
+                        >
+                          {t("rsvp.dietary_privacy_link")}
+                        </a>
+                      </p>
                     </div>
 
                     {/* Two shapes of one question. With no published lodgings

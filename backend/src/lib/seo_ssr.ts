@@ -17,6 +17,12 @@
 // adding a separate weddly.com EN-canonical) but ignored today.
 
 import type { BlogBlock } from "../../../shared/blog_posts";
+import {
+  FEATURE_PAGE_PATHS,
+  GUIDE_PAGE_PATHS,
+  marketingPageForPath,
+  type MarketingPage,
+} from "../../../shared/marketing_pages";
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../shared/seo_routes";
 import { toolFaqForPath } from "../../../shared/tool_faq";
@@ -54,6 +60,8 @@ interface SitemapPath {
  *  frontend/src/App.tsx public routes. */
 const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/", priority: "1.0", changefreq: "weekly" },
+  ...FEATURE_PAGE_PATHS.map((path) => ({ path, priority: "0.9", changefreq: "monthly" })),
+  ...GUIDE_PAGE_PATHS.map((path) => ({ path, priority: "0.8", changefreq: "monthly" })),
   // Tool pages, high SEO value (each targets a long-tail HU query the
   // landing can't rank for on its own) so they get a higher priority than
   // the auth flows. Same path on both hosts; the locale switch happens via
@@ -64,15 +72,13 @@ const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/eszkozok/ultetesi-rend-keszito", priority: "0.8", changefreq: "monthly" },
   { path: "/eszkozok/rsvp-szoveg-generator", priority: "0.8", changefreq: "monthly" },
   { path: "/eszkozok/100-kerdes-eskuvo-elott", priority: "0.8", changefreq: "monthly" },
-  { path: "/signup", priority: "0.7", changefreq: "monthly" },
   { path: "/blog", priority: "0.6", changefreq: "weekly" },
   // The public directory browser. Higher than the vendor-recruitment page it
   // sits under: it is the hub every one of the thousand-odd profile URLs below
   // hangs off, and the query a visitor actually types.
-  { path: "/vendors/browse", priority: "0.8", changefreq: "daily" },
-  { path: "/vendors", priority: "0.6", changefreq: "monthly" },
+  { path: "/suppliers/browse", priority: "0.8", changefreq: "daily" },
+  { path: "/suppliers", priority: "0.6", changefreq: "monthly" },
   { path: "/about", priority: "0.5", changefreq: "monthly" },
-  { path: "/login", priority: "0.5", changefreq: "monthly" },
   { path: "/privacy", priority: "0.3", changefreq: "yearly" },
   { path: "/terms", priority: "0.3", changefreq: "yearly" },
   { path: "/subscription-terms", priority: "0.3", changefreq: "yearly" },
@@ -97,8 +103,27 @@ function publicVendorSitemapPaths(): string[] {
   const seen = new Set<string>();
   const push = (id: string, name: string) => {
     if (hidden.has(id) || seen.has(id)) return;
+    const base = resolveSupplierBase(id);
+    if (!base) return;
+    const listing = db
+      .prepare("SELECT vendor_account_id, profile_imported FROM listings WHERE id = ?")
+      .get(base.id) as { vendor_account_id: number | null; profile_imported: number } | undefined;
+    // Imported, unclaimed listings expose only a teaser and deliberately hide
+    // their bio. They are useful browse results, but not substantial enough to
+    // be sitemap candidates. Require a real public description plus category,
+    // location and an image before actively asking search engines to index it.
+    const unclaimedImport = listing?.profile_imported === 1 && listing.vendor_account_id == null;
+    const hasDescription = base.blurb_hu.trim().length >= 80;
+    const hasImage = Boolean(
+      firstNonBlank(
+        base.hero_image_url,
+        base.gallery_urls?.[0],
+        listListingPhotos(base.id)[0]?.url,
+      ),
+    );
+    if (unclaimedImport || !hasDescription || !base.category || !base.city || !hasImage) return;
     seen.add(id);
-    paths.push(`/vendors/${vendorPublicId(id, name)}`);
+    paths.push(`/suppliers/${vendorPublicId(id, name)}`);
   };
   for (const entry of DIRECTORY) push(entry.id, entry.name);
   const rows = db.prepare("SELECT id, name FROM listings WHERE status = 'active'").all() as {
@@ -109,11 +134,11 @@ function publicVendorSitemapPaths(): string[] {
   return paths;
 }
 
-/** `/vendors/browse`, with or without a trailing slash. Query strings never
+/** `/suppliers/browse`, with or without a trailing slash. Query strings never
  *  reach here (the SSR entry point passes a bare pathname), so a category
  *  filter is a variation of the same indexable URL, not one of its own. */
 function isBrowsePath(pathname: string): boolean {
-  return pathname === "/vendors/browse" || pathname === "/vendors/browse/";
+  return pathname === "/suppliers/browse" || pathname === "/suppliers/browse/";
 }
 
 /** How many vendors the SSR'd browse body links to. Enough to give a crawler a
@@ -143,7 +168,7 @@ function renderVendorIndexHtml(locale: SeoLocale): string {
     list.push({
       name: entry.name,
       city: entry.city,
-      path: `/vendors/${vendorPublicId(entry.id, entry.name)}`,
+      path: `/suppliers/${vendorPublicId(entry.id, entry.name)}`,
     });
     byCategory.set(entry.category, list);
     taken += 1;
@@ -230,6 +255,18 @@ function lookupBlogPostSeo(pathname: string): RouteSeo | null {
  *  whether a path is blog-backed or static. */
 function resolveRouteSeo(pathname: string): RouteSeo | null {
   return lookupBlogPostSeo(pathname) ?? lookupRouteSeo(pathname);
+}
+
+/** Used by the SPA fallback to distinguish a real public route from an
+ * arbitrary URL. This keeps unknown public paths from inheriting index.html
+ * with a misleading 200 status. */
+export function hasPublicSeoPage(pathname: string): boolean {
+  if (pathname === "/") return true;
+  return (
+    resolveRouteSeo(pathname) !== null ||
+    lookupWeddingSiteMeta(pathname) !== null ||
+    lookupVendorPageMeta(pathname) !== null
+  );
 }
 
 interface BlogArticleMeta {
@@ -420,14 +457,11 @@ const META: Record<SeoLocale, LocaleMeta> = {
   hu: {
     lang: "hu",
     ogLocale: "hu_HU",
-    title: "Wēddly · Közös esküvőtervezés egy helyen",
-    // Kept inside the 120-160 char SERP window (see meta-length guard in
-    // tests/api/seo_meta_length.e2e.test.ts). The May 2026 audit flagged the old 166-char
-    // description as over the cap.
+    title: "Esküvőszervező alkalmazás pároknak | Weddly",
     description:
-      "Tervezzétek együtt az esküvőtöket egy közös felületen: költségvetés, vendéglista, RSVP, ültetési rend és nyomtatható kártyák. Mindketten ugyanazt látjátok.",
-    twDescription: "Közös felület mindkettőtöknek, egy helyen.",
-    ogImageAlt: "Wēddly · közösen tervezzétek az esküvőtöket, nyugodtan.",
+      "Tervezzétek együtt az esküvőt: közös költségvetés, vendéglista, személyes RSVP-linkek és vizuális ültetési rend egy helyen, pároknak.",
+    twDescription: "Nyugodt esküvőszervezés, egyetlen közös, naprakész tervvel kettőtöknek.",
+    ogImageAlt: "Wēddly · Nyugodt esküvőszervezés, egyetlen közös, naprakész tervvel kettőtöknek.",
     brandName: "Wēddly",
     brandDescription:
       "Magyar esküvőtervező webalkalmazás pároknak: költségvetés, vendéglista, RSVP, ültetési rend és nyomtatható kártyák egy közös felületen.",
@@ -435,14 +469,14 @@ const META: Record<SeoLocale, LocaleMeta> = {
   en: {
     lang: "en",
     ogLocale: "en_US",
-    title: "Weddly · Your shared wedding-planning workspace",
+    title: "Wēddly · Low-cortisol wedding planning, with one live plan for both of you.",
     // Kept inside the 120-160 char SERP window (see meta-length guard in
     // tests/api/seo_meta_length.e2e.test.ts).
     description:
-      "Plan your wedding together in one shared workspace: budget, guest list, RSVP, seating and printable cards. Both of you see the same live picture.",
-    twDescription: "One shared workspace for both of you, in real time.",
-    ogImageAlt: "Weddly · plan your wedding together, calmly.",
-    brandName: "Weddly",
+      "Low-cortisol wedding planning, with one live plan for both of you. Two logins keep the budget, guest list, RSVPs and seating in sync.",
+    twDescription: "Low-cortisol wedding planning, with one live plan for both of you.",
+    ogImageAlt: "Wēddly · Low-cortisol wedding planning, with one live plan for both of you.",
+    brandName: "Wēddly",
     brandDescription:
       "Wedding planning web app for couples: budget, guest list, RSVP, seating chart and printable cards in one shared workspace.",
   },
@@ -469,11 +503,12 @@ function plausibleDomainEnv(): string {
   return (process.env.PLAUSIBLE_DOMAIN ?? "").trim();
 }
 
-/** The Plausible <script> tag (head, deferred, cookieless) or "" when unset. */
+/** The Plausible tag or "" when unset. Even a cookieless deployment is optional
+ * audience measurement, so it follows the same statistics-consent gate. */
 function plausibleScriptTag(): string {
   const domain = plausibleDomainEnv();
   if (!domain) return "";
-  return `<script defer data-domain="${escapeAttr(domain)}" src="https://plausible.io/js/script.js"></script>`;
+  return `<script type="text/plain" data-cookieconsent="statistics" defer data-domain="${escapeAttr(domain)}" src="https://plausible.io/js/script.js"></script>`;
 }
 
 /** Google Tag Manager container id (e.g. "GTM-K9NCXCL9"). Activated by the
@@ -524,9 +559,10 @@ function gtmScriptTag(): string {
 }
 
 // ── Direct GA4 (bypass GTM) ───────────────────────────────────────────────────
-// Activated by GA4_MEASUREMENT_ID env var (e.g. "G-XXXXXXXXXX"). Loads
-// unconditionally, no Cookiebot consent gate. Remove this var if a GA4
-// Configuration tag is later added inside GTM to avoid double-counting.
+// Activated by GA4_MEASUREMENT_ID env var (e.g. "G-XXXXXXXXXX"). Both the
+// remote loader and inline config remain inert until Cookiebot records
+// statistics consent. Remove this var if a GA4 Configuration tag is later
+// added inside GTM to avoid double-counting.
 
 function ga4MeasurementIdEnv(): string {
   return (process.env.GA4_MEASUREMENT_ID ?? "").trim();
@@ -548,8 +584,8 @@ function ga4ScriptTag(): string {
   const id = ga4MeasurementIdEnv();
   if (!id || !/^G-[A-Z0-9]+$/.test(id)) return "";
   return (
-    `<script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>` +
-    `<script>${ga4InlineScript(id)}</script>`
+    `<script type="text/plain" data-cookieconsent="statistics" async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>` +
+    `<script type="text/plain" data-cookieconsent="statistics">${ga4InlineScript(id)}</script>`
   );
 }
 
@@ -625,6 +661,7 @@ function buildJsonLd(opts: {
   locale: SeoLocale;
   canonicalHost: string;
   pathname: string;
+  vendorMeta?: VendorPageMeta | null;
 }): string {
   const meta = META[opts.locale];
   const origin = `https://${opts.canonicalHost}`;
@@ -636,6 +673,8 @@ function buildJsonLd(opts: {
     name: meta.brandName,
     url: origin,
     logo: `${origin}/logo.png`,
+    email: "hello@tryweddly.com",
+    founder: { "@type": "Person", name: "Csíkász Andor" },
     sameAs: [
       `https://${CANONICAL_HOST}`,
       "https://www.instagram.com/tryweddly",
@@ -655,14 +694,6 @@ function buildJsonLd(opts: {
       name: meta.brandName,
       url: origin,
       inLanguage,
-      potentialAction: {
-        "@type": "SearchAction",
-        target: {
-          "@type": "EntryPoint",
-          urlTemplate: `https://${CANONICAL_HOST}/blog?q={search_term_string}`,
-        },
-        "query-input": "required name=search_term_string",
-      },
     },
   ];
 
@@ -681,11 +712,6 @@ function buildJsonLd(opts: {
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
       url: origin,
-      // `priceCurrency` follows the SSR locale so the EN landing's structured
-      // data quotes EUR instead of HUF, a London or Berlin visitor reading
-      // the rich-result snippet shouldn't see a Hungarian-forint price tag,
-      // even though every Weddly plan is currently free during open beta.
-      offers: { "@type": "Offer", price: "0", priceCurrency },
     });
     blocks.push({
       "@context": "https://schema.org",
@@ -697,8 +723,94 @@ function buildJsonLd(opts: {
       })),
     });
   } else {
+    const marketingPage = marketingPageForPath(path);
     const article = lookupBlogArticleMeta(path);
-    if (article) {
+    if (marketingPage) {
+      const crumbItems = [
+        { "@type": "ListItem", position: 1, name: "Főoldal", item: `${origin}/` },
+        ...(marketingPage.kind === "guide"
+          ? [
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Esküvőszervezési útmutatók",
+                item: `${origin}/utmutato`,
+              },
+            ]
+          : []),
+        {
+          "@type": "ListItem",
+          position: marketingPage.kind === "guide" ? 3 : 2,
+          name: marketingPage.h1,
+          item: `${origin}${path}`,
+        },
+      ];
+      blocks.push({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: crumbItems,
+      });
+      if (marketingPage.kind === "guide" && marketingPage.published && marketingPage.updated) {
+        blocks.push({
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: marketingPage.h1,
+          description: marketingPage.description,
+          datePublished: marketingPage.published,
+          dateModified: marketingPage.updated,
+          author: organization,
+          publisher: organization,
+          mainEntityOfPage: { "@type": "WebPage", "@id": `${origin}${path}` },
+          inLanguage: "hu-HU",
+        });
+      }
+      if (marketingPage.faqs && marketingPage.faqs.length > 0) {
+        blocks.push({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: marketingPage.faqs.map((faq) => ({
+            "@type": "Question",
+            name: faq.question,
+            acceptedAnswer: { "@type": "Answer", text: faq.answer },
+          })),
+        });
+      }
+    } else if (opts.vendorMeta) {
+      const vendorDescription = (
+        opts.locale === "hu" ? opts.vendorMeta.blurbHu : opts.vendorMeta.blurbEn
+      ).trim();
+      blocks.push({
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        name: opts.vendorMeta.name,
+        description: vendorDescription || undefined,
+        url: `${origin}/suppliers/${opts.vendorMeta.publicId}`,
+        image: opts.vendorMeta.heroImageUrl
+          ? absoluteImageUrl(origin, opts.vendorMeta.heroImageUrl)
+          : undefined,
+        areaServed: opts.vendorMeta.city,
+        knowsAbout: supplierCategoryLabel(opts.vendorMeta.category, opts.locale),
+      });
+      blocks.push({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: crumbLabels.home, item: `${origin}/` },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: opts.locale === "hu" ? "Esküvői szolgáltatók" : "Wedding suppliers",
+            item: `${origin}/suppliers/browse`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: opts.vendorMeta.name,
+            item: `${origin}/suppliers/${opts.vendorMeta.publicId}`,
+          },
+        ],
+      });
+    } else if (article) {
       const headline = opts.locale === "hu" ? article.huTitle : article.enTitle;
       const image = absoluteImageUrl(origin, article.coverImageUrl);
       blocks.push({
@@ -843,15 +955,17 @@ export function lookupWeddingSiteMeta(pathname: string | null | undefined): Wedd
 export interface VendorPageMeta {
   name: string;
   city: string;
+  category: string;
   blurbHu: string;
   blurbEn: string;
   heroImageUrl: string | null;
   /** Pretty public id (`magyar-foto-v12`) — the canonical `/vendors/:id` slug,
    *  so a link shared with the bare id or a stale name consolidates onto it. */
   publicId: string;
+  indexable: boolean;
 }
 
-const VENDOR_PATH_RE = /^\/vendors\/([^/?#]+)/;
+const VENDOR_PATH_RE = /^\/suppliers\/([^/?#]+)/;
 
 export function lookupVendorPageMeta(pathname: string | null | undefined): VendorPageMeta | null {
   if (!pathname) return null;
@@ -886,8 +1000,11 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
         profile_imported: number;
       }
     | undefined;
-  let heroImageUrl = firstNonBlank(listing?.hero_image_url, base.hero_image_url);
-  if (!heroImageUrl) {
+  const unclaimedImport = listing?.profile_imported === 1 && listing.vendor_account_id == null;
+  let heroImageUrl = unclaimedImport
+    ? null
+    : firstNonBlank(listing?.hero_image_url, base.hero_image_url);
+  if (!unclaimedImport && !heroImageUrl) {
     heroImageUrl = firstNonBlank(listListingPhotos(base.id)[0]?.url);
   }
   // The share card and the SSR <meta description> are public HTML, so an
@@ -895,14 +1012,19 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
   // either — redacting it in the API and then baking it into the page source
   // would publish it just the same, and to crawlers at that. The photo and the
   // name/town stay: that's the one picture the teaser is allowed.
-  const redacted = listing?.profile_imported === 1 && listing.vendor_account_id === null;
+  const redacted = unclaimedImport;
+  const publicDescription = redacted ? "" : base.blurb_hu.trim();
   return {
     name: base.name,
     city: base.city,
+    category: base.category,
     blurbHu: redacted ? "" : base.blurb_hu,
     blurbEn: redacted ? "" : base.blurb_en,
     heroImageUrl,
     publicId: vendorPublicId(base.id, base.name),
+    indexable: Boolean(
+      publicDescription.length >= 80 && base.category && base.city && heroImageUrl,
+    ),
   };
 }
 
@@ -936,6 +1058,29 @@ function heroPreloadTags(path: string): string[] {
   ];
 }
 
+function isIndexableHtmlPath(
+  path: string,
+  opts: { weddingMeta?: WeddingSiteMeta | null; vendorMeta?: VendorPageMeta | null },
+): boolean {
+  if (path === "/" || marketingPageForPath(path)) return true;
+  if (isToolPath(path) || path === "/blog" || lookupBlogPostSeo(path)) return true;
+  if (
+    path === "/about" ||
+    path === "/privacy" ||
+    path === "/terms" ||
+    path === "/terms/vendor-subscription" ||
+    path === "/imprint" ||
+    path === "/impresszum" ||
+    path === "/suppliers" ||
+    path === "/suppliers/browse" ||
+    path === "/planners"
+  ) {
+    return true;
+  }
+  if (opts.vendorMeta?.indexable || opts.weddingMeta) return true;
+  return false;
+}
+
 function buildHeadBlock(opts: {
   host: string | null;
   pathname: string;
@@ -960,6 +1105,7 @@ function buildHeadBlock(opts: {
   const altDefaultMeta = META[locale === "hu" ? "en" : "hu"];
   const canonicalHost = canonicalHostFor(locale);
   const path = opts.pathname || "/";
+  const robots = isIndexableHtmlPath(path, opts) ? "index,follow" : "noindex,follow";
   // Slug-pair lookup so the HU canonical always points to the HU slug and
   // the EN canonical always points to the EN slug, even if the visitor
   // landed on the "wrong" half of the pair (e.g. `weddly.com/eszkozok/X`
@@ -977,8 +1123,11 @@ function buildHeadBlock(opts: {
   //      about) via Accept-Language. Emitting an EN alternate that points back
   //      at the HU canonical is the duplicate-canonical trap, so we skip it.
   const enHostConfigured = enCanonicalHostEnv();
+  const hungarianOnly = marketingPageForPath(path) !== null;
   let enUrl: string | null;
-  if (enHostConfigured) {
+  if (hungarianOnly) {
+    enUrl = null;
+  } else if (enHostConfigured) {
     enUrl = `https://${enHostConfigured}${enPath}`;
   } else if (enPath !== huPath) {
     enUrl = `https://${CANONICAL_HOST}${enPath}`;
@@ -993,7 +1142,9 @@ function buildHeadBlock(opts: {
   let finalEnUrl = enUrl;
   if (blogPair) {
     finalHuUrl = `https://${CANONICAL_HOST}/blog/${blogPair.huSlug}`;
-    finalEnUrl = blogPair.enSlug ? `https://${CANONICAL_HOST}/blog/${blogPair.enSlug}` : null;
+    finalEnUrl = blogPair.enSlug
+      ? `https://${enHostConfigured || CANONICAL_HOST}/blog/${blogPair.enSlug}`
+      : null;
   }
   // Canonical follows the locale of the current render: HU render → HU URL
   // with HU slug; EN render (only meaningful when multi-host is active) →
@@ -1005,7 +1156,7 @@ function buildHeadBlock(opts: {
   // regardless of whether it was reached via the bare id or an outdated name —
   // so search + social consolidate onto one address.
   const canonicalUrl = opts.vendorMeta
-    ? `https://${canonicalHost}/vendors/${opts.vendorMeta.publicId}`
+    ? `https://${canonicalHost}/suppliers/${opts.vendorMeta.publicId}`
     : blogPair
       ? blogPair.accessedViaEnSlug && finalEnUrl
         ? finalEnUrl
@@ -1103,6 +1254,7 @@ function buildHeadBlock(opts: {
     ...heroPreloadTags(path),
     `<title>${escapeAttr(title)}</title>`,
     `<meta name="description" content="${escapeAttr(description)}" />`,
+    `<meta name="robots" content="${robots}" />`,
     `<meta name="application-name" content="${escapeAttr(defaultMeta.brandName)}" />`,
     `<link rel="canonical" href="${canonicalUrl}" />`,
     `<meta property="og:type" content="website" />`,
@@ -1126,14 +1278,63 @@ function buildHeadBlock(opts: {
     `<meta name="twitter:description" content="${escapeAttr(twDescription)}" />`,
     `<meta name="twitter:image" content="${escapeAttr(ogImage)}" />`,
     `<meta name="twitter:image:alt" content="${escapeAttr(ogImageAlt)}" />`,
-    `<link rel="alternate" hreflang="hu" href="${finalHuUrl}" />`,
+    `<link rel="alternate" hreflang="hu-HU" href="${finalHuUrl}" />`,
     ...(finalEnUrl ? [`<link rel="alternate" hreflang="en" href="${finalEnUrl}" />`] : []),
     `<link rel="alternate" hreflang="x-default" href="${finalHuUrl}" />`,
-    buildJsonLd({ locale, canonicalHost, pathname: path }),
+    buildJsonLd({ locale, canonicalHost, pathname: path, vendorMeta: opts.vendorMeta }),
     ...(plausibleScriptTag() ? [plausibleScriptTag()] : []),
     ...(gtmScriptTag() ? [gtmScriptTag()] : []),
     ...(ga4ScriptTag() ? [ga4ScriptTag()] : []),
   ].join("\n    ");
+}
+
+function renderMarketingPageHtml(page: MarketingPage): string {
+  const breadcrumb = [
+    `<a href="/">Főoldal</a>`,
+    ...(page.kind === "guide" ? [`<a href="/utmutato">Útmutatók</a>`] : []),
+    `<span aria-current="page">${escapeText(page.eyebrow)}</span>`,
+  ].join(" › ");
+  const sections = page.sections
+    .map((section) => {
+      const paragraphs = section.paragraphs.map((p) => `<p>${escapeText(p)}</p>`).join("\n");
+      const bullets = section.bullets
+        ? `<ul>${section.bullets.map((item) => `<li>${escapeText(item)}</li>`).join("")}</ul>`
+        : "";
+      return `<section><h2>${escapeText(section.heading)}</h2>${paragraphs}${bullets}</section>`;
+    })
+    .join("\n");
+  const steps = page.steps
+    ? `<section><h2>Így működik lépésről lépésre</h2><ol>${page.steps
+        .map((step) => `<li><h3>${escapeText(step.title)}</h3><p>${escapeText(step.body)}</p></li>`)
+        .join("")}</ol></section>`
+    : "";
+  const faq = page.faqs
+    ? `<section><h2>Gyakori kérdések</h2>${page.faqs
+        .map(
+          (item) =>
+            `<details><summary>${escapeText(item.question)}</summary><p>${escapeText(item.answer)}</p></details>`,
+        )
+        .join("")}</section>`
+    : "";
+  const dates =
+    page.published && page.updated
+      ? `<p>Közzétéve: <time datetime="${escapeAttr(page.published)}">${escapeText(page.published)}</time> · Frissítve: <time datetime="${escapeAttr(page.updated)}">${escapeText(page.updated)}</time></p>`
+      : "";
+  const cta = page.cta
+    ? `<aside><h2>${escapeText(page.cta.title)}</h2><p>${escapeText(page.cta.body)}</p><a href="${escapeAttr(page.cta.href)}">${escapeText(page.cta.label)}</a></aside>`
+    : "";
+  const related = `<nav aria-label="Kapcsolódó Weddly-oldalak"><h2>Kapcsolódó oldalak</h2><ul>${page.related
+    .map((link) => `<li><a href="${escapeAttr(link.href)}">${escapeText(link.label)}</a></li>`)
+    .join("")}</ul></nav>`;
+  return [
+    `<nav aria-label="Morzsanavigáció">${breadcrumb}</nav>`,
+    `<header><p>${escapeText(page.eyebrow)}</p><h1>${escapeText(page.h1)}</h1><p>${escapeText(page.intro)}</p>${dates}</header>`,
+    `<article>${sections}${steps}${faq}</article>`,
+    cta,
+    related,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 /** Build a tiny route-specific SSR body (h1 + intro + footer nav). Returns
@@ -1142,9 +1343,22 @@ function buildHeadBlock(opts: {
  *  to give Googlebot a distinct <h1> + paragraph on each public URL
  *  instead of nine copies of the landing's hero. */
 function renderRouteBody(pathname: string, locale: SeoLocale): string | null {
+  const vendor = lookupVendorPageMeta(pathname);
+  if (vendor) {
+    const category = supplierCategoryLabel(vendor.category, locale);
+    const description = locale === "hu" ? vendor.blurbHu : vendor.blurbEn;
+    const directoryLabel = locale === "hu" ? "Esküvői szolgáltatók" : "Wedding suppliers";
+    return [
+      `<nav aria-label="${locale === "hu" ? "Morzsanavigáció" : "Breadcrumb"}"><a href="/">${locale === "hu" ? "Főoldal" : "Home"}</a> › <a href="/suppliers/browse">${directoryLabel}</a> › <span aria-current="page">${escapeText(vendor.name)}</span></nav>`,
+      `<header><h1>${escapeText(vendor.name)}</h1><p>${escapeText(category)} · ${escapeText(vendor.city)}</p>${description ? `<p>${escapeText(description)}</p>` : ""}</header>`,
+      `<p><a href="/suppliers/browse">${directoryLabel}</a></p>`,
+    ].join("\n");
+  }
   const routeSeo = resolveRouteSeo(pathname);
   if (!routeSeo) return null;
   const entry = routeSeo[locale];
+  const marketingPage = marketingPageForPath(pathname);
+  if (marketingPage) return renderMarketingPageHtml(marketingPage);
   // Footer link target for the imprint route depends on locale (HU mounts at
   // /impresszum, EN at /imprint, both reach the same React page).
   const imprintHref = locale === "hu" ? "/impresszum" : "/imprint";
@@ -1219,7 +1433,7 @@ function renderRouteBody(pathname: string, locale: SeoLocale): string | null {
     `    <a href="/">${escapeAttr(labels.home)}</a> · `,
     `    <a href="/signup">${escapeAttr(labels.signup)}</a> · `,
     `    <a href="/login">${escapeAttr(labels.login)}</a> · `,
-    `    <a href="/vendors">${escapeAttr(labels.vendors)}</a> · `,
+    `    <a href="/suppliers">${escapeAttr(labels.vendors)}</a> · `,
     `    <a href="/about">${escapeAttr(labels.about)}</a> · `,
     `    <a href="/privacy">${escapeAttr(labels.privacy)}</a> · `,
     `    <a href="/terms">${escapeAttr(labels.terms)}</a> · `,
@@ -1288,13 +1502,16 @@ export function renderIndexHtml(
     }
   }
 
-  return out.replace(/<html lang="[^"]*"/, `<html lang="${META[locale].lang}"`);
+  return out
+    .replace(/<html lang="[^"]*"/, `<html lang="${META[locale].lang}"`)
+    .replace(/data-default-locale="[^"]*"/, `data-default-locale="${locale}"`);
 }
 
 export function renderRobotsTxt(_host: string | null): string {
   return [
     "User-agent: *",
     "Allow: /",
+    "Disallow: /api/",
     "Disallow: /app/",
     "Disallow: /onboarding",
     "Disallow: /invite/",
@@ -1370,7 +1587,7 @@ export function renderLlmsTxt(_host: string | null): string {
     "## Key pages",
     "",
     `- [About Weddly](${origin}/about): What Weddly is and who it's for.`,
-    `- [For vendors](${origin}/vendors): How wedding vendors can join the directory.`,
+    `- [For suppliers](${origin}/suppliers): How wedding suppliers can join the directory.`,
     `- [Blog index](${origin}/blog): All wedding-planning articles.`,
     "",
   );
@@ -1401,7 +1618,7 @@ export function renderSitemapXml(_host: string | null): string {
       "  <url>",
       `    <loc>${loc}</loc>`,
       `    <lastmod>${SITEMAP_LASTMOD}</lastmod>`,
-      `    <xhtml:link rel="alternate" hreflang="hu" href="${huHref}" />`,
+      `    <xhtml:link rel="alternate" hreflang="hu-HU" href="${huHref}" />`,
       ...(enHref ? [`    <xhtml:link rel="alternate" hreflang="en" href="${enHref}" />`] : []),
       // x-default stays HU per Google's docs: it's the fallback for crawlers
       // that don't advertise a locale preference, and the HU canonical is
@@ -1420,10 +1637,10 @@ export function renderSitemapXml(_host: string | null): string {
     const huPath = huPathFor(path);
     const enPath = enPathFor(path);
     const huHere = `https://${CANONICAL_HOST}${huPath}`;
-    const enHere = enHostConfigured
-      ? `https://${enHostConfigured}${enPath}`
-      : enPath !== huPath
-        ? `https://${CANONICAL_HOST}${enPath}`
+    const enHere = marketingPageForPath(path)
+      ? null
+      : enPath !== huPath || enHostConfigured
+        ? `https://${enHostConfigured || CANONICAL_HOST}${enPath}`
         : null;
     // 1. HU canonical <url>: <loc> on weddly.hu/{huPath}, alternates point at
     //    self (hu) + paired EN URL when multi-host is on.
@@ -1462,7 +1679,9 @@ export function renderSitemapXml(_host: string | null): string {
   // pair); posts without one get a single HU <url> with no EN alternate.
   for (const row of publishedBlogPostRows()) {
     const huHere = `https://${CANONICAL_HOST}/blog/${row.slug}`;
-    const enHere = row.en_slug ? `https://${CANONICAL_HOST}/blog/${row.en_slug}` : null;
+    const enHere = row.en_slug
+      ? `https://${enHostConfigured || CANONICAL_HOST}/blog/${row.en_slug}`
+      : null;
     blocks.push(buildUrlBlock(huHere, huHere, enHere, "0.7", "monthly"));
     if (enHere) {
       blocks.push(buildUrlBlock(enHere, huHere, enHere, "0.7", "monthly"));

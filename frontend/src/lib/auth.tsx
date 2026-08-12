@@ -5,7 +5,7 @@ import { isUiLocale } from "@shared/locales";
 import type { User } from "@shared/types";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { SessionExpiredDialog } from "../components/SessionExpiredDialog";
-import { ApiError, getToken, SESSION_EXPIRED_EVENT, setToken as persistToken } from "./api";
+import { ApiError, SESSION_EXPIRED_EVENT, setToken as persistToken } from "./api";
 import { clearDemoSessionFlag } from "./demoSession";
 import { authApi } from "./endpoints";
 import { useT } from "./i18n";
@@ -87,13 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, locale]);
 
   const refresh = useCallback(async () => {
-    if (!getToken()) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
     try {
       const me = await authApi.me();
+      // Migrates any pre-cookie browser after the server has returned its
+      // HttpOnly cookie, and records a non-secret probe hint for future loads.
+      persistToken("cookie-session");
       setUser(me.user);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {

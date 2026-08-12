@@ -128,7 +128,7 @@ function PublicHeader() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackEmail, setFeedbackEmail] = useState<string | null>(null);
   const { hidden, atTop } = useHeaderState();
-  const isAudiencePage = pathname === "/planners" || pathname === "/vendors";
+  const isAudiencePage = pathname === "/planners" || pathname === "/suppliers";
 
   // Theme toggle shared with the app shells via `localStorage["weddly.theme"]`
   // (see lib/useTheme.ts). Public default is `light` (the warm paper marketing
@@ -184,6 +184,7 @@ function PublicHeader() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           to="/"
+          data-nav-icon
           className="-my-1 inline-flex min-h-tap shrink-0 items-center text-umber-900 transition-colors hover:text-umber-800 sm:my-0 sm:min-h-0 dark:text-paper-50 dark:hover:text-umber-300"
         >
           {/* Header wordmark sits between Wordmark's md and lg presets:
@@ -204,9 +205,11 @@ function PublicHeader() {
           className="ml-2 hidden items-center gap-4 font-grotesk md:flex"
         >
           {[
-            { to: "/vendors", label: t("landing.nav_vendors") },
+            { to: "/eskuvoi-vendeglista", label: "Vendéglista" },
+            { to: "/eskuvoi-szolgaltatok", label: "Szolgáltatók" },
+            { to: "/utmutato", label: "Útmutatók" },
+            { to: "/suppliers", label: t("landing.nav_vendors") },
             { to: "/planners", label: t("landing.nav_planners") },
-            { to: "/rsvp", label: t("landing.footer_guests") },
           ].map(({ to, label }) => {
             const active = pathname === to;
             return (
@@ -243,9 +246,10 @@ function PublicHeader() {
             <MessageSquare size={18} aria-hidden="true" />
           </button>
           <LocaleSwitcher
-            className="hidden md:block"
+            className="hidden sm:block"
             dataNavIcon
-            buttonClassName="inline-flex h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            showCode
+            buttonClassName="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2 text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
           />
           <button
             type="button"
@@ -332,8 +336,30 @@ function PublicHeader() {
            *  "Visszajelzés" lower-cases visually without a string rewrite,
            *  which keeps SEO + locale keys intact. */}
           <div className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 py-3 font-grotesk text-sm text-umber-800 sm:px-6 dark:text-paper-100">
+            {[
+              { to: "/eskuvoi-vendeglista", label: "Esküvői vendéglista" },
+              { to: "/eskuvoi-koltsegvetes-tervezo", label: "Költségvetés tervező" },
+              { to: "/eskuvoi-ultetesi-rend-tervezo", label: "Ültetési rend tervező" },
+              { to: "/online-eskuvoi-rsvp", label: "Online esküvői RSVP" },
+              { to: "/eskuvoi-szolgaltatok", label: "Esküvői szolgáltatók" },
+              { to: "/utmutato", label: "Esküvőszervezési útmutatók" },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+                onClick={() => setMenuOpen(false)}
+              >
+                <ClipboardList
+                  size={16}
+                  aria-hidden="true"
+                  className="text-umber-600 dark:text-umber-300"
+                />
+                <span>{item.label}</span>
+              </Link>
+            ))}
             <Link
-              to="/vendors"
+              to="/suppliers"
               className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
@@ -464,8 +490,8 @@ function PublicHeader() {
 function PublicFooter() {
   const { t, locale } = useT();
   const { pathname } = useLocation();
-  const onVendorPage = pathname === "/vendors";
-  const isAudiencePage = pathname === "/planners" || pathname === "/vendors";
+  const onVendorPage = pathname === "/suppliers";
+  const isAudiencePage = pathname === "/planners" || pathname === "/suppliers";
   const askGuestCode = useGuestCodePrompt();
   const couplesCardsPath =
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
@@ -497,7 +523,7 @@ function PublicFooter() {
               {t("landing.footer_band_prompt")}
             </span>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link to="/vendors" className={footerBandBtnClass}>
+              <Link to="/suppliers" className={footerBandBtnClass}>
                 <Store size={15} aria-hidden />
                 {t("landing.footer_band_cta_vendor")}
               </Link>
@@ -570,9 +596,11 @@ function PublicFooter() {
         <FooterColumn title={t("landing.footer_couples")}>
           <FooterLink to="/signup">{t("landing.footer_couples_signup")}</FooterLink>
           <FooterLink to="/login">{t("landing.footer_couples_signin")}</FooterLink>
-          <FooterAnchor href="/#phases">{t("landing.footer_couples_features")}</FooterAnchor>
-          <FooterLink to="/blog">{t("blog.eyebrow")}</FooterLink>
-          <FooterLink to={couplesCardsPath}>{t("landing.footer_couples_cards")}</FooterLink>
+          <FooterLink to="/eskuvoi-vendeglista">Esküvői vendéglista</FooterLink>
+          <FooterLink to="/eskuvoi-koltsegvetes-tervezo">Költségvetés tervező</FooterLink>
+          <FooterLink to="/online-eskuvoi-rsvp">Online esküvői RSVP</FooterLink>
+          <FooterLink to="/eskuvoi-ultetesi-rend-tervezo">Ültetési rend tervező</FooterLink>
+          <FooterLink to="/utmutato">Esküvőszervezési útmutatók</FooterLink>
         </FooterColumn>
         {/* Mobile: Vendors + Guests stack in the right grid column (Guests
          *  directly under Vendors). `lg:contents` dissolves this wrapper on
@@ -580,7 +608,8 @@ function PublicFooter() {
          *  4-column brand+Couples+Vendors+Guests row is restored. */}
         <div className="flex flex-col gap-y-4 lg:contents">
           <FooterColumn title={t("landing.footer_vendors")}>
-            <FooterLink to="/vendors">{t("landing.footer_vendors_waitlist")}</FooterLink>
+            <FooterLink to="/eskuvoi-szolgaltatok">Esküvői szolgáltatók keresése</FooterLink>
+            <FooterLink to="/suppliers">{t("landing.footer_vendors_waitlist")}</FooterLink>
           </FooterColumn>
           <FooterColumn title={t("landing.footer_planners")}>
             <FooterLink to="/planners">{t("landing.footer_planners_waitlist")}</FooterLink>
@@ -625,6 +654,9 @@ function PublicFooter() {
           </Link>
           <Link to="/terms/vendor-subscription" className={legalLinkClass}>
             {t("landing.footer_legal_subscription")}
+          </Link>
+          <Link to="/report-content" className={legalLinkClass}>
+            {t("legal.report_illegal_content")}
           </Link>
         </div>
       </div>

@@ -111,11 +111,23 @@ describe("<SupplierCompareDialog> distance / rating / available rows", () => {
   });
 
   it("falls back to the cold-start + unclaimed states once the detail fetch settles", async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = mock(
+      async () =>
+        new Response(JSON.stringify({ error: "Not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }),
+    ) as unknown as typeof fetch;
     const s = makeSupplier();
-    renderDialog([s], { lat: null, lng: null });
-    // The detail fetch rejects under happy-dom → details stay empty → rating
-    // shows the cold-start copy and available shows the unclaimed fallback.
-    await waitFor(() => expect(screen.getByText(/no ratings yet/i)).toBeInTheDocument());
-    expect(screen.getByText(/ask to confirm/i)).toBeInTheDocument();
+    try {
+      renderDialog([s], { lat: null, lng: null });
+      // A missing public detail leaves the comparison on its safe cold-start
+      // copy without depending on a real network timeout.
+      await waitFor(() => expect(screen.getByText(/no ratings yet/i)).toBeInTheDocument());
+      expect(screen.getByText(/ask to confirm/i)).toBeInTheDocument();
+    } finally {
+      globalThis.fetch = realFetch;
+    }
   });
 });

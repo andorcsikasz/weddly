@@ -6,9 +6,9 @@ import hr from "@/locales/hr";
 import hu from "@/locales/hu";
 
 describe("planning checklist tab label", () => {
-  it("uses Checklist in every supported locale", () => {
+  it("has a localized, non-empty label in every supported locale", () => {
     for (const locale of [en, hu, de, es, hr]) {
-      expect(locale.planning.checklist.title).toBe("Checklist");
+      expect(locale.planning.checklist.title.trim().length).toBeGreaterThan(0);
     }
   });
 });

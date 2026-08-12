@@ -53,27 +53,66 @@ export interface OAuthTokens {
 }
 
 // ─── AES-256-GCM token-at-rest encryption ────────────────────────────────────
-// Key is derived from JWT_SECRET (already required to be strong in prod), so no
-// new secret to manage. Format: base64(iv):base64(tag):base64(ciphertext).
+// The first entry in DATA_ENCRYPTION_KEYS encrypts new values; every entry can
+// decrypt, so rotation is staged by prepending a new key and retaining old ones
+// until rows have naturally been rewritten. Format:
+// key-id:base64(iv):base64(tag):base64(ciphertext).
 
-function tokenKey(): Buffer {
-  return createHash("sha256").update(CONFIG.jwtSecret).digest();
+interface EncryptionKey {
+  id: string;
+  key: Buffer;
+}
+
+function tokenKeys(): EncryptionKey[] {
+  const configured = CONFIG.dataEncryptionKeys
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .flatMap((entry) => {
+      const separator = entry.indexOf(":");
+      if (separator < 1) return [];
+      const id = entry.slice(0, separator).trim();
+      const secret = entry.slice(separator + 1).trim();
+      if (!id || !secret) return [];
+      return [{ id, key: createHash("sha256").update(secret).digest() }];
+    });
+  if (configured.length > 0) return configured;
+  // Development/test compatibility only. Production config refuses Google
+  // Calendar without an independent keyring.
+  return [{ id: "dev", key: createHash("sha256").update(`data:${CONFIG.jwtSecret}`).digest() }];
 }
 
 export function encryptToken(plain: string): string {
+  const active = tokenKeys()[0];
+  if (!active) throw new Error("No data-encryption key is configured");
   const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", tokenKey(), iv);
+  const cipher = createCipheriv("aes-256-gcm", active.key, iv);
   const ct = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
-  return `${iv.toString("base64")}:${tag.toString("base64")}:${ct.toString("base64")}`;
+  return `${active.id}:${iv.toString("base64")}:${tag.toString("base64")}:${ct.toString("base64")}`;
 }
 
 export function decryptToken(enc: string | null): string | null {
   if (!enc) return null;
   try {
-    const [ivB, tagB, ctB] = enc.split(":");
-    if (!ivB || !tagB || !ctB) return null;
-    const decipher = createDecipheriv("aes-256-gcm", tokenKey(), Buffer.from(ivB, "base64"));
+    const parts = enc.split(":");
+    let key: Buffer | undefined;
+    let ivB: string | undefined;
+    let tagB: string | undefined;
+    let ctB: string | undefined;
+    if (parts.length === 4) {
+      const [keyId, iv, tag, ciphertext] = parts;
+      key = tokenKeys().find((candidate) => candidate.id === keyId)?.key;
+      [ivB, tagB, ctB] = [iv, tag, ciphertext];
+    } else if (parts.length === 3) {
+      // Legacy ciphertext from before key separation. Read-only compatibility
+      // keeps existing connections alive; the next token refresh rewrites it
+      // using the active independent key.
+      key = createHash("sha256").update(CONFIG.jwtSecret).digest();
+      [ivB, tagB, ctB] = parts;
+    }
+    if (!key || !ivB || !tagB || !ctB) return null;
+    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivB, "base64"));
     decipher.setAuthTag(Buffer.from(tagB, "base64"));
     return Buffer.concat([decipher.update(Buffer.from(ctB, "base64")), decipher.final()]).toString(
       "utf8",

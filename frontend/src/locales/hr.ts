@@ -44,13 +44,14 @@ const hr: LocaleMessages = {
     back_home_aria: "Weddly, natrag na početnu",
   },
   app: {
-    name: "Weddly",
-    tagline: "Planirajte vjenčanje zajedno, na jednom mirnom mjestu.",
+    name: "Wēddly",
+    tagline: "Planiranje vjenčanja bez stresa, uz jedan zajednički plan uživo za vas oboje.",
   },
   seo: {
-    home_title: "Weddly · cijelo vaše vjenčanje u jednom zajedničkom radnom prostoru",
+    home_title:
+      "Wēddly · Planiranje vjenčanja bez stresa, uz jedan zajednički plan uživo za vas oboje.",
     home_description:
-      "Proračun, popis gostiju, RSVP poveznice, vizualni raspored sjedenja i kartice za ispis u jednom zajedničkom radnom prostoru. Postavite ga u nekoliko minuta, a ušteđeno vrijeme posvetite jedno drugome.",
+      "Planiranje vjenčanja bez stresa, uz jedan zajednički plan uživo za vas oboje. Dvije prijave drže proračun, goste, RSVP-e i sjedenje usklađenima.",
     login_title: "Prijava · Weddly",
     login_description: "Prijavite se u svoj Weddly radni prostor za parove.",
     register_title: "Otvorite zajednički radni prostor · Weddly",
@@ -2117,8 +2118,9 @@ const hr: LocaleMessages = {
     back_home: "Natrag na početnu stranicu",
   },
   landing: {
-    hero_title: "Cijelo vaše\nvjenčanje,\nna jednom mjestu.",
-    hero_sub: "",
+    hero_title: "Planiranje vjenčanja bez stresa,\nuz jedan zajednički plan uživo za vas oboje.",
+    hero_sub:
+      "Dvije prijave. Jedan zajednički prostor. Isti proračun, popis gostiju, RSVP-i i raspored sjedenja, uvijek ažurni.",
     cta_signup: "Krenite s planiranjem",
     cta_login: "Prijava",
     cta_open_app: "Prijava",
@@ -2561,6 +2563,12 @@ const hr: LocaleMessages = {
       "Poslali smo poruku za potvrdu na adresu ispod. Potvrdite je, a zatim dovršite profil u nekoliko brzih koraka.",
     success_body_verified: "Sve je spremno. Dovršite profil u nekoliko brzih koraka.",
     google_continue_as: "Nastavljate s Googleom kao {email}.",
+    legal_accept_prefix: "Pročitao/la sam i izričito prihvaćam",
+    legal_accept_link: "Uvjete pretplate za dobavljače (ÁSZF)",
+    legal_accept_suffix: "te potvrđujem Obavijest o privatnosti.",
+    highlighted_accept:
+      "Zasebno prihvaćam istaknute odredbe o automatskom obnavljanju, ograničenju odgovornosti, promjenama naknada, izmjenama, nadležnosti i sponzoriranim pozicijama.",
+    legal_accept_required: "Prihvatite obje potvrde kako biste izradili račun.",
     submit: "Otvorite račun",
     continue_to_onboarding: "Nastavite",
   },
@@ -5996,7 +6004,7 @@ const hr: LocaleMessages = {
     taxonomy_edit_group_title: "Uređivanje grupe",
     taxonomy_edit_category_title: "Uređivanje kategorije",
     waitlist_title: "Lista čekanja dobavljača",
-    waitlist_sub: "Prijave s obrasca na /vendors.",
+    waitlist_sub: "Prijave s obrasca na /suppliers.",
     waitlist_filter_new: "Pristiglo",
     waitlist_filter_under_review: "U pregledu",
     waitlist_filter_accepted: "Prihvaćeni",
@@ -6245,7 +6253,7 @@ const hr: LocaleMessages = {
     flag_tpl_duplicate_label: "Duplikat računa",
     flag_tpl_duplicate_body:
       "Prema našem sustavu već imate drugi aktivni račun s istom adresom e-pošte ili sličnim podacima. Javite nam koji želite zadržati, inače ćemo duplikat izbrisati za 7 dana.",
-    flag_tpl_vendor_abuse_label: "Zlouporaba obrasca /vendors",
+    flag_tpl_vendor_abuse_label: "Zlouporaba obrasca /suppliers",
     flag_tpl_vendor_abuse_body:
       "Primijetili smo zlouporabu obrasca za prijavu dobavljača na vašem računu (ponovljene prijave, nepostojeće tvrtke ili sadržaj izvan teme). Objasnite nam to, inače ćemo vaš račun izbrisati za 7 dana.",
     flag_tpl_offensive_label: "Uvredljiv sadržaj",
@@ -7273,6 +7281,9 @@ const hr: LocaleMessages = {
     meal_section_title: "Jelovnik",
     dietary_section_title: "Alergije na hranu",
     dietary_other_placeholder: "Nešto drugo? Napišite ovdje",
+    dietary_privacy_notice:
+      "Neobavezni zdravstveni podatak. Koriste ga samo domaćini i njihov ovlašteni organizator radi cateringa i sigurnosti događaja.",
+    dietary_privacy_link: "Kako obrađujemo podatke gostiju",
     accommodation_section_title: "Gdje biste odsjeli?",
     accommodation_none: "Ne treba mi smještaj",
     guest_message_label: "Poruka paru",
@@ -7669,6 +7680,7 @@ const hr: LocaleMessages = {
     draft_banner_body:
       "Ovaj tekst pošteno opisuje što Weddly danas radi, ali ga odvjetnik još nije pregledao. Prije izlaska verzije 1.0 pregledat će ga i dovršiti mađarski odvjetnik.",
     version_label: "Verzija",
+    report_illegal_content: "Prijavi nezakonit sadržaj",
   },
   privacy: {
     seo_title: "Pravila privatnosti · Weddly",
@@ -7782,6 +7794,8 @@ const hr: LocaleMessages = {
       "Sentry (SAD), bilježenje pogrešaka aplikacije. Zasad nije uključen u produkciji; ako ga uključimo, ažurirat ćemo ovu stranicu. Primao bi pseudonimizirane tragove pogrešaka bez izravnih identifikatora.",
     subprocessors_google:
       "Google Ireland Ltd. / Google LLC (SAD), tri odvojene funkcije: prijava putem Googlea (primamo vaše ime, adresu e-pošte i oznaku Google računa), neobavezna sinkronizacija s Google kalendarom opisana u sljedećem odjeljku te upiti prema Google Maps Placesu koji služe za rangiranje javnog kataloga dobavljača (samo nazivi tvrtki, nikada vaši podaci). Osnova prijenosa su DPF/SCC.",
+    subprocessors_other:
+      "Ostali pružatelji povezani s funkcijama mogu biti Stripe, Cloudflare R2, Anthropic, Apple, DeepL, MaxMind i Cookiebot te—samo nakon pristanka na statistiku—Plausible, Google Analytics/Tag Manager i Microsoft Clarity. Sentry prima očišćenu telemetriju samo kada je uključen.",
     google_data_title: "Podaci iz Google računa (prijava i sinkronizacija kalendara)",
     google_data_body:
       "Obje su funkcije neobavezne i nijedna se ne pokreće dok ne prođete kroz Googleov vlastiti zaslon za odobrenje. Na račun koji se nikada ne poveže ništa se od navedenoga ne odnosi.",
@@ -7799,6 +7813,7 @@ const hr: LocaleMessages = {
     cookies_title: "Kolačići i lokalna pohrana",
     cookies_intro:
       "Weddly ne postavlja nikakve kolačiće za praćenje. Jedina pohrana u pregledniku koju koristimo nalazi se u localStorageu na vašem uređaju, pa nikada ne dolazi do treće strane:",
+    cookies_settings: "Pregledajte ili povucite odabir kolačića",
     cookies_locale: "weddly.locale, pamti preferirate li mađarsko ili englesko sučelje.",
     cookies_verify_dismiss:
       "weddly.verify_email_dismissed_until, na 24 sata utišava traku za potvrdu e-pošte nakon što je zatvorite.",
@@ -8006,18 +8021,18 @@ const hr: LocaleMessages = {
       "Ove uvjete povremeno ažuriramo. Manje jezične ispravke unosimo bez najave. Kod bitnih promjena (nova naknada, novi izvršitelj obrade, sužavanje naših obveza) javljamo vam e-poštom najmanje 14 dana prije stupanja na snagu i tražimo da ažurirane uvjete prihvatite u aplikaciji, bez prihvaćanja dijelovi usluge neće ostati dostupni. Kad otvorena beta završi, svi beta korisnici primit će zasebnu e-poruku o sveobuhvatnoj novoj verziji.",
     law_title: "Mjerodavno pravo",
     law_body:
-      "Na ove se uvjete primjenjuje mađarsko pravo, zajedno s propisima EU-a o zaštiti podataka i zaštiti potrošača (osobito GDPR, DSA i EU 524/2013). Svaki spor najprije pokušavamo riješiti e-poštom. Ako to ne uspije, nadležan je stvarno i mjesno nadležni sud u Mađarskoj; vaše pravo na izbor suda prema propisima o zaštiti potrošača time nije ograničeno.",
+      "Na ove se uvjete primjenjuju mađarsko pravo i primjenjiva pravila EU-a o zaštiti podataka i potrošača, osobito GDPR i DSA. Spor najprije pokušavamo riješiti e-poštom. Obvezna prava i nadležnosti potrošača prema mjestu uobičajenog boravišta ostaju nepromijenjeni.",
     contact_title: "Pitanja?",
     contact_body: "Pišite na hello@tryweddly.com ili andor.csikasz@gmail.com.",
     en_section_label: "English",
   },
   subscription_terms: {
-    seo_title: "Uvjeti pretplate za dobavljače (ÁSZF) v1.1 · Weddly",
+    seo_title: "Uvjeti pretplate za dobavljače (ÁSZF) · Weddly",
     seo_description:
       "Weddlyjevi opći uvjeti za dobavljače: naknade, naplata, produljenje, odgovornost, rangiranje, pritužbe, mađarsko i EU pravo.",
     page_title: "Uvjeti pretplate za dobavljače (ÁSZF)",
     last_updated_label: "Verzija",
-    last_updated_date: "1.1 · na snazi od 2026-07-28",
+    last_updated_date: "na snazi od 2026-08-12",
     intro:
       "Ovi Opći uvjeti poslovanja (ÁSZF) uređuju Weddlyjevu pretplatu za dobavljače. Postaju dio ugovora između strana kada ih Dobavljač izričito prihvati klikom na „Prihvaćam” tijekom registracije. Prema čl. 6:78(2) mađarskog Građanskog zakonika izričito su istaknute i uz posebnu pažnju prihvaćene sljedeće odredbe: ograničenje odgovornosti, automatsko produljenje, promjena naknada, jednostrana izmjena Općih uvjeta, nadležnost te označavanje sponzoriranih prikaza.",
     operator_title: "Operator i ugovorne strane",
@@ -8107,9 +8122,9 @@ const hr: LocaleMessages = {
     governing_law_title: "Mjerodavno pravo i nadležnost",
     governing_law_body:
       "Na ove se uvjete primjenjuje mađarsko pravo (osobito Građanski zakonik, Zakon o računovodstvu, Zakon o PDV-u, mađarski Ektv. i Vladina uredba 45/2014.) zajedno s mjerodavnim propisima EU-a (GDPR, DSA, P2B Uredba 2019/1150, ePrivacy). Strane će najprije pokušati rješenje putem odjeljaka Interno rješavanje pritužbi i Mirenje. Ako to ne uspije, nadležni su mađarski sudovi; Dobavljač koji je potrošač zadržava pravo pokrenuti postupak pred sudom svojeg prebivališta.",
-    odr_title: "Online rješavanje sporova (EU 524/2013)",
+    odr_title: "Alternativno rješavanje sporova",
     odr_body:
-      "Dobavljači koji su potrošači mogu pokrenuti i online rješavanje spora putem platforme Europske komisije: https://ec.europa.eu/consumers/odr. Platforma podržava alternativno rješavanje sporova između strana. Mađarske potrošačke pritužbe mogu se podnijeti i Budimpeštanskom mirilačkom vijeću (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) ili Mirilačkom vijeću Peštanske županije (panaszrendezes.hu).",
+      "Platforma EU-a za online rješavanje sporova ukinuta je 20. srpnja 2025. Potrošači se mogu obratiti nadležnom mađarskom mirilačkom tijelu; aktualni podaci nalaze se u Impressumu i našem odgovoru na pritužbu. Obvezna potrošačka pravna sredstva ostaju nepromijenjena.",
     contact_title: "Kontakt",
     contact_body:
       "Sva pitanja o Općim uvjetima i o usluzi koju Weddly pruža dobavljačima šaljite na hello@tryweddly.com; pritužbe, zahtjeve za mirenje i DSA prijave možete poslati i na panasz@weddly.xyz. Identifikacijski podaci Operatora prema čl. 4 mađarskog Ektv. dostupni su na stranici Impressum.",
@@ -8888,7 +8903,7 @@ const hr: LocaleMessages = {
     err_privacy: "Za nastavak morate prihvatiti pravila privatnosti.",
     err_plan: "Odaberite plan da biste nastavili.",
     features_title: "Sve što organizatoru vjenčanja doista treba",
-    features_tagline: "",
+    features_tagline: "Vodite klijente, rokove i dokumente iz jednog mirnog radnog prostora.",
     feature_guestlist_name: "Popis gostiju",
     feature_guestlist_desc: "RSVP, prehrambene napomene, status pozivnica.",
     feature_seating_name: "Raspored sjedenja",
@@ -8902,11 +8917,11 @@ const hr: LocaleMessages = {
     beta_title: "Pridružite se prvim 25 organizatora",
     beta_body: "Prvih 25 prijavljenih dvije su godine naši gosti.",
     beta_step_1_title: "Ispunite obrazac",
-    beta_step_1_body: "",
+    beta_step_1_body: "Recite nam nešto o svojem poslovanju i načinu rada.",
     beta_step_2_title: "Javljamo vam se",
-    beta_step_2_body: "",
+    beta_step_2_body: "Pregledat ćemo prijavu i poslati vam sljedeće korake e-poštom.",
     beta_step_3_title: "Dvije godine punog pristupa",
-    beta_step_3_body: "",
+    beta_step_3_body: "Aktivirajte radni prostor i počnite upravljati parovima na jednom mjestu.",
     step_label_contact: "Kontakt",
     form_title: "Prijavite se",
     step1_cta: "Dalje na prijavu",

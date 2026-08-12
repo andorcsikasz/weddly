@@ -303,7 +303,7 @@ export default function VendorDashboardPage() {
         <div className="flex flex-col gap-2 self-start sm:flex-row sm:items-center sm:self-auto">
           {listingId && (
             <Link
-              to={`/vendors/${listingId}`}
+              to={`/suppliers/${listingId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-paper-300 px-5 text-sm font-semibold text-ink-700 transition-colors hover:border-ink-900 hover:bg-paper-100 dark:border-umber-700 dark:text-paper-200 dark:hover:border-paper-200 dark:hover:bg-umber-800"

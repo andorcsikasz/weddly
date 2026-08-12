@@ -37,7 +37,7 @@ function Header() {
           className="hidden items-center gap-4 font-grotesk sm:flex"
         >
           {[
-            { to: "/vendors", label: t("landing.nav_vendors") },
+            { to: "/suppliers", label: t("landing.nav_vendors") },
             { to: "/planners", label: t("landing.nav_planners") },
           ].map(({ to, label }) => {
             const active = pathname === to;

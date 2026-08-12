@@ -500,8 +500,9 @@ export interface AdminWeddingAnalytics {
 
 // ─── /api/admin/analytics/guests ─────────────────────────────────────────
 //
-// Guest-list shape across the real universe — RSVP funnel, dietary load,
-// plus-one + accommodation demand. Guests belong to couples; rows owned by
+// Guest-list shape across the real universe — RSVP funnel, plus-one and
+// accommodation demand. Special-category dietary notes deliberately never
+// leave the owning workspace or enter this cross-customer rollup. Rows owned by
 // demo / `deleting` couples are excluded.
 
 export interface AdminGuestAnalytics {
@@ -527,19 +528,6 @@ export interface AdminGuestAnalytics {
   accommodation_needed_count: number;
   /** Guests with a non-empty `song_request`. */
   song_request_count: number;
-  /** Heuristic keyword scan of the free-text `dietary` field (HU + EN terms).
-   *  A single note can hit more than one bucket. `other_text` counts non-empty
-   *  notes that matched no keyword. */
-  dietary: {
-    gluten: number;
-    lactose: number;
-    nut: number;
-    vegetarian: number;
-    vegan: number;
-    other_text: number;
-  };
-  /** Guests with any non-empty `dietary` note (denominator for `dietary`). */
-  guests_with_dietary: number;
 }
 
 // ─── Traffic (Google Analytics 4) ──────────────────────────────────────────

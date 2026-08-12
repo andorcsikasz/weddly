@@ -190,7 +190,7 @@ describe("/w/:slug SSR meta — couple-personalised <title> + OG tags", () => {
     // the default render locale now (no Accept-Language forwarded by
     // production server.ts), so the brand line we assert is the EN one.
     expect(html).toContain('content="https://tryweddly.com/og.png"');
-    expect(html).toContain("Weddly · Your shared wedding-planning workspace");
+    expect(html).toContain("Wēddly · Low-cortisol wedding planning");
     // Spot-check that the bride/groom test names (set by bootstrapCouple)
     // do NOT leak into the head when is_public = 0.
     expect(html).not.toContain("Mia");

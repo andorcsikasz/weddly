@@ -589,7 +589,7 @@ export function SubmitSupplierModal({
                         {nameMatches.map((m) => (
                           <li key={m.id}>
                             <a
-                              href={`${visitor ? "/vendors/" : "/app/suppliers/"}${encodeURIComponent(m.id)}`}
+                              href={`${visitor ? "/suppliers/" : "/app/suppliers/"}${encodeURIComponent(m.id)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center justify-between gap-2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm transition hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-paper-50"

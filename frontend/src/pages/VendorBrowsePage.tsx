@@ -82,7 +82,7 @@ function TopBar({ t }: { t: T }) {
             vendor link is sm+ only so the phone header keeps one action. */}
         <div className="flex items-center gap-1 sm:gap-2">
           <Link
-            to="/vendors/signup"
+            to="/suppliers/signup"
             className="hidden rounded-full px-4 py-2.5 text-sm font-medium tracking-tight text-ink-600 transition hover:bg-ink-900/[0.06] hover:text-ink-900 sm:inline-flex dark:text-paper-200 dark:hover:bg-paper-50/10 dark:hover:text-paper-50"
           >
             {t("vendorBrowse.cta_vendor")}
@@ -224,7 +224,7 @@ function VendorCard({
 }) {
   return (
     <Link
-      to={`/vendors/${encodeURIComponent(id)}`}
+      to={`/suppliers/${encodeURIComponent(id)}`}
       className="group block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100"
     >
       <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-paper-200 dark:bg-umber-700">
@@ -465,7 +465,7 @@ function PlannerInviteModule({ t, vendors }: { t: T; vendors: PublicShowcaseVend
               {vendors.map((v) => (
                 <li key={v.id}>
                   <Link
-                    to={`/vendors/${encodeURIComponent(v.id)}`}
+                    to={`/suppliers/${encodeURIComponent(v.id)}`}
                     className="inline-block rounded-full border border-ink-900/15 px-3 py-1.5 text-[13px] tracking-tight text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-paper-50/20 dark:text-paper-200"
                   >
                     {v.name}
@@ -971,7 +971,7 @@ export default function VendorBrowsePage() {
                   domId={sectionDomId(c.category)}
                   label={t(`suppliers.cat.${c.category}`)}
                   vendors={c.vendors}
-                  showAllTo={`/vendors/browse?category=${c.category}${city ? `&city=${encodeURIComponent(city)}` : ""}`}
+                  showAllTo={`/suppliers/browse?category=${c.category}${city ? `&city=${encodeURIComponent(city)}` : ""}`}
                   t={t}
                 />
               ))}
@@ -1004,7 +1004,7 @@ export default function VendorBrowsePage() {
               <ArrowRight size={16} aria-hidden />
             </Link>
             <Link
-              to="/vendors/signup"
+              to="/suppliers/signup"
               className="text-sm font-medium tracking-tight text-paper-200/70 underline-offset-4 transition hover:text-paper-50 hover:underline"
             >
               {t("vendorBrowse.vendor_prompt")}

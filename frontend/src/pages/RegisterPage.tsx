@@ -335,7 +335,7 @@ export default function RegisterPage() {
             </p>
             <div className="mt-2 flex items-center justify-center gap-5 text-sm">
               <Link
-                to="/vendors"
+                to="/suppliers"
                 className="font-medium text-umber-900 underline dark:text-paper-100"
               >
                 {t("auth.register_as_vendor")}

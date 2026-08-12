@@ -203,6 +203,9 @@ export function ShareWeddlyDialog({
     const el = railRef.current;
     const child = el?.children[index] as HTMLElement | undefined;
     if (!el || !child) return;
+    // Update selection immediately for keyboard/button users. The scroll
+    // handler will confirm the same index once smooth scrolling settles.
+    setActive(index);
     const left = child.offsetLeft - (el.clientWidth - child.offsetWidth) / 2;
     el.scrollTo({ left, behavior: "smooth" });
   }, []);

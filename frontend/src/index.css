@@ -311,15 +311,21 @@
   :root {
     /* Mode accent re-themes the entire UI. Default = ink (couple workspace). */
     --color-mode-accent: theme(colors.ink.700);
+    /* Brand action and product state are deliberately separate semantic
+       channels. Ink/cream means "act"; clay/blush means "frozen/locked" in
+       the budget. Keeping those roles explicit prevents a future marketing
+       CTA from teaching the opposite meaning with the same terracotta hue. */
+    --color-brand-action: theme("colors.umber.900");
+    --color-brand-action-contrast: theme("colors.paper.100");
     /* Range-slider gradient: amount = the filled spent portion, remainder =
        the leftover track. In light mode the amount is dark (ink-700) on a
        light track (paper-200). Dark mode inverts to draw the eye to the
        spent amount, not the empty space (paper-100 amount on umber-700). */
     --range-fill-amount: theme("colors.ink.700");
     --range-fill-remainder: theme("colors.paper.200");
-    /* Frozen-row fill: blush so the locked rows share their palette with the
-       row label + lock badge. Used by `.range-fill-frozen` rows via an inline
-       `--range-fill-amount` override. */
+    /* Frozen-row fill: clay/blush is reserved for the locked-state vocabulary.
+       Used by `.range-fill-frozen` rows via an inline `--range-fill-amount`
+       override; it is intentionally not the primary brand action colour. */
     --range-fill-frozen: theme("colors.blush.400");
     /* Same inversion for the over-budget "actual spend" overlay: keeps the
        red as the eye-catching half in both modes (bright red on light, soft
@@ -364,11 +370,10 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* SSR prerender body (frontend/scripts/prerender.ts) — what crawlers see
-   * before the React bundle parses. Real users only catch ~100-300 ms of
-   * this before createRoot() wipes it; the styling keeps the flash from
-   * looking like a raw DOM dump. Tailwind utility classes on the React
-   * tree fully replace these rules post-hydration. */
+  /* SSR prerender body (frontend/scripts/prerender.ts) — useful, readable
+   * public content before the React bundle parses and for no-JS visitors.
+   * Tailwind utility classes on the React tree replace these rules after
+   * the application mounts. */
   .seo-prerender {
     max-width: 64ch;
     margin: 0 auto;
@@ -985,26 +990,22 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     box-shadow: none !important;
   }
 
-  /* While the hero section is in view the header is transparent; flip icons
-     light so they read against the dark photo on the right half of the frame.
-     Scoped to sm+ ONLY: on phones the hero photo is anchored lower in the
-     frame, so the header sits over the light paper band at the top — white
-     icons there vanish. Below 640px the icons keep their dark default
-     (text-umber-800), which reads cleanly on that cream band. */
-  @media (min-width: 640px) {
-    html.landing-hero-active header [data-nav-icon] {
-      color: rgba(251, 250, 246, 0.90);
-    }
-    html.landing-hero-active header [data-nav-icon]:hover {
-      background-color: rgba(251, 250, 246, 0.15);
-      color: #fbfaf5;
-    }
+  /* While the identity hero is in view the header is transparent; all tagged
+     controls and the wordmark flip light against the ink wash at every size. */
+  html.landing-hero-active header [data-nav-icon] {
+    color: rgba(251, 250, 246, 0.9);
+  }
+  html.landing-hero-active header [data-nav-icon]:hover {
+    background-color: rgba(251, 250, 246, 0.15);
+    color: #fbfaf5;
   }
 
   .hero-section {
     position: relative;
     overflow: hidden;
-    background: #fbfaf5;
+    /* Ink/night is the identity moment. Product and planning sections return
+       to paper immediately afterwards, so the two registers have clear jobs. */
+    background: #0f0a07;
     /* Slide the section up under the sticky header on every viewport so the
        background photo fills right up behind the (translucent) header — the
        header keeps its own cream/backdrop-blur layer so it stays legible in
@@ -1053,7 +1054,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     background-position: center top;
     background-repeat: no-repeat;
     pointer-events: none;
-    filter: saturate(1.4) brightness(0.93);
+    filter: saturate(0.9) brightness(0.52) contrast(1.05);
   }
   @media (max-width: 639px) {
     .hero-photo-img {
@@ -1063,8 +1064,8 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
          photo in the lower band. */
       background-image: url("/hero-mobile-cover.jpg");
       background-position: center;
-      opacity: 0.9;
-      filter: saturate(1.05) brightness(0.98);
+      opacity: 0.78;
+      filter: saturate(0.85) brightness(0.48) contrast(1.05);
     }
   }
   .dark .hero-photo-img {
@@ -1072,14 +1073,9 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     filter: saturate(1.2) brightness(0.75);
   }
 
-  /* Left content zone + smooth bottom dissolve into the page background.
-     Radial center sits a touch lower (54% vs 46%) so the cream mass anchors
-     around the title rather than the top third. The linear-gradient(to top)
-     layer fades the photo's bottom edge softly out.
-     That bottom layer ends on OPAQUE WHITE, not on cream at 98%: the section
-     under the hero is `bg-white`, so a fade that stops on paper-50 (or stops
-     2% short of opaque) meets it as a visible hairline across the full width.
-     The dissolve has to land on the exact colour of what follows. */
+  /* Dark identity wash on the copy side, with a long bottom dissolve into the
+     first paper section. The photograph remains visible as atmosphere rather
+     than competing with the positioning line. */
   .hero-overlay {
     position: absolute;
     inset: 0;
@@ -1088,53 +1084,45 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       linear-gradient(
         to top,
         rgba(255, 255, 255, 1) 0%,
-        rgba(255, 255, 255, 0.9) 5%,
-        rgba(255, 255, 255, 0.5) 12%,
-        rgba(255, 255, 255, 0) 24%
+        rgba(255, 255, 255, 0.88) 4%,
+        rgba(15, 10, 7, 0.35) 15%,
+        rgba(15, 10, 7, 0) 30%
       ),
       radial-gradient(
-        ellipse 64% 76% at 18% 54%,
-        rgba(251, 250, 246, 0.99) 0%,
-        rgba(251, 250, 246, 0.96) 30%,
-        rgba(251, 250, 246, 0.78) 48%,
-        rgba(251, 250, 246, 0.38) 66%,
-        rgba(251, 250, 246, 0.06) 100%
+        ellipse 70% 82% at 14% 52%,
+        rgba(15, 10, 7, 0.99) 0%,
+        rgba(15, 10, 7, 0.94) 34%,
+        rgba(15, 10, 7, 0.72) 55%,
+        rgba(15, 10, 7, 0.28) 76%,
+        rgba(15, 10, 7, 0) 100%
       ),
       linear-gradient(
         90deg,
-        rgba(251, 250, 246, 0.92) 0%,
-        rgba(251, 250, 246, 0.75) 30%,
-        rgba(251, 250, 246, 0.26) 58%,
-        rgba(251, 250, 246, 0) 100%
+        rgba(15, 10, 7, 0.94) 0%,
+        rgba(15, 10, 7, 0.72) 38%,
+        rgba(15, 10, 7, 0.2) 70%,
+        rgba(15, 10, 7, 0.08) 100%
       );
   }
   @media (max-width: 639px) {
     .hero-overlay {
-      /* Cream is near-opaque behind the headline/sub/CTA at the top, then
-         thins out so the photo emerges in the lower band (behind the demo
-         card and below) — mirrors the desktop "text on cream, photo peeking"
-         read in a single-column layout. The first layer is a bottom dissolve:
-         the photo's lower edge fades back into paper-50 so it blends into the
-         budget section below instead of hard-cutting at the section boundary.
-         Same rule as the base overlay: it ends on opaque white because the
-         next section is white, and it starts fading a third of the way up so
-         the handover is long enough to read as haze rather than as an edge. */
+      /* Phones keep the same dark identity register, with a stronger top wash
+         for the longer wrapped headline and a paper dissolve at the handoff. */
       background:
         linear-gradient(
           to top,
           rgba(255, 255, 255, 1) 0%,
-          rgba(255, 255, 255, 0.94) 6%,
-          rgba(255, 255, 255, 0.66) 14%,
-          rgba(255, 255, 255, 0.28) 24%,
-          rgba(255, 255, 255, 0) 34%
+          rgba(255, 255, 255, 0.9) 5%,
+          rgba(15, 10, 7, 0.4) 18%,
+          rgba(15, 10, 7, 0) 34%
         ),
         linear-gradient(
           180deg,
-          rgba(251, 250, 246, 0.86) 0%,
-          rgba(251, 250, 246, 0.78) 20%,
-          rgba(251, 250, 246, 0.58) 38%,
-          rgba(251, 250, 246, 0.32) 58%,
-          rgba(251, 250, 246, 0.1) 100%
+          rgba(15, 10, 7, 0.96) 0%,
+          rgba(15, 10, 7, 0.9) 28%,
+          rgba(15, 10, 7, 0.72) 52%,
+          rgba(15, 10, 7, 0.38) 76%,
+          rgba(15, 10, 7, 0.14) 100%
         );
     }
   }
@@ -1171,6 +1159,36 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .hero-content-wrap {
     position: relative;
     z-index: 2;
+  }
+
+  .hero-primary-cta {
+    background-color: theme("colors.paper.50");
+    color: theme("colors.umber.950");
+    --btn-rim: theme("colors.paper.300");
+    --btn-rim-hover: theme("colors.paper.400");
+  }
+  .hero-primary-cta:hover {
+    background-color: theme("colors.paper.200");
+  }
+  .hero-secondary-cta {
+    border-color: rgba(246, 242, 231, 0.55);
+    background-color: rgba(15, 10, 7, 0.46);
+    color: theme("colors.paper.50");
+    --btn-rim: rgba(246, 242, 231, 0.35);
+    --btn-rim-hover: rgba(246, 242, 231, 0.55);
+  }
+  .hero-secondary-cta:hover {
+    background-color: rgba(246, 242, 231, 0.14);
+  }
+
+  /* Design-tool typography guard: when Bodoni Moda is the couple's selected
+     display family, every web heading—including compact date/placeholder
+     treatments—uses the 600 face so hairlines and ő/ű remain intact. */
+  .wedding-theme h1,
+  .wedding-theme h2,
+  .wedding-theme h3,
+  .wedding-theme [style*="var(--wt-heading-font)"] {
+    font-weight: var(--wt-heading-weight, inherit);
   }
 
   .input {

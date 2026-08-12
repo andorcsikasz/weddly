@@ -4,7 +4,7 @@
 // are icon-only but never icon-only to a screen reader (real aria-labels).
 
 import { beforeEach, describe, expect, it } from "bun:test";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ShareWeddlyDialog } from "@/components/ShareWeddlyDialog";
 import { I18nProvider, _preloadHuForTests } from "@/lib/i18n";
 
@@ -18,7 +18,6 @@ function renderModal() {
 
 describe("ShareWeddlyDialog — English interface", () => {
   beforeEach(() => {
-    cleanup();
     try {
       localStorage.clear();
       localStorage.setItem("weddly.locale", "en");
@@ -29,12 +28,11 @@ describe("ShareWeddlyDialog — English interface", () => {
 
   it("renders the English headline and all three English message cards", () => {
     renderModal();
-    expect(screen.getByText("You build your marriage. We build Weddly.")).toBeTruthy();
-    const radios = screen.getAllByRole("radio");
-    expect(radios.length).toBe(3);
-    // The first card is selected by default.
-    expect(radios[0]?.getAttribute("aria-checked")).toBe("true");
-    expect(radios[1]?.getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByText("Share Weddly to reach more couples. 🕊️🤍")).toBeTruthy();
+    const dots = screen.getAllByRole("button", { name: /Share message [123]/ });
+    expect(dots.length).toBe(3);
+    expect(dots[0]?.getAttribute("aria-current")).toBe("true");
+    expect(dots[1]?.getAttribute("aria-current")).toBe("false");
     // No Hungarian leaks into the English experience.
     expect(screen.queryByText(/Ti a közös jövőtöket építitek/)).toBeNull();
   });
@@ -47,16 +45,15 @@ describe("ShareWeddlyDialog — English interface", () => {
 
   it("moves selection when another card is clicked", () => {
     renderModal();
-    const radios = screen.getAllByRole("radio");
-    fireEvent.click(radios[2] as HTMLElement);
-    expect(radios[2]?.getAttribute("aria-checked")).toBe("true");
-    expect(radios[0]?.getAttribute("aria-checked")).toBe("false");
+    const dots = screen.getAllByRole("button", { name: /Share message [123]/ });
+    fireEvent.click(dots[2] as HTMLElement);
+    expect(dots[2]?.getAttribute("aria-current")).toBe("true");
+    expect(dots[0]?.getAttribute("aria-current")).toBe("false");
   });
 });
 
 describe("ShareWeddlyDialog — Hungarian interface", () => {
   beforeEach(async () => {
-    cleanup();
     try {
       localStorage.clear();
       localStorage.setItem("weddly.locale", "hu");
@@ -71,11 +68,13 @@ describe("ShareWeddlyDialog — Hungarian interface", () => {
   it("renders the Hungarian headline and Hungarian action labels", async () => {
     renderModal();
     await waitFor(() =>
-      expect(screen.getByText("Ti a közös jövőtöket építitek. Mi a Weddlyt.")).toBeTruthy(),
+      expect(
+        screen.getByText("Osszátok meg a Weddly-t, hogy több párhoz eljussunk. 🕊️🤍"),
+      ).toBeTruthy(),
     );
     expect(screen.getByRole("button", { name: "Megosztás" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Másolás" })).toBeTruthy();
     // No English leaks into the Hungarian experience.
-    expect(screen.queryByText(/You build your marriage/)).toBeNull();
+    expect(screen.queryByText(/Share Weddly to reach/)).toBeNull();
   });
 });

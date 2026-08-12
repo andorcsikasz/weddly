@@ -393,7 +393,7 @@ function sweepVendorProfileShareNudge(ts: number): number {
       "vendor_profile_share",
       {
         businessName: r.display_name,
-        shareUrl: `${CONFIG.frontendBaseUrl}/vendors/${listingId}`,
+        shareUrl: `${CONFIG.frontendBaseUrl}/suppliers/${listingId}`,
         editUrl: `${CONFIG.frontendBaseUrl}/vendor/listing`,
         reviewsUrl: `${CONFIG.frontendBaseUrl}/vendor/reviews`,
         missing,

@@ -1,6 +1,6 @@
 // Tiny HTTP helpers + custom router. No framework — Bun's native runtime is fast enough.
 
-import { CONFIG } from "../config";
+import { CONFIG, REQUIRE_PROD_HARDENING } from "../config";
 import type { Logger } from "./logger";
 
 export interface Ctx {
@@ -21,13 +21,14 @@ export type Handler = (ctx: Ctx) => Promise<Response> | Response;
 
 interface Route {
   method: string;
+  path: string;
   pattern: RegExp;
   keys: string[];
   handler: Handler;
   requireAuth: boolean;
 }
 
-const IS_PROD = process.env.NODE_ENV === "production";
+const IS_PROD = REQUIRE_PROD_HARDENING;
 
 // CORS allowlist: prod locks to FRONTEND_BASE_URL; dev permits localhost on
 // any port so Vite (5173) → API (8787) keeps working. Tests run same-origin.
@@ -49,6 +50,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
     "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
     "Access-Control-Allow-Headers":
       "Authorization, Content-Type, x-test-client-ip, X-Weddly-Device, X-Visitor-Token",
+    "Access-Control-Allow-Credentials": "true",
     Vary: "Origin",
   };
 }
@@ -93,7 +95,7 @@ export class Router {
 
   add(method: string, path: string, handler: Handler, requireAuth = false) {
     const { pattern, keys } = compilePath(path);
-    this.routes.push({ method, pattern, keys, handler, requireAuth });
+    this.routes.push({ method, path, pattern, keys, handler, requireAuth });
   }
   get(path: string, handler: Handler, requireAuth = false) {
     this.add("GET", path, handler, requireAuth);

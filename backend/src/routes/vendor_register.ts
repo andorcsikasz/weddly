@@ -12,7 +12,7 @@
 // vendors get a free founding year, everyone after lands on a 14-day trial.
 
 import { randomBytes } from "node:crypto";
-import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import {
   isVendorSelfServeBlocked,
   SUPPLIER_GROUPS,
@@ -72,7 +72,8 @@ interface VendorRegisterBody {
   contact_phone?: unknown;
   website?: unknown;
   privacy_version?: unknown;
-  terms_version?: unknown;
+  vendor_terms_version?: unknown;
+  highlighted_terms_accepted?: unknown;
   locale?: unknown;
   referrer?: unknown;
   utm_source?: unknown;
@@ -337,8 +338,17 @@ async function finalizeVendorSignup(
     subjectUserId: input.userId,
     subjectKind: "user",
     subjectRef: null,
-    document: "terms",
-    version: TERMS_VERSION,
+    document: "vendor_terms",
+    version: VENDOR_TERMS_VERSION,
+    ip,
+    userAgent,
+  });
+  recordConsent({
+    subjectUserId: input.userId,
+    subjectKind: "user",
+    subjectRef: null,
+    document: "vendor_terms_highlighted",
+    version: VENDOR_TERMS_VERSION,
     ip,
     userAgent,
   });
@@ -392,8 +402,11 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   if (body.privacy_version !== PRIVACY_VERSION) {
     throw new HttpError(400, "Privacy policy version is out of date — please refresh the page");
   }
-  if (body.terms_version !== TERMS_VERSION) {
-    throw new HttpError(400, "Terms version is out of date — please refresh the page");
+  if (body.vendor_terms_version !== VENDOR_TERMS_VERSION) {
+    throw new HttpError(400, "Vendor terms version is out of date — please refresh the page");
+  }
+  if (body.highlighted_terms_accepted !== true) {
+    throw new HttpError(400, "The highlighted vendor terms must be expressly accepted");
   }
   if (getUserByEmail(email)) {
     throw new HttpError(409, "An account with this email already exists", { code: "email_taken" });
@@ -484,8 +497,11 @@ async function handleRegisterGoogle(ctx: Ctx): Promise<Response> {
   if (body.privacy_version !== PRIVACY_VERSION) {
     throw new HttpError(400, "Privacy policy version is out of date — please refresh the page");
   }
-  if (body.terms_version !== TERMS_VERSION) {
-    throw new HttpError(400, "Terms version is out of date — please refresh the page");
+  if (body.vendor_terms_version !== VENDOR_TERMS_VERSION) {
+    throw new HttpError(400, "Vendor terms version is out of date — please refresh the page");
+  }
+  if (body.highlighted_terms_accepted !== true) {
+    throw new HttpError(400, "The highlighted vendor terms must be expressly accepted");
   }
   // A Weddly account already on this email (couple or vendor) blocks the fresh
   // vendor signup, exactly like the password path. The user can link Google to

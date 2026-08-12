@@ -55,6 +55,9 @@ link_modules "frontend"
 # Random high port so parallel pushes / dev servers don't clash.
 TEST_PORT=$(( 18000 + RANDOM % 10000 ))
 export PORT="$TEST_PORT"
+export BUN_TEST_PORT="$TEST_PORT"
+export BUN_TEST_DB_PATH="$TMP/data/prepush-test-weddly.db"
+export BUN_TEST_UPLOADS_DIR="$TMP/data/prepush-test-uploads"
 
 cd "$TMP"
 

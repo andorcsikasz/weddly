@@ -29,12 +29,12 @@ const DEBOUNCE_MS = 200;
 /** Where picking a row takes the visitor. A vendor has its own public page;
  *  a town and a category are both filters on the browse teaser. */
 function hrefFor(s: PublicVendorSuggestion): string {
-  if (s.kind === "vendor" && s.id) return `/vendors/${encodeURIComponent(s.id)}`;
-  if (s.kind === "city") return `/vendors/browse?city=${encodeURIComponent(s.label)}`;
+  if (s.kind === "vendor" && s.id) return `/suppliers/${encodeURIComponent(s.id)}`;
+  if (s.kind === "city") return `/suppliers/browse?city=${encodeURIComponent(s.label)}`;
   if (s.kind === "category" && s.category) {
-    return `/vendors/browse?category=${encodeURIComponent(s.category)}`;
+    return `/suppliers/browse?category=${encodeURIComponent(s.category)}`;
   }
-  return "/vendors/browse";
+  return "/suppliers/browse";
 }
 
 export function VendorSearchBar({ className = "" }: { className?: string }) {
@@ -112,7 +112,7 @@ export function VendorSearchBar({ className = "" }: { className?: string }) {
 
   function go(s: PublicVendorSuggestion | null) {
     setOpen(false);
-    navigate(s ? hrefFor(s) : "/vendors/browse");
+    navigate(s ? hrefFor(s) : "/suppliers/browse");
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {

@@ -8,7 +8,7 @@
 // This replaces the old public waitlist form + emailed token-activation flow.
 
 import type { CompanyLookupResult } from "@shared/company_lookup";
-import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import type { AuthSession } from "@shared/types";
 import { Check, ChevronDown } from "lucide-react";
@@ -91,6 +91,8 @@ export default function VendorRegisterPage() {
   const [legalForm, setLegalForm] = useState("");
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
+  const [acceptedVendorTerms, setAcceptedVendorTerms] = useState(false);
+  const [acceptedHighlightedTerms, setAcceptedHighlightedTerms] = useState(false);
 
   // Only business name + category are required; the legal/registry/contact block
   // is optional (and also collected in onboarding), so it stays collapsed by
@@ -193,6 +195,10 @@ export default function VendorRegisterPage() {
       setError(t("vendor_register.custom_category_required"));
       return;
     }
+    if (!acceptedVendorTerms || !acceptedHighlightedTerms) {
+      setError(t("vendor_register.legal_accept_required"));
+      return;
+    }
     setSubmitting(true);
     try {
       const utm = readUtm();
@@ -220,7 +226,8 @@ export default function VendorRegisterPage() {
         contact_phone: phone.trim() || undefined,
         website: website.trim() || undefined,
         privacy_version: PRIVACY_VERSION,
-        terms_version: TERMS_VERSION,
+        vendor_terms_version: VENDOR_TERMS_VERSION,
+        highlighted_terms_accepted: true as const,
         locale,
         referrer,
         ...utm,
@@ -755,6 +762,39 @@ export default function VendorRegisterPage() {
                   {error}
                 </p>
               )}
+              <div className="space-y-3 rounded-xl border border-umber-200 bg-paper-50 p-4 text-sm text-umber-800">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={acceptedVendorTerms}
+                    onChange={(e) => setAcceptedVendorTerms(e.target.checked)}
+                    required
+                  />
+                  <span>
+                    {t("vendor_register.legal_accept_prefix")}{" "}
+                    <Link
+                      to="/terms/vendor-subscription"
+                      target="_blank"
+                      rel="noopener"
+                      className="underline hover:text-umber-950"
+                    >
+                      {t("vendor_register.legal_accept_link")}
+                    </Link>{" "}
+                    {t("vendor_register.legal_accept_suffix")}
+                  </span>
+                </label>
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={acceptedHighlightedTerms}
+                    onChange={(e) => setAcceptedHighlightedTerms(e.target.checked)}
+                    required
+                  />
+                  <span>{t("vendor_register.highlighted_accept")}</span>
+                </label>
+              </div>
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -792,7 +832,7 @@ export default function VendorRegisterPage() {
                 </Link>
                 {t("register.continuing_and")}
                 <Link
-                  to="/terms"
+                  to="/terms/vendor-subscription"
                   target="_blank"
                   rel="noopener"
                   className="underline hover:text-umber-800"
@@ -853,7 +893,7 @@ function messageFor(err: unknown, t: ReturnType<typeof useT>["t"]): string {
       if (detail?.code === "listing_exists_unclaimed") {
         return t("vendor_register.err_listing_exists", {
           name: detail.listing?.name ?? "",
-          url: `/vendors/${detail.listing?.id ?? ""}`,
+          url: `/suppliers/${detail.listing?.id ?? ""}`,
         });
       }
       return t("auth.duplicate_email");

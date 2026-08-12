@@ -1943,7 +1943,7 @@ export type MoodboardSource = "preset" | "pinterest" | "upload";
 /** One image the couple uploaded to their moodboard (source = "upload"). */
 export interface MoodboardImage {
   id: number;
-  /** Public URL served by the `/uploads/*` static handler. */
+  /** Short-lived signed URL for the private image bytes. */
   image_url: string;
   sort_order: number;
 }
