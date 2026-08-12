@@ -8,7 +8,8 @@
     "build": "tsc -b --noEmit && vite build && bun scripts/prerender.ts && bun scripts/precompress.ts",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "test": "bun test",
+    "test": "bun scripts/test.ts",
+    "test:unit": "bun test",
     "og": "bun scripts/og-to-png.ts"
   },
   "dependencies": {

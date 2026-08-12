@@ -363,27 +363,20 @@ describe("<SeatingPage>", () => {
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SeatingPage />);
-    await openFloorPlan();
 
-    // Each table renders both in the floor-plan map AND as a TableCard.
-    // findAllByText copes with that duplication without forcing us to query
-    // by region selector.
+    // Seat mode exposes every table as a card below the map.
     const headHits = await screen.findAllByText("Head Table");
     expect(headHits.length).toBeGreaterThan(0);
     const gardenHits = await screen.findAllByText("Garden Round");
     expect(gardenHits.length).toBeGreaterThan(0);
   });
 
-  it("clicking a table card selects it (TableEditor swaps in the per-table controls)", async () => {
+  it("clicking a table card selects it and opens its seat panel", async () => {
     const tables = [makeTable({ id: 1, label: "Solo Table" })];
     const mockFetch = installFetchMock(defaultSeatingRoutes({ tables }));
     globalThis.fetch = mockFetch.fetch;
 
     await renderPage(<SeatingPage />);
-    await openFloorPlan();
-
-    // The "empty editor" hint is rendered until a table is selected.
-    expect(screen.getByText("Pick a table on the map to edit its details.")).toBeInTheDocument();
 
     // Find the TableCard's role=button container by walking up from the h3
     // label (the same element exists as SVG <text> inside SeatingMap, which
@@ -400,10 +393,7 @@ describe("<SeatingPage>", () => {
       await Promise.resolve();
     });
 
-    // Once selected, the per-table editor renders its action row — the
-    // "Delete table" button is unique to that surface.
-    const deleteBtn = await waitFor(() => screen.getByRole("button", { name: /Delete table/i }));
-    expect(deleteBtn).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /back to list/i })).toBeInTheDocument();
   });
 
   it("delete confirm flow calls DELETE /api/seating/tables/:id with If-Match-less DELETE", async () => {
@@ -420,9 +410,9 @@ describe("<SeatingPage>", () => {
 
     await renderPage(<SeatingPage />);
 
-    // Find the TableCard (NOT the SeatingMap SVG group, which also matches
-    await openFloorPlan();
-    // role="button"). The TableCard's h3 uses `font-serif text-xl` — we walk
+    // Select through the seat-mode TableCard, then carry that selection into
+    // Floor plan where the destructive table controls live.
+    // The TableCard's h3 uses `font-serif text-xl` — we walk
     // up from that to the role=button ancestor.
     const labelEls = await screen.findAllByText("Doomed");
     const cardLabel = labelEls.find((el) => el.tagName === "H3");
@@ -435,6 +425,8 @@ describe("<SeatingPage>", () => {
       await Promise.resolve();
       await Promise.resolve();
     });
+
+    await openFloorPlan();
 
     // Delete button lives inside TableEditor (aria-label "Delete table").
     const deleteButton = await waitFor(() => screen.getByRole("button", { name: /Delete table/i }));
