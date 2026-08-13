@@ -24,6 +24,18 @@ interface LaunchRow {
   updated_by_user_id: number | null;
 }
 
+// Recurring checkout still lacks a product-specific, point-of-purchase terms
+// acceptance ledger for couples, planners, and vendors. This is deliberately
+// a code-owned gate rather than an environment flag: deployment configuration
+// must not be able to assert that an unimplemented contract boundary exists.
+// Remove this prerequisite only in the same change that implements and tests
+// exact-version checkout acceptance for all three products.
+const RECURRING_CHECKOUT_CONTRACT_READY = false;
+const recurringContract: [string, string] = [
+  "PAID_CHECKOUT_TERMS_ACCEPTANCE",
+  RECURRING_CHECKOUT_CONTRACT_READY ? "implemented" : "",
+];
+
 function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, value: string]> {
   const secret: [string, string] = ["STRIPE_SECRET_KEY", CONFIG.stripeSecretKey];
   const legalApproval: [string, string] = [
@@ -33,6 +45,7 @@ function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, val
   switch (product) {
     case "couple_subscriptions":
       return [
+        recurringContract,
         legalApproval,
         secret,
         ["STRIPE_WEBHOOK_SECRET", CONFIG.stripeWebhookSecret],
@@ -41,6 +54,7 @@ function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, val
       ];
     case "planner_subscriptions":
       return [
+        recurringContract,
         legalApproval,
         secret,
         ["STRIPE_PLANNER_WEBHOOK_SECRET", CONFIG.stripePlannerWebhookSecret],
@@ -53,6 +67,7 @@ function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, val
       ];
     case "vendor_billing":
       return [
+        recurringContract,
         legalApproval,
         secret,
         ["STRIPE_VENDOR_WEBHOOK_SECRET", CONFIG.stripeVendorWebhookSecret],

@@ -157,7 +157,7 @@ async function handleConsume(ctx: Ctx): Promise<Response> {
       { dashboardUrl: `${CONFIG.frontendBaseUrl}/app`, via: "password" },
       { user: { id: userRow.id, email: userRow.email, full_name: userRow.full_name ?? "" } },
     );
-    const token = issueSession(userRow.id);
+    const token = issueSession(userRow.id, "email_link");
     // 201: the click is what created the account.
     const session: AuthSession = { token, user: toUser(userRow) };
     return json(session, { status: 201 });

@@ -28,7 +28,6 @@ function jsonLdBlocks(html: string): Record<string, unknown>[] {
   const out: Record<string, unknown>[] = [];
   const re = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
   let m: RegExpExecArray | null;
-  // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec loop
   while ((m = re.exec(html)) !== null) {
     const raw = (m[1] ?? "").replace(/<\\\//g, "</");
     out.push(JSON.parse(raw) as Record<string, unknown>);

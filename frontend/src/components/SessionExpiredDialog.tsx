@@ -31,6 +31,7 @@ import { useT } from "../lib/i18n";
 
 interface Props {
   open: boolean;
+  reason: "expired" | "admin";
   /** Email of the previously signed-in user, so we can pre-fill it. */
   email: string;
   /** ID of the previously signed-in user. Used to reject re-auth that lands
@@ -55,6 +56,7 @@ interface Props {
 
 export function SessionExpiredDialog({
   open,
+  reason,
   email,
   userId,
   passwordSet,
@@ -67,6 +69,7 @@ export function SessionExpiredDialog({
   const { setSession } = useAuth();
   const errorId = useId();
   const [password, setPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,6 +78,7 @@ export function SessionExpiredDialog({
   useEffect(() => {
     if (open) {
       setPassword("");
+      setMfaCode("");
       setError(null);
     }
   }, [open]);
@@ -125,6 +129,24 @@ export function SessionExpiredDialog({
     }
   }
 
+  async function onAdminStepUp(e: FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await authApi.adminStepUp(mfaCode);
+      onLoggedIn();
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 429
+          ? t("auth.rate_limited")
+          : t("session.admin_mfa_invalid"),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   function onSignOut() {
     // Clear the token and bounce — nothing here to preserve if the user
     // wants out, and a stale token on every future request just keeps
@@ -145,14 +167,25 @@ export function SessionExpiredDialog({
     <Dialog
       open={open}
       role="dialog"
-      title={t("session.expired_title")}
+      title={t(reason === "admin" ? "session.admin_reauth_title" : "session.expired_title")}
       onClose={onClose}
       footer={
         <>
           <Button variant="outline" onClick={onSignOut} type="button">
             {t("session.sign_out")}
           </Button>
-          {showPassword && (
+          {reason === "admin" ? (
+            <Button
+              variant="primary"
+              type="submit"
+              form="admin-step-up-form"
+              loading={submitting}
+              loadingLabel={t("common.loading")}
+              disabled={!/^\d{6}$/.test(mfaCode)}
+            >
+              {t("session.admin_reauth_cta")}
+            </Button>
+          ) : showPassword ? (
             <Button
               variant="primary"
               type="submit"
@@ -162,13 +195,42 @@ export function SessionExpiredDialog({
             >
               {t("session.sign_in")}
             </Button>
-          )}
+          ) : null}
         </>
       }
     >
-      <p className="text-sm text-ink-700 dark:text-paper-100">{t("session.expired_body")}</p>
+      <p className="text-sm text-ink-700 dark:text-paper-100">
+        {t(reason === "admin" ? "session.admin_reauth_body" : "session.expired_body")}
+      </p>
 
-      {(showGoogle || showApple) && (
+      {reason === "admin" && (
+        <form id="admin-step-up-form" className="mt-4 space-y-2" onSubmit={onAdminStepUp}>
+          <label htmlFor="admin-mfa-code" className="field-label">
+            {t("session.admin_mfa_label")}
+          </label>
+          <input
+            id="admin-mfa-code"
+            className="input font-mono tracking-[0.35em]"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxLength={6}
+            value={mfaCode}
+            onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+            aria-invalid={Boolean(error) || undefined}
+            aria-describedby={error ? errorId : undefined}
+            autoFocus
+          />
+          <p className="text-xs text-ink-500 dark:text-paper-300">{t("session.admin_mfa_hint")}</p>
+          {error && (
+            <p id={errorId} className="text-sm text-blush-700 dark:text-blush-300" role="alert">
+              {error}
+            </p>
+          )}
+        </form>
+      )}
+
+      {reason !== "admin" && (showGoogle || showApple) && (
         <div className="mt-4 space-y-3">
           {showGoogle && (
             <GoogleSignInButton
@@ -188,7 +250,7 @@ export function SessionExpiredDialog({
         </div>
       )}
 
-      {(showGoogle || showApple) && showPassword && (
+      {reason !== "admin" && (showGoogle || showApple) && showPassword && (
         <div className="my-4 flex items-center gap-3" aria-hidden="true">
           <div className="h-px flex-1 bg-ink-200 dark:bg-paper-700" />
           <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-paper-300">
@@ -198,7 +260,7 @@ export function SessionExpiredDialog({
         </div>
       )}
 
-      {showPassword && (
+      {reason !== "admin" && showPassword && (
         <form
           id="session-relogin-form"
           className="mt-4 space-y-3"
@@ -230,7 +292,7 @@ export function SessionExpiredDialog({
         </form>
       )}
 
-      {!showPassword && error && (
+      {reason !== "admin" && !showPassword && error && (
         <p id={errorId} className="mt-3 text-sm text-blush-700 dark:text-blush-300" role="alert">
           {error}
         </p>

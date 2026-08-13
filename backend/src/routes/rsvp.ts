@@ -18,6 +18,7 @@ import type {
 import { isMealChoice, parseMealMenu } from "@shared/meals";
 import { isCurrency } from "@shared/currency";
 import { GUEST_MESSAGE_MAX } from "@shared/rsvp";
+import { GUEST_HEALTH_NOTICE_VERSION } from "@shared/legal";
 import { isRsvpOfferedAccommodation, listRsvpAccommodationOptions } from "../domain/accommodations";
 import { CONFIG } from "../config";
 import { db } from "../db";
@@ -48,6 +49,7 @@ import { addAuditLog } from "../lib/audit";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
+import { recordConsent } from "../domain/consents";
 
 // More forgiving than auth, but still slows enumeration of slug+code combos.
 const RSVP_BUCKET = { capacity: 30, refillRate: 1 / 5 };
@@ -627,9 +629,31 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
   const coupleMenu = parseMealMenu(couple.meal_menu);
   const parsed = body.members.map((m) => parseMember(m as SubmitMemberRaw, couple.id, coupleMenu));
   const parsedAdded = addedRaw.map((m) => parseAddedMember(m as AddedMemberRaw, coupleMenu));
+  const hasHealthData = [...parsed, ...parsedAdded].some((member) => Boolean(member.dietary));
+  if (hasHealthData && body.health_data_consent !== true) {
+    throw new HttpError(
+      400,
+      "Explicit consent is required to store allergy or dietary health data",
+      {
+        code: "health_data_consent_required",
+      },
+    );
+  }
 
   const { previous, updated } = persistCheckin(couple, hh, parsed);
   const addedRows = persistAddedMembers(couple, hh, parsedAdded);
+  const previouslyHadHealthData = previous.some((member) => Boolean(member.dietary));
+  if (hasHealthData || previouslyHadHealthData) {
+    recordConsent({
+      subjectUserId: null,
+      subjectKind: "guest",
+      subjectRef: `household:${hh.id}`,
+      document: hasHealthData ? "guest_health" : "guest_health_withdrawn",
+      version: GUEST_HEALTH_NOTICE_VERSION,
+      ip: ctx.clientIp,
+      userAgent: ctx.req.headers.get("user-agent"),
+    });
+  }
 
   // Household-level, so it is written once per submit rather than per member.
   // An ABSENT key leaves the stored message alone (an older client, or a
@@ -708,6 +732,7 @@ interface LegacySingleSubmit {
   rsvp_status?: unknown;
   meal_choice?: unknown;
   dietary?: unknown;
+  health_data_consent?: unknown;
   plus_one_name?: unknown;
   plus_one_meal?: unknown;
   accommodation_needed?: unknown;
@@ -747,6 +772,15 @@ async function handleLegacySubmit(ctx: Ctx): Promise<Response> {
     accommodation_needed: Boolean(body.accommodation_needed),
     song_request: strOrNull(body.song_request, 500),
   };
+  if (member.dietary && body.health_data_consent !== true) {
+    throw new HttpError(
+      400,
+      "Explicit consent is required to store allergy or dietary health data",
+      {
+        code: "health_data_consent_required",
+      },
+    );
+  }
   const members: CheckinMemberSubmit[] = [member];
 
   // Map plus-one onto a sibling household member if one exists; else
@@ -793,6 +827,18 @@ async function handleLegacySubmit(ctx: Ctx): Promise<Response> {
   }
 
   const { previous, updated } = persistCheckin(couple, hh, members);
+  const previouslyHadHealthData = previous.some((row) => Boolean(row.dietary));
+  if (member.dietary || previouslyHadHealthData) {
+    recordConsent({
+      subjectUserId: null,
+      subjectKind: "guest",
+      subjectRef: `household:${hh.id}`,
+      document: member.dietary ? "guest_health" : "guest_health_withdrawn",
+      version: GUEST_HEALTH_NOTICE_VERSION,
+      ip: ctx.clientIp,
+      userAgent: ctx.req.headers.get("user-agent"),
+    });
+  }
   notifyCouple(couple, hh, updated, previous);
   notifyGuests(couple, updated);
 

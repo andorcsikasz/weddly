@@ -2137,7 +2137,7 @@ function DayOfPanel({
 
   return (
     <div className="mx-auto mb-8 max-w-3xl">
-      {/* Hero — Today / Tomorrow + big check-in URL + (TODO) QR. On phones
+      {/* Hero — Today / Tomorrow + big check-in URL. On phones
        *  the section collapses behind a disclosure so the dashboard's
        *  first scroll isn't a tall blush slab — the day-of label still
        *  reads in the summary and the check-in URL is one tap away. */}
@@ -2198,12 +2198,6 @@ function DayOfPanel({
                 {t("dashboard.welcome_desk_open")}
               </a>
             </div>
-            {/* TODO(v2): inline SVG QR encoder. Avoiding a new heavy dep for
-                now — the URL above is the source of truth and most door-
-                staff workflows just need to type it on a kiosk anyway. */}
-            <p className="mt-4 text-xs italic text-ink-500 dark:text-umber-300">
-              {t("dashboard.day_of_qr_todo")}
-            </p>
           </>
         ) : (
           <p className="mt-4 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">

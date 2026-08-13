@@ -23,7 +23,6 @@ import { describe, expect, test } from "bun:test";
 import type { VendorBilling, VendorBillingDetails, VendorOffer } from "@shared/vendor_billing";
 import { PAST_DUE_GRACE_MS } from "@shared/billing";
 import {
-  startOfNextUtcMonth,
   VENDOR_EARLY_CAP,
   VENDOR_EARLY_DURATION_MS,
   VENDOR_FOUNDING_CAP,
@@ -44,7 +43,6 @@ import {
   vendorEarlySpotsLeft,
   vendorFoundingSpotsLeft,
 } from "../../src/domain/vendor_billing";
-import { ensureVendorScheduledSubscription } from "../../src/routes/vendor_billing";
 import {
   bootstrapCouple,
   enableBillingEnforcement,
@@ -441,8 +439,9 @@ describe("vendor billing: freemium lead window", () => {
     expect(row.card_on_file).toBe(1);
   });
 
-  test("each delivered inquiry spends a credit; the 3rd schedules billing for next month", async () => {
+  test("each delivered inquiry spends a credit; the 3rd pauses PRO without charging", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const listingId = await makeApprovedListing(
       "owner-credits@weddly.test",
       "vendor-credits@weddly.test",
@@ -456,14 +455,14 @@ describe("vendor billing: freemium lead window", () => {
     const adminToken = await registerAdminAndGetToken();
     const { coupleId } = await bootstrapCouple("couple-credits@weddly.test");
 
-    const inquire = async (eventDate: string) => {
+    const inquire = async (eventDate: string, expectedStatus = 201) => {
       const r = await req(
         "POST",
         `/api/suppliers/${encodeURIComponent(listingId)}/bookings`,
         { couple_id: coupleId, event_date: eventDate },
         { token: adminToken },
       );
-      expect(r.status).toBe(201);
+      expect(r.status).toBe(expectedStatus);
     };
 
     await inquire("2027-05-01");
@@ -480,22 +479,22 @@ describe("vendor billing: freemium lead window", () => {
       token: vendorToken,
     });
     expect(r.data.billing.lead_credits_used).toBe(VENDOR_FREE_LEAD_CREDITS);
-    // The 3rd generated lead anchors the first payment to the start of the
-    // NEXT calendar month.
-    expect(r.data.billing.billing_starts_at).toBe(startOfNextUtcMonth(Date.now()));
-    // Still entitled until that date, the free window was promised through it.
-    expect(r.data.billing.entitled).toBe(true);
-    expect(r.data.plan).toBe("pro");
+    // The third lead pauses PRO. Saving a card never schedules a charge; only
+    // a later explicit subscription Checkout can create payment obligations.
+    expect(r.data.billing.billing_starts_at).toBeNull();
+    expect(r.data.billing.entitled).toBe(false);
+    expect(r.data.billing.reason).toBe("leads_exhausted");
+    expect(r.data.plan).toBe("free");
 
-    // A 4th inquiry must not over-count or move the anchor.
-    await inquire("2027-08-01");
+    // A 4th inquiry is rejected and must not over-count or create a schedule.
+    await inquire("2027-08-01", 409);
     r = await req<BillingResponse>("GET", "/api/vendor/billing", undefined, {
       token: vendorToken,
     });
     expect(r.data.billing.lead_credits_used).toBe(VENDOR_FREE_LEAD_CREDITS);
   });
 
-  test("scheduled billing date passed with no active sub → leads_exhausted, FREE", async () => {
+  test("spent free leads are immediately leads_exhausted until explicit checkout", async () => {
     wipeAll();
     enableBillingEnforcement();
     const listingId = await makeApprovedListing(
@@ -508,7 +507,7 @@ describe("vendor billing: freemium lead window", () => {
       subscription_status: "lead_window",
       card_on_file: 1,
       lead_credits_used: VENDOR_FREE_LEAD_CREDITS,
-      billing_starts_at: Date.now() - 1000,
+      billing_starts_at: null,
     });
 
     const r = await req<BillingResponse>("GET", "/api/vendor/billing", undefined, {
@@ -575,12 +574,7 @@ describe("vendor billing: freemium lead window", () => {
     const portal = await req("POST", "/api/vendor/billing/portal", {}, { token: vendorToken });
     expect(portal.status).toBe(503);
 
-    setVendorSub(accountId, {
-      subscription_status: "lead_window",
-      card_on_file: 1,
-      billing_starts_at: Date.now() + 86_400_000,
-    });
-    await ensureVendorScheduledSubscription(accountId);
+    setVendorSub(accountId, { subscription_status: "lead_window", card_on_file: 1 });
     const scheduled = db
       .prepare(
         "SELECT stripe_subscription_id FROM vendor_subscriptions WHERE vendor_account_id = ?",

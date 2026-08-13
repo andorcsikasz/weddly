@@ -595,6 +595,10 @@ export const authApi = {
   }) => apiFetch<AuthSession>("POST", "/api/auth/apple", body),
   login: (body: { email: string; password: string }) =>
     apiFetch<AuthSession>("POST", "/api/auth/login", body),
+  /** Elevate only the current session for privileged admin routes. This never
+   * returns or replaces a session token. */
+  adminStepUp: (code: string) =>
+    apiFetch<{ ok: true; valid_until: number }>("POST", "/api/auth/admin-step-up", { code }),
   logout: () => apiFetch<{ ok: true }>("POST", "/api/auth/logout"),
   me: () => apiFetch<{ user: User }>("GET", "/api/auth/me"),
   /** Persist an explicit locale-switcher pick on users.locale so the choice
@@ -2130,6 +2134,27 @@ export const visitorApi = {
       { headers: token ? { "X-Visitor-Token": token } : {} },
     );
   },
+  ownReview: (supplierId: string, visitorToken?: string) => {
+    const token = visitorToken ?? getVisitorToken();
+    return apiFetch<SupplierReview>(
+      "GET",
+      `/api/public/suppliers/${encodeURIComponent(supplierId)}/reviews/mine`,
+      undefined,
+      { headers: token ? { "X-Visitor-Token": token } : {} },
+    );
+  },
+  updateReview: (reviewId: number, body: Partial<CreateReviewBody>, visitorToken?: string) => {
+    const token = visitorToken ?? getVisitorToken();
+    return apiFetch<SupplierReview>("PATCH", `/api/public/reviews/${reviewId}`, body, {
+      headers: token ? { "X-Visitor-Token": token } : {},
+    });
+  },
+  removeReview: (reviewId: number, visitorToken?: string) => {
+    const token = visitorToken ?? getVisitorToken();
+    return apiFetch<{ ok: true }>("DELETE", `/api/public/reviews/${reviewId}`, undefined, {
+      headers: token ? { "X-Visitor-Token": token } : {},
+    });
+  },
   /** Suggest/register a new vendor as a verified visitor (no account). Same
    *  public community endpoint the logged-in couple uses, but authed by the
    *  device token on X-Visitor-Token instead of a session bearer. */
@@ -2954,6 +2979,17 @@ export const vendorAccountApi = {
    *  clients incl. payments + blocked dates); the caller serialises it into a
    *  downloadable file. */
   export: () => apiFetch<VendorDataExport>("GET", "/api/vendor/export"),
+  legalStatus: () =>
+    apiFetch<{
+      accepted: boolean;
+      privacy_version: string;
+      vendor_terms_version: string;
+    }>("GET", "/api/vendor/legal-status"),
+  acceptLegal: (body: {
+    privacy_version: string;
+    vendor_terms_version: string;
+    highlighted_terms_accepted: true;
+  }) => apiFetch<{ accepted: true }>("POST", "/api/vendor/legal-acceptance", body),
 };
 
 /** Vendor self-serve availability — the booked/blocked days a claimed vendor
@@ -3600,6 +3636,47 @@ export const adminFeedbackApi = {
       delivery: { email: string | null; notified: boolean };
     }>("POST", `/api/admin/feedback/${id}/reply`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/feedback/${id}`),
+};
+
+export interface AdminContentNotice {
+  id: number;
+  reference: string;
+  reporter_name: string;
+  reporter_email: string;
+  content_url: string;
+  illegality: string;
+  explanation: string;
+  status: "submitted" | "reviewing" | "actioned" | "rejected";
+  decision_reason: string | null;
+  appealed_at: number | null;
+  appeal_text: string | null;
+  appeal_decision: string | null;
+  affected_email: string | null;
+  affected_notified_at: number | null;
+  affected_appealed_at: number | null;
+  affected_appeal_text: string | null;
+  affected_appeal_decision: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export const adminContentNoticeApi = {
+  list: () => apiFetch<{ notices: AdminContentNotice[] }>("GET", "/api/admin/content-notices"),
+  decide: (
+    reference: string,
+    body: {
+      status: "reviewing" | "actioned" | "rejected";
+      decision_reason?: string;
+      affected_email?: string;
+      appeal_decision?: string;
+      affected_appeal_decision?: string;
+    },
+  ) =>
+    apiFetch<{ notice: AdminContentNotice }>(
+      "PATCH",
+      `/api/admin/content-notices/${encodeURIComponent(reference)}`,
+      body,
+    ),
 };
 
 export const adminVendorWaitlistApi = {

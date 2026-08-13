@@ -18,6 +18,7 @@ import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import type { VendorAccount, VendorDataExport } from "@shared/listings";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 
 interface ClaimRow {
   token: string;
@@ -378,5 +379,119 @@ describe("GET /api/vendor/export", () => {
     const { token } = await bootstrapCouple("couple-export@weddly.test");
     const couple = await req("GET", "/api/vendor/export", undefined, { token });
     expect(couple.status).toBe(403);
+  });
+});
+
+describe("vendor legal-version gate", () => {
+  test("legacy vendor must accept the exact current terms and highlighted clauses", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-legal-gate@weddly.test",
+      "vendor-legal-gate@weddly.test",
+      "Legal Gate Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-legal-gate@weddly.test",
+      "Legal Gate Vendor",
+    );
+
+    const initial = await req<{
+      accepted: boolean;
+      privacy_version: string;
+      vendor_terms_version: string;
+    }>("GET", "/api/vendor/legal-status", undefined, { token: vendorToken });
+    expect(initial.status).toBe(200);
+    expect(initial.data).toEqual({
+      accepted: false,
+      privacy_version: PRIVACY_VERSION,
+      vendor_terms_version: VENDOR_TERMS_VERSION,
+    });
+
+    const stale = await req(
+      "POST",
+      "/api/vendor/legal-acceptance",
+      {
+        privacy_version: PRIVACY_VERSION,
+        vendor_terms_version: "1999-01-01",
+        highlighted_terms_accepted: true,
+      },
+      { token: vendorToken },
+    );
+    expect(stale.status).toBe(409);
+    expect((stale.data as { detail?: { code?: string } }).detail?.code).toBe("legal_version_stale");
+
+    const missingHighlight = await req(
+      "POST",
+      "/api/vendor/legal-acceptance",
+      {
+        privacy_version: PRIVACY_VERSION,
+        vendor_terms_version: VENDOR_TERMS_VERSION,
+        highlighted_terms_accepted: false,
+      },
+      { token: vendorToken },
+    );
+    expect(missingHighlight.status).toBe(400);
+
+    const accepted = await req(
+      "POST",
+      "/api/vendor/legal-acceptance",
+      {
+        privacy_version: PRIVACY_VERSION,
+        vendor_terms_version: VENDOR_TERMS_VERSION,
+        highlighted_terms_accepted: true,
+      },
+      { token: vendorToken },
+    );
+    expect(accepted.status).toBe(200);
+
+    const vendor = db.prepare("SELECT owner_user_id FROM vendor_accounts LIMIT 1").get() as {
+      owner_user_id: number;
+    };
+    const rows = db
+      .prepare(
+        `SELECT document, version FROM user_consents
+          WHERE subject_user_id = ? ORDER BY document`,
+      )
+      .all(vendor.owner_user_id);
+    expect(rows).toEqual([
+      { document: "privacy", version: PRIVACY_VERSION },
+      { document: "vendor_terms", version: VENDOR_TERMS_VERSION },
+      { document: "vendor_terms_highlighted", version: VENDOR_TERMS_VERSION },
+    ]);
+
+    const repeated = await req(
+      "POST",
+      "/api/vendor/legal-acceptance",
+      {
+        privacy_version: PRIVACY_VERSION,
+        vendor_terms_version: VENDOR_TERMS_VERSION,
+        highlighted_terms_accepted: true,
+      },
+      { token: vendorToken },
+    );
+    expect(repeated.status).toBe(200);
+    expect(
+      db
+        .prepare("SELECT COUNT(*) AS n FROM user_consents WHERE subject_user_id = ?")
+        .get(vendor.owner_user_id),
+    ).toEqual({ n: 3 });
+    expect(
+      db
+        .prepare("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'vendor.legal_acceptance'")
+        .get(),
+    ).toEqual({ n: 1 });
+
+    const current = await req<{ accepted: boolean }>("GET", "/api/vendor/legal-status", undefined, {
+      token: vendorToken,
+    });
+    expect(current.status).toBe(200);
+    expect(current.data.accepted).toBe(true);
+
+    const { token: coupleToken } = await bootstrapCouple("couple-legal-gate@weddly.test");
+    const forbidden = await req("GET", "/api/vendor/legal-status", undefined, {
+      token: coupleToken,
+    });
+    expect(forbidden.status).toBe(403);
   });
 });

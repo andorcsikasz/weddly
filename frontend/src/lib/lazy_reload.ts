@@ -22,7 +22,6 @@ function recentlyReloaded(): boolean {
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: mirrors React.lazy's own constraint
 export function lazyWithReload<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ): LazyExoticComponent<T> {

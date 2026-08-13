@@ -4,7 +4,7 @@
 const ADMIN_PAYMENT_LAUNCH_FALLBACK = {
   fin_launch_title: "Payment product launches",
   fin_launch_note:
-    "Launch or pause each checkout surface independently. Launch is available only after all required Stripe configuration values are present.",
+    "Launch or pause each checkout surface independently. Launch is available only after required Stripe configuration and product-specific checkout terms acceptance are implemented.",
   fin_launch_live_count: "{live} / {total} live",
   fin_launch_paywall_separate:
     "These controls only allow or block new payment sessions. Pausing does not change access, customer portals, existing renewals, or Checkout sessions already open. Global access enforcement is separate below.",
@@ -59,7 +59,8 @@ const ADMIN_PAYMENT_LAUNCH_FALLBACK = {
   fin_launch_product_planner_subscriptions: "Planner subscriptions",
   fin_launch_product_planner_subscriptions_note: "Recurring Essentials, Pro and Studio plans.",
   fin_launch_product_vendor_billing: "Vendor billing",
-  fin_launch_product_vendor_billing_note: "Card setup and billing after the free-lead allowance.",
+  fin_launch_product_vendor_billing_note:
+    "Card setup, a free-lead allowance, then a separate explicit subscription checkout.",
   fin_launch_product_film_checkout: "Wedding film checkout",
   fin_launch_product_film_checkout_note: "One-time wedding film purchase and activation.",
   fin_launch_product_guest_page_addon: "Guest-page add-on",

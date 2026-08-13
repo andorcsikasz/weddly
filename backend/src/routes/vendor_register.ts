@@ -381,7 +381,7 @@ async function finalizeVendorSignup(
     );
   }
 
-  const token = issueSession(input.userId);
+  const token = issueSession(input.userId, "activation");
   const userRow = getUserById(input.userId);
   if (!userRow) throw new HttpError(500, "User vanished after vendor registration");
   const session: AuthSession = { token, user: toUser(userRow as UserRow) };

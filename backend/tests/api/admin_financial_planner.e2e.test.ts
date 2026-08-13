@@ -362,7 +362,7 @@ describe("/api/admin/financial-planner/payment-launches", () => {
     expect(missingVersion.status).toBe(400);
   });
 
-  test("fully configured subscription products can launch, then enable the paywall", async () => {
+  test("recurring products stay fail-closed until checkout terms acceptance is implemented", async () => {
     wipeAll();
     const token = await addAdmin();
     const old = {
@@ -401,46 +401,16 @@ describe("/api/admin/financial-planner/payment-launches", () => {
           { product, enabled: true, expected_version: 0 },
           { token },
         );
-        expect(launch.status).toBe(200);
-        expect(launch.data.products[product]).toMatchObject({ enabled: true, ready: true });
+        expect(launch.status).toBe(409);
+        const current = await req<PaymentLaunchesResponse>(
+          "GET",
+          "/api/admin/financial-planner/payment-launches",
+          undefined,
+          { token },
+        );
+        expect(current.data.products[product]).toMatchObject({ enabled: false, ready: false });
+        expect(current.data.products[product].missing).toContain("PAID_CHECKOUT_TERMS_ACCEPTANCE");
       }
-
-      const enforcement = await req<AdminFinancialPlannerOverview>(
-        "POST",
-        "/api/admin/financial-planner/enforcement",
-        { on: true },
-        { token },
-      );
-      expect(enforcement.status).toBe(200);
-      expect(enforcement.data.billing_enforcement_on).toBe(true);
-
-      // Emergency-pausing a subscription surface atomically drops the global
-      // wall, so lapsed users are never stranded without a recovery checkout.
-      const pauseVendor = await req<PaymentLaunchesResponse>(
-        "PATCH",
-        "/api/admin/financial-planner/payment-launches",
-        { product: "vendor_billing", enabled: false, expected_version: 1 },
-        { token },
-      );
-      expect(pauseVendor.status).toBe(200);
-      expect(pauseVendor.data.products.vendor_billing.enabled).toBe(false);
-      const afterPause = await req<AdminFinancialPlannerOverview>(
-        "GET",
-        "/api/admin/financial-planner/overview",
-        undefined,
-        { token },
-      );
-      expect(afterPause.data.billing_enforcement_on).toBe(false);
-      const rawControl = db
-        .prepare("SELECT enforcement_on FROM billing_control WHERE id = 1")
-        .get() as { enforcement_on: number };
-      expect(rawControl.enforcement_on).toBe(0);
-      const safetyAudits = db
-        .prepare(
-          "SELECT COUNT(*) AS n FROM audit_log WHERE action = 'admin.billing_enforcement.auto_disabled'",
-        )
-        .get() as { n: number };
-      expect(safetyAudits.n).toBe(1);
     } finally {
       CONFIG.stripeSecretKey = old.stripeSecretKey;
       CONFIG.stripeWebhookSecret = old.stripeWebhookSecret;

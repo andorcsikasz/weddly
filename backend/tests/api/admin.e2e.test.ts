@@ -13,6 +13,9 @@ import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { autoInviteDueAt, runEmailSweep } from "../../src/domain/emails/worker";
 import { purgeOneUser, runPurgeSweep } from "../../src/domain/purge";
+import { adminSessionIssue } from "../../src/domain/users";
+import { CONFIG } from "../../src/config";
+import { totpCode } from "../../src/auth/totp";
 
 const HOUR = 1000 * 60 * 60;
 
@@ -241,6 +244,83 @@ describe("admin gate — 401 with no token on every /api/admin/* route", () => {
       }
       expect(res.status).toBe(401);
     }
+  });
+});
+
+describe("admin gate — recent primary authentication", () => {
+  const TOTP_SECRET = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
+
+  test("an aged admin session is refused until that exact session completes TOTP", async () => {
+    const token = await bootstrapAdmin();
+    const sessionId = token.slice(0, token.indexOf("."));
+    db.prepare("UPDATE sessions SET authenticated_at = ? WHERE id = ?").run(
+      now() - CONFIG.adminReauthTtlMs - 1,
+      sessionId,
+    );
+
+    const stale = await req<{
+      detail: { code: string; reason: string; max_age_seconds: number };
+    }>("GET", "/api/admin/users", undefined, { token });
+    expect(stale.status).toBe(403);
+    expect(stale.data.detail).toEqual({
+      code: "admin_reauth_required",
+      reason: "stale",
+      max_age_seconds: 900,
+    });
+
+    const stepUp = await req<{ ok: boolean; valid_until: number }>(
+      "POST",
+      "/api/auth/admin-step-up",
+      { code: totpCode(TOTP_SECRET) },
+      { token },
+    );
+    expect(stepUp.status).toBe(200);
+    expect(stepUp.data.ok).toBe(true);
+    const fresh = await req("GET", "/api/admin/users", undefined, { token });
+    expect(fresh.status).toBe(200);
+  });
+
+  test("production policy requires recent application MFA and rejects legacy/future proofs", () => {
+    const at = now();
+    expect(
+      adminSessionIssue({ userId: 7, authenticatedAt: at, method: "password" }, 7, at, true),
+    ).toBe("mfa_required");
+    expect(
+      adminSessionIssue({ userId: 7, authenticatedAt: at, method: "totp" }, 7, at, true),
+    ).toBeNull();
+    expect(adminSessionIssue({ userId: 7, authenticatedAt: null, method: null }, 7, at, true)).toBe(
+      "stale",
+    );
+    expect(
+      adminSessionIssue({ userId: 7, authenticatedAt: at + 61_000, method: "totp" }, 7, at, true),
+    ).toBe("future_timestamp");
+  });
+
+  test("a TOTP code is one-use across all sessions and elevates no other device", async () => {
+    const tokenA = await bootstrapAdmin();
+    const loginB = await req<{ token: string }>("POST", "/api/auth/login", {
+      email: "admin@test.test",
+      password: "supersafe123",
+    });
+    const tokenB = loginB.data.token;
+    const staleAt = now() - CONFIG.adminReauthTtlMs - 1;
+    db.prepare(
+      "UPDATE sessions SET authenticated_at = ? WHERE user_id = (SELECT id FROM users WHERE email = ?)",
+    ).run(staleAt, "admin@test.test");
+    const code = totpCode(TOTP_SECRET);
+    expect((await req("POST", "/api/auth/admin-step-up", { code }, { token: tokenA })).status).toBe(
+      200,
+    );
+    expect((await req("GET", "/api/admin/users", undefined, { token: tokenA })).status).toBe(200);
+    expect((await req("GET", "/api/admin/users", undefined, { token: tokenB })).status).toBe(403);
+    const replay = await req<{ detail: { code: string } }>(
+      "POST",
+      "/api/auth/admin-step-up",
+      { code },
+      { token: tokenB },
+    );
+    expect(replay.status).toBe(403);
+    expect(replay.data.detail.code).toBe("admin_mfa_invalid");
   });
 });
 
@@ -1336,7 +1416,9 @@ describe("auto invite-partner nudge (worker sweep)", () => {
     expect(sweep.invitePartnerAuto).toBe(1);
 
     const log = db
-      .prepare("SELECT kind FROM email_log WHERE user_id = ? ORDER BY id DESC LIMIT 1")
+      .prepare(
+        "SELECT kind FROM email_log WHERE user_id = ? AND kind = 'partner_invite_reminder' ORDER BY id DESC LIMIT 1",
+      )
       .get(reg.userId) as { kind: string } | undefined;
     expect(log?.kind).toBe("partner_invite_reminder");
 

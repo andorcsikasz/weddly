@@ -1531,7 +1531,7 @@ async function unverifiedUserWithSession(
       .run(email.trim().toLowerCase(), await hashPassword(password), fullName, ts, ts)
       .lastInsertRowid,
   );
-  return { token: issueSession(userId), userId };
+  return { token: issueSession(userId, "activation"), userId };
 }
 
 /** Register-or-reuse the shared admin account and return a working session
@@ -11545,7 +11545,6 @@ describe("demo: /api/demo/start", () => {
     // `couple` is asserted not-null above; tsc doesn't track that through
     // `expect(...).not.toBeNull()` so we re-narrow with a non-null assertion
     // for the .toBe(number) overload to bind.
-    // biome-ignore lint/style/noNonNullAssertion: see comment above
     expect(me.data.user.couple_id).toBe(res.data.couple!.id);
 
     const guests = await req<{ guests: Array<{ full_name: string }> }>(

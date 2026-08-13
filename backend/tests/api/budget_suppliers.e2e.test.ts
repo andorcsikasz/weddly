@@ -56,7 +56,7 @@ function unverifiedUserToken(email: string): string {
        VALUES (?, '!hash!', 'Unverified', 'active', 'owner', 0, 1, ?, ?)`,
     )
     .run(email, ts, ts);
-  return issueSession(Number(result.lastInsertRowid));
+  return issueSession(Number(result.lastInsertRowid), "activation");
 }
 
 interface LineDTO {

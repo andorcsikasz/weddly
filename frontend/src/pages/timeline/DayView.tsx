@@ -90,7 +90,6 @@ export default function DayView({
   // ~2 parts of upcoming hours below. Other days default to 06:00 at the
   // top of the visible window. After the auto-snap, the user owns scroll.
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-snap on day change
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;

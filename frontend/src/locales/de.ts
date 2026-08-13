@@ -990,6 +990,9 @@ const de: LocaleMessages = {
       title: "Assistent",
       intro:
         "Eine Zusammenfassung dieser Anfrage, was das Paar nicht erwähnt hat, und eine Antwort zum Bearbeiten.",
+      ai_disclosure:
+        "Nutzt Anthropic-KI. Beim Lesen werden die Anfrage und begrenzte Veranstaltungs-/Paketdaten an Anthropic gesendet; keine Nachricht wird automatisch versandt.",
+      privacy_link: "Datenschutzdetails",
       generate: "Anfrage lesen",
       regenerate: "Erneut lesen",
       working: "Wird gelesen…",
@@ -1000,6 +1003,7 @@ const de: LocaleMessages = {
       no_packages: "Sie haben noch keine Pakete gespeichert, daher gibt es nichts vorzuschlagen.",
       no_package_fit: "Keines Ihrer gespeicherten Pakete passt zu dieser Anfrage.",
       draft_title: "Antwortentwurf",
+      ai_draft_title: "KI-unterstützter Antwortentwurf",
       draft_note:
         "Ein Entwurf. Es wurde nichts gesendet. Bearbeiten Sie ihn und senden Sie ihn selbst im Verlauf.",
       copy: "Kopieren",
@@ -1223,7 +1227,7 @@ const de: LocaleMessages = {
       trial_expired_line: "Ihre Testphase ist beendet.",
       add_card_title: "Karte hinterlegen, die ersten Anfragen gehen auf uns",
       add_card_body:
-        "Hinterlegen Sie eine Karte und bleiben Sie auf Pro. Es wird nichts abgebucht, bis wir Ihnen die ersten {total} direkten Anfragen geliefert haben. Ihre Zahlungen starten erst im Monat nach der dritten.",
+        "Hinterlegen Sie eine Karte und behalten Sie Pro für Ihre ersten {total} direkten Anfragen. Das Speichern begründet keine Zahlungspflicht und wir belasten die Karte nie automatisch. Danach können Sie Pro über Abonnieren fortsetzen.",
       add_card_cta: "Karte hinterlegen und auf Pro bleiben",
       setup_success_note:
         "Karte gespeichert. Ihr Pro-Zugang wird gerade bestätigt, laden Sie gleich neu.",
@@ -1232,12 +1236,12 @@ const de: LocaleMessages = {
       lead_window_line:
         "Pro geht auf uns, bis wir Ihnen die ersten {total} direkten Anfragen geliefert haben.",
       billing_starts_line:
-        "Alle {total} Anfragen auf uns sind geliefert. Ihre erste Zahlung ist am {date}.",
+        "Alle {total} kostenlosen Anfragen wurden geliefert. Um Pro fortzusetzen, ist ein ausdrückliches Abonnement erforderlich.",
       next_payment_line: "Nächste Zahlung: {date}.",
       past_due_line:
         "Ihre letzte Zahlung ist fehlgeschlagen. Aktualisieren Sie Ihre Karte im Abrechnungsportal.",
       leads_exhausted_line:
-        "Ihre Anfragen auf uns sind aufgebraucht und es ist keine Zahlung durchgegangen, deshalb pausiert Pro.",
+        "Ihre kostenlosen Anfragen sind aufgebraucht, daher pausiert Pro. Es wurde nichts belastet; abonnieren Sie ausdrücklich, um fortzufahren.",
       subscribe_cta: "Pro abonnieren",
       portal_cta: "Abrechnungsportal öffnen",
       payment_title: "Zahlungsmethode",
@@ -2073,7 +2077,6 @@ const de: LocaleMessages = {
     day_of_checkin_copied: "Kopiert!",
     day_of_checkin_no_slug:
       "Noch keine Paar-Kennung, legen Sie eine auf der Seite Gäste fest, damit der Check-in funktioniert.",
-    day_of_qr_todo: "(QR-Code kommt in v2, teilen Sie vorerst einfach den Link oben)",
     welcome_desk_open: "Empfangs-Tablet öffnen",
     welcome_desk_help:
       "Öffnet sich in einem neuen Tab im Empfangsmodus, geben Sie das Tablet an Ihren Empfang.",
@@ -2626,6 +2629,10 @@ const de: LocaleMessages = {
     highlighted_accept:
       "Ich akzeptiere gesondert die hervorgehobenen Klauseln zu automatischer Verlängerung, Haftungsbegrenzung, Gebührenänderungen, Änderungen, Gerichtsstand und gesponserten Platzierungen.",
     legal_accept_required: "Bitte bestätigen Sie beide Erklärungen, um das Konto zu erstellen.",
+    legal_update_title: "Aktuelle Anbieterbedingungen prüfen",
+    legal_update_body:
+      "Ihr Anbieterbereich pausiert, bis Sie die aktuellen Abonnementbedingungen und die hervorgehobenen Klauseln geprüft und angenommen haben. Sie können zuvor das vollständige Dokument öffnen.",
+    legal_update_cta: "Akzeptieren und fortfahren",
     submit: "Konto anlegen",
     continue_to_onboarding: "Weiter",
   },
@@ -4391,7 +4398,7 @@ const de: LocaleMessages = {
     orphans_assign_button: "Diese Gäste Haushalten zuordnen",
     orphans_assigning: "Wird zugeordnet…",
     orphans_support_link: "Support kontaktieren",
-    orphans_support_url: "mailto:support@weddly.hu",
+    orphans_support_url: "mailto:hello@tryweddly.com",
     import_imported_label: "Importiert",
     import_skipped_label: "Übersprungen",
     import_errors_label: "Fehler",
@@ -6645,6 +6652,7 @@ const de: LocaleMessages = {
     directory_purge_submitter_confirm: "Konto endgültig löschen",
     directory_purge_submitter_done: "Einreicher-Konto gelöscht.",
     nav_feedback: "Feedback",
+    nav_content_notices: "Inhaltsmeldungen",
     nav_reviews: "Markierte Bewertungen",
     reviews: {
       title: "Markierte Bewertungen",
@@ -7371,7 +7379,7 @@ const de: LocaleMessages = {
     checkin_lookup_missing:
       "Füllen Sie beide Felder aus, den Namen des Paares und den 8-stelligen Code.",
     checkin_contact_hosts: "Wenden Sie sich an Ihre Gastgeber",
-    checkin_contact_hosts_email: "mailto:support@weddly.hu",
+    checkin_contact_hosts_email: "mailto:hello@tryweddly.com",
     checkin_household_for: "Check-in für",
     checkin_for_member: "Für {name}",
     checkin_member_dietary: "Allergien / Ernährung",
@@ -7417,6 +7425,10 @@ const de: LocaleMessages = {
     dietary_privacy_notice:
       "Freiwillige Gesundheitsangabe. Nur die Gastgeber und ihre bevollmächtigte Planung nutzen sie für Verpflegung und Veranstaltungssicherheit.",
     dietary_privacy_link: "Umgang mit Gästedaten",
+    dietary_consent_label:
+      "Ich willige ausdrücklich ein, dass Weddly die oben angegebenen Allergie-/Ernährungs-Gesundheitsdaten für Catering und Veranstaltungssicherheit speichert. Ich kann die Einwilligung durch Leeren und erneutes Absenden oder eine Löschanfrage widerrufen.",
+    dietary_consent_required:
+      "Bitte willigen Sie ein, bevor Sie Allergie- oder Ernährungs-Gesundheitsdaten senden.",
     accommodation_section_title: "Wo möchten Sie übernachten?",
     accommodation_none: "Keine Unterkunft nötig",
     guest_message_label: "Nachricht an das Paar",
@@ -7825,7 +7837,7 @@ const de: LocaleMessages = {
       "Wie Weddly mit Ihren Daten umgeht: erhobene Kategorien, Aufbewahrung, DSGVO-Rechte, Cookies und externe Dienste.",
     page_title: "Datenschutzerklärung",
     last_updated_label: "Zuletzt aktualisiert",
-    last_updated_date: "2026-08-03",
+    last_updated_date: "2026-08-13",
     intro:
       "Diese Datenschutzerklärung informiert Besucherinnen und Besucher, registrierte Nutzer, Newsletter-Abonnenten und gelistete Dienstleister ausführlich und transparent darüber, wie ihre personenbezogenen Daten von Weddly verarbeitet werden. Es gelten die folgenden Rechtsvorschriften: die EU-Verordnung 2016/679 (DSGVO); das ungarische Gesetz über das Recht auf informationelle Selbstbestimmung und die Informationsfreiheit (Infotv., Gesetz CXII von 2011); das Gesetz über den elektronischen Geschäftsverkehr (Ektv., Gesetz CVIII von 2001); und das Gesetz über die Wirtschaftswerbung (Grtv., Gesetz XLVIII von 2008).",
     controller_title: "Wer für Ihre Daten verantwortlich ist",
@@ -7857,7 +7869,7 @@ const de: LocaleMessages = {
       "Rechtliche Verpflichtung (Art. 6 Abs. 1 lit. c), das Prüfprotokoll und eine etwaige Auskunft an Behörden können gesetzlich vorgeschrieben sein (z. B. im Strafverfahren). Sobald wir die Beta verlassen und Rechnungen stellen, fällt auch die Aufbewahrungspflicht des ungarischen Rechnungslegungsgesetzes (§ 169) unter diese Grundlage (8 Jahre).",
     guest_data_title: "Daten von Gästen und Dritten (Art. 14 DSGVO)",
     guest_data_body:
-      "Wenn Sie als Gast zu Weddly gekommen sind (weil ein Paar, das Sie zu seiner Hochzeit einlädt, Sie in seine Gästeliste aufgenommen hat), verlangt Art. 14, dass wir Ihnen sagen, woher Ihre Daten stammen. Ihr Name, Ihre E-Mail-Adresse, Ihre Telefonnummer und etwaige Angaben zur Ernährung wurden von dem einladenden Paar eingetragen, dieses Paar ist für diese Informationen der Verantwortliche, und Weddly handelt für das Hosting als Auftragsverarbeiter in seinem Auftrag. Wenn Sie möchten, dass Ihre Daten gelöscht oder berichtigt werden, wenden Sie sich entweder direkt an das Paar oder schreiben Sie an hello@tryweddly.com, dann leiten wir die Anfrage für Sie weiter.",
+      "Wenn Sie als Hochzeitsgast zu Weddly gekommen sind, stammen Ihr Name und Ihre Kontaktdaten vom einladenden Paar, das die Gästeliste verantwortet; Weddly hostet sie in dessen Auftrag. Ernährungs- und Allergieangaben können Gesundheitsdaten offenbaren. Sie sind freiwillig und erfordern Ihre ausdrückliche Einwilligung nach Art. 9 Abs. 2 Buchst. a DSGVO; nur das Paar und seine bevollmächtigte Planung nutzen sie für Catering und Veranstaltungssicherheit, niemals kundenübergreifende Analysen. Sie können die Einwilligung durch Leeren und erneutes Absenden widerrufen oder Berichtigung/Löschung beim Paar bzw. über hello@tryweddly.com verlangen. Daten einer anderen Person dürfen Sie nur mit entsprechender Befugnis angeben.",
     directory_listings_title: "Ohne Konto gelistete Betriebe (Art. 14 DSGVO)",
     directory_listings_intro:
       "Der Weddly-Dienstleisterkatalog enthält auch Hochzeitsbetriebe, die sich nie bei uns registriert haben. Er ist ein redaktionell gepflegtes, sachliches Verzeichnis, keine Partnerliste: Ein Eintrag allein bedeutet keine Zusammenarbeit, keine Empfehlung und kein Vertragsverhältnis zwischen uns, und er begründet keinerlei Zahlungspflicht. Betriebe, die sich registriert haben und ihr Profil selbst verwalten, tragen die Kennzeichnung „Verifiziert“; die übrigen nicht.",
@@ -7907,20 +7919,20 @@ const de: LocaleMessages = {
       "Jedes andere Anliegen oder eine Beschwerde, schreiben Sie an hello@tryweddly.com oder andor.csikasz@gmail.com, und wir bearbeiten es innerhalb von sieben Tagen von Hand.",
     security_title: "Datensicherheit (Art. 32 DSGVO)",
     security_body:
-      "Ihr Passwort sehen wir nie: Es wird vor der Speicherung mit Argon2id gehasht, sodass selbst ein Datenleck es nicht offenlegen würde. Sitzungskennungen sind zufällige, signierte, undurchsichtige Token (keine JWTs), sie lassen sich serverseitig widerrufen und werden mit HMAC-SHA256 geprüft. Der gesamte Netzwerkverkehr ist TLS-verschlüsselt (die TLS-Verbindung endet am Railway-Edge). Die Datenbank ist SQLite auf einem persistenten Volume; für die physische Sicherheit dieses Volumes ist der Hosting-Anbieter verantwortlich. Über alle wesentlichen Vorgänge führen wir ein nur ergänzbares Prüfprotokoll (nie geändert, nie gelöscht).",
+      "Ihr Passwort sehen wir nie: Es wird vor der Speicherung mit Argon2id gehasht. Browsersitzungen verwenden zufällige, signierte, undurchsichtige Token in Secure-, HttpOnly- und SameSite-Cookies; sie lassen sich serverseitig widerrufen und werden mit HMAC-SHA256 geprüft. Der Netzwerkverkehr ist TLS-verschlüsselt. Die Datenbank ist SQLite auf einem persistenten Volume. Wesentliche Vorgänge werden in einem Anwendungs-Prüfprotokoll erfasst; gesetzlich erforderliche Sicherheitsnachweise können nach einer Kontolöschung mit auf autorisierte Personen beschränktem Zugriff aufbewahrt werden.",
     children_title: "Daten von Kindern (Art. 8 DSGVO)",
     children_body:
       "Weddly richtet sich nicht an Nutzerinnen und Nutzer unter 16 Jahren; Minderjährige können sich bei uns nicht direkt registrieren. Wenn ein Paar Kinder in seine Gästeliste aufnimmt, verarbeiten wir deren Daten nach Art. 14 (siehe „Daten von Gästen und Dritten“ oben), mit denselben Rechten auf Löschung und Berichtigung. Wenn Sie glauben, dass wir die Daten einer Person unter 16 Jahren ohne Rechtsgrundlage verarbeiten, schreiben Sie an hello@tryweddly.com, und wir handeln unverzüglich.",
     transfers_title: "Übermittlungen außerhalb des EWR (Kapitel V DSGVO)",
     transfers_body:
-      "Der Dienst läuft auf einer Infrastruktur von Railway Corp. (Vereinigte Staaten), ein Teil Ihrer Daten wird daher auf US-Servern gespeichert. Nach Schrems II (Rechtssache C-311/18) erfolgen Übermittlungen von der EU in die USA auf Grundlage des EU-US Data Privacy Framework (Angemessenheitsbeschluss 2023) und, als ergänzende Garantie, der Standardvertragsklauseln (2021/914). Railway steht auf der DPF-Liste zertifizierter Organisationen. Für transaktionale E-Mails erhält Resend (USA) ebenfalls auf Grundlage von DPF/SCC die Empfängeradresse und den Nachrichtentext.",
+      "Einige aktivierte Anbieter können Daten außerhalb des EWR verarbeiten. Vor der Aktivierung dokumentiert Weddly im Anbieterverzeichnis Rolle, Verarbeitungsregion und den anwendbaren Übermittlungsmechanismus, etwa einen Angemessenheitsbeschluss oder Standardvertragsklauseln. Informationen zu den aktuell geprüften Garantien und verfügbare Kopien erhalten Sie auf Anfrage.",
     subprocessors_title: "Auftragsverarbeiter (Art. 28 DSGVO)",
     subprocessors_intro:
-      "Wir setzen die folgenden Auftragsverarbeiter ein. Mit jedem besteht ein schriftlicher Auftragsverarbeitungsvertrag, und sie dürfen die Daten ausschließlich nach den Weisungen von Weddly verarbeiten.",
+      "Die folgenden Anbieter können Daten erhalten, wenn die jeweilige Funktion aktiviert ist. Einige, insbesondere Zahlungs- und Identitätsanbieter, können für eigene regulierte Zwecke selbst Verantwortliche sein. Das Produktions-Anbieterverzeichnis dokumentiert Rolle, Region, Vertrag und Übermittlungsnachweis.",
     subprocessors_railway:
-      "Railway Corp. (USA), Hosting der Anwendung; Speicherung der SQLite-Datenbank und der hochgeladenen Dateien. Grundlage der Übermittlung sind DPF/SCC.",
+      "Railway Corp. (USA), Hosting der Anwendung und Speicherung der SQLite-Datenbank. Verarbeitungsregion, Vertrag und Übermittlungsgarantie müssen vor dem Start im Produktions-Anbieterverzeichnis geprüft sein.",
     subprocessors_resend:
-      "Resend Inc. (USA), Zustellung transaktionaler E-Mails (Registrierung, Passwort-Zurücksetzung, Partnereinladung, Rückmeldungsbelege). Grundlage der Übermittlung sind DPF/SCC.",
+      "Resend Inc. (USA), Zustellung transaktionaler E-Mails (Registrierung, Passwort-Zurücksetzung, Partnereinladung, Rückmeldungsbelege). Vertrag und Übermittlungsgarantie müssen vor dem Start im Produktions-Anbieterverzeichnis geprüft sein.",
     subprocessors_serpapi:
       "SerpApi (USA), Abfragen bei Google Flights für das Flitterwochen-Widget. Erhält nur die von Ihnen eingegebene Route und das Datum; keine personenbezogenen Daten.",
     subprocessors_osm:
@@ -7928,9 +7940,9 @@ const de: LocaleMessages = {
     subprocessors_pinterest:
       "Pinterest (USA), das Moodboard-Widget liest serverseitig den RSS-Feed eines öffentlichen Pinterest-Boards. Erhält nur die von Ihnen angegebene Pinterest-URL.",
     subprocessors_sentry:
-      "Sentry (USA), Erfassung von Anwendungsfehlern. Im Produktivbetrieb noch nicht aktiviert; wenn wir es einschalten, aktualisieren wir diese Seite. Es würde pseudonymisierte Fehlerprotokolle ohne direkte Identifikatoren erhalten.",
+      "Sentry (USA), optionale Meldung von Anwendungsfehlern. Wenn konfiguriert, sendet Weddly bereinigte Fehlertelemetrie bei deaktivierter standardmäßiger Erfassung personenbezogener Daten; Region und Übermittlungsgarantie stehen im Produktions-Anbieterverzeichnis.",
     subprocessors_google:
-      "Google Ireland Ltd. / Google LLC (USA), drei getrennte Funktionen: Anmeldung mit Google (wir erhalten Ihren Namen, Ihre E-Mail-Adresse und Ihre Google-Konto-ID), die im nächsten Abschnitt beschriebene optionale Google-Kalender-Synchronisierung sowie Abfragen bei Google Maps Places, die der Reihenfolge im öffentlichen Dienstleisterkatalog dienen (nur Firmennamen, nie Ihre Daten). Grundlage der Übermittlung sind DPF/SCC.",
+      "Google Ireland Ltd. / Google LLC (USA), drei getrennte Funktionen: Anmeldung mit Google, die optionale Google-Kalender-Synchronisierung sowie Google-Maps-Places-Abfragen zu öffentlichen Unternehmensdaten. Rolle und Übermittlungsgarantie werden für jede aktivierte Funktion gesondert dokumentiert und geprüft.",
     subprocessors_other:
       "Weitere funktionsbezogene Anbieter können Stripe, Cloudflare R2, Anthropic, Apple, DeepL, MaxMind und Cookiebot sowie—nur nach Statistik-Einwilligung—Plausible, Google Analytics/Tag Manager und Microsoft Clarity sein. Sentry erhält nur bei Aktivierung bereinigte Fehlerdaten.",
     google_data_title: "Daten aus dem Google-Konto (Anmeldung und Kalendersynchronisierung)",
@@ -7949,14 +7961,14 @@ const de: LocaleMessages = {
     google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Cookies und lokale Speicherung",
     cookies_intro:
-      "Weddly setzt keine Tracking-Cookies. Die einzige Browser-Speicherung, die wir nutzen, liegt im localStorage auf Ihrem Gerät und gelangt damit nie zu Dritten:",
+      "Ein notwendiges HttpOnly-Cookie hält Ihre angemeldete Sitzung; die lokale Browserspeicherung enthält nur die unten genannten nicht geheimen Einstellungen. Cookiebot speichert Ihre Einwilligungsentscheidung. Optionale Analysedienste dürfen Kennungen erst nach Statistik-Einwilligung setzen oder lesen.",
     cookies_settings: "Cookie-Auswahl prüfen oder widerrufen",
     cookies_locale:
       "weddly.locale, merkt sich, ob Sie die ungarische oder die englische Oberfläche bevorzugen.",
     cookies_verify_dismiss:
       "weddly.verify_email_dismissed_until, blendet das Banner zur E-Mail-Bestätigung für 24 Stunden aus, nachdem Sie es geschlossen haben.",
     cookies_session:
-      "Sitzungstoken, eine signierte zufällige Kennung (kein JWT), die Sie angemeldet hält. Im localStorage gespeichert; bei der Abmeldung gelöscht.",
+      "weddly_session, eine signierte zufällige Sitzungskennung in einem Secure-, HttpOnly- und SameSite-Cookie. Browserskripte können sie nicht lesen; bei der Abmeldung wird sie widerrufen und gelöscht.",
     cookies_saved_suppliers:
       "weddly.suppliers.saved, eine nur lokale Liste der Dienstleister, die Sie im Katalog mit einem Stern versehen haben.",
     cookies_onboarding_draft:
@@ -8142,7 +8154,7 @@ const de: LocaleMessages = {
       "Sie sichern zu, dass alles, was Sie einreichen, (a) Ihnen gehört oder Sie zur Veröffentlichung berechtigt sind, (b) keine Rechte Dritter verletzt (Urheberrecht, Marke, Persönlichkeitsrecht, Geheimhaltung) und (c) den oben genannten Nutzungsregeln entspricht. Stellt sich heraus, dass eine dieser Zusicherungen nicht zutrifft, können wir den Inhalt entfernen und bei schweren oder wiederholten Verstößen Ihr Konto sperren oder löschen.",
     dsa_title: "Melde- und Abhilfeverfahren (EU Digital Services Act)",
     dsa_body:
-      "Die Verordnung (EU) 2022/2065 (DSA) verpflichtet jeden Hosting-Anbieter, ein leicht zugängliches Meldeverfahren für rechtswidrige Inhalte bereitzustellen. Wenn Sie der Ansicht sind, dass ein auf Weddly veröffentlichter Inhalt (z. B. ein von der Community eingereichter Dienstleistereintrag) rechtswidrig ist, schreiben Sie an dsa@weddly.xyz oder, falls diese Adresse noch nicht aktiv ist, an hello@tryweddly.com / andor.csikasz@gmail.com, und geben Sie an: (1) die URL oder eine andere eindeutige Angabe zum Auffinden des Inhalts; (2) warum Sie ihn für rechtswidrig halten; (3) Name und E-Mail-Adresse der meldenden Person; (4) eine Erklärung in gutem Glauben, dass die Meldung zutrifft. Wir prüfen jede Meldung ohne unangemessene Verzögerung und entfernen den Inhalt, wo es geboten ist, oder sperren den Zugang dazu; über die Entscheidung und deren Gründe informieren wir sowohl die meldende Person als auch die Person, die den Inhalt eingestellt hat. Interne Beschwerden gegen unsere Entscheidungen können an dieselbe Adresse gerichtet werden.",
+      "Die Verordnung (EU) 2022/2065 (DSA) verlangt ein leicht zugängliches Meldeverfahren für rechtswidrige Inhalte. Nutzen Sie dafür das dauerhaft von jeder Seite verlinkte Formular „Rechtswidrige Inhalte melden“. Es erfasst die genaue URL, die Gründe, Ihre Kontaktdaten und die Erklärung nach bestem Wissen, sendet eine Fallreferenz per E-Mail und ermöglicht die Abfrage von Status und begründeter Entscheidung sowie eine Beschwerde. Unterstützung erhalten Sie auch unter hello@tryweddly.com.",
     dsa_contact:
       "Zentrale Kontaktstelle (Single Point of Contact) für Behörden und Nutzer nach Art. 11 und 12 DSA: Andor Csíkász, andor.csikasz@gmail.com. Sprachen: Ungarisch und Englisch.",
     directory_title: "Dienstleisterkatalog",
@@ -8176,7 +8188,7 @@ const de: LocaleMessages = {
       "Weddlys AGB für Dienstleister: Entgelte, Abrechnung, Verlängerung, Haftung, Ranking, Beschwerden, ungarisches und EU-Recht.",
     page_title: "Abo-Bedingungen für Dienstleister (AGB)",
     last_updated_label: "Version",
-    last_updated_date: "gültig ab 2026-08-12",
+    last_updated_date: "gültig ab 2026-08-13",
     intro:
       "Diese Allgemeinen Geschäftsbedingungen (AGB) regeln das Dienstleister-Abo von Weddly. Sie werden Bestandteil des Vertrags zwischen den Parteien, sobald der Dienstleister sie bei der Registrierung ausdrücklich mit einem Klick auf „Ich akzeptiere“ annimmt. Nach §6:78(2) des ungarischen Zivilgesetzbuchs werden folgende Klauseln ausdrücklich hervorgehoben und mit gesonderter Aufmerksamkeit angenommen: Haftungsbeschränkung, automatische Verlängerung, Entgeltänderungen, einseitige Änderung der AGB, Gerichtsstand und die Kennzeichnung gesponserter Platzierungen.",
     operator_title: "Betreiber und Vertragsparteien",
@@ -8193,7 +8205,7 @@ const de: LocaleMessages = {
       "Der Weddly-Katalog enthält auch Unternehmen, die sich nicht registriert und ihr Profil nicht übernommen haben. Ein Eintrag allein begründet keinen Vertrag zwischen dem Dienstleister und dem Betreiber, keine Zahlungspflicht und keine Partnerschaft oder Empfehlung; diese AGB gelten für ein Unternehmen erst ab dem Moment, in dem es das Profil übernimmt oder sich registriert. Ein Eintrag enthält nur öffentlich zugängliche, sachliche Geschäftsdaten (Name, Leistungskategorie, Ort und Adresse, Website, die vom Unternehmen selbst veröffentlichten geschäftlichen Kontaktdaten, eine geschätzte Preis- und Kapazitätsspanne, eine kurze sachliche Zusammenfassung und das Vorschaubild der eigenen Website des Unternehmens). Nach geltendem ungarischem und EU-Recht ist die neutrale Anzeige solcher Daten in der Regel nicht von der vorherigen Zustimmung des Unternehmens abhängig; das stützen unter anderem §10(2) des Gesetzes V aus 2006 über Firmenpublizität, gerichtliche Firmenverfahren und freiwillige Liquidation, Erwägungsgrund (14) DSGVO, §1(3) des Gesetzes LXXVI aus 1999 über das Urheberrecht sowie §15(1)(c) des Gesetzes XI aus 1997 über den Schutz von Marken und geografischen Angaben. Das betroffene Unternehmen kann jederzeit die Berichtigung der Daten, eine kostenlose Übernahme des Profils oder die dauerhafte Unterdrückung jeder Kontaktaufnahme verlangen oder dem Eintrag widersprechen, unter hello@tryweddly.com. Wir prüfen jedes Verlangen einzeln und antworten begründet ohne unangemessene Verzögerung, in jedem Fall innerhalb von 30 Tagen; Kontaktdaten, die Beschreibung und jedes Foto werden auf Verlangen ohne Prüfung entfernt. Das vollständige Verfahren und die nach Art. 14 DSGVO erforderlichen Informationen stehen im Kapitel „Ohne Konto gelistete Unternehmen“ der Datenschutzerklärung.",
     ratings_title: "Bewertungen und Rechtsbehelfe des Dienstleisters",
     ratings_body:
-      "Paare können zu einem Katalogeintrag Bewertungen schreiben, auch bevor der Dienstleister das Profil übernommen hat. Der Betreiber beauftragt und bezahlt keine Bewertungen und sortiert sie nicht nach Sternen um; die Kennzeichnung „Verifiziert“ bedeutet nur, dass die bewertende Person den Dienstleister auch in ihrer eigenen Planung eingetragen hat, nicht dass der Betreiber die Leistung geprüft hätte. Nach Übernahme des Profils erhält der Dienstleister ein öffentliches Antwortrecht auf jede Bewertung über ihn. Der Dienstleister kann jede Bewertung unter hello@tryweddly.com melden; eine Bewertung mit unwahren Tatsachenbehauptungen, Beleidigungen oder einer Verletzung von Rechten Dritter oder dieser AGB wird nach dem Verfahren im Abschnitt Inhaltsmoderation entfernt, mit einer Begründung zur Entscheidung. Rechtmäßige Bewertungen entfernt der Betreiber nicht, so ungünstig sie auch sein mögen, und ob ein Dienstleister ein Abo hat oder nicht, beeinflusst die Anzeige von Bewertungen in keiner Richtung.",
+      "Paare können einen Katalogeintrag auch vor der Profilübernahme bewerten. Der Betreiber beauftragt oder bezahlt keine Bewertungen und sortiert sie nicht nach Sternen; „Verifiziert“ bedeutet nur, dass die Person den Dienstleister in ihrer Planung erfasst hat. Eine öffentliche Antwortfunktion für Dienstleister ist derzeit nicht verfügbar. Bewertungen können unter hello@tryweddly.com gemeldet werden; Meldungen werden nach dem Abschnitt Inhaltsmoderation mit begründetem Ergebnis bearbeitet. Rechtmäßige Bewertungen werden nicht allein wegen ihres ungünstigen Inhalts entfernt, und ein Abo beeinflusst ihre Anzeige nicht.",
     fees_title: "Entgelte und Preise",
     fees_body:
       "Tarife und Preise sind im Anhang Preise beschrieben, der integraler Bestandteil der AGB ist und bei der Registrierung als PDF zum Download sowie jederzeit im Konto des Dienstleisters bereitsteht. Zum Zeitpunkt des Inkrafttretens ist der Basiseintrag im öffentlichen Katalog (Beta-Stufe) kostenlos; kostenpflichtige Tarife kündigt der Betreiber den Dienstleistern mindestens 30 Tage vor dem Start per gesonderter E-Mail an, und jeder kostenpflichtige Tarif wird ausschließlich durch die ausdrückliche Bestätigung des Dienstleisters per Klick aktiviert. Für neue Abos gilt der zu Beginn der Laufzeit geltende Preis. Bei bestehenden Abos darf der Betreiber den Preis höchstens einmal pro Kalenderjahr ändern, mit einer Vorankündigung per E-Mail von mindestens 60 Tagen vor dem nächsten Abrechnungszyklus. Die jährliche Preiserhöhung darf den vom ungarischen Statistikamt (KSH) veröffentlichten Verbraucherpreisindex (VPI) des Vorjahres zuzüglich 10 Prozentpunkte nicht überschreiten, es sei denn, der Betreiber führt eine neue Funktion oder einen neuen Tarif ein, die der Dienstleister ausdrücklich angenommen hat. Bis zum Wirksamwerden der Erhöhung kann der Dienstleister den Vertrag kostenfrei und mit anteiliger Rückerstattung kündigen.",
@@ -8205,7 +8217,7 @@ const de: LocaleMessages = {
       "Die Umsatzsteuer gilt in der jeweils nach ungarischem Recht vorgeschriebenen Höhe. Ist der Betreiber bei Vertragsbeginn kein umsatzsteuerpflichtiger Unternehmer (zum Beispiel als Kleinunternehmer befreit), werden die Preise ohne Umsatzsteuer in Rechnung gestellt, und die Rechnung weist dies aus. Nach Registrierung zur Umsatzsteuer sind die veröffentlichten Preise Nettopreise, zu denen die Umsatzsteuer hinzukommt.",
     term_title: "Laufzeit, Verlängerung, Kündigung",
     term_body:
-      "Das kostenpflichtige Abo läuft bis zum Ende des gewählten (monatlichen oder jährlichen) Abrechnungszyklus und verlängert sich automatisch um den nächsten Zyklus, sofern der Dienstleister nicht mindestens 14 Tage vor dem Verlängerungsdatum in der Weddly-App oder per E-Mail an hello@tryweddly.com kündigt. Bei jährlichen Zyklen schickt der Betreiber mindestens 30 Tage vor dem Verlängerungsdatum eine Erinnerung per E-Mail und nennt darin den bei Verlängerung geltenden Preis. Die Verlängerung erfolgt zu dem Preis, den der Dienstleister vorab annehmen konnte, wie im Abschnitt Entgelte und Preise beschrieben. Bereits gezahlte Entgelte des laufenden Zyklus werden bei ordentlicher Kündigung nicht erstattet, außer wenn die Geld-zurück-Garantie oder das Verbraucherwiderrufsrecht greift. Mit Wirksamwerden der Kündigung enden der öffentliche Eintrag und alle hervorgehobenen Platzierungen.",
+      "Das derzeit angebotene kostenpflichtige Abo ist monatlich und verlängert sich monatlich, bis der Dienstleister es in der Weddly-App oder per E-Mail an hello@tryweddly.com kündigt. Die Kündigung stoppt die nächste Verlängerung; der bezahlte Zyklus bleibt bis zu seinem Ende verfügbar. Entgelte des laufenden Zyklus werden bei ordentlicher Kündigung nicht erstattet, außer bei Geld-zurück-Garantie oder Verbraucherwiderruf. Danach bleibt der öffentliche Basiseintrag im kostenlosen Tarif aktiv und bearbeitbar; Pro-Funktionen und hervorgehobene Platzierungen enden. Ein Jahrestarif wird derzeit nicht angeboten.",
     refund_title: "Geld-zurück-Garantie (B2B 14 Tage)",
     refund_body:
       "Beim ersten kostenpflichtigen Abo kann der Dienstleister den Vertrag ohne Angabe von Gründen kündigen und die volle Rückerstattung des gezahlten Entgelts verlangen, per E-Mail an hello@tryweddly.com innerhalb der ersten 14 Tage des ersten kostenpflichtigen Zyklus. Die Garantie gilt nicht: (a) bei erneuten Registrierungen oder Tarifwechseln, (b) wenn der Dienstleister innerhalb der 14 Tage ausdrücklich eine individuelle Werbe- oder Inhaltsleistung des Betreibers in Anspruch genommen hat. Rückerstattungen erfolgen über den ursprünglichen Zahlungsweg innerhalb von 14 Tagen nach Eingang des Verlangens.",
@@ -8214,16 +8226,16 @@ const de: LocaleMessages = {
       "Soweit der Dienstleister ausnahmsweise als Verbraucher im Sinne der Regierungsverordnung 45/2014. (II. 26.) und §8:1(1)(3) des ungarischen Zivilgesetzbuchs gilt (eine natürliche Person, die den Vertrag nicht im Rahmen ihrer gewerblichen, geschäftlichen oder beruflichen Tätigkeit schließt; die Registrierung eines Einzelunternehmers für eine bestehende Hochzeitsleistung ist in der Regel NICHT ein solcher Fall), kann der Dienstleister als Verbraucher innerhalb von 14 Tagen nach Vertragsschluss ohne Angabe von Gründen widerrufen (§20 der Verordnung). Die Widerrufserklärung kann an hello@tryweddly.com gehen; das Musterformular in Anhang 2 der Verordnung kann verwendet werden. Verlangt der Verbraucher-Dienstleister ausdrücklich, dass die Leistung innerhalb der Widerrufsfrist beginnt (das Profil also sichtbar wird), akzeptiert er, dass er dem Betreiber im Widerrufsfall die anteiligen Kosten der bereits erbrachten Leistung erstatten muss (§26) und dass das Widerrufsrecht mit vollständiger Erbringung der Leistung erlischt (§29(1)(a)). Dienstleistern, die in unternehmerischer Eigenschaft kontrahieren, steht das Widerrufsrecht NICHT zu; für sie gilt stattdessen der Abschnitt Geld-zurück-Garantie.",
     sla_title: "Service-Level und Wartung",
     sla_body:
-      "Der Betreiber strebt für den öffentlichen Weddly-Katalog und die Dienstleister-Verwaltungsoberfläche eine monatliche Verfügbarkeit von 99 Prozent an (also eine monatliche Ausfallzeit von insgesamt rund 7 Stunden 18 Minuten, geplant und ungeplant zusammen). Geplante Wartungen werden mindestens 48 Stunden vorher per E-Mail angekündigt und, soweit vernünftigerweise möglich, zwischen 23:00 und 06:00 Uhr MEZ durchgeführt; geplante Wartung wird auf das Ziel von 99 Prozent nicht angerechnet. Fällt die tatsächliche monatliche Verfügbarkeit unter 95 Prozent, kann der Dienstleister für den folgenden Abrechnungszyklus eine Gutschrift von 10 Prozent des Monatsentgelts verlangen; unter 90 Prozent beträgt die Gutschrift 25 Prozent. Der Dienstleister muss das Verlangen innerhalb von 30 Tagen nach Ende des betroffenen Monats schriftlich an hello@tryweddly.com richten. Gutschriften gelten nicht für Ausfälle durch höhere Gewalt, durch Internet- oder Infrastrukturstörungen Dritter oder für vom Dienstleister verursachte Ereignisse.",
+      "Während der kostenlosen offenen Beta gibt es keine vertragliche Verfügbarkeits-SLA und keine Servicegutschriften. Geplante Wartungen und wesentliche Vorfälle werden nach Möglichkeit mitgeteilt. Vor einem kostenpflichtigen Start veröffentlichen wir die anwendbaren Service-Level und Rechtsbehelfe.",
     ranking_title: "Ranking und hervorgehobene Platzierungen",
     ranking_body:
-      "Das Standard-Ranking des Katalogs verwendet in absteigender Wichtigkeit folgende Hauptparameter: (a) Übereinstimmung mit den vom Paar gesetzten Filtern (Kategorie, Ort, Datum, Gästezahl); (b) Vollständigkeit und Aktualität des Profils; (c) durchschnittliche Antwortzeit des Dienstleisters auf Paaranfragen; (d) Durchschnitt und Anzahl der Paarbewertungen; (e) Art des vom Dienstleister gewählten Abo-Tarifs. Gesponserte Platzierungen (bezahlte Hervorhebung) werden sichtbar, mit dem Label „Hervorgehoben“ und optisch abgesetzt gezeigt, niemals verdeckt. Die genauen mathematischen Gewichte der Parameter können sich aus geschäftlichen und qualitativen Gründen von Zeit zu Zeit ändern; eine wesentliche Änderung (Einführung oder Wegfall eines Parameters, Änderung der Ranking-Position bezahlter Hervorhebungen) wird im Verfahren zur AGB-Änderung mit mindestens 15 Tagen Vorlauf angekündigt (EU-Verordnung 2019/1150 P2B, Art. 5).",
+      "Der öffentliche Katalog wendet zuerst die Kategorie- und Ortsfilter des Paares an. Innerhalb des Ergebnisses sind die wichtigsten Signale: Profilfoto, übernommenes Profil, Profilvollständigkeit und der Unternehmensname als stabiler Gleichstandsfaktor. In der angemeldeten Planung können eigene gespeicherte Dienstleister und Community-Stimmen zusätzlich aufrücken. Bewertungen, Antwortzeit und Abo-Tarif beeinflussen das organische Ranking derzeit nicht. Bezahlte Plätze müssen sichtbar als „Hervorgehoben“ gekennzeichnet sein.",
     differential_title: "Differenzierte Behandlung",
     differential_body:
       "Zum Zeitpunkt des Inkrafttretens tritt der Betreiber nicht selbst als Hochzeitsdienstleister auf, es gibt also kein eigenes Angebot, das gegenüber anderen Dienstleistern ein bevorzugtes Ranking, besseren Datenzugang, günstigere Entgelte oder Vertragsbedingungen genießt. Wird ein eigenes Angebot eingeführt, wird dieser Abschnitt im Verfahren zur AGB-Änderung mit mindestens 30 Tagen Vorlauf angepasst, und die Dienstleister erhalten ein Kündigungsrecht (EU-Verordnung 2019/1150 P2B, Art. 7).",
     data_access_title: "Datenzugang",
     data_access_body:
-      "In seinem Konto hat der Dienstleister Zugriff auf: (a) Bearbeitung und Export der eigenen Profildaten, Fotos und Beschreibungen; (b) Liste und Export der eingegangenen Paaranfragen (Name, Kontakt, Datum, Nachricht); (c) Basisstatistiken zum eigenen Profil (Aufrufe, Klicks, Anfragen). Keinen Zugriff hat der Dienstleister auf: (i) Profilstatistiken oder Anfragedaten anderer Dienstleister; (ii) die internen Gewichte des Ranking-Algorithmus; (iii) betriebliche, technische oder finanzielle Interna des Betreibers. Exportierbare Daten bleiben nach Vertragsende 30 Tage verfügbar (siehe Datenexport und Off-boarding) (EU-Verordnung 2019/1150 P2B, Art. 9).",
+      "Bei aktivem Konto kann der Dienstleister sein Profil bearbeiten und exportieren sowie den JSON-Kontoexport mit Anfragen und verfügbaren Statistiken herunterladen. Auf Daten anderer Dienstleister, interne Rankinggewichte oder interne Betreiberdaten besteht kein Zugriff. Da derzeit kein Nur-Lese-Konto nach Vertragsende angeboten wird, sollte der Export vor einer Kündigungs- oder Löschanfrage heruntergeladen werden; den supportgestützten Ablauf beschreibt der Abschnitt Off-boarding.",
     ip_title: "Geistiges Eigentum und Inhaltslizenz",
     ip_body:
       "Die vom Dienstleister hochgeladenen Fotos, Videos, Beschreibungen, Logos und sonstigen Inhalte bleiben geistiges Eigentum des Dienstleisters (oder des Rechteinhabers). Mit der Registrierung und dem Hochladen von Inhalten räumt der Dienstleister dem Betreiber eine nicht ausschließliche, unentgeltliche, weltweite und unterlizenzierbare Lizenz ein, ausschließlich zur Anzeige der Inhalte im Weddly-Katalog, in der zugehörigen technischen Infrastruktur und auf den eigenen Marketingflächen von Weddly (Social-Media-Beiträge, Newsletter, Pressematerial, die Landingpage-Blöcke der Weddly-Website). Jede andere Nutzung (außerhalb der Bewerbung von Weddly) bedarf der vorherigen schriftlichen Zustimmung des Dienstleisters. Die Lizenz endet innerhalb von 30 Tagen nach Vertragsende; danach entfernt der Betreiber die Inhalte des Dienstleisters von den öffentlichen Flächen. Marke, Logo, Software und Oberfläche von Weddly bleiben geistiges Eigentum des Betreibers; der Dienstleister erhält daran nur ein nicht ausschließliches, widerrufliches Nutzungsrecht für die bestimmungsgemäße Verwendung der Dienstleister-Verwaltungsoberfläche.",
@@ -8241,7 +8253,7 @@ const de: LocaleMessages = {
       "Für die im Rahmen des Abos verarbeiteten Daten (Vorstellung und Portfolio-Inhalte des Dienstleisters, Kontakt- und Rechnungsdaten, Anfragen und Statistiken) gilt die Datenschutzerklärung von Weddly, mit folgenden Ergänzungen: (a) Vorstellung, Portfolio und Kontaktinhalte des Dienstleisters werden im Katalog öffentlich angezeigt; (b) Rechnungs- und Buchhaltungsunterlagen werden nach §169 des ungarischen Rechnungslegungsgesetzes 8 Jahre aufbewahrt; (c) der Zahlungsdienstleister (Stripe oder gleichwertig) ist für Kartendaten eigenständig Verantwortlicher, der Betreiber speichert keine Kartendaten; (d) bei der Weiterleitung von Paaranfragen handeln Weddly und der Dienstleister als voneinander unabhängige Verantwortliche (DSGVO Art. 4 Nr. 7): Für die erhaltenen personenbezogenen Daten ist der Dienstleister selbst Verantwortlicher. Ein gesonderter Auftragsverarbeitungsvertrag (AVV) ist nur erforderlich, wenn der Dienstleister einen zusätzlichen kostenpflichtigen Statistik- oder Automatisierungsdienst nutzt, den der Betreiber im Auftrag des Dienstleisters als Auftragsverarbeiter erbringt; dies wird im entsprechenden Anhang festgehalten.",
     complaints_title: "Internes Beschwerdemanagement",
     complaints_body:
-      "Der Dienstleister kann Beschwerden über den Dienst, die Abrechnung, Moderationsentscheidungen oder jede Handlung des Betreibers kostenfrei per E-Mail an panasz@weddly.xyz oder hello@tryweddly.com richten. Eine schriftliche Beschwerde beantwortet der Betreiber innerhalb von 15 Werktagen inhaltlich. Eine Verbraucherbeschwerde nach §17/A und §17/B des ungarischen Gesetzes CLV aus 1997 (Fgytv.) wird innerhalb von 30 Tagen beantwortet. Ein Dienstleister mit Verbrauchereigenschaft kann sich nach Ablehnung seiner Beschwerde an die Schlichtungsstelle Budapest (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) oder an die örtlich zuständige Verbraucherschutzbehörde wenden. Der Betreiber veröffentlicht einmal jährlich eine Zusammenfassung der Beschwerdestatistik auf der Weddly-Website (EU-Verordnung 2019/1150 P2B, Art. 11).",
+      "Der Dienstleister kann Beschwerden über den Dienst, die Abrechnung, Moderationsentscheidungen oder jede Handlung des Betreibers kostenfrei per E-Mail an hello@tryweddly.com richten. Eine schriftliche Beschwerde beantwortet der Betreiber innerhalb von 15 Werktagen inhaltlich. Eine Verbraucherbeschwerde nach §17/A und §17/B des ungarischen Gesetzes CLV aus 1997 (Fgytv.) wird innerhalb von 30 Tagen beantwortet. Ein Dienstleister mit Verbrauchereigenschaft kann sich nach Ablehnung seiner Beschwerde an die Schlichtungsstelle Budapest (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) oder an die örtlich zuständige Verbraucherschutzbehörde wenden. Der Betreiber veröffentlicht einmal jährlich eine Zusammenfassung der Beschwerdestatistik auf der Weddly-Website (EU-Verordnung 2019/1150 P2B, Art. 11).",
     mediation_title: "Mediation und außergerichtliche Streitbeilegung",
     mediation_body:
       "Vor der Geltendmachung von Ansprüchen aus den AGB versuchen die Parteien eine außergerichtliche Lösung. Im Einklang mit Art. 12 der P2B-Verordnung verpflichtet sich der Betreiber, im Einvernehmen mit dem Dienstleister einen im ungarischen Recht bewanderten, unabhängigen Mediator einzuschalten (insbesondere aus dem Mediations- und Schiedszentrum der Ungarischen Industrie- und Handelskammer oder einen anderen im Mediatorenverzeichnis des Justizministeriums geführten Mediator). Über die Tragung der Mediatorenkosten einigen sich die Parteien vor Beginn der Mediation; ohne Einigung werden die Kosten hälftig getragen.",
@@ -8259,7 +8271,7 @@ const de: LocaleMessages = {
       "Der Betreiber kann den Vertrag jederzeit ordentlich mit einer Frist von mindestens 30 Tagen schriftlich (per E-Mail) kündigen, zusammen mit einer anteiligen Rückerstattung (EU-Verordnung 2019/1150 P2B, Art. 4 Abs. 1). Eine Aussetzung, Beschränkung oder fristlose Kündigung ist nur in folgenden Fällen zulässig und immer von einer schriftlichen, auf den Einzelfall gestützten Begründung begleitet: (a) der Dienstleister verstößt wesentlich oder wiederholt gegen die AGB oder die Nutzungsbedingungen (insbesondere: Veröffentlichung rechtswidriger, irreführender oder rechtsverletzender Inhalte, wiederholte begründete Beschwerden Dritter) und behebt den Verstoß nicht innerhalb von 14 Tagen nach Zugang der Aufforderung; (b) der Dienstleister zahlt nicht innerhalb von 30 Tagen nach Zugang einer Mahnung; (c) der Dienstleister nutzt die Weddly-Plattform rechtswidrig oder in einer Weise, die die Sicherheit anderer Nutzer unmittelbar gefährdet; (d) eine Behörde oder ein Gericht ordnet rechtskräftig an, dass die Leistung des Dienstleisters nicht angezeigt werden darf. In den Fällen (c) und (d) kann der Betreiber auf die 14-tägige Abhilfefrist verzichten. Den Grund der fristlosen Kündigung teilt der Betreiber schriftlich mit und nennt darin die offenstehenden Wege (Internes Beschwerdemanagement, Mediation). Die Fristen für den Datenexport regelt der Abschnitt Datenexport und Off-boarding.",
     offboarding_title: "Datenexport und Off-boarding",
     offboarding_body:
-      "Nach Vertragsende bleibt die Dienstleister-Verwaltungsoberfläche 30 Tage im Nur-Lese-Modus zugänglich; in dieser Zeit kann der Dienstleister sein Profil, seine Anfragen und Statistiken im CSV- oder JSON-Format exportieren. Der öffentliche Profileintrag und alle hervorgehobenen Platzierungen enden mit dem Wirksamwerden der Kündigung. Nach Ablauf der Exportfrist hält der Betreiber das Konto weitere 60 Tage inaktiv (auf Wunsch reaktivierbar) und löscht die Daten danach, mit Ausnahme der Unterlagen, die nach §169 des Rechnungslegungsgesetzes oder anderen Vorschriften aufzubewahren sind. Mit der Kündigung kann der Dienstleister ausdrücklich verlangen, dass seine Basisdaten (Name, Kategorie, Ort) im Archivbereich „ehemalige Dienstleister“ des Katalogs angezeigt werden; ohne ein solches Verlangen endet die öffentliche Anzeige vollständig.",
+      "Der Dienstleister kann seinen JSON-Datenexport jederzeit aus dem Konto herunterladen. Bis eine Selbstbedienungslöschung verfügbar ist, werden Kündigungs- und Löschanfragen unter hello@tryweddly.com bearbeitet: Weddly entfernt das öffentliche Profil, bestätigt Umfang und Zeitplan der Löschung und behält nur gesetzlich für Steuern, Buchhaltung, Streitfälle oder Sicherheit erforderliche Daten. Ein automatisches Nur-Lese- oder ehemaliger-Dienstleister-Archiv wird derzeit nicht versprochen.",
     transitional_title: "Übergangsbestimmungen",
     transitional_body:
       "Zum Zeitpunkt des Inkrafttretens der AGB v1.0 ist der Basiseintrag im öffentlichen Weddly-Katalog kostenlos (Beta-Stufe), und kostenpflichtige Tarife sind noch nicht aktiviert. Vor dem Inkrafttreten registrierte Dienstleister werden per gesonderter E-Mail informiert und bei der nächsten Anmeldung in einem Annahmedialog um die Annahme der AGB per Klick gebeten. Nach dem Inkrafttreten registrierte Dienstleister nehmen die AGB und die Datenschutzerklärung bei der Registrierung an. Der Start kostenpflichtiger Tarife wird mindestens 30 Tage vorher per gesonderter E-Mail angekündigt; die Aktivierung erfolgt ausschließlich durch die ausdrückliche Tarifwahl des Dienstleisters per Klick.",
@@ -8271,7 +8283,7 @@ const de: LocaleMessages = {
       "Die EU-Plattform zur Online-Streitbeilegung wurde am 20. Juli 2025 eingestellt. Verbraucher können sich an die zuständige ungarische Schlichtungsstelle wenden; aktuelle Kontaktdaten stehen im Impressum und in unserer Antwort auf eine Beschwerde. Zwingende Verbraucherrechte bleiben unberührt.",
     contact_title: "Kontakt",
     contact_body:
-      "Alle Fragen zu den AGB und zu dem Dienst, den Weddly Dienstleistern bietet, richten Sie bitte an hello@tryweddly.com; Beschwerden, Mediationsanfragen und DSA-Meldungen können auch an panasz@weddly.xyz gehen. Die Identifikationsangaben des Betreibers nach §4 Ektv. finden Sie im Impressum.",
+      "Alle Fragen zu den AGB und zu dem Dienst, den Weddly Dienstleistern bietet, richten Sie bitte an hello@tryweddly.com. Meldungen rechtswidriger Inhalte können auch über das dauerhaft verlinkte Meldeformular eingereicht werden. Die Identifikationsangaben des Betreibers nach §4 Ektv. finden Sie im Impressum.",
     en_section_label: "English",
   },
   imprint: {
@@ -8422,6 +8434,13 @@ const de: LocaleMessages = {
     expired_title: "Sitzung beendet",
     expired_body:
       "Melden Sie sich erneut an und machen Sie dort weiter, wo Sie aufgehört haben. Alles, was Sie eingegeben haben, ist noch da.",
+    admin_reauth_title: "Identität bestätigen",
+    admin_reauth_body:
+      "Für den Adminbereich ist eine aktuelle Zwei-Faktor-Prüfung erforderlich. Ihre Arbeit bleibt erhalten.",
+    admin_reauth_cta: "Bestätigen",
+    admin_mfa_label: "Authenticator-Code",
+    admin_mfa_hint: "Geben Sie den aktuellen sechsstelligen Code Ihrer Authenticator-App ein.",
+    admin_mfa_invalid: "Der Code ist ungültig, abgelaufen oder wurde bereits verwendet.",
     sign_in: "Anmelden",
     sign_out: "Abmelden",
     or_divider: "oder",

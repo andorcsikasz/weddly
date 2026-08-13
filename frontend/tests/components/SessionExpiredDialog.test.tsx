@@ -54,6 +54,7 @@ async function flush() {
 
 interface RenderOpts {
   open?: boolean;
+  reason?: "expired" | "admin";
   email?: string;
   userId?: number | null;
   passwordSet?: boolean;
@@ -73,6 +74,7 @@ function renderDialog(opts: RenderOpts = {}) {
           <AuthProvider>
             <SessionExpiredDialog
               open={opts.open ?? true}
+              reason={opts.reason ?? "expired"}
               email={opts.email ?? "user@example.com"}
               userId={opts.userId ?? 42}
               passwordSet={opts.passwordSet ?? true}
@@ -102,6 +104,32 @@ afterEach(() => {
 });
 
 describe("<SessionExpiredDialog> — capability branching", () => {
+  it("uses a dedicated TOTP form for admin step-up, never the ordinary password form", () => {
+    installFetch(() => jsonResponse(200, { ok: true }));
+    renderDialog({ reason: "admin" });
+    expect(screen.getByRole("heading", { name: "Confirm it's you" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/authenticator code/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^password/i)).not.toBeInTheDocument();
+  });
+
+  it("posts the code to the same-session step-up endpoint and closes on success", async () => {
+    const calls: string[] = [];
+    installFetch((url) => {
+      calls.push(url);
+      if (url === "/api/auth/admin-step-up") {
+        return jsonResponse(200, { ok: true, valid_until: Date.now() + 900_000 });
+      }
+      return jsonResponse(401, { error: "not authenticated" });
+    });
+    let completed = 0;
+    renderDialog({ reason: "admin", onLoggedIn: () => completed++ });
+    fireEvent.change(screen.getByLabelText(/authenticator code/i), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: /^verify$/i }));
+    await waitFor(() => expect(completed).toBe(1));
+    expect(calls).toContain("/api/auth/admin-step-up");
+    expect(calls).not.toContain("/api/auth/login");
+  });
+
   it("password-only user: shows password field + Sign in button, no 'or' divider", () => {
     installFetch(() => jsonResponse(200, { ok: true }));
     renderDialog({ passwordSet: true, hasGoogle: false });

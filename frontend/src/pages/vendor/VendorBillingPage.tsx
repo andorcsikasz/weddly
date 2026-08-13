@@ -167,11 +167,6 @@ export default function VendorBillingPage() {
     statusDateLine = t("vendor.billing.trial_until", {
       date: formatDateMs(billing.trial_ends_at, locale),
     });
-  } else if (status === "lead_window" && billing.billing_starts_at != null) {
-    statusDateLine = t("vendor.billing.billing_starts_line", {
-      total: String(billing.lead_credits_total),
-      date: formatDateMs(billing.billing_starts_at, locale),
-    });
   } else if ((status === "active" || status === "past_due") && billing.current_period_end != null) {
     statusDateLine = t("vendor.billing.next_payment_line", {
       date: formatDateMs(billing.current_period_end, locale),
@@ -259,11 +254,8 @@ export default function VendorBillingPage() {
           </div>
           <LeadMeter used={billing.lead_credits_used} total={billing.lead_credits_total} />
           <p className="text-sm text-ink-600 dark:text-paper-300">
-            {billing.billing_starts_at != null
-              ? t("vendor.billing.billing_starts_line", {
-                  total: String(billing.lead_credits_total),
-                  date: formatDateMs(billing.billing_starts_at, locale),
-                })
+            {billing.reason === "leads_exhausted"
+              ? t("vendor.billing.leads_exhausted_line")
               : t("vendor.billing.lead_window_line", {
                   total: String(billing.lead_credits_total),
                 })}

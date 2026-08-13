@@ -943,6 +943,9 @@ const en: LocaleMessages = {
     assistant: {
       title: "Assistant",
       intro: "A summary of this inquiry, what the couple left out, and a reply to edit.",
+      ai_disclosure:
+        "Uses Anthropic AI. Clicking Read sends the inquiry and limited event/package context to Anthropic; no message is sent automatically.",
+      privacy_link: "Privacy details",
       generate: "Read this inquiry",
       regenerate: "Read it again",
       working: "Reading…",
@@ -953,6 +956,7 @@ const en: LocaleMessages = {
       no_packages: "You have no saved packages yet, so there is nothing to suggest.",
       no_package_fit: "None of your saved packages fits this one.",
       draft_title: "Draft reply",
+      ai_draft_title: "AI-assisted draft reply",
       draft_note: "A draft. Nothing has been sent. Edit it, then send it yourself in the thread.",
       copy: "Copy",
       copied: "Draft copied.",
@@ -1168,18 +1172,18 @@ const en: LocaleMessages = {
       trial_expired_line: "Your tryout has ended.",
       add_card_title: "Add your card, your first inquiries are on us",
       add_card_body:
-        "Save a card to stay on Pro. Nothing is charged until we've delivered your first {total} direct inquiries. Your payments only start the month after the third one arrives.",
+        "Save a card to stay on Pro through your first {total} direct inquiries. Saving it creates no payment obligation and we never charge it automatically. After those inquiries, choose Subscribe to continue Pro.",
       add_card_cta: "Add card and stay on Pro",
       setup_success_note: "Card saved. Your Pro access is being confirmed, refresh in a moment.",
       lead_meter_title: "Inquiries on us",
       lead_meter_count: "{used} of {total} used",
       lead_window_line: "Pro is on us until we've delivered your first {total} direct inquiries.",
       billing_starts_line:
-        "All {total} complimentary inquiries delivered. Your first payment is on {date}.",
+        "All {total} complimentary inquiries delivered. Subscribe explicitly to continue Pro.",
       next_payment_line: "Next payment: {date}.",
       past_due_line: "Your last payment failed. Update your card in the billing portal.",
       leads_exhausted_line:
-        "Your complimentary inquiries are used up and no payment has gone through, so Pro is paused.",
+        "Your complimentary inquiries are used up, so Pro is paused. Nothing was charged; subscribe explicitly to continue.",
       subscribe_cta: "Subscribe to Pro",
       portal_cta: "Open billing portal",
       payment_title: "Payment method",
@@ -1998,7 +2002,6 @@ const en: LocaleMessages = {
     day_of_checkin_copied: "Copied!",
     day_of_checkin_no_slug:
       "No couple identifier yet, set one on the Guests page so check-in works.",
-    day_of_qr_todo: "(QR code coming in v2, for now just share the link above)",
     welcome_desk_open: "Open welcome-desk tablet",
     welcome_desk_help: "Opens in a new tab in welcome-desk mode, hand the tablet to your greeter.",
     day_of_stats_yes: "Guests confirmed",
@@ -2555,6 +2558,10 @@ const en: LocaleMessages = {
     highlighted_accept:
       "I separately accept the highlighted clauses on automatic renewal, liability limits, fee changes, amendments, jurisdiction and sponsored placements.",
     legal_accept_required: "Accept both vendor-terms confirmations to create the account.",
+    legal_update_title: "Review the current vendor terms",
+    legal_update_body:
+      "Your vendor workspace is paused until you review and accept the current subscription terms and highlighted clauses. You can open the full document before deciding.",
+    legal_update_cta: "Accept and continue",
     submit: "Create account",
     continue_to_onboarding: "Continue",
   },
@@ -4257,7 +4264,7 @@ const en: LocaleMessages = {
     orphans_assign_button: "Place these guests into households",
     orphans_assigning: "Placing…",
     orphans_support_link: "Contact support",
-    orphans_support_url: "mailto:support@weddly.hu",
+    orphans_support_url: "mailto:hello@tryweddly.com",
     import_imported_label: "Imported",
     import_skipped_label: "Skipped",
     import_errors_label: "Errors",
@@ -6542,6 +6549,7 @@ const en: LocaleMessages = {
     directory_purge_submitter_confirm: "Permanently delete account",
     directory_purge_submitter_done: "Submitter account deleted.",
     nav_feedback: "Feedback",
+    nav_content_notices: "Content notices",
     nav_reviews: "Flagged reviews",
     reviews: {
       title: "Flagged reviews",
@@ -7261,7 +7269,7 @@ const en: LocaleMessages = {
     checkin_lookup_code_unknown: "That 8-character code doesn't match this couple.",
     checkin_lookup_missing: "Fill both fields, the couple name and the 8-character code.",
     checkin_contact_hosts: "Contact your hosts",
-    checkin_contact_hosts_email: "mailto:support@weddly.hu",
+    checkin_contact_hosts_email: "mailto:hello@tryweddly.com",
     checkin_household_for: "Checking in for",
     checkin_for_member: "For {name}",
     checkin_member_dietary: "Allergies / dietary",
@@ -7307,6 +7315,9 @@ const en: LocaleMessages = {
     dietary_privacy_notice:
       "Optional health information. Only the hosts and their authorised planner use it for catering and event safety.",
     dietary_privacy_link: "How guest data is handled",
+    dietary_consent_label:
+      "I explicitly consent to Weddly storing the allergy/dietary health information entered above for catering and event safety. I can withdraw this consent by clearing these fields and resubmitting, or by asking the hosts/Weddly to erase it.",
+    dietary_consent_required: "Please consent before submitting allergy or dietary health data.",
     accommodation_section_title: "Where would you like to stay?",
     accommodation_none: "No accommodation needed",
     guest_message_label: "Message to the couple",
@@ -7706,7 +7717,7 @@ const en: LocaleMessages = {
       "How Weddly handles your data: categories collected, retention, GDPR rights, cookies and third-party services.",
     page_title: "Privacy policy",
     last_updated_label: "Last updated",
-    last_updated_date: "2026-08-12",
+    last_updated_date: "2026-08-13",
     intro:
       "This Privacy Policy provides detailed, transparent information to visitors, registered users, newsletter subscribers, and listed service providers about how their personal data is processed by Weddly. The following laws apply: EU Regulation 2016/679 (GDPR); the Hungarian Information Self-Determination and Freedom of Information Act (Infotv., Act CXII of 2011); the Electronic Commerce Act (Ektv., Act CVIII of 2001); and the Commercial Advertising Act (Grtv., Act XLVIII of 2008).",
     controller_title: "Who controls your data",
@@ -7738,7 +7749,7 @@ const en: LocaleMessages = {
       "Legal obligation (Art. 6(1)(c)), the audit log and any disclosure to authorities may be required by law (e.g. criminal procedure). Once we leave beta and start invoicing, the Hungarian Accounting Act's retention obligation (§169) will also fall under this basis (8 years).",
     guest_data_title: "Guest and third-party data (GDPR Art. 14)",
     guest_data_body:
-      "If you arrived as a wedding guest, your name and contact details came from the inviting couple, who controls that guest list; Weddly hosts it on their behalf. Dietary and allergy details can reveal health information. Supplying them is optional, they are shown only to the couple and authorised planner for catering and event safety, and they are never included in cross-customer analytics. Ask the couple to correct or erase them, or email hello@tryweddly.com and we will relay and track the request. Do not submit another person's health information unless you are authorised to do so.",
+      "If you arrived as a wedding guest, your name and contact details came from the inviting couple, who controls that guest list; Weddly hosts it on their behalf. Dietary and allergy details can reveal health information. Supplying them is optional and requires your explicit consent under GDPR Article 9(2)(a); they are shown only to the couple and authorised planner for catering and event safety, and are never included in cross-customer analytics. You can withdraw consent by clearing those fields and resubmitting, or ask the couple to correct or erase them; you may also email hello@tryweddly.com and we will relay and track the request. Do not submit another person's health information unless you are authorised to consent for them.",
     directory_listings_title: "Businesses listed without an account (GDPR Art. 14)",
     directory_listings_intro:
       'The Weddly supplier directory also contains wedding businesses that never registered with us. It is a curated, factual index, not a partner list: an entry on its own does not imply cooperation, endorsement or any contractual relationship between us, and it carries no payment obligation whatsoever. Businesses that have registered and manage their own profile carry a "Verified" mark; the ones that have not, do not.',
@@ -7766,16 +7777,16 @@ const en: LocaleMessages = {
       "How we decide an objection. We give a substantive answer without undue delay and in any event within 30 days. We remove the email address, the phone number, the description and the photograph on request, without assessment. We delete the entire entry where the business has ceased trading, where it does not serve the wedding market, where the data relates to a natural person and the objection is well founded after individual assessment, and in every case where we cannot demonstrate compelling legitimate grounds overriding your interests. We always give reasons for the decision, and we tell you that you may also turn to the Hungarian supervisory authority (NAIH) or to a court.",
     retention_title: "How long we keep your data",
     retention_body:
-      "Active workspaces are kept for as long as you want them. If you pause your workspace from the Profile page, we keep everything for 30 days in case you change your mind, then permanently delete it. You can cancel the pause any time before the 30 days are up.",
+      "Couple workspaces are kept while active. A couple can pause from Profile: we keep the workspace for a 30-day grace period, then delete it, and the pause can be cancelled during that period. Planners can export or delete from Planner Settings. Vendors can download a JSON export; until self-service deletion exists, vendor termination and erasure requests are handled at hello@tryweddly.com and confirmed with their scope and timing. Records required for tax, accounting, disputes or security are retained only for the applicable legal period, and backup copies age out under the documented backup retention schedule.",
     rights_title: "Your rights (GDPR)",
     rights_intro:
       "If you are in the EU/EEA, you have the following rights under the GDPR. We honour all four for users everywhere, not just Europe.",
     rights_access:
-      "Access (Art. 15), export everything we store about you from the Profile page (one click, JSON file).",
+      "Access (Art. 15), couples can export from Profile, planners from Planner Settings, and vendors from their Data settings. Email hello@tryweddly.com if the relevant export is unavailable.",
     rights_rectification:
       "Rectification (Art. 16), you can edit your own data directly from the Profile page and every in-app surface. If something isn't editable, email hello@tryweddly.com and we'll correct it manually.",
     rights_deletion:
-      "Erasure (Art. 17), delete your account from the Profile page. A 30-day grace period gives you a way out; after that, we permanently wipe the workspace.",
+      "Erasure (Art. 17), couples use pause-and-delete in Profile and planners use Planner Settings. Vendor requests currently go to hello@tryweddly.com. We confirm the scope and timing, and retain only records that an applicable legal obligation or unresolved claim requires.",
     rights_portability:
       "Portability (Art. 20), the same JSON export is structured so you can re-import the data elsewhere. Guest lists also export to CSV.",
     rights_objection:
@@ -7908,7 +7919,7 @@ const en: LocaleMessages = {
       "Purpose: user authentication, login management, and delivery of account-linked features.",
     proc_account_basis: "Legal basis: GDPR Art. 6(1)(b), performance of the user service contract.",
     proc_account_retention:
-      "Retention: while the account is active; upon deletion a 30-day grace period applies, after which data is permanently and irreversibly erased.",
+      "Retention: while the account is active. Couple accounts use a 30-day pause-to-delete grace period; planners can delete in settings; vendor erasure is currently handled by email. Legally required accounting, dispute and security records and time-limited encrypted backups follow their separate retention periods.",
     proc_workspace_title: "Wedding workspace, planning and organising data",
     proc_workspace_data:
       "Data collected: wedding date, venue, guest list (names, email, phone, dietary requirements), seating layout, budget, task list, uploaded documents, supplier notes, all content you enter.",
@@ -7985,7 +7996,7 @@ const en: LocaleMessages = {
   terms: {
     seo_title: "Terms of service · Weddly",
     seo_description:
-      "The short open-beta terms of service for Weddly: free to use, no SLA, hosted in Hungary.",
+      "The short open-beta terms of service for Weddly: free to use, no SLA, governed by Hungarian law.",
     page_title: "Terms of service",
     last_updated_label: "Last updated",
     last_updated_date: "2026-08-12",
@@ -8016,7 +8027,7 @@ const en: LocaleMessages = {
       "You warrant that everything you submit (a) is yours or you have permission to publish it, (b) does not infringe any third-party right (copyright, trademark, privacy, confidentiality), and (c) complies with the acceptable-use rules above. If any of those turn out not to hold, we may remove the content and, for serious or repeated violations, suspend or delete your account.",
     dsa_title: "Notice and action (EU Digital Services Act)",
     dsa_body:
-      "Regulation (EU) 2022/2065 (DSA) requires every hosting provider to operate an easy-to-use notice mechanism for illegal content. If you believe content published on Weddly (e.g. a community supplier listing) is unlawful, email dsa@weddly.xyz, or, if that address isn't live yet, hello@tryweddly.com / andor.csikasz@gmail.com, including: (1) the URL or other unambiguous locator of the content; (2) why you believe it is illegal; (3) the notifier's name and email; (4) a good-faith statement that the notice is accurate. We review every notice without undue delay and, where warranted, remove or disable access to the content; we notify both the notifier and the uploader of the decision and the reasons. Internal complaints about our decisions can be sent to the same address.",
+      "Regulation (EU) 2022/2065 (DSA) requires every hosting provider to operate an easy-to-use notice mechanism for illegal content. If you believe content published on Weddly is unlawful, use the permanent Report illegal content form linked from every page. It records the exact URL, grounds, your contact details and good-faith declaration, emails a case reference, and provides status, a reasoned outcome and an appeal path. You may also write to hello@tryweddly.com for assistance.",
     dsa_contact:
       "Single Point of Contact for authorities and users under DSA Art. 11 and 12: Andor Csíkász, andor.csikasz@gmail.com. Languages: Hungarian and English.",
     directory_title: "Supplier directory",
@@ -8050,7 +8061,7 @@ const en: LocaleMessages = {
       "Weddly's vendor ÁSZF: fees, billing, renewal, liability, ranking, complaints, Hungarian and EU law.",
     page_title: "Vendor subscription terms (ÁSZF)",
     last_updated_label: "Version",
-    last_updated_date: "effective 2026-08-12",
+    last_updated_date: "effective 2026-08-13",
     intro:
       "These General Terms and Conditions (ÁSZF) govern Weddly's vendor subscription. They become part of the contract between the parties when the Vendor expressly accepts them by clicking 'I accept' during registration. Under §6:78(2) of the Hungarian Civil Code, the following clauses are expressly highlighted and accepted with separate attention: the limitation of liability, automatic renewal, fee changes, unilateral amendment of the ÁSZF, jurisdiction, and the disclosure of sponsored placements.",
     operator_title: "Operator and contracting parties",
@@ -8067,7 +8078,7 @@ const en: LocaleMessages = {
       "The Weddly directory also contains businesses that have not registered and have not claimed their profile. An entry creates no contract, payment obligation, partnership or endorsement. It contains factual public business data only and no photograph unless Weddly has a documented licence. The business may request correction, free take-over, contact suppression or object to the listing at hello@tryweddly.com. We respond without undue delay and within 30 days; contact details, descriptions and images are removed on request. The Privacy Policy explains the Art. 14 GDPR procedure.",
     ratings_title: "Reviews and the Vendor's remedies",
     ratings_body:
-      'Couples may write reviews on a directory entry even before the Vendor has claimed the profile. The Operator does not commission or pay for reviews and does not re-rank them by star rating; the "Verified" mark means only that the reviewer also recorded the supplier in their own planning, not that the Operator verified performance. Once the Vendor claims the profile, it gains a public right of reply to every review about it. The Vendor may report any review at hello@tryweddly.com; a review containing false statements of fact, abuse, or an infringement of a third-party right or of this ÁSZF is removed under the procedure in the Content moderation section, with a statement of reasons attached to the decision. The Operator does not remove lawful reviews, however unfavourable, and the existence or absence of a Vendor subscription does not influence the display of reviews in either direction.',
+      'Couples may write reviews on a directory entry even before the Vendor has claimed the profile. The Operator does not commission or pay for reviews and does not re-rank them by star rating; the "Verified" mark means only that the reviewer also recorded the supplier in their own planning, not that the Operator verified performance. A public Vendor-reply feature is not currently available. The Vendor may report a review at hello@tryweddly.com; reports are handled under the Content moderation section and receive a reasoned outcome. The Operator does not remove lawful reviews merely because they are unfavourable, and a Vendor subscription does not influence review display.',
     fees_title: "Fees and pricing",
     fees_body:
       "On the effective date, basic directory listing is free and paid checkout is disabled. Before paid launch, Weddly will publish the exact plan, total price, tax treatment, billing period and renewal terms in the account and Checkout, notify Vendors at least 30 days in advance, and require a separate express payment confirmation. A registration or saved card alone never creates a payment obligation.",
@@ -8079,7 +8090,7 @@ const en: LocaleMessages = {
       "VAT applies at the rate prescribed by Hungarian law from time to time. If the Operator is not a VAT-registered taxpayer when the contract takes effect (for example, exempt small business), prices are invoiced VAT-free and the invoice indicates this. Once VAT-registered, the published prices are net prices to which VAT is added.",
     term_title: "Term, renewal, termination",
     term_body:
-      "The paid subscription runs until the end of the chosen (monthly or annual) billing cycle, and renews automatically for the next cycle unless the Vendor cancels in the Weddly app or by email to hello@tryweddly.com at least 14 days before the renewal date. For annual cycles, the Operator sends a renewal reminder by email at least 30 days before the renewal date, indicating the price applicable on renewal. Renewal takes place at the price the Vendor has had the opportunity to accept in advance, as set out in the Fees and pricing section. Fees already paid for the running cycle are not refunded on ordinary cancellation, except where the Refund guarantee or the Consumer right of withdrawal applies. After cancellation takes effect, the public listing and any featured placements end.",
+      "The currently offered paid subscription is monthly and renews monthly until the Vendor cancels in the Weddly app or by email to hello@tryweddly.com. Cancellation stops the next renewal; the already-paid cycle remains available until its end. Fees already paid for the running cycle are not refunded on ordinary cancellation, except where the Refund guarantee or the Consumer right of withdrawal applies. After cancellation, the basic public listing remains live and editable on the free plan, while paid Pro features and any featured placement end. No annual plan is currently offered.",
     refund_title: "Refund guarantee (B2B 14 days)",
     refund_body:
       "On the Vendor's first paid subscription, the Vendor may terminate the contract and request a full refund of the paid fee, without giving reasons, by emailing hello@tryweddly.com within the first 14 days of the first paid cycle. The guarantee does not apply: (a) on subsequent registrations or plan changes, (b) where the Vendor has expressly used a bespoke promotional or content service of the Operator during the 14-day period. Refunds are issued via the original payment channel within 14 days of receiving the request.",
@@ -8088,16 +8099,16 @@ const en: LocaleMessages = {
       "Where the Vendor exceptionally qualifies as a consumer under Government Decree 45/2014. (II. 26.) and Hungarian Civil Code §8:1(1)(3) (a natural person not contracting in the course of a trade, business or profession; the registration of a sole proprietor for an existing wedding service is generally NOT such), the consumer Vendor may withdraw from the contract without giving reasons within 14 days of contract formation (Decree §20). The withdrawal declaration may be sent to hello@tryweddly.com; the model declaration in Annex 2 of the Decree may be used. If the consumer Vendor expressly requests that performance begin within the withdrawal period (i.e. the profile becomes visible), they accept that, on withdrawal, they must reimburse the Operator for the proportionate cost of the performance already rendered (§26), and that once the service has been fully performed the right of withdrawal is lost (§29(1)(a)). The withdrawal right does NOT apply to Vendors contracting in a business capacity; in their case the Refund guarantee section applies instead.",
     sla_title: "Service level and maintenance",
     sla_body:
-      "The Operator targets a monthly uptime of 99 percent for both the public Weddly directory and the Vendor admin interface (i.e. monthly downtime of up to roughly 7 hours 18 minutes, planned and unplanned combined). Planned maintenance is announced at least 48 hours in advance by email and, where reasonably possible, performed between 23:00 and 06:00 CET; planned maintenance does not count against the 99 percent target. If the actual monthly uptime drops below 95 percent, the Vendor may request a service credit of 10 percent of the monthly fee for the following billing cycle; below 90 percent the credit is 25 percent. The Vendor must submit the service credit request in writing to hello@tryweddly.com within 30 days of the end of the affected month. Service credits do not apply to downtime caused by force majeure, third-party internet or infrastructure outages, or events caused by the Vendor.",
+      "During the free open beta, the Operator provides no contractual uptime SLA or service credits. Planned maintenance and material incidents are communicated where reasonably possible. Any paid launch will publish the applicable service level and remedies before a Vendor incurs a fee.",
     ranking_title: "Ranking and featured placements",
     ranking_body:
-      "The default ranking of the directory uses, in decreasing order of importance, the following main parameters: (a) match with the filters set by the couple (category, location, date, party size); (b) profile completeness and recency; (c) the Vendor's average response time to couple enquiries; (d) the average and number of couple reviews; (e) the type of subscription plan chosen by the Vendor. Sponsored placement (paid featured listing) is shown visibly, labelled 'Featured', and visually distinguished, never hidden. The exact mathematical weights of the parameters may change from time to time for business and quality reasons; a material change (introduction or removal of a parameter, change in the ranking position of paid featured placements) is announced via the ÁSZF amendment procedure with at least 15 days' prior notice (EU 2019/1150 P2B Regulation art. 5).",
+      "The default public directory order first applies the couple's chosen category and location filters. Within that result, the principal ranking signals are whether the profile has a photo, whether it is claimed, profile completeness, and then the business name as a stable tie-breaker. In the signed-in planning view, the couple's own saved vendors and community votes may additionally move a result up. Review rating, response time and subscription plan do not currently change organic ranking. Any paid placement must be visibly labelled 'Featured' and distinguished from organic results. A material change to these main parameters is announced through the ÁSZF amendment procedure (EU 2019/1150 P2B Regulation art. 5).",
     differential_title: "Differentiated treatment",
     differential_body:
       "As of the effective date, the Operator does not itself act as a wedding-service vendor, so there is no proprietary offering that enjoys preferential ranking, data access, fees or contractual conditions compared to other Vendors. If a proprietary offering is introduced, this section will be amended via the ÁSZF amendment procedure with at least 30 days' prior notice, and Vendors will be granted a right to terminate (EU 2019/1150 P2B Regulation art. 7).",
     data_access_title: "Data access",
     data_access_body:
-      "Within their account, the Vendor has access to: (a) editing and exporting their own profile data, photos and descriptions; (b) the list and export of couple enquiries received (name, contact, date, message); (c) basic statistics for their profile (views, clicks, enquiries). The Vendor does not have access to: (i) other Vendors' profile statistics or enquiry data; (ii) the internal weights of the ranking algorithm; (iii) the Operator's operational, technical or financial internal data. Exportable data remains available for 30 days after the contract ends (see Off-boarding) (EU 2019/1150 P2B Regulation art. 9).",
+      "While the account is active, the Vendor can edit and export its profile and download its JSON account data, including received enquiries and available statistics. It cannot access other Vendors' data, internal ranking weights, or the Operator's internal data. Because the service does not currently provide a post-termination read-only account, the Vendor should download its export before requesting termination; the Off-boarding section explains the support-assisted process.",
     ip_title: "Intellectual property and content licence",
     ip_body:
       "The photos, videos, descriptions, logos and other content uploaded by the Vendor remain the intellectual property of the Vendor (or of the rights-holder). By registering and uploading content, the Vendor grants the Operator a non-exclusive, royalty-free, worldwide, sub-licensable licence solely to display the content in the Weddly directory, in the associated technical infrastructure, and on Weddly's own marketing surfaces (social media posts, newsletters, press kits, the landing-style blocks of the Weddly website). Any other use (outside the promotion of Weddly) requires the Vendor's prior written consent. The licence ends within 30 days of contract termination; after that, the Operator removes the Vendor's content from public surfaces. The Weddly brand, logo, software and interface remain the Operator's intellectual property; the Vendor receives only a non-exclusive, revocable right to use them for the proper use of the Vendor admin interface.",
@@ -8115,7 +8126,7 @@ const en: LocaleMessages = {
       "Data processed under the subscription (the Vendor's introduction and portfolio content, contact and billing data, enquiries and statistics) is governed by Weddly's Privacy Policy, with the following additions: (a) the Vendor's introduction, portfolio and contact content are displayed publicly in the directory; (b) billing and accounting records are retained for 8 years under §169 of the Hungarian Accounting Act; (c) the payment provider (Stripe or equivalent) acts as an independent controller for card data, and the Operator does not store card data; (d) when forwarding couples' enquiries, Weddly and the Vendor act as independent controllers (GDPR art. 4(7)): the Vendor is its own controller for the personal data it receives. A separate Data Processing Agreement (DPA) is required only if the Vendor uses an additional paid statistics or automation service that the Operator performs as a processor on the Vendor's behalf; this is recorded in the relevant annex.",
     complaints_title: "Internal complaint-handling",
     complaints_body:
-      "The Vendor may submit a free-of-charge complaint about the service, billing, moderation decisions, or any Operator action by email to panasz@weddly.xyz or hello@tryweddly.com. The Operator gives a substantive reply to a written complaint within 15 business days. A consumer complaint under Hungarian Act CLV of 1997 (Fgytv.) §17/A and §17/B is replied to within 30 days. A consumer Vendor whose complaint is rejected may turn to the Budapest Conciliation Board (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) or to the locally competent consumer protection authority. The Operator publishes an annual summary of complaint statistics on the Weddly website (EU 2019/1150 P2B Regulation art. 11).",
+      "The Vendor may submit a free-of-charge complaint about the service, billing, moderation decisions, or any Operator action by email to hello@tryweddly.com. The Operator gives a substantive reply to a written complaint within 15 business days. A consumer complaint under Hungarian Act CLV of 1997 (Fgytv.) §17/A and §17/B is replied to within 30 days. A consumer Vendor whose complaint is rejected may turn to the Budapest Conciliation Board (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) or to the locally competent consumer protection authority. The Operator publishes an annual summary of complaint statistics on the Weddly website (EU 2019/1150 P2B Regulation art. 11).",
     mediation_title: "Mediation and out-of-court dispute resolution",
     mediation_body:
       "Before bringing claims arising from the ÁSZF, the parties shall attempt out-of-court resolution. In line with P2B Regulation art. 12, the Operator undertakes to engage, by mutual agreement with the Vendor, a Hungarian-law-trained, independent mediator (in particular from the Mediation and Arbitration Centre of the Hungarian Chamber of Commerce and Industry, or any other mediator listed in the register of mediators kept by the Ministry of Justice). The parties agree on the bearing of the mediator's fees before mediation starts; absent agreement, the fees are borne equally.",
@@ -8145,7 +8156,7 @@ const en: LocaleMessages = {
       "The EU Online Dispute Resolution platform was discontinued on 20 July 2025. Consumer Vendors may use the competent Hungarian conciliation body; current authority and contact details are provided in the Imprint and in our response to a complaint. Mandatory consumer remedies remain unaffected.",
     contact_title: "Contact",
     contact_body:
-      "All queries about the ÁSZF and the service Weddly provides to vendors should be addressed to hello@tryweddly.com; complaints, mediation requests and DSA notices may also be sent to panasz@weddly.xyz. The Operator's §4 Ektv. identification details are available on the Imprint page.",
+      "All queries about the ÁSZF and the service Weddly provides to vendors should be addressed to hello@tryweddly.com. Illegal-content notices can also be submitted through the permanent Report illegal content form. The Operator's §4 Ektv. identification details are available on the Imprint page.",
     en_section_label: "English",
   },
   imprint: {
@@ -8293,6 +8304,13 @@ const en: LocaleMessages = {
     expired_title: "Session ended",
     expired_body:
       "Sign in again to pick up where you left off. Anything you've typed is still here.",
+    admin_reauth_title: "Confirm it's you",
+    admin_reauth_body:
+      "Admin access requires a recent second-factor check. Your work is still here.",
+    admin_reauth_cta: "Verify",
+    admin_mfa_label: "Authenticator code",
+    admin_mfa_hint: "Enter the current 6-digit code from your authenticator app.",
+    admin_mfa_invalid: "That code is invalid, expired, or was already used. Try the current code.",
     sign_in: "Sign in",
     sign_out: "Sign out",
     or_divider: "or",

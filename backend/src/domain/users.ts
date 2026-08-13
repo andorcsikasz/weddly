@@ -2,7 +2,8 @@
 
 import { isUiLocale, type UiLocale } from "@shared/locales";
 import type { User, UserRole, UserStatus } from "@shared/types";
-import { CONFIG } from "../config";
+import { extractToken, sessionAuthentication, type SessionAuthentication } from "../auth/session";
+import { CONFIG, REQUIRE_PROD_HARDENING } from "../config";
 import { db, now } from "../db";
 import { type Ctx, HttpError, requireAuth } from "../lib/http";
 
@@ -167,12 +168,53 @@ export function setUserStatus(userId: number, status: "active" | "suspended"): v
   db.prepare("UPDATE users SET status = ?, updated_at = ? WHERE id = ?").run(status, now(), userId);
 }
 
-/** Auth + ADMIN_EMAILS gate. Use on every /api/admin/* handler. */
+export type AdminSessionIssue =
+  | "missing_session"
+  | "wrong_user"
+  | "stale"
+  | "future_timestamp"
+  | "mfa_required";
+
+/** Pure policy core for tests and future privileged surfaces. Production admin
+ *  sessions must complete the application TOTP factor; every environment
+ *  still requires a primary-auth proof no older than the fixed recent-auth
+ *  window. */
+export function adminSessionIssue(
+  auth: SessionAuthentication | null,
+  userId: number,
+  at = now(),
+  requireMfa = REQUIRE_PROD_HARDENING,
+): AdminSessionIssue | null {
+  if (!auth) return "missing_session";
+  if (auth.userId !== userId) return "wrong_user";
+  if (!auth.authenticatedAt || !Number.isFinite(auth.authenticatedAt)) return "stale";
+  if (auth.authenticatedAt > at + 60_000) return "future_timestamp";
+  if (at - auth.authenticatedAt > CONFIG.adminReauthTtlMs) return "stale";
+  if (requireMfa && auth.method !== "totp") return "mfa_required";
+  return null;
+}
+
+function requireFreshAdminSession(ctx: Ctx, userId: number): void {
+  const token = extractToken(ctx.req);
+  const issue = adminSessionIssue(token ? sessionAuthentication(token) : null, userId);
+  if (!issue) return;
+  throw new HttpError(403, "Re-authentication required for admin access", {
+    code: "admin_reauth_required",
+    reason: issue,
+    max_age_seconds: Math.floor(CONFIG.adminReauthTtlMs / 1000),
+  });
+}
+
+/** Auth + ADMIN_EMAILS + recent-primary-auth gate. Use on every
+ * `/api/admin/*` handler. Ordinary sessions remain valid for 30 days, but a
+ * stolen or unattended browser cannot retain privileged access beyond the
+ * short non-sliding window. */
 export function requireAdmin(ctx: Ctx): UserRow {
   const userId = requireAuth(ctx);
   const row = getUserById(userId);
   if (!row) throw new HttpError(401, "User not found");
   if (!isAdminEmail(row.email)) throw new HttpError(403, "Admin only");
+  requireFreshAdminSession(ctx, row.id);
   return row;
 }
 
@@ -183,5 +225,8 @@ export function requireAdmin(ctx: Ctx): UserRow {
 export function viewerIsAdmin(ctx: Ctx): { userId: number; isAdmin: boolean } {
   const userId = requireAuth(ctx);
   const row = getUserById(userId);
-  return { userId, isAdmin: !!row && isAdminEmail(row.email) };
+  if (!row || !isAdminEmail(row.email)) return { userId, isAdmin: false };
+  const token = extractToken(ctx.req);
+  const issue = adminSessionIssue(token ? sessionAuthentication(token) : null, userId);
+  return { userId, isAdmin: issue === null };
 }

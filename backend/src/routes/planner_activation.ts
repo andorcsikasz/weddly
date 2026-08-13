@@ -116,7 +116,7 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
 
   const fresh = getUserById(user.id);
   if (!fresh) throw new HttpError(500, "Activation failed");
-  const session: AuthSession = { token: issueSession(user.id), user: toUser(fresh) };
+  const session: AuthSession = { token: issueSession(user.id, "activation"), user: toUser(fresh) };
   return json(session, { status: 200 });
 }
 

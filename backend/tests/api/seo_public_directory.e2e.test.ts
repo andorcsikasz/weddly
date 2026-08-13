@@ -124,11 +124,11 @@ describe("the sitemap offers every vendor page", () => {
 
 describe("/suppliers/browse is crawlable without JavaScript", () => {
   test("the SSR body carries the page's own heading and intro", () => {
-    // No Accept-Language means HU: the root domain's canonical public
-    // experience targets Hungary.
+    // Without a host/language signal, SSR uses the product-wide English
+    // fallback. Hungarian is selected explicitly by host or Accept-Language.
     const body = ssrBody("/suppliers/browse");
-    expect(body).toContain("<h1>Esküvői szolgáltatók</h1>");
-    expect(body).toContain("Szűrj városra és kategóriára");
+    expect(body).toContain("<h1>Wedding suppliers</h1>");
+    expect(body).toContain("Filter by city and category");
   });
 
   test("the index names its categories in words, not enum keys", () => {

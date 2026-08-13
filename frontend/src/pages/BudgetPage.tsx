@@ -2435,7 +2435,6 @@ function PaidEntryDialog({
               {/* Percent side (left) */}
               {mode === "pct" ? (
                 <div className="flex flex-1 flex-col items-center justify-center bg-paper-50 px-3 py-3 dark:bg-umber-800/60">
-                  {/* biome-ignore lint/a11y/noAutofocus: focusing the active unit in a deliberately-opened entry dialog is expected. */}
                   <input
                     type="text"
                     inputMode="numeric"
@@ -2468,7 +2467,6 @@ function PaidEntryDialog({
               {/* Currency side (right) */}
               {mode === "amount" ? (
                 <div className="flex flex-1 flex-col items-center justify-center bg-paper-50 px-3 py-3 dark:bg-umber-800/60">
-                  {/* biome-ignore lint/a11y/noAutofocus: focusing the active unit in a deliberately-opened entry dialog is expected. */}
                   <input
                     type="text"
                     inputMode="numeric"

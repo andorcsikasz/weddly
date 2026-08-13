@@ -49,7 +49,7 @@ function freshUserUnverified(email: string): { token: string; userId: number } {
     )
     .run(email.trim().toLowerCase(), "x", "Unverified User", ts, ts);
   const userId = Number(info.lastInsertRowid);
-  return { token: issueSession(userId), userId };
+  return { token: issueSession(userId, "activation"), userId };
 }
 
 /** Convenience: create a partner invite from the owner-A workspace. */

@@ -81,6 +81,62 @@ describe("DSA content notices", () => {
     expect(duplicate.status).toBe(409);
   });
 
+  test("affected content owner receives a scoped statement-of-reasons appeal path", async () => {
+    wipeAll();
+    const created = await submitNotice();
+    const admin = await registerAndVerify({
+      email: "admin@test.test",
+      password: "supersafe123",
+      full_name: "Ádám Nagy",
+    });
+    const affectedEmail = "vendor-owner@example.test";
+    const decided = await req<{ notice: { affected_notified_at: number | null } }>(
+      "PATCH",
+      `/api/admin/content-notices/${created.data.reference}`,
+      {
+        status: "actioned",
+        decision_reason:
+          "The reported photograph was removed because the available licence evidence did not cover publication on Weddly.",
+        affected_email: affectedEmail,
+      },
+      { token: admin.data.token },
+    );
+    expect(decided.status).toBe(200);
+    expect(decided.data.notice.affected_notified_at).toBeNumber();
+
+    const affected = await req<{ notice: { status: string; decision_reason: string } }>(
+      "GET",
+      `/api/legal/content-notices/${created.data.reference}/affected?email=${encodeURIComponent(affectedEmail)}`,
+    );
+    expect(affected.status).toBe(200);
+    expect(affected.data.notice.status).toBe("actioned");
+    const reporterCannotUseAffectedPath = await req(
+      "GET",
+      `/api/legal/content-notices/${created.data.reference}/affected?email=${encodeURIComponent(REPORTER)}`,
+    );
+    expect(reporterCannotUseAffectedPath.status).toBe(404);
+
+    const appeal = await req(
+      "POST",
+      `/api/legal/content-notices/${created.data.reference}/affected-appeal`,
+      {
+        email: affectedEmail,
+        reason:
+          "The image licence expressly includes directory publication and the signed grant is attached to this complaint.",
+      },
+    );
+    expect(appeal.status).toBe(200);
+    const duplicate = await req(
+      "POST",
+      `/api/legal/content-notices/${created.data.reference}/affected-appeal`,
+      {
+        email: affectedEmail,
+        reason: "This duplicate affected-user appeal must be rejected as already submitted.",
+      },
+    );
+    expect(duplicate.status).toBe(409);
+  });
+
   test("rejects notices without the good-faith declaration or a Weddly locator", async () => {
     wipeAll();
     const offPlatform = await req("POST", "/api/legal/content-notices", {

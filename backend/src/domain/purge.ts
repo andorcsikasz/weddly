@@ -556,6 +556,42 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
   db.prepare("DELETE FROM supplier_votes WHERE user_id = ?").run(userId);
   db.prepare("DELETE FROM feedback_submissions WHERE user_id = ?").run(userId);
 
+  // A vendor deletion removes the public profile, not merely the login. Keep a
+  // hidden, scrubbed listing tombstone because many historical planning/event
+  // rows use the public string id without a foreign key; deleting the row would
+  // leave dangling references. Vendor-authored media/package rows are erased,
+  // and the whole storage prefix is deleted best-effort after the DB mutation.
+  const vendorAccount = db
+    .prepare("SELECT id FROM vendor_accounts WHERE owner_user_id = ?")
+    .get(userId) as { id: number } | undefined;
+  const vendorListingIds = vendorAccount
+    ? (
+        db
+          .prepare("SELECT id FROM listings WHERE vendor_account_id = ?")
+          .all(vendorAccount.id) as Array<{ id: string }>
+      ).map((row) => row.id)
+    : [];
+  if (vendorListingIds.length > 0) {
+    const scrubListings = db.transaction(() => {
+      for (const listingId of vendorListingIds) {
+        db.prepare("DELETE FROM listing_photos WHERE listing_id = ?").run(listingId);
+        db.prepare("DELETE FROM listing_videos WHERE listing_id = ?").run(listingId);
+        db.prepare("DELETE FROM listing_packages WHERE listing_id = ?").run(listingId);
+        db.prepare(
+          `UPDATE listings
+              SET status = 'hidden', vendor_account_id = NULL,
+                  name = 'Removed listing', city = '', address = NULL,
+                  website = NULL, contact_email = NULL, contact_phone = NULL,
+                  blurb_hu = NULL, blurb_en = NULL, hero_image_url = NULL,
+                  updated_at = ?
+            WHERE id = ?`,
+        ).run(ts, listingId);
+      }
+    });
+    scrubListings();
+    for (const listingId of vendorListingIds) void storage.deletePrefix(`listings/${listingId}/`);
+  }
+
   // Next-11 — three Phase-2 tables that didn't exist when this sweep was
   // first written:
   //   - listing_claims.email_sent_to is raw PII (the vendor's contact
@@ -565,9 +601,8 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
   //     scrub the users row in-place (UPDATE below), so the cascade
   //     never fires. DELETE explicitly; that in turn flips
   //     listings.vendor_account_id + listing_claims.vendor_account_id
-  //     to NULL via their FK SET-NULL rules, leaving the directory
-  //     listing as orphaned-but-public (correct: it's curated content,
-  //     not the user's personal data).
+  //     to NULL via their FK SET-NULL rules. Owned listings were already
+  //     hidden and scrubbed above so deletion cannot leave a public profile.
   //   - growth_events.user_id is ON DELETE SET NULL but the users row
   //     survives the scrub, so explicit UPDATE de-links the behavioural
   //     trail from the now-purged identity. Row kept (aggregate-only).

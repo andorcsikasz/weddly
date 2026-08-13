@@ -228,7 +228,6 @@ function PlannerProfileMenu({
   }, [open]);
 
   // Auto-close on navigation.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: close on path change
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);

@@ -25,6 +25,7 @@ import { getCoupleForUser } from "../domain/couples";
 import {
   createReview,
   getReviewById,
+  getReviewWithTags,
   listReviewsForSupplier,
   getReviewSummary,
   type ReviewAuthorKind,
@@ -428,6 +429,93 @@ async function handleVisitorCreate(ctx: Ctx, subject: ReviewSubject): Promise<Re
   return json(review, { status: 201 });
 }
 
+function visitorOwnedReview(reviewIdRaw: string | undefined, visitorId: number) {
+  const reviewId = Number.parseInt(reviewIdRaw ?? "", 10);
+  if (!Number.isInteger(reviewId)) throw new HttpError(400, "review_id required");
+  const existing = getReviewById(reviewId);
+  if (!existing) throw new HttpError(404, "Review not found");
+  if (existing.author_kind !== "visitor" || existing.author_visitor_id !== visitorId) {
+    // Do not reveal whether another visitor's review id exists.
+    throw new HttpError(404, "Review not found");
+  }
+  return existing;
+}
+
+/** Recover the current visitor's review for this supplier on any device where
+ *  they have verified the same email. This makes edit/delete durable across a
+ *  reload instead of depending on an id held only in React state. */
+async function handleVisitorMine(ctx: Ctx, subject: ReviewSubject): Promise<Response> {
+  const visitor = requireVerifiedVisitor(ctx);
+  const row = db
+    .prepare(
+      `SELECT id FROM supplier_reviews
+        WHERE supplier_id = ? AND author_kind = 'visitor'
+          AND author_visitor_id = ? AND deleted_at IS NULL
+        LIMIT 1`,
+    )
+    .get(subject.id, visitor.id) as { id: number } | undefined;
+  if (!row) throw new HttpError(404, "Review not found");
+  const review = getReviewWithTags(row.id);
+  if (!review) throw new HttpError(404, "Review not found");
+  return json(review);
+}
+
+async function handleVisitorUpdate(ctx: Ctx): Promise<Response> {
+  const visitor = requireVerifiedVisitor(ctx);
+  rateLimit(`visitor:${visitor.id}`, "visitor_review.update", { capacity: 10, refillRate: 1 / 60 });
+  const existing = visitorOwnedReview(ctx.params.review_id, visitor.id);
+  const body = await readJson<Partial<CreateReviewBody>>(ctx.req);
+  const patch: Parameters<typeof updateReview>[2] = {};
+  if (body.rating !== undefined) {
+    patch.rating = parseRating(body.rating);
+    patch.flagged = patch.rating <= 2;
+  }
+  if (body.body !== undefined) patch.body = parseBody(body.body);
+  if (body.tags !== undefined) patch.tags = parseTags(body.tags);
+  if (body.amount_paid !== undefined) {
+    const amount = parseAmount(body.amount_paid);
+    patch.amountPaid = amount;
+    patch.amountCurrency = resolveAmountCurrency(amount, body.amount_currency);
+  }
+  if (body.amount_note !== undefined) patch.amountNote = parseAmountNote(body.amount_note);
+  if (body.published !== undefined) {
+    throw new HttpError(403, "Visitors may not change published");
+  }
+  const updated = updateReview(existing.id, existing.supplier_id, patch);
+  if (!updated) throw new HttpError(404, "Review not found");
+  addAuditLog({
+    actor_user_id: null,
+    couple_id: null,
+    action: "supplier_review.updated_visitor",
+    target_kind: "supplier_review",
+    target_id: existing.id,
+    after: {
+      supplier_id: existing.supplier_id,
+      fields: Object.keys(patch),
+      visitor_id: visitor.id,
+    },
+  });
+  return json(updated);
+}
+
+async function handleVisitorDelete(ctx: Ctx): Promise<Response> {
+  const visitor = requireVerifiedVisitor(ctx);
+  rateLimit(`visitor:${visitor.id}`, "visitor_review.delete", { capacity: 5, refillRate: 1 / 60 });
+  const existing = visitorOwnedReview(ctx.params.review_id, visitor.id);
+  if (!softDeleteReview(existing.id, existing.supplier_id)) {
+    throw new HttpError(404, "Review not found");
+  }
+  addAuditLog({
+    actor_user_id: null,
+    couple_id: null,
+    action: "supplier_review.deleted_visitor",
+    target_kind: "supplier_review",
+    target_id: existing.id,
+    after: { supplier_id: existing.supplier_id, visitor_id: visitor.id },
+  });
+  return json({ ok: true });
+}
+
 async function handleUpdate(ctx: Ctx): Promise<Response> {
   const { userId, isAdmin } = viewerIsAdmin(ctx);
   const reviewId = Number.parseInt(ctx.params.review_id ?? "", 10);
@@ -512,6 +600,12 @@ export function registerSupplierReviewRoutes(router: Router) {
     "/api/public/suppliers/:supplier_id/reviews",
     withSubject(supplierSubject, handleVisitorCreate),
   );
+  router.get(
+    "/api/public/suppliers/:supplier_id/reviews/mine",
+    withSubject(supplierSubject, handleVisitorMine),
+  );
+  router.patch("/api/public/reviews/:review_id", handleVisitorUpdate);
+  router.delete("/api/public/reviews/:review_id", handleVisitorDelete);
 
   // Planner accounts, same three surfaces. A planner is a review subject like
   // any other; only `plannerSubject` differs (see ReviewSubject above), which

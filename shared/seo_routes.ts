@@ -130,20 +130,20 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
   },
   "/terms/vendor-subscription": {
     hu: {
-      title: "Szolgáltatói előfizetési feltételek (tervezet) · Wēddly",
+      title: "Szolgáltatói előfizetési feltételek (ÁSZF) · Wēddly",
       description:
-        "A Wēddly szolgáltatói várólistájához és a v2-es fizetős profilokhoz tartozó előfizetési feltételek tervezete.",
-      h1: "Szolgáltatói előfizetési feltételek (ÁSZF, tervezet)",
+        "A Wēddly szolgáltatói ÁSZF-je: szerződéskötés, díjak, számlázás, megújulás, rangsorolás, panaszkezelés és megszűnés.",
+      h1: "Szolgáltatói előfizetési feltételek (ÁSZF)",
       intro:
-        "Ez a dokumentum a Wēddly szolgáltatói várólistájához és a v2-ben induló fizetős profilokhoz tartozó előfizetési feltételek tervezete. Egyelőre tájékoztató jellegű, a fizetős szolgáltatás indulása előtt fogjuk véglegesíteni.",
+        "Ez a verziózott dokumentum szabályozza a Wēddly szolgáltatói fiókját és az esetleges jövőbeli fizetős csomagokat. A regisztráció a jelenlegi ÁSZF kifejezett elfogadását igényli; a fizetés külön megerősítés nélkül nem indul el.",
     },
     en: {
-      title: "Supplier subscription terms (draft) · Wēddly",
+      title: "Vendor subscription terms (ÁSZF) · Wēddly",
       description:
-        "Draft subscription terms for Weddly's vendor waitlist and the v2 paid profiles. Informational only until the paid service launches.",
-      h1: "Vendor subscription terms (draft)",
+        "Weddly's vendor terms: contract formation, fees, billing, renewal, ranking, complaints and termination.",
+      h1: "Vendor subscription terms (ÁSZF)",
       intro:
-        "This is a draft of the subscription terms that will govern Weddly's vendor waitlist and the v2 paid profiles. It's informational until we finalise it before the paid service launches.",
+        "This versioned document governs Weddly vendor accounts and any future paid plan. Registration requires express acceptance of the current terms; payment cannot begin without a separate confirmation.",
     },
   },
   "/imprint": {

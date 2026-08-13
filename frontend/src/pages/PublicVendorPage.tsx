@@ -107,6 +107,37 @@ function PublicReviewComposer({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [ownReview, setOwnReview] = useState<SupplierReview | null>(null);
+
+  const loadReview = (review: SupplierReview) => {
+    setOwnReview(review);
+    setRating(review.rating);
+    setBody(review.body ?? "");
+    setTags(review.tags);
+    setAmount(review.amount_paid);
+    setAmountNote(review.amount_note ?? "");
+  };
+
+  useEffect(() => {
+    if (!verified) return;
+    let cancelled = false;
+    visitorApi
+      .ownReview(supplierId)
+      .then((review) => {
+        if (!cancelled) loadReview(review);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        if (e instanceof ApiError && e.status === 404) return;
+        if (e instanceof ApiError && e.status === 401) {
+          setVisitorToken(null);
+          setVerified(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [supplierId, verified]);
 
   const onGoogle = async (credential: string) => {
     setError(null);
@@ -123,14 +154,18 @@ function PublicReviewComposer({
     setSubmitting(true);
     setError(null);
     try {
-      await visitorApi.createReview(supplierId, {
+      const reviewBody = {
         rating,
         body: body.trim() || null,
         tags,
         amount_paid: amount,
         amount_currency: localeCurrency(locale),
         amount_note: amountNote.trim() || null,
-      });
+      };
+      const review = ownReview
+        ? await visitorApi.updateReview(ownReview.id, reviewBody)
+        : await visitorApi.createReview(supplierId, reviewBody);
+      loadReview(review);
       setDone(true);
       onSubmitted();
     } catch (e) {
@@ -150,10 +185,40 @@ function PublicReviewComposer({
     }
   };
 
+  const remove = async () => {
+    if (!ownReview || !window.confirm(t("suppliers.detail.reviews.deleteConfirmTitle"))) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await visitorApi.removeReview(ownReview.id);
+      setOwnReview(null);
+      setRating(0);
+      setBody("");
+      setTags([]);
+      setAmount(null);
+      setAmountNote("");
+      setDone(false);
+      onSubmitted();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (done) {
     return (
       <div className="mt-6 rounded-xl border border-sage-300/60 bg-sage-50 p-4 text-sm text-sage-800 dark:border-sage-700/50 dark:bg-sage-900/30 dark:text-sage-100">
-        {t("suppliers.detail.reviews.visitorSubmitted")}
+        <p>{t("suppliers.detail.reviews.visitorSubmitted")}</p>
+        <div className="mt-3 flex gap-2">
+          <button type="button" className="btn-outline" onClick={() => setDone(false)}>
+            {t("common.edit")}
+          </button>
+          <button type="button" className="btn-outline" onClick={remove} disabled={submitting}>
+            {t("common.delete")}
+          </button>
+        </div>
+        {error && <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">{error}</p>}
       </div>
     );
   }
@@ -208,7 +273,11 @@ function PublicReviewComposer({
               onClick={submit}
               className="rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-paper-100 dark:text-ink-900"
             >
-              {submitting ? "…" : t("suppliers.detail.reviews.submit")}
+              {submitting
+                ? "…"
+                : ownReview
+                  ? t("common.save")
+                  : t("suppliers.detail.reviews.submit")}
             </button>
           </div>
         </div>

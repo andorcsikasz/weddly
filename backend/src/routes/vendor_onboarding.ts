@@ -205,7 +205,7 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   // grant them 2 months free now that the vendor has activated.
   maybeGrantVendorReferral(row.waitlist_id);
 
-  const sessionToken = issueSession(newUserId);
+  const sessionToken = issueSession(newUserId, "activation");
   const userRow = getUserById(newUserId);
   if (!userRow) throw new HttpError(500, "User vanished after onboarding completion");
   const session: AuthSession = { token: sessionToken, user: toUser(userRow as UserRow) };

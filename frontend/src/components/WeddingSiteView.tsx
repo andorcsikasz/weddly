@@ -1046,7 +1046,6 @@ export function WeddingSiteView({
               {menuCourses.map((course, i) => (
                 // Index key: courses carry no id and the couple's editor
                 // rewrites the whole array on every change.
-                // biome-ignore lint/suspicious/noArrayIndexKey: positional by nature
                 <div key={i}>
                   {course.title && (
                     <p

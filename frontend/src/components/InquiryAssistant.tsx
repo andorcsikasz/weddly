@@ -143,6 +143,12 @@ export function InquiryAssistant({ bookingId, pro }: { bookingId: number; pro: b
             <p className="mt-0.5 text-sm text-ink-600 dark:text-paper-300">
               {t("vendor.assistant.intro")}
             </p>
+            <p className="mt-1 text-xs text-ink-500 dark:text-paper-400">
+              {t("vendor.assistant.ai_disclosure")}{" "}
+              <a className="underline" href="/privacy" target="_blank" rel="noreferrer">
+                {t("vendor.assistant.privacy_link")}
+              </a>
+            </p>
           </div>
         </div>
         <Button
@@ -240,7 +246,7 @@ export function InquiryAssistant({ bookingId, pro }: { bookingId: number; pro: b
           <div>
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-paper-400">
-                {t("vendor.assistant.draft_title")}
+                {t("vendor.assistant.ai_draft_title")}
               </h3>
               <button
                 type="button"
@@ -259,7 +265,7 @@ export function InquiryAssistant({ bookingId, pro }: { bookingId: number; pro: b
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               rows={7}
-              aria-label={t("vendor.assistant.draft_title")}
+              aria-label={t("vendor.assistant.ai_draft_title")}
               className="input mt-1 w-full resize-y text-sm"
             />
             <p className="mt-1 text-xs text-ink-500 dark:text-paper-400">

@@ -1339,6 +1339,8 @@ export interface LocaleMessages {
     assistant: {
       title: string;
       intro: string;
+      ai_disclosure: string;
+      privacy_link: string;
       generate: string;
       regenerate: string;
       working: string;
@@ -1355,6 +1357,7 @@ export interface LocaleMessages {
       /** They have packages, none of them suits this inquiry. */
       no_package_fit: string;
       draft_title: string;
+      ai_draft_title: string;
       /** The standing reminder that nothing here has been sent. */
       draft_note: string;
       copy: string;
@@ -2579,8 +2582,6 @@ export interface LocaleMessages {
     day_of_checkin_copy: string;
     day_of_checkin_copied: string;
     day_of_checkin_no_slug: string;
-    /** Inline TODO line shown where the QR code will eventually live. */
-    day_of_qr_todo: string;
     welcome_desk_open: string;
     welcome_desk_help: string;
     day_of_stats_yes: string;
@@ -3107,9 +3108,8 @@ export interface LocaleMessages {
      *  paid model will follow once the platform exits beta. */
     beta_notice_title: string;
     beta_notice_body: string;
-    /** Inline link under the beta notice that points at the future
-     *  paid-tier ÁSZF page. Reads cleaner without the "(draft)" label —
-     *  the page itself still carries the draft banner. */
+    /** Inline link under the beta notice that points at the versioned vendor
+     *  ÁSZF. Paid checkout remains a separately gated future capability. */
     beta_notice_terms_link: string;
     /** GDPR consent checkbox before submit. Same three-piece split as the
      *  register page so the policy link is a real <Link>. */
@@ -3211,6 +3211,9 @@ export interface LocaleMessages {
     legal_accept_suffix: string;
     highlighted_accept: string;
     legal_accept_required: string;
+    legal_update_title: string;
+    legal_update_body: string;
+    legal_update_cta: string;
     submit: string;
     continue_to_onboarding: string;
   };
@@ -7708,6 +7711,8 @@ export interface LocaleMessages {
     directory_purge_submitter_done: string;
     /** /app/admin/feedback page — triage of Visszajelzés submissions. */
     nav_feedback: string;
+    /** /app/admin/content-notices — DSA notice-and-action case queue. */
+    nav_content_notices: string;
     /** /app/admin/reviews page — moderation queue of flagged reviews. */
     nav_reviews: string;
     /** Flagged-review moderation queue. */
@@ -8572,6 +8577,8 @@ export interface LocaleMessages {
     dietary_other_placeholder: string;
     dietary_privacy_notice: string;
     dietary_privacy_link: string;
+    dietary_consent_label: string;
+    dietary_consent_required: string;
     accommodation_section_title: string;
     accommodation_none: string;
     guest_message_label: string;
@@ -9355,10 +9362,9 @@ export interface LocaleMessages {
     contact_body: string;
     en_section_label: string;
   };
-  /** /terms/vendor-subscription — DRAFT ÁSZF for the future paid vendor
-   *  tier. Lawyer-review pending; rendered with the legal `draft_banner`.
-   *  Linked from the /vendors page so the disclosure is one click from
-   *  every waitlist signup. */
+  /** /terms/vendor-subscription — versioned vendor ÁSZF accepted during
+   *  registration and on material updates. Paid checkout remains independently
+   *  fail-closed until the launch evidence and purchase acceptance are ready. */
   subscription_terms: {
     seo_title: string;
     seo_description: string;
@@ -9592,6 +9598,12 @@ export interface LocaleMessages {
   session: {
     expired_title: string;
     expired_body: string;
+    admin_reauth_title: string;
+    admin_reauth_body: string;
+    admin_reauth_cta: string;
+    admin_mfa_label: string;
+    admin_mfa_hint: string;
+    admin_mfa_invalid: string;
     sign_in: string;
     sign_out: string;
     or_divider: string;

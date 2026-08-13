@@ -60,6 +60,7 @@ const AdminBlogPage = lazyWithReload(() => import("./pages/AdminBlogPage"));
 const AdminCoupleCardsPage = lazyWithReload(() => import("./pages/AdminCoupleCardsPage"));
 const AdminPublicStatsPage = lazyWithReload(() => import("./pages/AdminPublicStatsPage"));
 const AdminFeedbackPage = lazyWithReload(() => import("./pages/AdminFeedbackPage"));
+const AdminContentNoticesPage = lazyWithReload(() => import("./pages/AdminContentNoticesPage"));
 const AdminFlaggedReviewsPage = lazyWithReload(() => import("./pages/AdminFlaggedReviewsPage"));
 const AdminCategoriesPage = lazyWithReload(() => import("./pages/AdminCategoriesPage"));
 const AdminSuppliersPage = lazyWithReload(() => import("./pages/AdminSuppliersPage"));
@@ -1310,6 +1311,16 @@ export default function App() {
               <Page>
                 <RequireAdmin>
                   <AdminFeedbackPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/content-notices"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminContentNoticesPage />
                 </RequireAdmin>
               </Page>
             }

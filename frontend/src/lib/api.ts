@@ -40,6 +40,9 @@ const DEFAULT_TIMEOUT_MS = 20_000;
  *  SessionExpiredDialog handler) can open the re-login modal without the
  *  fetch caller needing to know about React state. */
 export const SESSION_EXPIRED_EVENT = "weddly:session-expired";
+/** A valid long-lived session reached a privileged admin route after its
+ *  non-sliding recent-auth window elapsed. */
+export const ADMIN_REAUTH_REQUIRED_EVENT = "weddly:admin-reauth-required";
 
 /** Browser event dispatched on a 402 (subscription required) so the app shell
  *  can surface the "your workspace is read-only" prompt without every write
@@ -54,6 +57,7 @@ export type ApiErrorCode =
   | "timeout"
   | "aborted"
   | "session_expired"
+  | "admin_reauth_required"
   | "subscription_required"
   | "server_error"
   | "client_error";
@@ -152,7 +156,13 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const token = opts.token ?? getToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+    // Explicitly tells the backend this is a legacy browser credential, not a
+    // stable API bearer. A successful response rotates it into an HttpOnly
+    // cookie and invalidates this localStorage token.
+    headers["X-Weddly-Session-Migration"] = "cookie-v1";
+  }
   const deviceId = getDeviceId();
   if (deviceId) headers["X-Weddly-Device"] = deviceId;
   if (opts.headers) {
@@ -229,6 +239,11 @@ export async function apiFetch<T>(
     if (externalAbortHandler && opts.signal) {
       opts.signal.removeEventListener("abort", externalAbortHandler);
     }
+    if (res.headers.get("x-weddly-session-migrated") === "1") {
+      // The backend has atomically revoked the bearer and issued its HttpOnly
+      // replacement. Remove the script-readable copy before any next request.
+      setToken("cookie-session");
+    }
 
     let data: unknown = null;
     const text = await res.text();
@@ -273,6 +288,21 @@ export async function apiFetch<T>(
           }
         }
         throw new ApiError(402, "subscription_required", msg, errBody.detail);
+      }
+      if (
+        res.status === 403 &&
+        errBody.detail &&
+        typeof errBody.detail === "object" &&
+        (errBody.detail as { code?: unknown }).code === "admin_reauth_required"
+      ) {
+        if (typeof window !== "undefined") {
+          try {
+            window.dispatchEvent(new CustomEvent(ADMIN_REAUTH_REQUIRED_EVENT));
+          } catch {
+            /* CustomEvent may not exist on some odd embeds */
+          }
+        }
+        throw new ApiError(403, "admin_reauth_required", msg, errBody.detail);
       }
       if (res.status >= 500) {
         lastTransientError = new ApiError(res.status, "server_error", msg, errBody.detail);

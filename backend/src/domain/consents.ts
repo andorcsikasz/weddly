@@ -10,6 +10,8 @@ export type ConsentDocument =
   | "terms"
   | "vendor_terms"
   | "vendor_terms_highlighted"
+  | "guest_health"
+  | "guest_health_withdrawn"
   | "vendor_beta_notice";
 
 interface RecordConsentInput {
@@ -18,7 +20,7 @@ interface RecordConsentInput {
   subjectUserId: number | null;
   /** What kind of actor accepted: a real `users` row or an anonymous
    *  submission row. */
-  subjectKind: "user" | "vendor_waitlist" | "newsletter";
+  subjectKind: "user" | "vendor_waitlist" | "newsletter" | "guest";
   /** Ref to the non-user subject row (e.g. stringified vendor_waitlist.id). */
   subjectRef: string | null;
   document: ConsentDocument;

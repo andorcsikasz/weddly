@@ -14,7 +14,7 @@
     ]
   },
   "deploy": {
-    "startCommand": "bun src/server.ts",
+    "startCommand": "bun src/bootstrap.ts",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 30,
     "overlapSeconds": 20,

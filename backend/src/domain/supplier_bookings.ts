@@ -712,9 +712,8 @@ export function createBooking(args: CreateBookingArgs): SupplierBooking {
     );
   const id = Number(info.lastInsertRowid);
   // The delivered inquiry is a generated lead: spend one free credit when the
-  // vendor is inside the card-on-file lead window (3rd credit schedules the
-  // first payment for the start of next month). The caller kicks off the
-  // Stripe subscription via ensureVendorScheduledSubscription.
+  // vendor is inside the card-on-file lead window. Reaching the allowance
+  // pauses PRO until an explicit subscription Checkout; it never auto-charges.
   recordVendorLeadCredit(listing.vendor_account_id, ts);
   const row = db.prepare("SELECT * FROM supplier_bookings WHERE id = ?").get(id) as BookingRow;
   return toBooking(row);

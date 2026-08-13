@@ -403,7 +403,7 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
     },
   });
 
-  const sessionToken = issueSession(newUserId);
+  const sessionToken = issueSession(newUserId, "activation");
   const userRow = getUserById(newUserId);
   if (!userRow) throw new HttpError(500, "User vanished after claim completion");
   const session: AuthSession = { token: sessionToken, user: toUser(userRow as UserRow) };

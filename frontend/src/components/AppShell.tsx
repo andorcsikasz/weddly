@@ -30,6 +30,7 @@ import {
   Palette,
   Plane,
   Send,
+  Scale,
   ShieldCheck,
   Store,
   Sun,
@@ -296,6 +297,12 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     group: "inbox",
   },
   {
+    to: "/app/admin/content-notices",
+    labelKey: "admin.nav_content_notices",
+    icon: <Scale size={18} />,
+    group: "inbox",
+  },
+  {
     to: "/app/admin/reviews",
     labelKey: "admin.nav_reviews",
     // no tabKey — goes to the phone More sheet
@@ -523,7 +530,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // so no needless requests fire on the couple-facing rail.
   const [adminBadges, setAdminBadges] = useState<AdminSidebarBadges | null>(null);
   useEffect(() => {
-    if (!user?.is_admin) {
+    if (!user?.is_admin || !location.pathname.startsWith("/app/admin")) {
       setAdminBadges(null);
       return;
     }
@@ -544,7 +551,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [user?.is_admin]);
+  }, [user?.is_admin, location.pathname]);
 
   // ── Instagram-style "section seen" ping ───────────────────────────────
   // When the admin navigates into one of /app/admin/{suppliers|users|

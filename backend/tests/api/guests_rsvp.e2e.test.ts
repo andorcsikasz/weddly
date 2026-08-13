@@ -14,6 +14,7 @@ import { describe, expect, test } from "bun:test";
 import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
 import { issueSession } from "../../src/auth/session";
 import { db } from "../../src/db";
+import { GUEST_HEALTH_NOTICE_VERSION } from "@shared/legal";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -919,7 +920,7 @@ describe("guests: auth + cross-couple isolation", () => {
          VALUES (?, ?, ?, 'active', 'owner', 0, 1, ?, ?)`,
       )
       .run("g-unv@weddly.test", "x", "Unv", ts, ts);
-    const unverifiedToken = issueSession(Number(info.lastInsertRowid));
+    const unverifiedToken = issueSession(Number(info.lastInsertRowid), "activation");
     const r = await req("PATCH", "/api/guests/1", { full_name: "x" }, { token: unverifiedToken });
     expect(r.status).toBe(403);
     expect((r.data as { detail?: { code?: string } }).detail?.code).toBe("email_unverified");
@@ -1636,6 +1637,75 @@ describe("rsvp checkin: validation + idempotency + isolation", () => {
       added_members: [{ full_name: "", kind: "adult", rsvp_status: "yes" }],
     });
     expect(r.status).toBe(400);
+  });
+
+  test("POST /api/rsvp/checkin requires and records explicit health-data consent and withdrawal", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("ck-health-consent@weddly.test");
+    const guest = await req<{ guest: { id: number } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna", new_household_label: "Health consent" },
+      { token },
+    );
+    const slug = await getSlug(token);
+    const household = (await listHouseholds(token)).find((row) => row.label === "Health consent")!;
+    const submission = {
+      couple_slug: slug,
+      household_code: household.code,
+      members: [
+        {
+          guest_id: guest.data.guest.id,
+          rsvp_status: "yes",
+          dietary: "peanut allergy",
+        },
+      ],
+    };
+
+    const rejected = await req("POST", "/api/rsvp/checkin", submission);
+    expect(rejected.status).toBe(400);
+    expect((rejected.data as { detail?: { code?: string } }).detail?.code).toBe(
+      "health_data_consent_required",
+    );
+    expect(db.prepare("SELECT dietary FROM guests WHERE id = ?").get(guest.data.guest.id)).toEqual({
+      dietary: null,
+    });
+
+    const accepted = await req("POST", "/api/rsvp/checkin", {
+      ...submission,
+      health_data_consent: true,
+    });
+    expect(accepted.status).toBe(200);
+    expect(
+      db
+        .prepare(
+          `SELECT subject_kind, subject_ref, document, version
+             FROM user_consents WHERE subject_ref = ? ORDER BY id`,
+        )
+        .all(`household:${household.id}`),
+    ).toEqual([
+      {
+        subject_kind: "guest",
+        subject_ref: `household:${household.id}`,
+        document: "guest_health",
+        version: GUEST_HEALTH_NOTICE_VERSION,
+      },
+    ]);
+
+    const withdrawn = await req("POST", "/api/rsvp/checkin", {
+      couple_slug: slug,
+      household_code: household.code,
+      members: [{ guest_id: guest.data.guest.id, rsvp_status: "yes", dietary: null }],
+    });
+    expect(withdrawn.status).toBe(200);
+    expect(db.prepare("SELECT dietary FROM guests WHERE id = ?").get(guest.data.guest.id)).toEqual({
+      dietary: null,
+    });
+    expect(
+      db
+        .prepare("SELECT document FROM user_consents WHERE subject_ref = ? ORDER BY id")
+        .all(`household:${household.id}`),
+    ).toEqual([{ document: "guest_health" }, { document: "guest_health_withdrawn" }]);
   });
 
   test("POST /api/rsvp/checkin with unknown slug returns 404", async () => {

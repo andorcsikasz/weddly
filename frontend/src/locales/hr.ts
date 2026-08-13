@@ -967,6 +967,9 @@ const hr: LocaleMessages = {
     assistant: {
       title: "Asistent",
       intro: "Sažetak ovog upita, ono što par nije naveo, i odgovor koji možete urediti.",
+      ai_disclosure:
+        "Koristi Anthropic AI. Klik na Čitanje šalje upit i ograničeni kontekst događaja/paketa Anthropic-u; nijedna poruka ne šalje se automatski.",
+      privacy_link: "Pojedinosti o privatnosti",
       generate: "Pročitajte upit",
       regenerate: "Pročitajte ponovno",
       working: "Čitanje…",
@@ -977,6 +980,7 @@ const hr: LocaleMessages = {
       no_packages: "Još nemate spremljenih paketa, pa nema što predložiti.",
       no_package_fit: "Nijedan od vaših spremljenih paketa ne odgovara ovom upitu.",
       draft_title: "Nacrt odgovora",
+      ai_draft_title: "Nacrt odgovora uz pomoć umjetne inteligencije",
       draft_note: "Ovo je nacrt. Ništa nije poslano. Uredite ga i pošaljite sami u razgovoru.",
       copy: "Kopiraj",
       copied: "Nacrt je kopiran.",
@@ -1196,7 +1200,7 @@ const hr: LocaleMessages = {
       trial_expired_line: "Vaša je isproba završila.",
       add_card_title: "Dodajte karticu, prve upite častimo mi",
       add_card_body:
-        "Spremite karticu i ostanite na Pro planu. Ništa se ne naplaćuje dok vam ne isporučimo prvih {total} izravnih upita. Plaćanje kreće tek mjesec nakon što stigne treći.",
+        "Spremite karticu i zadržite Pro tijekom prvih {total} izravnih upita. Spremanje ne stvara obvezu plaćanja i karticu nikada ne naplaćujemo automatski. Nakon toga odaberite Pretplatite se za nastavak Pro plana.",
       add_card_cta: "Dodajte karticu i ostanite na Pro",
       setup_success_note:
         "Kartica je spremljena. Potvrđujemo vaš Pro pristup, osvježite za koji trenutak.",
@@ -1204,11 +1208,11 @@ const hr: LocaleMessages = {
       lead_meter_count: "Iskorišteno {used} od {total}",
       lead_window_line: "Pro je na naš račun dok vam ne isporučimo prvih {total} izravnih upita.",
       billing_starts_line:
-        "Isporučeno je svih {total} upita na naš račun. Vaše prvo plaćanje je {date}.",
+        "Isporučeno je svih {total} besplatnih upita. Za nastavak Pro plana potrebna je izričita pretplata.",
       next_payment_line: "Sljedeće plaćanje: {date}.",
       past_due_line: "Zadnje plaćanje nije uspjelo. Ažurirajte karticu u portalu za naplatu.",
       leads_exhausted_line:
-        "Upiti na naš račun su iskorišteni, a nijedno plaćanje nije prošlo, pa je Pro pauziran.",
+        "Besplatni upiti su iskorišteni pa je Pro pauziran. Ništa nije naplaćeno; izričito se pretplatite za nastavak.",
       subscribe_cta: "Pretplatite se na Pro",
       portal_cta: "Otvorite portal za naplatu",
       payment_title: "Način plaćanja",
@@ -2024,7 +2028,6 @@ const hr: LocaleMessages = {
     day_of_checkin_copied: "Kopirano!",
     day_of_checkin_no_slug:
       "Još nema identifikatora para, postavite ga na stranici Gosti da prijava proradi.",
-    day_of_qr_todo: "(QR kod stiže u v2, zasad samo podijelite poveznicu iznad)",
     welcome_desk_open: "Otvorite tablet za doček",
     welcome_desk_help:
       "Otvara se u novoj kartici u načinu za doček, predajte tablet osobi koja dočekuje goste.",
@@ -2569,6 +2572,10 @@ const hr: LocaleMessages = {
     highlighted_accept:
       "Zasebno prihvaćam istaknute odredbe o automatskom obnavljanju, ograničenju odgovornosti, promjenama naknada, izmjenama, nadležnosti i sponzoriranim pozicijama.",
     legal_accept_required: "Prihvatite obje potvrde kako biste izradili račun.",
+    legal_update_title: "Pregledajte važeće uvjete za pružatelje usluga",
+    legal_update_body:
+      "Vaš prostor za pružatelje usluga pauziran je dok ne pregledate i prihvatite važeće uvjete pretplate i posebno istaknute odredbe. Prije odluke možete otvoriti cijeli dokument.",
+    legal_update_cta: "Prihvati i nastavi",
     submit: "Otvorite račun",
     continue_to_onboarding: "Nastavite",
   },
@@ -4294,7 +4301,7 @@ const hr: LocaleMessages = {
     orphans_assign_button: "Rasporedite ove goste u kućanstva",
     orphans_assigning: "Raspoređivanje…",
     orphans_support_link: "Javite se podršci",
-    orphans_support_url: "mailto:support@weddly.hu",
+    orphans_support_url: "mailto:hello@tryweddly.com",
     import_imported_label: "Uvezeno",
     import_skipped_label: "Preskočeno",
     import_errors_label: "Pogreške",
@@ -6524,6 +6531,7 @@ const hr: LocaleMessages = {
     directory_purge_submitter_confirm: "Trajno izbriši račun",
     directory_purge_submitter_done: "Račun predlagatelja je izbrisan.",
     nav_feedback: "Povratne informacije",
+    nav_content_notices: "Prijave sadržaja",
     nav_reviews: "Označene recenzije",
     reviews: {
       title: "Označene recenzije",
@@ -7242,7 +7250,7 @@ const hr: LocaleMessages = {
     checkin_lookup_code_unknown: "Taj 8-znakovni kod ne odgovara ovom paru.",
     checkin_lookup_missing: "Ispunite oba polja, ime para i 8-znakovni kod.",
     checkin_contact_hosts: "Javite se domaćinima",
-    checkin_contact_hosts_email: "mailto:support@weddly.hu",
+    checkin_contact_hosts_email: "mailto:hello@tryweddly.com",
     checkin_household_for: "Prijava za",
     checkin_for_member: "Za {name}",
     checkin_member_dietary: "Alergije / prehrana",
@@ -7288,6 +7296,10 @@ const hr: LocaleMessages = {
     dietary_privacy_notice:
       "Neobavezni zdravstveni podatak. Koriste ga samo domaćini i njihov ovlašteni organizator radi cateringa i sigurnosti događaja.",
     dietary_privacy_link: "Kako obrađujemo podatke gostiju",
+    dietary_consent_label:
+      "Izričito pristajem da Weddly pohrani gore unesene zdravstvene podatke o alergijama/prehrani radi cateringa i sigurnosti događaja. Privolu mogu povući brisanjem polja i ponovnom predajom ili zahtjevom za brisanje.",
+    dietary_consent_required:
+      "Dajte privolu prije slanja zdravstvenih podataka o alergijama ili prehrani.",
     accommodation_section_title: "Gdje biste odsjeli?",
     accommodation_none: "Ne treba mi smještaj",
     guest_message_label: "Poruka paru",
@@ -7692,7 +7704,7 @@ const hr: LocaleMessages = {
       "Kako Weddly postupa s vašim podacima: prikupljene kategorije, čuvanje, prava iz GDPR-a, kolačići i vanjske usluge.",
     page_title: "Pravila privatnosti",
     last_updated_label: "Zadnje ažuriranje",
-    last_updated_date: "2026-08-03",
+    last_updated_date: "2026-08-13",
     intro:
       "Ova pravila privatnosti posjetiteljima, registriranim korisnicima, pretplatnicima na newsletter i uvrštenim pružateljima usluga daju detaljne i transparentne informacije o tome kako Weddly obrađuje njihove osobne podatke. Primjenjuju se sljedeći propisi: Uredba EU 2016/679 (GDPR); mađarski Zakon o informacijskom samoodređenju i slobodi informiranja (Infotv., Zakon CXII iz 2011.); Zakon o elektroničkoj trgovini (Ektv., Zakon CVIII iz 2001.); i Zakon o gospodarskom oglašavanju (Grtv., Zakon XLVIII iz 2008.).",
     controller_title: "Tko je voditelj obrade vaših podataka",
@@ -7724,7 +7736,7 @@ const hr: LocaleMessages = {
       "Pravna obveza (čl. 6. st. 1. t. (c)), dnevnik revizije i eventualno dostavljanje podataka tijelima vlasti mogu biti propisani zakonom (npr. u kaznenom postupku). Kada izađemo iz bete i počnemo izdavati račune, pod ovu će osnovu potpasti i obveza čuvanja iz mađarskog Zakona o računovodstvu (§ 169.) (8 godina).",
     guest_data_title: "Podaci gostiju i trećih osoba (čl. 14. GDPR-a)",
     guest_data_body:
-      "Ako ste na Weddly stigli kao gost (jer vas je par koji vas poziva na svoje vjenčanje dodao na svoj popis gostiju), čl. 14. traži da vam kažemo odakle vaši podaci potječu. Vaše ime, adresu e-pošte, telefonski broj i podatke o prehrani unio je par koji vas poziva, oni su za te podatke voditelj obrade, a Weddly za njihovo smještanje djeluje kao izvršitelj obrade u njihovo ime. Ako želite da se vaši podaci izbrišu ili isprave, obratite se izravno paru ili pišite na hello@tryweddly.com pa ćemo zahtjev proslijediti umjesto vas.",
+      "Ako ste stigli kao gost, vaše ime i kontaktni podaci potječu od para koji vodi popis gostiju; Weddly ih pohranjuje u njihovo ime. Podaci o prehrani i alergijama mogu otkriti zdravstvene informacije. Neobavezni su i zahtijevaju vašu izričitu privolu prema čl. 9. st. 2. t. (a) GDPR-a; koriste ih samo par i ovlašteni organizator radi cateringa i sigurnosti, nikada za analitiku među korisnicima. Privolu možete povući brisanjem polja i ponovnom predajom ili zatražiti ispravak/brisanje od para ili na hello@tryweddly.com. Tuđe zdravstvene podatke unesite samo ako ste ovlašteni dati privolu za tu osobu.",
     directory_listings_title: "Tvrtke uvrštene bez računa (čl. 14. GDPR-a)",
     directory_listings_intro:
       "Weddlyjev katalog dobavljača sadrži i tvrtke za vjenčanja koje se nikada nisu registrirale kod nas. Riječ je o uređenom, činjeničnom popisu, a ne o popisu partnera: sam unos ne podrazumijeva suradnju, preporuku ni bilo kakav ugovorni odnos među nama i ne nosi nikakvu obvezu plaćanja. Tvrtke koje su se registrirale i same upravljaju svojim profilom nose oznaku „Provjereno”; one koje nisu, tu oznaku nemaju.",
@@ -7774,20 +7786,20 @@ const hr: LocaleMessages = {
       "Za svaki drugi zahtjev ili pritužbu pišite na hello@tryweddly.com ili andor.csikasz@gmail.com i riješit ćemo ga ručno u roku od sedam dana.",
     security_title: "Sigurnost podataka (čl. 32. GDPR-a)",
     security_body:
-      "Vašu lozinku nikada ne vidimo: prije pohrane hashira se algoritmom Argon2id, pa je ni curenje baze podataka ne bi otkrilo. Oznake sesije nasumični su, potpisani neprozirni tokeni (nisu JWT), mogu se opozvati na poslužitelju i provjeravaju se s HMAC-SHA256. Sav mrežni promet zaštićen je TLS-om (TLS završava na rubu Railwaya). Baza podataka je SQLite postavljen na trajni volumen; za fizičku sigurnost tog volumena odgovoran je pružatelj usluge smještaja. O svim važnim radnjama vodimo dnevnik revizije koji se samo nadopunjuje (nikada se ne mijenja ni ne briše).",
+      "Vašu lozinku nikada ne vidimo: prije pohrane hashira se algoritmom Argon2id. Sesije preglednika koriste nasumične, potpisane neprozirne tokene u Secure, HttpOnly i SameSite kolačićima; mogu se opozvati na poslužitelju i provjeravaju se s HMAC-SHA256. Mrežni promet zaštićen je TLS-om. Baza podataka je SQLite na trajnom volumenu. Važne radnje bilježe se u revizijski dnevnik aplikacije; zakonski obvezni sigurnosni zapisi mogu se zadržati nakon brisanja računa uz pristup ograničen na ovlaštene osobe.",
     children_title: "Podaci djece (čl. 8. GDPR-a)",
     children_body:
       "Weddly nije namijenjen korisnicima mlađima od 16 godina; maloljetnici se kod nas ne mogu izravno registrirati. Ako par doda djecu na svoj popis gostiju, njihove podatke obrađujemo prema čl. 14. (vidjeti „Podaci gostiju i trećih osoba” iznad), uz ista prava na brisanje i ispravak. Ako smatrate da podatke osobe mlađe od 16 godina obrađujemo bez zakonite osnove, pišite na hello@tryweddly.com i postupit ćemo bez odgode.",
     transfers_title: "Prijenosi izvan EGP-a (Poglavlje V. GDPR-a)",
     transfers_body:
-      "Usluga radi na infrastrukturi koju osigurava Railway Corp. (Sjedinjene Američke Države), pa se dio vaših podataka pohranjuje na poslužiteljima u SAD-u. Nakon presude Schrems II (predmet C-311/18) prijenosi iz EU-a u SAD provode se na temelju okvira EU-US Data Privacy Framework (odluka o primjerenosti iz 2023.) i, kao dopunske zaštitne mjere, standardnih ugovornih klauzula (2021/914). Railway se nalazi na popisu organizacija certificiranih prema DPF-u. Za transakcijske poruke e-pošte Resend (SAD) jednako tako prima adresu primatelja i sadržaj poruke na temelju DPF/SCC.",
+      "Neki uključeni pružatelji mogu obrađivati podatke izvan EGP-a. Prije uključivanja Weddly u registru pružatelja bilježi njihovu ulogu, regiju obrade i primjenjivi mehanizam prijenosa, primjerice odluku o primjerenosti ili standardne ugovorne klauzule. Na zahtjev dajemo podatke o trenutačno provjerenim zaštitnim mjerama i dostupnu kopiju.",
     subprocessors_title: "Izvršitelji obrade (čl. 28. GDPR-a)",
     subprocessors_intro:
-      "Koristimo se sljedećim izvršiteljima obrade. Sa svakim je sklopljen pisani ugovor o obradi podataka i podatke smiju obrađivati isključivo prema uputama Weddlyja.",
+      "Sljedeći pružatelji mogu primiti podatke kada je uključena pripadajuća funkcija. Neki, osobito pružatelji plaćanja i identiteta, mogu djelovati kao samostalni voditelji za vlastite regulirane svrhe. Produkcijski registar bilježi ulogu, regiju, ugovor i dokaz prijenosa.",
     subprocessors_railway:
-      "Railway Corp. (SAD), smještaj aplikacije; pohrana SQLite baze podataka i prenesenih datoteka. Osnova prijenosa su DPF/SCC.",
+      "Railway Corp. (SAD), smještaj aplikacije i pohrana SQLite baze podataka. Regija, ugovor i jamstvo prijenosa moraju se prije pokretanja provjeriti u produkcijskom registru pružatelja.",
     subprocessors_resend:
-      "Resend Inc. (SAD), dostava transakcijskih poruka e-pošte (registracija, ponovno postavljanje lozinke, poziv partneru, potvrde dolaska). Osnova prijenosa su DPF/SCC.",
+      "Resend Inc. (SAD), dostava transakcijskih poruka e-pošte (registracija, ponovno postavljanje lozinke, poziv partneru, potvrde dolaska). Ugovor i jamstvo prijenosa moraju se prije pokretanja provjeriti u produkcijskom registru pružatelja.",
     subprocessors_serpapi:
       "SerpApi (SAD), upiti prema Google Flightsu za widget planera medenog mjeseca. Prima samo rutu i datum koje unesete; nikakve osobne podatke.",
     subprocessors_osm:
@@ -7795,9 +7807,9 @@ const hr: LocaleMessages = {
     subprocessors_pinterest:
       "Pinterest (SAD), widget za ploču raspoloženja na poslužitelju čita RSS izvor javne Pinterest ploče. Prima samo Pinterest URL koji ste naveli.",
     subprocessors_sentry:
-      "Sentry (SAD), bilježenje pogrešaka aplikacije. Zasad nije uključen u produkciji; ako ga uključimo, ažurirat ćemo ovu stranicu. Primao bi pseudonimizirane tragove pogrešaka bez izravnih identifikatora.",
+      "Sentry (SAD), neobavezno bilježenje pogrešaka aplikacije. Kada je konfiguriran, Weddly šalje očišćenu telemetriju uz isključeno zadano prikupljanje osobnih podataka; produkcijski registar bilježi regiju i jamstvo prijenosa.",
     subprocessors_google:
-      "Google Ireland Ltd. / Google LLC (SAD), tri odvojene funkcije: prijava putem Googlea (primamo vaše ime, adresu e-pošte i oznaku Google računa), neobavezna sinkronizacija s Google kalendarom opisana u sljedećem odjeljku te upiti prema Google Maps Placesu koji služe za rangiranje javnog kataloga dobavljača (samo nazivi tvrtki, nikada vaši podaci). Osnova prijenosa su DPF/SCC.",
+      "Google Ireland Ltd. / Google LLC (SAD), za tri odvojene funkcije: prijavu putem Googlea, neobaveznu sinkronizaciju s Google kalendarom i upite Google Maps Placesa o javnim poslovnim podacima. Uloga i jamstvo prijenosa bilježe se i provjeravaju zasebno za svaku uključenu funkciju.",
     subprocessors_other:
       "Ostali pružatelji povezani s funkcijama mogu biti Stripe, Cloudflare R2, Anthropic, Apple, DeepL, MaxMind i Cookiebot te—samo nakon pristanka na statistiku—Plausible, Google Analytics/Tag Manager i Microsoft Clarity. Sentry prima očišćenu telemetriju samo kada je uključen.",
     google_data_title: "Podaci iz Google računa (prijava i sinkronizacija kalendara)",
@@ -7816,13 +7828,13 @@ const hr: LocaleMessages = {
     google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Kolačići i lokalna pohrana",
     cookies_intro:
-      "Weddly ne postavlja nikakve kolačiće za praćenje. Jedina pohrana u pregledniku koju koristimo nalazi se u localStorageu na vašem uređaju, pa nikada ne dolazi do treće strane:",
+      "Nužni HttpOnly kolačić održava prijavljenu sesiju; lokalna pohrana preglednika sadrži samo dolje navedene postavke koje nisu tajne. Cookiebot sprema vaš izbor privole. Neobavezna analitika smije postaviti ili čitati identifikatore tek nakon privole za statistiku.",
     cookies_settings: "Pregledajte ili povucite odabir kolačića",
     cookies_locale: "weddly.locale, pamti preferirate li mađarsko ili englesko sučelje.",
     cookies_verify_dismiss:
       "weddly.verify_email_dismissed_until, na 24 sata utišava traku za potvrdu e-pošte nakon što je zatvorite.",
     cookies_session:
-      "Token sesije, potpisana nasumična oznaka (nije JWT) koja vas drži prijavljenima. Pohranjuje se u localStorageu; briše se pri odjavi.",
+      "weddly_session, potpisani nasumični identifikator sesije u Secure, HttpOnly i SameSite kolačiću. Skripte preglednika ne mogu ga čitati; opoziva se i briše pri odjavi.",
     cookies_saved_suppliers:
       "weddly.suppliers.saved, popis dobavljača koje ste u katalogu označili zvjezdicom, samo na vašem uređaju.",
     cookies_onboarding_draft:
@@ -8002,7 +8014,7 @@ const hr: LocaleMessages = {
       "Jamčite da je sve što pošaljete (a) vaše ili da imate dopuštenje za objavu, (b) da ne krši prava trećih osoba (autorsko pravo, žig, privatnost, poslovnu tajnu) i (c) da je u skladu s gore navedenim pravilima prihvatljivog korištenja. Ako se pokaže da nešto od toga ne stoji, sadržaj možemo ukloniti, a kod teških ili ponovljenih kršenja suspendirati ili izbrisati vaš račun.",
     dsa_title: "Prijava i postupanje (EU Digital Services Act)",
     dsa_body:
-      "Uredba (EU) 2022/2065 (DSA) obvezuje svakog pružatelja usluga smještaja sadržaja da omogući jednostavan mehanizam za prijavu nezakonitog sadržaja. Ako smatrate da je sadržaj objavljen na Weddlyju (npr. unos dobavljača iz zajednice) nezakonit, pišite na dsa@weddly.xyz ili, ako ta adresa još nije aktivna, na hello@tryweddly.com / andor.csikasz@gmail.com, i navedite: (1) URL ili drugu nedvojbenu oznaku gdje se sadržaj nalazi; (2) zašto smatrate da je nezakonit; (3) ime i e-adresu prijavitelja; (4) izjavu u dobroj vjeri da je prijava točna. Svaku prijavu razmatramo bez nepotrebnog odgađanja i, kad je opravdano, uklanjamo sadržaj ili onemogućujemo pristup njemu; o odluci i njezinim razlozima obavještavamo i prijavitelja i osobu koja je sadržaj objavila. Interne pritužbe na naše odluke možete poslati na istu adresu.",
+      "Uredba (EU) 2022/2065 (DSA) zahtijeva lako dostupan mehanizam za prijavu nezakonitog sadržaja. Upotrijebite trajni obrazac „Prijavi nezakoniti sadržaj“ povezan sa svake stranice. Obrazac bilježi točan URL, razloge, kontaktne podatke i izjavu u dobroj vjeri, e-poštom šalje referencu predmeta te omogućuje praćenje statusa, obrazložene odluke i podnošenje prigovora. Pomoć možete zatražiti i na hello@tryweddly.com.",
     dsa_contact:
       "Jedinstvena kontaktna točka (Single Point of Contact) za tijela i korisnike prema čl. 11. i 12. DSA-a: Andor Csíkász, andor.csikasz@gmail.com. Jezici: mađarski i engleski.",
     directory_title: "Katalog dobavljača",
@@ -8036,7 +8048,7 @@ const hr: LocaleMessages = {
       "Weddlyjevi opći uvjeti za dobavljače: naknade, naplata, produljenje, odgovornost, rangiranje, pritužbe, mađarsko i EU pravo.",
     page_title: "Uvjeti pretplate za dobavljače (ÁSZF)",
     last_updated_label: "Verzija",
-    last_updated_date: "na snazi od 2026-08-12",
+    last_updated_date: "na snazi od 2026-08-13",
     intro:
       "Ovi Opći uvjeti poslovanja (ÁSZF) uređuju Weddlyjevu pretplatu za dobavljače. Postaju dio ugovora između strana kada ih Dobavljač izričito prihvati klikom na „Prihvaćam” tijekom registracije. Prema čl. 6:78(2) mađarskog Građanskog zakonika izričito su istaknute i uz posebnu pažnju prihvaćene sljedeće odredbe: ograničenje odgovornosti, automatsko produljenje, promjena naknada, jednostrana izmjena Općih uvjeta, nadležnost te označavanje sponzoriranih prikaza.",
     operator_title: "Operator i ugovorne strane",
@@ -8053,7 +8065,7 @@ const hr: LocaleMessages = {
       "Weddly katalog sadrži i poslovne subjekte koji se nisu registrirali i nisu preuzeli svoj profil. Sam zapis ne stvara ugovor između Dobavljača i Operatora, ne stvara obvezu plaćanja i ne znači partnerstvo ni preporuku; ovi se Opći uvjeti na poslovni subjekt primjenjuju tek od trenutka kad preuzme profil ili se registrira. Zapis sadrži samo javno dostupne, činjenične poslovne podatke (naziv, kategoriju usluge, mjesto i adresu, web-stranicu, poslovne kontaktne podatke koje je sam subjekt objavio, procijenjeni raspon cijene i kapaciteta, kratak činjenični sažetak te sliku za prikaz pri dijeljenju s vlastite web-stranice subjekta). Prema mjerodavnom mađarskom i europskom pravu neutralan prikaz takvih podataka u pravilu nije uvjetovan prethodnom suglasnošću subjekta; to među ostalim potvrđuju čl. 10(2) mađarskog Zakona V. iz 2006. o javnosti trgovačkih društava, sudskim postupcima za trgovačka društva i likvidaciji, uvodna izjava (14) GDPR-a, čl. 1(3) mađarskog Zakona LXXVI. iz 1999. o autorskom pravu te čl. 15(1)(c) mađarskog Zakona XI. iz 1997. o zaštiti žigova i oznaka zemljopisnog podrijetla. Predmetni poslovni subjekt u svakom trenutku može zatražiti ispravak podataka, besplatno preuzimanje profila, trajno onemogućavanje svih kontakata ili prigovoriti prikazu, na hello@tryweddly.com. Svaki zahtjev razmatramo pojedinačno i na njega odgovaramo obrazloženo bez nepotrebne odgode, a najkasnije u roku od 30 dana; kontaktni podaci, opis i svaka fotografija uklanjaju se na zahtjev bez procjene. Cijeli postupak i informacije koje traži čl. 14 GDPR-a navedeni su u poglavlju „Poslovni subjekti prikazani bez računa” u Pravilima privatnosti.",
     ratings_title: "Ocjene i pravna sredstva Dobavljača",
     ratings_body:
-      "Parovi mogu napisati ocjenu uz zapis u katalogu i prije nego što je Dobavljač preuzeo profil. Operator ocjene ne naručuje niti plaća i ne rangira ih prema broju zvjezdica; oznaka „Provjereno” znači samo da je ocjenjivač tog dobavljača zabilježio i u vlastitom planiranju, a ne da je Operator provjerio izvedbu. Nakon preuzimanja profila Dobavljač dobiva javno pravo odgovora na svaku ocjenu o sebi. Dobavljač bilo koju ocjenu može prijaviti na hello@tryweddly.com; ocjena koja sadrži neistinite tvrdnje o činjenicama, uvrede ili povredu prava treće osobe ili ovih Općih uvjeta uklanja se prema postupku iz odjeljka Moderiranje sadržaja, uz obrazloženje priloženo odluci. Operator ne uklanja zakonite ocjene, koliko god bile nepovoljne, a postojanje ili nepostojanje pretplate Dobavljača ni u jednom smjeru ne utječe na prikaz ocjena.",
+      "Parovi mogu ocijeniti zapis i prije nego što Dobavljač preuzme profil. Operator ocjene ne naručuje niti plaća i ne rangira ih prema zvjezdicama; „Provjereno” samo znači da je osoba dobavljača zabilježila u vlastitom planiranju. Javna funkcija odgovora Dobavljača trenutačno nije dostupna. Ocjena se može prijaviti na hello@tryweddly.com; prijava se obrađuje prema odjeljku Moderiranje sadržaja uz obrazloženi ishod. Zakonita ocjena ne uklanja se samo zato što je nepovoljna, a pretplata ne utječe na njezin prikaz.",
     fees_title: "Naknade i cjenik",
     fees_body:
       "Paketi i cijene detaljno su opisani u prilogu Cjenik, koji je sastavni dio Općih uvjeta i dostupan je kao PDF za preuzimanje tijekom registracije te u svakom trenutku u računu Dobavljača. Na dan stupanja na snagu osnovni prikaz u javnom katalogu (Beta razina) je besplatan; plaćene pakete Operator najavljuje Dobavljačima zasebnom e-poštom najmanje 30 dana prije uvođenja, a svaki plaćeni paket aktivira se isključivo izričitom potvrdom Dobavljača klikom. Na nove pretplate primjenjuje se cjenik koji vrijedi na početku razdoblja. Za postojeće pretplate Operator može promijeniti cijenu najviše jednom u kalendarskoj godini, uz obavijest e-poštom najmanje 60 dana prije sljedećeg ciklusa naplate. Godišnje povećanje cijene ne smije premašiti indeks potrošačkih cijena (CPI) za prethodnu godinu, kako ga objavljuje mađarski Državni zavod za statistiku (KSH), uvećan za 10 postotnih bodova, osim ako Operator uvede novu funkciju ili paket koje je Dobavljač izričito prihvatio. Do stupanja povećanja na snagu Dobavljač može raskinuti ugovor bez naknade, uz razmjerni povrat.",
@@ -8065,7 +8077,7 @@ const hr: LocaleMessages = {
       "PDV se primjenjuje po stopi koju propisuje mađarsko pravo u danom trenutku. Ako Operator na dan stupanja ugovora na snagu nije obveznik PDV-a (primjerice, oslobođeni mali poduzetnik), cijene se fakturiraju bez PDV-a, a račun to navodi. Nakon upisa u sustav PDV-a objavljene su cijene neto cijene na koje se dodaje PDV.",
     term_title: "Trajanje, produljenje, raskid",
     term_body:
-      "Plaćena pretplata traje do kraja odabranog (mjesečnog ili godišnjeg) ciklusa naplate i automatski se produljuje za sljedeći ciklus, osim ako Dobavljač otkaže u aplikaciji Weddly ili e-poštom na hello@tryweddly.com najmanje 14 dana prije datuma produljenja. Za godišnje cikluse Operator šalje podsjetnik e-poštom najmanje 30 dana prije datuma produljenja, uz naznaku cijene koja vrijedi pri produljenju. Produljenje se odvija po cijeni koju je Dobavljač imao priliku unaprijed prihvatiti, kako je opisano u odjeljku Naknade i cjenik. Naknade već plaćene za tekući ciklus ne vraćaju se kod redovnog otkaza, osim kad se primjenjuje Jamstvo povrata novca ili Potrošačko pravo na odustanak. Nakon stupanja otkaza na snagu javni prikaz i istaknuta mjesta prestaju.",
+      "Trenutačno ponuđena plaćena pretplata mjesečna je i obnavlja se svaki mjesec dok je Dobavljač ne otkaže u aplikaciji ili e-poštom na hello@tryweddly.com. Otkaz zaustavlja sljedeću obnovu; već plaćeni ciklus dostupan je do kraja. Naknada za tekući ciklus ne vraća se osim prema jamstvu povrata ili potrošačkom pravu na odustanak. Nakon toga osnovni javni zapis ostaje aktivan i uređiv u besplatnom planu, dok Pro funkcije i istaknuti prikazi prestaju. Godišnji plan trenutačno se ne nudi.",
     refund_title: "Jamstvo povrata novca (B2B 14 dana)",
     refund_body:
       "Kod prve plaćene pretplate Dobavljač može, bez navođenja razloga, raskinuti ugovor i zatražiti puni povrat plaćene naknade slanjem e-pošte na hello@tryweddly.com unutar prvih 14 dana prvog plaćenog ciklusa. Jamstvo se ne primjenjuje: (a) kod ponovnih registracija ili promjene paketa, (b) ako je Dobavljač tijekom razdoblja od 14 dana izričito koristio prilagođenu promotivnu ili sadržajnu uslugu Operatora. Povrat se izvršava izvornim kanalom plaćanja u roku od 14 dana od primitka zahtjeva.",
@@ -8074,16 +8086,16 @@ const hr: LocaleMessages = {
       "Ako Dobavljač iznimno ima svojstvo potrošača prema Vladinoj uredbi 45/2014. (II. 26.) i čl. 8:1(1)(3) mađarskog Građanskog zakonika (fizička osoba koja ugovor ne sklapa u okviru svoje trgovačke, poslovne ili profesionalne djelatnosti; registracija obrtnika za postojeću uslugu za vjenčanja u pravilu NIJE takav slučaj), Dobavljač potrošač može odustati od ugovora bez navođenja razloga u roku od 14 dana od sklapanja ugovora (čl. 20 Uredbe). Izjava o odustanku može se poslati na hello@tryweddly.com; može se koristiti i obrazac iz Priloga 2 Uredbe. Ako Dobavljač potrošač izričito zatraži da ispunjenje započne unutar roka za odustanak (odnosno da profil postane vidljiv), prihvaća da u slučaju odustanka mora Operatoru nadoknaditi razmjerni trošak već izvršenog ispunjenja (čl. 26) te da se potpunim ispunjenjem usluge pravo na odustanak gubi (čl. 29(1)(a)). Pravo na odustanak NE pripada Dobavljačima koji ugovor sklapaju u poslovnom svojstvu; za njih se umjesto toga primjenjuje odjeljak Jamstvo povrata novca.",
     sla_title: "Razina usluge i održavanje",
     sla_body:
-      "Operator cilja na mjesečnu dostupnost od 99 posto za javni Weddly katalog i za admin sučelje za dobavljače (odnosno na mjesečni prekid rada od najviše otprilike 7 sati i 18 minuta, planiran i neplaniran zajedno). Planirano održavanje najavljuje se e-poštom najmanje 48 sati unaprijed i, kad je to razumno moguće, izvodi se između 23:00 i 06:00 po srednjoeuropskom vremenu; planirano se održavanje ne uračunava u cilj od 99 posto. Ako stvarna mjesečna dostupnost padne ispod 95 posto, Dobavljač može zatražiti odobrenje u visini 10 posto mjesečne naknade za sljedeći ciklus naplate; ispod 90 posto odobrenje iznosi 25 posto. Zahtjev za odobrenje Dobavljač mora podnijeti pisanim putem na hello@tryweddly.com u roku od 30 dana od kraja pogođenog mjeseca. Odobrenja se ne primjenjuju na prekide uzrokovane višom silom, ispadom interneta ili infrastrukture treće strane, ni na događaje koje je uzrokovao Dobavljač.",
+      "Tijekom besplatne otvorene bete nema ugovornog SLA-a dostupnosti ni servisnih odobrenja. Planirano održavanje i bitni incidenti priopćavaju se kad je to razumno moguće. Prije plaćenog pokretanja objavit ćemo primjenjivu razinu usluge i pravna sredstva.",
     ranking_title: "Rangiranje i istaknuti prikazi",
     ranking_body:
-      "Zadano rangiranje kataloga koristi, prema opadajućoj važnosti, sljedeće glavne parametre: (a) podudarnost s filtrima koje je par postavio (kategorija, lokacija, datum, broj uzvanika); (b) potpunost i ažurnost profila; (c) prosječno vrijeme odgovora Dobavljača na upite parova; (d) prosjek i broj ocjena parova; (e) vrstu pretplatničkog paketa koji je Dobavljač odabrao. Sponzorirani prikaz (plaćeno isticanje) prikazuje se vidljivo, s oznakom „Istaknuto” i vizualno odvojeno, nikada skriveno. Točne matematičke težine parametara mogu se s vremena na vrijeme mijenjati iz poslovnih i kvalitativnih razloga; bitna promjena (uvođenje ili uklanjanje parametra, promjena položaja plaćenog isticanja u rangiranju) najavljuje se postupkom izmjene Općih uvjeta uz najmanje 15 dana prethodne obavijesti (Uredba EU 2019/1150 P2B, čl. 5).",
+      "Javni katalog najprije primjenjuje filtre para za kategoriju i lokaciju. Unutar rezultata glavni su signali: ima li profil fotografiju, je li preuzet, potpunost profila i naziv tvrtke kao stabilni kriterij izjednačenja. U prijavljenom planiranju spremljeni dobavljači para i glasovi zajednice mogu dodatno podići rezultat. Ocjena, vrijeme odgovora i pretplatnički plan trenutačno ne mijenjaju organski rang. Plaćeni prikaz mora biti jasno označen kao „Istaknuto”.",
     differential_title: "Različito postupanje",
     differential_body:
       "Na dan stupanja na snagu Operator sam ne nastupa kao dobavljač usluga za vjenčanja, pa ne postoji vlastita ponuda koja bi uživala povoljnije rangiranje, pristup podacima, naknade ili ugovorne uvjete u odnosu na druge Dobavljače. Ako se vlastita ponuda uvede, ovaj se odjeljak mijenja postupkom izmjene Općih uvjeta uz najmanje 30 dana prethodne obavijesti, a Dobavljačima se daje pravo na raskid (Uredba EU 2019/1150 P2B, čl. 7).",
     data_access_title: "Pristup podacima",
     data_access_body:
-      "Unutar svojeg računa Dobavljač ima pristup: (a) uređivanju i izvozu podataka vlastitog profila, fotografija i opisa; (b) popisu i izvozu zaprimljenih upita parova (ime, kontakt, datum, poruka); (c) osnovnoj statistici svojeg profila (pregledi, klikovi, upiti). Dobavljač nema pristup: (i) statistici profila ni podacima o upitima drugih Dobavljača; (ii) internim težinama algoritma rangiranja; (iii) operativnim, tehničkim ni financijskim internim podacima Operatora. Podaci koji se mogu izvesti ostaju dostupni 30 dana nakon prestanka ugovora (vidjeti Izvoz podataka i odjava) (Uredba EU 2019/1150 P2B, čl. 9).",
+      "Dok je račun aktivan, Dobavljač može uređivati i izvoziti profil te preuzeti JSON izvoz računa s upitima i dostupnom statistikom. Nema pristup podacima drugih Dobavljača, internim težinama rangiranja ni internim podacima Operatora. Budući da nakon prestanka trenutačno nema računa samo za čitanje, izvoz treba preuzeti prije zahtjeva za otkaz ili brisanje; postupak uz podršku opisan je u odjeljku Odjava.",
     ip_title: "Intelektualno vlasništvo i licencija za sadržaj",
     ip_body:
       "Fotografije, videozapisi, opisi, logotipi i drugi sadržaji koje prenese Dobavljač ostaju intelektualno vlasništvo Dobavljača (ili nositelja prava). Registracijom i prijenosom sadržaja Dobavljač Operatoru daje neisključivu, besplatnu, svjetsku licenciju s pravom podlicenciranja, isključivo radi prikaza sadržaja u Weddly katalogu, u pripadajućoj tehničkoj infrastrukturi i na Weddlyjevim vlastitim marketinškim površinama (objave na društvenim mrežama, newsletteri, materijali za medije, blokovi na Weddlyjevoj web-stranici). Za svako drugo korištenje (izvan promocije Weddlyja) potrebna je prethodna pisana suglasnost Dobavljača. Licencija prestaje u roku od 30 dana od prestanka ugovora; nakon toga Operator uklanja sadržaj Dobavljača s javnih površina. Weddly marka, logotip, softver i sučelje ostaju intelektualno vlasništvo Operatora; Dobavljač na njima dobiva samo neisključivo, opozivo pravo korištenja radi propisne uporabe admin sučelja za dobavljače.",
@@ -8101,7 +8113,7 @@ const hr: LocaleMessages = {
       "Na podatke koji se obrađuju u okviru pretplate (predstavljanje i sadržaj portfelja Dobavljača, kontaktni podaci i podaci za naplatu, upiti i statistika) primjenjuju se Weddlyjeva Pravila privatnosti, uz sljedeće dopune: (a) predstavljanje, portfelj i kontaktni sadržaji Dobavljača javno se prikazuju u katalogu; (b) računovodstvena dokumentacija i podaci za naplatu čuvaju se 8 godina prema čl. 169 mađarskog Zakona o računovodstvu; (c) pružatelj platnih usluga (Stripe ili jednakovrijedan) samostalni je voditelj obrade podataka o karticama, a Operator podatke o karticama ne pohranjuje; (d) pri prosljeđivanju upita parova Weddly i Dobavljač djeluju kao međusobno neovisni voditelji obrade (GDPR, čl. 4(7)): Dobavljač je samostalni voditelj obrade za osobne podatke koje primi. Zaseban ugovor o obradi podataka (DPA) potreban je samo ako Dobavljač koristi dodatnu plaćenu statističku uslugu ili uslugu automatizacije koju Operator obavlja u ime Dobavljača kao izvršitelj obrade; to se utvrđuje u odgovarajućem prilogu.",
     complaints_title: "Interno rješavanje pritužbi",
     complaints_body:
-      "Dobavljač može bez naknade podnijeti pritužbu na uslugu, naplatu, odluke o moderiranju ili bilo koju radnju Operatora e-poštom na panasz@weddly.xyz ili hello@tryweddly.com. Na pisanu pritužbu Operator daje sadržajan odgovor u roku od 15 radnih dana. Na potrošačku pritužbu prema čl. 17/A i 17/B mađarskog Zakona CLV. iz 1997. (Fgytv.) odgovara se u roku od 30 dana. Dobavljač koji je potrošač i čija je pritužba odbijena može se obratiti Budimpeštanskom mirilačkom vijeću (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) ili mjesno nadležnom tijelu za zaštitu potrošača. Operator jednom godišnje objavljuje zbirni pregled statistike pritužbi na web-stranici Weddlyja (Uredba EU 2019/1150 P2B, čl. 11).",
+      "Dobavljač može bez naknade podnijeti pritužbu na uslugu, naplatu, odluke o moderiranju ili bilo koju radnju Operatora e-poštom na hello@tryweddly.com. Na pisanu pritužbu Operator daje sadržajan odgovor u roku od 15 radnih dana. Na potrošačku pritužbu prema čl. 17/A i 17/B mađarskog Zakona CLV. iz 1997. (Fgytv.) odgovara se u roku od 30 dana. Dobavljač koji je potrošač i čija je pritužba odbijena može se obratiti Budimpeštanskom mirilačkom vijeću (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) ili mjesno nadležnom tijelu za zaštitu potrošača. Operator jednom godišnje objavljuje zbirni pregled statistike pritužbi na web-stranici Weddlyja (Uredba EU 2019/1150 P2B, čl. 11).",
     mediation_title: "Mirenje i izvansudsko rješavanje sporova",
     mediation_body:
       "Prije pokretanja zahtjeva koji proizlaze iz Općih uvjeta strane će pokušati izvansudsko rješenje. U skladu s čl. 12 P2B Uredbe Operator se obvezuje da će, uz zajednički dogovor s Dobavljačem, angažirati neovisnog izmiritelja upućenog u mađarsko pravo (osobito iz Centra za mirenje i arbitražu Mađarske trgovačke i industrijske komore ili nekog drugog izmiritelja iz registra izmiritelja koji vodi Ministarstvo pravosuđa). O snošenju naknade izmiritelja strane se dogovaraju prije početka mirenja; ako dogovora nema, naknadu snose na jednake dijelove.",
@@ -8119,7 +8131,7 @@ const hr: LocaleMessages = {
       "Operator može ugovor raskinuti redovnim otkazom u bilo kojem trenutku uz pisanu (e-poštom) obavijest najmanje 30 dana unaprijed, uz razmjerni povrat (Uredba EU 2019/1150 P2B, čl. 4(1)). Obustava, ograničenje ili raskid s trenutačnim učinkom zakoniti su samo u sljedećim slučajevima i uvijek su popraćeni pisanim obrazloženjem utemeljenim na pojedinačnim činjenicama: (a) Dobavljač bitno ili opetovano krši Opće uvjete ili Uvjete korištenja (osobito: objavljivanje nezakonitog, obmanjujućeg sadržaja ili sadržaja koji povređuje prava, opetovane osnovane pritužbe trećih osoba) i povredu ne otkloni u roku od 14 dana od primitka obavijesti; (b) Dobavljač ne plati u roku od 30 dana od primitka opomene; (c) Dobavljač Weddly platformu koristi nezakonito ili na način koji izravno ugrožava sigurnost drugih korisnika; (d) tijelo javne vlasti ili sud pravomoćnom odlukom naloži da se usluga Dobavljača ne smije prikazivati. Za (c) i (d) Operator može odustati od roka za otklanjanje od 14 dana. Razlog raskida s trenutačnim učinkom Operator priopćava pisanim putem i u obavijesti navodi dostupne putove (Interno rješavanje pritužbi, Mirenje). Rokovi za izvoz podataka uređeni su odjeljkom Izvoz podataka i odjava.",
     offboarding_title: "Izvoz podataka i odjava",
     offboarding_body:
-      "Nakon prestanka ugovora admin sučelje za dobavljače ostaje dostupno u načinu samo za čitanje 30 dana; u tom razdoblju Dobavljač može izvesti svoj profil, upite i statistiku u CSV ili JSON formatu. Javni prikaz profila i sva istaknuta mjesta prestaju na dan stupanja raskida na snagu. Nakon isteka razdoblja za izvoz Operator čuva račun u neaktivnom stanju još 60 dana (na zahtjev se može ponovno aktivirati), a zatim briše podatke, osim evidencije koju je dužan čuvati prema čl. 169 Zakona o računovodstvu ili drugom propisu. Uz obavijest o raskidu Dobavljač može izričito zatražiti da se njegovi osnovni podaci (naziv, kategorija, lokacija) prikazuju u arhivskom dijelu kataloga „bivši dobavljači”; bez takvog zahtjeva javni prikaz prestaje u cijelosti.",
+      "Dobavljač u svakom trenutku može preuzeti JSON izvoz svojih podataka iz računa. Dok se ne uvede samostalno brisanje, zahtjevi za otkaz i brisanje obrađuju se na hello@tryweddly.com: Weddly uklanja javni profil, potvrđuje opseg i rok brisanja te zadržava samo evidenciju obveznu zbog poreza, računovodstva, sporova ili sigurnosti. Ne obećavamo automatsku arhivu samo za čitanje ili bivših dobavljača koju usluga trenutačno ne pruža.",
     transitional_title: "Prijelazne odredbe",
     transitional_body:
       "Na dan stupanja na snagu Općih uvjeta v1.0 osnovni je prikaz u javnom Weddly katalogu besplatan (Beta razina), a plaćeni paketi još nisu aktivirani. Dobavljači registrirani prije dana stupanja na snagu obavještavaju se zasebnom e-poštom i pri sljedećoj se prijavi pozivaju da Opće uvjete prihvate klikom u dijalogu za prihvaćanje. Dobavljači koji se registriraju nakon dana stupanja na snagu prihvaćaju Opće uvjete i Pravila privatnosti pri registraciji. Uvođenje plaćenih paketa najavljuje se zasebnom e-poštom najmanje 30 dana unaprijed; aktivacija se odvija isključivo izričitim odabirom paketa klikom od strane Dobavljača.",
@@ -8131,7 +8143,7 @@ const hr: LocaleMessages = {
       "Platforma EU-a za online rješavanje sporova ukinuta je 20. srpnja 2025. Potrošači se mogu obratiti nadležnom mađarskom mirilačkom tijelu; aktualni podaci nalaze se u Impressumu i našem odgovoru na pritužbu. Obvezna potrošačka pravna sredstva ostaju nepromijenjena.",
     contact_title: "Kontakt",
     contact_body:
-      "Sva pitanja o Općim uvjetima i o usluzi koju Weddly pruža dobavljačima šaljite na hello@tryweddly.com; pritužbe, zahtjeve za mirenje i DSA prijave možete poslati i na panasz@weddly.xyz. Identifikacijski podaci Operatora prema čl. 4 mađarskog Ektv. dostupni su na stranici Impressum.",
+      "Sva pitanja o Općim uvjetima i o usluzi koju Weddly pruža dobavljačima šaljite na hello@tryweddly.com. Nezakoniti sadržaj može se prijaviti i putem trajnog obrasca povezanog sa svake stranice. Identifikacijski podaci Operatora prema čl. 4 mađarskog Ektv. dostupni su na stranici Impressum.",
     en_section_label: "English",
   },
   imprint: {
@@ -8280,6 +8292,13 @@ const hr: LocaleMessages = {
     expired_title: "Sesija je završila",
     expired_body:
       "Prijavite se ponovno i nastavite gdje ste stali. Sve što ste upisali i dalje je tu.",
+    admin_reauth_title: "Potvrdite svoj identitet",
+    admin_reauth_body:
+      "Za administratorski pristup potrebna je nedavna provjera drugog faktora. Vaš će rad ostati sačuvan.",
+    admin_reauth_cta: "Potvrdi",
+    admin_mfa_label: "Kod autentifikatora",
+    admin_mfa_hint: "Unesite trenutačni 6-znamenkasti kod iz aplikacije za autentifikaciju.",
+    admin_mfa_invalid: "Kod nije valjan, istekao je ili je već upotrijebljen.",
     sign_in: "Prijava",
     sign_out: "Odjava",
     or_divider: "ili",

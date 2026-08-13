@@ -368,6 +368,7 @@ export function HouseholdRsvpForm({
   const lodgings = view.accommodation_options ?? [];
   const currency = view.currency ?? "HUF";
   const [submitting, setSubmitting] = useState(false);
+  const [healthConsent, setHealthConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   // After a self-serve guest submits, the filled-in RSVP collapses and (when the
@@ -603,6 +604,14 @@ export function HouseholdRsvpForm({
       setError(validationError);
       return;
     }
+    const added = collectAddedMembers(drafts);
+    const hasHealthData =
+      drafts.some((d) => Boolean(buildDietary(d.dietary_tags, d.dietary_free))) ||
+      added.some((member) => Boolean(member.dietary));
+    if (hasHealthData && !healthConsent) {
+      setError(t("rsvp.dietary_consent_required"));
+      return;
+    }
     // Double-confirm — the user explicitly asked for a "dupla leokézás"
     // before submission lands so accidental taps don't fire off the RSVP.
     const ok = await confirm({
@@ -615,7 +624,6 @@ export function HouseholdRsvpForm({
 
     setSubmitting(true);
     setError(null);
-    const added = collectAddedMembers(drafts);
     const payload = {
       couple_slug: view.couple_slug,
       household_code: view.household_code,
@@ -625,6 +633,7 @@ export function HouseholdRsvpForm({
       // household wrote last time, so an emptied box is the guest deleting
       // their message and the server has to hear about it.
       guest_message: guestMessage.trim(),
+      health_data_consent: hasHealthData ? true : undefined,
     };
     // Stamp the idempotency key BEFORE the first attempt so any retry from
     // the offline queue dedupes against the original write. The server
@@ -1186,6 +1195,18 @@ export function HouseholdRsvpForm({
           <p className="field-error mt-4" role="alert" aria-live="polite">
             {error}
           </p>
+        )}
+        {(drafts.some((d) => Boolean(buildDietary(d.dietary_tags, d.dietary_free))) ||
+          collectAddedMembers(drafts).some((member) => Boolean(member.dietary))) && (
+          <label className="mt-4 flex items-start gap-3 rounded-xl border border-paper-300 bg-paper-50 p-3 text-sm text-ink-800 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100">
+            <input
+              type="checkbox"
+              checked={healthConsent}
+              onChange={(event) => setHealthConsent(event.target.checked)}
+              className="mt-1"
+            />
+            <span>{t("rsvp.dietary_consent_label")}</span>
+          </label>
         )}
         <button type="submit" className="btn-accent btn-lg mt-4 w-full" disabled={submitting}>
           {submitting ? t("common.loading") : t("rsvp.checkin_complete")}

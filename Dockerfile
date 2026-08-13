@@ -32,13 +32,29 @@ RUN cd frontend && bun run build
 
 # --- runtime image ---
 FROM oven/bun:1.3.10
-COPY --from=builder /app /app
+WORKDIR /app
+
+# Resolve a clean production-only dependency tree instead of carrying the
+# builder's TypeScript/Vite/test toolchain and source tree into production.
+COPY package.json bun.lock* ./
+COPY backend/package.json ./backend/
+COPY frontend/package.json ./frontend/
+RUN bun install --production --frozen-lockfile
+
+COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/backend/src ./backend/src
+COPY --from=builder /app/backend/tsconfig.json ./backend/tsconfig.json
+COPY --from=builder /app/frontend/dist ./frontend/dist
+
+RUN mkdir -p /data && chown -R bun:bun /data
 
 ENV NODE_ENV=production \
     SERVE_FRONTEND=1 \
     DB_PATH=/data/weddly.db \
-    UPLOADS_DIR=/data/uploads
+    UPLOADS_DIR=/data/uploads \
+    APP_RUNTIME_UID=1000 \
+    APP_RUNTIME_GID=1000
 
 WORKDIR /app/backend
 EXPOSE 8787
-CMD ["bun", "src/server.ts"]
+CMD ["bun", "src/bootstrap.ts"]

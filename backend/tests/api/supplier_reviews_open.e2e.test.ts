@@ -281,6 +281,69 @@ describe("open reviews — verified visitors (Google)", () => {
     expect(second.status).toBe(409);
   });
 
+  test("a visitor can recover, edit and delete their own review", async () => {
+    const visitor = await googleVisitor("manage@example.com", "Manage Me");
+    const sid = "c-vis-manage";
+    const headers = { "X-Visitor-Token": visitor.token };
+    const created = await req<SupplierReview>(
+      "POST",
+      publicReviewsUrl(sid),
+      { rating: 5, body: "First version" },
+      { headers },
+    );
+
+    const mine = await req<SupplierReview>("GET", `${publicReviewsUrl(sid)}/mine`, undefined, {
+      headers,
+    });
+    expect(mine.status).toBe(200);
+    expect(mine.data.id).toBe(created.data.id);
+
+    const updated = await req<SupplierReview>(
+      "PATCH",
+      `/api/public/reviews/${created.data.id}`,
+      { rating: 2, body: "Corrected", tags: ["professional"] },
+      { headers },
+    );
+    expect(updated.status).toBe(200);
+    expect(updated.data.rating).toBe(2);
+    expect(updated.data.body).toBe("Corrected");
+    const flagged = db
+      .prepare("SELECT flagged FROM supplier_reviews WHERE id = ?")
+      .get(created.data.id) as { flagged: number };
+    expect(flagged.flagged).toBe(1);
+
+    const removed = await req("DELETE", `/api/public/reviews/${created.data.id}`, undefined, {
+      headers,
+    });
+    expect(removed.status).toBe(200);
+    const after = await req("GET", `${publicReviewsUrl(sid)}/mine`, undefined, { headers });
+    expect(after.status).toBe(404);
+  });
+
+  test("visitor review management does not reveal or mutate another visitor's review", async () => {
+    const owner = await googleVisitor("review-owner@example.com");
+    const stranger = await googleVisitor("review-stranger@example.com");
+    const sid = "c-vis-isolation";
+    const created = await req<SupplierReview>(
+      "POST",
+      publicReviewsUrl(sid),
+      { rating: 4 },
+      { headers: { "X-Visitor-Token": owner.token } },
+    );
+    const strangerHeaders = { "X-Visitor-Token": stranger.token };
+    const patch = await req(
+      "PATCH",
+      `/api/public/reviews/${created.data.id}`,
+      { rating: 1 },
+      { headers: strangerHeaders },
+    );
+    const remove = await req("DELETE", `/api/public/reviews/${created.data.id}`, undefined, {
+      headers: strangerHeaders,
+    });
+    expect(patch.status).toBe(404);
+    expect(remove.status).toBe(404);
+  });
+
   test("missing or garbage visitor token is rejected", async () => {
     const sid = "c-vis-noauth";
     const none = await req("POST", publicReviewsUrl(sid), { rating: 5 });

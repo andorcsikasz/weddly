@@ -32,7 +32,6 @@ import { db } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { addAuditLog } from "../lib/audit";
 import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
-import { ensureVendorScheduledSubscription } from "./vendor_billing";
 
 interface OutreachHealth {
   /** Build stage marker. Bumps to "v1" with the send + list + detail
@@ -97,10 +96,8 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   // the inquiry rather than the session.
   for (const inquiry of inquiries) {
     markVendorCalendarDirty(inquiry.vendorAccountId);
-    // Freemium: a delivered lead can spend the vendor's last free credit, which
-    // schedules their first payment. Only a genuinely new inquiry does that —
-    // a follow-up on an open one costs nothing.
-    if (inquiry.isNew) void ensureVendorScheduledSubscription(inquiry.vendorAccountId);
+    // A genuinely new inquiry spends a lead credit in the domain transaction.
+    // Reaching the allowance only pauses PRO; it never creates a payment.
   }
   return json(detail, { status: 201 });
 }

@@ -6,8 +6,8 @@ about:
 
 - **UptimeRobot** — pulls `/api/health` every 5 min. Catches "the service is
   down or returning bad responses".
-- **Healthchecks.io** — the backup cron pings *it*. Catches "the cron didn't
-  even fire" — the most dangerous backup failure mode.
+- **Healthchecks.io** — the encrypted off-site backup worker pings *it* and
+  catches missed or failed snapshots.
 
 Both have free tiers that are sufficient. Total setup is ~15 minutes.
 
@@ -61,33 +61,28 @@ slug. Couples get a transparency page; you get free PR if you stay up.
 
 ---
 
-## 2. Healthchecks.io — backup cron heartbeat
+## 2. Healthchecks.io — off-site backup heartbeat
 
 Free tier: 20 cron-style "push" checks. <https://healthchecks.io>
 
-The backup cron pings Healthchecks.io on success / failure. If it doesn't ping
-within the grace window, Healthchecks pages you. This catches "the cron was
-never scheduled" and "the cron container won't even start" — UptimeRobot
-can't see those.
+The backup worker pings Healthchecks.io on start, success and failure. If it
+doesn't ping within the grace window, Healthchecks pages you.
 
 ### Setup
 
 1. Create an account, then **Add Check**:
    - Name: `weddly-nightly-backup`
-   - Schedule: `Cron`, expression `0 3 * * *` (03:00 UTC daily — adjust to taste)
+   - Schedule: `Simple`, period **1 day**
    - Grace time: **1 hour** (allows for slow R2 uploads)
 2. Copy the unique **Ping URL** (looks like `https://hc-ping.com/<uuid>`).
-3. In Railway, set the env var on the **backup** service (not the app service):
-   - `HEALTHCHECK_URL` = the ping URL.
-4. The backup script (`scripts/backup.sh`) wraps itself with this — see the
-   start/success/fail conventions documented at <https://healthchecks.io/docs/>.
+3. In Railway, set `OFFSITE_BACKUP_HEALTHCHECK_URL` on the app service.
+4. The application worker sends the start/success/fail pings.
 
 ### Verifying it works
 
 After the first scheduled run, the Healthchecks dashboard should show a
 green checkmark and "last ping: <minutes> ago". Trigger a manual fail by
-running `scripts/backup.sh` locally with an invalid `S3_BUCKET` to confirm
-the failure ping is sent.
+using invalid backup-bucket credentials in a non-production drill environment.
 
 ---
 
@@ -115,10 +110,10 @@ Once-per-environment setup. Tick as you go.
 - [ ] (Optional) Public status page published.
 - [ ] Healthchecks.io account created.
 - [ ] Check `weddly-nightly-backup` added with grace 1h.
-- [ ] `HEALTHCHECK_URL` set on the Railway backup service.
+- [ ] `OFFSITE_BACKUP_HEALTHCHECK_URL` set on the Railway app service.
 - [ ] **Drill:** stop the production service for ~6 minutes and confirm
       UptimeRobot pages you. Restart, confirm recovery.
-- [ ] **Drill:** trigger a backup failure (bad S3 creds) and confirm
+- [ ] **Drill:** trigger a backup failure in a drill environment and confirm
       Healthchecks pages you.
 
 The drills are the only step that matters — an unverified pager is no pager.

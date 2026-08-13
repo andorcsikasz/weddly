@@ -138,7 +138,7 @@ async function handleStart(ctx: Ctx): Promise<Response> {
     note: `seeded demo workspace (${JSON.stringify(seeded)})`,
   });
 
-  const token = issueSession(userId);
+  const token = issueSession(userId, "demo");
   const userRow = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as UserRow;
   const session: AuthSession = { token, user: toUser(userRow) };
 
@@ -211,7 +211,7 @@ async function handleStartPlanner(ctx: Ctx): Promise<Response> {
     note: `seeded planner demo (${JSON.stringify(seeded)})`,
   });
 
-  const token = issueSession(userId);
+  const token = issueSession(userId, "demo");
   const userRow = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as UserRow;
   const session: AuthSession = { token, user: toUser(userRow) };
 
@@ -289,7 +289,7 @@ async function handleStartVendor(ctx: Ctx): Promise<Response> {
     note: `seeded vendor demo (${JSON.stringify(seeded)})`,
   });
 
-  const token = issueSession(userId);
+  const token = issueSession(userId, "demo");
   const userRow = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as UserRow;
   const session: AuthSession = { token, user: toUser(userRow) };
 

@@ -971,6 +971,9 @@ const es: LocaleMessages = {
     assistant: {
       title: "Asistente",
       intro: "Un resumen de esta solicitud, lo que la pareja no contó y una respuesta para editar.",
+      ai_disclosure:
+        "Usa IA de Anthropic. Al pulsar Leer se envían la solicitud y datos limitados del evento/paquetes a Anthropic; no se envía ningún mensaje automáticamente.",
+      privacy_link: "Detalles de privacidad",
       generate: "Leer esta solicitud",
       regenerate: "Leerla otra vez",
       working: "Leyendo…",
@@ -981,6 +984,7 @@ const es: LocaleMessages = {
       no_packages: "Todavía no tienes paquetes guardados, así que no hay nada que sugerir.",
       no_package_fit: "Ninguno de tus paquetes guardados encaja con esta solicitud.",
       draft_title: "Borrador de respuesta",
+      ai_draft_title: "Borrador de respuesta asistido por IA",
       draft_note:
         "Es un borrador. No se ha enviado nada. Edítalo y envíalo tú desde la conversación.",
       copy: "Copiar",
@@ -1200,7 +1204,7 @@ const es: LocaleMessages = {
       trial_expired_line: "Tu prueba ha terminado.",
       add_card_title: "Añade tu tarjeta, tus primeras solicitudes corren de nuestra cuenta",
       add_card_body:
-        "Guarda una tarjeta para seguir en Pro. No se cobra nada hasta que te hayamos entregado tus primeras {total} solicitudes directas. Tus pagos solo empiezan el mes siguiente a la llegada de la tercera.",
+        "Guarda una tarjeta y mantén Pro durante tus primeras {total} solicitudes directas. Guardarla no crea una obligación de pago y nunca la cobraremos automáticamente. Después, elige Suscribirse para continuar con Pro.",
       add_card_cta: "Añadir tarjeta y seguir en Pro",
       setup_success_note:
         "Tarjeta guardada. Tu acceso Pro se está confirmando, actualiza en un momento.",
@@ -1209,11 +1213,11 @@ const es: LocaleMessages = {
       lead_window_line:
         "Pro corre de nuestra cuenta hasta que te hayamos entregado tus primeras {total} solicitudes directas.",
       billing_starts_line:
-        "Entregadas las {total} solicitudes de cortesía. Tu primer pago es el {date}.",
+        "Entregadas las {total} solicitudes de cortesía. Para continuar con Pro debes suscribirte expresamente.",
       next_payment_line: "Próximo pago: {date}.",
       past_due_line: "Tu último pago falló. Actualiza tu tarjeta en el portal de facturación.",
       leads_exhausted_line:
-        "Tus solicitudes de cortesía se han agotado y no se ha procesado ningún pago, así que Pro está en pausa.",
+        "Tus solicitudes de cortesía se han agotado, así que Pro está en pausa. No se ha cobrado nada; suscríbete expresamente para continuar.",
       subscribe_cta: "Suscribirse a Pro",
       portal_cta: "Abrir portal de facturación",
       payment_title: "Método de pago",
@@ -2044,7 +2048,6 @@ const es: LocaleMessages = {
     day_of_checkin_copied: "¡Copiado!",
     day_of_checkin_no_slug:
       "Aún no hay identificador de pareja, configura uno en la página de Invitados para que funcione el registro.",
-    day_of_qr_todo: "(El código QR llega en la v2, por ahora solo comparte el enlace de arriba)",
     welcome_desk_open: "Abrir tablet de recepción",
     welcome_desk_help:
       "Se abre en una pestaña nueva en modo recepción, entrega la tablet a quien recibe a los invitados.",
@@ -2614,6 +2617,10 @@ const es: LocaleMessages = {
     highlighted_accept:
       "Acepto por separado las cláusulas destacadas sobre renovación automática, límites de responsabilidad, cambios de tarifas, modificaciones, jurisdicción y posiciones patrocinadas.",
     legal_accept_required: "Acepta ambas confirmaciones para crear la cuenta.",
+    legal_update_title: "Revisa las condiciones actuales para proveedores",
+    legal_update_body:
+      "Tu espacio de proveedor queda pausado hasta que revises y aceptes las condiciones de suscripción actuales y las cláusulas destacadas. Puedes abrir el documento completo antes de decidir.",
+    legal_update_cta: "Aceptar y continuar",
     submit: "Crear cuenta",
     continue_to_onboarding: "Continuar",
   },
@@ -4344,7 +4351,7 @@ const es: LocaleMessages = {
     orphans_assign_button: "Colocar a estos invitados en hogares",
     orphans_assigning: "Colocando…",
     orphans_support_link: "Contactar con soporte",
-    orphans_support_url: "mailto:support@weddly.hu",
+    orphans_support_url: "mailto:hello@tryweddly.com",
     import_imported_label: "Importados",
     import_skipped_label: "Omitidos",
     import_errors_label: "Errores",
@@ -6587,6 +6594,7 @@ const es: LocaleMessages = {
     directory_purge_submitter_confirm: "Eliminar la cuenta de forma permanente",
     directory_purge_submitter_done: "Cuenta del remitente eliminada.",
     nav_feedback: "Comentarios",
+    nav_content_notices: "Avisos de contenido",
     nav_reviews: "Reseñas reportadas",
     reviews: {
       title: "Reseñas reportadas",
@@ -7315,7 +7323,7 @@ const es: LocaleMessages = {
     checkin_lookup_missing:
       "Rellena ambos campos, el nombre de la pareja y el código de 8 caracteres.",
     checkin_contact_hosts: "Contacta con tus anfitriones",
-    checkin_contact_hosts_email: "mailto:support@weddly.hu",
+    checkin_contact_hosts_email: "mailto:hello@tryweddly.com",
     checkin_household_for: "Registrando a",
     checkin_for_member: "Para {name}",
     checkin_member_dietary: "Alergias / dieta",
@@ -7361,6 +7369,10 @@ const es: LocaleMessages = {
     dietary_privacy_notice:
       "Información de salud opcional. Solo los anfitriones y su organizador autorizado la usan para el catering y la seguridad del evento.",
     dietary_privacy_link: "Cómo tratamos los datos de invitados",
+    dietary_consent_label:
+      "Consiento expresamente que Weddly almacene los datos de salud sobre alergias/dieta indicados arriba para catering y seguridad del evento. Puedo retirar el consentimiento borrando los campos y reenviando, o solicitando su eliminación.",
+    dietary_consent_required:
+      "Da tu consentimiento antes de enviar datos de salud sobre alergias o dieta.",
     accommodation_section_title: "¿Dónde te gustaría alojarte?",
     accommodation_none: "No necesito alojamiento",
     guest_message_label: "Mensaje para la pareja",
@@ -7773,7 +7785,7 @@ const es: LocaleMessages = {
       "Cómo gestiona Weddly tus datos: categorías recopiladas, conservación, derechos del RGPD, cookies y servicios de terceros.",
     page_title: "Política de privacidad",
     last_updated_label: "Última actualización",
-    last_updated_date: "2026-08-03",
+    last_updated_date: "2026-08-13",
     intro:
       "Esta Política de privacidad ofrece información detallada y transparente a los visitantes, usuarios registrados, suscriptores del boletín y proveedores de servicios listados sobre cómo Weddly trata sus datos personales. Se aplican las siguientes leyes: el Reglamento de la UE 2016/679 (RGPD); la Ley húngara de Autodeterminación Informativa y Libertad de Información (Infotv., Ley CXII de 2011); la Ley de Comercio Electrónico (Ektv., Ley CVIII de 2001); y la Ley de Publicidad Comercial (Grtv., Ley XLVIII de 2008).",
     controller_title: "Quién controla tus datos",
@@ -7805,7 +7817,7 @@ const es: LocaleMessages = {
       "Obligación legal (art. 6.1.c), el registro de auditoría y cualquier divulgación a las autoridades pueden ser exigidos por la ley (p. ej. un procedimiento penal). Una vez salgamos de la beta y empecemos a facturar, la obligación de conservación de la Ley húngara de Contabilidad (§169) también entrará dentro de esta base (8 años).",
     guest_data_title: "Datos de invitados y de terceros (art. 14 del RGPD)",
     guest_data_body:
-      "Si llegaste a Weddly como invitado (porque una pareja que te invita a su boda te añadió a su lista de invitados), el art. 14 nos obliga a decirte de dónde proceden tus datos. Tu nombre, correo, número de teléfono y cualquier información sobre tu dieta fueron introducidos por la pareja que te invita, ellos son el responsable del tratamiento de esa información, y Weddly actúa como encargado del tratamiento en su nombre para alojarla. Si quieres que se eliminen o corrijan tus datos, pídeselo directamente a la pareja, o escribe a hello@tryweddly.com y transmitiremos la solicitud en tu nombre.",
+      "Si llegaste como invitado, tu nombre y datos de contacto proceden de la pareja que gestiona la lista; Weddly los aloja por cuenta de ella. Los datos de dieta y alergias pueden revelar información de salud. Son opcionales y requieren tu consentimiento explícito conforme al art. 9.2.a del RGPD; solo la pareja y su organizador autorizado los usan para catering y seguridad, nunca para analítica entre clientes. Puedes retirar el consentimiento borrando los campos y reenviando, o pedir corrección o supresión a la pareja o en hello@tryweddly.com. Solo envíes datos de salud de otra persona si estás autorizado para consentir por ella.",
     directory_listings_title: "Empresas que figuran sin cuenta (art. 14 del RGPD)",
     directory_listings_intro:
       "El directorio de proveedores de Weddly también incluye empresas de bodas que nunca se registraron con nosotros. Es un índice seleccionado y factual, no una lista de socios: una ficha por sí sola no implica colaboración, recomendación ni ninguna relación contractual entre nosotros, y no conlleva obligación de pago alguna. Las empresas registradas que gestionan su propio perfil llevan la marca «Verificado»; las demás, no.",
@@ -7855,20 +7867,20 @@ const es: LocaleMessages = {
       "Cualquier otra solicitud o reclamación, escribe a hello@tryweddly.com o andor.csikasz@gmail.com y la gestionaremos manualmente en un plazo de siete días.",
     security_title: "Seguridad de los datos (art. 32 del RGPD)",
     security_body:
-      "Nunca vemos tu contraseña: se cifra con hash Argon2id antes de almacenarse, de modo que ni siquiera una brecha en la base de datos la expondría. Los identificadores de sesión son tokens opacos aleatorios y firmados (no JWT), pueden revocarse en el servidor y se verifican con HMAC-SHA256. Todo el tráfico de red va cifrado con TLS (terminado en el edge de Railway). La base de datos es SQLite montada en un volumen persistente; el proveedor de alojamiento es responsable de la seguridad física de ese volumen. Mantenemos un registro de auditoría de solo adición de todas las operaciones significativas (nunca se actualiza ni se elimina).",
+      "Nunca vemos tu contraseña: se cifra con hash Argon2id antes de almacenarse. Las sesiones del navegador usan tokens opacos, aleatorios y firmados en cookies Secure, HttpOnly y SameSite; pueden revocarse en el servidor y se verifican con HMAC-SHA256. El tráfico de red va cifrado con TLS. La base de datos es SQLite en un volumen persistente. Las operaciones significativas quedan en un registro de auditoría de la aplicación; los registros de seguridad exigidos por ley pueden conservarse tras borrar la cuenta con acceso limitado a personal autorizado.",
     children_title: "Datos de menores (art. 8 del RGPD)",
     children_body:
       "Weddly no está dirigido a usuarios menores de 16 años; los menores no pueden registrarse con nosotros directamente. Si una pareja añade niños a su lista de invitados, sus datos se tratan conforme al art. 14 (véase «Datos de invitados» más arriba), con los mismos derechos de supresión y rectificación. Si crees que estamos tratando los datos de alguien menor de 16 años sin una base legal, escribe a hello@tryweddly.com y actuaremos sin demora.",
     transfers_title: "Transferencias fuera del EEE (Capítulo V del RGPD)",
     transfers_body:
-      "El servicio se ejecuta en infraestructura proporcionada por Railway Corp. (Estados Unidos), por lo que una parte de tus datos se almacena en servidores de EE. UU. Tras la sentencia Schrems II (asunto C-311/18), las transferencias UE→EE. UU. se realizan en el marco del Marco de Privacidad de Datos UE-EE. UU. (decisión de adecuación de 2023) y, como salvaguardia adicional, las Cláusulas Contractuales Tipo (2021/914). Railway figura en la lista de organizaciones certificadas del DPF. Para el correo transaccional, Resend (EE. UU.) recibe igualmente la dirección del destinatario y el cuerpo del mensaje en el marco del DPF/CCT.",
+      "Algunos proveedores activados pueden tratar datos fuera del EEE. Antes de activar uno, Weddly registra en el inventario de proveedores su función, región de tratamiento y el mecanismo de transferencia aplicable, como una decisión de adecuación o Cláusulas Contractuales Tipo. Puedes solicitar información sobre las garantías verificadas y una copia cuando esté disponible.",
     subprocessors_title: "Subencargados (art. 28 del RGPD)",
     subprocessors_intro:
-      "Utilizamos los siguientes subencargados. Existe un acuerdo escrito de tratamiento de datos con cada uno, y solo pueden tratar los datos siguiendo las instrucciones de Weddly.",
+      "Los siguientes proveedores pueden recibir datos cuando se activa su función. Algunos, especialmente los proveedores de pagos e identidad, pueden actuar como responsables independientes para sus propios fines regulados. El inventario de producción registra la función, región, contrato y prueba de transferencia.",
     subprocessors_railway:
-      "Railway Corp. (EE. UU.), alojamiento de la aplicación; almacenamiento de la base de datos SQLite y de los archivos subidos. DPF/CCT para la transferencia.",
+      "Railway Corp. (EE. UU.), alojamiento de la aplicación y almacenamiento de la base SQLite. La región, el contrato y la garantía de transferencia deben verificarse en el inventario de producción antes del lanzamiento.",
     subprocessors_resend:
-      "Resend Inc. (EE. UU.), entrega del correo transaccional (registro, restablecimiento de contraseña, invitación de pareja, acuses de confirmación de asistencia). DPF/CCT para la transferencia.",
+      "Resend Inc. (EE. UU.), entrega del correo transaccional (registro, restablecimiento de contraseña, invitación de pareja, acuses de confirmación de asistencia). El contrato y la garantía de transferencia deben verificarse en el inventario de producción antes del lanzamiento.",
     subprocessors_serpapi:
       "SerpApi (EE. UU.), consultas a Google Flights para el widget de planificación de la luna de miel. Recibe solo la ruta y la fecha que introduces; ningún dato personal.",
     subprocessors_osm:
@@ -7876,9 +7888,9 @@ const es: LocaleMessages = {
     subprocessors_pinterest:
       "Pinterest (EE. UU.), el widget de moodboard lee el feed RSS de un tablero público de Pinterest del lado del servidor. Recibe solo la URL de Pinterest que proporcionas.",
     subprocessors_sentry:
-      "Sentry (EE. UU.), notificación de errores de la aplicación. Aún no está activado en producción; si lo activamos, actualizaremos esta página. Recibiría trazas de error seudonimizadas sin identificadores directos.",
+      "Sentry (EE. UU.), notificación opcional de errores. Cuando está configurado, Weddly envía telemetría depurada con la recopilación predeterminada de datos personales desactivada; el inventario de producción registra su región y garantía de transferencia.",
     subprocessors_google:
-      "Google Ireland Ltd. / Google LLC (EE. UU.), en tres funciones distintas: iniciar sesión con Google (recibimos tu nombre, tu correo electrónico y el id de tu cuenta de Google), la sincronización opcional con Google Calendar descrita en la sección siguiente, y las consultas de Google Maps Places que ordenan el directorio público de proveedores (solo nombres de empresas, nunca tus datos). DPF/SCC para la transferencia.",
+      "Google Ireland Ltd. / Google LLC (EE. UU.), en tres funciones distintas: inicio de sesión, sincronización opcional con Google Calendar y consultas de Google Maps Places sobre datos empresariales públicos. La función y la garantía de transferencia se registran y verifican por separado para cada función activada.",
     subprocessors_other:
       "Otros proveedores vinculados a funciones pueden ser Stripe, Cloudflare R2, Anthropic, Apple, DeepL, MaxMind y Cookiebot y—solo tras aceptar estadísticas—Plausible, Google Analytics/Tag Manager y Microsoft Clarity. Sentry solo recibe telemetría depurada si se activa.",
     google_data_title:
@@ -7898,13 +7910,13 @@ const es: LocaleMessages = {
     google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Cookies y almacenamiento local",
     cookies_intro:
-      "Weddly no coloca ninguna cookie de seguimiento. El único almacenamiento del navegador que usamos vive en el localStorage de tu dispositivo, por lo que nunca llega a un tercero:",
+      "Una cookie HttpOnly necesaria mantiene tu sesión iniciada; el almacenamiento local del navegador solo contiene las preferencias no secretas indicadas abajo. Cookiebot guarda tu elección de consentimiento. Los servicios analíticos opcionales solo pueden establecer o leer identificadores tras el consentimiento estadístico.",
     cookies_settings: "Revisar o retirar las preferencias de cookies",
     cookies_locale: "weddly.locale, recuerda si prefieres la interfaz en húngaro o en inglés.",
     cookies_verify_dismiss:
       "weddly.verify_email_dismissed_until, silencia el aviso de «verifica tu correo» durante 24 horas después de que lo descartes.",
     cookies_session:
-      "Token de sesión, un id aleatorio firmado (no JWT) que te mantiene con la sesión iniciada. Se almacena en localStorage; se borra cuando cierras sesión.",
+      "weddly_session, un identificador aleatorio firmado en una cookie Secure, HttpOnly y SameSite. Los scripts del navegador no pueden leerlo; se revoca y elimina al cerrar sesión.",
     cookies_saved_suppliers:
       "weddly.suppliers.saved, lista solo local de los proveedores que marcaste como favoritos en el directorio.",
     cookies_onboarding_draft:
@@ -8090,7 +8102,7 @@ const es: LocaleMessages = {
       "Garantizas que todo lo que envías (a) es tuyo o tienes permiso para publicarlo, (b) no infringe ningún derecho de terceros (derechos de autor, marca, privacidad, confidencialidad) y (c) cumple las normas de uso aceptable anteriores. Si alguna de ellas resulta no cumplirse, podemos retirar el contenido y, en caso de infracciones graves o reiteradas, suspender o eliminar tu cuenta.",
     dsa_title: "Notificación y acción (Ley de Servicios Digitales de la UE)",
     dsa_body:
-      "El Reglamento (UE) 2022/2065 (DSA) obliga a todo proveedor de alojamiento a operar un mecanismo de notificación fácil de usar para el contenido ilegal. Si crees que un contenido publicado en Weddly (p. ej. un listado de proveedor de la comunidad) es ilícito, escribe a dsa@weddly.xyz, o, si esa dirección aún no está operativa, a hello@tryweddly.com / andor.csikasz@gmail.com, incluyendo: (1) la URL u otro localizador inequívoco del contenido; (2) por qué crees que es ilegal; (3) el nombre y el correo del notificante; (4) una declaración de buena fe de que la notificación es exacta. Revisamos cada notificación sin demora indebida y, cuando proceda, retiramos o bloqueamos el acceso al contenido; notificamos tanto al notificante como al autor de la subida la decisión y sus motivos. Las reclamaciones internas sobre nuestras decisiones pueden enviarse a la misma dirección.",
+      "El Reglamento (UE) 2022/2065 (DSA) exige un mecanismo accesible para notificar contenido ilícito. Utiliza el formulario permanente «Denunciar contenido ilegal» enlazado desde todas las páginas. El formulario registra la URL exacta, los motivos, tus datos de contacto y la declaración de buena fe, envía por correo una referencia del caso y permite consultar el estado, la decisión motivada y presentar una reclamación. También puedes pedir ayuda en hello@tryweddly.com.",
     dsa_contact:
       "Punto único de contacto para autoridades y usuarios conforme a los art. 11 y 12 del DSA: Andor Csíkász, andor.csikasz@gmail.com. Idiomas: húngaro e inglés.",
     directory_title: "Directorio de proveedores",
@@ -8124,7 +8136,7 @@ const es: LocaleMessages = {
       "ÁSZF de proveedores de Weddly: tarifas, facturación, renovación, responsabilidad, posicionamiento, reclamaciones, legislación húngara y de la UE.",
     page_title: "Condiciones de suscripción para proveedores (ÁSZF)",
     last_updated_label: "Versión",
-    last_updated_date: "en vigor desde el 2026-08-12",
+    last_updated_date: "en vigor desde el 2026-08-13",
     intro:
       "Estas Condiciones Generales de Contratación (ÁSZF) rigen la suscripción de proveedores de Weddly. Pasan a formar parte del contrato entre las partes cuando el Proveedor las acepta expresamente haciendo clic en «Acepto» durante el registro. En virtud del §6:78(2) del Código Civil húngaro, las siguientes cláusulas se destacan y se aceptan expresamente con especial atención: la limitación de responsabilidad, la renovación automática, los cambios de tarifas, la modificación unilateral de las ÁSZF, la jurisdicción y la divulgación de los emplazamientos patrocinados.",
     operator_title: "Operador y partes contratantes",
@@ -8141,7 +8153,7 @@ const es: LocaleMessages = {
       "El directorio de Weddly también incluye empresas que no se han registrado y no han reclamado su perfil. Una ficha por sí sola no crea ningún contrato entre el Proveedor y el Operador, ninguna obligación de pago ni colaboración o recomendación alguna; este ÁSZF se aplica a una empresa solo desde el momento en que reclama el perfil o se registra. Una ficha contiene únicamente datos empresariales factuales de acceso público (nombre, categoría de servicio, localidad y dirección, sitio web, datos de contacto profesionales publicados por la propia empresa, horquilla estimada de precio y aforo, un breve resumen factual, y la imagen de vista previa para compartir del sitio web de la propia empresa). Conforme al Derecho húngaro y de la Unión Europea aplicable, mostrar tales datos de forma neutra no está, por regla general, condicionado al consentimiento previo de la empresa; así lo respaldan, entre otros, el §10(2) de la Ley V de 2006 sobre publicidad registral mercantil, procedimiento judicial societario y liquidación voluntaria, el considerando (14) del RGPD, el §1(3) de la Ley LXXVI de 1999 de derechos de autor y el §15(1)(c) de la Ley XI de 1997 sobre marcas e indicaciones geográficas. La empresa afectada puede solicitar en cualquier momento la rectificación de los datos, la reclamación gratuita del perfil, la supresión permanente de todo contacto, u oponerse a la ficha, en hello@tryweddly.com. Examinamos cada solicitud de forma individual y respondemos motivadamente sin dilación indebida y, en todo caso, en un plazo de 30 días; los datos de contacto, la descripción y cualquier fotografía se retiran a petición sin evaluación previa. El procedimiento completo y la información exigida por el art. 14 del RGPD se recogen en el capítulo «Empresas que figuran sin cuenta» de la Política de privacidad.",
     ratings_title: "Reseñas y vías de reclamación del Proveedor",
     ratings_body:
-      "Las parejas pueden escribir reseñas en una ficha de directorio incluso antes de que el Proveedor haya reclamado el perfil. El Operador no encarga ni paga reseñas y no las reordena por puntuación; la marca «Verificado» significa únicamente que quien reseñó registró también al proveedor en su propia planificación, no que el Operador haya verificado la prestación. Una vez que el Proveedor reclama el perfil, obtiene derecho de réplica público frente a toda reseña sobre él. El Proveedor puede notificar cualquier reseña en hello@tryweddly.com; una reseña que contenga afirmaciones de hecho falsas, sea ofensiva o infrinja el derecho de un tercero o este ÁSZF se retira conforme al procedimiento de la sección Moderación de contenidos, adjuntando una motivación a la decisión. El Operador no retira reseñas lícitas, por desfavorables que sean, y la existencia o ausencia de una suscripción del Proveedor no influye en ningún sentido en la exhibición de las reseñas.",
+      "Las parejas pueden reseñar una ficha incluso antes de que el Proveedor reclame el perfil. El Operador no encarga ni paga reseñas ni las reordena por estrellas; «Verificado» solo significa que la persona registró también al proveedor en su planificación. Actualmente no existe una función de respuesta pública del Proveedor. Se puede notificar una reseña en hello@tryweddly.com; la notificación se tramita conforme a Moderación de contenidos con un resultado motivado. No se retiran reseñas lícitas solo por ser desfavorables y la suscripción no influye en su exhibición.",
     fees_title: "Tarifas y precios",
     fees_body:
       "Los planes y precios se detallan en el anexo de Precios, que forma parte integrante de las ÁSZF y está disponible como PDF descargable durante el registro y en todo momento en la cuenta del Proveedor. En la fecha de entrada en vigor, la ficha básica en el directorio público (nivel Beta) es gratuita; los planes de pago se comunicarán a los Proveedores mediante un correo electrónico aparte con al menos 30 días de antelación antes de su lanzamiento, y cualquier plan de pago se activa únicamente mediante la confirmación expresa del Proveedor por clic. El precio vigente al inicio del plazo se aplica a las nuevas suscripciones. Para las suscripciones existentes, el Operador podrá cambiar el precio como máximo una vez por año natural, con un aviso por correo electrónico de al menos 60 días de antelación antes del siguiente ciclo de facturación. El incremento anual del precio no superará el índice de precios al consumo (IPC) del año anterior, publicado por la Oficina Central de Estadística de Hungría (KSH), más 10 puntos porcentuales, salvo que el Operador lance una nueva funcionalidad o plan expresamente aceptado por el Proveedor. Antes de que el incremento surta efecto, el Proveedor podrá rescindir el contrato de forma gratuita con un reembolso proporcional.",
@@ -8153,7 +8165,7 @@ const es: LocaleMessages = {
       "El IVA se aplica al tipo prescrito en cada momento por la legislación húngara. Si el Operador no es sujeto pasivo del IVA cuando el contrato entra en vigor (por ejemplo, pequeña empresa exenta), los precios se facturan sin IVA y la factura así lo indica. Una vez dado de alta en el IVA, los precios publicados son precios netos a los que se añade el IVA.",
     term_title: "Duración, renovación y rescisión",
     term_body:
-      "La suscripción de pago se prolonga hasta el final del ciclo de facturación elegido (mensual o anual) y se renueva automáticamente para el siguiente ciclo salvo que el Proveedor la cancele en la app de Weddly o por correo electrónico a hello@tryweddly.com con al menos 14 días de antelación antes de la fecha de renovación. Para los ciclos anuales, el Operador envía un recordatorio de renovación por correo electrónico con al menos 30 días de antelación antes de la fecha de renovación, indicando el precio aplicable en la renovación. La renovación se realiza al precio que el Proveedor ha tenido la oportunidad de aceptar por adelantado, según se establece en la sección Tarifas y precios. Las tarifas ya abonadas por el ciclo en curso no se reembolsan en caso de cancelación ordinaria, salvo cuando sean aplicables la Garantía de reembolso o el Derecho de desistimiento del consumidor. Una vez que la cancelación surte efecto, la ficha pública y cualquier emplazamiento destacado finalizan.",
+      "La suscripción de pago disponible es mensual y se renueva cada mes hasta que el Proveedor la cancele en la app o por correo a hello@tryweddly.com. La cancelación detiene la siguiente renovación; el ciclo ya pagado sigue disponible hasta su fin. No se reembolsa el ciclo en curso salvo Garantía de reembolso o desistimiento del consumidor. Después, la ficha pública básica permanece activa y editable en el plan gratuito, mientras terminan las funciones Pro y los emplazamientos destacados. Actualmente no se ofrece plan anual.",
     refund_title: "Garantía de reembolso (B2B 14 días)",
     refund_body:
       "En la primera suscripción de pago del Proveedor, este podrá rescindir el contrato y solicitar el reembolso íntegro de la tarifa abonada, sin necesidad de justificación, escribiendo a hello@tryweddly.com dentro de los primeros 14 días del primer ciclo de pago. La garantía no es aplicable: (a) en registros posteriores o cambios de plan, (b) cuando el Proveedor haya utilizado expresamente un servicio promocional o de contenidos a medida del Operador durante el periodo de 14 días. Los reembolsos se efectúan a través del canal de pago original en un plazo de 14 días desde la recepción de la solicitud.",
@@ -8162,16 +8174,16 @@ const es: LocaleMessages = {
       "Cuando el Proveedor, excepcionalmente, tenga la condición de consumidor con arreglo al Decreto Gubernamental 45/2014. (II. 26.) y al §8:1(1)(3) del Código Civil húngaro (una persona física que no contrata en el marco de un oficio, negocio o profesión; el registro de un autónomo para un servicio de bodas existente por lo general NO lo es), el Proveedor consumidor podrá desistir del contrato sin necesidad de justificación en un plazo de 14 días desde la formación del contrato (§20 del Decreto). La declaración de desistimiento podrá enviarse a hello@tryweddly.com; podrá utilizarse el modelo de declaración del Anexo 2 del Decreto. Si el Proveedor consumidor solicita expresamente que la ejecución comience dentro del plazo de desistimiento (es decir, que el perfil se haga visible), acepta que, en caso de desistimiento, deberá reembolsar al Operador el coste proporcional de la ejecución ya realizada (§26), y que, una vez ejecutado por completo el servicio, se pierde el derecho de desistimiento (§29(1)(a)). El derecho de desistimiento NO se aplica a los Proveedores que contratan en calidad de empresa; en su caso se aplica en su lugar la sección Garantía de reembolso.",
     sla_title: "Nivel de servicio y mantenimiento",
     sla_body:
-      "El Operador aspira a una disponibilidad mensual del 99 por ciento tanto para el directorio público de Weddly como para la interfaz de administración del Proveedor (es decir, una indisponibilidad mensual de aproximadamente 7 horas y 18 minutos como máximo, sumando la planificada y la no planificada). El mantenimiento planificado se anuncia con al menos 48 horas de antelación por correo electrónico y, cuando sea razonablemente posible, se realiza entre las 23:00 y las 06:00 CET; el mantenimiento planificado no computa a efectos del objetivo del 99 por ciento. Si la disponibilidad mensual real cae por debajo del 95 por ciento, el Proveedor podrá solicitar un crédito de servicio del 10 por ciento de la tarifa mensual para el siguiente ciclo de facturación; por debajo del 90 por ciento el crédito es del 25 por ciento. El Proveedor debe presentar la solicitud de crédito de servicio por escrito a hello@tryweddly.com dentro de los 30 días siguientes al final del mes afectado. Los créditos de servicio no se aplican a la indisponibilidad causada por fuerza mayor, por cortes de internet o de infraestructura de terceros, o por hechos causados por el Proveedor.",
+      "Durante la beta abierta gratuita no existe un SLA contractual de disponibilidad ni créditos de servicio. El mantenimiento planificado y los incidentes relevantes se comunican cuando sea razonablemente posible. Antes de un lanzamiento de pago se publicarán el nivel de servicio y las vías de reparación aplicables.",
     ranking_title: "Posicionamiento y emplazamientos destacados",
     ranking_body:
-      "El posicionamiento por defecto del directorio utiliza, en orden decreciente de importancia, los siguientes parámetros principales: (a) coincidencia con los filtros establecidos por la pareja (categoría, ubicación, fecha, número de invitados); (b) grado de completitud y actualidad del perfil; (c) el tiempo medio de respuesta del Proveedor a las consultas de las parejas; (d) la valoración media y el número de reseñas de las parejas; (e) el tipo de plan de suscripción elegido por el Proveedor. El emplazamiento patrocinado (ficha destacada de pago) se muestra de forma visible, etiquetado como «Destacado», y se distingue visualmente, sin ocultarse nunca. Los pesos matemáticos exactos de los parámetros pueden cambiar de vez en cuando por motivos comerciales y de calidad; un cambio sustancial (introducción o eliminación de un parámetro, cambio en la posición de los emplazamientos destacados de pago) se anuncia mediante el procedimiento de modificación de las ÁSZF con un aviso de al menos 15 días de antelación (Reglamento UE 2019/1150 P2B, art. 5).",
+      "El directorio público aplica primero los filtros de categoría y ubicación de la pareja. Dentro del resultado, las señales principales son si el perfil tiene foto, si está reclamado, su completitud y el nombre del negocio como desempate estable. En la vista de planificación autenticada, los proveedores guardados por la pareja y los votos comunitarios también pueden subir un resultado. La valoración, el tiempo de respuesta y el plan no cambian actualmente el posicionamiento orgánico. Todo emplazamiento de pago debe llevar una etiqueta visible de «Destacado».",
     differential_title: "Trato diferenciado",
     differential_body:
       "A fecha de entrada en vigor, el Operador no actúa por sí mismo como proveedor de servicios de bodas, por lo que no existe una oferta propia que disfrute de un posicionamiento, acceso a datos, tarifas o condiciones contractuales preferentes frente a otros Proveedores. Si se introduce una oferta propia, esta sección se modificará mediante el procedimiento de modificación de las ÁSZF con un aviso de al menos 30 días de antelación, y se concederá a los Proveedores un derecho de rescisión (Reglamento UE 2019/1150 P2B, art. 7).",
     data_access_title: "Acceso a los datos",
     data_access_body:
-      "Dentro de su cuenta, el Proveedor tiene acceso a: (a) editar y exportar los datos de su propio perfil, fotos y descripciones; (b) la lista y exportación de las consultas de parejas recibidas (nombre, contacto, fecha, mensaje); (c) estadísticas básicas de su perfil (visitas, clics, consultas). El Proveedor no tiene acceso a: (i) las estadísticas de perfil ni los datos de consultas de otros Proveedores; (ii) los pesos internos del algoritmo de posicionamiento; (iii) los datos internos operativos, técnicos o financieros del Operador. Los datos exportables permanecen disponibles durante 30 días después de que finalice el contrato (véase Baja) (Reglamento UE 2019/1150 P2B, art. 9).",
+      "Con la cuenta activa, el Proveedor puede editar y exportar su perfil y descargar el JSON de su cuenta, incluidas consultas y estadísticas disponibles. No puede acceder a datos de otros Proveedores, pesos internos del posicionamiento ni datos internos del Operador. Como actualmente no hay cuenta de solo lectura tras la terminación, debe descargar la exportación antes de solicitar baja o supresión; la sección Baja explica el proceso asistido.",
     ip_title: "Propiedad intelectual y licencia de contenidos",
     ip_body:
       "Las fotos, vídeos, descripciones, logotipos y demás contenidos subidos por el Proveedor siguen siendo propiedad intelectual del Proveedor (o del titular de los derechos). Al registrarse y subir contenidos, el Proveedor otorga al Operador una licencia no exclusiva, libre de regalías, mundial y sublicenciable, únicamente para mostrar los contenidos en el directorio de Weddly, en la infraestructura técnica asociada y en las propias superficies de marketing de Weddly (publicaciones en redes sociales, boletines, kits de prensa, los bloques de estilo landing del sitio web de Weddly). Cualquier otro uso (fuera de la promoción de Weddly) requiere el consentimiento previo por escrito del Proveedor. La licencia finaliza en un plazo de 30 días desde la rescisión del contrato; transcurrido ese plazo, el Operador retira los contenidos del Proveedor de las superficies públicas. La marca, el logotipo, el software y la interfaz de Weddly siguen siendo propiedad intelectual del Operador; el Proveedor recibe únicamente un derecho no exclusivo y revocable de uso de los mismos para el uso adecuado de la interfaz de administración del Proveedor.",
@@ -8189,7 +8201,7 @@ const es: LocaleMessages = {
       "Los datos tratados en el marco de la suscripción (los contenidos de presentación y portafolio del Proveedor, los datos de contacto y de facturación, las consultas y las estadísticas) se rigen por la Política de Privacidad de Weddly, con las siguientes adiciones: (a) los contenidos de presentación, portafolio y contacto del Proveedor se muestran públicamente en el directorio; (b) los registros de facturación y contabilidad se conservan durante 8 años con arreglo al §169 de la Ley de Contabilidad húngara; (c) el proveedor de pagos (Stripe o equivalente) actúa como responsable independiente respecto de los datos de las tarjetas, y el Operador no almacena datos de tarjetas; (d) al reenviar las consultas de las parejas, Weddly y el Proveedor actúan como responsables independientes (RGPD art. 4(7)): el Proveedor es su propio responsable respecto de los datos personales que recibe. Solo se requiere un Acuerdo de Encargo de Tratamiento (DPA) independiente si el Proveedor utiliza un servicio adicional de pago de estadísticas o automatización que el Operador presta como encargado por cuenta del Proveedor; esto se recoge en el anexo correspondiente.",
     complaints_title: "Gestión interna de reclamaciones",
     complaints_body:
-      "El Proveedor podrá presentar de forma gratuita una reclamación sobre el servicio, la facturación, las decisiones de moderación o cualquier actuación del Operador por correo electrónico a panasz@weddly.xyz o hello@tryweddly.com. El Operador da una respuesta motivada a una reclamación por escrito en un plazo de 15 días hábiles. Una reclamación de consumidor con arreglo a la Ley húngara CLV de 1997 (Fgytv.) §17/A y §17/B se responde en un plazo de 30 días. Un Proveedor consumidor cuya reclamación sea rechazada podrá dirigirse a la Junta de Conciliación de Budapest (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) o a la autoridad de protección de los consumidores territorialmente competente. El Operador publica anualmente un resumen de las estadísticas de reclamaciones en el sitio web de Weddly (Reglamento UE 2019/1150 P2B, art. 11).",
+      "El Proveedor podrá presentar de forma gratuita una reclamación sobre el servicio, la facturación, las decisiones de moderación o cualquier actuación del Operador por correo electrónico a hello@tryweddly.com. El Operador da una respuesta motivada a una reclamación por escrito en un plazo de 15 días hábiles. Una reclamación de consumidor con arreglo a la Ley húngara CLV de 1997 (Fgytv.) §17/A y §17/B se responde en un plazo de 30 días. Un Proveedor consumidor cuya reclamación sea rechazada podrá dirigirse a la Junta de Conciliación de Budapest (1016 Budapest, Krisztina krt. 99.; bekelteto.budapest.hu) o a la autoridad de protección de los consumidores territorialmente competente. El Operador publica anualmente un resumen de las estadísticas de reclamaciones en el sitio web de Weddly (Reglamento UE 2019/1150 P2B, art. 11).",
     mediation_title: "Mediación y resolución extrajudicial de litigios",
     mediation_body:
       "Antes de interponer reclamaciones derivadas de las ÁSZF, las partes intentarán una resolución extrajudicial. En línea con el art. 12 del Reglamento P2B, el Operador se compromete a recurrir, de común acuerdo con el Proveedor, a un mediador independiente con formación en Derecho húngaro (en particular del Centro de Mediación y Arbitraje de la Cámara de Comercio e Industria de Hungría, o cualquier otro mediador inscrito en el registro de mediadores que lleva el Ministerio de Justicia). Las partes acuerdan el reparto de los honorarios del mediador antes de que comience la mediación; a falta de acuerdo, los honorarios se soportan a partes iguales.",
@@ -8207,7 +8219,7 @@ const es: LocaleMessages = {
       "El Operador podrá rescindir el contrato por conveniencia en cualquier momento con un aviso por escrito (correo electrónico) de al menos 30 días de antelación, junto con un reembolso proporcional (Reglamento UE 2019/1150 P2B, art. 4(1)). La suspensión, restricción o rescisión inmediata solo es lícita en los siguientes casos, y siempre va acompañada de una exposición de motivos por escrito basada en hechos individuales: (a) el Proveedor incumple de forma sustancial o reiterada las ÁSZF o las Condiciones del Servicio (en particular: publicar contenidos ilícitos, engañosos o que infrinjan derechos, reclamaciones fundadas y reiteradas de terceros) y no subsana el incumplimiento en un plazo de 14 días desde la recepción del aviso; (b) el Proveedor no paga en un plazo de 30 días desde la recepción de un recordatorio de pago; (c) el Proveedor utiliza la plataforma de Weddly de forma ilícita o de un modo que pone directamente en peligro la seguridad de otros usuarios; (d) una autoridad o un tribunal ordena, por resolución firme, que el servicio del Proveedor no debe mostrarse. Para (c) y (d), el Operador podrá renunciar al periodo de subsanación de 14 días. El Operador comunica el motivo de la rescisión inmediata por escrito e indica en la comunicación las vías disponibles (Gestión interna de reclamaciones, Mediación). El momento de la exportación de datos se rige por la sección Baja.",
     offboarding_title: "Exportación de datos y baja",
     offboarding_body:
-      "Tras finalizar el contrato, la interfaz de administración del Proveedor permanece accesible en modo de solo lectura durante 30 días; durante este periodo el Proveedor podrá exportar su perfil, consultas y estadísticas en formato CSV o JSON. La ficha pública del perfil y cualquier emplazamiento destacado finalizan en la fecha de entrada en vigor de la rescisión. Una vez finalizado el periodo de exportación, el Operador mantiene la cuenta en estado inactivo durante otros 60 días (puede reactivarse a petición) y, a continuación, elimina los datos, salvo los registros que deban conservarse con arreglo al §169 de la Ley de Contabilidad u otra ley. Con su aviso de rescisión, el Proveedor podrá solicitar expresamente que sus datos básicos (nombre, categoría, ubicación) se muestren en la sección de archivo de «antiguos proveedores» del directorio; a falta de tal solicitud, la exhibición pública finaliza por completo.",
+      "El Proveedor puede descargar el JSON de sus datos desde la cuenta en cualquier momento. Hasta que exista supresión autoservicio, las solicitudes de baja y supresión se tramitan en hello@tryweddly.com: Weddly retira el perfil público, confirma el alcance y calendario de supresión y conserva solo los registros exigidos por normas fiscales, contables, de litigios o seguridad. No prometemos un archivo automático de solo lectura o de antiguos proveedores que el servicio no ofrece actualmente.",
     transitional_title: "Disposiciones transitorias",
     transitional_body:
       "En la fecha de entrada en vigor de las ÁSZF v1.0, la ficha básica en el directorio público de Weddly es gratuita (nivel Beta) y los planes de pago aún no están activados. Los Proveedores registrados antes de la fecha de entrada en vigor son notificados mediante un correo electrónico aparte y se les solicita que acepten por clic las ÁSZF en una ventana de aceptación en el siguiente inicio de sesión. Los Proveedores que se registran después de la fecha de entrada en vigor aceptan las ÁSZF y la Política de Privacidad en el momento del registro. El lanzamiento de los planes de pago se anuncia mediante un correo electrónico aparte con al menos 30 días de antelación; la activación se produce únicamente mediante la selección expresa del plan por parte del Proveedor por clic.",
@@ -8219,7 +8231,7 @@ const es: LocaleMessages = {
       "La plataforma de resolución de litigios en línea de la UE dejó de funcionar el 20 de julio de 2025. Los consumidores pueden acudir al organismo húngaro de conciliación competente; el aviso legal y nuestra respuesta a la reclamación incluyen los datos actuales. Los recursos obligatorios del consumidor no se ven afectados.",
     contact_title: "Contacto",
     contact_body:
-      "Todas las consultas sobre las ÁSZF y el servicio que Weddly presta a los proveedores deben dirigirse a hello@tryweddly.com; las reclamaciones, solicitudes de mediación y notificaciones del DSA también podrán enviarse a panasz@weddly.xyz. Los datos de identificación del Operador conforme al §4 de la Ektv. están disponibles en la página de Aviso legal.",
+      "Todas las consultas sobre las ÁSZF y el servicio que Weddly presta a los proveedores deben dirigirse a hello@tryweddly.com. El contenido ilícito también puede notificarse mediante el formulario permanente enlazado desde todas las páginas. Los datos de identificación del Operador conforme al §4 de la Ektv. están disponibles en la página de Aviso legal.",
     en_section_label: "Inglés",
   },
   imprint: {
@@ -8368,6 +8380,13 @@ const es: LocaleMessages = {
     expired_title: "Sesión finalizada",
     expired_body:
       "Vuelve a iniciar sesión para continuar donde lo dejaste. Todo lo que hayas escrito sigue aquí.",
+    admin_reauth_title: "Confirma que eres tú",
+    admin_reauth_body:
+      "El acceso de administración requiere una comprobación reciente del segundo factor. Tu trabajo seguirá aquí.",
+    admin_reauth_cta: "Verificar",
+    admin_mfa_label: "Código del autenticador",
+    admin_mfa_hint: "Introduce el código actual de 6 dígitos de tu aplicación de autenticación.",
+    admin_mfa_invalid: "El código no es válido, ha caducado o ya se ha utilizado.",
     sign_in: "Iniciar sesión",
     sign_out: "Cerrar sesión",
     or_divider: "o",

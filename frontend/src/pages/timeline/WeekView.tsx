@@ -173,7 +173,6 @@ export default function WeekView({
   // the present moment is always on screen without the user scrolling.
   // Weeks without today default to 06:00 at the top.
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-snap on week change
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;

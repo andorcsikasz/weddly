@@ -39,6 +39,30 @@ export function addColumnIfMissing(table: string, column: string, ddl: string) {
 }
 
 // ── Future column additions land here. ──
+// Admin authorization uses a short recent-auth window. Keep this timestamp
+// separate from sessions.created_at: created_at slides at half-life for normal
+// 30-day sessions, while authenticated_at changes only after a real sign-in.
+addColumnIfMissing("sessions", "authenticated_at", "authenticated_at INTEGER");
+addColumnIfMissing("sessions", "auth_method", "auth_method TEXT");
+addColumnIfMissing("sessions", "totp_counter", "totp_counter INTEGER");
+// TOTP codes are shared by a user's devices for one 30-second time step. Keep
+// the replay watermark on the admin principal as well as the elevated session
+// so the same code cannot elevate a second stolen/parallel session.
+addColumnIfMissing("users", "admin_totp_counter", "admin_totp_counter INTEGER");
+
+// DSA statements of reasons and the affected uploader/vendor's independent
+// complaint path. Existing notice rows remain valid with null recipient data.
+addColumnIfMissing("content_notices", "affected_email", "affected_email TEXT");
+addColumnIfMissing("content_notices", "affected_notified_at", "affected_notified_at INTEGER");
+addColumnIfMissing("content_notices", "affected_appeal_text", "affected_appeal_text TEXT");
+addColumnIfMissing("content_notices", "affected_appealed_at", "affected_appealed_at INTEGER");
+addColumnIfMissing("content_notices", "affected_appeal_decision", "affected_appeal_decision TEXT");
+addColumnIfMissing(
+  "content_notices",
+  "affected_appeal_decided_at",
+  "affected_appeal_decided_at INTEGER",
+);
+
 addColumnIfMissing("couples", "bride_name", "bride_name TEXT NOT NULL DEFAULT ''");
 addColumnIfMissing("couples", "groom_name", "groom_name TEXT NOT NULL DEFAULT ''");
 

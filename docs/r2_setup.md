@@ -2,12 +2,13 @@
 
 Weddly can store uploads (couple photos, moodboard, blog covers, vendor hero
 images, couple/honeymoon covers, budget documents, vendor-waitlist price lists)
-and periodic SQLite backups in Cloudflare R2 instead of the local `/data`
-volume. The app picks R2 automatically once the env vars below are set; until
-then it uses local disk with no behaviour change.
+in Cloudflare R2 instead of the local `/data` volume. The application backup
+worker stores encrypted SQLite snapshots in a separate R2 bucket. Uploads
+remain on local disk until the web-service R2 variables below are set.
 
-The code is already wired (`backend/src/lib/storage.ts`, `domain/backup.ts`).
-What remains is account/dashboard work that only an account owner can do.
+The upload code is wired in `backend/src/lib/storage.ts`; the backup worker is
+in `backend/src/domain/backup.ts`. What remains is account/dashboard work that
+only an account owner can do.
 
 ## 1. Enable R2 (one-time, dashboard)
 
@@ -17,9 +18,7 @@ until it's provisioned.
 
 1. Cloudflare Dashboard → **R2** → **Enable R2** (requires a payment method;
    there is a generous free tier).
-2. Create a bucket, e.g. **`weddly-uploads`**. Optionally a second bucket
-   **`weddly-backups`** for DB snapshots (otherwise backups land under a
-   `backups/` prefix in the uploads bucket).
+2. Create distinct **`weddly-uploads`** and **`weddly-backups`** buckets.
 
 ## 2. S3 credentials
 
@@ -43,9 +42,11 @@ Set these on the Railway service (never commit them):
 | `R2_ACCESS_KEY_ID` | yes | (from the R2 token) |
 | `R2_SECRET_ACCESS_KEY` | yes | (from the R2 token) |
 | `R2_BUCKET` | yes | `weddly-uploads` |
-| `R2_BACKUP_BUCKET` | no | `weddly-backups` (falls back to `R2_BUCKET`) |
-| `R2_BACKUP_INTERVAL_HOURS` | no | `24` (set `0` to disable backups) |
-| `R2_BACKUP_RETENTION` | no | `14` |
+
+Configure the `OFFSITE_BACKUP_*` variables from `.env.example` on the web
+service using a second token scoped only to `weddly-backups`. Railway volumes
+cannot be shared between services, so the online SQLite snapshot runs inside
+the app and encrypts before upload. Follow `docs/backup-restore-runbook.md`.
 
 All four of the first group must be present, or the app silently stays on local
 disk (`R2_ENABLED` is false). Redeploy after setting them.
@@ -70,6 +71,6 @@ can be removed.
 
 - Upload a new image in the app and confirm it serves at its `/uploads/...` URL
   (the request is streamed from R2 through the app, same URL as before).
-- Check the bucket for the new object, and (after `R2_BACKUP_INTERVAL_HOURS`,
-  or the ~30s boot run) for a `backups/weddly-<timestamp>.db` snapshot.
-- Logs: `backup.uploaded` / `backup.pruned` confirm the backup loop.
+- Check the upload bucket for the new object.
+- For encrypted database backups, verify the worker heartbeat and perform the
+  restore drill in `docs/backup-restore-runbook.md`.

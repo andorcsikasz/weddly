@@ -43,6 +43,7 @@ process.env.SERVE_FRONTEND = "0";
 // Admin allowlist for tests — must be set BEFORE the server boots so config.ts
 // picks it up. Tests register `admin@test.test` to exercise admin-only routes.
 process.env.ADMIN_EMAILS = "admin@test.test";
+process.env.ADMIN_TOTP_SECRETS = "admin@test.test=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
 // Sentry stays off in tests — even a placeholder DSN would queue HTTPS
 // requests during the suite and tag every event with the test environment.
 process.env.SENTRY_DSN = "";
@@ -134,8 +135,14 @@ process.env.R2_ENDPOINT = "";
 process.env.R2_ACCESS_KEY_ID = "";
 process.env.R2_SECRET_ACCESS_KEY = "";
 process.env.R2_BUCKET = "";
-process.env.R2_BACKUP_BUCKET = "";
-process.env.R2_BACKUP_INTERVAL_HOURS = "0";
+process.env.OFFSITE_BACKUP_ENDPOINT = "";
+process.env.OFFSITE_BACKUP_ACCESS_KEY_ID = "";
+process.env.OFFSITE_BACKUP_SECRET_ACCESS_KEY = "";
+process.env.OFFSITE_BACKUP_BUCKET = "";
+process.env.OFFSITE_BACKUP_ENCRYPTION_KEYS =
+  "test:0000000000000000000000000000000000000000000000000000000000000000";
+process.env.OFFSITE_BACKUP_HEALTHCHECK_URL = "";
+process.env.OFFSITE_BACKUP_INTERVAL_HOURS = "0";
 
 // Company lookup: every registry provider answers from deterministic fixtures
 // (src/lib/company_lookup/fake.ts) so the suite never touches a real registry.

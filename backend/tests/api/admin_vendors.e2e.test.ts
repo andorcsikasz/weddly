@@ -518,9 +518,36 @@ describe("admin vendor management", () => {
     expect(res.status).toBe(403);
   });
 
-  test("DELETE purges the vendor account", async () => {
+  test("DELETE purges the vendor account and removes its public listing/content", async () => {
     const adminToken = await bootstrapAdmin();
     const { accountId } = await seedActivatedVendor("vendor4@weddly.test", "Gone Soon");
+    createVendorListing({
+      vendorAccountId: accountId,
+      category: "photo_video",
+      name: "Gone Soon",
+      city: "Budapest",
+      contactEmail: "vendor4@weddly.test",
+    });
+    const listingId = `v${accountId}`;
+    db.prepare(
+      "UPDATE listings SET hero_image_url = ?, website = ?, blurb_en = ? WHERE id = ?",
+    ).run(
+      `/uploads/listings/${listingId}/hero.jpg`,
+      "https://gone.example",
+      "Vendor-authored bio",
+      listingId,
+    );
+    db.prepare("INSERT INTO listing_photos (listing_id, url, created_at) VALUES (?, ?, ?)").run(
+      listingId,
+      `/uploads/listings/${listingId}/gallery/photo.jpg`,
+      Date.now(),
+    );
+    db.prepare(
+      "INSERT INTO listing_videos (listing_id, provider, video_id, url, position, created_at) VALUES (?, 'youtube', 'abc', 'https://youtube.test/abc', 0, ?)",
+    ).run(listingId, Date.now());
+    db.prepare(
+      "INSERT INTO listing_packages (listing_id, name, created_at, updated_at) VALUES (?, 'Package', ?, ?)",
+    ).run(listingId, Date.now(), Date.now());
 
     const res = await req("DELETE", `/api/admin/vendors/${accountId}`, undefined, {
       token: adminToken,
@@ -528,6 +555,26 @@ describe("admin vendor management", () => {
     expect(res.status).toBe(200);
     const row = db.prepare("SELECT id FROM vendor_accounts WHERE id = ?").get(accountId);
     expect(row ?? null).toBeNull();
+    const listing = db
+      .prepare(
+        "SELECT status, vendor_account_id, name, contact_email, website, blurb_en, hero_image_url FROM listings WHERE id = ?",
+      )
+      .get(listingId) as Record<string, unknown>;
+    expect(listing).toEqual({
+      status: "hidden",
+      vendor_account_id: null,
+      name: "Removed listing",
+      contact_email: null,
+      website: null,
+      blurb_en: null,
+      hero_image_url: null,
+    });
+    for (const table of ["listing_photos", "listing_videos", "listing_packages"]) {
+      const count = db
+        .prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE listing_id = ?`)
+        .get(listingId) as { n: number };
+      expect(count.n).toBe(0);
+    }
   });
 
   test("list derives the FREE/PRO plan from the billing entitlement", async () => {

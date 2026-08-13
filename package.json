@@ -14,6 +14,7 @@
     "dev:frontend": "cd frontend && bun run dev",
     "build": "cd frontend && bun run build",
     "build:frontend": "cd frontend && bun run build",
+    "check:bundle": "bun scripts/check-bundle-budget.ts",
     "check:migrations": "bun scripts/check-db-migrations.ts",
     "preflight:stripe": "bun backend/scripts/stripe_preflight.ts",
     "typecheck": "cd backend && bun run typecheck && cd ../frontend && bun run typecheck",

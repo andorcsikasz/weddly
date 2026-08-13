@@ -241,7 +241,7 @@ async function handleLogin(ctx: Ctx): Promise<Response> {
     throw new HttpError(403, "Email not verified", { code: "email_unverified" });
   }
 
-  const token = issueSession(row.id);
+  const token = issueSession(row.id, "password");
   alertOnNewDevice(ctx, row);
   const session: AuthSession = { token, user: toUser(row) };
   return json(session);
@@ -306,7 +306,7 @@ async function handleChangePassword(ctx: Ctx): Promise<Response> {
     { user: { id: row.id, email: row.email, full_name: row.full_name } },
   );
 
-  const token = issueSession(userId);
+  const token = issueSession(userId, "password");
   const fresh = getUserById(userId);
   if (!fresh) throw new HttpError(500, "User vanished after password change");
   const session: AuthSession = { token, user: toUser(fresh) };

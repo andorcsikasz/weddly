@@ -82,8 +82,8 @@ interface UpsertBody {
   /** Boolean — `true` and `email` present: fire a `guest_invite` email with a
    *  one-click /rsvp/{invite_code} link. Also stamps `invited_at` so the
    *  guest row's status badge moves to "invited" in the UI. Silently ignored
-   *  when no email is on the guest or the flag is false. Create-only — for
-   *  resends, use the dedicated endpoint (TODO when it lands). */
+   *  when no email is on the guest or the flag is false. Create-only — use
+   *  POST /api/households/invite-batch with `resend: true` for resends. */
   send_invite?: unknown;
   /** Household this guest belongs to. If omitted on create, the server
    *  spawns a household-of-one with the guest's name as its label. */

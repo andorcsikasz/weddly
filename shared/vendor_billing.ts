@@ -12,8 +12,8 @@
 //   trialing (3 days, no card)
 //     → card on file → lead_window (full PRO, free until the first
 //       VENDOR_FREE_LEAD_CREDITS couple inquiries have been delivered)
-//     → 3rd inquiry lands → billing_starts_at = first day of the NEXT month;
-//       the paid Stripe subscription is scheduled to start charging then
+//     → 3rd inquiry lands → free lead window ends
+//     → a separate explicit subscription checkout is required for PRO
 //     → active / past_due / canceled (driven by the Stripe webhook)
 //
 // A vendor who never adds a card (or lapses) falls to the FREE plan: the
@@ -41,19 +41,17 @@ export type { BillingReason, SubscriptionStatus };
 
 /** Vendor statuses = the shared set plus the vendor-only "lead_window": card
  *  on file, riding free until the first VENDOR_FREE_LEAD_CREDITS inquiries
- *  arrive (then until the scheduled first billing date). Stored in
+ *  arrive. Stored in
  *  vendor_subscriptions.subscription_status; couples never see this value. */
 export type VendorSubscriptionStatus = SubscriptionStatus | "lead_window";
 
 /** Vendor reasons = the shared set plus the lead-window pair. */
 export type VendorBillingReason =
   | BillingReason
-  /** Entitled: inside the card-on-file free-leads window (or between the 3rd
-   *  lead and the scheduled first billing date). */
+  /** Entitled: inside the card-on-file free-leads window. */
   | "lead_window"
-  /** Not entitled: the free leads are spent and the scheduled billing date
-   *  passed without an active subscription taking over (payment failed or
-   *  billing not wired), so the vendor is back on FREE until they subscribe. */
+  /** Not entitled: the free leads are spent, so the vendor is back on FREE
+   *  until they explicitly subscribe. */
   | "leads_exhausted";
 
 /** First N vendors to activate get a free founding year. Counted by granted
@@ -119,14 +117,6 @@ export function vendorOfferForSlots(foundingUsed: number, earlyUsed: number): Ve
  *  of the NEXT calendar month. */
 export const VENDOR_FREE_LEAD_CREDITS = 3;
 
-/** First day of the calendar month AFTER `nowMs`, at UTC midnight: the
- *  "payment period starts next month" anchor. Pure so the domain trigger, the
- *  Stripe trial_end, the UI copy, and the tests all agree. */
-export function startOfNextUtcMonth(nowMs: number): UnixMs {
-  const d = new Date(nowMs);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
-}
-
 /** Single source of truth for "does this vendor have PRO access right now?".
  *  Handles the vendor-only lead_window status, then defers to the shared
  *  computeEntitlement for everything else. Pure + time-based so the server
@@ -146,12 +136,8 @@ export function computeVendorEntitlement(
     if (opts.lead_credits_used < VENDOR_FREE_LEAD_CREDITS) {
       return { entitled: true, reason: "lead_window" };
     }
-    // Credits spent: still free until the scheduled first billing date. Once
-    // that passes the Stripe subscription should have flipped the status to
-    // active; if it didn't (payment failed / billing unwired), fall to FREE.
-    if (opts.billing_starts_at && opts.nowMs < opts.billing_starts_at) {
-      return { entitled: true, reason: "lead_window" };
-    }
+    // A saved card is not a payment order. Once the included leads are spent,
+    // PRO pauses until the vendor explicitly completes subscription Checkout.
     return { entitled: false, reason: "leads_exhausted" };
   }
   return computeEntitlement(status, {

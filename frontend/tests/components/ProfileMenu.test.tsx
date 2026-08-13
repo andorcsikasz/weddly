@@ -114,8 +114,8 @@ describe("<ProfileMenu>", () => {
 
     await waitFor(() => {
       expect(view.container.querySelectorAll(".bg-sage-500.right-0")).toHaveLength(1);
+      expect(view.container.querySelector(".bg-umber-400.right-0")).toBeInTheDocument();
     });
-    expect(view.container.querySelector(".bg-umber-400.right-0")).toBeInTheDocument();
 
     view.unmount();
   });

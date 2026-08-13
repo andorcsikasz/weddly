@@ -24,6 +24,12 @@ interface NoticeRow {
   appealed_at: number | null;
   appeal_decision: string | null;
   appeal_decided_at: number | null;
+  affected_email: string | null;
+  affected_notified_at: number | null;
+  affected_appeal_text: string | null;
+  affected_appealed_at: number | null;
+  affected_appeal_decision: string | null;
+  affected_appeal_decided_at: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -77,6 +83,20 @@ function publicCase(row: NoticeRow) {
     appealed_at: row.appealed_at,
     appeal_decision: row.appeal_decision,
     appeal_decided_at: row.appeal_decided_at,
+    created_at: row.created_at,
+  };
+}
+
+function affectedCase(row: NoticeRow) {
+  return {
+    reference: row.reference,
+    status: row.status,
+    content_url: row.content_url,
+    decision_reason: row.decision_reason,
+    decided_at: row.decided_at,
+    appealed_at: row.affected_appealed_at,
+    appeal_decision: row.affected_appeal_decision,
+    appeal_decided_at: row.affected_appeal_decided_at,
     created_at: row.created_at,
   };
 }
@@ -143,6 +163,37 @@ async function handleAppeal(ctx: Ctx): Promise<Response> {
   return json({ ok: true, appealed_at: ts });
 }
 
+async function handleAffectedAppeal(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "content_notice_affected_appeal", { capacity: 5, refillRate: 1 / 900 });
+  const reference = textField(ctx.params.reference, "reference", 32, 32);
+  const body = await readJson<Record<string, unknown>>(ctx.req);
+  const email = emailField(body.email);
+  const reason = textField(body.reason, "reason", 20, 4000);
+  const row = caseByReference(reference);
+  if (!row || row.affected_email !== email) throw new HttpError(404, "Notice not found");
+  if (!row.decided_at || !row.affected_notified_at) {
+    throw new HttpError(409, "A moderation decision can be appealed only after notification");
+  }
+  if (row.affected_appealed_at) throw new HttpError(409, "This decision has already been appealed");
+  const ts = now();
+  db.prepare(
+    `UPDATE content_notices SET affected_appeal_text = ?, affected_appealed_at = ?,
+       updated_at = ? WHERE id = ?`,
+  ).run(reason, ts, ts, row.id);
+  return json({ ok: true, appealed_at: ts });
+}
+
+function handleAffectedStatus(ctx: Ctx): Response {
+  rateLimit(ctx.clientIp, "content_notice_affected_status", { capacity: 20, refillRate: 1 / 60 });
+  const reference = textField(ctx.params.reference, "reference", 32, 32);
+  const email = emailField(ctx.url.searchParams.get("email"));
+  const row = caseByReference(reference);
+  if (!row || row.affected_email !== email || !row.affected_notified_at) {
+    throw new HttpError(404, "Notice not found");
+  }
+  return json({ notice: affectedCase(row) });
+}
+
 function handleAdminList(ctx: Ctx): Response {
   requireAdmin(ctx);
   const rows = db
@@ -173,11 +224,24 @@ async function handleAdminDecision(ctx: Ctx): Promise<Response> {
   if (body.appeal_decision !== undefined && !row.appealed_at) {
     throw new HttpError(409, "There is no appeal to decide");
   }
+  const affectedEmail =
+    body.affected_email === undefined || body.affected_email === null || body.affected_email === ""
+      ? row.affected_email
+      : emailField(body.affected_email);
+  const affectedAppealDecision =
+    body.affected_appeal_decision === undefined
+      ? row.affected_appeal_decision
+      : textField(body.affected_appeal_decision, "affected_appeal_decision", 20, 4000);
+  if (body.affected_appeal_decision !== undefined && !row.affected_appealed_at) {
+    throw new HttpError(409, "There is no affected-user appeal to decide");
+  }
   const ts = now();
   db.prepare(
     `UPDATE content_notices SET status = ?, decision_reason = ?, decided_by_user_id = ?,
        decided_at = CASE WHEN ? = 'reviewing' THEN NULL ELSE ? END,
        appeal_decision = ?, appeal_decided_at = CASE WHEN ? IS NULL THEN appeal_decided_at ELSE ? END,
+       affected_email = ?, affected_appeal_decision = ?,
+       affected_appeal_decided_at = CASE WHEN ? IS NULL THEN affected_appeal_decided_at ELSE ? END,
        updated_at = ? WHERE id = ?`,
   ).run(
     status,
@@ -187,6 +251,10 @@ async function handleAdminDecision(ctx: Ctx): Promise<Response> {
     ts,
     appealDecision,
     appealDecisionInput,
+    ts,
+    affectedEmail,
+    affectedAppealDecision,
+    body.affected_appeal_decision === undefined ? null : String(body.affected_appeal_decision),
     ts,
     ts,
     row.id,
@@ -208,14 +276,27 @@ async function handleAdminDecision(ctx: Ctx): Promise<Response> {
       text: `Decision: ${status}\nReason: ${decisionReason}\nCheck the case or appeal at ${CONFIG.frontendBaseUrl}/report-content.`,
       html: `<p><strong>Decision:</strong> ${status}</p><p>${decisionReason}</p><p>You may check the case or appeal at <a href="${CONFIG.frontendBaseUrl}/report-content">the notice status page</a>.</p>`,
     });
+    if (affectedEmail && !row.affected_notified_at) {
+      void sendTransactionalMessage({
+        to: affectedEmail,
+        subject: `Weddly moderation decision · ${reference}`,
+        text: `Content: ${row.content_url}\nDecision: ${status}\nReason: ${decisionReason}\nYou may inspect and appeal this decision at ${CONFIG.frontendBaseUrl}/report-content?affected=1.`,
+        html: `<p><strong>Content:</strong> ${row.content_url}</p><p><strong>Decision:</strong> ${status}</p><p>${decisionReason}</p><p>You may inspect and appeal this decision at <a href="${CONFIG.frontendBaseUrl}/report-content?affected=1">the moderation status page</a>.</p>`,
+      });
+      db.prepare(
+        "UPDATE content_notices SET affected_notified_at = ?, updated_at = ? WHERE id = ?",
+      ).run(ts, ts, row.id);
+    }
   }
-  return json({ notice: updated });
+  return json({ notice: caseByReference(reference) ?? updated });
 }
 
 export function registerContentNoticeRoutes(router: Router): void {
   router.post("/api/legal/content-notices", handleSubmit);
   router.get("/api/legal/content-notices/:reference", handleStatus);
   router.post("/api/legal/content-notices/:reference/appeal", handleAppeal);
+  router.get("/api/legal/content-notices/:reference/affected", handleAffectedStatus);
+  router.post("/api/legal/content-notices/:reference/affected-appeal", handleAffectedAppeal);
   router.get("/api/admin/content-notices", handleAdminList, true);
   router.patch("/api/admin/content-notices/:reference", handleAdminDecision, true);
 }

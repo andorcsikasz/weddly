@@ -1562,6 +1562,8 @@ export interface CheckinSubmitBody {
    *  entirely to leave any existing message untouched; send `""` or `null` to
    *  clear it. Stored on `households.guest_message`. */
   guest_message?: string | null;
+  /** Required when any member/addition submits dietary or allergy data. */
+  health_data_consent?: boolean;
 }
 
 export interface CheckinMemberSubmit {

@@ -231,7 +231,7 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
     { user: { id: userId, email: identity.email, full_name: fullName } },
   );
 
-  const token = issueSession(userId);
+  const token = issueSession(userId, "google");
   // Re-read the freshly-inserted row instead of hand-reconstructing it — the
   // schema picks up additive columns (google_sub, password_set, last_seen_at)
   // without needing this literal to be kept in sync.
@@ -242,7 +242,7 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
 }
 
 function signInExisting(ctx: Ctx, row: UserRow, auditAction: string): Response {
-  const token = issueSession(row.id);
+  const token = issueSession(row.id, "google");
   addAuditLog({
     actor_user_id: row.id,
     couple_id: null,

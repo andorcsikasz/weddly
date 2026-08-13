@@ -5,7 +5,12 @@ import { isUiLocale } from "@shared/locales";
 import type { User } from "@shared/types";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { SessionExpiredDialog } from "../components/SessionExpiredDialog";
-import { ApiError, SESSION_EXPIRED_EVENT, setToken as persistToken } from "./api";
+import {
+  ADMIN_REAUTH_REQUIRED_EVENT,
+  ApiError,
+  SESSION_EXPIRED_EVENT,
+  setToken as persistToken,
+} from "./api";
 import { clearDemoSessionFlag } from "./demoSession";
 import { authApi } from "./endpoints";
 import { useT } from "./i18n";
@@ -29,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   // True when an /api/* call returned 401 mid-session — pops the re-login
   // modal so the user can resume without losing typed state.
-  const [sessionExpired, setSessionExpired] = useState(false);
+  const [reauthReason, setReauthReason] = useState<"expired" | "admin" | null>(null);
   const { locale, setLocale: setI18nLocale } = useT();
 
   // Sync the server-stored `user.locale` into the in-memory i18n state
@@ -120,12 +125,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     function onExpired() {
       // Re-check the latest user via closure trick: setState callback form.
       setUser((cur) => {
-        if (cur) setSessionExpired(true);
+        if (cur) setReauthReason("expired");
         return cur;
       });
     }
     window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    function onAdminReauth() {
+      setUser((cur) => {
+        if (cur) setReauthReason("admin");
+        return cur;
+      });
+    }
+    window.addEventListener(ADMIN_REAUTH_REQUIRED_EVENT, onAdminReauth);
+    return () => window.removeEventListener(ADMIN_REAUTH_REQUIRED_EVENT, onAdminReauth);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -147,7 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     persistToken(null);
     setUser(null);
-    setSessionExpired(false);
+    setReauthReason(null);
     // The demo flag must never outlive its session. Clearing it here covers
     // both the in-app "Start your own" conversion and the auth-form guard's
     // demo teardown, so a later real account on this device is never mistaken
@@ -182,14 +199,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{ user, loading, login, logout, refresh, setSession }}>
       {children}
       <SessionExpiredDialog
-        open={sessionExpired}
+        open={reauthReason !== null}
+        reason={reauthReason ?? "expired"}
         email={user?.email ?? ""}
         userId={user?.id ?? null}
         passwordSet={user?.password_set ?? false}
         hasGoogle={user?.has_google ?? false}
         hasApple={user?.has_apple ?? false}
-        onClose={() => setSessionExpired(false)}
-        onLoggedIn={() => setSessionExpired(false)}
+        onClose={() => setReauthReason(null)}
+        onLoggedIn={() => setReauthReason(null)}
       />
     </AuthContext.Provider>
   );

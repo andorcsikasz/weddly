@@ -1489,7 +1489,6 @@ export default function SuppliersPage() {
   // page whenever the filtered set changes (new search / category / sort) so we
   // never show a stale offset, then grow it a page at a time on "load more".
   const [visibleCount, setVisibleCount] = useState(SUPPLIERS_PAGE_SIZE);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on result change
   useEffect(() => setVisibleCount(SUPPLIERS_PAGE_SIZE), [filtered]);
   // The grid is in-country results only. The tail never pages and never gets a
   // card: it is a "these exist, elsewhere" note, and a couple who wants to

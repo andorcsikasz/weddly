@@ -5,7 +5,7 @@
 // agree; this file owns the vendor_subscriptions row transitions:
 //
 //   trialing (3 days) ──card saved──▶ lead_window ──3rd inquiry──▶
-//   billing_starts_at stamped (next month start) ──Stripe webhook──▶ active
+//   leads_exhausted ──explicit subscription checkout──▶ active
 //
 // `applyVendorSubscriptionState` is the seam the vendor billing webhook calls;
 // `markVendorCardOnFile` + `recordVendorLeadCredit` are the freemium seams
@@ -13,7 +13,6 @@
 
 import {
   computeVendorEntitlement,
-  startOfNextUtcMonth,
   type SubscriptionStatus,
   VENDOR_EARLY_CAP,
   VENDOR_FOUNDING_CAP,
@@ -218,30 +217,21 @@ export function markVendorCardOnFile(vendorAccountId: number, nowMs: number = no
 }
 
 /** A couple inquiry was delivered to this vendor. Spends one free lead credit
- *  when the vendor is inside the lead window; the credit that reaches
- *  VENDOR_FREE_LEAD_CREDITS stamps billing_starts_at = start of the NEXT
- *  month (the "we generated 3 direct sales → payment period starts next
- *  month" trigger). Returns true when this call just scheduled billing, so
- *  the caller can kick off the Stripe subscription. No-op for every other
- *  status (trial and founding inquiries are free and uncounted). */
+ * while the vendor is inside the lead window. The third lead ends PRO access;
+ * it never schedules or creates a payment. A vendor must later complete the
+ * separate subscription Checkout to assume a payment obligation. */
 export function recordVendorLeadCredit(vendorAccountId: number, nowMs: number = now()): boolean {
   const spend = db.transaction((): boolean => {
     const sub = getVendorSub(vendorAccountId);
     if (!sub || sub.subscription_status !== "lead_window") return false;
-    if (sub.billing_starts_at !== null || sub.lead_credits_used >= VENDOR_FREE_LEAD_CREDITS) {
-      return false;
-    }
+    if (sub.lead_credits_used >= VENDOR_FREE_LEAD_CREDITS) return false;
     const used = sub.lead_credits_used + 1;
-    const startsBilling = used >= VENDOR_FREE_LEAD_CREDITS;
-    const billingStartsAt = startsBilling
-      ? Math.max(startOfNextUtcMonth(nowMs), nowMs + 1000 * 60 * 60)
-      : null;
     db.prepare(
       `UPDATE vendor_subscriptions
-          SET lead_credits_used = ?, billing_starts_at = ?, updated_at = ?
+          SET lead_credits_used = ?, billing_starts_at = NULL, updated_at = ?
         WHERE vendor_account_id = ?`,
-    ).run(used, billingStartsAt, nowMs, vendorAccountId);
-    return startsBilling;
+    ).run(used, nowMs, vendorAccountId);
+    return used >= VENDOR_FREE_LEAD_CREDITS;
   });
   return spend();
 }

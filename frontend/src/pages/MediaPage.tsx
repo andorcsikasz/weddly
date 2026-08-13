@@ -1463,24 +1463,6 @@ export default function MediaPage() {
             </button>
           )}
         </div>
-
-        {/* ── Reveal gallery teaser (coming soon) ───────────────────── */}
-        <div className="pointer-events-none flex cursor-default select-none items-center gap-4 border-t border-paper-200 px-5 py-4 opacity-80">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-umber-300 text-umber-400">
-            <Share2 size={18} aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <span className="text-[15px] font-medium text-umber-700">
-              {t("media.to_guests_title")}
-            </span>
-            <p className="mt-0.5 text-[13px] leading-snug text-umber-600">
-              {t("media.shared_gallery_teaser")}
-            </p>
-          </div>
-          <span className="shrink-0 self-center rounded-full border border-paper-300 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-umber-600">
-            {t("media.coming_soon_title")}
-          </span>
-        </div>
       </div>
 
       {/* ── Wedding film card (collapsible) ───────────────────────── */}

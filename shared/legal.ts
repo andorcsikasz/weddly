@@ -7,12 +7,14 @@
 // correctly as plain strings. Same string is rendered as the "Verzió:"
 // eyebrow on Privacy/Terms so end users can see what they accepted.
 
-export const PRIVACY_VERSION = "2026-08-12";
+export const PRIVACY_VERSION = "2026-08-13";
 export const TERMS_VERSION = "2026-08-12";
 /** Vendor-specific B2B/B2C subscription terms served at
  *  `/terms/vendor-subscription`. Kept separate from the general site terms so
  *  the acceptance ledger identifies the exact contract the vendor saw. */
-export const VENDOR_TERMS_VERSION = "2026-08-12";
+export const VENDOR_TERMS_VERSION = "2026-08-13";
+/** Explicit-consent text shown beside optional RSVP allergy/dietary fields. */
+export const GUEST_HEALTH_NOTICE_VERSION = "2026-08-13";
 
 /** Standalone notice on the vendor waitlist form covering the free-beta /
  *  future-paid-tier disclosure. Bumped separately from the privacy/terms
@@ -30,4 +32,6 @@ export type LegalDocument =
   | "terms"
   | "vendor_terms"
   | "vendor_terms_highlighted"
+  | "guest_health"
+  | "guest_health_withdrawn"
   | "vendor_beta_notice";

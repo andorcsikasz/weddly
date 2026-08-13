@@ -5,8 +5,8 @@ import { existsSync } from "node:fs";
 import { join, sep } from "node:path";
 import {
   clearSessionCookie,
-  extractToken,
-  SESSION_COOKIE_NAME,
+  rotateSessionToken,
+  sessionCredentials,
   sessionCookie,
   verifySessionToken,
 } from "./auth/session";
@@ -42,7 +42,7 @@ import { storage, keyFromUploadUrl } from "./lib/storage";
 import { assertEmailIntegrityAtBoot } from "./domain/emails/integrity_check";
 import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
-import { startBackupWorker } from "./domain/backup";
+import { startBackupWorker, stopBackupWorker } from "./domain/backup";
 import { startGoogleCalendarWorker } from "./domain/google_calendar_worker";
 import { startSupplierBookingWorker } from "./domain/supplier_booking_worker";
 import { backfillVendorPoints } from "./domain/vendor_points";
@@ -76,7 +76,9 @@ import { registerPlannerAccountRoutes } from "./routes/planner_account";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAuthAppleRoutes } from "./routes/auth_apple";
 import { registerAuthGoogleRoutes } from "./routes/auth_google";
+import { registerAuthStepUpRoutes } from "./routes/auth_step_up";
 import { registerBillingRoutes } from "./routes/billing";
+import { requireAdmin } from "./domain/users";
 import { registerReferralRoutes } from "./routes/referrals";
 import { registerBlogRoutes, seedBlogPostsIfEmpty } from "./routes/blog";
 import { registerBudgetRoutes } from "./routes/budget";
@@ -269,6 +271,7 @@ registerHealthRoutes(router);
 registerAuthRoutes(router);
 registerAuthGoogleRoutes(router);
 registerAuthAppleRoutes(router);
+registerAuthStepUpRoutes(router);
 registerPasswordResetRoutes(router);
 registerEmailVerifyRoutes(router);
 registerEmailChangeRoutes(router);
@@ -869,16 +872,24 @@ async function handleRequest(req: Request): Promise<Response> {
   // Auth middleware accepts the legacy/API Bearer header and the browser's
   // HttpOnly session cookie. Browser code never needs to persist the bearer.
   let userId: number | null = null;
-  const token = extractToken(req);
+  const credentials = sessionCredentials(req);
+  if (credentials.mixed) {
+    const r = httpErr(400, "Send either a session cookie or a bearer token, not both", {
+      code: "mixed_auth_credentials",
+    });
+    const headers = new Headers(r.headers);
+    for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+    headers.set("x-request-id", requestId);
+    return new Response(r.body, { status: r.status, headers });
+  }
+  const token = credentials.token;
   if (token) userId = verifySessionToken(token);
 
   // Cookie-authenticated writes are same-origin only. SameSite=Lax already
   // blocks ordinary cross-site POSTs; this Origin check also covers same-site
   // sibling subdomains and keeps the cookie migration from introducing CSRF.
-  const hasBearer = Boolean(req.headers.get("authorization"));
-  const hasSessionCookie = (req.headers.get("cookie") ?? "")
-    .split(";")
-    .some((part) => part.trim().startsWith(`${SESSION_COOKIE_NAME}=`));
+  const hasBearer = credentials.source === "bearer";
+  const hasSessionCookie = credentials.source === "cookie";
   if (
     REQUIRE_PROD_HARDENING &&
     hasSessionCookie &&
@@ -910,6 +921,41 @@ async function handleRequest(req: Request): Promise<Response> {
     for (const [k, v] of Object.entries(cors)) headers.set(k, v);
     headers.set("x-request-id", requestId);
     return new Response(r.body, { status: r.status, headers });
+  }
+
+  // Resolve the registered route template before any tenant/billing policy.
+  // Besides keeping capability values out of logs, this lets the privileged
+  // prefix backstop run at the first authenticated choke point instead of
+  // allowing an entitlement/name gate to answer an admin request first.
+  const safeRoute = matched.route.path;
+  const reqLog = makeLogger({
+    requestId,
+    method: req.method,
+    route: safeRoute,
+    ...(userId != null ? { userId } : {}),
+  });
+  const ctx: Ctx = {
+    req,
+    url,
+    params: matched.params,
+    userId,
+    clientIp: clientIpFrom(req),
+    requestId,
+    log: reqLog,
+  };
+  if (safeRoute.startsWith("/api/admin/")) {
+    try {
+      requireAdmin(ctx);
+    } catch (e) {
+      const isHttpErr = e instanceof HttpError;
+      const r = isHttpErr
+        ? httpErr(e.status, e.message, e.extra)
+        : httpErr(500, "Internal server error");
+      const headers = new Headers(r.headers);
+      for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+      headers.set("x-request-id", requestId);
+      return new Response(r.body, { status: r.status, headers });
+    }
   }
 
   // Billing read-only gate: a couple whose trial/founding window has lapsed
@@ -949,27 +995,6 @@ async function handleRequest(req: Request): Promise<Response> {
     return new Response(r.body, { status: r.status, headers });
   }
 
-  // Log the registered route template rather than the concrete pathname. This
-  // prevents every path capability—including short RSVP/household codes and
-  // future token formats—from reaching Railway or Sentry logs.
-  const safeRoute = matched.route.path;
-  const reqLog = makeLogger({
-    requestId,
-    method: req.method,
-    route: safeRoute,
-    ...(userId != null ? { userId } : {}),
-  });
-
-  const ctx: Ctx = {
-    req,
-    url,
-    params: matched.params,
-    userId,
-    clientIp: clientIpFrom(req),
-    requestId,
-    log: reqLog,
-  };
-
   try {
     const res = await matched.route.handler(ctx);
     const headers = new Headers(res.headers);
@@ -1007,11 +1032,21 @@ async function handleRequest(req: Request): Promise<Response> {
         // A session route returning a non-JSON error is handled normally and
         // never receives a cookie.
       }
-    } else if (hasBearer && token && userId !== null && !hasSessionCookie) {
-      // One-request migration for existing browsers: their first valid legacy
-      // bearer request receives the HttpOnly cookie, after which the frontend
-      // deletes the localStorage secret.
-      headers.append("Set-Cookie", sessionCookie(token));
+    } else if (
+      hasBearer &&
+      token &&
+      userId !== null &&
+      req.headers.get("x-weddly-session-migration") === "cookie-v1"
+    ) {
+      // Explicit one-request legacy-browser migration. Rotate—not copy—the
+      // bearer so the script-readable credential stops working as soon as its
+      // HttpOnly replacement is delivered. API clients that do not opt in keep
+      // ordinary stable bearer semantics.
+      const replacement = rotateSessionToken(token);
+      if (replacement) {
+        headers.append("Set-Cookie", sessionCookie(replacement));
+        headers.set("x-weddly-session-migrated", "1");
+      }
     }
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
     for (const [k, v] of Object.entries(cors)) headers.set(k, v);
@@ -1124,6 +1159,7 @@ if (process.env.NODE_ENV !== "test") {
     if (inflightRequests > 0) {
       log.warn("server.shutdown.drain_timeout", { inflight: inflightRequests });
     }
+    stopBackupWorker();
     db.close();
     await flushObservability();
     log.info("server.shutdown.done", { signal });
@@ -1135,11 +1171,9 @@ if (process.env.NODE_ENV !== "test") {
 
 // Pause-to-delete sweep — only in real environments. Tests drive it directly.
 if (process.env.NODE_ENV !== "test") {
+  startBackupWorker();
   startPurgeWorker();
   startEmailWorker();
-  // Periodic SQLite → R2 disaster-recovery backups. No-op unless R2 is
-  // configured and R2_BACKUP_INTERVAL_HOURS > 0.
-  startBackupWorker();
   // Reconcile couples' Google Calendars whose events changed. No-op unless the
   // Google Calendar integration is configured (GOOGLE_CALENDAR_ENABLED).
   startGoogleCalendarWorker();

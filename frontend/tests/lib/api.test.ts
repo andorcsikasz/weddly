@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
-import { ApiError, apiFetch } from "@/lib/api";
+import { ADMIN_REAUTH_REQUIRED_EVENT, ApiError, apiFetch } from "@/lib/api";
 
 const realFetch = globalThis.fetch;
 
@@ -85,6 +85,28 @@ describe("apiFetch retry", () => {
 
     await expect(apiFetch("GET", "/x")).rejects.toMatchObject({ code: "session_expired" });
     expect(calls).toBe(1);
+  });
+
+  it("surfaces the typed admin re-auth event without treating the session as expired", async () => {
+    let events = 0;
+    const onReauth = () => events++;
+    window.addEventListener(ADMIN_REAUTH_REQUIRED_EVENT, onReauth);
+    globalThis.fetch = mock(async () =>
+      jsonResponse(403, {
+        error: "Re-authentication required for admin access",
+        detail: { code: "admin_reauth_required", reason: "stale" },
+      }),
+    ) as unknown as typeof fetch;
+
+    try {
+      await expect(apiFetch("GET", "/api/admin/users")).rejects.toMatchObject({
+        status: 403,
+        code: "admin_reauth_required",
+      });
+      expect(events).toBe(1);
+    } finally {
+      window.removeEventListener(ADMIN_REAUTH_REQUIRED_EVENT, onReauth);
+    }
   });
 
   it("does not retry when the caller's signal aborted", async () => {

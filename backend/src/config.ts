@@ -4,6 +4,50 @@ const DEV_JWT_SECRET = "dev-only-secret-change-me-in-production-please-012345678
 const DEFAULT_EMAIL_FROM = "Weddly <onboarding@resend.dev>";
 const IS_PROD = process.env.NODE_ENV === "production";
 
+function hasStrongSigningSecret(value: string | undefined): boolean {
+  if (!value || value !== value.trim() || /\s/.test(value)) return false;
+  // 32 random bytes represented as hex or base64/base64url. We cannot prove
+  // entropy from a string, but rejecting short/arbitrary values prevents a
+  // typo such as JWT_SECRET=x from silently becoming the production key.
+  if (/^[0-9a-f]{64,}$/i.test(value)) return true;
+  return /^[A-Za-z0-9+/_=-]{43,}$/.test(value);
+}
+
+function configuredAdminEmails(): string[] {
+  return (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function configuredAdminTotpSecrets(): Map<string, string> {
+  const result = new Map<string, string>();
+  for (const entry of (process.env.ADMIN_TOTP_SECRETS ?? "").split(",")) {
+    if (!entry.trim()) continue;
+    const separator = entry.indexOf("=");
+    const email = separator > 0 ? entry.slice(0, separator).trim().toLowerCase() : "";
+    const secret =
+      separator > 0
+        ? entry
+            .slice(separator + 1)
+            .replace(/\s+/g, "")
+            .toUpperCase()
+        : "";
+    if (!email.includes("@") || !/^[A-Z2-7]{26,}$/.test(secret)) {
+      console.error(
+        "[config] FATAL: ADMIN_TOTP_SECRETS must contain email=BASE32 entries with at least 128 bits of entropy.",
+      );
+      process.exit(1);
+    }
+    if (result.has(email) || [...result.values()].includes(secret)) {
+      console.error("[config] FATAL: every admin must have one unique TOTP secret.");
+      process.exit(1);
+    }
+    result.set(email, secret);
+  }
+  return result;
+}
+
 // Railway always injects RAILWAY_* vars into a deployed service. Treat their
 // presence as "this is a real deployment" even when NODE_ENV was forgotten, so
 // a misconfigured deploy can never boot on the publicly-known DEV_JWT_SECRET
@@ -17,7 +61,7 @@ export const REQUIRE_PROD_HARDENING = IS_PROD || ON_RAILWAY;
 
 if (
   REQUIRE_PROD_HARDENING &&
-  (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEV_JWT_SECRET)
+  (!hasStrongSigningSecret(process.env.JWT_SECRET) || process.env.JWT_SECRET === DEV_JWT_SECRET)
 ) {
   console.error(
     "[config] FATAL: a deployed environment requires a strong JWT_SECRET " +
@@ -60,9 +104,14 @@ if (REQUIRE_PROD_HARDENING) {
   if (
     publicUrl.protocol !== "https:" ||
     publicUrl.hostname === "localhost" ||
-    publicUrl.hostname === "127.0.0.1"
+    publicUrl.hostname === "127.0.0.1" ||
+    publicUrl.username !== "" ||
+    publicUrl.password !== "" ||
+    (process.env.FRONTEND_BASE_URL ?? "") !== publicUrl.origin
   ) {
-    console.error("[config] FATAL: FRONTEND_BASE_URL must be a non-local HTTPS URL in production.");
+    console.error(
+      "[config] FATAL: FRONTEND_BASE_URL must be exactly one non-local HTTPS origin (no credentials, path, query, fragment, or trailing slash).",
+    );
     process.exit(1);
   }
   if (!(process.env.RESEND_API_KEY ?? "").trim()) {
@@ -74,6 +123,14 @@ if (REQUIRE_PROD_HARDENING) {
   if (!(process.env.ADMIN_EMAILS ?? "").trim()) {
     console.error(
       "[config] FATAL: ADMIN_EMAILS must be explicitly configured in production; no personal-address default is allowed.",
+    );
+    process.exit(1);
+  }
+  const adminEmails = configuredAdminEmails();
+  const adminTotp = configuredAdminTotpSecrets();
+  if (adminEmails.some((email) => !adminTotp.has(email)) || adminTotp.size !== adminEmails.length) {
+    console.error(
+      "[config] FATAL: ADMIN_TOTP_SECRETS must provide one unique TOTP secret for every ADMIN_EMAILS address and no others.",
     );
     process.exit(1);
   }
@@ -121,6 +178,51 @@ if (REQUIRE_PROD_HARDENING) {
   requireMatchingBuildValue("GOOGLE_CLIENT_ID", "VITE_GOOGLE_CLIENT_ID");
   requireMatchingBuildValue("APPLE_CLIENT_ID", "VITE_APPLE_CLIENT_ID");
   requireMatchingBuildValue("EN_CANONICAL_HOST", "VITE_EN_CANONICAL_HOST");
+
+  const backupFields = [
+    "OFFSITE_BACKUP_ENDPOINT",
+    "OFFSITE_BACKUP_ACCESS_KEY_ID",
+    "OFFSITE_BACKUP_SECRET_ACCESS_KEY",
+    "OFFSITE_BACKUP_BUCKET",
+    "OFFSITE_BACKUP_ENCRYPTION_KEYS",
+    "OFFSITE_BACKUP_HEALTHCHECK_URL",
+  ] as const;
+  const missingBackupFields = backupFields.filter((name) => !(process.env[name] ?? "").trim());
+  if (missingBackupFields.length > 0) {
+    console.error(
+      `[config] FATAL: encrypted off-site backup configuration is incomplete; missing ${missingBackupFields.join(", ")}.`,
+    );
+    process.exit(1);
+  }
+  const backupKeys = (process.env.OFFSITE_BACKUP_ENCRYPTION_KEYS ?? "").split(",");
+  if (
+    backupKeys.some((entry) => {
+      const separator = entry.indexOf(":");
+      const id = separator > 0 ? entry.slice(0, separator).trim() : "";
+      const key = separator > 0 ? entry.slice(separator + 1).trim() : "";
+      return !/^[A-Za-z0-9_-]{1,24}$/.test(id) || !/^[0-9a-f]{64}$/i.test(key);
+    })
+  ) {
+    console.error(
+      "[config] FATAL: OFFSITE_BACKUP_ENCRYPTION_KEYS must be comma-separated key-id:64-hex-character entries.",
+    );
+    process.exit(1);
+  }
+  try {
+    const endpoint = new URL(process.env.OFFSITE_BACKUP_ENDPOINT ?? "");
+    const heartbeat = new URL(process.env.OFFSITE_BACKUP_HEALTHCHECK_URL ?? "");
+    if (endpoint.protocol !== "https:" || heartbeat.protocol !== "https:") throw new Error();
+  } catch {
+    console.error(
+      "[config] FATAL: OFFSITE_BACKUP_ENDPOINT and OFFSITE_BACKUP_HEALTHCHECK_URL must be absolute HTTPS URLs.",
+    );
+    process.exit(1);
+  }
+  const backupHours = Number(process.env.OFFSITE_BACKUP_INTERVAL_HOURS ?? "24");
+  if (!Number.isFinite(backupHours) || backupHours <= 0) {
+    console.error("[config] FATAL: OFFSITE_BACKUP_INTERVAL_HOURS must be greater than zero.");
+    process.exit(1);
+  }
 }
 
 /** The From identity for mail an admin sends by hand from `/app/admin/*`.
@@ -159,6 +261,9 @@ export const CONFIG = {
   dataEncryptionKeys: process.env.DATA_ENCRYPTION_KEYS ?? "",
   /** 30 days. */
   sessionTtlMs: 1000 * 60 * 60 * 24 * 30,
+  /** Privileged admin requests require a primary sign-in within 15 minutes.
+   *  Unlike the ordinary session TTL this never slides on API activity. */
+  adminReauthTtlMs: 1000 * 60 * 15,
   frontendBaseUrl: process.env.FRONTEND_BASE_URL ?? "http://localhost:5173",
   /** When `1`, the server also serves the built SPA from `frontend/dist`. */
   serveFrontend: process.env.SERVE_FRONTEND === "1",
@@ -175,10 +280,11 @@ export const CONFIG = {
   supportEmail: SUPPORT_EMAIL,
   /** Comma-separated email allowlist. Members get `is_admin: true` on the User
    *  DTO and access to /app/admin/* routes. Reversible via env edit. */
-  adminEmails: (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean),
+  adminEmails: configuredAdminEmails(),
+  /** Per-admin application MFA. Secrets stay in deployment secret storage,
+   * never the database or frontend bundle. Production boot requires exact
+   * one-to-one coverage of ADMIN_EMAILS. */
+  adminTotpSecrets: configuredAdminTotpSecrets(),
   /** Independent legal/accounting release gate for every path that creates a
    *  Stripe payment. Production is fail-closed until counsel/accountant review,
    *  operator registration, invoicing/VAT setup and checkout copy are signed
@@ -312,7 +418,7 @@ export const CONFIG = {
    *  missing. Empty = no download attempt, every country lookup returns null. */
   maxmindLicenseKey: process.env.MAXMIND_LICENSE_KEY ?? "",
   /** Cloudflare R2 (S3-compatible) object storage. When all four core fields
-   *  are set, uploads + DB backups go to R2 instead of the local `/data`
+   *  are set, uploads go to R2 instead of the local `/data`
    *  volume; otherwise the app falls back to disk with zero behaviour change
    *  (same "configured?" pattern as Stripe). `endpoint` is the account S3
    *  endpoint `https://<account>.r2.cloudflarestorage.com`. */
@@ -321,22 +427,36 @@ export const CONFIG = {
     accessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? "",
     bucket: process.env.R2_BUCKET ?? "",
-    /** Optional separate bucket for SQLite backups; falls back to `bucket`. */
-    backupBucket: process.env.R2_BACKUP_BUCKET ?? "",
-    /** Hours between automatic SQLite backups to R2. 0 disables the job. */
-    backupIntervalHours: Number(process.env.R2_BACKUP_INTERVAL_HOURS ?? "24"),
-    /** How many most-recent DB backups to retain in R2 (older ones pruned). */
-    backupRetention: Number(process.env.R2_BACKUP_RETENTION ?? "14"),
+  },
+  /** Encrypted SQLite snapshots use credentials and a bucket distinct from
+   * application uploads. The first key encrypts; retained older keys allow
+   * historical restores after rotation. Production requires the complete set. */
+  offsiteBackup: {
+    endpoint: process.env.OFFSITE_BACKUP_ENDPOINT ?? "",
+    accessKeyId: process.env.OFFSITE_BACKUP_ACCESS_KEY_ID ?? "",
+    secretAccessKey: process.env.OFFSITE_BACKUP_SECRET_ACCESS_KEY ?? "",
+    bucket: process.env.OFFSITE_BACKUP_BUCKET ?? "",
+    encryptionKeys: process.env.OFFSITE_BACKUP_ENCRYPTION_KEYS ?? "",
+    healthcheckUrl: process.env.OFFSITE_BACKUP_HEALTHCHECK_URL ?? "",
+    intervalHours: Number(process.env.OFFSITE_BACKUP_INTERVAL_HOURS ?? "24"),
+    retention: Number(process.env.OFFSITE_BACKUP_RETENTION ?? "90"),
   },
 };
 
-/** True when R2 object storage is fully configured. Upload routes + the backup
- *  job check this; when false everything uses the local disk fallback. */
+/** True when R2 object storage is fully configured for application uploads. */
 export const R2_ENABLED =
   CONFIG.r2.endpoint !== "" &&
   CONFIG.r2.accessKeyId !== "" &&
   CONFIG.r2.secretAccessKey !== "" &&
   CONFIG.r2.bucket !== "";
+
+export const OFFSITE_BACKUP_ENABLED =
+  CONFIG.offsiteBackup.endpoint !== "" &&
+  CONFIG.offsiteBackup.accessKeyId !== "" &&
+  CONFIG.offsiteBackup.secretAccessKey !== "" &&
+  CONFIG.offsiteBackup.bucket !== "" &&
+  CONFIG.offsiteBackup.encryptionKeys !== "" &&
+  CONFIG.offsiteBackup.healthcheckUrl !== "";
 
 /** True when a Stripe secret key is configured. Billing endpoints check this
  *  and 503 when false, mirroring the Google-OAuth "configured?" pattern. */

@@ -32,62 +32,56 @@ closed. Group ordering reflects what blocks ship.
 
 ## C. Backups (30 min, blocks GDPR readiness)
 
-Recommended target: **Cloudflare R2** — 10 GB / 10M reads / 1M writes free per month, no egress fees, S3-compatible (works with the same `aws s3 cp` calls). The script supports any S3-compatible bucket via `AWS_ENDPOINT_URL`.
+Use Railway native volume backups for fast recovery and a dedicated Cloudflare
+R2 bucket for encrypted off-site copies. A Railway volume belongs to one
+service, so do not try to mount the app volume into a separate cron service.
 
-### C.1 Generate the age keypair (5 min, do this on your laptop, not on the server)
+### C.1 Generate the off-site encryption key
 
 ```sh
-age-keygen -o weddly-backup.key
-# → "Public key: age1xxxxxxxxxxxxxxxxxxxx..."  (this is the AGE_RECIPIENT)
-# The private half is the recovery secret. Without it, every encrypted snapshot is unrecoverable.
+openssl rand -hex 32
+# Store as OFFSITE_BACKUP_ENCRYPTION_KEYS=v1:<64 hex characters>
 ```
 
-- [ ] Store the private key (`weddly-backup.key`) **outside this machine** — 1Password / Bitwarden / a sealed envelope in a drawer. Losing it = losing every backup.
-- [ ] Set `AGE_RECIPIENT=age1xxxxx...` (the public key) in Railway service variables.
+- [ ] Store the key outside Railway, R2 and database backups. Losing it makes
+  the off-site snapshots unusable.
+- [ ] Add it to Railway only as a secret environment variable; never commit it.
 
 ### C.2 Cloudflare R2 setup (10 min)
 
 - [ ] Create a Cloudflare account (free) → R2 dashboard → **Create bucket**, e.g. `weddly-backups`. Pick a region close to Railway (`eu` if Railway runs in EU).
 - [ ] Manage R2 API Tokens → **Create API Token** → permissions "Object Read & Write" scoped to that bucket only. Copy the Access Key ID + Secret Access Key + S3 endpoint URL.
-- [ ] In R2 → bucket → Settings → **Object Lifecycle**: add a rule "delete after 90 days". Local retention sweep handles 14 days; R2 lifecycle handles long-term sweep.
+- [ ] In R2 → bucket → Settings → configure versioning/lifecycle protection and
+  retain at least the documented RPO window (the app also keeps 90 newest by default).
 
-### C.3 Railway env vars on the **backup** service (not the app)
+### C.3 Railway app-service variables
 
-- [ ] `DB_PATH=/data/weddly.db`
-- [ ] `BACKUP_DIR=/tmp/weddly-backup`
-- [ ] `AGE_RECIPIENT=age1xxxxx...` (from C.1)
-- [ ] `S3_BUCKET=weddly-backups`
-- [ ] `S3_PREFIX=prod/`
-- [ ] `AWS_ACCESS_KEY_ID=...` (from C.2)
-- [ ] `AWS_SECRET_ACCESS_KEY=...` (from C.2)
-- [ ] `AWS_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com` (from C.2)
-- [ ] `HEALTHCHECK_URL=https://hc-ping.com/<uuid>` (from `docs/uptime.md` step 2)
+- [ ] `OFFSITE_BACKUP_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com`
+- [ ] `OFFSITE_BACKUP_ACCESS_KEY_ID=...` (backup-bucket-only token)
+- [ ] `OFFSITE_BACKUP_SECRET_ACCESS_KEY=...`
+- [ ] `OFFSITE_BACKUP_BUCKET=weddly-backups`
+- [ ] `OFFSITE_BACKUP_ENCRYPTION_KEYS=v1:<64 hex characters>`
+- [ ] `OFFSITE_BACKUP_HEALTHCHECK_URL=https://hc-ping.com/<uuid>`
+- [ ] `OFFSITE_BACKUP_INTERVAL_HOURS=24`
+- [ ] `OFFSITE_BACKUP_RETENTION=90`
 
-### C.4 Schedule the cron
+### C.4 Enable both backup layers
 
-Recommended: **Railway Cron service**.
-
-- [ ] In your Railway project → **+ New** → Cron. Point it at the same repo/Dockerfile.
-- [ ] Override the start command: `bash scripts/backup.sh`
-- [ ] Schedule: `0 3 * * *` (03:00 UTC daily; tweak to off-peak for your couples).
-- [ ] **Mount the same `/data` volume** that the app service uses, ideally read-only. The cron container needs to read the live DB.
-- [ ] The base image (`oven/bun:1.3.10`) is Debian-based. Add `sqlite3`, `age`, and the AWS CLI to the cron service. Easiest path: add an ad-hoc `apt-get install` step in a wrapper shell, or use a small custom Dockerfile for the cron service. (TODO: ship a `Dockerfile.backup` if Railway's "Cron" feature doesn't accept inline install steps.)
-
-Alternative: GitHub Actions scheduled workflow that SSHes into Railway and triggers the script. Slower to set up; only do this if Railway Cron isn't available on your plan.
+- [ ] Railway Volume → Backups: enable daily, weekly and monthly snapshots and
+  record the retention shown by the dashboard.
+- [ ] Confirm the application produces a
+  `prod/weddly-<timestamp>.db.aes256gcm` object and a successful heartbeat.
 
 ### C.5 First-restore drill (mandatory — the only thing that proves backups work)
 
-- [ ] Wait for the first nightly run, then check the R2 bucket → confirm a `weddly-<timestamp>.db.age` object appeared.
-- [ ] On your laptop, with the private key from C.1:
+- [ ] Download the newest encrypted R2 object to an isolated machine.
+- [ ] With the matching keyring from C.1:
 
   ```sh
-  export AGE_IDENTITY=/path/to/weddly-backup.key
-  export AWS_ACCESS_KEY_ID=...   # same R2 creds
-  export AWS_SECRET_ACCESS_KEY=...
-  export AWS_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
-  bash scripts/restore.sh \
-      s3://weddly-backups/prod/weddly-20260509T030000Z.db.age \
-      /tmp/restored.db
+  export OFFSITE_BACKUP_ENCRYPTION_KEYS='v1:<64 hex characters>'
+  cd backend
+  bun run scripts/decrypt-backup.ts \
+      /path/to/weddly-20260813T030000Z.db.aes256gcm /tmp/restored.db
   sqlite3 /tmp/restored.db 'SELECT count(*) FROM users;'
   ```
 
@@ -95,18 +89,30 @@ Alternative: GitHub Actions scheduled workflow that SSHes into Railway and trigg
 
 ## D. Legal review (1–2 weeks calendar time, blocks public launch)
 
-- [ ] Hand `legal/PRIVACY.md`, `legal/TERMS.md`, `legal/IMPRINT.md` to a Hungarian lawyer (privacy + e-commerce specialist). They review GDPR, ÁSZF, fogyasztóvédelem.
-- [ ] Replace every `{{PLACEHOLDER}}` once the lawyer's edits are in.
-- [ ] Add `/privacy`, `/terms`, `/imprint` routes in `frontend/src/App.tsx` rendering the final docs.
-- [ ] Link them from the landing-page footer + auth-page footers + Settings.
-- [ ] Decide on cookie banner — Plausible is cookieless (no banner needed legally) but HU users expect one. Skip for v1 if Plausible-only.
+- [ ] Hand the rendered `/privacy`, `/terms`, `/vendor-terms` and `/imprint`
+  pages in every live locale to Hungarian/EU counsel. The `legal/*.md` files
+  point to those served canonical documents and are not independent drafts.
+- [ ] Record counsel-approved exact document versions and archive the rendered
+  text accepted by each user and at each paid checkout.
+- [ ] Implement and test exact-version, point-of-purchase terms acceptance for
+  couple, planner and vendor recurring Checkout. Until then these products are
+  code-gated as `PAID_CHECKOUT_TERMS_ACCEPTANCE` missing and cannot be launched.
+- [x] Legal routes are linked from public and account surfaces.
+- [x] Cookiebot is the sole CMP; optional analytics is category-gated and a
+  permanent cookie-settings control permits withdrawal.
+- [ ] Capture reject, accept-by-category and withdrawal network/storage evidence
+  against the production deployment.
 
 ## E. Content / marketing (a couple of evenings)
 
 - [ ] Have a native HU speaker review every string in `frontend/src/locales/hu.ts`. Auto-generated translations kill trust on weddings.
-- [ ] Design an OG image (1200×630, JPG) — couple silhouette + "Weddly" wordmark works. Drop into `frontend/public/og.jpg`. Add `<meta property="og:image" content="/og.jpg" />` to `frontend/index.html`.
-- [ ] Add `apple-touch-icon-180.png` (180×180 PNG) to `frontend/public/`. Add the corresponding `<link rel="apple-touch-icon">` in `index.html`.
-- [ ] Update `frontend/public/sitemap.xml` to use the absolute domain (`https://weddly.hu/`).
+- [x] The 1200×630 brand share card is `frontend/public/og.png`; static and
+  server-rendered pages publish its absolute URL, dimensions and alt text.
+- [x] `frontend/public/logo.png` is a 512×512 touch icon and is linked from
+  `frontend/index.html`; PWA-specific sizes remain in the web manifest.
+- [x] `/sitemap.xml` is generated by the backend from the canonical-host config,
+  localized route table, published blog posts and eligible directory listings;
+  there is intentionally no stale static sitemap to edit.
 - [ ] Edit landing copy with your real beta-pricing message. Confirm the FAQ answers.
 
 ## F. QA before traffic (1 day)
@@ -135,9 +141,10 @@ Alternative: GitHub Actions scheduled workflow that SSHes into Railway and trigg
 - [ ] Make the live preflight a deployment gate and run it on a daily monitor.
   Alert on a disabled/wrong Price, unavailable charges, or webhook drift; the
   admin launch check is intentionally not a substitute for ongoing monitoring.
-- [ ] Launch live products in this order: guest-page add-on, film, couple,
-  planner, vendor. Use a real low-value transaction for each, refund it, and
-  confirm the refund/webhook is recorded before launching the next product.
+- [ ] Launch live products in this order: guest-page add-on and film first;
+  couple, planner and vendor only after the recurring-checkout acceptance gate
+  above is implemented. Use a real low-value transaction for each, refund it,
+  and confirm the refund/webhook is recorded before launching the next product.
 - [ ] Enable the global paid-access paywall only after couple, planner and
   vendor subscriptions have passed their live checkout + recovery drill.
 
@@ -162,6 +169,7 @@ Alternative: GitHub Actions scheduled workflow that SSHes into Railway and trigg
 - Don't expose every Stripe flow at once. Configure and verify each product,
   then launch it independently from Admin → Financial planner. Start with the
   low-risk one-off add-on and film flows; keep vendor deferred billing for last.
-- Don't add Google Analytics or any analytics SDK that touches PII. Plausible only.
+- Don't enable analytics that touches PII. Keep every non-essential provider
+  behind Cookiebot consent and keep the privacy/cookie declarations current.
 - Don't run the backup script on top of the live DB without `.backup` (a plain `cp` against a WAL'd DB will produce a corrupt copy).
 - Don't bypass `--no-verify` to push past failing hooks. If a hook fails, fix it.

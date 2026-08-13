@@ -44,9 +44,9 @@ function corsHeaders(origin: string | null): Record<string, string> {
     origin &&
     (CORS_ALLOWED_ORIGINS.has(origin) || (!IS_PROD && origin.startsWith("http://localhost")))
       ? origin
-      : CONFIG.frontendBaseUrl;
+      : null;
   return {
-    "Access-Control-Allow-Origin": allow,
+    ...(allow ? { "Access-Control-Allow-Origin": allow } : {}),
     "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
     "Access-Control-Allow-Headers":
       "Authorization, Content-Type, x-test-client-ip, X-Weddly-Device, X-Visitor-Token",

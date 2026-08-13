@@ -52,7 +52,10 @@ CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,                                         -- random opaque id (24 bytes hex)
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   created_at INTEGER NOT NULL,
-  expires_at INTEGER NOT NULL
+  expires_at INTEGER NOT NULL,
+  authenticated_at INTEGER,                                    -- last primary-auth proof; never slides; legacy NULL fails closed
+  auth_method TEXT,                                            -- password | google | apple | totp | email_link | activation | demo
+  totp_counter INTEGER                                         -- last accepted TOTP time-step; replay guard
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 
@@ -633,6 +636,12 @@ CREATE TABLE IF NOT EXISTS content_notices (
   appealed_at INTEGER,
   appeal_decision TEXT,
   appeal_decided_at INTEGER,
+  affected_email TEXT,
+  affected_notified_at INTEGER,
+  affected_appeal_text TEXT,
+  affected_appealed_at INTEGER,
+  affected_appeal_decision TEXT,
+  affected_appeal_decided_at INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );

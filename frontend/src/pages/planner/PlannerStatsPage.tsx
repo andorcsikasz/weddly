@@ -60,7 +60,6 @@ function StatTile({
         {label}
         {help && (
           // Prevent the tooltip toggle from triggering an enclosing card link.
-          // biome-ignore lint/a11y/useKeyWithClickEvents: wrapper only cancels link nav; InfoHint owns focus/keys
           <span
             className="inline-flex"
             onClick={(e) => {
@@ -257,7 +256,6 @@ export default function PlannerStatsPage() {
             />
             {t("planner_stats.pending_title")}
             {/* Prevent the tooltip toggle from following the card link. */}
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: wrapper only cancels link nav; InfoHint owns focus/keys */}
             <span
               className="inline-flex"
               onClick={(e) => {

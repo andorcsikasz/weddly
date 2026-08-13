@@ -214,7 +214,6 @@ export function SeatingMap({
         .sort((a, b) => a - b)
         .join(",")
     : "";
-  // biome-ignore lint/correctness/useExhaustiveDependencies: aisleKey is the change signal
   useEffect(() => {
     setAisleDismissed(false);
   }, [aisleKey]);

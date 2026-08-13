@@ -47,7 +47,7 @@ function unverifiedUserWithSession(email: string): { token: string; userId: numb
     )
     .run(email.trim().toLowerCase(), "x", "Unverified", ts, ts);
   const userId = Number(info.lastInsertRowid);
-  return { token: issueSession(userId), userId };
+  return { token: issueSession(userId, "activation"), userId };
 }
 
 /** Make a fresh registered+verified user, accept the given invite on their

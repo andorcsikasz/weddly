@@ -939,7 +939,7 @@ describe("POST /api/auth/verify/request — resend", () => {
     // the row directly and hand it the session vendor-register would have issued
     // (that path, plus pre-split accounts, is who still reaches this endpoint).
     const userId = await createUnverifiedUser("resend-fresh@example.com", "supersafe123", "RF");
-    const token = issueSession(userId);
+    const token = issueSession(userId, "activation");
     await req("POST", "/api/auth/verify/request", {}, { token });
     await req("POST", "/api/auth/verify/request", {}, { token });
     const rows = db

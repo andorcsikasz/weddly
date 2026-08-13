@@ -12,11 +12,9 @@
 //                                       (STRIPE_VENDOR_WEBHOOK_SECRET), mirrors
 //                                       the planner webhook.
 //
-// The 3rd free lead stamps billing_starts_at (start of next month) in the
-// domain layer; ensureVendorScheduledSubscription then creates the real Stripe
-// subscription with trial_end = that date, so the first charge lands exactly
-// when the copy promised. It's idempotent and re-attempted from the status
-// read, so a transient Stripe failure heals on the next billing-page visit.
+// Saving a card never creates a subscription. Once the included leads are
+// spent, only the separate subscription Checkout endpoint can create a paid
+// plan; this preserves an explicit payment-confirmation boundary.
 
 import type Stripe from "stripe";
 import {
@@ -52,9 +50,9 @@ import {
   type VendorSubRow,
 } from "../domain/vendor_billing";
 import { resolveVendorAccount } from "../domain/vendor_clients";
-import { log } from "../lib/logger";
 import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment_launch";
 import { type Ctx, HttpError, json, type Router } from "../lib/http";
+import { log } from "../lib/logger";
 
 /** The vendor's pinned display currency (fallback: owner locale). */
 function vendorCurrency(sub: VendorSubRow | null, ownerUserId: number): Currency {
@@ -101,81 +99,6 @@ async function ensureStripeCustomer(vendorAccountId: number): Promise<string> {
   return customer.id;
 }
 
-/** Create the scheduled Stripe subscription once the free leads are spent:
- *  billing_starts_at is stamped, a card is on file, and no subscription exists
- *  yet. trial_end = billing_starts_at makes Stripe charge exactly on the
- *  promised "next month" date. Idempotent; failures are logged and retried on
- *  the next billing status read. */
-export async function ensureVendorScheduledSubscription(vendorAccountId: number): Promise<void> {
-  if (!paymentProductAvailable("vendor_billing")) return;
-  const sub = getVendorSub(vendorAccountId);
-  if (
-    !sub ||
-    sub.subscription_status !== "lead_window" ||
-    sub.billing_starts_at === null ||
-    sub.stripe_subscription_id !== null ||
-    sub.card_on_file !== 1
-  ) {
-    return;
-  }
-  try {
-    const customerId = sub.stripe_customer_id ?? (await ensureStripeCustomer(vendorAccountId));
-    const currency = vendorCurrency(sub, getVendorAccountById(vendorAccountId)?.owner_user_id ?? 0);
-    // Recover a subscription whose successful create response was lost before
-    // the local id could be persisted. This remains useful after Stripe's
-    // idempotency-key retention window expires.
-    const remote = await stripe().subscriptions.list({
-      customer: customerId,
-      status: "all",
-      limit: 100,
-    });
-    const existing = remote.data.find(
-      (candidate) =>
-        candidate.metadata.vendor_account_id === String(vendorAccountId) &&
-        candidate.metadata.billing_starts_at === String(sub.billing_starts_at) &&
-        candidate.status !== "canceled" &&
-        candidate.status !== "incomplete_expired",
-    );
-    if (existing) {
-      applyVendorSubscriptionState(vendorAccountId, {
-        subscriptionId: existing.id,
-        stripeStatus: existing.status,
-        currentPeriodEnd: periodEndMs(existing),
-      });
-      return;
-    }
-    const created = await stripe().subscriptions.create(
-      {
-        customer: customerId,
-        items: [{ price: vendorPriceId(currency), quantity: 1 }],
-        // Persisted when the last free lead lands, including the minimum
-        // one-hour Stripe lead time. Retries therefore send identical params
-        // with the deterministic idempotency key below.
-        trial_end: Math.floor(sub.billing_starts_at / 1000),
-        metadata: {
-          vendor_account_id: String(vendorAccountId),
-          billing_starts_at: String(sub.billing_starts_at),
-        },
-      },
-      {
-        // Concurrent inquiry/status requests converge on the same Stripe
-        // subscription even before either request persists the returned id.
-        idempotencyKey: `vendor-scheduled-${vendorAccountId}-${sub.billing_starts_at}`,
-      },
-    );
-    applyVendorSubscriptionState(vendorAccountId, {
-      subscriptionId: created.id,
-      stripeStatus: created.status,
-      currentPeriodEnd: periodEndMs(created),
-    });
-  } catch (err) {
-    log.warn("vendor_billing.schedule_subscription_failed", {
-      vendorAccountId,
-      error: err instanceof Error ? err.message : String(err),
-    });
-  }
-}
-
 // ── GET /api/vendor/billing ─────────────────────────────────────────────────
 /** A vendor with no sub row yet (claim-flow account, pre-billing) is FREE and
  *  unentitled, deliberately NOT lazily granted, so reading this page never
@@ -199,10 +122,8 @@ function noSubBilling(currency: Currency): VendorBilling {
   };
 }
 
-async function handleGetBilling(ctx: Ctx): Promise<Response> {
+function handleGetBilling(ctx: Ctx): Response {
   const account = resolveVendorAccount(ctx);
-  // Retry seam: heal a missed/failed scheduled-subscription creation.
-  await ensureVendorScheduledSubscription(account.id);
   const fresh = getVendorSub(account.id);
   const currency = vendorCurrency(fresh, account.owner_user_id);
   const billing: VendorBilling = fresh ? toVendorBilling(fresh) : noSubBilling(currency);

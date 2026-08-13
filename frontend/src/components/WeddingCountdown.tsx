@@ -47,7 +47,6 @@ function CountdownNum({
       style={{ ...style, width: `${cells * 0.62}em` }}
     >
       {text.split("").map((ch, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: fixed positional digit cells
         <span key={i} className="inline-block text-center" style={{ width: "0.62em" }}>
           {ch}
         </span>

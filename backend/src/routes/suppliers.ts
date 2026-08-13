@@ -52,7 +52,7 @@ import { maskAddressForPublic } from "../domain/contact_mask";
 import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
 import { getAvailability, isIsoDate, listingIdsUnavailableOn } from "../domain/supplier_bookings";
-import { isAdminEmail } from "../domain/users";
+import { isAdminEmail, requireAdmin } from "../domain/users";
 import { completeListingIds } from "../domain/vendor_clients";
 import { db } from "../db";
 import { haversineKm } from "../lib/geo";
@@ -648,6 +648,7 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
     | { email: string }
     | undefined;
   const viewerIsAdmin = userRow ? isAdminEmail(userRow.email) : false;
+  if (viewerIsAdmin) requireAdmin(ctx);
 
   const payload = buildSupplierDetail(supplierId, {
     viewerUserId: userId,

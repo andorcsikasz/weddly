@@ -487,17 +487,14 @@ export default function AdminUsersPage() {
     () => (searchQuery === "" ? realCouples : realCouples.filter(coupleMatches)),
     // coupleMatches closes over searchQuery + userById; both are deps already
     // captured by the realCouples + searchQuery deps.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [realCouples, searchQuery, userById],
   );
   const filteredBetaCouples = useMemo(
     () => (searchQuery === "" ? betaCouples : betaCouples.filter(coupleMatches)),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [betaCouples, searchQuery, userById],
   );
   const filteredFlaggedCouples = useMemo(
     () => (searchQuery === "" ? flaggedCouples : flaggedCouples.filter(coupleMatches)),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [flaggedCouples, searchQuery, userById],
   );
   // Owner groups split into pairs (primary has both partners) vs solo (primary
@@ -532,7 +529,6 @@ export default function AdminUsersPage() {
   );
   const filteredOrphans = useMemo(
     () => (searchQuery === "" ? orphans : orphans.filter(orphanMatches)),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [orphans, searchQuery],
   );
   // Demo accounts are the only place a demo vendor/planner is listed (they're
@@ -541,17 +537,14 @@ export default function AdminUsersPage() {
   // would turn up nothing.
   const filteredDemoCouples = useMemo(
     () => (searchQuery === "" ? demoCouples : demoCouples.filter(coupleMatches)),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [demoCouples, searchQuery, userById],
   );
   const filteredDemoVendors = useMemo(
     () => (searchQuery === "" ? demoVendors : demoVendors.filter(orphanMatches)),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [demoVendors, searchQuery],
   );
   const filteredDemoPlanners = useMemo(
     () => (searchQuery === "" ? demoPlanners : demoPlanners.filter(orphanMatches)),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [demoPlanners, searchQuery],
   );
   const filteredDemoTotal =

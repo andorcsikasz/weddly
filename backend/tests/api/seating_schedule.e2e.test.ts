@@ -326,7 +326,7 @@ describe("seating tables: requireVerifiedAuth", () => {
          VALUES (?, ?, ?, 'active', 'owner', 0, 1, ?, ?)`,
       )
       .run("st-unv@weddly.test", "x", "Unv", ts, ts);
-    const unverifiedToken = issueSession(Number(info.lastInsertRowid));
+    const unverifiedToken = issueSession(Number(info.lastInsertRowid), "activation");
     const r = await req<{ detail?: { code?: string } }>(
       "POST",
       "/api/seating/tables",

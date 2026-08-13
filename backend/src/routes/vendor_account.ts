@@ -14,9 +14,10 @@
 // vendor can already fix a typo in their company data.
 
 import type { VendorAccountEditInput, VendorDataExport } from "@shared/listings";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { addAuditLog } from "../lib/audit";
-import { now } from "../db";
+import { db, now } from "../db";
 import { listListingsByVendorAccountId } from "../domain/listings";
 import { listBlockedDates } from "../domain/supplier_bookings";
 import {
@@ -27,6 +28,75 @@ import {
 import { getVendorSub, toVendorBilling } from "../domain/vendor_billing";
 import { listVendorClientDetails, resolveVendorAccount } from "../domain/vendor_clients";
 import { getUserById } from "../domain/users";
+import { recordConsent } from "../domain/consents";
+
+interface LegalAcceptanceBody {
+  privacy_version?: unknown;
+  vendor_terms_version?: unknown;
+  highlighted_terms_accepted?: unknown;
+}
+
+function hasCurrentVendorAcceptance(userId: number): boolean {
+  const rows = db
+    .prepare(
+      `SELECT document FROM user_consents
+        WHERE subject_user_id = ? AND subject_kind = 'user' AND version = ?
+          AND document IN ('vendor_terms', 'vendor_terms_highlighted')`,
+    )
+    .all(userId, VENDOR_TERMS_VERSION) as Array<{ document: string }>;
+  const docs = new Set(rows.map((row) => row.document));
+  return docs.has("vendor_terms") && docs.has("vendor_terms_highlighted");
+}
+
+function handleLegalStatus(ctx: Ctx): Response {
+  const account = resolveVendorAccount(ctx);
+  return json({
+    accepted: hasCurrentVendorAcceptance(account.owner_user_id),
+    privacy_version: PRIVACY_VERSION,
+    vendor_terms_version: VENDOR_TERMS_VERSION,
+  });
+}
+
+async function handleAcceptLegal(ctx: Ctx): Promise<Response> {
+  const account = resolveVendorAccount(ctx);
+  const body = await readJson<LegalAcceptanceBody>(ctx.req);
+  if (
+    body.privacy_version !== PRIVACY_VERSION ||
+    body.vendor_terms_version !== VENDOR_TERMS_VERSION
+  ) {
+    throw new HttpError(409, "Legal documents changed; refresh and review the current version", {
+      code: "legal_version_stale",
+    });
+  }
+  if (body.highlighted_terms_accepted !== true) {
+    throw new HttpError(400, "The highlighted vendor clauses must be expressly accepted");
+  }
+  if (!hasCurrentVendorAcceptance(account.owner_user_id)) {
+    const evidence = {
+      subjectUserId: account.owner_user_id,
+      subjectKind: "user" as const,
+      subjectRef: null,
+      ip: ctx.clientIp,
+      userAgent: ctx.req.headers.get("user-agent"),
+    };
+    recordConsent({ ...evidence, document: "privacy", version: PRIVACY_VERSION });
+    recordConsent({ ...evidence, document: "vendor_terms", version: VENDOR_TERMS_VERSION });
+    recordConsent({
+      ...evidence,
+      document: "vendor_terms_highlighted",
+      version: VENDOR_TERMS_VERSION,
+    });
+    addAuditLog({
+      actor_user_id: account.owner_user_id,
+      couple_id: null,
+      action: "vendor.legal_acceptance",
+      target_kind: "vendor_account",
+      target_id: account.id,
+      after: { privacy_version: PRIVACY_VERSION, vendor_terms_version: VENDOR_TERMS_VERSION },
+    });
+  }
+  return json({ accepted: true });
+}
 
 // Mirrors the listing editor's limits where the same kind of field exists.
 const MAX_DISPLAY_NAME_LEN = 200;
@@ -149,6 +219,8 @@ async function handleExport(ctx: Ctx): Promise<Response> {
 }
 
 export function registerVendorAccountRoutes(router: Router) {
-  router.patch("/api/vendor/account", handlePatchAccount);
-  router.get("/api/vendor/export", handleExport);
+  router.patch("/api/vendor/account", handlePatchAccount, true);
+  router.get("/api/vendor/export", handleExport, true);
+  router.get("/api/vendor/legal-status", handleLegalStatus, true);
+  router.post("/api/vendor/legal-acceptance", handleAcceptLegal, true);
 }

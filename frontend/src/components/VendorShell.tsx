@@ -48,6 +48,7 @@ import {
   VENDOR_ACCOUNT_STALE_EVENT,
   VENDOR_STATS_STALE_EVENT,
   vendorBillingApi,
+  vendorAccountApi,
   vendorListingApi,
   vendorStatsApi,
 } from "../lib/endpoints";
@@ -577,6 +578,49 @@ export function VendorShell({ children }: { children: ReactNode }) {
   const { t } = useT();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [legalStatus, setLegalStatus] = useState<{
+    accepted: boolean;
+    privacy_version: string;
+    vendor_terms_version: string;
+  } | null>(null);
+  const [legalChecked, setLegalChecked] = useState(false);
+  const [legalHighlighted, setLegalHighlighted] = useState(false);
+  const [legalBusy, setLegalBusy] = useState(false);
+  const [legalFailed, setLegalFailed] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    vendorAccountApi
+      .legalStatus()
+      .then((status) => {
+        if (!cancelled) setLegalStatus(status);
+      })
+      .catch(() => {
+        // Fail closed: an unknown status keeps the blocking review visible.
+        if (!cancelled)
+          setLegalStatus({ accepted: false, privacy_version: "", vendor_terms_version: "" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function acceptCurrentVendorTerms() {
+    if (!legalStatus || !legalChecked || !legalHighlighted) return;
+    setLegalBusy(true);
+    setLegalFailed(false);
+    try {
+      await vendorAccountApi.acceptLegal({
+        privacy_version: legalStatus.privacy_version,
+        vendor_terms_version: legalStatus.vendor_terms_version,
+        highlighted_terms_accepted: true,
+      });
+      setLegalStatus({ ...legalStatus, accepted: true });
+    } catch {
+      setLegalFailed(true);
+    } finally {
+      setLegalBusy(false);
+    }
+  }
   // Best-effort fetch of the vendor's business name for the header. A vendor
   // without a listing yet just sees the brand fallback — never blocks render.
   const [businessName, setBusinessName] = useState<string | null>(null);
@@ -1020,6 +1064,63 @@ export function VendorShell({ children }: { children: ReactNode }) {
         source="app"
         context={pathname}
       />
+      {legalStatus && !legalStatus.accepted && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-900/60 p-4 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="vendor-legal-title"
+            className="w-full max-w-lg rounded-2xl bg-paper-50 p-6 shadow-2xl dark:bg-umber-900"
+          >
+            <h2
+              id="vendor-legal-title"
+              className="font-grotesk text-xl font-semibold text-ink-900 dark:text-paper-50"
+            >
+              {t("vendor_register.legal_update_title")}
+            </h2>
+            <p className="mt-2 text-sm text-ink-600 dark:text-paper-300">
+              {t("vendor_register.legal_update_body")}
+            </p>
+            <label className="mt-5 flex items-start gap-3 text-sm text-ink-800 dark:text-paper-100">
+              <input
+                type="checkbox"
+                checked={legalChecked}
+                onChange={(e) => setLegalChecked(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                {t("vendor_register.legal_accept_prefix")}{" "}
+                <Link className="underline" to="/terms/vendor-subscription" target="_blank">
+                  {t("vendor_register.legal_accept_link")}
+                </Link>{" "}
+                {t("vendor_register.legal_accept_suffix")}
+              </span>
+            </label>
+            <label className="mt-3 flex items-start gap-3 text-sm text-ink-800 dark:text-paper-100">
+              <input
+                type="checkbox"
+                checked={legalHighlighted}
+                onChange={(e) => setLegalHighlighted(e.target.checked)}
+                className="mt-1"
+              />
+              <span>{t("vendor_register.highlighted_accept")}</span>
+            </label>
+            {legalFailed && (
+              <p className="mt-3 text-sm text-red-700">{t("common.error_generic")}</p>
+            )}
+            <button
+              type="button"
+              className="btn-primary mt-5 w-full"
+              disabled={
+                !legalChecked || !legalHighlighted || legalBusy || !legalStatus.vendor_terms_version
+              }
+              onClick={() => void acceptCurrentVendorTerms()}
+            >
+              {legalBusy ? t("common.loading") : t("vendor_register.legal_update_cta")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
