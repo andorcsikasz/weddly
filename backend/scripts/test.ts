@@ -15,6 +15,20 @@ const resourceHeavyTests = new Set([
   "tests/printed_cards_visual.test.ts",
   "tests/api/seating_schedule.e2e.test.ts",
 ]);
+const allocatedPorts = new Set<number>();
+
+function allocateTestPort(): number {
+  // Parallel files must never receive the same port from this launcher. Keep
+  // allocations for the entire run rather than returning a port to the pool:
+  // a stopped Bun server can still be winding down when the next file starts.
+  while (true) {
+    const port = 18_000 + (randomBytes(2).readUInt16BE(0) % 20_000);
+    if (!allocatedPorts.has(port)) {
+      allocatedPorts.add(port);
+      return port;
+    }
+  }
+}
 
 function testFiles(dir: string, prefix = "tests"): string[] {
   const files: string[] = [];
@@ -28,7 +42,7 @@ function testFiles(dir: string, prefix = "tests"): string[] {
 
 async function run(args: string[], honorOverrides: boolean): Promise<number> {
   const runDir = mkdtempSync(join(tmpdir(), "weddly-test-"));
-  const randomPort = 18_000 + (randomBytes(2).readUInt16BE(0) % 20_000);
+  const randomPort = allocateTestPort();
   const isolatedEnv = {
     ...process.env,
     BUN_TEST_PORT: (honorOverrides ? process.env.BUN_TEST_PORT : undefined) ?? String(randomPort),
