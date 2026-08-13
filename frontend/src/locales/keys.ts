@@ -10896,16 +10896,23 @@ export interface LocaleMessages {
     invited_physical: string;
     invited_both: string;
     not_invited: string;
+    /** `{count}` = guests with neither channel marked sent. */
+    not_invited_alert: string;
     rsvp_title: string;
     rsvp_yes: string;
     rsvp_no: string;
     rsvp_maybe: string;
     rsvp_pending: string;
-    col_name: string;
-    col_channel: string;
-    col_rsvp: string;
-    col_responded: string;
+    /** `{count}` = invited guests still on "pending". */
+    pending_alert: string;
+    filter_label: string;
+    filter_all: string;
+    filter_awaiting: string;
+    filter_responded: string;
+    search_placeholder: string;
+    search_label: string;
     table_empty: string;
+    list_empty_filtered: string;
     channel_online: string;
     channel_physical: string;
     responded_never: string;

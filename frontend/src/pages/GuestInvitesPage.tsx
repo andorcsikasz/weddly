@@ -7,12 +7,13 @@ import {
   CheckCheck,
   Clock3,
   Coins,
-  Handshake,
   Mail,
   Megaphone,
   Pencil,
+  Search,
   Send,
   Sparkles,
+  TriangleAlert,
   Users,
   X,
   type LucideIcon,
@@ -24,6 +25,7 @@ import type {
   GuestMessage,
   GuestMessageAudience,
   GuestMessageTemplate,
+  RsvpStatus,
 } from "@shared/types";
 import {
   type ConfirmOptions,
@@ -39,6 +41,22 @@ import { formatMoney, formatTimestamp } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 const AUDIENCES: GuestMessageAudience[] = ["all", "pending", "confirmed"];
+
+/** Where a guest sits in the invite pipeline: nobody has been told yet, they
+ *  were told and haven't answered, or they answered (yes/no/maybe all count —
+ *  a decline is still a decision, unlike "pending"). Drives both the filter
+ *  pills and the default sort, so the two can never disagree about what
+ *  "needs attention" means. */
+type GuestBucket = "not_invited" | "awaiting" | "responded";
+type StatusFilter = "all" | GuestBucket;
+const FILTERS: StatusFilter[] = ["all", "not_invited", "awaiting", "responded"];
+const BUCKET_ORDER: Record<GuestBucket, number> = { not_invited: 0, awaiting: 1, responded: 2 };
+
+function guestBucket(g: Guest): GuestBucket {
+  const invited = g.invited_online_at !== null || g.invited_physical_at !== null;
+  if (!invited) return "not_invited";
+  return g.rsvp_status === "pending" ? "awaiting" : "responded";
+}
 
 /** One glyph per audience, so the picker can be three small pills carrying the
  *  HEADCOUNT rather than three long labels that scroll off a narrow card. */
@@ -615,35 +633,104 @@ function PreWeddingCard({
   );
 }
 
-/** One compact stats row: group label + inline value/label pairs.
- *  Zero values render muted so the live numbers pop. */
-function StatRow({
+/** One KPI tile: group icon + label, the headline number, a quiet breakdown
+ *  line, and — only when something in this group actually needs the couple's
+ *  attention — a highlighted action line. This replaces a cramped inline stat
+ *  row with three tiles a CRM dashboard would recognise: what's the number,
+ *  what's it made of, and is there anything to do about it. */
+function KpiTile({
+  icon: Icon,
   label,
-  items,
+  value,
+  breakdown,
+  alert,
 }: {
+  icon: LucideIcon;
   label: string;
-  items: { label: string; value: number }[];
+  value: number;
+  breakdown: string;
+  alert?: string;
 }) {
   return (
-    <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 px-4 py-2.5">
-      <span className="w-24 shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-umber-500 dark:text-umber-400">
-        {label}
-      </span>
-      {items.map((it) => (
-        <span key={it.label} className="inline-flex items-baseline gap-1.5">
-          <span
-            className={`font-grotesk text-base font-semibold ${
-              it.value === 0
-                ? "text-umber-400 dark:text-umber-500"
-                : "text-umber-900 dark:text-paper-50"
-            }`}
-          >
-            {it.value}
-          </span>
-          <span className="text-xs text-umber-600 dark:text-umber-300">{it.label}</span>
+    <div className="rounded-xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
+      <div className="flex items-center gap-2">
+        <Icon
+          className="h-4 w-4 shrink-0 text-umber-500 dark:text-umber-300"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-umber-500 dark:text-umber-400">
+          {label}
         </span>
-      ))}
+      </div>
+      <p className="mt-2 font-grotesk text-3xl font-semibold leading-none text-umber-900 dark:text-paper-50">
+        {value}
+      </p>
+      <p className="mt-1.5 text-xs text-umber-600 dark:text-umber-300">{breakdown}</p>
+      {alert && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-blush-600 dark:text-blush-300">
+          <TriangleAlert size={13} aria-hidden="true" className="shrink-0" />
+          {alert}
+        </p>
+      )}
     </div>
+  );
+}
+
+/** RSVP as a coloured badge instead of plain text — colour + label together
+ *  (never colour alone), matching the badge language the guest list itself
+ *  uses. "Maybe" gets its own tone rather than sharing pending's, since a
+ *  declared "talán" is a different fact from silence. */
+function RsvpStatusBadge({ status }: { status: RsvpStatus }) {
+  const { t } = useT();
+  const cls =
+    status === "yes"
+      ? "border-sage-200 bg-sage-100 text-sage-700 dark:border-sage-400/30 dark:bg-sage-900/30 dark:text-sage-300"
+      : status === "no"
+        ? "border-blush-200 bg-blush-50 text-blush-700 dark:border-blush-400/30 dark:bg-blush-900/30 dark:text-blush-300"
+        : status === "maybe"
+          ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/30 dark:bg-amber-900/30 dark:text-amber-300"
+          : "border-dashed border-paper-300 bg-paper-100 text-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-400";
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium ${cls}`}
+    >
+      {t(`guest_invites.rsvp_${status}`)}
+    </span>
+  );
+}
+
+/** One invite channel, toggled by tapping it. A filled sage pill with a check
+ *  reads as "done" on sight; the label is always visible text, never an icon
+ *  standing alone for the channel — that ambiguity ("what does the handshake
+ *  mean?") is exactly what this replaces. */
+function ChannelChip({
+  label,
+  active,
+  guestName,
+  onToggle,
+}: {
+  label: string;
+  active: boolean;
+  guestName: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={`${guestName}: ${label}`}
+      title={label}
+      onClick={onToggle}
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+        active
+          ? "border-sage-300 bg-sage-100 text-sage-700 dark:border-sage-400/40 dark:bg-sage-900/30 dark:text-sage-300"
+          : "border-paper-300 bg-white text-umber-500 hover:border-umber-400 hover:text-umber-800 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-400 dark:hover:border-umber-500 dark:hover:text-umber-100"
+      }`}
+    >
+      {active && <Check size={11} aria-hidden="true" />}
+      {label}
+    </button>
   );
 }
 
@@ -715,6 +802,8 @@ export default function GuestInvitesPage() {
     let no = 0;
     let maybe = 0;
     let pending = 0;
+    let awaiting = 0;
+    let responded = 0;
     for (const g of eligible) {
       if (g.kind === "adult") adults += 1;
       else if (g.kind === "child") children += 1;
@@ -731,6 +820,10 @@ export default function GuestInvitesPage() {
       else if (g.rsvp_status === "no") no += 1;
       else if (g.rsvp_status === "maybe") maybe += 1;
       else pending += 1;
+
+      const bucket = guestBucket(g);
+      if (bucket === "awaiting") awaiting += 1;
+      else if (bucket === "responded") responded += 1;
     }
     return {
       total: eligible.length,
@@ -745,8 +838,37 @@ export default function GuestInvitesPage() {
       no,
       maybe,
       pending,
+      awaiting,
+      responded,
     };
   }, [eligible]);
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [query, setQuery] = useState("");
+
+  const filterCount: Record<StatusFilter, number> = {
+    all: stats.total,
+    not_invited: stats.notInvited,
+    awaiting: stats.awaiting,
+    responded: stats.responded,
+  };
+
+  /** Filtered by pipeline bucket + name search, then sorted actionable-first
+   *  (not yet invited, then awaiting reply, then responded) so the guests who
+   *  need something from the couple surface at the top of "Mind" without
+   *  requiring a filter tap. */
+  const visibleGuests = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = eligible.filter((g) => {
+      if (statusFilter !== "all" && guestBucket(g) !== statusFilter) return false;
+      if (q && !g.full_name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    return [...filtered].sort((a, b) => {
+      const d = BUCKET_ORDER[guestBucket(a)] - BUCKET_ORDER[guestBucket(b)];
+      return d !== 0 ? d : a.full_name.localeCompare(b.full_name, locale);
+    });
+  }, [eligible, statusFilter, query, locale]);
 
   async function toggleChannel(guest: Guest, channel: "online" | "physical") {
     try {
@@ -823,100 +945,123 @@ export default function GuestInvitesPage() {
                 {t("guest_invites.monitoring_title")}
               </h2>
 
-              <div className="mt-3 divide-y divide-paper-200 rounded-xl border border-paper-300 bg-paper-50 dark:divide-umber-800 dark:border-umber-700 dark:bg-umber-900">
-                <StatRow
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <KpiTile
+                  icon={Users}
                   label={t("guest_invites.guests_section_title")}
-                  items={[
-                    { label: t("guest_invites.stat_total"), value: stats.total },
-                    { label: t("guest_invites.stat_adults"), value: stats.adults },
-                    { label: t("guest_invites.stat_children"), value: stats.children },
-                    { label: t("guest_invites.stat_babies"), value: stats.babies },
-                  ]}
+                  value={stats.total}
+                  breakdown={`${stats.adults} ${t("guest_invites.stat_adults").toLowerCase()} · ${stats.children} ${t("guest_invites.stat_children").toLowerCase()} · ${stats.babies} ${t("guest_invites.stat_babies").toLowerCase()}`}
                 />
-                <StatRow
+                <KpiTile
+                  icon={Send}
                   label={t("guest_invites.channel_section_title")}
-                  items={[
-                    { label: t("guest_invites.invited_online"), value: stats.online },
-                    { label: t("guest_invites.invited_physical"), value: stats.physical },
-                    { label: t("guest_invites.invited_both"), value: stats.both },
-                    { label: t("guest_invites.not_invited"), value: stats.notInvited },
-                  ]}
+                  value={stats.total - stats.notInvited}
+                  breakdown={`${stats.online} ${t("guest_invites.invited_online").toLowerCase()} · ${stats.physical} ${t("guest_invites.invited_physical").toLowerCase()}`}
+                  alert={
+                    stats.notInvited > 0
+                      ? t("guest_invites.not_invited_alert", { count: stats.notInvited })
+                      : undefined
+                  }
                 />
-                <StatRow
+                <KpiTile
+                  icon={CheckCheck}
                   label={t("guest_invites.rsvp_title")}
-                  items={[
-                    { label: t("guest_invites.rsvp_yes"), value: stats.yes },
-                    { label: t("guest_invites.rsvp_no"), value: stats.no },
-                    { label: t("guest_invites.rsvp_maybe"), value: stats.maybe },
-                    { label: t("guest_invites.rsvp_pending"), value: stats.pending },
-                  ]}
+                  value={stats.yes}
+                  breakdown={`${stats.no} ${t("guest_invites.rsvp_no").toLowerCase()} · ${stats.maybe} ${t("guest_invites.rsvp_maybe").toLowerCase()}`}
+                  alert={
+                    stats.pending > 0
+                      ? t("guest_invites.pending_alert", { count: stats.pending })
+                      : undefined
+                  }
                 />
               </div>
 
-              {/* Per-guest table */}
-              <div className="mt-4 overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
-                <div className="hidden grid-cols-12 gap-2 border-b border-paper-300 bg-paper-100 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-umber-500 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-400 sm:grid">
-                  <span className="col-span-4">{t("guest_invites.col_name")}</span>
-                  <span className="col-span-4">{t("guest_invites.col_channel")}</span>
-                  <span className="col-span-2">{t("guest_invites.col_rsvp")}</span>
-                  <span className="col-span-2">{t("guest_invites.col_responded")}</span>
+              {/* Filter + search — a pipeline the couple can actually work
+                  from, not just a number. */}
+              {eligible.length > 0 && (
+                <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                  <SegmentedControl
+                    size="sm"
+                    ariaLabel={t("guest_invites.filter_label")}
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={FILTERS.map((f) => ({
+                      value: f,
+                      label: `${t(f === "not_invited" ? "guest_invites.not_invited" : `guest_invites.filter_${f}`)} ${filterCount[f]}`,
+                    }))}
+                  />
+                  <div className="relative w-full sm:w-56">
+                    <Search
+                      size={14}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-umber-400"
+                    />
+                    <input
+                      type="search"
+                      className="input h-9 py-1 pl-9"
+                      placeholder={t("guest_invites.search_placeholder")}
+                      aria-label={t("guest_invites.search_label")}
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                  </div>
                 </div>
+              )}
 
+              {/* Per-guest list */}
+              <div className="mt-3 overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
                 {eligible.length === 0 ? (
                   <p className="px-4 py-8 text-center text-sm text-umber-500 dark:text-umber-400">
                     {t("guest_invites.table_empty")}
                   </p>
+                ) : visibleGuests.length === 0 ? (
+                  <p className="px-4 py-8 text-center text-sm text-umber-500 dark:text-umber-400">
+                    {t("guest_invites.list_empty_filtered")}
+                  </p>
                 ) : (
                   <ul className="divide-y divide-paper-200 dark:divide-umber-800">
-                    {eligible.map((g) => {
+                    {visibleGuests.map((g) => {
                       const onlineOn = g.invited_online_at !== null;
                       const physicalOn = g.invited_physical_at !== null;
+                      const initial = g.full_name.trim().charAt(0).toUpperCase() || "?";
                       return (
                         <li
                           key={g.id}
-                          className="grid grid-cols-1 gap-2 px-4 py-2.5 sm:grid-cols-12 sm:items-center"
+                          className="flex flex-col gap-2.5 px-4 py-3 sm:flex-row sm:items-center sm:gap-4"
                         >
-                          <span className="font-medium text-umber-900 dark:text-paper-50 sm:col-span-4">
-                            {g.full_name}
-                          </span>
-                          <span className="flex gap-2 sm:col-span-4">
-                            <button
-                              type="button"
-                              aria-pressed={onlineOn}
-                              aria-label={`${g.full_name}: ${t("guest_invites.channel_online")}`}
-                              title={t("guest_invites.channel_online")}
-                              onClick={() => void toggleChannel(g, "online")}
-                              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
-                                onlineOn
-                                  ? "border-umber-700 bg-umber-700 text-paper-50 dark:border-umber-400 dark:bg-umber-400 dark:text-umber-900"
-                                  : "border-paper-300 text-umber-400 hover:border-umber-400 hover:text-umber-700 dark:border-umber-600 dark:text-umber-500 dark:hover:border-umber-400 dark:hover:text-umber-200"
-                              }`}
+                          <div className="flex min-w-0 flex-1 items-center gap-3">
+                            <span
+                              aria-hidden="true"
+                              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-paper-200 font-grotesk text-sm font-semibold text-umber-700 dark:bg-umber-800 dark:text-umber-200"
                             >
-                              <Mail size={15} aria-hidden="true" />
-                            </button>
-                            <button
-                              type="button"
-                              aria-pressed={physicalOn}
-                              aria-label={`${g.full_name}: ${t("guest_invites.channel_physical")}`}
-                              title={t("guest_invites.channel_physical")}
-                              onClick={() => void toggleChannel(g, "physical")}
-                              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
-                                physicalOn
-                                  ? "border-umber-700 bg-umber-700 text-paper-50 dark:border-umber-400 dark:bg-umber-400 dark:text-umber-900"
-                                  : "border-paper-300 text-umber-400 hover:border-umber-400 hover:text-umber-700 dark:border-umber-600 dark:text-umber-500 dark:hover:border-umber-400 dark:hover:text-umber-200"
-                              }`}
-                            >
-                              <Handshake size={15} aria-hidden="true" />
-                            </button>
-                          </span>
-                          <span className="text-sm text-umber-700 dark:text-umber-200 sm:col-span-2">
-                            {t(`guest_invites.rsvp_${g.rsvp_status}`)}
-                          </span>
-                          <span className="text-xs text-umber-500 dark:text-umber-400 sm:col-span-2">
-                            {g.rsvp_responded_at !== null
-                              ? formatTimestamp(g.rsvp_responded_at, locale)
-                              : t("guest_invites.responded_never")}
-                          </span>
+                              {initial}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-umber-900 dark:text-paper-50">
+                                {g.full_name}
+                              </p>
+                              <p className="text-xs text-umber-500 dark:text-umber-400">
+                                {g.rsvp_responded_at !== null
+                                  ? formatTimestamp(g.rsvp_responded_at, locale)
+                                  : t("guest_invites.responded_never")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                            <ChannelChip
+                              label={t("guest_invites.channel_online")}
+                              active={onlineOn}
+                              guestName={g.full_name}
+                              onToggle={() => void toggleChannel(g, "online")}
+                            />
+                            <ChannelChip
+                              label={t("guest_invites.channel_physical")}
+                              active={physicalOn}
+                              guestName={g.full_name}
+                              onToggle={() => void toggleChannel(g, "physical")}
+                            />
+                            <RsvpStatusBadge status={g.rsvp_status} />
+                          </div>
                         </li>
                       );
                     })}
