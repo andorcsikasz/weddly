@@ -258,6 +258,10 @@ interface MemberDraft {
    *  non-null when the couple published something to choose between. */
   accommodation_id: number | null;
   song_request: string;
+  /** Contact email so the couple can send this guest updates after the RSVP
+   *  is in. Seeded from whatever the server already had (self-reported on a
+   *  prior visit, or entered by the couple in the admin guest list). */
+  email: string;
   /** Per-member attached add-ons. Chip on ↔ entry exists. Name is required
    *  on submit when the chip is on. */
   plus_one: AttachedDraft | null;
@@ -287,6 +291,7 @@ function fromMember(m: HouseholdMember, hostsPlusOne = false): MemberDraft {
     accommodation_needed: m.accommodation_needed,
     accommodation_id: m.accommodation_id,
     song_request: m.song_request ?? "",
+    email: m.email ?? "",
     plus_one: null,
     baby: null,
   };
@@ -304,6 +309,7 @@ function toSubmit(d: MemberDraft): CheckinMemberSubmit {
     accommodation_needed: d.accommodation_needed,
     accommodation_id: d.accommodation_id,
     song_request: d.song_request.trim() ? d.song_request.trim() : null,
+    email: d.email.trim() ? d.email.trim() : null,
   };
 }
 
@@ -317,6 +323,7 @@ function hasYesData(d: MemberDraft): boolean {
       d.accommodation_needed ||
       d.accommodation_id !== null ||
       d.song_request.trim() ||
+      d.email.trim() ||
       d.plus_one ||
       d.baby,
   );
@@ -1065,6 +1072,25 @@ export function HouseholdRsvpForm({
                         </div>
                       </div>
                     )}
+                    <div>
+                      <label className="field-label" htmlFor={`member-email-${d.id}`}>
+                        {t("rsvp.checkin_member_email")}
+                      </label>
+                      <input
+                        id={`member-email-${d.id}`}
+                        className="input"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        maxLength={254}
+                        value={d.email}
+                        onChange={(e) => updateMember(d.id, { email: e.target.value })}
+                      />
+                      <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                        {t("rsvp.checkin_member_email_help")}
+                      </p>
+                    </div>
+
                     <div>
                       <label className="field-label">{t("rsvp.checkin_member_song")}</label>
                       <input

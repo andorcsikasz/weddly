@@ -1495,6 +1495,11 @@ export interface HouseholdMember {
    *  checkbox leaves it null and the couple assigns rooms afterwards. */
   accommodation_id: number | null;
   song_request: string | null;
+  /** Guest-supplied contact email, echoed back so the RSVP form pre-fills what
+   *  this member already gave (or the couple entered from the admin side)
+   *  instead of asking again on every visit. Lets the couple reach this guest
+   *  with updates after the RSVP is in. */
+  email: string | null;
   /** True when this member is themselves a +1 brought by another member. The
    *  check-in form hides the "+1" chip on these rows so a +1 can't carry its
    *  own +1. */
@@ -1578,6 +1583,10 @@ export interface CheckinMemberSubmit {
    *  the form. Picking one implies `accommodation_needed`. */
   accommodation_id?: number | null;
   song_request: string | null;
+  /** Optional contact email so the couple can reach this guest with wedding
+   *  updates after they've RSVP'd. Stored on the guest's own `guests.email`
+   *  column — the same one the couple can set from the admin guest list. */
+  email: string | null;
 }
 
 export interface CheckinAddedMember {

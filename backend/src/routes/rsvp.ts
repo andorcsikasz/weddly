@@ -201,6 +201,7 @@ interface SubmitMemberRaw {
   accommodation_needed?: unknown;
   accommodation_id?: unknown;
   song_request?: unknown;
+  email?: unknown;
 }
 
 function strOrNull(raw: unknown, max: number): string | null {
@@ -208,6 +209,20 @@ function strOrNull(raw: unknown, max: number): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   if (trimmed.length > max) return trimmed.slice(0, max);
+  return trimmed;
+}
+
+/** Same "degrade to null" contract as `resolveMeal` above: an unauthenticated
+ *  guest typing garbage into the email box shouldn't 400 the whole submit, it
+ *  should just not be stored. RFC 5321's 254-char address ceiling, not the
+ *  320 used elsewhere for the admin-entered guest email — this one is
+ *  self-reported and unverified, so the tighter cap costs nothing real. */
+function emailOrNull(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed.length > 254) return null;
+  const at = trimmed.indexOf("@");
+  if (at < 1 || trimmed.indexOf(".", at) === -1) return null;
   return trimmed;
 }
 
@@ -257,6 +272,7 @@ function parseMember(raw: SubmitMemberRaw, coupleId: number, menu: MealMenu): Ch
     accommodation_id: accommodationId,
     dietary: strOrNull(raw.dietary, 500),
     song_request: strOrNull(raw.song_request, 500),
+    email: emailOrNull(raw.email),
   };
 }
 
@@ -284,6 +300,7 @@ function persistCheckin(
         accommodation_needed: m.accommodation_needed,
         accommodation_id: m.accommodation_id ?? null,
         song_request: m.song_request,
+        email: m.email,
       });
     }
   });
@@ -771,6 +788,10 @@ async function handleLegacySubmit(ctx: Ctx): Promise<Response> {
     dietary: strOrNull(body.dietary, 500),
     accommodation_needed: Boolean(body.accommodation_needed),
     song_request: strOrNull(body.song_request, 500),
+    // This legacy body shape carries no email field — echo back whatever the
+    // guest already had rather than wiping it, matching `applyMemberCheckin`'s
+    // always-overwrite contract.
+    email: guest.email,
   };
   if (member.dietary && body.health_data_consent !== true) {
     throw new HttpError(
@@ -822,6 +843,7 @@ async function handleLegacySubmit(ctx: Ctx): Promise<Response> {
         dietary: null,
         accommodation_needed: false,
         song_request: null,
+        email: sibling.email,
       });
     }
   }

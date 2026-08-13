@@ -314,6 +314,7 @@ export function toHouseholdMember(row: GuestRow): HouseholdMember {
     accommodation_needed: g.accommodation_needed,
     accommodation_id: g.accommodation_id,
     song_request: g.song_request,
+    email: g.email,
     is_plus_one: g.is_plus_one,
     plus_one_of: g.plus_one_of,
   };
@@ -335,13 +336,17 @@ export function applyMemberCheckin(
      *  selected" is an answer. */
     accommodation_id: number | null;
     song_request: string | null;
+    /** Guest-supplied contact email. Always sent by the current form (seeded
+     *  from what the server already had), so this is a normal overwrite —
+     *  same round-trip contract as `song_request` above. */
+    email: string | null;
   },
 ): void {
   const ts = now();
   db.prepare(
     `UPDATE guests SET
         rsvp_status = ?, meal_choice = ?, dietary = ?,
-        accommodation_needed = ?, accommodation_id = ?, song_request = ?,
+        accommodation_needed = ?, accommodation_id = ?, song_request = ?, email = ?,
         rsvp_responded_at = ?, updated_at = ?
        WHERE id = ? AND household_id = ?`,
   ).run(
@@ -351,6 +356,7 @@ export function applyMemberCheckin(
     patch.accommodation_needed ? 1 : 0,
     patch.accommodation_id,
     patch.song_request,
+    patch.email,
     ts,
     ts,
     guestId,
