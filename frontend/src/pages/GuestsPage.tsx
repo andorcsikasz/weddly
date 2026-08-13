@@ -5357,6 +5357,13 @@ function GuestFilterBar({
   // Auto-open the panel when a filter is already applied (e.g. arriving via a
   // shared URL) so the active selection is visible, not hidden behind a chip.
   const [open, setOpen] = useState(activeFilterCount > 0);
+  // Collapses to a tap target on phones (Uber-style: icon in, full-width
+  // field out); sm+ keeps the field open since there's room for it there.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
   const rsvpOptions: RsvpStatus[] = ["pending", "yes", "maybe", "no"];
   const sortOptions: SortKey[] = ["default", "name", "added", "rsvp", "group"];
   const chip = (on: boolean) =>
@@ -5373,21 +5380,53 @@ function GuestFilterBar({
       <div className="flex flex-wrap items-center gap-2">
         <div
           data-tour-target="guests-search"
-          className="relative w-full min-w-0 flex-1 sm:w-auto sm:min-w-[200px]"
+          className={`relative min-w-0 sm:w-auto sm:min-w-[200px] sm:flex-1 sm:basis-auto ${
+            searchOpen ? "w-full basis-full" : "w-9 shrink-0"
+          }`}
         >
-          <Search
-            size={14}
-            aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-          />
-          <input
-            type="search"
-            className="input pl-9"
-            placeholder={t("guests.search_placeholder")}
-            aria-label={t("guests.search_label")}
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
-          />
+          {!searchOpen && (
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label={t("guests.search_label")}
+              aria-expanded={searchOpen}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-600 transition-colors hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 sm:hidden"
+            >
+              <Search size={14} aria-hidden />
+            </button>
+          )}
+          <div className={searchOpen ? undefined : "hidden sm:block"}>
+            <Search
+              size={14}
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+            />
+            <input
+              ref={searchInputRef}
+              type="search"
+              className="input pl-9 pr-9 [&::-webkit-search-cancel-button]:appearance-none sm:pr-3"
+              placeholder={t("guests.search_placeholder")}
+              aria-label={t("guests.search_label")}
+              value={query}
+              onChange={(e) => onQueryChange(e.target.value)}
+              onBlur={() => {
+                if (!query) setSearchOpen(false);
+              }}
+            />
+            {searchOpen && (
+              <button
+                type="button"
+                onClick={() => {
+                  onQueryChange("");
+                  setSearchOpen(false);
+                }}
+                aria-label={t("guests.search_clear")}
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 hover:text-ink-700 sm:hidden dark:text-umber-300 dark:hover:text-paper-100"
+              >
+                <X size={14} aria-hidden />
+              </button>
+            )}
+          </div>
         </div>
         <div className="relative">
           <select
