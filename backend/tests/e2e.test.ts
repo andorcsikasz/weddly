@@ -11243,6 +11243,13 @@ describe("seo: renderIndexHtml meta injection", () => {
     expect(html).toContain(`hreflang="hu-HU" href="https://${HU_HOST}/about"`);
   });
 
+  test("HU-only marketing pages declare the language their body uses", () => {
+    const html = render("tryweddly.com", "/eskuvoi-vendeglista");
+    expect(html).toContain(`<html lang="hu"`);
+    expect(html).toContain(`<meta property="og:locale" content="hu_HU" />`);
+    expect(html).toContain(`<title>Esküvői vendéglista`);
+  });
+
   test("og:image is an absolute URL on the canonical host", () => {
     const huRoot = render("weddly.hu", "/");
     expect(huRoot).toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);

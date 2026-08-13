@@ -79,6 +79,23 @@ describe("DSA content notices", () => {
       },
     );
     expect(duplicate.status).toBe(409);
+
+    const appealDecision = await req<{
+      notice: { appeal_decision: string; appeal_decided_at: number | null };
+    }>(
+      "PATCH",
+      `/api/admin/content-notices/${created.data.reference}`,
+      {
+        status: "rejected",
+        decision_reason:
+          "The supplied evidence does not establish ownership; please provide the original publication record.",
+        appeal_decision:
+          "The appeal was reviewed with the new evidence, but it still does not establish ownership of the reported work.",
+      },
+      { token: admin.data.token },
+    );
+    expect(appealDecision.status).toBe(200);
+    expect(appealDecision.data.notice.appeal_decided_at).toBeNumber();
   });
 
   test("affected content owner receives a scoped statement-of-reasons appeal path", async () => {
@@ -135,6 +152,24 @@ describe("DSA content notices", () => {
       },
     );
     expect(duplicate.status).toBe(409);
+
+    const appealDecision = await req<{
+      notice: { affected_appeal_decision: string; affected_appeal_decided_at: number | null };
+    }>(
+      "PATCH",
+      `/api/admin/content-notices/${created.data.reference}`,
+      {
+        status: "actioned",
+        decision_reason:
+          "The reported photograph was removed because the available licence evidence did not cover publication on Weddly.",
+        affected_email: affectedEmail,
+        affected_appeal_decision:
+          "The licence evidence was reviewed, but it does not grant Weddly the right to publish this directory image.",
+      },
+      { token: admin.data.token },
+    );
+    expect(appealDecision.status).toBe(200);
+    expect(appealDecision.data.notice.affected_appeal_decided_at).toBeNumber();
   });
 
   test("rejects notices without the good-faith declaration or a Weddly locator", async () => {

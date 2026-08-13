@@ -8,25 +8,34 @@ closed. Group ordering reflects what blocks ship.
 
 ## A. Domain + hosting infra (1–2 hours, blocks email + production URL)
 
-- [ ] Buy domain (e.g. `weddly.hu`). Set DNS to Cloudflare or your registrar's resolver.
+- [ ] Confirm control of the canonical `tryweddly.com` domain and its DNS. Keep
+  retired/legacy domains redirecting permanently to this canonical host.
 - [ ] Create Railway project; connect this repo; verify the Dockerfile build succeeds.
 - [ ] **Mount a persistent volume at `/data`** in the Railway service settings. Without it every redeploy wipes the SQLite DB. This is the single most important infra step.
 - [ ] In Railway service variables, set:
   - `JWT_SECRET` — `openssl rand -hex 48`
-  - `FRONTEND_BASE_URL` — your real domain (`https://weddly.hu`)
+  - `FRONTEND_BASE_URL=https://tryweddly.com` (exact origin, no trailing slash)
   - `NODE_ENV=production`
   - `SERVE_FRONTEND=1`
   - `RESEND_API_KEY` — from Resend dashboard (after step B)
-  - `EMAIL_FROM` — `Weddly <noreply@weddly.hu>` (must use a verified domain)
+  - `EMAIL_FROM` — `Weddly <noreply@tryweddly.com>` (verified domain)
+  - `SUPPORT_EMAIL` — a monitored mailbox on the verified sending domain
+  - `ADMIN_EMAILS` — the explicit, reviewed administrator allowlist
+  - `ADMIN_TOTP_SECRETS` — one unique 128-bit-or-stronger Base32 secret per admin
+  - `DATA_ENCRYPTION_KEYS` — an independent, rotation-capable application-data keyring
+  - every `OFFSITE_BACKUP_*` variable from section C.3
+  Production boot deliberately fails if required security, email, admin or
+  backup configuration is absent or inconsistent.
 - [ ] Add a custom domain in Railway → wait for HTTPS cert (auto Let's Encrypt).
-- [ ] Smoke test the deploy: hit `https://weddly.hu/api/health` → `{ "ok": true }`.
+- [ ] Smoke test the deploy: hit `https://tryweddly.com/api/health` → `{ "ok": true }`.
 
 ## B. Email deliverability (1 hour DNS + ~24h propagation)
 
 - [ ] Sign up for Resend.
 - [ ] Verify your sending domain in Resend dashboard.
 - [ ] Add the **SPF, DKIM, and DMARC** DNS records Resend provides. Without these, invites and password-reset emails will land in spam.
-  - DMARC starting policy: `v=DMARC1; p=none; rua=mailto:dmarc@weddly.hu` (move to `quarantine` after 1–2 weeks of clean reports).
+  - DMARC starting policy: `v=DMARC1; p=none; rua=mailto:dmarc@tryweddly.com`
+    (move to `quarantine` after 1–2 weeks of clean reports).
 - [ ] Send a test email to gmail / outlook / proton / fastmail / iCloud. Check the spam folder on each. Verify the bilingual (HU + EN) layout reads cleanly.
 - [ ] Add `RESEND_API_KEY` to Railway (step A).
 
@@ -89,9 +98,11 @@ openssl rand -hex 32
 
 ## D. Legal review (1–2 weeks calendar time, blocks public launch)
 
-- [ ] Hand the rendered `/privacy`, `/terms`, `/vendor-terms` and `/imprint`
-  pages in every live locale to Hungarian/EU counsel. The `legal/*.md` files
-  point to those served canonical documents and are not independent drafts.
+- [ ] Hand the rendered `/privacy`, `/terms`, `/subscription-terms` and `/imprint`
+  pages to Hungarian/EU counsel. EN/HU are the current canonical legal
+  documents; do not target DE/ES/HR commercially until equivalent localized,
+  counsel-approved documents are served there. The `legal/*.md` files point to
+  the served documents and are not independent drafts.
 - [ ] Record counsel-approved exact document versions and archive the rendered
   text accepted by each user and at each paid checkout.
 - [ ] Implement and test exact-version, point-of-purchase terms acceptance for
@@ -148,11 +159,12 @@ openssl rand -hex 32
 - [ ] Enable the global paid-access paywall only after couple, planner and
   vendor subscriptions have passed their live checkout + recovery drill.
 
-## G. Observability (30 min, optional but recommended)
+## G. Observability (30 min, blocks public traffic)
 
 - [ ] Sentry account → create project for "weddly-backend" + "weddly-frontend".
 - [ ] Set `SENTRY_DSN` (backend) and `VITE_SENTRY_DSN` (rebuild required) in Railway. **VITE_** vars are baked at build time; you need a redeploy after setting them.
-- [ ] Plausible account → add domain → set `VITE_PLAUSIBLE_DOMAIN` and rebuild.
+- [ ] If analytics is enabled, add the canonical domain in Plausible and set
+  `VITE_PLAUSIBLE_DOMAIN`; rebuild, verify consent gating, and keep it disclosed.
 - [ ] External uptime monitor pinging `/api/health` every 5 min. Step-by-step runbook in [`docs/uptime.md`](docs/uptime.md) — UptimeRobot for endpoint pings + Healthchecks.io for the backup cron heartbeat, both free tier.
 
 ## H. Soft launch (recommended before going public)

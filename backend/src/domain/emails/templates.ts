@@ -4487,7 +4487,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Sign up for Weddly",
       postCtaParagraphs: [
-        "If you're not the one getting married but know someone who is planning their big day, feel free to forward this email to them. 💌",
+        "If you're not the one getting married but know someone who is planning their big day, please forward this email to them. 💌",
         "We received and use your email address solely to send this message. We have not created an account for you – one will only be created with your approval, after you register.",
       ],
       signoff: ["Best,", "the Weddly team"],

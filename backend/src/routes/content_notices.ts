@@ -49,6 +49,15 @@ function emailField(value: unknown): string {
   return email;
 }
 
+function escapeEmailHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function contentUrl(value: unknown): string {
   const raw = textField(value, "content_url", 8, 800);
   let url: URL;
@@ -132,7 +141,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     to: reporterEmail,
     subject: `Weddly content notice received · ${reference}`,
     text: `We received your notice. Reference: ${reference}\nContent: ${url}\nYou can check the outcome or appeal at ${CONFIG.frontendBaseUrl}/report-content.`,
-    html: `<p>We received your notice.</p><p><strong>Reference:</strong> ${reference}</p><p>Use the reference and your email address at <a href="${CONFIG.frontendBaseUrl}/report-content">Weddly's notice status page</a>.</p>`,
+    html: `<p>We received your notice.</p><p><strong>Reference:</strong> ${escapeEmailHtml(reference)}</p><p>Use the reference and your email address at <a href="${escapeEmailHtml(`${CONFIG.frontendBaseUrl}/report-content`)}">Weddly's notice status page</a>.</p>`,
   });
   return json({ reference, status: "submitted", created_at: ts }, { status: 201 });
 }
@@ -267,21 +276,44 @@ async function handleAdminDecision(ctx: Ctx): Promise<Response> {
     action: "content_notice.decision",
     target_kind: "content_notice",
     target_id: row.id,
-    after: { reference, status, appeal_decided: body.appeal_decision !== undefined },
+    after: {
+      reference,
+      status,
+      appeal_decided: body.appeal_decision !== undefined,
+      affected_appeal_decided: body.affected_appeal_decision !== undefined,
+    },
   });
-  if (status !== "reviewing") {
+  const decidedAppeal = body.appeal_decision !== undefined;
+  const decidedAffectedAppeal = body.affected_appeal_decision !== undefined;
+  if (decidedAppeal) {
+    void sendTransactionalMessage({
+      to: row.reporter_email,
+      subject: `Weddly content notice appeal outcome · ${reference}`,
+      text: `Appeal outcome: ${appealDecision}\nCheck the case at ${CONFIG.frontendBaseUrl}/report-content.`,
+      html: `<p><strong>Appeal outcome:</strong></p><p>${escapeEmailHtml(appealDecision ?? "")}</p><p>Check the case at <a href="${escapeEmailHtml(`${CONFIG.frontendBaseUrl}/report-content`)}">the notice status page</a>.</p>`,
+    });
+  }
+  if (decidedAffectedAppeal && affectedEmail) {
+    void sendTransactionalMessage({
+      to: affectedEmail,
+      subject: `Weddly moderation appeal outcome · ${reference}`,
+      text: `Appeal outcome: ${affectedAppealDecision}\nCheck the case at ${CONFIG.frontendBaseUrl}/report-content?affected=1.`,
+      html: `<p><strong>Appeal outcome:</strong></p><p>${escapeEmailHtml(affectedAppealDecision ?? "")}</p><p>Check the case at <a href="${escapeEmailHtml(`${CONFIG.frontendBaseUrl}/report-content?affected=1`)}">the moderation status page</a>.</p>`,
+    });
+  }
+  if (status !== "reviewing" && !decidedAppeal && !decidedAffectedAppeal) {
     void sendTransactionalMessage({
       to: row.reporter_email,
       subject: `Weddly content notice outcome · ${reference}`,
       text: `Decision: ${status}\nReason: ${decisionReason}\nCheck the case or appeal at ${CONFIG.frontendBaseUrl}/report-content.`,
-      html: `<p><strong>Decision:</strong> ${status}</p><p>${decisionReason}</p><p>You may check the case or appeal at <a href="${CONFIG.frontendBaseUrl}/report-content">the notice status page</a>.</p>`,
+      html: `<p><strong>Decision:</strong> ${escapeEmailHtml(status)}</p><p>${escapeEmailHtml(decisionReason ?? "")}</p><p>You may check the case or appeal at <a href="${escapeEmailHtml(`${CONFIG.frontendBaseUrl}/report-content`)}">the notice status page</a>.</p>`,
     });
     if (affectedEmail && !row.affected_notified_at) {
       void sendTransactionalMessage({
         to: affectedEmail,
         subject: `Weddly moderation decision · ${reference}`,
         text: `Content: ${row.content_url}\nDecision: ${status}\nReason: ${decisionReason}\nYou may inspect and appeal this decision at ${CONFIG.frontendBaseUrl}/report-content?affected=1.`,
-        html: `<p><strong>Content:</strong> ${row.content_url}</p><p><strong>Decision:</strong> ${status}</p><p>${decisionReason}</p><p>You may inspect and appeal this decision at <a href="${CONFIG.frontendBaseUrl}/report-content?affected=1">the moderation status page</a>.</p>`,
+        html: `<p><strong>Content:</strong> ${escapeEmailHtml(row.content_url)}</p><p><strong>Decision:</strong> ${escapeEmailHtml(status)}</p><p>${escapeEmailHtml(decisionReason ?? "")}</p><p>You may inspect and appeal this decision at <a href="${escapeEmailHtml(`${CONFIG.frontendBaseUrl}/report-content?affected=1`)}">the moderation status page</a>.</p>`,
       });
       db.prepare(
         "UPDATE content_notices SET affected_notified_at = ?, updated_at = ? WHERE id = ?",

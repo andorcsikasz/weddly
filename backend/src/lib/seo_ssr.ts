@@ -624,6 +624,17 @@ export function localeForHost(
   return prefersHungarian(acceptLanguage) ? "hu" : "en";
 }
 
+/** Hungarian feature/guide routes have no translated body yet. Keep the
+ * document language and social metadata aligned with their actual content,
+ * even though the shared landing defaults to English. */
+function localeForPath(
+  host: string | null | undefined,
+  acceptLanguage: string | null | undefined,
+  pathname: string,
+): SeoLocale {
+  return marketingPageForPath(pathname) ? "hu" : localeForHost(host, acceptLanguage);
+}
+
 /** Canonical hostname for SEO link rels. When `EN_CANONICAL_HOST` is set
  *  in the environment, EN renders point to that host (e.g. `weddly.com`)
  *  so the `hreflang` pair can advertise distinct URLs across locales.
@@ -1100,7 +1111,7 @@ function buildHeadBlock(opts: {
    *  `weddingMeta`, applied to the vendor share card. */
   vendorMeta?: VendorPageMeta | null;
 }): string {
-  const locale = localeForHost(opts.host, opts.acceptLanguage ?? null);
+  const locale = localeForPath(opts.host, opts.acceptLanguage ?? null, opts.pathname || "/");
   const defaultMeta = META[locale];
   const altDefaultMeta = META[locale === "hu" ? "en" : "hu"];
   const canonicalHost = canonicalHostFor(locale);
@@ -1465,7 +1476,7 @@ export function renderIndexHtml(
     acceptLanguage?: string | null;
   },
 ): string {
-  const locale = localeForHost(opts.host, opts.acceptLanguage ?? null);
+  const locale = localeForPath(opts.host, opts.acceptLanguage ?? null, opts.pathname || "/");
   // Look up the couple + vendor meta once at the boundary, `buildHeadBlock` is
   // a pure string-builder so we keep the DB read here.
   const weddingMeta = lookupWeddingSiteMeta(opts.pathname);

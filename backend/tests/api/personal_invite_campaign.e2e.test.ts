@@ -122,7 +122,7 @@ describe("personal-invite campaign", () => {
     const text = built.rendered.text;
     const opener = "A couple currently planning their wedding on Weddly shared your email address.";
     const forward =
-      "If you're not the one getting married but know someone who is planning their big day, feel free to forward this email to them. 💌";
+      "If you're not the one getting married but know someone who is planning their big day, please forward this email to them. 💌";
     expect(text).toContain("Hi Anna,");
     expect(text).toContain(opener);
     expect(text).toContain(

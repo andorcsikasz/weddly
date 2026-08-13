@@ -60,18 +60,31 @@ for (const path of publicPaths) {
   const html = await response.text();
   htmlByPath.set(path, html);
 
-  if (!/<html lang="hu"(?:\s|>)/.test(html)) throw new Error(`${path}: expected html lang=hu`);
+  // The canonical landing is international-first (EN). The Hungarian keyword
+  // feature/guide routes intentionally remain HU-only until equivalent EN
+  // slugs and content exist, so validate the actual route contract rather than
+  // assuming one locale for the whole host.
+  const expectedLocale = path === "/" ? "en" : "hu";
+  if (!new RegExp(`<html lang="${expectedLocale}"(?:\\s|>)`).test(html)) {
+    throw new Error(`${path}: expected html lang=${expectedLocale}`);
+  }
   const ogLocale = matches(
     html,
     /<meta property="og:locale" content="([^"]+)"/,
     "Open Graph locale",
     path,
   )[1];
-  if (ogLocale !== "hu_HU") throw new Error(`${path}: unexpected Open Graph locale: ${ogLocale}`);
+  const expectedOgLocale = expectedLocale === "en" ? "en_US" : "hu_HU";
+  if (ogLocale !== expectedOgLocale) {
+    throw new Error(`${path}: unexpected Open Graph locale: ${ogLocale}`);
+  }
 
   const title = decodeHtml(matches(html, /<title>([^<]+)<\/title>/, "title", path)[1] ?? "");
   if (title.length === 0) throw new Error(`${path}: empty title`);
-  if (path === "/" && title !== "Esküvőszervező alkalmazás pároknak | Weddly") {
+  if (
+    path === "/" &&
+    title !== "Wēddly · Low-cortisol wedding planning, with one live plan for both of you."
+  ) {
     throw new Error(`${path}: unexpected homepage title: ${title}`);
   }
   if ([...titles.values()].includes(title)) throw new Error(`${path}: duplicate title: ${title}`);
@@ -96,8 +109,12 @@ for (const path of publicPaths) {
   const robots = matches(html, /<meta name="robots" content="([^"]+)"/, "robots", path)[1];
   if (robots !== "index,follow") throw new Error(`${path}: unexpected robots: ${robots}`);
   const visibleText = html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ");
-  if (!/[áéíóöőúüű]/i.test(visibleText) || !/esküvő/i.test(visibleText)) {
-    throw new Error(`${path}: Hungarian visible content check failed`);
+  const localeTextPresent =
+    expectedLocale === "en"
+      ? /wedding/i.test(visibleText)
+      : /[áéíóöőúüű]/i.test(visibleText) && /esküvő/i.test(visibleText);
+  if (!localeTextPresent || !/Wēddly|Weddly/.test(visibleText)) {
+    throw new Error(`${path}: ${expectedLocale.toUpperCase()} visible content check failed`);
   }
   jsonLd(html, path);
 }
