@@ -127,7 +127,9 @@ jobs:
         run: |
           if [ "$EVENT_NAME" = "pull_request" ]; then
             echo "sha=$PR_BASE_SHA" >> "$GITHUB_OUTPUT"
-          elif [ -n "$PUSH_BEFORE_SHA" ] && [ "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+          elif [ -n "$PUSH_BEFORE_SHA" ] \
+            && [ "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ] \
+            && git cat-file -e "$PUSH_BEFORE_SHA^{commit}" 2>/dev/null; then
             echo "sha=$PUSH_BEFORE_SHA" >> "$GITHUB_OUTPUT"
           else
             echo "sha=HEAD^" >> "$GITHUB_OUTPUT"
