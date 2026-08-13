@@ -59,6 +59,7 @@ jobs:
           scan-type: fs
           scan-ref: .
           scanners: secret,misconfig
+          trivyignores: .trivyignore.yaml
           format: table
           exit-code: 1
           severity: HIGH,CRITICAL
@@ -75,6 +76,7 @@ jobs:
     name: CodeQL SAST
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       security-events: write
     steps:

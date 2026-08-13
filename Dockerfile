@@ -32,6 +32,14 @@ RUN cd frontend && bun run build
 
 # --- runtime image ---
 FROM oven/bun:1.3.10
+
+# The pinned Bun image can lag Debian security point releases. Apply available
+# security updates during the reproducible image build so fixed OS CVEs do not
+# ship until the next Bun base-image refresh.
+RUN apt-get update \
+    && apt-get upgrade --yes \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Resolve a clean production-only dependency tree instead of carrying the

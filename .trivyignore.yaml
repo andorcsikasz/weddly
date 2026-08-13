@@ -1,0 +1,8 @@
+misconfigurations:
+  - id: AVD-DS-0002
+    paths:
+      - Dockerfile
+    statement: >-
+      Railway mounts /data as root. The bootstrap starts privileged only long
+      enough to chown that fixed volume, then drops to UID/GID 1000 before it
+      imports or starts the application server.

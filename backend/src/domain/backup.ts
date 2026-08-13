@@ -7,7 +7,7 @@
 // before upload, verifies SQLite integrity, and pings an external missed-run
 // monitor. Railway's native volume backups remain the first recovery layer.
 
-import { rm } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { Database } from "bun:sqlite";
 import { CONFIG, OFFSITE_BACKUP_ENABLED } from "../config";
@@ -34,6 +34,7 @@ function backupClient(): InstanceType<typeof Bun.S3Client> {
 }
 
 export async function dumpDbSnapshot(tmpPath: string): Promise<void> {
+  await mkdir(dirname(tmpPath), { recursive: true });
   await rm(tmpPath, { force: true }).catch(() => {});
   db.exec(`VACUUM INTO '${tmpPath.replaceAll("'", "''")}'`);
 }
