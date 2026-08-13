@@ -3738,6 +3738,18 @@ export const adminSupplierApi = {
       `/api/admin/suppliers/${encodeURIComponent(listingId)}/photos`,
       { url, role: role ?? null },
     ),
+  /** Upload a local JPEG/PNG/WebP (max 4 MB). The same endpoint also accepts
+   *  URL-shaped JSON above; multipart keeps binary bytes out of that API. */
+  uploadPhoto: (listingId: string, file: File, role?: "hero" | "gallery") => {
+    const form = new FormData();
+    form.append("file", file);
+    if (role) form.append("role", role);
+    return uploadMultipart<AdminListingPhotosResponse>(
+      "POST",
+      `/api/admin/suppliers/${encodeURIComponent(listingId)}/photos`,
+      form,
+    );
+  },
   /** `photoId` is the gallery row id, or the literal "hero" (which lives on the
    *  listings column and has no row of its own). */
   removePhoto: (listingId: string, photoId: number | "hero") =>

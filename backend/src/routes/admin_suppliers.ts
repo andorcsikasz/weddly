@@ -65,6 +65,7 @@ import { DIRECTORY } from "../domain/suppliers_data";
 import { requireAdmin } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { sniffUploadedImage } from "../lib/image_sniff";
 
 interface HideBody {
   reason?: unknown;
@@ -402,16 +403,20 @@ async function handleEdit(ctx: Ctx): Promise<Response> {
 //
 // "Fetch from website" is the automatic path and it needs a website; a business
 // that only exists on a social page, or whose site has no usable og:image, had
-// no path to a photo at all and stayed a category-icon placeholder forever. So
-// this takes an image URL directly: the server downloads it (same SSRF-guarded
-// `fetchRemoteImage` every other image path uses — scheme check, DNS guard on
-// each redirect hop, byte cap, magic-byte sniff) and re-hosts it under our own
-// `listings/<id>/…` key. Never a hotlink: the CSP `img-src` allow-list refuses
-// an arbitrary remote host, so a stored remote URL renders as a broken glyph.
+// no path to a photo at all and stayed a category-icon placeholder forever. An
+// admin can therefore upload a local file or provide an image URL. Remote URLs
+// use the SSRF-guarded `fetchRemoteImage` pipeline; both paths store our own
+// validated bytes under `listings/<id>/…`, never a CSP-breaking hotlink.
 
 /** Cap on gallery thumbnails an admin can attach. Matches the backfill sweep's
  *  own cap so a hand-built gallery and a seeded one look the same on the card. */
 const ADMIN_GALLERY_CAP = 12;
+const ADMIN_PHOTO_MAX_BYTES = 4 * 1024 * 1024;
+const ADMIN_PHOTO_EXTENSIONS: Record<string, "jpg" | "png" | "webp"> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 function listingPhotosPayload(listingId: string): AdminListingPhoto[] {
   const listing = getListingById(listingId);
@@ -444,24 +449,69 @@ interface AddPhotoBody {
   role?: unknown;
 }
 
+function parsePhotoRole(value: unknown): "hero" | "gallery" | undefined {
+  if (value == null || value === "") return undefined;
+  if (value === "hero" || value === "gallery") return value;
+  throw new HttpError(400, "role must be 'hero' or 'gallery'");
+}
+
+/** Read a local image chosen in the admin UI. The browser's MIME and filename
+ *  are both attacker-controlled, so the stored extension comes from magic
+ *  bytes. This deliberately matches the vendor editor's 4 MB/JPEG/PNG/WebP
+ *  contract. */
+async function readAdminPhotoUpload(
+  ctx: Ctx,
+): Promise<{ file: File; ext: "jpg" | "png" | "webp"; role?: "hero" | "gallery" }> {
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
+  });
+  const file = form.get("file");
+  if (!(file instanceof File)) {
+    throw new HttpError(400, "`file` field required", { code: "missing_file" });
+  }
+  if (file.size <= 0) throw new HttpError(400, "Empty file", { code: "empty_file" });
+  if (file.size > ADMIN_PHOTO_MAX_BYTES) {
+    throw new HttpError(413, "File too large (max 4 MB)", { code: "file_too_large" });
+  }
+  if (!ADMIN_PHOTO_EXTENSIONS[file.type]) {
+    throw new HttpError(415, `Unsupported image type: ${file.type || "unknown"}`, {
+      code: "unsupported_type",
+    });
+  }
+  const sniffed = await sniffUploadedImage(file);
+  const ext = sniffed ? ADMIN_PHOTO_EXTENSIONS[sniffed] : undefined;
+  if (!ext) {
+    throw new HttpError(415, "File contents are not a valid image", {
+      code: "unsupported_type",
+    });
+  }
+  return { file, ext, role: parsePhotoRole(form.get("role")) };
+}
+
 async function handleAddPhoto(ctx: Ctx): Promise<Response> {
   const admin = requireAdmin(ctx);
   const listingId = parseListingId(ctx);
 
-  const body = await readJson<AddPhotoBody>(ctx.req);
-  const url = typeof body.url === "string" ? body.url.trim() : "";
-  if (!url) throw new HttpError(400, "url required");
-  if (body.role != null && body.role !== "hero" && body.role !== "gallery") {
-    throw new HttpError(400, "role must be 'hero' or 'gallery'");
+  const isMultipart = (ctx.req.headers.get("content-type") ?? "").includes("multipart/form-data");
+  let requestedRole: "hero" | "gallery" | undefined;
+  let upload: Awaited<ReturnType<typeof readAdminPhotoUpload>> | null = null;
+  let sourceUrl = "";
+  if (isMultipart) {
+    upload = await readAdminPhotoUpload(ctx);
+    requestedRole = upload.role;
+  } else {
+    const body = await readJson<AddPhotoBody>(ctx.req);
+    sourceUrl = typeof body.url === "string" ? body.url.trim() : "";
+    if (!sourceUrl) throw new HttpError(400, "url required");
+    requestedRole = parsePhotoRole(body.role);
   }
 
   const listing = getListingById(listingId);
-  const role: "hero" | "gallery" =
-    body.role === "hero" || body.role === "gallery"
-      ? body.role
-      : listing?.hero_image_url
-        ? "gallery"
-        : "hero";
+  const role: "hero" | "gallery" = requestedRole
+    ? requestedRole
+    : listing?.hero_image_url
+      ? "gallery"
+      : "hero";
 
   if (role === "gallery" && countListingPhotos(listingId) >= ADMIN_GALLERY_CAP) {
     throw new HttpError(409, `Gallery is full (max ${ADMIN_GALLERY_CAP})`, {
@@ -469,23 +519,26 @@ async function handleAddPhoto(ctx: Ctx): Promise<Response> {
     });
   }
 
-  // No quality gate: an admin pasting a specific URL has already looked at the
-  // picture, and the gate exists to filter what an automatic sweep guessed at.
-  const img = await fetchRemoteImage(url);
-  if (!img) {
+  // No quality gate: an admin choosing a file or pasting a specific URL has
+  // already looked at the picture. The gate only filters automatic guesses.
+  const remote = upload ? null : await fetchRemoteImage(sourceUrl);
+  if (!upload && !remote) {
     throw new HttpError(422, "Could not download a usable image from that URL", {
       code: "image_unavailable",
     });
   }
+  const ext = upload?.ext ?? remote?.ext;
+  const bytes = upload?.file ?? remote?.bytes;
+  if (!ext || !bytes) throw new HttpError(422, "Could not read image");
 
   // Timestamped key so replacing a hero can't be served stale from a CDN or the
   // browser cache under the key the old bytes already occupy.
   const ts = Date.now();
   const key =
     role === "hero"
-      ? `listings/${listingId}/hero.${img.ext}`
-      : `listings/${listingId}/gallery/admin-${ts}.${img.ext}`;
-  await storage.write(key, img.bytes);
+      ? `listings/${listingId}/hero.${ext}`
+      : `listings/${listingId}/gallery/admin-${ts}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  await storage.write(key, bytes);
   const publicUrl = `/uploads/${key}?v=${ts}`;
 
   if (role === "hero") setListingHeroImage(listingId, publicUrl);
@@ -497,7 +550,15 @@ async function handleAddPhoto(ctx: Ctx): Promise<Response> {
     action: "supplier.listing.photo.add",
     target_kind: "listing",
     target_id: null,
-    after: { listing_id: listingId, role, source_url: url, stored_url: publicUrl },
+    after: {
+      listing_id: listingId,
+      role,
+      source: upload ? "upload" : "url",
+      ...(upload
+        ? { original_name: upload.file.name, bytes: upload.file.size, mime: upload.file.type }
+        : { source_url: sourceUrl }),
+      stored_url: publicUrl,
+    },
   });
 
   return json({ listing_id: listingId, photos: listingPhotosPayload(listingId) });

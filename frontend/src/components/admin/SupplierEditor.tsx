@@ -23,8 +23,8 @@ import {
   type VenueStyle,
   languageLabel,
 } from "@shared/suppliers";
-import { ImageOff, Plus, Star, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ImageOff, Plus, Star, Upload, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../../lib/api";
 import { adminSupplierApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -375,7 +375,9 @@ export function SupplierPhotoManager({ listingId }: { listingId: string }) {
   const toast = useToast();
   const [photos, setPhotos] = useState<AdminListingPhoto[] | null>(null);
   const [url, setUrl] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<"url" | "upload" | "other" | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const busy = busyAction !== null;
 
   useEffect(() => {
     let alive = true;
@@ -385,8 +387,8 @@ export function SupplierPhotoManager({ listingId }: { listingId: string }) {
         if (alive) setPhotos(r.photos);
       })
       // A listing that has no mirrored row yet (or any read failure) shows the
-      // empty state rather than an error banner — the moderator's next action
-      // is the same either way: paste a URL.
+      // empty state rather than an error banner; either add path will surface a
+      // concrete write error if the listing really is unavailable.
       .catch(() => {
         if (alive) setPhotos([]);
       });
@@ -399,7 +401,7 @@ export function SupplierPhotoManager({ listingId }: { listingId: string }) {
     async (role?: "hero" | "gallery") => {
       const value = url.trim();
       if (!value) return;
-      setBusy(true);
+      setBusyAction("url");
       try {
         const r = await adminSupplierApi.addPhoto(listingId, value, role);
         setPhotos(r.photos);
@@ -408,14 +410,14 @@ export function SupplierPhotoManager({ listingId }: { listingId: string }) {
       } catch (e) {
         toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
       } finally {
-        setBusy(false);
+        setBusyAction(null);
       }
     },
     [listingId, url, toast, t],
   );
 
   async function remove(photoId: number | "hero") {
-    setBusy(true);
+    setBusyAction("other");
     try {
       const r = await adminSupplierApi.removePhoto(listingId, photoId);
       setPhotos(r.photos);
@@ -423,7 +425,7 @@ export function SupplierPhotoManager({ listingId }: { listingId: string }) {
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }
 
@@ -431,7 +433,7 @@ export function SupplierPhotoManager({ listingId }: { listingId: string }) {
    *  from our own URL, which keeps one code path for "where does a hero come
    *  from" instead of a second one that copies storage keys around. */
   async function promote(photo: AdminListingPhoto) {
-    setBusy(true);
+    setBusyAction("other");
     try {
       const absolute = new URL(photo.url, window.location.origin).toString();
       const r = await adminSupplierApi.addPhoto(listingId, absolute, "hero");
@@ -440,7 +442,30 @@ export function SupplierPhotoManager({ listingId }: { listingId: string }) {
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
-      setBusy(false);
+      setBusyAction(null);
+    }
+  }
+
+  async function upload(file: File) {
+    const supported = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (!supported.has(file.type)) {
+      toast.error(t("admin.suppliers_photos_upload_invalid_type"));
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error(t("admin.suppliers_photos_upload_too_large"));
+      return;
+    }
+
+    setBusyAction("upload");
+    try {
+      const r = await adminSupplierApi.uploadPhoto(listingId, file);
+      setPhotos(r.photos);
+      toast.success(t("admin.suppliers_photos_added"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setBusyAction(null);
     }
   }
 
@@ -497,6 +522,31 @@ export function SupplierPhotoManager({ listingId }: { listingId: string }) {
 
       <div className="flex flex-wrap items-center gap-2">
         <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (file) void upload(file);
+          }}
+        />
+        <button
+          type="button"
+          className="btn-primary btn-sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={busy}
+        >
+          <Upload size={14} aria-hidden />
+          {busyAction === "upload"
+            ? t("admin.suppliers_photos_uploading")
+            : t("admin.suppliers_photos_upload")}
+        </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <input
           className="input min-w-0 flex-1"
           type="url"
           value={url}
@@ -517,7 +567,9 @@ export function SupplierPhotoManager({ listingId }: { listingId: string }) {
           disabled={busy || url.trim() === ""}
         >
           <Plus size={14} aria-hidden />
-          {busy ? t("admin.suppliers_photos_adding") : t("admin.suppliers_photos_add")}
+          {busyAction === "url"
+            ? t("admin.suppliers_photos_adding")
+            : t("admin.suppliers_photos_add")}
         </button>
       </div>
       <p className="m-0 text-[11px] text-neutral-500 dark:text-umber-300">

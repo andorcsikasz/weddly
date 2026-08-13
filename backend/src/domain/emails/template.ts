@@ -53,6 +53,11 @@ export interface LocaleBlock {
   /** Omit the generic cold-email orientation and visible CTA URL when this
    *  language block already provides a complete introduction. */
   suppressOutreachChrome?: boolean;
+  /** Omit the generic "why am I getting this" footer line when the body
+   *  already carries the complete source/privacy explanation. */
+  suppressFooterWhyLine?: boolean;
+  /** Per-message wording for the support prompt in the footer. */
+  footerHelpLabel?: string;
   /** Plain (non-italic) line rendered directly under the CTA button. Use for
    *  load-bearing info that's part of the action, link expiry, single-use
    *  warning, time-sensitive caveats. Reserves the `footnote` slot for truly
@@ -258,10 +263,21 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   ): string {
     // null = the bilingual stack; otherwise the one language on the card.
     const single = blocks.length === 1 ? (blocks[0]?.locale ?? "en") : null;
-    const why = whyLineFor(category, single, whyOverride);
-    const out: string[] = ["---", why];
-    out.push("Weddly · tryweddly.com");
-    out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
+    const primary = blocks[0]?.block;
+    const out: string[] = ["---"];
+    if (!primary?.suppressFooterWhyLine) {
+      out.push(whyLineFor(category, single, whyOverride));
+    }
+    if (primary?.footerHelpLabel) {
+      out.push(`${primary.footerHelpLabel} ${CONFIG.supportEmail}`);
+    }
+    if (primary?.suppressFooterWhyLine) {
+      out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
+      out.push("Weddly · tryweddly.com");
+    } else {
+      out.push("Weddly · tryweddly.com");
+      out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
+    }
     return out.join("\n");
   }
 
@@ -481,6 +497,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     whyOverride?: { hu: string; en: string },
   ): string {
     const single = blocks.length === 1 ? (blocks[0]?.locale ?? "en") : null;
+    const primary = blocks[0]?.block;
     const why = whyLineForHtml(category, single, whyOverride);
     // Footer body copy is bumped to 13px (from the previous 11/12px), that
     // was below the 14px legibility floor for the median wedding-vendor
@@ -489,10 +506,11 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     // looks crisp without bumping copy density too far.
     // Bilingual help label so a HU vendor on a cold mail isn't left guessing
     // what "Questions?" means, and every single-language render stays clean.
-    const helpLabel = HELP_LABELS[single ?? "bilingual"] ?? HELP_LABELS.en!;
+    const helpLabel =
+      primary?.footerHelpLabel ?? HELP_LABELS[single ?? "bilingual"] ?? HELP_LABELS.en!;
     return `
-      <p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">${why}</p>
-      <p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
+      ${primary?.suppressFooterWhyLine ? "" : `<p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">${why}</p>`}
+      <p style="margin:${primary?.suppressFooterWhyLine ? "0" : "8px"} 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
         ${helpLabel} <a href="mailto:${escapeAttr(CONFIG.supportEmail)}" style="color:${COLOR.muted};text-decoration:underline;">${escapeHtml(CONFIG.supportEmail)}</a>
       </p>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 0 0;">

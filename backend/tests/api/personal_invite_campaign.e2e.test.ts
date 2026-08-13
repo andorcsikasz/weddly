@@ -71,7 +71,7 @@ async function createCampaign(slug: string, dailyCap = 50): Promise<PersonalInvi
 }
 
 describe("personal-invite campaign", () => {
-  test("the Hungarian invite renders the personal-source copy, register CTA and email-use note", () => {
+  test("the Hungarian invite renders the couple-source copy, register CTA and consent note", () => {
     const built = buildEmail(
       "personal_invite",
       {
@@ -83,21 +83,62 @@ describe("personal-invite campaign", () => {
     );
 
     const text = built.rendered.text;
-    const opener =
-      "A Weddly csapatából személyesen ismerünk, ezért szeretnénk röviden bemutatni nektek a Weddlyt.";
+    const opener = "Egy éppen esküvőt tervező pár a Weddly oldalán megadta az e-mail-címedet.";
     const forward =
-      "Ha egy családtagod vagy barátod szervezi az esküvőjét, ezt a levelet neki is továbbíthatod.";
+      "Ha pedig nem te készülsz esküvőre, de van a környezetedben valaki, aki éppen szervezi a nagy napot, nyugodtan továbbítsd neki ezt a levelet. 💌";
     expect(text).toContain(opener);
-    expect(text).toContain("Ha te vagy valaki a környezetedben esküvőt szervez, nézz körül:");
+    expect(text).toContain(
+      "A Weddly egy online esküvőtervező, ahol egy helyen kezelheted a költségvetést, a vendéglistát, az online RSVP-t, az ülésrendet, a szolgáltatókat és az esküvői weboldalatokat.",
+    );
+    expect(text).toContain("Ha te is esküvőt tervezel, nézz körül, és próbáld ki:");
     expect(text).toContain("Regisztrálok a Weddlyre:");
     expect(text).toContain(forward);
     expect(text).toContain(
-      "Az e-mail-címedet kizárólag ennek az e-mailnek a kiküldéséhez használjuk. Ha a jövőben is szeretnél leveleket kapni tőlünk, regisztrálj a Weddly-n.",
+      "Az e-mail-címedet kizárólag ennek az üzenetnek az elküldéséhez kaptuk meg és használjuk. Fiókot nem hoztunk létre számodra – az csak a te jóváhagyásoddal, regisztráció után jön létre.",
     );
     expect(text).toContain("Üdv,\na Weddly csapata");
+    expect(text).toContain("Kérdésed van? hello@tryweddly.com");
+    expect(text).toContain("Instagram:");
+    expect(text).toContain("Facebook:");
+    expect(text).toContain("TikTok:");
+    expect(text).toContain("Weddly · tryweddly.com");
+    expect(text).not.toContain("Bemutatkozó levél a Weddly esküvőtervezőtől");
     expect(text.indexOf(opener)).toBeLessThan(text.indexOf("Regisztrálok a Weddlyre:"));
     expect(text.indexOf("Regisztrálok a Weddlyre:")).toBeLessThan(text.indexOf(forward));
-    expect(text).not.toContain("a Weddly egyik felhasználója megadta az e-mail-címedet");
+    expect(text).not.toContain("A Weddly csapatából személyesen ismerünk");
+  });
+
+  test("the English invite renders the same couple-source and consent message", () => {
+    const built = buildEmail(
+      "personal_invite",
+      {
+        name: "Anna",
+        ctaUrl: "https://weddly.test/r/invite/43.signed",
+        locale: "en",
+      },
+      { recipientName: "Anna", recipientLocale: "en" },
+    );
+
+    const text = built.rendered.text;
+    const opener = "A couple currently planning their wedding on Weddly shared your email address.";
+    const forward =
+      "If you're not the one getting married but know someone who is planning their big day, feel free to forward this email to them. 💌";
+    expect(text).toContain("Hi Anna,");
+    expect(text).toContain(opener);
+    expect(text).toContain(
+      "Weddly is an online wedding planner where you can manage your budget, guest list, online RSVPs, seating plan, vendors and wedding website in one place.",
+    );
+    expect(text).toContain("If you're planning a wedding too, take a look and give it a try:");
+    expect(text).toContain("Sign up for Weddly:");
+    expect(text).toContain(forward);
+    expect(text).toContain(
+      "We received and use your email address solely to send this message. We have not created an account for you – one will only be created with your approval, after you register.",
+    );
+    expect(text).toContain("Best,\nthe Weddly team");
+    expect(text).toContain("Questions? hello@tryweddly.com");
+    expect(text).not.toContain("An introduction from Weddly");
+    expect(text.indexOf(opener)).toBeLessThan(text.indexOf("Sign up for Weddly:"));
+    expect(text.indexOf("Sign up for Weddly:")).toBeLessThan(text.indexOf(forward));
   });
 
   test("every admin endpoint is admin-only", async () => {

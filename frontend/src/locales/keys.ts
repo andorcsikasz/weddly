@@ -7580,11 +7580,15 @@ export interface LocaleMessages {
     suppliers_edit_field_languages: string;
     suppliers_edit_field_price_band_none: string;
     suppliers_edit_city_help: string;
-    /** Photo manager: attach a card image by URL (the server re-hosts it). */
+    /** Photo manager: upload a local image or import one by URL. */
     suppliers_photos_section: string;
     suppliers_photos_empty: string;
     suppliers_photos_hero: string;
     suppliers_photos_gallery: string;
+    suppliers_photos_upload: string;
+    suppliers_photos_uploading: string;
+    suppliers_photos_upload_invalid_type: string;
+    suppliers_photos_upload_too_large: string;
     suppliers_photos_add_placeholder: string;
     suppliers_photos_add: string;
     suppliers_photos_adding: string;

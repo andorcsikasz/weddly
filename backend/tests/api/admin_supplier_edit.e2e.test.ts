@@ -24,10 +24,39 @@ import type {
 } from "@shared/community_suppliers";
 import { db } from "../../src/db";
 import { addListingPhoto, setListingHeroImage } from "../../src/domain/listings";
+import { keyFromUploadUrl, storage } from "../../src/lib/storage";
 import { registerAndVerify, req } from "../helpers";
 
 const ADMIN_EMAIL = "admin@test.test";
 const ADMIN_PASSWORD = "supersafe123";
+const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
+
+function tinyPngBlob(): Blob {
+  return new Blob(
+    [
+      new Uint8Array([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44,
+        0x52,
+      ]),
+    ],
+    { type: "image/png" },
+  );
+}
+
+async function uploadAdminPhoto(
+  listingId: string,
+  token: string,
+  blob: Blob,
+  filename = "photo.png",
+): Promise<Response> {
+  const form = new FormData();
+  form.append("file", blob, filename);
+  return fetch(`${BASE}/api/admin/suppliers/${listingId}/photos`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+}
 
 async function adminToken(): Promise<string> {
   const reg = await registerAndVerify({
@@ -233,6 +262,39 @@ describe("PATCH /api/admin/suppliers/:id", () => {
 });
 
 describe("admin listing photos", () => {
+  test("uploads local images as the card image first, then gallery photos", async () => {
+    const { id, token } = await seedThinListing("AdminEdit PhotoUpload");
+
+    const res = await uploadAdminPhoto(`c${id}`, token, tinyPngBlob());
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as AdminListingPhotosResponse;
+    expect(body.photos).toHaveLength(1);
+    expect(body.photos[0]?.role).toBe("hero");
+    expect(body.photos[0]?.url).toMatch(
+      new RegExp(`^/uploads/listings/c${id}/hero\\.png\\?v=\\d+$`),
+    );
+    const key = keyFromUploadUrl(body.photos[0]?.url ?? "");
+    expect(key).not.toBeNull();
+    expect(await storage.exists(key ?? "")).toBe(true);
+
+    const second = await uploadAdminPhoto(`c${id}`, token, tinyPngBlob(), "gallery.png");
+    expect(second.status).toBe(200);
+    const secondBody = (await second.json()) as AdminListingPhotosResponse;
+    expect(secondBody.photos.map((photo) => photo.role)).toEqual(["hero", "gallery"]);
+    expect(secondBody.photos[1]?.url).toMatch(
+      new RegExp(`^/uploads/listings/c${id}/gallery/admin-.*\\.png\\?v=\\d+$`),
+    );
+  });
+
+  test("rejects a local file whose contents are not an image", async () => {
+    const { id, token } = await seedThinListing("AdminEdit PhotoInvalid");
+    const fake = new Blob(["not a png"], { type: "image/png" });
+
+    const res = await uploadAdminPhoto(`c${id}`, token, fake);
+    expect(res.status).toBe(415);
+    expect(listingFor(id)?.hero_image_url).toBeNull();
+  });
+
   test("lists the hero and the gallery as one ordered set", async () => {
     const { id, token } = await seedThinListing("AdminEdit Photos");
     setListingHeroImage(`c${id}`, "/uploads/listings/test/hero.jpg");

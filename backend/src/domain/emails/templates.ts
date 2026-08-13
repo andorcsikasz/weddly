@@ -4449,11 +4449,10 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
     },
   }),
-  // The founder's own contacts, introduced to Weddly with a "you (or someone you
-  // love) is getting married" angle and a register CTA. Weddly is the voice the
-  // whole way through (never "I"/"me", and NEVER signed with a personal name),
-  // Uber-tight, and there is no discount / "free" framing. Personalised by
-  // first name.
+  // Personal invitation to an address shared by a couple already planning on
+  // Weddly. The note explains exactly where the address came from, what Weddly
+  // does, and that no account was created without the recipient's consent.
+  // Personalised by first name and signed by the team, never an individual.
   personal_invite: (p) => ({
     subject:
       p.locale === "hu"
@@ -4461,33 +4460,40 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         : "Plan your wedding with Weddly",
     ctaUrl: p.ctaUrl,
     hu: {
-      preheader: "Ha te vagy valaki a környezetedben esküvőt szervez, ismerd meg a Weddlyt.",
+      preheader: "Egy éppen esküvőt tervező pár a Weddly oldalán megadta az e-mail-címedet.",
       greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
       paragraphs: [
-        "A Weddly csapatából személyesen ismerünk, ezért szeretnénk röviden bemutatni nektek a Weddlyt.",
-        "A Weddly egy helyre hozza a költségvetést, a vendéglistát, az online RSVP-t, az ülésrendet, a szolgáltatókat és az esküvői weboldalt.",
-        "Ha te vagy valaki a környezetedben esküvőt szervez, nézz körül:",
+        "Egy éppen esküvőt tervező pár a Weddly oldalán megadta az e-mail-címedet.",
+        "A Weddly egy online esküvőtervező, ahol egy helyen kezelheted a költségvetést, a vendéglistát, az online RSVP-t, az ülésrendet, a szolgáltatókat és az esküvői weboldalatokat.",
+        "Ha te is esküvőt tervezel, nézz körül, és próbáld ki:",
       ],
       cta: "Regisztrálok a Weddlyre",
       postCtaParagraphs: [
-        "Ha egy családtagod vagy barátod szervezi az esküvőjét, ezt a levelet neki is továbbíthatod.",
-        "Az e-mail-címedet kizárólag ennek az e-mailnek a kiküldéséhez használjuk. Ha a jövőben is szeretnél leveleket kapni tőlünk, regisztrálj a Weddly-n.",
+        "Ha pedig nem te készülsz esküvőre, de van a környezetedben valaki, aki éppen szervezi a nagy napot, nyugodtan továbbítsd neki ezt a levelet. 💌",
+        "Az e-mail-címedet kizárólag ennek az üzenetnek az elküldéséhez kaptuk meg és használjuk. Fiókot nem hoztunk létre számodra – az csak a te jóváhagyásoddal, regisztráció után jön létre.",
       ],
       signoff: ["Üdv,", "a Weddly csapata"],
       suppressOutreachChrome: true,
+      suppressFooterWhyLine: true,
+      footerHelpLabel: "Kérdésed van?",
     },
     en: {
-      preheader: "Guest list, seating, budget, RSVP. In one place.",
+      preheader: "A couple currently planning their wedding on Weddly shared your email address.",
       greeting: p.name.trim() ? `Hi ${p.name.trim()},` : "Hi there,",
       paragraphs: [
-        "We're sending this because we know each other and wanted to introduce you to **Weddly**.",
-        "Weddly brings together the budget, guest list, online RSVPs, seating plan, vendors and wedding website.",
-        "If you or someone close to you is planning a wedding, take a look and see whether it could help.",
+        "A couple currently planning their wedding on Weddly shared your email address.",
+        "Weddly is an online wedding planner where you can manage your budget, guest list, online RSVPs, seating plan, vendors and wedding website in one place.",
+        "If you're planning a wedding too, take a look and give it a try:",
       ],
-      cta: "Take a look",
-      ctaSubtext: "Create an account to start planning.",
-      footnote:
-        "Know an engaged couple? Send it on to them. Questions? Just reply to this email, we read every line.",
+      cta: "Sign up for Weddly",
+      postCtaParagraphs: [
+        "If you're not the one getting married but know someone who is planning their big day, feel free to forward this email to them. 💌",
+        "We received and use your email address solely to send this message. We have not created an account for you – one will only be created with your approval, after you register.",
+      ],
+      signoff: ["Best,", "the Weddly team"],
+      suppressOutreachChrome: true,
+      suppressFooterWhyLine: true,
+      footerHelpLabel: "Questions?",
     },
   }),
   // Admin re-engagement message for a registered couple before onboarding.
