@@ -2280,7 +2280,7 @@ const hu: LocaleMessages = {
     counter_eyebrow: "Élő számok",
     counter_couples_label: "Tervezgető pár",
     counter_rsvps_label: "Beérkezett RSVP",
-    provendors_title: "Szolgáltatóként az első év Wēddly Prót mi álljuk",
+    provendors_title: "Szolgáltatóként az első év Weddly Pro-t mi álljuk",
     provendors_seats_label: "szabad hely",
     provendors_count_listings: "szolgáltató a katalógusban",
     provendors_cta: "Lefoglalom a helyem",
