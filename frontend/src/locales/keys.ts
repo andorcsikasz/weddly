@@ -5036,20 +5036,13 @@ export interface LocaleMessages {
     couple_slug_help_locked: string;
     /** "Invited?" checkbox UX on the household card list. */
     invited_check_label: string;
-    invited_short: string;
     invited_progress_help: string;
     /** Header pill that surfaces how many invitations have been physically handed over. */
-    delivered_short: string;
     delivered_progress_help: string;
-    /** 3-state invite chip labels (not-invited / invited / delivered) + next-state hints. */
+    /** Binary invite chip labels (not-invited / invited) + next-state hints. */
     invite_state_not_invited: string;
     invite_state_invited: string;
-    invite_state_delivered: string;
-    /** Mobile-only short label rendered inside the chip when the screen is
-     *  too narrow for icons-with-tooltip discovery. Sub-6-char target. */
-    invite_state_not_invited_short: string;
     invite_state_cycle_to_invited: string;
-    invite_state_cycle_to_delivered: string;
     invite_state_cycle_to_clear: string;
     invite_email_opened: string;
     invite_email_opened_at: string;
@@ -8522,6 +8515,8 @@ export interface LocaleMessages {
     checkin_member_dietary: string;
     checkin_member_accommodation: string;
     checkin_member_song: string;
+    checkin_member_email: string;
+    checkin_member_email_help: string;
     checkin_save_for_all: string;
     checkin_back_to_lookup: string;
     checkin_household_label: string;

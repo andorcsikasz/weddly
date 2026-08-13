@@ -36,7 +36,6 @@ import {
   Beef,
   Briefcase,
   Check,
-  CheckCheck,
   ChevronDown,
   ClipboardCopy,
   Cookie,
@@ -54,6 +53,7 @@ import {
   Leaf,
   Link2,
   Lock,
+  Mail,
   MessageSquareQuote,
   Milk,
   MoreHorizontal,
@@ -607,21 +607,22 @@ export default function GuestsPage() {
     }
   }
 
-  async function onCycleInviteState(g: Guest) {
-    // 3-state cycle: not-invited → invited → delivered → not-invited.
-    // Encode the *target* as a (invited, delivered) pair on the wire so the
-    // server can reason about both timestamps in one round-trip.
-    const currentState = inviteStateOf(g);
-    const next = nextInviteState(currentState);
-    const targetTs = Date.now();
-    const targetInvitedAt = next === "not_invited" ? null : targetTs;
-    const targetDeliveredAt = next === "delivered" ? targetTs : null;
+  async function onToggleGuestInvited(g: Guest) {
+    // Binary toggle — the online/physical/opened channel detail lives on the
+    // dedicated Invites pipeline (/app/invites); this quick-glance chip only
+    // answers "did we invite this guest at all". Un-inviting always clears
+    // invitation_delivered_at too, mirroring the backend's own "you can't
+    // deliver to someone you haven't invited" rule; marking invited never
+    // touches it, since a delivered stamp can't exist without invited_at
+    // already being set.
+    const nextInvited = g.invited_at == null;
+    const targetInvitedAt = nextInvited ? Date.now() : null;
     // When g is a host (not itself a +1), its materialized +1s inherit the same
     // invite state — mirrors the backend cascade so the row updates instantly.
     const isHost = !g.is_plus_one;
     const affects = (row: Guest) => row.id === g.id || (isHost && row.plus_one_of === g.id);
     // Snapshot the affected rows' original state for rollback — each +1 may have
-    // differed from the host before this cycle.
+    // differed from the host before this toggle.
     const originals = new Map<number, Pick<Guest, "invited_at" | "invitation_delivered_at">>();
     for (const row of guests) {
       if (affects(row)) {
@@ -634,19 +635,21 @@ export default function GuestsPage() {
     const optimistic = (list: Guest[]) =>
       list.map((row) =>
         affects(row)
-          ? { ...row, invited_at: targetInvitedAt, invitation_delivered_at: targetDeliveredAt }
+          ? {
+              ...row,
+              invited_at: targetInvitedAt,
+              invitation_delivered_at: nextInvited ? row.invitation_delivered_at : null,
+            }
           : row,
       );
     setGuests((prev) => optimistic(prev));
     patchSearchResults(optimistic);
     try {
-      // PATCH revalidates the row, so ship the full guest plus the two flags.
-      // The backend cascades the same flags onto this guest's +1s.
-      await guestApi.update(g.id, {
-        ...g,
-        invited: next !== "not_invited",
-        delivered: next === "delivered",
-      });
+      // Omitting `delivered` leaves invitation_delivered_at / invited_physical_at
+      // alone when marking invited; the backend clears them itself when invited
+      // goes false, so there's nothing else to send. PATCH revalidates the row
+      // and cascades the same flag onto this guest's +1s.
+      await guestApi.update(g.id, { ...g, invited: nextInvited });
     } catch (e) {
       // Roll back host + +1s on failure so the UI doesn't lie.
       const rollback = (list: Guest[]) =>
@@ -1199,7 +1202,7 @@ export default function GuestsPage() {
             onCreateGuest={onCreateGuestInline}
             onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
             onDeleteGuest={onDeleteGuest}
-            onCycleInviteState={onCycleInviteState}
+            onToggleGuestInvited={onToggleGuestInvited}
           />
         </div>
       ) : flatView ? (
@@ -1259,7 +1262,7 @@ export default function GuestsPage() {
                         onRenameHousehold={onRenameHousehold}
                         onChangeGroup={onChangeHouseholdGroup}
                         onToggleAccommodation={onToggleHouseholdAccommodation}
-                        onCycleInviteState={onCycleInviteState}
+                        onToggleGuestInvited={onToggleGuestInvited}
                         onPrintPlaceCard={onPrintPlaceCard}
                       />
                     ))}
@@ -1340,7 +1343,7 @@ export default function GuestsPage() {
                   onRenameHousehold={onRenameHousehold}
                   onChangeGroup={onChangeHouseholdGroup}
                   onToggleAccommodation={onToggleHouseholdAccommodation}
-                  onCycleInviteState={onCycleInviteState}
+                  onToggleGuestInvited={onToggleGuestInvited}
                   onPrintPlaceCard={onPrintPlaceCard}
                 />
               </div>
@@ -1931,7 +1934,7 @@ function GuestTable({
   onCreateGuest,
   onEditGuest,
   onDeleteGuest,
-  onCycleInviteState,
+  onToggleGuestInvited,
 }: {
   guests: Guest[];
   households: Household[];
@@ -1947,7 +1950,7 @@ function GuestTable({
   onCreateGuest: (body: GuestUpsert) => Promise<boolean>;
   onEditGuest: (g: Guest) => void;
   onDeleteGuest: (id: number) => void | Promise<void>;
-  onCycleInviteState: (g: Guest) => void | Promise<void>;
+  onToggleGuestInvited: (g: Guest) => void | Promise<void>;
 }) {
   const { t } = useT();
   const householdLabelById = useMemo(() => {
@@ -2025,7 +2028,7 @@ function GuestTable({
               onChangeHousehold={onChangeHousehold}
               onEditGuest={onEditGuest}
               onDeleteGuest={onDeleteGuest}
-              onCycleInviteState={onCycleInviteState}
+              onToggleGuestInvited={onToggleGuestInvited}
             />
           ))}
           {/* Always-present blank row so a guest can be added inline without
@@ -2047,7 +2050,7 @@ function GuestTableRow({
   onChangeHousehold,
   onEditGuest,
   onDeleteGuest,
-  onCycleInviteState,
+  onToggleGuestInvited,
 }: {
   guest: Guest;
   householdLabel: string | null;
@@ -2061,7 +2064,7 @@ function GuestTableRow({
   ) => void | Promise<void>;
   onEditGuest: (g: Guest) => void;
   onDeleteGuest: (id: number) => void | Promise<void>;
-  onCycleInviteState: (g: Guest) => void | Promise<void>;
+  onToggleGuestInvited: (g: Guest) => void | Promise<void>;
 }) {
   const { t } = useT();
   const dietary = parseDietaryTags(g.dietary);
@@ -2195,7 +2198,7 @@ function GuestTableRow({
         />
       </td>
       <td className="px-3 py-2 text-center">
-        <InviteChip guest={g} onCycle={() => void onCycleInviteState(g)} />
+        <InviteChip guest={g} onToggle={() => void onToggleGuestInvited(g)} />
       </td>
       <td className="px-3 py-2">
         <span className="flex items-center justify-end gap-1">
@@ -2271,7 +2274,7 @@ function HouseholdCard({
   onRenameHousehold,
   onChangeGroup,
   onToggleAccommodation,
-  onCycleInviteState,
+  onToggleGuestInvited,
   onPrintPlaceCard,
 }: {
   household: Household;
@@ -2291,7 +2294,7 @@ function HouseholdCard({
   onRenameHousehold: (id: number, label: string) => Promise<void>;
   onChangeGroup: (id: number, groupTag: GuestGroupTag) => Promise<void>;
   onToggleAccommodation: (id: number, next: boolean) => Promise<void>;
-  onCycleInviteState: (g: Guest) => void;
+  onToggleGuestInvited: (g: Guest) => void;
   onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
   const { t } = useT();
@@ -2511,7 +2514,7 @@ function HouseholdCard({
                   className="pointer-events-none absolute left-4 top-0 h-1/2 w-3 rounded-bl-md border-b border-l border-paper-300 dark:border-umber-600 md:left-6"
                 />
               )}
-              <InviteChip guest={g} onCycle={() => onCycleInviteState(g)} />
+              <InviteChip guest={g} onToggle={() => onToggleGuestInvited(g)} />
               <p className="flex min-w-0 flex-1 items-center gap-1 truncate text-sm text-ink-900 dark:text-paper-50">
                 <PartnerRoleIcon role={g.partner_role} />
                 <KindIcon kind={g.kind} />
@@ -2741,56 +2744,29 @@ function RsvpBadge({ status }: { status: RsvpStatus }) {
   );
 }
 
-type InviteState = "not_invited" | "invited" | "delivered";
+type InviteState = "not_invited" | "invited";
 
 function inviteStateOf(g: Guest): InviteState {
-  if (g.invitation_delivered_at != null) return "delivered";
-  if (g.invited_at != null) return "invited";
-  return "not_invited";
-}
-
-function nextInviteState(s: InviteState): InviteState {
-  return s === "not_invited" ? "invited" : s === "invited" ? "delivered" : "not_invited";
+  return g.invited_at != null ? "invited" : "not_invited";
 }
 
 /**
- * Three-state cyclic chip: not-invited → invited → delivered → repeat. Each
- * state has its own glyph + tone so the row scans at a glance:
- *   – empty outline (paper) for "not invited yet"
- *   – ink-filled single check for "invited / link sent"
- *   – sage-filled double check for "invitation physically handed over"
+ * Binary invited toggle — not-invited is an empty outline circle, invited
+ * is a green check + a small envelope underneath it. The prior three-state
+ * cycle (plus a physically-delivered tier shown as a near-invisible dot)
+ * read as unreadable on a phone; the channel detail it tracked now lives on
+ * the dedicated Invites pipeline (/app/invites), so this quick-glance chip
+ * only ever answers one question: did we invite this guest. Not-invited
+ * renders nothing inside the circle on purpose — an empty state should look
+ * empty, not carry a placeholder dot nobody can decode.
  */
-function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
+function InviteChip({ guest, onToggle }: { guest: Guest; onToggle: () => void }) {
   const { t } = useT();
-  const state = inviteStateOf(guest);
-  const next = nextInviteState(state);
-  const label =
-    state === "delivered"
-      ? t("guests.invite_state_delivered")
-      : state === "invited"
-        ? t("guests.invite_state_invited")
-        : t("guests.invite_state_not_invited");
-  // Sub-6-char label for the mobile chip body. Icons-only is fine at sm+
-  // where the tooltip is reachable; on touch widths we surface the state in
-  // text so a glance answers "did we send this one yet?".
-  const shortLabel =
-    state === "delivered"
-      ? t("guests.delivered_short")
-      : state === "invited"
-        ? t("guests.invited_short")
-        : t("guests.invite_state_not_invited_short");
-  const nextHint =
-    next === "delivered"
-      ? t("guests.invite_state_cycle_to_delivered")
-      : next === "invited"
-        ? t("guests.invite_state_cycle_to_invited")
-        : t("guests.invite_state_cycle_to_clear");
-  const cls =
-    state === "delivered"
-      ? "border-sage-300 bg-sage-100 text-sage-700 hover:bg-sage-200 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
-      : state === "invited"
-        ? "border-ink-800 bg-ink-800 text-paper-50 hover:bg-ink-900 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 dark:hover:bg-paper-100"
-        : "border-paper-300 bg-paper-50 text-ink-400 hover:border-ink-300 hover:text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-umber-200";
+  const invited = inviteStateOf(guest) === "invited";
+  const label = invited ? t("guests.invite_state_invited") : t("guests.invite_state_not_invited");
+  const nextHint = invited
+    ? t("guests.invite_state_cycle_to_clear")
+    : t("guests.invite_state_cycle_to_invited");
   const openedAt = guest.invitation_opened_at;
   const openedLabel = openedAt
     ? t("guests.invite_email_opened_at").replace(
@@ -2803,25 +2779,22 @@ function InviteChip({ guest, onCycle }: { guest: Guest; onCycle: () => void }) {
     <span className="inline-flex shrink-0 items-center gap-0.5">
       <button
         type="button"
-        onClick={onCycle}
+        onClick={onToggle}
         title={`${label}: ${nextHint}`}
         aria-label={`${label}. ${nextHint}`}
-        aria-pressed={state !== "not_invited"}
-        /* Single small dot at every viewport — the prior `h-8 min-w-[3.5rem]`
-         *  chip with the "Meghívva" / "Átadva" / "-" text was a full-width
-         *  pill on mobile that ate the row before the name even rendered.
-         *  The header already carries the "0/2 meghívva" tally so the per-
-         *  member text was redundant; cycling tap target stays at the
-         *  WCAG-min 24px chip + the surrounding row hit area. */
-        className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${cls}`}
+        aria-pressed={invited}
+        className={`inline-flex h-6 w-6 shrink-0 flex-col items-center justify-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${
+          invited
+            ? "border-sage-300 bg-sage-100 text-sage-700 hover:bg-sage-200 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
+            : "border-paper-300 bg-paper-50 hover:border-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+        }`}
       >
-        <span className="sr-only">{shortLabel}</span>
-        {state === "delivered" ? (
-          <CheckCheck size={14} strokeWidth={2.5} aria-hidden="true" />
-        ) : state === "invited" ? (
-          <Check size={14} strokeWidth={2.5} aria-hidden="true" />
-        ) : (
-          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-50" />
+        <span className="sr-only">{label}</span>
+        {invited && (
+          <>
+            <Check size={11} strokeWidth={3} aria-hidden="true" />
+            <Mail size={8} strokeWidth={2.5} aria-hidden="true" className="-mt-0.5" />
+          </>
         )}
       </button>
       {openedLabel && (
