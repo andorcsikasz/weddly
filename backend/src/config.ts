@@ -187,8 +187,13 @@ if (REQUIRE_PROD_HARDENING) {
     "OFFSITE_BACKUP_ENCRYPTION_KEYS",
     "OFFSITE_BACKUP_HEALTHCHECK_URL",
   ] as const;
+  const configuredBackupFields = backupFields.filter((name) => (process.env[name] ?? "").trim());
   const missingBackupFields = backupFields.filter((name) => !(process.env[name] ?? "").trim());
-  if (missingBackupFields.length > 0) {
+  // Off-site backups need external R2 credentials and a heartbeat endpoint.
+  // Keep the integration optional until those resources are provisioned, but
+  // fail closed when an operator starts configuring it and leaves a partial
+  // setup that would otherwise look enabled while silently producing nothing.
+  if (configuredBackupFields.length > 0 && missingBackupFields.length > 0) {
     console.error(
       `[config] FATAL: encrypted off-site backup configuration is incomplete; missing ${missingBackupFields.join(", ")}.`,
     );
@@ -196,6 +201,7 @@ if (REQUIRE_PROD_HARDENING) {
   }
   const backupKeys = (process.env.OFFSITE_BACKUP_ENCRYPTION_KEYS ?? "").split(",");
   if (
+    configuredBackupFields.length > 0 &&
     backupKeys.some((entry) => {
       const separator = entry.indexOf(":");
       const id = separator > 0 ? entry.slice(0, separator).trim() : "";
@@ -208,20 +214,22 @@ if (REQUIRE_PROD_HARDENING) {
     );
     process.exit(1);
   }
-  try {
-    const endpoint = new URL(process.env.OFFSITE_BACKUP_ENDPOINT ?? "");
-    const heartbeat = new URL(process.env.OFFSITE_BACKUP_HEALTHCHECK_URL ?? "");
-    if (endpoint.protocol !== "https:" || heartbeat.protocol !== "https:") throw new Error();
-  } catch {
-    console.error(
-      "[config] FATAL: OFFSITE_BACKUP_ENDPOINT and OFFSITE_BACKUP_HEALTHCHECK_URL must be absolute HTTPS URLs.",
-    );
-    process.exit(1);
-  }
-  const backupHours = Number(process.env.OFFSITE_BACKUP_INTERVAL_HOURS ?? "24");
-  if (!Number.isFinite(backupHours) || backupHours <= 0) {
-    console.error("[config] FATAL: OFFSITE_BACKUP_INTERVAL_HOURS must be greater than zero.");
-    process.exit(1);
+  if (configuredBackupFields.length > 0) {
+    try {
+      const endpoint = new URL(process.env.OFFSITE_BACKUP_ENDPOINT ?? "");
+      const heartbeat = new URL(process.env.OFFSITE_BACKUP_HEALTHCHECK_URL ?? "");
+      if (endpoint.protocol !== "https:" || heartbeat.protocol !== "https:") throw new Error();
+    } catch {
+      console.error(
+        "[config] FATAL: OFFSITE_BACKUP_ENDPOINT and OFFSITE_BACKUP_HEALTHCHECK_URL must be absolute HTTPS URLs.",
+      );
+      process.exit(1);
+    }
+    const backupHours = Number(process.env.OFFSITE_BACKUP_INTERVAL_HOURS ?? "24");
+    if (!Number.isFinite(backupHours) || backupHours <= 0) {
+      console.error("[config] FATAL: OFFSITE_BACKUP_INTERVAL_HOURS must be greater than zero.");
+      process.exit(1);
+    }
   }
 }
 
@@ -430,7 +438,8 @@ export const CONFIG = {
   },
   /** Encrypted SQLite snapshots use credentials and a bucket distinct from
    * application uploads. The first key encrypts; retained older keys allow
-   * historical restores after rotation. Production requires the complete set. */
+   * historical restores after rotation. A partially configured set is fatal in
+   * production; a completely absent set keeps this optional worker disabled. */
   offsiteBackup: {
     endpoint: process.env.OFFSITE_BACKUP_ENDPOINT ?? "",
     accessKeyId: process.env.OFFSITE_BACKUP_ACCESS_KEY_ID ?? "",

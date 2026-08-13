@@ -24,8 +24,10 @@ closed. Group ordering reflects what blocks ship.
   - `ADMIN_TOTP_SECRETS` — one unique 128-bit-or-stronger Base32 secret per admin
   - `DATA_ENCRYPTION_KEYS` — an independent, rotation-capable application-data keyring
   - every `OFFSITE_BACKUP_*` variable from section C.3
-  Production boot deliberately fails if required security, email, admin or
-  backup configuration is absent or inconsistent.
+  Production boot deliberately fails if required security, email or admin
+  configuration is absent or inconsistent. Off-site backup remains disabled
+  when all of its variables are absent, and fails boot if configured only
+  partially; complete section C.3 before launch.
 - [ ] Add a custom domain in Railway → wait for HTTPS cert (auto Let's Encrypt).
 - [ ] Smoke test the deploy: hit `https://tryweddly.com/api/health` → `{ "ok": true }`.
 
