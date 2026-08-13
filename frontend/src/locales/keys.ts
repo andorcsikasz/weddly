@@ -5266,6 +5266,9 @@ export interface LocaleMessages {
     paid: string;
     /** Transient acknowledgement on an inline amount field after it commits. */
     saved: string;
+    /** aria-label + title on the one-tap button that copies the planned
+     *  amount into an untouched (zero) actual field. */
+    copy_planned_to_actual: string;
     paid_mark_full: string;
     paid_record: string;
     paid_record_help: string;

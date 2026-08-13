@@ -4636,6 +4636,7 @@ const de: LocaleMessages = {
     label: "Position",
     planned: "Geplant",
     actual: "Tatsächlich",
+    copy_planned_to_actual: "Wie geplant",
     paid: "Bezahlt",
     saved: "Gespeichert",
     paid_mark_full: "Als voll bezahlt markieren",

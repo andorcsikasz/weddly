@@ -16,6 +16,7 @@ import {
   BarChart3,
   Check,
   CircleCheck,
+  Equal,
   ExternalLink,
   FileText,
   Image as ImageIcon,
@@ -1294,6 +1295,7 @@ export default function BudgetPage() {
                         readOnly={!editable}
                         dataKey="actual"
                         ariaLabel={t("budget.actual")}
+                        copySource={planned}
                       />
                     </td>
                     <td className="px-4 py-2 align-middle">
@@ -1389,6 +1391,7 @@ export default function BudgetPage() {
                           readOnly={owned}
                           dataKey="actual"
                           ariaLabel={t("budget.actual")}
+                          copySource={plannedDisplay}
                         />
                       </td>
                       <td className="px-4 py-2 align-middle">
@@ -2883,6 +2886,7 @@ function BudgetMobileCard({
               readOnly={readOnlyActual}
               dataKey="actual"
               ariaLabel={t("budget.actual")}
+              copySource={planned}
             />
           </dd>
         </div>
@@ -3003,6 +3007,7 @@ function BudgetMobileCustomCard({
               readOnly={owned}
               dataKey="actual"
               ariaLabel={t("budget.actual")}
+              copySource={planned}
             />
           </dd>
         </div>
@@ -3596,6 +3601,7 @@ function HufInput({
   readOnly = false,
   dataKey,
   ariaLabel,
+  copySource,
 }: {
   value: number;
   /** Resolving to `false` means the write failed and the caller has already
@@ -3605,6 +3611,11 @@ function HufInput({
   readOnly?: boolean;
   dataKey?: "planned" | "actual" | "paid";
   ariaLabel?: string;
+  /** Planned amount this field may borrow with one tap instead of the couple
+   *  retyping a number they already entered above. Offered only on an
+   *  untouched "actual" field (`value === 0`) — once there's a real figure
+   *  in it, offering to overwrite it is more risk than the tap saves. */
+  copySource?: number;
 }) {
   // Amounts group in the READER's locale ("1,500,000" in EN, "1.500.000" in ES,
   // "1 500 000" in HU). This was pinned to "hu" while the card around it was
@@ -3620,6 +3631,10 @@ function HufInput({
   // from one that never left the field.
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Gates the copy-from-planned button: hidden while the field is actively
+  // being typed into, so it never sits under a number the couple is mid-way
+  // through entering themselves.
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   // Set while a pointer-initiated focus is still waiting for its mouseup —
   // see `onFocus` / `onMouseUp` below.
@@ -3698,6 +3713,7 @@ function HufInput({
   // couple entered a new figure and got a mangled one, with no error and no
   // way to notice beyond re-reading the cell.
   function onFocus(e: FocusEvent<HTMLInputElement>) {
+    setIsFocused(true);
     if (readOnly) return;
     selectingRef.current = true;
     e.currentTarget.select();
@@ -3714,15 +3730,10 @@ function HufInput({
     e.preventDefault();
   }
 
-  async function onBlur() {
-    selectingRef.current = false;
-    if (readOnly) return;
-    const parsed = parseAmountInput(draft);
-    if (parsed === null) {
-      setError(true);
-      return;
-    }
-    // Always re-format so the user sees grouping after they leave the field.
+  // Shared by the normal blur-commit and the copy-from-planned button, so
+  // both paths get the same re-format, no-op-on-unchanged, and saved-tick
+  // behaviour instead of the button needing its own copy of it.
+  async function commitValue(parsed: number) {
     setDraft(formatNumber(parsed, locale));
     if (parsed === value) return;
     const outcome = await onCommit(parsed);
@@ -3734,6 +3745,29 @@ function HufInput({
       setSaved(false);
     }, SAVED_TICK_MS);
   }
+
+  async function onBlur() {
+    selectingRef.current = false;
+    setIsFocused(false);
+    if (readOnly) return;
+    const parsed = parseAmountInput(draft);
+    if (parsed === null) {
+      setError(true);
+      return;
+    }
+    await commitValue(parsed);
+  }
+
+  function onCopyPlanned() {
+    if (readOnly || !copySource) return;
+    void commitValue(copySource);
+  }
+
+  // Only ever offered on an empty "actual" field with a real planned amount
+  // to borrow, and hidden mid-typing so it never sits under a number the
+  // couple is entering themselves — see the `copySource` prop doc above.
+  const showCopyButton =
+    !readOnly && !isFocused && dataKey === "actual" && !!copySource && value === 0;
 
   return (
     <span className="relative block">
@@ -3748,7 +3782,7 @@ function HufInput({
         aria-label={ariaLabel}
         className={`input h-9 min-h-0 py-1 text-center text-sm tabular-nums ${
           error ? "input-invalid" : ""
-        } ${readOnly ? "cursor-not-allowed bg-paper-100 text-ink-500 dark:bg-umber-700/60 dark:text-umber-300" : ""}`}
+        } ${showCopyButton ? "pr-7" : ""} ${readOnly ? "cursor-not-allowed bg-paper-100 text-ink-500 dark:bg-umber-700/60 dark:text-umber-300" : ""}`}
         value={draft}
         onChange={onChange}
         onFocus={onFocus}
@@ -3762,6 +3796,18 @@ function HufInput({
           aria-hidden
           className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-400"
         />
+      )}
+      {showCopyButton && (
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onCopyPlanned}
+          aria-label={t("budget.copy_planned_to_actual")}
+          title={t("budget.copy_planned_to_actual")}
+          className="absolute right-0.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+        >
+          <Equal size={13} aria-hidden="true" />
+        </button>
       )}
       {/* Announced once per commit; the tick alone says nothing to a screen
        *  reader, and this is the only confirmation the edit produces. */}

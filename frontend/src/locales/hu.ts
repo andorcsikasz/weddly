@@ -4541,6 +4541,7 @@ const hu: LocaleMessages = {
     actual: "Tényleges",
     paid: "Kifizetve",
     saved: "Mentve",
+    copy_planned_to_actual: "Ugyanannyi, mint a tervezett",
     paid_mark_full: "Teljesen kifizetve",
     paid_record: "Kifizetés rögzítése",
     paid_record_help: "Add meg a kifizetett százalékot vagy összeget.",

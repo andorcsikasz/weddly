@@ -4589,6 +4589,7 @@ const es: LocaleMessages = {
     label: "Concepto",
     planned: "Previsto",
     actual: "Real",
+    copy_planned_to_actual: "Igual que lo previsto",
     paid: "Pagado",
     saved: "Guardado",
     paid_mark_full: "Marcar como pagado por completo",

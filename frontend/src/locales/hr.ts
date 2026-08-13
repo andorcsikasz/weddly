@@ -4537,6 +4537,7 @@ const hr: LocaleMessages = {
     label: "Stavka",
     planned: "Planirano",
     actual: "Stvarno",
+    copy_planned_to_actual: "Isto kao planirano",
     paid: "Plaćeno",
     saved: "Spremljeno",
     paid_mark_full: "Označite kao u cijelosti plaćeno",

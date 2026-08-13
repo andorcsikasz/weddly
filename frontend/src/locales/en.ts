@@ -4501,6 +4501,7 @@ const en: LocaleMessages = {
     actual: "Actual",
     paid: "Paid",
     saved: "Saved",
+    copy_planned_to_actual: "Same as planned",
     paid_mark_full: "Mark fully paid",
     paid_record: "Record payment",
     paid_record_help: "Enter the percentage or amount paid.",
