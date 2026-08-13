@@ -8385,7 +8385,6 @@ const es: LocaleMessages = {
       "El acceso de administración requiere una comprobación reciente del segundo factor. Tu trabajo seguirá aquí.",
     admin_reauth_cta: "Verificar",
     admin_mfa_label: "Código del autenticador",
-    admin_mfa_hint: "Introduce el código actual de 6 dígitos de tu aplicación de autenticación.",
     admin_mfa_invalid: "El código no es válido, ha caducado o ya se ha utilizado.",
     sign_in: "Iniciar sesión",
     sign_out: "Cerrar sesión",

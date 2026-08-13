@@ -8297,7 +8297,6 @@ const hr: LocaleMessages = {
       "Za administratorski pristup potrebna je nedavna provjera drugog faktora. Vaš će rad ostati sačuvan.",
     admin_reauth_cta: "Potvrdi",
     admin_mfa_label: "Kod autentifikatora",
-    admin_mfa_hint: "Unesite trenutačni 6-znamenkasti kod iz aplikacije za autentifikaciju.",
     admin_mfa_invalid: "Kod nije valjan, istekao je ili je već upotrijebljen.",
     sign_in: "Prijava",
     sign_out: "Odjava",

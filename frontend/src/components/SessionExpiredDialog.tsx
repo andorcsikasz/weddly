@@ -204,26 +204,28 @@ export function SessionExpiredDialog({
       </p>
 
       {reason === "admin" && (
-        <form id="admin-step-up-form" className="mt-4 space-y-2" onSubmit={onAdminStepUp}>
-          <label htmlFor="admin-mfa-code" className="field-label">
-            {t("session.admin_mfa_label")}
-          </label>
+        <form id="admin-step-up-form" className="mt-4" onSubmit={onAdminStepUp}>
           <input
             id="admin-mfa-code"
-            className="input font-mono tracking-[0.35em]"
+            className="input text-center font-mono text-2xl tracking-[0.5em]"
             inputMode="numeric"
             autoComplete="one-time-code"
             pattern="[0-9]{6}"
             maxLength={6}
+            placeholder="000000"
             value={mfaCode}
             onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+            aria-label={t("session.admin_mfa_label")}
             aria-invalid={Boolean(error) || undefined}
             aria-describedby={error ? errorId : undefined}
             autoFocus
           />
-          <p className="text-xs text-ink-500 dark:text-paper-300">{t("session.admin_mfa_hint")}</p>
           {error && (
-            <p id={errorId} className="text-sm text-blush-700 dark:text-blush-300" role="alert">
+            <p
+              id={errorId}
+              className="mt-2 text-sm text-blush-700 dark:text-blush-300"
+              role="alert"
+            >
               {error}
             </p>
           )}

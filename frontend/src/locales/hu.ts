@@ -8386,7 +8386,6 @@ const hu: LocaleMessages = {
       "Az adminfelülethez friss második faktoros ellenőrzés szükséges. A munkád megmarad.",
     admin_reauth_cta: "Ellenőrzés",
     admin_mfa_label: "Hitelesítő kód",
-    admin_mfa_hint: "Add meg a hitelesítő alkalmazás aktuális, 6 számjegyű kódját.",
     admin_mfa_invalid: "A kód hibás, lejárt vagy már felhasználtad. Próbáld az aktuális kódot.",
     sign_in: "Bejelentkezés",
     sign_out: "Kijelentkezés",

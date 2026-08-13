@@ -9602,7 +9602,6 @@ export interface LocaleMessages {
     admin_reauth_body: string;
     admin_reauth_cta: string;
     admin_mfa_label: string;
-    admin_mfa_hint: string;
     admin_mfa_invalid: string;
     sign_in: string;
     sign_out: string;

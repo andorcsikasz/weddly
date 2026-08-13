@@ -8439,7 +8439,6 @@ const de: LocaleMessages = {
       "Für den Adminbereich ist eine aktuelle Zwei-Faktor-Prüfung erforderlich. Ihre Arbeit bleibt erhalten.",
     admin_reauth_cta: "Bestätigen",
     admin_mfa_label: "Authenticator-Code",
-    admin_mfa_hint: "Geben Sie den aktuellen sechsstelligen Code Ihrer Authenticator-App ein.",
     admin_mfa_invalid: "Der Code ist ungültig, abgelaufen oder wurde bereits verwendet.",
     sign_in: "Anmelden",
     sign_out: "Abmelden",

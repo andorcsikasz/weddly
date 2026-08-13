@@ -8309,7 +8309,6 @@ const en: LocaleMessages = {
       "Admin access requires a recent second-factor check. Your work is still here.",
     admin_reauth_cta: "Verify",
     admin_mfa_label: "Authenticator code",
-    admin_mfa_hint: "Enter the current 6-digit code from your authenticator app.",
     admin_mfa_invalid: "That code is invalid, expired, or was already used. Try the current code.",
     sign_in: "Sign in",
     sign_out: "Sign out",
