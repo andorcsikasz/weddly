@@ -1184,14 +1184,7 @@ export default function BudgetPage() {
                 paid={bucket?.paid ?? 0}
                 currency={currency}
                 locale={locale}
-                // Planned is always read-only at the row level — the slider on
-                // the CostPlanningCard above is the single edit surface for
-                // "how much we plan to spend on this category". Letting both
-                // surfaces edit the same value created a confusing "two
-                // sliders for one number" mental glitch (10-agent debate
-                // Agent 5). Actual stays editable so the couple can still
-                // log real spend per row.
-                readOnlyPlanned
+                readOnlyPlanned={!editable}
                 readOnlyActual={!editable}
                 canDelete={canDelete}
                 sources={bucket?.sources ?? []}
@@ -1286,14 +1279,10 @@ export default function BudgetPage() {
                       <CategoryCell category={cat} sources={bucket?.sources ?? []} />
                     </td>
                     <td className="px-4 py-2 align-middle">
-                      {/* Planned is read-only at the row level — the per-
-                          category slider on the CostPlanningCard above is
-                          the single edit surface. See the mirrored mobile
-                          card prop comment for the rationale. */}
                       <HufInput
                         value={planned}
                         onCommit={(v) => setAggregatedPlanned(cat, v)}
-                        readOnly
+                        readOnly={!editable}
                         dataKey="planned"
                         ariaLabel={t("budget.planned")}
                       />

@@ -914,15 +914,11 @@ describe("<BudgetPage>", () => {
     expect(patchCall).toBeDefined();
   });
 
-  it("the planned HufInput in the table is read-only — the slider above is the sole edit surface", async () => {
-    // Behaviour change shipped alongside the cost-slider soft-caps:
-    // the BudgetPage table's `planned` column became read-only so the
-    // couple sees ONE place to edit the per-category plan (the
-    // CostPlanningCard slider) instead of two confusing input surfaces
-    // that wrote to the same `planned_huf`. Typing + blurring on the
-    // table input no longer fires a PATCH because the field never
-    // accepts the change. The slider-driven write path is exercised by
-    // the dedicated CostPlanningCard tests.
+  it("the planned HufInput in the table is editable and PATCHes the line, same as Actual", async () => {
+    // The couple asked to type Planned directly in the Költségsorok table
+    // instead of only dragging the CostPlanningCard slider above. Both
+    // surfaces write the same `planned_huf` through `setAggregatedPlanned`,
+    // so they can never disagree.
     const line = makeBudgetLine({
       id: 5001,
       category: "venue",
@@ -930,6 +926,9 @@ describe("<BudgetPage>", () => {
       label: "Venue",
     });
     installDefaultEndpoints({ lines: [line] });
+    onPatch((u) => u === "/api/budget/lines/5001", {
+      line: { ...line, planned_huf: 2_000_000 },
+    });
     renderBudget();
     await waitFor(() => expect(screen.getAllByText("Venue").length).toBeGreaterThan(0));
     await flush(2);
@@ -937,9 +936,9 @@ describe("<BudgetPage>", () => {
       document.querySelectorAll('input[data-budget-planned="true"]'),
     ) as HTMLInputElement[];
     expect(plannedInputs.length).toBeGreaterThan(0);
-    // Every planned input renders read-only — both mobile and desktop slot.
+    // Every planned input renders editable — both mobile and desktop slot.
     for (const inp of plannedInputs) {
-      expect(inp.readOnly).toBe(true);
+      expect(inp.readOnly).toBe(false);
     }
     const target = plannedInputs[0]!;
     await act(async () => {
@@ -950,7 +949,8 @@ describe("<BudgetPage>", () => {
     const patchCall = fetchCalls.find(
       (c) => c.method === "PATCH" && c.url === "/api/budget/lines/5001",
     );
-    expect(patchCall).toBeUndefined();
+    expect(patchCall).toBeDefined();
+    expect((patchCall?.body as { planned_huf?: number })?.planned_huf).toBe(2_000_000);
   });
 
   it("selects the whole amount when an editable field is focused", async () => {
