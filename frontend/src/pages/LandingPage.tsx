@@ -249,26 +249,20 @@ export default function LandingPage() {
           <div className="mx-auto flex min-h-[calc(75svh+5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
             <div className="grid items-start gap-8 lg:items-center lg:gap-14">
               <div>
-                <h1 className="max-w-[19ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-paper-50 sm:text-6xl sm:leading-[0.98] lg:text-7xl">
+                <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                   {t("landing.hero_title")}
                 </h1>
-                <p className="mt-5 max-w-xl font-grotesk text-base leading-relaxed text-paper-200 sm:text-lg">
-                  {t("landing.hero_sub")}
-                </p>
                 {/* Signup + demo sit side by side: sign up, or look around
                     first. Stacked on phones, inline from sm up. On phones each
                     button is only as wide as its own label — a full-width slab
                     masks the couple behind it, and the photo is the point. The
                     row also sits 5rem lower there (paired with the wrapper's
                     min-height above) so it lands below their faces. */}
-                <div className="mt-10 flex max-w-[17rem] flex-col items-start gap-3 sm:mt-7 sm:max-w-md sm:flex-row sm:flex-wrap sm:items-center">
-                  <Link
-                    to="/signup"
-                    className="hero-primary-cta btn-primary btn-lifted btn-landing btn-lg w-auto"
-                  >
+                <div className="mt-24 flex max-w-[17rem] flex-col items-start gap-3 sm:mt-6 sm:max-w-md sm:flex-row sm:flex-wrap sm:items-center">
+                  <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg w-auto">
                     {t("landing.cta_signup")}
                   </Link>
-                  <DemoLaunchButton className="hero-secondary-cta w-auto whitespace-nowrap" />
+                  <DemoLaunchButton className="w-auto whitespace-nowrap" />
                 </div>
                 {/* Role escape-hatch chips: icon-only pills that reveal their
                  *  label on hover/focus. Same three audiences (+ icons) as the
@@ -276,7 +270,7 @@ export default function LandingPage() {
                  *  prompt rather than navigating. */}
                 <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5">
                   <Link
-                    to="/suppliers"
+                    to="/vendors"
                     aria-label={t("landing.footer_band_cta_vendor")}
                     className={roleChipClass}
                     onClick={(e) => chipTapProceeds(e, "vendor")}
@@ -322,29 +316,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* The founding offer used to be discoverable only inside the pricing
-          deck far down the page. Give the promise its own early, indexable
-          section so visitors understand the offer before evaluating features. */}
-      <section className="relative border-y border-paper-300 bg-paper-200 dark:border-umber-700 dark:bg-umber-800">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-12">
-          <div className="max-w-3xl">
-            <p className="inline-flex items-center gap-2 font-grotesk text-xs font-semibold uppercase tracking-[0.24em] text-umber-600 dark:text-umber-300">
-              <Gift size={16} aria-hidden />
-              {t("landing.pricing_section_eyebrow")}
-            </p>
-            <h2 className="mt-3 font-grotesk text-3xl font-semibold leading-tight tracking-tight text-umber-950 dark:text-paper-50 sm:text-4xl">
-              {t("landing.pricing_title")}
-            </h2>
-            <p className="mt-3 max-w-2xl font-grotesk text-base leading-relaxed text-umber-700 dark:text-umber-200">
-              {t("landing.pricing_body")}
-            </p>
-          </div>
-          <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg shrink-0">
-            {t("landing.cta_signup")}
-          </Link>
-        </div>
-      </section>
-
       {/* ════════════════════════ 02 · Suppliers — THREE DOORS ════════════════════
           Pulled up from mid-page to the first scroll beat: the directory is
           the one thing a visitor can use before signing up, so it earns the
@@ -377,7 +348,7 @@ export default function LandingPage() {
                 icon={<Store size={18} strokeWidth={1.6} />}
                 label={t("landing.suppliers_action_join_label")}
                 sub={t("landing.suppliers_action_join_sub")}
-                to="/suppliers"
+                to="/vendors"
               />
             </div>
           </div>
@@ -580,7 +551,7 @@ export default function LandingPage() {
               icon={<Store size={20} strokeWidth={1.5} />}
               row={t("landing.card_vendors_title")}
               ctaLabel={t("landing.card_vendors_cta")}
-              to="/suppliers"
+              to="/vendors"
             />
             {/* Planners are a paid product with their own portal, so they get
                 their own row rather than being folded in with vendors. */}
@@ -922,7 +893,7 @@ function FoundingVendorsBand() {
   const heroSeats = remaining ?? VENDOR_FOUNDING_CAP;
 
   async function shareFoundingLink() {
-    const url = `${window.location.origin}/suppliers?ref=share`;
+    const url = `${window.location.origin}/vendors?ref=share`;
     // Native share sheet first — the highest-leverage "send to a friend"
     // affordance on mobile. A cancelled sheet rejects with AbortError, which
     // we swallow silently (NOT a reason to fall through to clipboard).
@@ -1002,7 +973,7 @@ function FoundingVendorsBand() {
           )}
           <div className="flex items-center gap-3">
             <Link
-              to="/suppliers/signup"
+              to="/vendors/signup"
               className="btn btn-landing btn-lg bg-paper-50 px-8 font-grotesk text-xs uppercase tracking-[0.2em] text-umber-950 hover:bg-paper-200 dark:bg-umber-900 dark:text-paper-50 dark:hover:bg-umber-800"
             >
               {t("landing.provendors_cta")}
@@ -1597,7 +1568,7 @@ function PricingDeck() {
         { icon: <CalendarCheck size={16} />, text: t("landing.pricing_vendor_bullet_4") },
         { icon: <Pause size={16} />, text: t("landing.pricing_vendor_bullet_5") },
       ],
-      ctaTo: "/suppliers",
+      ctaTo: "/vendors",
       ctaLabel: t("landing.pricing_vendor_cta"),
     },
     planners: {
