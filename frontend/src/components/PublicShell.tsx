@@ -184,7 +184,6 @@ function PublicHeader() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           to="/"
-          data-nav-icon
           className="-my-1 inline-flex min-h-tap shrink-0 items-center text-umber-900 transition-colors hover:text-umber-800 sm:my-0 sm:min-h-0 dark:text-paper-50 dark:hover:text-umber-300"
         >
           {/* Header wordmark sits between Wordmark's md and lg presets:
@@ -246,10 +245,9 @@ function PublicHeader() {
             <MessageSquare size={18} aria-hidden="true" />
           </button>
           <LocaleSwitcher
-            className="hidden sm:block"
+            className="hidden md:block"
             dataNavIcon
-            showCode
-            buttonClassName="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2 text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+            buttonClassName="inline-flex h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
           />
           <button
             type="button"
