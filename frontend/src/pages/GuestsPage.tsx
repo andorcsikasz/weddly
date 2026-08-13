@@ -2387,16 +2387,23 @@ function HouseholdCard({
             )}
           </div>
           {!isHosts && (
-            <span className="shrink-0 font-mono text-sm text-ink-900 tracking-[0.2em] dark:text-paper-50 md:col-start-4 md:row-start-1 md:text-base md:tracking-[0.3em]">
-              {household.code}
-            </span>
-          )}
-          {!isHosts && (
-            <div className="min-w-0 max-w-full md:col-start-2 md:row-start-1">
-              <HouseholdGroupChip
-                value={household.group_tag}
-                onChange={(g) => onChangeGroup(household.id, g)}
-              />
+            /* `basis-full` forces this pair onto its own line below the
+             * label on mobile — without it, the code's `shrink-0` was
+             * stealing width from the flex-1 label div, squeezing a long
+             * household name into a column so narrow each word wrapped
+             * to its own row. `md:contents` un-wraps it on desktop so
+             * the code/chip keep landing in their own grid cells instead
+             * of both sitting in whatever cell this div would occupy. */
+            <div className="flex min-w-0 basis-full flex-wrap items-center gap-x-3 gap-y-1 md:contents">
+              <span className="shrink-0 font-mono text-sm text-ink-900 tracking-[0.2em] dark:text-paper-50 md:col-start-4 md:row-start-1 md:text-base md:tracking-[0.3em]">
+                {household.code}
+              </span>
+              <div className="min-w-0 max-w-full md:col-start-2 md:row-start-1">
+                <HouseholdGroupChip
+                  value={household.group_tag}
+                  onChange={(g) => onChangeGroup(household.id, g)}
+                />
+              </div>
             </div>
           )}
           {!isHosts && coupleSlug && (
@@ -2895,15 +2902,20 @@ function HouseholdLabelEditor({
         setEditing(true);
       }}
       aria-label={t("guests.household_label")}
-      className={`flex max-w-full items-start gap-1.5 rounded text-left text-base font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400 dark:focus-visible:outline-umber-600 ${
+      /* Plain text flow, not a flex row: a flex sibling for the count
+       * forced the label into its own narrow column whenever space was
+       * tight, so long names wrapped one word per line instead of
+       * reflowing like a normal paragraph. `break-words` still guards
+       * the pathological case of one long unbroken token. */
+      className={`max-w-full break-words rounded text-left text-base font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink-400 dark:focus-visible:outline-umber-600 ${
         onDark
           ? "text-paper-50 hover:text-paper-200"
           : "text-ink-900 hover:text-ink-700 dark:text-paper-50 dark:hover:text-paper-100"
       }`}
     >
-      <span className="min-w-0 break-words">{household.label}</span>
+      {household.label}{" "}
       <span
-        className={`shrink-0 text-sm font-normal ${onDark ? "text-paper-200/80" : "text-ink-500 dark:text-umber-300"}`}
+        className={`text-sm font-normal ${onDark ? "text-paper-200/80" : "text-ink-500 dark:text-umber-300"}`}
       >
         ({count})
       </span>
@@ -4652,7 +4664,7 @@ function MealsDialog({
               <p className="text-sm font-medium leading-tight text-ink-800 dark:text-paper-100">
                 {t("guests.rsvp_collects_meal_label")}
               </p>
-              <p className="truncate text-[11px] text-ink-500 dark:text-umber-300">
+              <p className="text-[11px] leading-snug text-ink-500 dark:text-umber-300 sm:truncate">
                 {t("guests.rsvp_collects_meal_help")}
               </p>
             </div>
