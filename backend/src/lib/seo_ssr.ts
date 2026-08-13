@@ -1311,9 +1311,21 @@ function renderMarketingPageHtml(page: MarketingPage): string {
       const bullets = section.bullets
         ? `<ul>${section.bullets.map((item) => `<li>${escapeText(item)}</li>`).join("")}</ul>`
         : "";
-      return `<section><h2>${escapeText(section.heading)}</h2>${paragraphs}${bullets}</section>`;
+      const image = section.image
+        ? `<img src="${escapeAttr(section.image.url)}" alt="${escapeAttr(section.image.alt)}" loading="lazy" />`
+        : "";
+      return `<section><h2>${escapeText(section.heading)}</h2>${paragraphs}${bullets}${image}</section>`;
     })
     .join("\n");
+  const guideCards =
+    page.guideCards && page.guideCards.length > 0
+      ? `<section><h2>A három útmutató</h2><ul>${page.guideCards
+          .map(
+            (card) =>
+              `<li><a href="${escapeAttr(card.href)}"><img src="${escapeAttr(card.image.url)}" alt="${escapeAttr(card.image.alt)}" loading="lazy" /><h3>${escapeText(card.label)}</h3><p>${escapeText(card.description)}</p></a></li>`,
+          )
+          .join("")}</ul></section>`
+      : "";
   const steps = page.steps
     ? `<section><h2>Így működik lépésről lépésre</h2><ol>${page.steps
         .map((step) => `<li><h3>${escapeText(step.title)}</h3><p>${escapeText(step.body)}</p></li>`)
@@ -1337,10 +1349,13 @@ function renderMarketingPageHtml(page: MarketingPage): string {
   const related = `<nav aria-label="Kapcsolódó Weddly-oldalak"><h2>Kapcsolódó oldalak</h2><ul>${page.related
     .map((link) => `<li><a href="${escapeAttr(link.href)}">${escapeText(link.label)}</a></li>`)
     .join("")}</ul></nav>`;
+  const heroImage = page.heroImage
+    ? `<img src="${escapeAttr(page.heroImage.url)}" alt="${escapeAttr(page.heroImage.alt)}" />`
+    : "";
   return [
     `<nav aria-label="Morzsanavigáció">${breadcrumb}</nav>`,
-    `<header><p>${escapeText(page.eyebrow)}</p><h1>${escapeText(page.h1)}</h1><p>${escapeText(page.intro)}</p>${dates}</header>`,
-    `<article>${sections}${steps}${faq}</article>`,
+    `<header><p>${escapeText(page.eyebrow)}</p><h1>${escapeText(page.h1)}</h1><p>${escapeText(page.intro)}</p>${dates}${heroImage}</header>`,
+    `<article>${sections}${guideCards}${steps}${faq}</article>`,
     cta,
     related,
   ]

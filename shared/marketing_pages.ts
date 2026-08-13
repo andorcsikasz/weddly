@@ -11,15 +11,32 @@ export interface MarketingLink {
   label: string;
 }
 
+export interface MarketingImage {
+  url: string;
+  alt: string;
+  /** Which part of the crop to keep when the photo's own aspect ratio
+   *  doesn't match the box it renders in. Defaults to "top" at the call
+   *  site; set "center" for photos whose focal point sits mid-frame. */
+  position?: "top" | "center";
+}
+
 export interface MarketingSection {
   heading: string;
   paragraphs: readonly string[];
   bullets?: readonly string[];
+  image?: MarketingImage;
 }
 
 export interface MarketingFaq {
   question: string;
   answer: string;
+}
+
+export interface MarketingGuideCard {
+  href: string;
+  label: string;
+  description: string;
+  image: MarketingImage;
 }
 
 export interface MarketingPage {
@@ -30,9 +47,11 @@ export interface MarketingPage {
   eyebrow: string;
   h1: string;
   intro: string;
+  heroImage?: MarketingImage;
   sections: readonly MarketingSection[];
   steps?: readonly { title: string; body: string }[];
   faqs?: readonly MarketingFaq[];
+  guideCards?: readonly MarketingGuideCard[];
   related: readonly MarketingLink[];
   cta?: { title: string; body: string; href: string; label: string };
   published?: string;
@@ -50,6 +69,11 @@ const featurePages: readonly MarketingPage[] = [
     h1: "Esküvői vendéglista, amit nem kell körbeküldeni",
     intro:
       "A Weddlyben mindketten ugyanazt a vendéglistát látjátok. Az RSVP-válaszok, kísérők, ételválasztások és megjegyzések egy helyre érkeznek, ezért nem kell több Excel-verzióból összefésülni az adatokat.",
+    heroImage: {
+      url: "https://images.unsplash.com/photo-1537843147573-84a454793cf6?w=1200&auto=format&fit=crop&q=75",
+      alt: "Sötétzöld esküvői boríték kézzel írt fehér kalligráfiával, tollheggyel és fenyőtobozzal, meleg fényben.",
+      position: "center",
+    },
     sections: [
       {
         heading: "Miért nehéz egy táblázattal tervezni?",
@@ -70,6 +94,10 @@ const featurePages: readonly MarketingPage[] = [
           "A visszajelzések ugyanabban a rendszerben jelennek meg, ahol a vendégeket kezelitek. Amikor eljön az ültetés ideje, nem kell újra begépelni a neveket: a vendéglistából dolgozhattok tovább.",
           "Ez különösen hasznos a végső létszám, a menük összesítése és az utolsó pillanatos változások idején.",
         ],
+        image: {
+          url: "https://images.unsplash.com/photo-1687226480327-a8948ec49f9b?w=1200&auto=format&fit=crop&q=75",
+          alt: "Egyenként megcímzett, kraftpapír csomagok névre szóló kártyákkal, sorba állítva egy asztalon.",
+        },
       },
     ],
     steps: [
@@ -365,6 +393,10 @@ const featurePages: readonly MarketingPage[] = [
     h1: "Esküvői szolgáltatók egy átlátható katalógusban",
     intro:
       "A Weddly nyilvános szolgáltatói katalógusában kategória és hely alapján kereshettek. A részletes profilokon a szolgáltató által megadott bemutatkozás és képek segítenek a rövid lista összeállításában.",
+    heroImage: {
+      url: "https://images.unsplash.com/photo-1758810743028-6b8e150ec98f?w=1200&auto=format&fit=crop&q=75",
+      alt: "Szalvia-zöld terítővel és vadvirág-csokrokkal berendezett esküvői asztal, arany evőeszközökkel, kerti fényben.",
+    },
     sections: [
       {
         heading: "Induljatok a valódi igényeitekből",
@@ -385,6 +417,10 @@ const featurePages: readonly MarketingPage[] = [
           "Első körben ne egyetlen nyertest keressetek. Mentsétek el azokat, akik stílusban, helyben és szolgáltatásban szóba jöhetnek, majd ugyanazokat a kérdéseket tegyétek fel nekik.",
           "A katalógus a felfedezést segíti; az elérhetőséget, a pontos tartalmat és a feltételeket mindig közvetlenül a szolgáltatóval egyeztessétek.",
         ],
+        image: {
+          url: "https://images.unsplash.com/photo-1782038522911-10e919331c16?w=1200&auto=format&fit=crop&q=75",
+          alt: "Virágkötő kezei rózsaszín rózsákat válogatnak egy esküvői csokorhoz.",
+        },
       },
     ],
     steps: [
@@ -669,15 +705,80 @@ const hub: MarketingPage = {
   h1: "Esküvőszervezési útmutatók, valódi döntésekhez",
   intro:
     "A tervezés legnehezebb részeihez készítettünk lépésről lépésre használható útmutatókat. Regisztráció nélkül végigolvashatók, példákkal és ellenőrző szempontokkal.",
+  heroImage: {
+    url: "https://images.unsplash.com/photo-1541140911322-98afe66ea6da?w=1200&auto=format&fit=crop&q=75",
+    alt: "Nyitott éves tervező kézzel írt bejegyzésekkel és egy rézszínű toll, letisztult asztalon.",
+  },
   sections: [
     {
       heading: "Három alap, amelyre a többi döntés épül",
       paragraphs: [
         "A vendéglista meghatározza a létszámot, a költségvetés kijelöli a lehetőségeket, az ültetési rend pedig a végleges vendégadatokból lesz használható. Érdemes ebben a sorrendben haladni, miközben a változásokat mindhárom helyen átvezetitek.",
+        "Egyik útmutató sem egyszeri feladatlista. Mindegyik lépésről lépésre halad, konkrét példákkal illusztrálja a döntéseket, és egy gyakori hibákat összegző résszel zárul, hogy ne csak azt lássátok, mit érdemes csinálni, hanem azt is, hol szoktak elcsúszni mások.",
       ],
     },
   ],
-  related: guidePages.map((page) => ({ href: page.path, label: page.h1 })),
+  guideCards: [
+    {
+      href: "/utmutato/eskuvoi-vendeglista",
+      label: "Esküvői vendéglista készítése",
+      description:
+        "A névsortól a végleges létszámig: keret, csoportok, kísérők, RSVP és a leggyakoribb hibák.",
+      image: {
+        url: "https://images.unsplash.com/photo-1537843147573-84a454793cf6?w=1200&auto=format&fit=crop&q=75",
+        alt: "Sötétzöld esküvői boríték kézzel írt fehér kalligráfiával.",
+        position: "center",
+      },
+    },
+    {
+      href: "/utmutato/eskuvoi-koltsegvetes",
+      label: "Esküvői költségvetés készítése",
+      description:
+        "Kerettől a kifizetésekig: kategóriák, tartalék, ajánlatok összehasonlítása és fizetési naptár.",
+      image: {
+        url: "https://images.unsplash.com/photo-1633158829585-23ba8f7c8caf?w=1200&auto=format&fit=crop&q=75",
+        alt: "Egymásra rakott érmék, ahogy valaki a költségvetés tételeit számolja.",
+      },
+    },
+    {
+      href: "/utmutato/eskuvoi-ultetesi-rend",
+      label: "Esküvői ültetési rend készítése",
+      description:
+        "Asztaltól asztalig: csoportok, érzékeny szempontok és a végső ellenőrzés nyomtatás előtt.",
+      image: {
+        url: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200&auto=format&fit=crop&q=75",
+        alt: "Hosszú, virágdíszes esküvői asztal megterítve, székekkel mindkét oldalon.",
+      },
+    },
+  ],
+  faqs: [
+    {
+      question: "Kell hozzá Weddly-fiók az útmutatók elolvasásához?",
+      answer: "Nem. Mindhárom útmutató regisztráció nélkül, szabadon olvasható.",
+    },
+    {
+      question: "Milyen sorrendben érdemes végigolvasni őket?",
+      answer:
+        "A vendéglistával érdemes kezdeni, utána jöhet a költségvetés, majd az ültetési rend, mert mindegyik az előzőre épül.",
+    },
+    {
+      question: "Az útmutatók a Weddly használatához kellenek?",
+      answer:
+        "Nem feltétlenül. A lépések bármilyen módszerrel, akár papíron vagy táblázatban is követhetők; a Weddly funkciói csak megkönnyítik a megvalósítást.",
+    },
+  ],
+  related: [
+    { href: "/eskuvoi-vendeglista", label: "Esküvői vendéglista" },
+    { href: "/eskuvoi-koltsegvetes-tervezo", label: "Esküvői költségvetés tervező" },
+    { href: "/eskuvoi-ultetesi-rend-tervezo", label: "Esküvői ültetési rend tervező" },
+    { href: "/online-eskuvoi-rsvp", label: "Online esküvői RSVP" },
+  ],
+  cta: {
+    title: "Ha közben terveznétek is, ne csak olvasnátok",
+    body: "A Weddlyben a vendéglista, a költségvetés és az ültetés ugyanarra a közös, naprakész adatra épül.",
+    href: "/signup",
+    label: "Regisztráció",
+  },
 };
 
 export const MARKETING_PAGES: Readonly<Record<string, MarketingPage>> = Object.fromEntries(
