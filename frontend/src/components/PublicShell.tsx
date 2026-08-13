@@ -204,9 +204,6 @@ function PublicHeader() {
           className="ml-2 hidden items-center gap-4 font-grotesk md:flex"
         >
           {[
-            { to: "/eskuvoi-vendeglista", label: "Vendéglista" },
-            { to: "/eskuvoi-szolgaltatok", label: "Szolgáltatók" },
-            { to: "/utmutato", label: "Útmutatók" },
             { to: "/suppliers", label: t("landing.nav_vendors") },
             { to: "/planners", label: t("landing.nav_planners") },
           ].map(({ to, label }) => {
@@ -335,12 +332,9 @@ function PublicHeader() {
            *  which keeps SEO + locale keys intact. */}
           <div className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 py-3 font-grotesk text-sm text-umber-800 sm:px-6 dark:text-paper-100">
             {[
-              { to: "/eskuvoi-vendeglista", label: "Esküvői vendéglista" },
               { to: "/eskuvoi-koltsegvetes-tervezo", label: "Költségvetés tervező" },
               { to: "/eskuvoi-ultetesi-rend-tervezo", label: "Ültetési rend tervező" },
               { to: "/online-eskuvoi-rsvp", label: "Online esküvői RSVP" },
-              { to: "/eskuvoi-szolgaltatok", label: "Esküvői szolgáltatók" },
-              { to: "/utmutato", label: "Esküvőszervezési útmutatók" },
             ].map((item) => (
               <Link
                 key={item.to}
