@@ -2194,6 +2194,7 @@ const es: LocaleMessages = {
       "Cread una cuenta gratuita para guardar este progreso y acceder al resto del espacio de planificación de vuestra boda.",
     checklist_demo_convert_dismiss: "Quizá más tarde",
     checklist_demo_convert_cta: "Guardar mi progreso",
+    checklist_demo_open_link: "Abrir la lista completa",
     faq_title: "Las preguntas que seguramente te harás",
     faq_show_more: "+{n} preguntas más",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
@@ -2373,10 +2374,6 @@ const es: LocaleMessages = {
     pricing_title: "Sois nuestros invitados 18 meses.",
     pricing_body:
       "Acompáñanos desde el primer capítulo: durante los próximos dieciocho meses sois nuestros invitados, con todo incluido. Después son 7 € al mes, con dos semanas para probarlo y todas las funciones incluidas.",
-    pricing_section_eyebrow: "Precios",
-    pricing_section_title: "Primero ganáis vosotros, luego nosotros.",
-    pricing_section_sub:
-      "Las tres primeras parejas de un proveedor corren de nuestra cuenta, así que no se cobra nada hasta que Weddly ya le ha puesto trabajo delante. Las parejas tienen dos semanas para probarlo todo y luego dieciocho meses como invitados.",
     pricing_tab_couples: "Parejas",
     pricing_tab_vendors: "Proveedores",
     pricing_tab_planners: "Wedding planners",

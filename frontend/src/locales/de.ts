@@ -2217,6 +2217,7 @@ const de: LocaleMessages = {
       "Erstellen Sie ein kostenloses Konto, um diesen Fortschritt zu behalten und den Rest Ihres Hochzeitsplanungs-Arbeitsbereichs zu erhalten.",
     checklist_demo_convert_dismiss: "Vielleicht später",
     checklist_demo_convert_cta: "Fortschritt speichern",
+    checklist_demo_open_link: "Vollständige Checkliste öffnen",
     faq_title: "Fragen, die Sie wahrscheinlich stellen",
     faq_show_more: "+{n} weitere Fragen",
     closing_title: "In zwei Minuten\neingerichtet.",
@@ -2388,10 +2389,6 @@ const de: LocaleMessages = {
     pricing_title: "18 Monate lang sind Sie unser Gast.",
     pricing_body:
       "Kommen Sie vom ersten Kapitel an mit: die nächsten achtzehn Monate sind Sie unser Gast, alles freigeschaltet. Danach 7 € im Monat, mit zwei Wochen zum Ausprobieren und allen Funktionen.",
-    pricing_section_eyebrow: "Preise",
-    pricing_section_title: "Erst verdienen Sie, dann wir.",
-    pricing_section_sub:
-      "Die ersten drei Paare, die einen Dienstleister erreichen, gehen auf uns. Berechnet wird also nichts, solange Weddly ihm nicht bereits Arbeit gebracht hat. Paare haben zwei Wochen zum Ausprobieren und danach achtzehn Monate als unser Gast.",
     pricing_tab_couples: "Paare",
     pricing_tab_vendors: "Dienstleister",
     pricing_tab_planners: "Planer",

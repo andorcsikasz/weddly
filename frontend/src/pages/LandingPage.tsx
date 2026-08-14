@@ -545,16 +545,14 @@ export default function LandingPage() {
           read as a confession of synthetic social proof. Bring it back
           when we have one real beta couple willing to be named. */}
 
-      {/* ════════════════════════ 06 · Checklist — interactive ════════════════════
-          Same canonical wedding checklist that powers /app/planning's
-          Checklist tab, playable with zero signup: every section is free to
-          browse, and checking an item off is a real (locally-stored) action —
-          it just has nowhere permanent to live yet, which is exactly the
-          moment the inline "save this" card appears. PDF download works with
-          no account either way. A visitor who checks anything off here has
-          their progress replayed onto the real checklist the first time they
-          open Planning after signing up (see WeddingChecklist.tsx). */}
-      <PublicWeddingChecklist previewSectionCount={2} />
+      {/* ════════════════════════ 06 · Checklist — teaser card ════════════════════
+          A single stat card, not the full interactive list: title, live
+          progress (reads the same localStorage stash the tool page writes
+          to), download. Clicking the card hands the visitor off to the
+          dedicated /eszkozok tool page — that's where the section-by-section
+          browsing, per-item checking and the "save this progress" signup
+          nudge actually live (see PublicWeddingChecklist.tsx, WeddingChecklist.tsx). */}
+      <PublicWeddingChecklist teaser />
 
       {/* ════════════════════════ 09 · Audience — LEDGER ════════════════════════
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
@@ -603,17 +601,6 @@ export default function LandingPage() {
           rather than on a number, because the number is not the argument. */}
       <section id="pricing" className="relative stationery scroll-mt-20">
         <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
-              {t("landing.pricing_section_eyebrow")}
-            </p>
-            <h2 className="mt-3 font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
-              {t("landing.pricing_section_title")}
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl font-grotesk text-base leading-relaxed text-umber-700 dark:text-umber-200">
-              {t("landing.pricing_section_sub")}
-            </p>
-          </div>
           <PricingDeck />
         </div>
       </section>

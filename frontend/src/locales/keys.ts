@@ -2732,6 +2732,8 @@ export interface LocaleMessages {
     checklist_demo_convert_body: string;
     checklist_demo_convert_dismiss: string;
     checklist_demo_convert_cta: string;
+    /** Link caption on the landing teaser card, pairing with an arrow icon. */
+    checklist_demo_open_link: string;
     /** Landing-page demo launch card — small tilted sticker on the right
      *  of the hero. Eyebrow + title + button + loading/error states. */
     demo_card_eyebrow: string;
@@ -2928,15 +2930,6 @@ export interface LocaleMessages {
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_title: string;
     pricing_body: string;
-    /** Section eyebrow above the pricing deck. */
-    pricing_section_eyebrow: string;
-    /** Section headline. Leads on the VALUE PROPOSITION, not on a number: a
-     *  vendor's first inquiries are on us, so Weddly only starts earning once
-     *  it has already put work in front of them. */
-    pricing_section_title: string;
-    /** The one paragraph under the headline that says the same thing plainly
-     *  and names what each of the three sides gets. */
-    pricing_section_sub: string;
     /** Names for the three sides of the marketplace, on the deck's tap row,
      *  the peek cards and above the front ticket's price. */
     pricing_tab_couples: string;

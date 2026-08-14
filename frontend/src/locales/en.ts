@@ -2146,6 +2146,7 @@ const en: LocaleMessages = {
       "Create a free account to keep this progress and get the rest of your wedding planning workspace.",
     checklist_demo_convert_dismiss: "Maybe later",
     checklist_demo_convert_cta: "Save my progress",
+    checklist_demo_open_link: "Open the full checklist",
     faq_title: "Questions you'll probably ask",
     faq_show_more: "+{n} more questions",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
@@ -2322,10 +2323,6 @@ const en: LocaleMessages = {
     pricing_title: "You're our guest for 18 months.",
     pricing_body:
       "Come along from the first chapter: for the next eighteen months you're our guest, everything unlocked. After that it's 7 € a month, with two weeks to try it and every feature included.",
-    pricing_section_eyebrow: "Pricing",
-    pricing_section_title: "We only earn after you do.",
-    pricing_section_sub:
-      "A vendor's first three couples are on us, so nothing is charged until Weddly has already put work in front of them. Couples get two weeks to try everything, then eighteen months as our guest.",
     pricing_tab_couples: "Couples",
     pricing_tab_vendors: "Suppliers",
     pricing_tab_planners: "Planners",

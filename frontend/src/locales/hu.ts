@@ -2164,6 +2164,7 @@ const hu: LocaleMessages = {
       "Hozzatok létre egy ingyenes fiókot, hogy megmaradjon ez a haladás, és megkapjátok hozzá a teljes esküvőtervező felületet.",
     checklist_demo_convert_dismiss: "Most nem",
     checklist_demo_convert_cta: "Mentsük el a haladást",
+    checklist_demo_open_link: "Nyisd meg a teljes listát",
     faq_title: "Gyakori kérdések",
     faq_show_more: "+{n} további kérdés",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
@@ -2345,10 +2346,6 @@ const hu: LocaleMessages = {
     pricing_title: "18 hónapig a vendégünk vagytok.",
     pricing_body:
       "Tartsatok velünk az első fejezettől: a következő másfél évben a vendégünk vagytok, teljes hozzáféréssel. Utána 2 490 Ft havonta, 2 hét próbaidővel, minden funkcióval.",
-    pricing_section_eyebrow: "Árak",
-    pricing_section_title: "Előbb ti kerestek, utána mi.",
-    pricing_section_sub:
-      "Egy szolgáltató első három párja a vendégünk, vagyis addig semmit nem számlázunk, amíg a Weddly nem hozott nekik valódi munkát. A pároknak két hét próbaidő, utána tizennyolc hónap vendégség.",
     pricing_tab_couples: "Pároknak",
     pricing_tab_vendors: "Szolgáltatóknak",
     pricing_tab_planners: "Szervezőknek",

@@ -2167,6 +2167,7 @@ const hr: LocaleMessages = {
       "Otvorite besplatan račun kako biste zadržali ovaj napredak i dobili ostatak svog radnog prostora za planiranje vjenčanja.",
     checklist_demo_convert_dismiss: "Možda kasnije",
     checklist_demo_convert_cta: "Spremi moj napredak",
+    checklist_demo_open_link: "Otvori cijeli popis",
     faq_title: "Pitanja koja ćete vjerojatno postaviti",
     faq_show_more: "+{n} dodatnih pitanja",
     closing_title: "Dvije minute\ni sve je spremno.",
@@ -2336,10 +2337,6 @@ const hr: LocaleMessages = {
     pricing_title: "18 mjeseci ste naš gost.",
     pricing_body:
       "Krenite s nama od prvog poglavlja: sljedećih osamnaest mjeseci naš ste gost, sa svime otključanim. Nakon toga 7 € mjesečno, s dva tjedna za isprobavanje i svim funkcijama.",
-    pricing_section_eyebrow: "Cijene",
-    pricing_section_title: "Prvo zaradite vi, pa onda mi.",
-    pricing_section_sub:
-      "Prva tri para koja stignu do dobavljača idu na nas, pa se ništa ne naplaćuje dok Weddly pred njega već nije stavio posao. Parovi dobivaju dva tjedna za isprobavanje, a zatim osamnaest mjeseci kao naši gosti.",
     pricing_tab_couples: "Parovi",
     pricing_tab_vendors: "Dobavljači",
     pricing_tab_planners: "Organizatori",
