@@ -108,6 +108,10 @@ export function WeddingChecklist({
   const [filter, setFilter] = useState<ChecklistFilter>("all");
   const [savingIds, setSavingIds] = useState<Set<number>>(() => new Set());
   const [addingIds, setAddingIds] = useState<Set<string>>(() => new Set());
+  // The couple's own edit of a not-yet-approved item's suggested due date,
+  // keyed by template id. Nothing is written until they tap "+" — that's the
+  // confirm. Absent = still showing the catalog's own suggested date.
+  const [dateOverrides, setDateOverrides] = useState<Record<string, string>>({});
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [pdfLocale, setPdfLocale] = useState<Locale>(locale);
@@ -151,13 +155,23 @@ export function WeddingChecklist({
 
   async function addItem(template: (typeof applicable)[number]) {
     if (addingIds.has(template.id)) return;
+    // Whatever the couple sees in the date field right now is what gets
+    // written — the suggested default if they left it alone, their own edit
+    // if they changed it, or no date at all if they cleared it.
+    const confirmedDate = (dateOverrides[template.id] ?? template.dueDate ?? "").trim();
     setAddingIds((current) => new Set(current).add(template.id));
     try {
-      const result = await planningApi.addChecklistItem(template.id, locale);
+      const result = await planningApi.addChecklistItem(template.id, locale, confirmedDate || null);
       onItemsChange((current) => [
         ...current.filter((entry) => entry.id !== result.item.id),
         result.item,
       ]);
+      setDateOverrides((current) => {
+        if (!(template.id in current)) return current;
+        const next = { ...current };
+        delete next[template.id];
+        return next;
+      });
     } catch {
       toast.error(t("planning.checklist.add_error"));
     } finally {
@@ -528,16 +542,21 @@ export function WeddingChecklist({
                           <p className="break-words text-sm font-medium leading-5 text-ink-900 dark:text-paper-50">
                             {template.title}
                           </p>
-                          {template.dueDate && (
-                            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
-                              <span className="inline-flex items-center gap-1">
-                                <CalendarDays size={12} aria-hidden="true" />
-                                {t("planning.checklist.due_date", {
-                                  date: formatShortDate(template.dueDate, locale),
-                                })}
-                              </span>
-                            </div>
-                          )}
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                            <CalendarDays size={12} className="shrink-0" aria-hidden="true" />
+                            <input
+                              type="date"
+                              value={dateOverrides[template.id] ?? template.dueDate ?? ""}
+                              onChange={(e) =>
+                                setDateOverrides((current) => ({
+                                  ...current,
+                                  [template.id]: e.target.value,
+                                }))
+                              }
+                              aria-label={t("planning.due_date_label")}
+                              className="shrink-0 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-xs text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                            />
+                          </div>
                         </div>
                       </li>
                     ),

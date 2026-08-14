@@ -66,6 +66,9 @@ const en: LocaleMessages = {
     planning_title: "Planning · Weddly",
     planning_description:
       "Tasks, ideas, and your wedding-day timeline in one place, quick to capture, easy to reorder.",
+    decisions_title: "Decisions · Weddly",
+    decisions_description:
+      "The long-tail wedding-day details, grouped by theme, worked through whenever you're ready.",
     admin_suppliers_title: "Admin · Suppliers · Weddly",
     admin_suppliers_description:
       "Moderate community submissions, approve, hide or delete from the Weddly admin console.",
@@ -2863,9 +2866,9 @@ const en: LocaleMessages = {
     recommended_title: "Recommended for you",
     recommended_sub: "Picked from your answers",
     recommended_added: "Added to your ideas",
-    recommended_empty_nudge:
-      "Answer a few questions on the Decisions tab and we'll suggest ideas tailored to you.",
+    recommended_empty_nudge: "Answer a few questions and we'll suggest ideas tailored to you.",
     recommended_empty_cta: "Open the questions",
+    decisions_entry_title: "When you're ready to think it through",
     dice_empty_cta: "Out of ideas? We'll roll you some!",
     idea_tag_program: "Program idea",
     idea_tag_decor: "Decor",

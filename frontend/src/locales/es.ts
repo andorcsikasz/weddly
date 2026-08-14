@@ -70,6 +70,9 @@ const es: LocaleMessages = {
     planning_title: "Planificación · Weddly",
     planning_description:
       "Tareas, ideas y el cronograma del día de la boda en un solo lugar; rápido de anotar, fácil de reordenar.",
+    decisions_title: "Decisiones · Weddly",
+    decisions_description:
+      "Los pequeños detalles de la boda, agrupados por tema, para resolverlos cuando estéis listos.",
     admin_suppliers_title: "Admin · Proveedores · Weddly",
     admin_suppliers_description:
       "Modera los envíos de la comunidad: aprueba, oculta o elimina desde la consola de administración de Weddly.",
@@ -2923,9 +2926,9 @@ const es: LocaleMessages = {
     recommended_title: "Recomendado para ti",
     recommended_sub: "Elegido según tus respuestas",
     recommended_added: "Añadido a tus ideas",
-    recommended_empty_nudge:
-      "Responde unas preguntas en la pestaña Decisiones y te sugeriremos ideas a tu medida.",
+    recommended_empty_nudge: "Responde unas preguntas y te sugeriremos ideas a tu medida.",
     recommended_empty_cta: "Abrir las preguntas",
+    decisions_entry_title: "Cuando estéis listos para pensarlo con calma",
     dice_empty_cta: "¿Sin ideas? ¡Te tiramos unas cuantas!",
     idea_tag_program: "Idea de programa",
     idea_tag_decor: "Decoración",

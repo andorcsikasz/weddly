@@ -88,6 +88,8 @@ export interface LocaleMessages {
     logistics_description: string;
     planning_title: string;
     planning_description: string;
+    decisions_title: string;
+    decisions_description: string;
     admin_suppliers_title: string;
     admin_suppliers_description: string;
     admin_feedback_title: string;
@@ -3574,6 +3576,9 @@ export interface LocaleMessages {
     recommended_empty_cta: string;
     /** Dice entry point surfaced on the Ideas empty state. */
     dice_empty_cta: string;
+    /** Headline on the card that links from Planning to the standalone
+     *  /app/decisions page (not a tab any more). */
+    decisions_entry_title: string;
     /** Idea category tag labels (one per IdeaTag) + picker affordances. */
     idea_tag_program: string;
     idea_tag_decor: string;

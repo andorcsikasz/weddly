@@ -67,6 +67,9 @@ const hu: LocaleMessages = {
     planning_title: "Tervezés · Wēddly",
     planning_description:
       "Feladatok, ötletek és az esküvői napi programterv egy helyen, gyorsan rögzíthető, később könnyen átrendezhető.",
+    decisions_title: "Döntések · Wēddly",
+    decisions_description:
+      "Az esküvő apró, hosszú távú részletei téma szerint csoportosítva, akkor foglalkoztok velük, amikor készen álltok.",
     admin_suppliers_title: "Admin · Szolgáltatók · Wēddly",
     admin_suppliers_description:
       "Közösségi beküldések moderálása, elfogadás, elrejtés és törlés a Weddly admin felületéről.",
@@ -2889,9 +2892,9 @@ const hu: LocaleMessages = {
     recommended_title: "Nektek ajánljuk",
     recommended_sub: "A válaszaitok alapján összeválogatva",
     recommended_added: "Hozzáadva az ötletekhez",
-    recommended_empty_nudge:
-      "Válaszoljatok pár kérdésre a Döntések fülön, és személyre szabott ötleteket ajánlunk.",
+    recommended_empty_nudge: "Válaszoljatok pár kérdésre, és személyre szabott ötleteket ajánlunk.",
     recommended_empty_cta: "Kérdések megnyitása",
+    decisions_entry_title: "Ha készen álltok a mélyebb átgondolásra",
     dice_empty_cta: "Nincs ötleted? Dobunk egyet!",
     idea_tag_program: "Programötlet",
     idea_tag_decor: "Dekor",

@@ -1409,12 +1409,25 @@ export const planningApi = {
     ),
   /** Approve a single catalog suggestion onto the couple's own Planning list.
    *  Idempotent; reuses an equivalent existing template/timeline task where
-   *  titles match instead of duplicating it. */
-  addChecklistItem: (templateId: string, locale: import("@shared/locales").UiLocale) =>
+   *  titles match instead of duplicating it. `dueDate` is the couple's
+   *  confirmed timing: omit to keep the catalog's computed date, pass a
+   *  YYYY-MM-DD string to confirm an (optionally edited) date, or pass null
+   *  to add with no date at all. */
+  addChecklistItem: (
+    templateId: string,
+    locale: import("@shared/locales").UiLocale,
+    dueDate?: string | null,
+  ) =>
     apiFetch<{
       item: import("@shared/types").PlanningItem;
       created: boolean;
-    }>("POST", "/api/planning/checklist/items", { template_id: templateId, locale }),
+    }>(
+      "POST",
+      "/api/planning/checklist/items",
+      dueDate === undefined
+        ? { template_id: templateId, locale }
+        : { template_id: templateId, locale, due_date: dueDate },
+    ),
 };
 
 export function weddingChecklistPdfUrl(options: {

@@ -81,6 +81,9 @@ const de: LocaleMessages = {
     planning_title: "Planung · Weddly",
     planning_description:
       "Aufgaben, Ideen und der Ablauf des Hochzeitstags an einem Ort, schnell notiert, leicht umsortiert.",
+    decisions_title: "Entscheidungen · Weddly",
+    decisions_description:
+      "Die vielen kleinen Details der Hochzeit, nach Themen gruppiert, für den Moment, wenn ihr bereit seid.",
     admin_suppliers_title: "Admin · Dienstleister · Weddly",
     admin_suppliers_description:
       "Community-Einreichungen moderieren, freigeben, ausblenden oder löschen in der Weddly-Adminkonsole.",
@@ -2927,8 +2930,9 @@ const de: LocaleMessages = {
     recommended_sub: "Aus Ihren Antworten ausgewählt",
     recommended_added: "Zu Ihren Ideen hinzugefügt",
     recommended_empty_nudge:
-      "Beantworten Sie ein paar Fragen im Tab Entscheidungen, dann schlagen wir Ihnen passende Ideen vor.",
+      "Beantworten Sie ein paar Fragen, dann schlagen wir Ihnen passende Ideen vor.",
     recommended_empty_cta: "Fragen öffnen",
+    decisions_entry_title: "Wenn Sie bereit sind, es in Ruhe durchzudenken",
     dice_empty_cta: "Keine Idee? Wir würfeln Ihnen ein paar!",
     idea_tag_program: "Programmidee",
     idea_tag_decor: "Deko",

@@ -83,6 +83,9 @@ const hr: LocaleMessages = {
     planning_title: "Planiranje · Weddly",
     planning_description:
       "Zadaci, ideje i raspored dana vjenčanja na jednom mjestu, brzo se zapisuju i lako preslaguju.",
+    decisions_title: "Odluke · Weddly",
+    decisions_description:
+      "Sitni detalji vjenčanja, grupirani po temama, riješite ih kad budete spremni.",
     admin_suppliers_title: "Admin · Dobavljači · Weddly",
     admin_suppliers_description:
       "Moderiranje prijava zajednice, odobravanje, skrivanje i brisanje iz Weddly admin konzole.",
@@ -2865,9 +2868,9 @@ const hr: LocaleMessages = {
     recommended_title: "Preporučujemo vam",
     recommended_sub: "Odabrano prema vašim odgovorima",
     recommended_added: "Dodano u vaše ideje",
-    recommended_empty_nudge:
-      "Odgovorite na nekoliko pitanja na kartici Odluke i predložit ćemo vam ideje po mjeri.",
+    recommended_empty_nudge: "Odgovorite na nekoliko pitanja i predložit ćemo vam ideje po mjeri.",
     recommended_empty_cta: "Otvorite pitanja",
+    decisions_entry_title: "Kad budete spremni sve promisliti do kraja",
     dice_empty_cta: "Nemate ideja? Bacit ćemo vam nekoliko!",
     idea_tag_program: "Ideja za program",
     idea_tag_decor: "Dekor",

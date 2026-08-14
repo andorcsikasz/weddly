@@ -24,6 +24,11 @@ export function addChecklistItem(
   templateId: string,
   weddingDate: string | null,
   rawLocale: unknown,
+  /** Explicit due date the couple confirmed in the approve UI. `undefined`
+   *  (the field omitted) means "use the catalog's computed date" — the old
+   *  behaviour, still what the demo-progress replay relies on. `null` means
+   *  the couple cleared the suggested date on purpose. */
+  dueDateOverride?: string | null,
 ): AddChecklistItemResult {
   if (!isChecklistTemplateId(templateId)) {
     throw new HttpError(400, "Unknown checklist template id");
@@ -32,6 +37,7 @@ export function addChecklistItem(
     typeof rawLocale === "string" && isUiLocale(rawLocale) ? rawLocale : "en";
   const template = checklistItemById(templateId, locale, weddingDate);
   if (!template) throw new HttpError(400, "Unknown checklist template id");
+  const resolvedDueDate = dueDateOverride !== undefined ? dueDateOverride : template.dueDate;
 
   const existing = listPlanningItemsByCouple(coupleId);
   const already = existing.find((entry) => entry.checklist_template_id === templateId);
@@ -55,9 +61,11 @@ export function addChecklistItem(
   const ts = now();
   let id: number;
   if (reusable) {
+    // Never clobber a date the couple (or another wand) already set on the
+    // row being adopted — only fill the gap.
     db.prepare(
-      "UPDATE planning_items SET checklist_template_id = ?, updated_at = ? WHERE id = ? AND couple_id = ? AND checklist_template_id IS NULL",
-    ).run(templateId, ts, reusable.id, coupleId);
+      "UPDATE planning_items SET checklist_template_id = ?, due_date = COALESCE(due_date, ?), updated_at = ? WHERE id = ? AND couple_id = ? AND checklist_template_id IS NULL",
+    ).run(templateId, resolvedDueDate, ts, reusable.id, coupleId);
     id = reusable.id;
   } else {
     const position = existing.reduce((max, entry) => Math.max(max, entry.position), -1) + 1;
@@ -73,8 +81,8 @@ export function addChecklistItem(
       .run(
         coupleId,
         template.title,
-        template.dueDate,
-        template.dueDate,
+        resolvedDueDate,
+        resolvedDueDate,
         position,
         templateId,
         ts,

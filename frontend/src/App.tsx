@@ -79,6 +79,7 @@ const AdminEmailListPage = lazyWithReload(() => import("./pages/AdminEmailListPa
 const BudgetPage = lazyWithReload(() => import("./pages/BudgetPage"));
 const ChangeEmailPage = lazyWithReload(() => import("./pages/ChangeEmailPage"));
 const DashboardPage = lazyWithReload(() => import("./pages/DashboardPage"));
+const DecisionsPage = lazyWithReload(() => import("./pages/DecisionsPage"));
 const DesignPage = lazyWithReload(() => import("./pages/DesignPage"));
 const GuestPageEditorPage = lazyWithReload(() => import("./pages/GuestPageEditorPage"));
 const GuestsPage = lazyWithReload(() => import("./pages/GuestsPage"));
@@ -1104,6 +1105,18 @@ export default function App() {
             element={
               <Page>
                 <PlanningPage />
+              </Page>
+            }
+          />
+          {/* The "Döntések" long-tail decision deck, split off Planning's tab
+            bar 2026-08-14 into its own door — a different, slower mode than
+            the scan-and-tick lists there. No sidebar rail entry on purpose;
+            reached via a promoted card on Planning. */}
+          <Route
+            path="decisions"
+            element={
+              <Page>
+                <DecisionsPage />
               </Page>
             }
           />

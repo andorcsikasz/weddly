@@ -76,6 +76,55 @@ describe("wedding checklist", () => {
     expect(list.data.items.filter((entry) => entry.title === "Book your venue")).toHaveLength(1);
   });
 
+  test("confirms the couple's own due date instead of the catalog default", async () => {
+    const { token } = await bootstrapCouple();
+    const withDate = await req<AddResponse>(
+      "POST",
+      "/api/planning/checklist/items",
+      { template_id: "book-venue", locale: "en", due_date: "2027-03-01" },
+      { token },
+    );
+    expect(withDate.status).toBe(200);
+    expect(withDate.data.item.due_date).toBe("2027-03-01");
+
+    // Explicit null means "add it, but I don't want a date".
+    const noDate = await req<AddResponse>(
+      "POST",
+      "/api/planning/checklist/items",
+      { template_id: "buy-rings", locale: "en", due_date: null },
+      { token },
+    );
+    expect(noDate.status).toBe(200);
+    expect(noDate.data.item.due_date).toBeNull();
+
+    const badShape = await req(
+      "POST",
+      "/api/planning/checklist/items",
+      { template_id: "choose-cake", locale: "en", due_date: "not-a-date" },
+      { token },
+    );
+    expect(badShape.status).toBe(400);
+  });
+
+  test("fills a reused task's missing date but never overwrites an existing one", async () => {
+    const { token } = await bootstrapCouple();
+    const existing = await req<{ item: PlanningItem }>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Book your venue", due_date: "2026-01-01" },
+      { token },
+    );
+    const added = await req<AddResponse>(
+      "POST",
+      "/api/planning/checklist/items",
+      { template_id: "book-venue", locale: "en", due_date: "2027-03-01" },
+      { token },
+    );
+    expect(added.data.item.id).toBe(existing.data.item.id);
+    // The couple's own pre-existing date wins over the newly confirmed one.
+    expect(added.data.item.due_date).toBe("2026-01-01");
+  });
+
   test("rejects an unknown checklist template id", async () => {
     const { token } = await bootstrapCouple();
     const result = await req(

@@ -18,6 +18,21 @@ function parseLocale(raw: unknown): UiLocale {
   return typeof raw === "string" && isUiLocale(raw) ? raw : "en";
 }
 
+// YYYY-MM-DD, same loose shape check used across the planning routes.
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** `undefined` (field omitted) = keep the old default-date behaviour;
+ *  `null` = the couple explicitly cleared the suggested date; a string must
+ *  be a valid-shaped date. */
+function parseDueDateOverride(raw: unknown): string | null | undefined {
+  if (raw === undefined) return undefined;
+  if (raw === null) return null;
+  if (typeof raw !== "string" || !DATE_RE.test(raw)) {
+    throw new HttpError(400, "due_date must be YYYY-MM-DD or null");
+  }
+  return raw;
+}
+
 function profileFor(coupleId: number): ManualTagAnswers {
   const row = db.prepare("SELECT planning_profile FROM couples WHERE id = ?").get(coupleId) as
     | { planning_profile: string | null }
@@ -39,7 +54,9 @@ async function handleAddItem(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
-  const body = await readJson<{ template_id?: unknown; locale?: unknown }>(ctx.req);
+  const body = await readJson<{ template_id?: unknown; locale?: unknown; due_date?: unknown }>(
+    ctx.req,
+  );
   if (typeof body.template_id !== "string" || !body.template_id) {
     throw new HttpError(400, "template_id is required");
   }
@@ -49,6 +66,7 @@ async function handleAddItem(ctx: Ctx): Promise<Response> {
     body.template_id,
     couple.wedding_date,
     body.locale,
+    parseDueDateOverride(body.due_date),
   );
   return json(result);
 }

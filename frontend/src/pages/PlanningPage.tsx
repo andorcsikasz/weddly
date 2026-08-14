@@ -15,7 +15,6 @@ import {
   timelineStatus,
   toIsoDate,
 } from "@shared/planning_timeline";
-import { type ConditionTag, INTAKE_DIMENSIONS } from "@shared/planning_prompts";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { Currency, IdeaStatus, IdeaTag, PlanningItem, PlanningKind } from "@shared/types";
 import {
@@ -34,7 +33,6 @@ import {
   GripVertical,
   Lightbulb,
   LayoutList,
-  ListChecks,
   Pencil,
   Plus,
   Sparkles,
@@ -57,7 +55,6 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
-import { DecisionsPanel } from "./DecisionsPanel";
 import { alreadyListedName, ApiError } from "../lib/api";
 import {
   type PlanningPromptTags,
@@ -89,12 +86,19 @@ import {
 import { useDocumentMeta } from "../lib/seo";
 
 type PlanningTabKind = Exclude<PlanningKind, "schedule">;
-/** The decision-prompt deck is a separate surface over the same table, but its
- *  rows aren't a distinct PlanningKind (they're kind='task' with a seed_key) —
- *  so the tab key is its own union member, not a PlanningKind. */
-type PlanningTab = PlanningTabKind | "decision" | "checklist";
+type PlanningTab = PlanningTabKind | "checklist";
 
+// Checklist leads: it's the first thing a couple should get (per the owner),
+// and it's what actually populates Tasks with dated to-dos. "Döntések" used
+// to be a fourth tab here — split into its own page at /app/decisions
+// 2026-08-14, since it asks the couple to sit with a question rather than
+// scan-and-tick, a different mode that doesn't belong in this tab bar.
 const TABS: { kind: PlanningTab; labelKey: string; tipKey: string }[] = [
+  {
+    kind: "checklist",
+    labelKey: "planning.checklist.title",
+    tipKey: "planning.checklist.subtitle",
+  },
   {
     kind: "task",
     labelKey: "planning.tab_tasks",
@@ -105,23 +109,12 @@ const TABS: { kind: PlanningTab; labelKey: string; tipKey: string }[] = [
     labelKey: "planning.tab_ideas",
     tipKey: "planning.tab_ideas_tip",
   },
-  {
-    kind: "decision",
-    labelKey: "planning.tab_decisions",
-    tipKey: "planning.tab_decisions_tip",
-  },
-  {
-    kind: "checklist",
-    labelKey: "planning.checklist.title",
-    tipKey: "planning.checklist.subtitle",
-  },
 ];
 
 const TAB_ICON: Record<PlanningTab, typeof CheckCircle2> = {
+  checklist: ClipboardCheck,
   task: CheckCircle2,
   idea: Lightbulb,
-  decision: ListChecks,
-  checklist: ClipboardCheck,
 };
 
 // Icon-only tool group for the Tasks-tab actions (Timeline / Generate /
@@ -196,21 +189,6 @@ const IDEA_STATUS_META: Record<
 };
 const IDEA_STATUS_ORDER: IdeaStatus[] = ["doing", "maybe", "skip"];
 
-/** localStorage key for the Decisions-tab personalization strip collapse state
- *  ("1" = collapsed, "0" = open). Absent means "no explicit preference yet", so
- *  the strip auto-collapses once the couple has already answered something. */
-const INTAKE_COLLAPSE_KEY = "weddly.planning.intakeCollapsed";
-function readIntakeCollapsePref(): boolean | null {
-  try {
-    const v = localStorage.getItem(INTAKE_COLLAPSE_KEY);
-    if (v === "1") return false;
-    if (v === "0") return true;
-  } catch {
-    // localStorage unavailable (private mode / SSR) - fall back to default.
-  }
-  return null;
-}
-
 /** Lookup table mapping every TASK_TEMPLATE title (HU + EN) to the group it
  *  came from. Lets us render a divider between Esküvő and Nászút tasks in
  *  the main list without storing a group column on `planning_items`. Hand-
@@ -280,6 +258,17 @@ function BodyWithLinks({ text }: { text: string }) {
   );
 }
 
+/** A decision-prompt row (kind='task', carries a seed_key from the Döntések
+ *  deck) that hasn't been promoted into a real task yet. These stay out of
+ *  every Tasks-tab view — list, board, counts — until the couple promotes
+ *  them on the standalone /app/decisions page. Single-sourced so the four
+ *  call sites can't drift on what "still a pending prompt" means. */
+function isPendingDecisionPrompt(
+  item: Pick<PlanningItem, "seed_key" | "decision_status">,
+): boolean {
+  return Boolean(item.seed_key) && item.decision_status !== "promoted";
+}
+
 function taskGroupOf(item: PlanningItem, weddingDate: string | null): TaskGroupOrOther {
   const templateGroup = TASK_TITLE_TO_GROUP.get(item.title);
   // Honeymoon is already an explicit phase and should not be swallowed by the
@@ -310,7 +299,7 @@ export default function PlanningPage() {
   const confirm = useConfirm();
   const [items, setItems] = useState<PlanningItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeKind, setActiveKind] = useState<PlanningTab>("task");
+  const [activeKind, setActiveKind] = useState<PlanningTab>("checklist");
   // Per-kind wand modal flags. Task + idea each open their own previewer
   // (different field shapes). The wedding-day program template lives on
   // /app/schedule, so there's no schedule wand here.
@@ -383,60 +372,23 @@ export default function PlanningPage() {
       .catch(() => undefined);
   }, [viewMode, vendorsFetched]);
 
-  // Decisions-tab intake answers + collapse state live here (not in
-  // DecisionsPanel) so the collapsed intake bar can ride up in the tab row next
-  // to the pills while the answer grid renders below. Answers tune which
-  // conditional decision prompts surface.
+  // Read-only: the couple's Decisions-page intake answers, fetched here only
+  // to drive the Ideas tab's "Nektek ajánljuk" recommender (yesTags below).
+  // The questions themselves are answered on the standalone /app/decisions
+  // page now, not here.
   const [intakeTags, setIntakeTags] = useState<PlanningPromptTags>({});
-  const [intakeOpen, setIntakeOpen] = useState<boolean>(() => readIntakeCollapsePref() ?? true);
-  const intakeAutoSet = useRef(false);
   useEffect(() => {
     let alive = true;
     void planningApi
       .getPromptProfile()
       .then((res) => {
-        if (!alive) return;
-        const tags = res.tags ?? {};
-        setIntakeTags(tags);
-        // No saved preference yet: collapse the setup strip the first time we
-        // see the couple has already answered something; keep it open otherwise.
-        if (readIntakeCollapsePref() === null && !intakeAutoSet.current) {
-          intakeAutoSet.current = true;
-          const answered = INTAKE_DIMENSIONS.filter((d) => tags[d.tag] != null).length;
-          setIntakeOpen(answered === 0);
-        }
+        if (alive) setIntakeTags(res.tags ?? {});
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
   }, []);
-  const intakeAnswered = useMemo(
-    () => INTAKE_DIMENSIONS.filter((d) => intakeTags[d.tag] != null).length,
-    [intakeTags],
-  );
-  function toggleIntake() {
-    setIntakeOpen((v) => {
-      const next = !v;
-      try {
-        localStorage.setItem(INTAKE_COLLAPSE_KEY, next ? "0" : "1");
-      } catch {
-        // best-effort persistence only
-      }
-      return next;
-    });
-  }
-  async function handleSetTag(tag: ConditionTag, value: "yes" | "no") {
-    const next: PlanningPromptTags = { ...intakeTags };
-    if (next[tag] === value) delete next[tag];
-    else next[tag] = value;
-    setIntakeTags(next);
-    try {
-      await planningApi.savePromptProfile(next);
-    } catch {
-      toast.error(t("planning.decisions.save_error"));
-    }
-  }
 
   // The two partners, surfaced as ready-made options in the task "assignee"
   // datalist (the common case — a task is owned by one of them). Their actual
@@ -489,7 +441,7 @@ export default function PlanningPage() {
         .filter((i) => i.kind === activeKind)
         // Decision-prompts are kind='task' rows; keep them out of the dated
         // Tasks list until they're promoted into real tasks.
-        .filter((i) => !(i.kind === "task" && i.seed_key && i.decision_status !== "promoted"))
+        .filter((i) => !(i.kind === "task" && isPendingDecisionPrompt(i)))
         .filter(
           (i) => i.kind !== "task" || priorityFilter === 0 || (i.priority ?? 0) === priorityFilter,
         )
@@ -528,7 +480,7 @@ export default function PlanningPage() {
     let p2 = 0;
     for (const i of items) {
       if (i.kind !== "task") continue;
-      if (i.seed_key && i.decision_status !== "promoted") continue;
+      if (isPendingDecisionPrompt(i)) continue;
       const p = i.priority ?? 0;
       if (p === 1) p1++;
       if (p === 2) p2++;
@@ -543,9 +495,9 @@ export default function PlanningPage() {
     due_date?: string | null;
     assignee?: string | null;
   }) {
-    // The decision tab has no quick-add form; this guard also narrows
+    // The checklist tab has no quick-add form; this guard also narrows
     // activeKind to a real PlanningKind for the create call.
-    if (activeKind === "decision" || activeKind === "checklist") return;
+    if (activeKind === "checklist") return;
     try {
       const r = await planningApi.create({ kind: activeKind, ...input });
       setItems((prev) => [...prev, r.item]);
@@ -763,7 +715,7 @@ export default function PlanningPage() {
   }
 
   const hasTaskItems = useMemo(
-    () => items.some((i) => i.kind === "task" && !(i.seed_key && i.decision_status !== "promoted")),
+    () => items.some((i) => i.kind === "task" && !isPendingDecisionPrompt(i)),
     [items],
   );
   const hasIdeaItems = useMemo(() => items.some((i) => i.kind === "idea"), [items]);
@@ -1006,7 +958,7 @@ export default function PlanningPage() {
             role="tablist"
             data-tour-target="planning-tabs"
             aria-label={t("planning.tabs_aria")}
-            className="grid w-full grid-cols-2 gap-0.5 rounded-xl border border-ink-900 bg-paper-100/50 p-0.5 sm:w-auto sm:grid-cols-4 dark:border-umber-700 dark:bg-umber-700/60"
+            className="grid w-full grid-cols-3 gap-0.5 rounded-xl border border-ink-900 bg-paper-100/50 p-0.5 sm:w-auto dark:border-umber-700 dark:bg-umber-700/60"
           >
             {TABS.map((tab) => {
               const active = tab.kind === activeKind;
@@ -1044,37 +996,6 @@ export default function PlanningPage() {
               );
             })}
           </nav>
-
-          {activeKind === "decision" && (
-            <button
-              type="button"
-              onClick={toggleIntake}
-              aria-expanded={intakeOpen}
-              className="flex w-full items-center gap-3 rounded-2xl border border-ink-900 bg-paper-100/40 px-4 py-2 text-left transition-colors hover:bg-paper-200/40 dark:border-umber-700 dark:bg-umber-800/40 dark:hover:bg-umber-700/40 sm:ml-auto sm:flex-1"
-            >
-              <span className="flex-1 truncate font-grotesk text-xs font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                {t("planning.decisions.setup_label")}
-              </span>
-              <span className="shrink-0 rounded-full bg-paper-200 px-2.5 py-1 text-[11px] font-medium text-ink-600 dark:bg-umber-700 dark:text-umber-100">
-                {t("planning.decisions.setup_answered", {
-                  n: String(intakeAnswered),
-                  total: String(INTAKE_DIMENSIONS.length),
-                })}
-              </span>
-              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-sage-600 dark:text-sage-300">
-                {t(
-                  intakeOpen
-                    ? "planning.decisions.setup_done"
-                    : "planning.decisions.setup_continue",
-                )}
-                <ChevronDown
-                  size={16}
-                  aria-hidden="true"
-                  className={`transition-transform ${intakeOpen ? "rotate-180" : ""}`}
-                />
-              </span>
-            </button>
-          )}
 
           <div
             data-testid="planning-toolbar-actions"
@@ -1190,17 +1111,23 @@ export default function PlanningPage() {
           </div>
         </div>
 
-        {activeKind === "decision" ? (
-          <DecisionsPanel
-            items={items}
-            loading={loading}
-            locale={locale}
-            onItemsChange={setItems}
-            tags={intakeTags}
-            onSetTag={handleSetTag}
-            intakeOpen={intakeOpen}
-          />
-        ) : activeKind === "checklist" ? (
+        {/* Promoted, low-pressure entry point into the standalone long-tail
+         *  decision deck — a card, not a tab, so it never competes with the
+         *  daily scan-and-tick lists above for the same click. */}
+        <Link
+          to="/app/decisions"
+          className="mb-4 flex items-center gap-3 rounded-2xl border border-ink-900 bg-paper-100/40 px-4 py-3 transition-colors hover:bg-paper-200/40 dark:border-umber-700 dark:bg-umber-800/40 dark:hover:bg-umber-700/40"
+        >
+          <span className="flex-1 truncate font-grotesk text-sm font-medium text-ink-800 dark:text-paper-50">
+            {t("planning.decisions_entry_title")}
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
+            {t("planning.tab_decisions")}
+            <ArrowRight size={12} aria-hidden="true" />
+          </span>
+        </Link>
+
+        {activeKind === "checklist" ? (
           <WeddingChecklist
             items={items}
             onItemsChange={setItems}
@@ -1221,7 +1148,6 @@ export default function PlanningPage() {
                 locale={locale}
                 existingTitles={existingIdeaTitles}
                 onAdd={onAddRecommendedIdea}
-                onOpenDecisions={() => setActiveKind("decision")}
               />
             )}
 
@@ -1334,9 +1260,7 @@ export default function PlanningPage() {
 
             {activeKind === "task" && viewMode === "board" ? (
               <KanbanBoard
-                tasks={items.filter(
-                  (i) => i.kind === "task" && !(i.seed_key && i.decision_status !== "promoted"),
-                )}
+                tasks={items.filter((i) => i.kind === "task" && !isPendingDecisionPrompt(i))}
                 vendors={vendors}
                 currency={currency}
                 filter={boardFilter}
@@ -2706,13 +2630,11 @@ function RecommendedIdeas({
   locale,
   existingTitles,
   onAdd,
-  onOpenDecisions,
 }: {
   yesTags: string[];
   locale: Locale;
   existingTitles: Set<string>;
   onAdd: (idea: Idea) => Promise<boolean>;
-  onOpenDecisions: () => void;
 }) {
   const { t } = useT();
   const ideas = useMemo(() => recommendedIdeas(yesTags), [yesTags]);
@@ -2729,14 +2651,13 @@ function RecommendedIdeas({
         <span className="text-xs text-ink-600 dark:text-umber-200">
           {t("planning.recommended_empty_nudge")}
         </span>
-        <button
-          type="button"
-          onClick={onOpenDecisions}
+        <Link
+          to="/app/decisions"
           className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-ink-700 underline decoration-dotted underline-offset-2 hover:text-ink-900 dark:text-paper-100"
         >
           {t("planning.recommended_empty_cta")}
           <ArrowRight size={12} aria-hidden="true" />
-        </button>
+        </Link>
       </div>
     );
   }

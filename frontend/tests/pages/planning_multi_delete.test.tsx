@@ -91,6 +91,8 @@ describe("Planning multi-delete", () => {
       </MemoryRouter>,
     );
 
+    // Checklist is the default landing tab now; switch to Tasks to see them.
+    fireEvent.click(await screen.findByRole("tab", { name: "Tasks" }));
     expect(await screen.findByText("Confirm florist")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Select" }));
     fireEvent.click(screen.getByRole("button", { name: "Select all" }));
@@ -120,6 +122,8 @@ describe("Planning multi-delete", () => {
       </MemoryRouter>,
     );
 
+    // Checklist is the default landing tab now; switch to Tasks to see them.
+    fireEvent.click(await screen.findByRole("tab", { name: "Tasks" }));
     expect(await screen.findByText("Confirm florist")).toBeInTheDocument();
 
     const toolbar = screen.getByTestId("planning-toolbar-actions");
