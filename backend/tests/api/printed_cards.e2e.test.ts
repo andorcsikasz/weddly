@@ -172,7 +172,7 @@ describe("Design -> Printed cards exports", () => {
 
     const expectedPage = {
       place_card: "595.276 x 841.891",
-      table_number: "297.638 x 419.528",
+      table_number: "419.528 x 297.638",
       menu: "419.528 x 595.276",
       invitation: "419.528 x 595.276",
       thank_you: "297.638 x 419.528",

@@ -34,6 +34,23 @@ const NOTO_REGULAR = readFileSync(join(FONT_DIR, "NotoSans-Regular.ttf"));
 const NOTO_BOLD = readFileSync(join(FONT_DIR, "NotoSans-Bold.ttf"));
 const NOTO_SC = readFileSync(join(FONT_DIR, "NotoSansSC-Regular.otf"));
 
+// fontkit's layout() picks a ligature/contextual-alternate glyph per its own
+// shaping rules, but CustomFontEmbedder.widthOfTextAtSize sums each glyph's
+// standalone advanceWidth (pdf-lib@1.17.1) rather than the shaped run's
+// actual positions. For most substitutions the two agree; for CormorantGaramond
+// -Italic's "ta" contextual alternate they don't, and the mismatch is only
+// visible once pdf-lib bakes the (wrong) width into the printed PDF's glyph
+// spacing — "asztal" rendered as "aszt   al" on every card in that pack.
+// Ligatures buy a print name card nothing; disabling them removes the whole
+// bug class rather than special-casing one pack's one word pair.
+const NO_LIGATURE_FEATURES = {
+  liga: false,
+  calt: false,
+  dlig: false,
+  clig: false,
+  hlig: false,
+} as const;
+
 // Style-pack display fonts. Cormorant Garamond, Cormorant SC and EB Garamond
 // use the official static OTF builds and MUST be embedded whole. fontkit 1.1.1
 // corrupts their CFF subset (text operators remain but most outlines vanish),
@@ -541,8 +558,8 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
 
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
-  const helv = await pdf.embedFont(NOTO_REGULAR, { subset: true });
-  const helvBold = await pdf.embedFont(NOTO_BOLD, { subset: true });
+  const helv = await pdf.embedFont(NOTO_REGULAR, { subset: true, features: NO_LIGATURE_FEATURES });
+  const helvBold = await pdf.embedFont(NOTO_BOLD, { subset: true, features: NO_LIGATURE_FEATURES });
   // CJK fallback is embedded lazily — only when the input strings actually
   // contain Han / Kana glyphs. Keeps Latin-only PDFs lean (the SC face is
   // ~8 MB and fontkit 1.1.1 hits a writeUInt8-out-of-range bug if we ask it
@@ -553,7 +570,7 @@ export async function renderSeatingChartPdf(input: SeatingChartInput): Promise<U
     bold: helvBold,
     getCjk: async () => {
       if (cjkFont) return cjkFont;
-      cjkFont = await pdf.embedFont(NOTO_SC);
+      cjkFont = await pdf.embedFont(NOTO_SC, { features: NO_LIGATURE_FEATURES });
       return cjkFont;
     },
   };
@@ -997,15 +1014,21 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
         // Monochrome: name left-rag, table label pinned top-right. No centre axis.
         drawName(y_mm0_top + cardH * 0.4, true);
         drawTableLabel(y_mm0_top + cardH - 12, true);
-      } else {
+      } else if (tableLabel) {
         // Garden / Blush / Midnight: centred name, ornament, label below.
-        const nameY_mm = tableLabel ? y_mm0_top + cardH * 0.52 : y_mm0_top + cardH / 2 - 3;
-        drawName(nameY_mm, false);
+        drawName(y_mm0_top + cardH * 0.6, false);
         // Garden's botanical sprig sits between the name and the table label.
         if (input.design.print.ornament && pack.cardLayout === "centered") {
-          drawOrnament(page, pack.ornament, cxPt, mm(y_mm0_top + cardH * 0.42), 28, colors.accent);
+          drawOrnament(page, pack.ornament, cxPt, mm(y_mm0_top + cardH * 0.46), 28, colors.accent);
         }
-        drawTableLabel(y_mm0_top + cardH * 0.2, false);
+        drawTableLabel(y_mm0_top + cardH * 0.22, false);
+      } else {
+        // No table label yet: nothing to divide, so the name alone sits at
+        // true centre. Drawing the ornament anyway used to land it almost
+        // exactly on the name's own baseline (both landed within 1mm of each
+        // other), overlapping the name's descenders on every guest whose
+        // name has one ("Nagy", "Varga", "Márton"…).
+        drawName(y_mm0_top + cardH / 2, false);
       }
     }
   }
@@ -1018,17 +1041,26 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
  *  card speaks the same typographic language as the guest page. */
 async function buildFontPair(pdf: PDFDocument, design?: CoupleDesign): Promise<FontPair> {
   pdf.registerFontkit(fontkit);
-  const regular = await pdf.embedFont(NOTO_REGULAR, { subset: true });
-  const bold = await pdf.embedFont(NOTO_BOLD, { subset: true });
+  const regular = await pdf.embedFont(NOTO_REGULAR, {
+    subset: true,
+    features: NO_LIGATURE_FEATURES,
+  });
+  const bold = await pdf.embedFont(NOTO_BOLD, { subset: true, features: NO_LIGATURE_FEATURES });
   let cjkFont: PDFFont | null = null;
   const pack = design ? PACK_FONT_FILES[design.fonts] : undefined;
   const headingFile = design?.headingFont ? FAMILY_FONT_FILES[design.headingFont] : pack?.heading;
   const bodyFile = design?.bodyFont ? FAMILY_FONT_FILES[design.bodyFont] : pack?.body;
   const packHeading = headingFile
-    ? await pdf.embedFont(headingFile.bytes, { subset: headingFile.subset })
+    ? await pdf.embedFont(headingFile.bytes, {
+        subset: headingFile.subset,
+        features: NO_LIGATURE_FEATURES,
+      })
     : undefined;
   const packBody = bodyFile
-    ? await pdf.embedFont(bodyFile.bytes, { subset: bodyFile.subset })
+    ? await pdf.embedFont(bodyFile.bytes, {
+        subset: bodyFile.subset,
+        features: NO_LIGATURE_FEATURES,
+      })
     : undefined;
   return {
     regular,
@@ -1037,7 +1069,7 @@ async function buildFontPair(pdf: PDFDocument, design?: CoupleDesign): Promise<F
     packBody,
     getCjk: async () => {
       if (cjkFont) return cjkFont;
-      cjkFont = await pdf.embedFont(NOTO_SC);
+      cjkFont = await pdf.embedFont(NOTO_SC, { features: NO_LIGATURE_FEATURES });
       return cjkFont;
     },
   };
@@ -1253,7 +1285,12 @@ interface TableNumbersInput {
 
 /** A6 table-number cards - one per seating table, a big centred label with a
  *  small monogram on top. Palette and border match the place cards so
- *  the two sit together as a set. One card per A6 page. */
+ *  the two sit together as a set. One card per A6 page.
+ *
+ *  Landscape, not portrait: this is a fold-in-half tent card that stands on
+ *  the table like the place cards beside it, and the couple-facing preview
+ *  has always drawn it wide. A portrait A6 here read as upright stationery
+ *  when it's meant to sit sideways in front of a centrepiece. */
 export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   const fontPair = await buildFontPair(pdf, input.design);
@@ -1261,9 +1298,9 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
   const colors = designColors(input.design);
   const pack = getStylePreset(input.design.style);
 
-  // A6 = 105x148mm - half of A5, the matching set size for the place cards.
-  const W = 105;
-  const H = 148;
+  // A6 landscape = 148x105mm.
+  const W = 148;
+  const H = 105;
 
   if (input.tables.length === 0) {
     const page = pdf.addPage([mm(W), mm(H)]);
@@ -1278,6 +1315,14 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
   }
 
   const box = { x: 6, y: 6, w: W - 12, h: H - 12 };
+  // Footer and ornament anchor the bottom of the card; the hero label centres
+  // in whatever band is left above them, so a wrapped 2-3 line label (a table
+  // can be named "Nagyszülők és keresztszülők", not just a number) never
+  // reads as pushed to one edge the way a fixed offset tuned for one line did.
+  const footerY = 14;
+  const ornamentY = 25;
+  const heroBandBottom = ornamentY + 8;
+  const heroBandTop = H - 12;
   for (const t of input.tables) {
     const page = pdf.addPage([mm(W), mm(H)]);
     const cxPt = mm(W / 2);
@@ -1296,14 +1341,20 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
       fontPair,
       label,
       "heading",
-      64,
-      12,
-      mm(W - 24),
-      4,
+      56,
+      14,
+      mm(W - 32),
+      3,
       label.length > 60 ? fontPair.bold : undefined,
     );
     const heroLineMm = (hero.size * 1.12) / MM_TO_PT;
-    const heroCentreY = H / 2 - hero.size * 0.18;
+    // A baseline centred on the band still reads top-heavy: a cap-height
+    // serif sits almost entirely above its baseline, so the "empty" space
+    // below (baseline down to the ornament) looks bigger than the space
+    // above even though the two are numerically equal. Nudge down by a
+    // fraction of the font size, same idiom as the single-line portrait
+    // layout this replaced.
+    const heroCentreY = (heroBandBottom + heroBandTop) / 2 - hero.size * 0.14;
     const firstBaseline = heroCentreY + ((hero.lines.length - 1) * heroLineMm) / 2;
     for (const [lineIndex, line] of hero.lines.entries()) {
       const width = hero.font.widthOfTextAtSize(line, hero.size);
@@ -1318,7 +1369,7 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
     }
     // Pack ornament divider under the number (centred packs), gated by toggle.
     if (input.design.print.ornament && pack.cardLayout !== "asymmetric") {
-      drawOrnament(page, pack.ornament, cxPt, mm(H * 0.3), 36, colors.accent);
+      drawOrnament(page, pack.ornament, cxPt, mm(ornamentY), 36, colors.accent);
     }
     if (t.footer) {
       const footer = safe(t.footer);
@@ -1327,7 +1378,7 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
       const footerW = footerFont.widthOfTextAtSize(footer, footerSize);
       page.drawText(footer, {
         x: cxPt - footerW / 2,
-        y: mm(H * 0.21),
+        y: mm(footerY),
         size: footerSize,
         font: footerFont,
         color: colors.primary,
@@ -2104,8 +2155,8 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
   const { width_mm: pageW, height_mm: pageH } = FORMATS.a4;
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
-  const helv = await pdf.embedFont(NOTO_REGULAR, { subset: true });
-  const helvBold = await pdf.embedFont(NOTO_BOLD, { subset: true });
+  const helv = await pdf.embedFont(NOTO_REGULAR, { subset: true, features: NO_LIGATURE_FEATURES });
+  const helvBold = await pdf.embedFont(NOTO_BOLD, { subset: true, features: NO_LIGATURE_FEATURES });
   // Lazy CJK fallback — only embed the SC face when an input string actually
   // needs it. Same pattern as the seating + place-card renderers.
   let cjkFont: PDFFont | null = null;
@@ -2114,7 +2165,7 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
     bold: helvBold,
     getCjk: async () => {
       if (cjkFont) return cjkFont;
-      cjkFont = await pdf.embedFont(NOTO_SC);
+      cjkFont = await pdf.embedFont(NOTO_SC, { features: NO_LIGATURE_FEATURES });
       return cjkFont;
     },
   };
