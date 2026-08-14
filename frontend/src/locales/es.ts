@@ -7419,7 +7419,7 @@ const es: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Compartir Weddly",
-    title: "Comparte Weddly para llegar a más parejas. 🕊️🤍",
+    title: "Comparte Weddly para llegar a más parejas.",
     body: "Ayúdanos a ayudar también a otras parejas. 🕊️🤍",
     messages_label: "Mensaje para compartir",
     message_warm:

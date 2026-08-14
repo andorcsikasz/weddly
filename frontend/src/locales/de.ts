@@ -7473,7 +7473,7 @@ const de: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Weddly teilen",
-    title: "Teilen Sie Weddly, damit wir mehr Paare erreichen. 🕊️🤍",
+    title: "Teilen Sie Weddly, damit wir mehr Paare erreichen.",
     body: "Helfen Sie uns, auch anderen Paaren zu helfen. 🕊️🤍",
     messages_label: "Nachricht zum Teilen",
     message_warm:

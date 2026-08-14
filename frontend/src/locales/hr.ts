@@ -7345,7 +7345,7 @@ const hr: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Podijelite Weddly",
-    title: "Podijelite Weddly da dođemo do više parova. 🕊️🤍",
+    title: "Podijelite Weddly da dođemo do više parova.",
     body: "Pomozite nam da pomognemo i drugim parovima. 🕊️🤍",
     messages_label: "Poruka za dijeljenje",
     message_warm:

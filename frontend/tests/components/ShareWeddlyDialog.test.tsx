@@ -28,7 +28,7 @@ describe("ShareWeddlyDialog — English interface", () => {
 
   it("renders the English headline and all three English message cards", () => {
     renderModal();
-    expect(screen.getByText("Share Weddly to reach more couples. 🕊️🤍")).toBeTruthy();
+    expect(screen.getByText("Share Weddly to reach more couples.")).toBeTruthy();
     const dots = screen.getAllByRole("button", { name: /Share message [123]/ });
     expect(dots.length).toBe(3);
     expect(dots[0]?.getAttribute("aria-current")).toBe("true");
@@ -68,9 +68,7 @@ describe("ShareWeddlyDialog — Hungarian interface", () => {
   it("renders the Hungarian headline and Hungarian action labels", async () => {
     renderModal();
     await waitFor(() =>
-      expect(
-        screen.getByText("Osszátok meg a Weddly-t, hogy több párhoz eljussunk. 🕊️🤍"),
-      ).toBeTruthy(),
+      expect(screen.getByText("Osszátok meg a Weddly-t, hogy több párhoz eljussunk.")).toBeTruthy(),
     );
     expect(screen.getByRole("button", { name: "Megosztás" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Másolás" })).toBeTruthy();

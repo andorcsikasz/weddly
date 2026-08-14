@@ -7429,7 +7429,7 @@ const hu: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Weddly megosztása",
-    title: "Osszátok meg a Weddly-t, hogy több párhoz eljussunk. 🕊️🤍",
+    title: "Osszátok meg a Weddly-t, hogy több párhoz eljussunk.",
     body: "Segítsetek, hogy más pároknak is segíthessünk. 🕊️🤍",
     messages_label: "Megosztandó üzenet",
     message_warm:

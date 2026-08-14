@@ -7363,7 +7363,7 @@ const en: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Share Weddly",
-    title: "Share Weddly to reach more couples. 🕊️🤍",
+    title: "Share Weddly to reach more couples.",
     body: "Help us to help other couples, too. 🕊️🤍",
     messages_label: "Share message",
     message_warm:

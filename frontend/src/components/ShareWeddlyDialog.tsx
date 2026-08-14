@@ -299,7 +299,7 @@ export function ShareWeddlyDialog({
       open={open}
       role="dialog"
       title={t("share_weddly.title")}
-      titleClassName="text-balance text-[1.375rem] leading-[1.15] sm:text-[1.625rem]"
+      titleClassName="text-balance text-xl leading-snug sm:text-[1.375rem]"
       onClose={handleClose}
       closeOnBackdrop={phase !== "sharing"}
     >
@@ -328,7 +328,7 @@ export function ShareWeddlyDialog({
               goTo(Math.max(active - 1, 0));
             }
           }}
-          className="-mx-1 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="-mx-1 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {messages.map((m, i) => {
             const selected = i === active;
@@ -363,7 +363,7 @@ export function ShareWeddlyDialog({
         {/* Pagination dots. The active one stretches into a pill so position is
          *  legible at a glance; each is a real button so the rail is navigable
          *  without a drag. */}
-        <div className="mt-3.5 flex justify-center gap-1.5">
+        <div className="mt-3 flex justify-center gap-1.5">
           {messages.map((m, i) => {
             const selected = i === active;
             return (
@@ -387,7 +387,7 @@ export function ShareWeddlyDialog({
          *  composer. Share stays visually primary; copy is the quiet
          *  secondary. Both are 44×44 minimum and carry a native tooltip plus
          *  an aria-label, so the icon is never the only affordance. */}
-        <div className="mt-6 flex items-center justify-center gap-3">
+        <div className="mt-5 flex items-center justify-center gap-3">
           <button
             ref={shareBtnRef}
             type="button"
