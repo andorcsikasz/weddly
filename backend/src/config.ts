@@ -269,9 +269,13 @@ export const CONFIG = {
   dataEncryptionKeys: process.env.DATA_ENCRYPTION_KEYS ?? "",
   /** 30 days. */
   sessionTtlMs: 1000 * 60 * 60 * 24 * 30,
-  /** Privileged admin requests require a primary sign-in within 15 minutes.
-   *  Unlike the ordinary session TTL this never slides on API activity. */
-  adminReauthTtlMs: 1000 * 60 * 15,
+  /** Privileged admin requests require a TOTP step-up within this window of
+   *  `authenticated_at`. Matches the ordinary session TTL: once an admin
+   *  completes the app TOTP factor, privileged access rides the same 30-day
+   *  session and only ends on explicit logout or session expiry. Unlike the
+   *  ordinary session TTL this never slides on API activity — it is fixed
+   *  from the moment of step-up, not from last use. */
+  adminReauthTtlMs: 1000 * 60 * 60 * 24 * 30,
   frontendBaseUrl: process.env.FRONTEND_BASE_URL ?? "http://localhost:5173",
   /** When `1`, the server also serves the built SPA from `frontend/dist`. */
   serveFrontend: process.env.SERVE_FRONTEND === "1",

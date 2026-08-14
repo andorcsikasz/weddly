@@ -206,9 +206,11 @@ function requireFreshAdminSession(ctx: Ctx, userId: number): void {
 }
 
 /** Auth + ADMIN_EMAILS + recent-primary-auth gate. Use on every
- * `/api/admin/*` handler. Ordinary sessions remain valid for 30 days, but a
- * stolen or unattended browser cannot retain privileged access beyond the
- * short non-sliding window. */
+ * `/api/admin/*` handler. A completed TOTP step-up stays valid for the same
+ * 30-day window as the ordinary session (`adminReauthTtlMs`), so an admin who
+ * has done the app MFA once is not re-prompted every 15 minutes; privileged
+ * access still ends on explicit logout or when the underlying session
+ * expires. */
 export function requireAdmin(ctx: Ctx): UserRow {
   const userId = requireAuth(ctx);
   const row = getUserById(userId);

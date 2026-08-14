@@ -265,7 +265,7 @@ describe("admin gate — recent primary authentication", () => {
     expect(stale.data.detail).toEqual({
       code: "admin_reauth_required",
       reason: "stale",
-      max_age_seconds: 900,
+      max_age_seconds: Math.floor(CONFIG.adminReauthTtlMs / 1000),
     });
 
     const stepUp = await req<{ ok: boolean; valid_until: number }>(
