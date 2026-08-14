@@ -6,7 +6,7 @@ import { HU_HOST, renderIndexHtml } from "../../src/lib/seo_ssr";
 
 // Per-post Open Graph / Twitter image: a published blog post with a cover
 // image gets its OWN share card instead of the brand og.png shared by every
-// page. Brand pages keep og.png + the exact 1200×630 PNG dimension hints;
+// page. Brand pages keep og.png + its exact 1200×1200 PNG dimension hints;
 // custom covers (blog/couple) drop the hints since their real size is unknown.
 
 const TEMPLATE = `<!doctype html>
@@ -99,11 +99,11 @@ describe("seo: per-post Open Graph image", () => {
 });
 
 describe("seo: brand pages keep og.png + dimension hints", () => {
-  test("landing emits og.png with 1200×630 PNG hints and a brand alt", () => {
+  test("landing emits og.png with 1200×1200 PNG hints and a brand alt", () => {
     const html = render("/");
     expect(metaContent(html, "og:image")).toBe(`https://${HU_HOST}/og.png`);
     expect(html).toContain(`<meta property="og:image:width" content="1200" />`);
-    expect(html).toContain(`<meta property="og:image:height" content="630" />`);
+    expect(html).toContain(`<meta property="og:image:height" content="1200" />`);
     expect(metaContent(html, "twitter:image:alt")).toBe(metaContent(html, "og:image:alt"));
   });
 });

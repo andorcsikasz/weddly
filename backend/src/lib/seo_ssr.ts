@@ -1190,33 +1190,36 @@ function buildHeadBlock(opts: {
     : null;
   let ogImage: string;
   let ogImageAlt: string;
-  // Brand images are the known 1200×630 PNGs we ship, only those get the
+  // Brand images are the known fixed-size PNGs we ship, only those get the
   // exact dimension/type hints below. Custom covers (couple- or admin-pasted)
   // have unknown size/format, so we skip the hints and let scrapers measure.
-  let isBrandOgImage: boolean;
+  // og.png is the square 1200×1200 logo mark; og-rsvp.png is still the
+  // 1200×630 landscape card, so the two brand images carry their own dims
+  // rather than sharing one hardcoded pair.
+  let brandOgImageDims: { width: number; height: number } | null;
   if (opts.weddingMeta?.cover_image_url) {
     ogImage = opts.weddingMeta.cover_image_url;
     ogImageAlt = opts.weddingMeta.display_name;
-    isBrandOgImage = false;
+    brandOgImageDims = null;
   } else if (opts.vendorMeta?.heroImageUrl) {
     // Vendor hero is stored relative (`/uploads/…`) — make it absolute against
     // the canonical host so scrapers can fetch it. Unknown size/format, so no
     // dimension hints (same as blog/wedding covers).
     ogImage = absoluteImageUrl(`https://${canonicalHost}`, opts.vendorMeta.heroImageUrl) as string;
     ogImageAlt = opts.vendorMeta.name;
-    isBrandOgImage = false;
+    brandOgImageDims = null;
   } else if (blogArticle && blogCover) {
     ogImage = blogCover;
     ogImageAlt = locale === "hu" ? blogArticle.huTitle : blogArticle.enTitle;
-    isBrandOgImage = false;
+    brandOgImageDims = null;
   } else if (opts.isRsvp) {
     ogImage = `https://${canonicalHost}/og-rsvp.png`;
     ogImageAlt = defaultMeta.ogImageAlt;
-    isBrandOgImage = true;
+    brandOgImageDims = { width: 1200, height: 630 };
   } else {
     ogImage = `https://${canonicalHost}/og.png`;
     ogImageAlt = defaultMeta.ogImageAlt;
-    isBrandOgImage = true;
+    brandOgImageDims = { width: 1200, height: 1200 };
   }
 
   // Route-specific title + description take precedence over the landing
@@ -1277,11 +1280,11 @@ function buildHeadBlock(opts: {
     `<meta property="og:title" content="${escapeAttr(title)}" />`,
     `<meta property="og:description" content="${escapeAttr(description)}" />`,
     `<meta property="og:image" content="${escapeAttr(ogImage)}" />`,
-    ...(isBrandOgImage
+    ...(brandOgImageDims
       ? [
           `<meta property="og:image:type" content="image/png" />`,
-          `<meta property="og:image:width" content="1200" />`,
-          `<meta property="og:image:height" content="630" />`,
+          `<meta property="og:image:width" content="${brandOgImageDims.width}" />`,
+          `<meta property="og:image:height" content="${brandOgImageDims.height}" />`,
         ]
       : []),
     `<meta property="og:image:alt" content="${escapeAttr(ogImageAlt)}" />`,

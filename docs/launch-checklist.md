@@ -119,7 +119,7 @@ openssl rand -hex 32
 ## E. Content / marketing (a couple of evenings)
 
 - [ ] Have a native HU speaker review every string in `frontend/src/locales/hu.ts`. Auto-generated translations kill trust on weddings.
-- [x] The 1200×630 brand share card is `frontend/public/og.png`; static and
+- [x] The 1200×1200 brand share image is `frontend/public/og.png`; static and
   server-rendered pages publish its absolute URL, dimensions and alt text.
 - [x] `frontend/public/logo.png` is a 512×512 touch icon and is linked from
   `frontend/index.html`; PWA-specific sizes remain in the web manifest.

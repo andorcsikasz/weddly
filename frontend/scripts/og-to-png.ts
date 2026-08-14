@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
- * Render every public/og*.svg to its matching public/og*.png at the
- * canonical Open Graph size (1200×630). Run before deploys so social
+ * Render the remaining public/og*.svg cards to their matching public/og*.png
+ * at the canonical Open Graph size (1200×630). Run before deploys so social
  * scrapers (Twitter, Facebook, Slack) can show the share cards — many
  * of them don't render SVG og:image reliably.
  *
@@ -10,10 +10,16 @@
  * Google's structured-data tooling resolves the logo URL, so a PNG is
  * safer than SVG even though we'd prefer SVG.
  *
+ * public/og.png is NOT in this list — it's the square dove logo mark now
+ * (a supplied raster asset, brand-colour-remapped, no SVG source), so
+ * running this script never overwrites it. Edit it directly if it needs
+ * to change.
+ *
  * Usage: `bun run og` from the frontend workspace.
  *
- * The SVGs are the source of truth — edit them, then re-run this script.
- * Add a new variant by dropping `og-<name>.svg` into public/.
+ * The SVGs are the source of truth for the variants below — edit them,
+ * then re-run this script. Add a new variant by dropping `og-<name>.svg`
+ * into public/.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -24,7 +30,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 
 const variants = [
-  { svg: "public/og.svg", png: "public/og.png", width: 1200 },
   { svg: "public/og-rsvp.svg", png: "public/og-rsvp.png", width: 1200 },
   { svg: "public/logo.svg", png: "public/logo.png", width: 512 },
 ];
