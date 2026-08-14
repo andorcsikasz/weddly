@@ -995,7 +995,6 @@ export default function PlanningPage() {
           <h1 className="text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
             {t("planning.title")}
           </h1>
-          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{t("planning.sub")}</p>
           <PlanningRouteLinks className="mt-3" />
         </header>
 

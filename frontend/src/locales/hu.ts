@@ -2683,7 +2683,6 @@ const hu: LocaleMessages = {
   },
   planning: {
     title: "Tervezés",
-    sub: "Gyűjtsétek egy helyre a feladatokat, ötleteket és az esküvői napi programot.",
     tabs_aria: "Tervezés kategóriák",
     tab_tasks: "Feladatok",
     tab_ideas: "Ötletek",

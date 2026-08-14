@@ -2727,7 +2727,6 @@ const de: LocaleMessages = {
   },
   planning: {
     title: "Planung",
-    sub: "Ein Ort für Aufgaben, Ideen und den Ablauf des Hochzeitstags.",
     tabs_aria: "Planungskategorien",
     tab_tasks: "Aufgaben",
     tab_ideas: "Ideen",

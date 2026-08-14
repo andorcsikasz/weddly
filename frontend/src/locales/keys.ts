@@ -3342,7 +3342,6 @@ export interface LocaleMessages {
   /** Free-form planning surface — three tabs over the planning_items table. */
   planning: {
     title: string;
-    sub: string;
     /** aria-label for the tablist wrapping the three category tabs. */
     tabs_aria: string;
     tab_tasks: string;

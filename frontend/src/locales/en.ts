@@ -2658,7 +2658,6 @@ const en: LocaleMessages = {
   },
   planning: {
     title: "Planning",
-    sub: "One place for tasks, ideas, and the wedding-day timeline.",
     tabs_aria: "Planning categories",
     tab_tasks: "Tasks",
     tab_ideas: "Ideas",

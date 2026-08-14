@@ -2716,7 +2716,6 @@ const es: LocaleMessages = {
   },
   planning: {
     title: "Planificación",
-    sub: "Un solo lugar para tareas, ideas y el cronograma del día de la boda.",
     tabs_aria: "Categorías de planificación",
     tab_tasks: "Tareas",
     tab_ideas: "Ideas",

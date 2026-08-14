@@ -2669,7 +2669,6 @@ const hr: LocaleMessages = {
   },
   planning: {
     title: "Planiranje",
-    sub: "Jedno mjesto za zadatke, ideje i tijek dana vjenčanja.",
     tabs_aria: "Kategorije planiranja",
     tab_tasks: "Zadaci",
     tab_ideas: "Ideje",
