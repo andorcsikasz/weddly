@@ -249,8 +249,20 @@ export default function LandingPage() {
           <div className="mx-auto flex min-h-[calc(75svh+5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
             <div className="grid items-start gap-8 lg:items-center lg:gap-14">
               <div>
-                <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
-                  {t("landing.hero_title")}
+                <h1 className="max-w-[18ch] font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+                  {(() => {
+                    const [heroMain, heroSub] = t("landing.hero_title").split("\n");
+                    return (
+                      <>
+                        {heroMain}
+                        {heroSub && (
+                          <span className="mt-2 block whitespace-nowrap text-lg leading-none sm:mt-3 sm:text-4xl lg:mt-4 lg:text-5xl">
+                            {heroSub}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </h1>
                 {/* Signup + demo sit side by side: sign up, or look around
                     first. Stacked on phones, inline from sm up. On phones each
