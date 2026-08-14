@@ -21,6 +21,7 @@ import BlogPostPage from "./pages/BlogPostPage";
 import BudgetCalculatorPage from "./pages/BudgetCalculatorPage";
 import CountdownPage from "./pages/CountdownPage";
 import CoupleCardsPage from "./pages/CoupleCardsPage";
+import WeddingChecklistToolPage from "./pages/WeddingChecklistToolPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import GuestListTemplatePage from "./pages/GuestListTemplatePage";
 import RsvpGeneratorPage from "./pages/RsvpGeneratorPage";
@@ -543,6 +544,22 @@ export default function App() {
           element={
             <Page>
               <CoupleCardsPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/eszkozok/eskuvoi-ellenorzolista"
+          element={
+            <Page>
+              <WeddingChecklistToolPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/tools/wedding-checklist"
+          element={
+            <Page>
+              <WeddingChecklistToolPage />
             </Page>
           }
         />

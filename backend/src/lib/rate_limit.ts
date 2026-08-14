@@ -80,6 +80,12 @@ export const AI_ASSIST_BUCKET: BucketConfig = { capacity: 6, refillRate: 1 / 30 
  *  refill keeps the paid upstream from being farmed as an open translator. */
 export const TRANSLATE_BUCKET: BucketConfig = { capacity: 12, refillRate: 1 / 6 };
 
+/** Anonymous checklist PDF download on the landing/tool-page widget. Rendering
+ *  is local (pdf-lib, no paid upstream) so this only needs to keep a script
+ *  from hammering the render loop — a small burst covers a visitor clicking
+ *  download a couple of times while picking a language. */
+export const PUBLIC_CHECKLIST_PDF_BUCKET: BucketConfig = { capacity: 8, refillRate: 1 / 30 };
+
 // ─── Per-account failed-login throttle ──────────────────────────────────────
 // The per-IP AUTH_BUCKET can't see a distributed credential-stuffing run (many
 // IPs, one target account). This counts FAILED attempts per claimed email and

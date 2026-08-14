@@ -49,6 +49,7 @@ import { DemoLaunchButton } from "../components/DemoLaunchButton";
 import { NewsletterCapture } from "../components/NewsletterCapture";
 import { VendorSearchBar } from "../components/VendorSearchBar";
 import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
+import { PublicWeddingChecklist } from "../components/PublicWeddingChecklist";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useToast } from "../components/ui";
 import { publicStatsApi } from "../lib/endpoints";
@@ -543,6 +544,17 @@ export default function LandingPage() {
           "composite from beta interviews" disclaimer stamped three times
           read as a confession of synthetic social proof. Bring it back
           when we have one real beta couple willing to be named. */}
+
+      {/* ════════════════════════ 06 · Checklist — interactive ════════════════════
+          Same canonical wedding checklist that powers /app/planning's
+          Checklist tab, playable with zero signup: every section is free to
+          browse, and checking an item off is a real (locally-stored) action —
+          it just has nowhere permanent to live yet, which is exactly the
+          moment the inline "save this" card appears. PDF download works with
+          no account either way. A visitor who checks anything off here has
+          their progress replayed onto the real checklist the first time they
+          open Planning after signing up (see WeddingChecklist.tsx). */}
+      <PublicWeddingChecklist previewSectionCount={2} />
 
       {/* ════════════════════════ 09 · Audience — LEDGER ════════════════════════
           Replaced 3 cards with a 3-row ledger: row label, body, → link.

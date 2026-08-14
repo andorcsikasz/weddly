@@ -2132,6 +2132,17 @@ const en: LocaleMessages = {
     demo_cat_ceremony_services: "Ceremony & officiant",
     demo_cat_stationery_smalls: "Stationery & small items",
     demo_cat_reserve: "Reserve",
+    // ── Interactive public wedding checklist (landing + /eszkozok tool page) ──
+    checklist_demo_title: "Try your wedding checklist",
+    checklist_demo_subtitle:
+      "Every phase from 12–18 months out to after the wedding. Browse freely, check things off, download it, no account needed.",
+    checklist_demo_progress_label: "{done} of {total} checked",
+    checklist_demo_download: "Download PDF",
+    checklist_demo_convert_title: "Nice start!",
+    checklist_demo_convert_body:
+      "Create a free account to keep this progress and get the rest of your wedding planning workspace.",
+    checklist_demo_convert_dismiss: "Maybe later",
+    checklist_demo_convert_cta: "Save my progress",
     faq_title: "Questions you'll probably ask",
     faq_show_more: "+{n} more questions",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
@@ -8792,6 +8803,17 @@ const en: LocaleMessages = {
       cta_h2: "When you're ready for the rest",
       cta_body:
         "After the hard conversations come the practical decisions. Weddly keeps your budget, guest list, RSVP and seating in one shared workspace, so the real work doesn't fall back into PDFs and text threads.",
+      cta_button: "Open your workspace",
+      faq_h2: "Common questions",
+    },
+    wedding_checklist: {
+      page_eyebrow: "Tools · Wedding checklist",
+      page_h1: "Wedding checklist",
+      page_intro:
+        "The whole wedding-planning timeline in one list, from 12–18 months out to the week after. Check off what's done and download it as a PDF, any time, no signup needed.",
+      cta_h2: "Keep this checklist tied to your date",
+      cta_body:
+        "Weddly maps every item's recommended deadline to your actual wedding date, and keeps it linked to your shared budget, guest list and seating plan.",
       cta_button: "Open your workspace",
       faq_h2: "Common questions",
     },

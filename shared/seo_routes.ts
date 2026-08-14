@@ -290,6 +290,24 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Four decks of 25 conversation-starter cards for engaged couples. Pick a deck, draw a card, and let the conversation begin. Free, no signup needed.",
     },
   },
+  "/eszkozok/eskuvoi-ellenorzolista": {
+    hu: {
+      title: "Esküvői ellenőrzőlista, ingyenes checklist | Wēddly",
+      description:
+        "Mit intézzetek mikor az esküvő előtt? 11 szakasz, 12–18 hónappal előtte a nagy naptól az utómunkákig. Pipáljátok ki, töltsétek le PDF-ben, regisztráció nélkül.",
+      h1: "Esküvői ellenőrzőlista",
+      intro:
+        "A teljes esküvőszervezési folyamat egy listában, 12–18 hónappal előtte a nagy naptól egészen az utómunkákig. Pipáljátok ki, ami kész, és töltsétek le PDF-ben, bármikor, regisztráció nélkül.",
+    },
+    en: {
+      title: "Wedding checklist, free planning timeline | Wēddly",
+      description:
+        "What to plan and when: 11 phases, from 12–18 months out to after the wedding. Check items off, download as a PDF. Free, no signup needed.",
+      h1: "Wedding checklist",
+      intro:
+        "The whole wedding-planning timeline in one list, from 12–18 months out to the week after. Check off what's done and download it as a PDF, any time, no signup needed.",
+    },
+  },
   "/blog": {
     hu: {
       title: "Blog · Wēddly",
@@ -374,6 +392,10 @@ export const SLUG_PAIRS: ReadonlyArray<{ hu: string; en: string }> = [
   {
     hu: "/eszkozok/100-kerdes-eskuvo-elott",
     en: "/tools/100-questions-before-marriage",
+  },
+  {
+    hu: "/eszkozok/eskuvoi-ellenorzolista",
+    en: "/tools/wedding-checklist",
   },
 ];
 

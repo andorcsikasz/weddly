@@ -1432,6 +1432,12 @@ export function weddingChecklistPdfUrl(options: {
   return `/api/print/wedding-checklist?${params.toString()}`;
 }
 
+/** Public, no-auth version for the landing/tool-page checklist widget — always
+ *  the full blank checklist, no couple to scope progress to. */
+export function publicWeddingChecklistPdfUrl(locale: import("@shared/locales").UiLocale): string {
+  return `/api/public/checklist/pdf?locale=${locale}`;
+}
+
 export const notificationApi = {
   /** Merged bell feed: live timeline items + stored events, with the unread
    *  count + the overdue / due-soon rollup the dashboard card headlines. */

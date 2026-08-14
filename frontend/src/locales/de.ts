@@ -2204,6 +2204,16 @@ const de: LocaleMessages = {
     demo_cat_ceremony_services: "Trauung & Redner",
     demo_cat_stationery_smalls: "Papeterie & Kleinigkeiten",
     demo_cat_reserve: "Reserve",
+    checklist_demo_title: "Testen Sie Ihre Hochzeits-Checkliste",
+    checklist_demo_subtitle:
+      "Jede Phase von 12–18 Monaten vorher bis nach der Hochzeit. Frei durchstöbern, abhaken, herunterladen, ohne Konto.",
+    checklist_demo_progress_label: "{done} von {total} abgehakt",
+    checklist_demo_download: "PDF herunterladen",
+    checklist_demo_convert_title: "Guter Anfang!",
+    checklist_demo_convert_body:
+      "Erstellen Sie ein kostenloses Konto, um diesen Fortschritt zu behalten und den Rest Ihres Hochzeitsplanungs-Arbeitsbereichs zu erhalten.",
+    checklist_demo_convert_dismiss: "Vielleicht später",
+    checklist_demo_convert_cta: "Fortschritt speichern",
     faq_title: "Fragen, die Sie wahrscheinlich stellen",
     faq_show_more: "+{n} weitere Fragen",
     closing_title: "In zwei Minuten\neingerichtet.",
@@ -8921,6 +8931,17 @@ const de: LocaleMessages = {
       cta_h2: "Wenn Sie bereit für den Rest sind",
       cta_body:
         "Nach den schwierigen Gesprächen kommen die praktischen Entscheidungen. Weddly hält Budget, Gästeliste, Zusagen und Sitzplan in einem gemeinsamen Arbeitsbereich, damit die eigentliche Arbeit nicht wieder in PDFs und Chatverläufen landet.",
+      cta_button: "Arbeitsbereich öffnen",
+      faq_h2: "Häufige Fragen",
+    },
+    wedding_checklist: {
+      page_eyebrow: "Tools · Hochzeits-Checkliste",
+      page_h1: "Hochzeits-Checkliste",
+      page_intro:
+        "Der gesamte Hochzeitsplanungs-Zeitplan in einer Liste, von 12–18 Monaten vorher bis zur Woche danach. Haken Sie ab, was erledigt ist, und laden Sie sie jederzeit als PDF herunter, ohne Konto.",
+      cta_h2: "Verknüpfen Sie diese Liste mit Ihrem Datum",
+      cta_body:
+        "Weddly ordnet die empfohlene Frist jeder Aufgabe Ihrem tatsächlichen Hochzeitsdatum zu und hält sie mit Ihrem gemeinsamen Budget, Ihrer Gästeliste und Ihrem Sitzplan verknüpft.",
       cta_button: "Arbeitsbereich öffnen",
       faq_h2: "Häufige Fragen",
     },

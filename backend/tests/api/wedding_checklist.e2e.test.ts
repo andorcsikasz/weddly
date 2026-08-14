@@ -119,4 +119,42 @@ describe("wedding checklist", () => {
     expect(response.status).toBe(401);
     await response.text();
   });
+
+  test("public checklist PDF renders with no auth and rate-limits by IP", async () => {
+    const base = `http://localhost:${process.env.PORT ?? "8791"}`;
+    const ip = "10.55.0.9";
+    const response = await fetch(`${base}/api/public/checklist/pdf?locale=hu`, {
+      headers: { "x-test-client-ip": ip },
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/pdf");
+    expect(response.headers.get("content-disposition")).toContain("weddly-wedding-checklist.pdf");
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe("%PDF");
+    const document = await PDFDocument.load(bytes);
+    expect(document.getPageCount()).toBeGreaterThanOrEqual(2);
+
+    // Bucket capacity is 8 (PUBLIC_CHECKLIST_PDF_BUCKET) — one token already
+    // spent above, so 7 more succeed (request #8) and the 9th overall
+    // request 429s.
+    for (let i = 0; i < 7; i++) {
+      const ok = await fetch(`${base}/api/public/checklist/pdf?locale=en`, {
+        headers: { "x-test-client-ip": ip },
+      });
+      expect(ok.status).toBe(200);
+      await ok.arrayBuffer();
+    }
+    const limited = await fetch(`${base}/api/public/checklist/pdf?locale=en`, {
+      headers: { "x-test-client-ip": ip },
+    });
+    expect(limited.status).toBe(429);
+    await limited.text();
+
+    // A different IP is a fresh bucket.
+    const otherIp = await fetch(`${base}/api/public/checklist/pdf?locale=en`, {
+      headers: { "x-test-client-ip": "10.55.0.10" },
+    });
+    expect(otherIp.status).toBe(200);
+    await otherIp.arrayBuffer();
+  });
 });

@@ -2150,6 +2150,17 @@ const hu: LocaleMessages = {
     demo_cat_ceremony_services: "Ceremónia & szolgáltatók",
     demo_cat_stationery_smalls: "Meghívó, papíráru, apróságok",
     demo_cat_reserve: "Tartalék",
+    // ── Interaktív, publikus esküvői ellenőrzőlista (landing + /eszkozok) ──
+    checklist_demo_title: "Próbáljátok ki az ellenőrzőlistát",
+    checklist_demo_subtitle:
+      "Minden szakasz a 12–18 hónappal előttitől az esküvő utáni teendőkig. Böngésszétek szabadon, pipáljátok ki, töltsétek le, fiók nélkül.",
+    checklist_demo_progress_label: "{done}/{total} kipipálva",
+    checklist_demo_download: "PDF letöltése",
+    checklist_demo_convert_title: "Szép kezdet!",
+    checklist_demo_convert_body:
+      "Hozzatok létre egy ingyenes fiókot, hogy megmaradjon ez a haladás, és megkapjátok hozzá a teljes esküvőtervező felületet.",
+    checklist_demo_convert_dismiss: "Most nem",
+    checklist_demo_convert_cta: "Mentsük el a haladást",
     faq_title: "Gyakori kérdések",
     faq_show_more: "+{n} további kérdés",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
@@ -8863,6 +8874,17 @@ const hu: LocaleMessages = {
       cta_h2: "Ha készen álltok a többire",
       cta_body:
         "A nehéz beszélgetések után jöhetnek a praktikus döntések. A Wēddly egy közös felületen tartja a költségvetést, vendéglistát, RSVP-t és az ültetést, hogy az igazi munka után se kelljen PDF-eket osztogatni.",
+      cta_button: "Workspace indítása",
+      faq_h2: "Gyakori kérdések",
+    },
+    wedding_checklist: {
+      page_eyebrow: "Eszközök · Esküvői ellenőrzőlista",
+      page_h1: "Esküvői ellenőrzőlista",
+      page_intro:
+        "A teljes esküvőszervezési folyamat egy listában, 12–18 hónappal előtte a nagy naptól egészen az utómunkákig. Pipáljátok ki, ami kész, és töltsétek le PDF-ben, bármikor, regisztráció nélkül.",
+      cta_h2: "Kössétek a listát a saját dátumotokhoz",
+      cta_body:
+        "A Wēddly minden tétel ajánlott határidejét a ti valós esküvői dátumotokhoz igazítja, és a közös költségvetéssel, vendéglistával és ültetési renddel együtt tartja.",
       cta_button: "Workspace indítása",
       faq_h2: "Gyakori kérdések",
     },

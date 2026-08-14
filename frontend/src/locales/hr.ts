@@ -2154,6 +2154,16 @@ const hr: LocaleMessages = {
     demo_cat_ceremony_services: "Ceremonija i voditelj",
     demo_cat_stationery_smalls: "Pozivnice i sitnice",
     demo_cat_reserve: "Rezerva",
+    checklist_demo_title: "Isprobajte svoj popis obaveza",
+    checklist_demo_subtitle:
+      "Sve faze, od 12–18 mjeseci prije do razdoblja nakon vjenčanja. Pregledavajte slobodno, označite obavljeno, preuzmite, bez potrebe za računom.",
+    checklist_demo_progress_label: "{done} od {total} označeno",
+    checklist_demo_download: "Preuzmi PDF",
+    checklist_demo_convert_title: "Odličan početak!",
+    checklist_demo_convert_body:
+      "Otvorite besplatan račun kako biste zadržali ovaj napredak i dobili ostatak svog radnog prostora za planiranje vjenčanja.",
+    checklist_demo_convert_dismiss: "Možda kasnije",
+    checklist_demo_convert_cta: "Spremi moj napredak",
     faq_title: "Pitanja koja ćete vjerojatno postaviti",
     faq_show_more: "+{n} dodatnih pitanja",
     closing_title: "Dvije minute\ni sve je spremno.",
@@ -8772,6 +8782,17 @@ const hr: LocaleMessages = {
       cta_h2: "Kad budete spremni za ostalo",
       cta_body:
         "Nakon teških razgovora dolaze praktične odluke. Weddly drži proračun, popis gostiju, odgovore gostiju i raspored sjedenja u jednom zajedničkom radnom prostoru, da pravi posao ne završi u PDF-ovima i porukama.",
+      cta_button: "Otvorite radni prostor",
+      faq_h2: "Česta pitanja",
+    },
+    wedding_checklist: {
+      page_eyebrow: "Alati · Popis obaveza za vjenčanje",
+      page_h1: "Popis obaveza za vjenčanje",
+      page_intro:
+        "Cijeli proces planiranja vjenčanja u jednom popisu, od 12–18 mjeseci prije do tjedan dana nakon. Označite obavljeno i preuzmite ga kao PDF, u bilo kojem trenutku, bez potrebe za računom.",
+      cta_h2: "Povežite ovaj popis sa svojim datumom",
+      cta_body:
+        "Weddly usklađuje preporučeni rok svake stavke s vašim stvarnim datumom vjenčanja i drži ga povezanim sa zajedničkim proračunom, popisom gostiju i rasporedom sjedenja.",
       cta_button: "Otvorite radni prostor",
       faq_h2: "Česta pitanja",
     },

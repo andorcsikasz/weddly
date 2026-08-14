@@ -72,6 +72,7 @@ const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/eszkozok/ultetesi-rend-keszito", priority: "0.8", changefreq: "monthly" },
   { path: "/eszkozok/rsvp-szoveg-generator", priority: "0.8", changefreq: "monthly" },
   { path: "/eszkozok/100-kerdes-eskuvo-elott", priority: "0.8", changefreq: "monthly" },
+  { path: "/eszkozok/eskuvoi-ellenorzolista", priority: "0.8", changefreq: "monthly" },
   { path: "/blog", priority: "0.6", changefreq: "weekly" },
   // The public directory browser. Higher than the vendor-recruitment page it
   // sits under: it is the hub every one of the thousand-odd profile URLs below

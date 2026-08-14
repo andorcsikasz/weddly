@@ -2720,6 +2720,16 @@ export interface LocaleMessages {
     demo_cat_ceremony_services: string;
     demo_cat_stationery_smalls: string;
     demo_cat_reserve: string;
+    /** Interactive public wedding checklist widget — landing section + the
+     *  /eszkozok tool page reuse these verbatim. */
+    checklist_demo_title: string;
+    checklist_demo_subtitle: string;
+    checklist_demo_progress_label: string;
+    checklist_demo_download: string;
+    checklist_demo_convert_title: string;
+    checklist_demo_convert_body: string;
+    checklist_demo_convert_dismiss: string;
+    checklist_demo_convert_cta: string;
     /** Landing-page demo launch card — small tilted sticker on the right
      *  of the hero. Eyebrow + title + button + loading/error states. */
     demo_card_eyebrow: string;
@@ -9989,6 +9999,15 @@ export interface LocaleMessages {
       suggest_submitting: string;
       suggest_thanks: string;
       suggest_error: string;
+      cta_h2: string;
+      cta_body: string;
+      cta_button: string;
+      faq_h2: string;
+    };
+    wedding_checklist: {
+      page_eyebrow: string;
+      page_h1: string;
+      page_intro: string;
       cta_h2: string;
       cta_body: string;
       cta_button: string;

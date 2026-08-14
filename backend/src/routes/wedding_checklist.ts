@@ -12,6 +12,7 @@ import { listPlanningItemsByCouple } from "../domain/planning";
 import { renderWeddingChecklistPdf } from "../domain/wedding_checklist_pdf";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { PUBLIC_CHECKLIST_PDF_BUCKET, rateLimit } from "../lib/rate_limit";
 
 function parseLocale(raw: unknown): UiLocale {
   return typeof raw === "string" && isUiLocale(raw) ? raw : "en";
@@ -186,7 +187,47 @@ async function handlePdf(ctx: Ctx): Promise<Response> {
   });
 }
 
+/** Anonymous version of the print route: the landing-page and /eszkozok tool-page
+ *  widgets have no couple to scope to, so this always renders the full, blank
+ *  canonical checklist — no wedding date, no personalization, no progress. It
+ *  is what makes "download the checklist" true regardless of how much of the
+ *  demo a visitor has checked off locally in their own browser. */
+async function handlePublicPdf(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "public_checklist_pdf", PUBLIC_CHECKLIST_PDF_BUCKET);
+  const locale = parseLocale(ctx.url.searchParams.get("locale"));
+  const sections = checklistSections(locale).map((section) => ({
+    title: section.title,
+    items: section.items.map((template) => ({
+      title: template.title,
+      done: false,
+      dueDate: null,
+      owner: null,
+    })),
+  }));
+  const total = sections.reduce((sum, section) => sum + section.items.length, 0);
+  const pdf = await renderWeddingChecklistPdf({
+    locale,
+    coupleName: null,
+    weddingDate: null,
+    completed: 0,
+    total,
+    includeProgress: false,
+    includeDates: false,
+    includeOwners: false,
+    remainingOnly: false,
+    sections,
+  });
+  return new Response(pdf, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": 'attachment; filename="weddly-wedding-checklist.pdf"',
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
 export function registerWeddingChecklistRoutes(router: Router) {
   router.post("/api/planning/checklist/initialize", handleInitialize, true);
   router.get("/api/print/wedding-checklist", handlePdf, true);
+  router.get("/api/public/checklist/pdf", handlePublicPdf);
 }

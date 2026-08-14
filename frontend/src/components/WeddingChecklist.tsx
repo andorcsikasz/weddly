@@ -3,6 +3,7 @@
 // normal page flow.
 import { checklistSections, isChecklistItemApplicable } from "@shared/wedding_checklist";
 import type { PlanningItem } from "@shared/types";
+import { CHECKLIST_DEMO_PROGRESS_KEY } from "./PublicWeddingChecklist";
 import {
   CalendarDays,
   Check,
@@ -47,6 +48,44 @@ function formatShortDate(value: string, locale: Locale): string {
     year: "numeric",
     timeZone: "UTC",
   }).format(date);
+}
+
+/** Replays the public landing/tool-page demo's locally-checked items onto the
+ *  couple's freshly-materialised checklist, then clears the stash. Fires as
+ *  part of every initialize() call — a no-op for the couples who never
+ *  touched the public demo, and the other half of the "convert to user" loop
+ *  for the ones who did: their checked items arrive already ticked. Silently
+ *  best-effort — a failure here must never surface as a checklist-creation
+ *  error, since the checklist itself already exists at this point. */
+async function applyStashedDemoProgress(
+  items: PlanningItem[],
+  onItemsChange: WeddingChecklistProps["onItemsChange"],
+): Promise<void> {
+  try {
+    const raw = localStorage.getItem(CHECKLIST_DEMO_PROGRESS_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return;
+    const stashedIds = new Set(
+      parsed.filter((entry): entry is string => typeof entry === "string"),
+    );
+    if (stashedIds.size === 0) return;
+    const matches = items.filter(
+      (item) =>
+        item.checklist_template_id && stashedIds.has(item.checklist_template_id) && !item.done,
+    );
+    if (matches.length > 0) {
+      const results = await Promise.all(
+        matches.map((item) => planningApi.update(item.id, { done: true })),
+      );
+      const updatedById = new Map(results.map((result) => [result.item.id, result.item]));
+      onItemsChange((current) => current.map((entry) => updatedById.get(entry.id) ?? entry));
+    }
+    localStorage.removeItem(CHECKLIST_DEMO_PROGRESS_KEY);
+  } catch {
+    // Best-effort handoff — never blocks or errors out the checklist the
+    // couple just created.
+  }
 }
 
 export function WeddingChecklist({
@@ -99,6 +138,7 @@ export function WeddingChecklist({
     try {
       const result = await planningApi.initializeChecklist(locale);
       onItemsChange(() => result.items);
+      await applyStashedDemoProgress(result.items, onItemsChange);
     } catch {
       toast.error(t("common.error_generic"));
     } finally {

@@ -2181,6 +2181,16 @@ const es: LocaleMessages = {
     demo_cat_ceremony_services: "Ceremonia y oficiante",
     demo_cat_stationery_smalls: "Papelería y detalles",
     demo_cat_reserve: "Reserva",
+    checklist_demo_title: "Probad vuestra lista de tareas",
+    checklist_demo_subtitle:
+      "Todas las fases, desde 12–18 meses antes hasta después de la boda. Navegad libremente, marcad tareas, descargadla, sin necesidad de cuenta.",
+    checklist_demo_progress_label: "{done} de {total} marcadas",
+    checklist_demo_download: "Descargar PDF",
+    checklist_demo_convert_title: "¡Buen comienzo!",
+    checklist_demo_convert_body:
+      "Cread una cuenta gratuita para guardar este progreso y acceder al resto del espacio de planificación de vuestra boda.",
+    checklist_demo_convert_dismiss: "Quizá más tarde",
+    checklist_demo_convert_cta: "Guardar mi progreso",
     faq_title: "Las preguntas que seguramente te harás",
     faq_show_more: "+{n} preguntas más",
     // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
@@ -8870,6 +8880,17 @@ const es: LocaleMessages = {
       cta_h2: "Cuando estéis listos para el resto",
       cta_body:
         "Tras las conversaciones difíciles llegan las decisiones prácticas. Weddly mantiene vuestro presupuesto, lista de invitados, confirmaciones y distribución de mesas en un único espacio de trabajo compartido, para que el trabajo de verdad no vuelva a caer en PDFs e hilos de mensajes.",
+      cta_button: "Abre tu espacio de trabajo",
+      faq_h2: "Preguntas frecuentes",
+    },
+    wedding_checklist: {
+      page_eyebrow: "Herramientas · Lista de tareas de boda",
+      page_h1: "Lista de tareas de boda",
+      page_intro:
+        "Todo el proceso de organización de la boda en una lista, desde 12–18 meses antes hasta la semana siguiente. Marcad lo que esté hecho y descargadla en PDF, cuando queráis, sin necesidad de cuenta.",
+      cta_h2: "Vinculad esta lista a vuestra fecha",
+      cta_body:
+        "Weddly ajusta el plazo recomendado de cada tarea a vuestra fecha de boda real, y la mantiene unida a vuestro presupuesto, lista de invitados y distribución de mesas compartidos.",
       cta_button: "Abre tu espacio de trabajo",
       faq_h2: "Preguntas frecuentes",
     },

@@ -23,7 +23,8 @@ export type ToolFaqSlug =
   | "guest_list_template"
   | "seating_chart"
   | "rsvp_generator"
-  | "couple_cards";
+  | "couple_cards"
+  | "wedding_checklist";
 
 /** HU + EN canonical paths per tool, mirroring SLUG_PAIRS in seo_routes.ts. */
 export const TOOL_FAQ_PATHS: Record<ToolFaqSlug, { hu: string; en: string }> = {
@@ -38,6 +39,10 @@ export const TOOL_FAQ_PATHS: Record<ToolFaqSlug, { hu: string; en: string }> = {
   couple_cards: {
     hu: "/eszkozok/100-kerdes-eskuvo-elott",
     en: "/tools/100-questions-before-marriage",
+  },
+  wedding_checklist: {
+    hu: "/eszkozok/eskuvoi-ellenorzolista",
+    en: "/tools/wedding-checklist",
   },
 };
 
@@ -131,6 +136,24 @@ export const TOOL_FAQ: Record<SeoFaqLocale, Record<ToolFaqSlug, ReadonlyArray<Se
         a: "Tíz külső szakértő (párterapeuta, pénzügyi tervező, hosszan házas párok, intimitás-coach, filozófus) szemszögéből szűrtük le a témákat. Ami mindenkinél visszatért: a család öröksége, a pénz és a hétköznapok, a test és a vágy, és a halál–krízis–értelem hármasa. Innen jött a négy pakli.",
       },
     ],
+    wedding_checklist: [
+      {
+        q: "Hány teendő van a listán?",
+        a: "Kb. 100 tétel, 11 időszakra bontva: 12–18 hónappal előtte a nagy naptól egészen az esküvő utáni teendőkig. A kültéri, gyerekes vagy alkoholt kínáló esküvőkhöz a lista automatikusan kiegészül plusz tételekkel.",
+      },
+      {
+        q: "A dátumomhoz igazodnak a határidők?",
+        a: "Ezen az oldalon még nem, mert nincs megadva esküvői dátum. Regisztráció után a Wēddly a ti dátumotokhoz igazítja minden tétel ajánlott határidejét, és a saját Tervezés felületeteken folytatódik.",
+      },
+      {
+        q: "Elmenthetem, amit itt kipipáltam?",
+        a: "Igen. Amíg csak böngésztek, semmi sem gátol; amint kipipáltok egy tételt, felajánljuk, hogy hozzatok létre egy ingyenes fiókot, ami átveszi a kipipált tételeket a saját ellenőrzőlistátokba.",
+      },
+      {
+        q: "Ingyenes a PDF letöltése?",
+        a: "Igen, regisztráció nélkül is letölthető a teljes lista PDF-ben, nyomtatható formában.",
+      },
+    ],
   },
   en: {
     budget_calculator: [
@@ -219,6 +242,24 @@ export const TOOL_FAQ: Record<SeoFaqLocale, Record<ToolFaqSlug, ReadonlyArray<Se
       {
         q: "Why these four decks specifically?",
         a: "We took the synthesis of ten different perspectives (a couples therapist, a long-married couple, an intimacy coach, a financial planner, a philosopher) and the themes that surfaced in all of them: family inheritance, money and the everyday, body and desire, and the death–crisis–meaning cluster. That's how we landed on four.",
+      },
+    ],
+    wedding_checklist: [
+      {
+        q: "How many tasks are on the checklist?",
+        a: "About 100 items across 11 phases, from 12–18 months out to after the wedding. Outdoor, alcohol-serving or family-friendly weddings automatically get a few extra items.",
+      },
+      {
+        q: "Are the deadlines based on my wedding date?",
+        a: "Not on this page — there's no date to work from here. After signing up, Weddly maps every item's recommended deadline to your actual date and continues in your own Planning workspace.",
+      },
+      {
+        q: "Can I save what I check off here?",
+        a: "Yes. Browsing is always free; the moment you check an item off, we offer a free account that carries your checked items straight into your own checklist.",
+      },
+      {
+        q: "Is the PDF download free?",
+        a: "Yes, the full checklist downloads as a printable PDF with no signup needed.",
       },
     ],
   },
