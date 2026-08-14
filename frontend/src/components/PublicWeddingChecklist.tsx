@@ -1,19 +1,25 @@
 // Public, no-auth wedding checklist widget — same canonical data as the real
 // Planning > Checklist tab (WeddingChecklist.tsx), but with zero backend calls
-// of its own. Browsing every section is always free; checking an item off is
-// the one action that surfaces the "save this" invitation, since there is
-// nowhere to persist a check-mark without a couple workspace. The checked set
-// lives in localStorage under CHECKLIST_DEMO_PROGRESS_KEY, so WeddingChecklist's
-// initialize() can replay it onto the couple's real checklist right after
-// signup — see the read of that key there for the other half of the handoff.
+// of its own. In `teaser` mode (the landing page) it is a single stat card:
+// title, live progress, download — clicking the card hands the visitor off to
+// the full tool page rather than expanding a section list in place. The full
+// section-by-section accordion with per-item checkboxes only renders when
+// `teaser` is false (the dedicated /eszkozok tool page). Checking an item
+// there is the one action that surfaces the "save this" invitation, since
+// there is nowhere to persist a check-mark without a couple workspace. The
+// checked set lives in localStorage under CHECKLIST_DEMO_PROGRESS_KEY, so
+// WeddingChecklist's initialize() can replay it onto the couple's real
+// checklist right after signup — see the read of that key there for the
+// other half of the handoff.
 
-import { Check, ChevronDown, ClipboardCheck, Download, Loader2 } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ClipboardCheck, Download, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { TOOL_FAQ_PATHS } from "@shared/tool_faq";
 import type { ChecklistSectionId } from "@shared/wedding_checklist";
 import { checklistSections, isChecklistItemApplicable } from "@shared/wedding_checklist";
 import { fetchPdfBlob, publicWeddingChecklistPdfUrl } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 
 export const CHECKLIST_DEMO_PROGRESS_KEY = "weddly.checklist_demo_progress";
 const DISMISS_SESSION_KEY = "weddly.checklist_demo_convert_dismissed";
@@ -52,14 +58,20 @@ function convertAlreadyDismissed(): boolean {
 
 export function PublicWeddingChecklist({
   previewSectionCount = 3,
+  teaser = false,
 }: {
-  /** How many sections start expanded. The landing teaser opens a couple; the
-   *  dedicated tool page passes a number ≥ the section count so everything is
-   *  open. Every section header and item count is always visible either way —
-   *  this only controls the default fold, never what's reachable. */
+  /** How many sections start expanded. Only matters when `teaser` is false —
+   *  the dedicated tool page passes a number ≥ the section count so
+   *  everything is open. Every section header and item count is always
+   *  visible either way — this only controls the default fold. */
   previewSectionCount?: number;
+  /** Landing-page mode: title, live progress and download only, no section
+   *  list. The progress card becomes a link to the full tool page — the
+   *  actual checking-things-off experience lives there. */
+  teaser?: boolean;
 }) {
   const { t, locale } = useT();
+  const toolHref = TOOL_FAQ_PATHS.wedding_checklist[contentLocale(locale)];
   const sections = useMemo(
     () =>
       checklistSections(locale).map((section) => ({
@@ -141,27 +153,22 @@ export function PublicWeddingChecklist({
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-          <div className="rounded-2xl bg-neutral-950 p-5 text-white sm:p-6 dark:bg-black">
-            <div className="flex items-center justify-between gap-6">
-              <div>
-                <p className="text-sm font-medium text-white/60">
-                  {t("landing.checklist_demo_progress_label", { done, total })}
-                </p>
-                <p className="mt-1 font-grotesk text-4xl font-semibold leading-none tracking-[-0.04em] tabular-nums sm:text-5xl">
-                  {percent}%
-                </p>
-              </div>
-              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white/10 text-white">
-                <ClipboardCheck size={20} aria-hidden="true" />
-              </span>
+          {teaser ? (
+            <Link
+              to={toolHref}
+              className="group rounded-2xl bg-neutral-950 p-5 text-white transition-shadow hover:shadow-pop sm:p-6 dark:bg-black"
+            >
+              <StatCardBody t={t} done={done} total={total} percent={percent} />
+              <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 transition-colors group-hover:text-white">
+                {t("landing.checklist_demo_open_link")}
+                <ArrowRight size={14} aria-hidden="true" />
+              </p>
+            </Link>
+          ) : (
+            <div className="rounded-2xl bg-neutral-950 p-5 text-white sm:p-6 dark:bg-black">
+              <StatCardBody t={t} done={done} total={total} percent={percent} />
             </div>
-            <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/20">
-              <div
-                className="h-full rounded-full bg-white transition-[width] duration-300"
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-          </div>
+          )}
           <button
             type="button"
             onClick={downloadPdf}
@@ -205,79 +212,117 @@ export function PublicWeddingChecklist({
           </div>
         )}
 
-        <div className="mt-6 space-y-3">
-          {sections.map((section) => {
-            const sectionDone = section.items.filter((entry) => checked.has(entry.id)).length;
-            const open = openIds.has(section.id);
-            return (
-              <div
-                key={section.id}
-                className="overflow-hidden rounded-xl border border-ink-900/15 bg-white dark:border-paper-50/15 dark:bg-umber-800"
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleOpen(section.id)}
-                  aria-expanded={open}
-                  className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left sm:px-5"
+        {!teaser && (
+          <div className="mt-6 space-y-3">
+            {sections.map((section) => {
+              const sectionDone = section.items.filter((entry) => checked.has(entry.id)).length;
+              const open = openIds.has(section.id);
+              return (
+                <div
+                  key={section.id}
+                  className="overflow-hidden rounded-xl border border-ink-900/15 bg-white dark:border-paper-50/15 dark:bg-umber-800"
                 >
-                  <span className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
-                    {section.title}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <span className="text-xs font-semibold tabular-nums text-ink-500 dark:text-umber-300">
-                      {sectionDone}/{section.items.length}
+                  <button
+                    type="button"
+                    onClick={() => toggleOpen(section.id)}
+                    aria-expanded={open}
+                    className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left sm:px-5"
+                  >
+                    <span className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
+                      {section.title}
                     </span>
-                    <ChevronDown
-                      size={16}
-                      aria-hidden="true"
-                      className={`text-ink-500 transition-transform dark:text-umber-300 ${open ? "" : "-rotate-90"}`}
-                    />
-                  </span>
-                </button>
-                {open && (
-                  <ul className="divide-y divide-ink-900/10 border-t border-ink-900/10 dark:divide-paper-50/10 dark:border-paper-50/10">
-                    {section.items.map((entry) => {
-                      const isChecked = checked.has(entry.id);
-                      return (
-                        <li key={entry.id} className="flex items-start gap-3 px-4 py-3 sm:px-5">
-                          <label className="inline-flex shrink-0 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => toggleItem(entry.id)}
-                              className="peer sr-only"
-                              aria-label={entry.title}
-                            />
-                            <span
-                              aria-hidden="true"
-                              className={`inline-flex h-5 w-5 items-center justify-center rounded-sm border-2 transition-colors ${
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="text-xs font-semibold tabular-nums text-ink-500 dark:text-umber-300">
+                        {sectionDone}/{section.items.length}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        aria-hidden="true"
+                        className={`text-ink-500 transition-transform dark:text-umber-300 ${open ? "" : "-rotate-90"}`}
+                      />
+                    </span>
+                  </button>
+                  {open && (
+                    <ul className="divide-y divide-ink-900/10 border-t border-ink-900/10 dark:divide-paper-50/10 dark:border-paper-50/10">
+                      {section.items.map((entry) => {
+                        const isChecked = checked.has(entry.id);
+                        return (
+                          <li key={entry.id} className="flex items-start gap-3 px-4 py-3 sm:px-5">
+                            <label className="inline-flex shrink-0 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => toggleItem(entry.id)}
+                                className="peer sr-only"
+                                aria-label={entry.title}
+                              />
+                              <span
+                                aria-hidden="true"
+                                className={`inline-flex h-5 w-5 items-center justify-center rounded-sm border-2 transition-colors ${
+                                  isChecked
+                                    ? "border-neutral-950 bg-neutral-950 text-white dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+                                    : "border-ink-400 bg-paper-50 text-transparent dark:border-umber-300 dark:bg-umber-800"
+                                }`}
+                              >
+                                <Check size={12} strokeWidth={2.5} aria-hidden="true" />
+                              </span>
+                            </label>
+                            <p
+                              className={`text-sm leading-5 ${
                                 isChecked
-                                  ? "border-neutral-950 bg-neutral-950 text-white dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                                  : "border-ink-400 bg-paper-50 text-transparent dark:border-umber-300 dark:bg-umber-800"
+                                  ? "text-ink-400 line-through dark:text-umber-400"
+                                  : "text-ink-800 dark:text-paper-100"
                               }`}
                             >
-                              <Check size={12} strokeWidth={2.5} aria-hidden="true" />
-                            </span>
-                          </label>
-                          <p
-                            className={`text-sm leading-5 ${
-                              isChecked
-                                ? "text-ink-400 line-through dark:text-umber-400"
-                                : "text-ink-800 dark:text-paper-100"
-                            }`}
-                          >
-                            {entry.title}
-                          </p>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                              {entry.title}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
+  );
+}
+
+function StatCardBody({
+  t,
+  done,
+  total,
+  percent,
+}: {
+  t: ReturnType<typeof useT>["t"];
+  done: number;
+  total: number;
+  percent: number;
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between gap-6">
+        <div>
+          <p className="text-sm font-medium text-white/60">
+            {t("landing.checklist_demo_progress_label", { done, total })}
+          </p>
+          <p className="mt-1 font-grotesk text-4xl font-semibold leading-none tracking-[-0.04em] tabular-nums sm:text-5xl">
+            {percent}%
+          </p>
+        </div>
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white/10 text-white">
+          <ClipboardCheck size={20} aria-hidden="true" />
+        </span>
+      </div>
+      <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/20">
+        <div
+          className="h-full rounded-full bg-white transition-[width] duration-300"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </>
   );
 }
