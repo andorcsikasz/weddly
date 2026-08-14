@@ -1,62 +1,58 @@
 import "../setup";
 
-import { checklistTemplateSize } from "@shared/wedding_checklist";
 import type { PlanningItem } from "@shared/types";
 import { PDFDocument } from "pdf-lib";
 import { beforeEach, describe, expect, test } from "bun:test";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
-type InitResponse = { items: PlanningItem[]; created: number; linked: number };
+type AddResponse = { item: PlanningItem; created: boolean };
 
 describe("wedding checklist", () => {
   beforeEach(() => wipeAll());
 
-  test("initializes ordinary Planning tasks once and keeps completion on the task row", async () => {
+  test("approves a single checklist item onto the Planning list, idempotently", async () => {
     const { token } = await bootstrapCouple();
-    const first = await req<InitResponse>(
+    const first = await req<AddResponse>(
       "POST",
-      "/api/planning/checklist/initialize",
-      { locale: "en" },
+      "/api/planning/checklist/items",
+      { template_id: "book-venue", locale: "en" },
       { token },
     );
     expect(first.status).toBe(200);
-    expect(first.data.created).toBe(checklistTemplateSize());
-    const checklistTasks = first.data.items.filter((entry) => entry.checklist_template_id);
-    expect(checklistTasks).toHaveLength(checklistTemplateSize());
-    expect(new Set(checklistTasks.map((entry) => entry.checklist_template_id)).size).toBe(
-      checklistTemplateSize(),
-    );
-    expect(checklistTasks.every((entry) => entry.kind === "task")).toBe(true);
-    expect(
-      checklistTasks.find((entry) => entry.checklist_template_id === "book-venue")?.due_date,
-    ).not.toBeNull();
+    expect(first.data.created).toBe(true);
+    expect(first.data.item.checklist_template_id).toBe("book-venue");
+    expect(first.data.item.kind).toBe("task");
+    expect(first.data.item.due_date).not.toBeNull();
 
-    const venue = checklistTasks.find((entry) => entry.checklist_template_id === "book-venue");
-    expect(venue).toBeDefined();
     const completed = await req<{ item: PlanningItem }>(
       "PATCH",
-      `/api/planning/${venue?.id}`,
+      `/api/planning/${first.data.item.id}`,
       { done: true },
       { token },
     );
     expect(completed.data.item.done).toBe(true);
-    expect(completed.data.item.checklist_template_id).toBe("book-venue");
 
-    const second = await req<InitResponse>(
+    // Re-approving the same item is a no-op: same row, no duplicate, and the
+    // couple's own completion isn't clobbered by the replay.
+    const second = await req<AddResponse>(
       "POST",
-      "/api/planning/checklist/initialize",
-      { locale: "de" },
+      "/api/planning/checklist/items",
+      { template_id: "book-venue", locale: "de" },
       { token },
     );
-    expect(second.data.created).toBe(0);
-    expect(second.data.linked).toBe(0);
-    expect(second.data.items.filter((entry) => entry.checklist_template_id)).toHaveLength(
-      checklistTemplateSize(),
-    );
-    expect(second.data.items.find((entry) => entry.id === venue?.id)?.done).toBe(true);
+    expect(second.data.created).toBe(false);
+    expect(second.data.item.id).toBe(first.data.item.id);
+    expect(second.data.item.done).toBe(true);
+
+    const list = await req<{ items: PlanningItem[] }>("GET", "/api/planning", undefined, {
+      token,
+    });
+    expect(
+      list.data.items.filter((entry) => entry.checklist_template_id === "book-venue"),
+    ).toHaveLength(1);
   });
 
-  test("adopts an equivalent existing template task instead of creating a duplicate", async () => {
+  test("reuses an equivalent existing template task instead of creating a duplicate", async () => {
     const { token } = await bootstrapCouple();
     const existing = await req<{ item: PlanningItem }>(
       "POST",
@@ -64,26 +60,42 @@ describe("wedding checklist", () => {
       { kind: "task", title: "Book your venue" },
       { token },
     );
-    const initialized = await req<InitResponse>(
+    const added = await req<AddResponse>(
       "POST",
-      "/api/planning/checklist/initialize",
-      { locale: "en" },
+      "/api/planning/checklist/items",
+      { template_id: "book-venue", locale: "en" },
       { token },
     );
-    expect(initialized.data.linked).toBeGreaterThanOrEqual(1);
-    expect(initialized.data.created).toBe(checklistTemplateSize() - 1);
-    const venue = initialized.data.items.find(
-      (entry) => entry.checklist_template_id === "book-venue",
+    expect(added.data.created).toBe(true);
+    expect(added.data.item.id).toBe(existing.data.item.id);
+    expect(added.data.item.checklist_template_id).toBe("book-venue");
+
+    const list = await req<{ items: PlanningItem[] }>("GET", "/api/planning", undefined, {
+      token,
+    });
+    expect(list.data.items.filter((entry) => entry.title === "Book your venue")).toHaveLength(1);
+  });
+
+  test("rejects an unknown checklist template id", async () => {
+    const { token } = await bootstrapCouple();
+    const result = await req(
+      "POST",
+      "/api/planning/checklist/items",
+      { template_id: "not-a-real-item", locale: "en" },
+      { token },
     );
-    expect(venue?.id).toBe(existing.data.item.id);
-    expect(
-      initialized.data.items.filter((entry) => entry.title === "Book your venue"),
-    ).toHaveLength(1);
+    expect(result.status).toBe(400);
   });
 
   test("renders branded progress and blank variants as valid localized PDFs", async () => {
     const { token } = await bootstrapCouple();
-    await req("POST", "/api/planning/checklist/initialize", { locale: "hr" }, { token });
+    const added = await req<AddResponse>(
+      "POST",
+      "/api/planning/checklist/items",
+      { template_id: "book-venue", locale: "hr" },
+      { token },
+    );
+    await req("PATCH", `/api/planning/${added.data.item.id}`, { done: true }, { token });
     const base = `http://localhost:${process.env.PORT ?? "8791"}`;
     for (const query of [
       "locale=en",
@@ -111,7 +123,10 @@ describe("wedding checklist", () => {
   });
 
   test("requires the authenticated couple workspace", async () => {
-    const result = await req("POST", "/api/planning/checklist/initialize", { locale: "en" });
+    const result = await req("POST", "/api/planning/checklist/items", {
+      template_id: "book-venue",
+      locale: "en",
+    });
     expect(result.status).toBe(401);
     const response = await fetch(
       `http://localhost:${process.env.PORT ?? "8791"}/api/print/wedding-checklist?locale=en`,

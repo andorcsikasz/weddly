@@ -3597,15 +3597,13 @@ export interface LocaleMessages {
       action: string;
       title: string;
       subtitle: string;
-      create_title: string;
-      create_body: string;
-      create_action: string;
       completed_count: string;
       percent_complete: string;
       filter_all: string;
       filter_todo: string;
       filter_done: string;
       section_count: string;
+      section_suggestions: string;
       section_complete: string;
       download: string;
       download_options: string;
@@ -3618,7 +3616,8 @@ export interface LocaleMessages {
       include_owners: string;
       only_remaining: string;
       download_action: string;
-      initializing: string;
+      add_action: string;
+      add_error: string;
       save_error: string;
       download_error: string;
       due_date: string;

@@ -1,7 +1,11 @@
 // Persistent fourth Planning surface. This deliberately is not a Dialog: its
 // progress, filters, and two-column task list stay visible and trackable in the
-// normal page flow.
+// normal page flow. The catalog itself is a browsable reference — every item is
+// always visible, and nothing here is ever deletable. An item only joins the
+// couple's own to-do list (and counts toward progress) once they approve it by
+// tapping its "+".
 import { checklistSections, isChecklistItemApplicable } from "@shared/wedding_checklist";
+import type { WeddingChecklistItem } from "@shared/wedding_checklist";
 import type { PlanningItem } from "@shared/types";
 import { CHECKLIST_DEMO_PROGRESS_KEY } from "./PublicWeddingChecklist";
 import {
@@ -10,10 +14,11 @@ import {
   ClipboardCheck,
   Download,
   Loader2,
+  Plus,
   SlidersHorizontal,
   UserRound,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchPdfBlob,
   planningApi,
@@ -24,6 +29,7 @@ import { useToast } from "./ui";
 import { type Locale, LOCALES, LOCALE_NAMES, useT } from "../lib/i18n";
 
 type ChecklistFilter = "all" | "todo" | "done";
+type ChecklistRow = { template: WeddingChecklistItem; task: PlanningItem | null };
 
 interface WeddingChecklistProps {
   items: PlanningItem[];
@@ -51,14 +57,15 @@ function formatShortDate(value: string, locale: Locale): string {
 }
 
 /** Replays the public landing/tool-page demo's locally-checked items onto the
- *  couple's freshly-materialised checklist, then clears the stash. Fires as
- *  part of every initialize() call — a no-op for the couples who never
- *  touched the public demo, and the other half of the "convert to user" loop
- *  for the ones who did: their checked items arrive already ticked. Silently
- *  best-effort — a failure here must never surface as a checklist-creation
- *  error, since the checklist itself already exists at this point. */
+ *  couple's own checklist the first time this tab is open: approves each
+ *  stashed item (materialising its task if it isn't already added) and marks
+ *  it done, then clears the stash. A no-op for couples who never touched the
+ *  public demo. Silently best-effort — a failure here must never surface as
+ *  a checklist error. */
 async function applyStashedDemoProgress(
-  items: PlanningItem[],
+  applicableIds: ReadonlySet<string>,
+  taskByTemplateId: ReadonlyMap<string, PlanningItem>,
+  locale: Locale,
   onItemsChange: WeddingChecklistProps["onItemsChange"],
 ): Promise<void> {
   try {
@@ -66,25 +73,27 @@ async function applyStashedDemoProgress(
     if (!raw) return;
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return;
-    const stashedIds = new Set(
-      parsed.filter((entry): entry is string => typeof entry === "string"),
+    const stashedIds = parsed.filter(
+      (entry): entry is string => typeof entry === "string" && applicableIds.has(entry),
     );
-    if (stashedIds.size === 0) return;
-    const matches = items.filter(
-      (item) =>
-        item.checklist_template_id && stashedIds.has(item.checklist_template_id) && !item.done,
-    );
-    if (matches.length > 0) {
-      const results = await Promise.all(
-        matches.map((item) => planningApi.update(item.id, { done: true })),
-      );
-      const updatedById = new Map(results.map((result) => [result.item.id, result.item]));
-      onItemsChange((current) => current.map((entry) => updatedById.get(entry.id) ?? entry));
+    if (stashedIds.length === 0) {
+      localStorage.removeItem(CHECKLIST_DEMO_PROGRESS_KEY);
+      return;
+    }
+    for (const templateId of stashedIds) {
+      const existing = taskByTemplateId.get(templateId);
+      if (existing?.done) continue;
+      const item = existing ?? (await planningApi.addChecklistItem(templateId, locale)).item;
+      if (item.done) continue;
+      const result = await planningApi.update(item.id, { done: true });
+      onItemsChange((current) => [
+        ...current.filter((entry) => entry.id !== result.item.id),
+        result.item,
+      ]);
     }
     localStorage.removeItem(CHECKLIST_DEMO_PROGRESS_KEY);
   } catch {
-    // Best-effort handoff — never blocks or errors out the checklist the
-    // couple just created.
+    // Best-effort handoff — never blocks or errors out the checklist tab.
   }
 }
 
@@ -97,8 +106,8 @@ export function WeddingChecklist({
   const { t, locale } = useT();
   const toast = useToast();
   const [filter, setFilter] = useState<ChecklistFilter>("all");
-  const [initializing, setInitializing] = useState(false);
   const [savingIds, setSavingIds] = useState<Set<number>>(() => new Set());
+  const [addingIds, setAddingIds] = useState<Set<string>>(() => new Set());
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [pdfLocale, setPdfLocale] = useState<Locale>(locale);
@@ -106,6 +115,7 @@ export function WeddingChecklist({
   const [includeDates, setIncludeDates] = useState(false);
   const [includeOwners, setIncludeOwners] = useState(false);
   const [remainingOnly, setRemainingOnly] = useState(false);
+  const demoProgressApplied = useRef(false);
 
   useEffect(() => setPdfLocale(locale), [locale]);
 
@@ -118,7 +128,6 @@ export function WeddingChecklist({
       ),
     [items],
   );
-  const initialized = taskByTemplateId.size > 0;
   const sections = useMemo(
     () =>
       checklistSections(locale, weddingDate).map((section) => ({
@@ -128,21 +137,35 @@ export function WeddingChecklist({
     [locale, weddingDate, profile],
   );
   const applicable = sections.flatMap((section) => section.items);
-  const completed = applicable.filter((entry) => taskByTemplateId.get(entry.id)?.done).length;
-  const total = applicable.length;
+  const added = applicable.filter((entry) => taskByTemplateId.has(entry.id));
+  const completed = added.filter((entry) => taskByTemplateId.get(entry.id)?.done).length;
+  const total = added.length;
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-  async function initialize() {
-    if (initializing) return;
-    setInitializing(true);
+  useEffect(() => {
+    if (demoProgressApplied.current) return;
+    demoProgressApplied.current = true;
+    const applicableIds = new Set(applicable.map((entry) => entry.id));
+    void applyStashedDemoProgress(applicableIds, taskByTemplateId, locale, onItemsChange);
+  }, [applicable, taskByTemplateId, locale, onItemsChange]);
+
+  async function addItem(template: (typeof applicable)[number]) {
+    if (addingIds.has(template.id)) return;
+    setAddingIds((current) => new Set(current).add(template.id));
     try {
-      const result = await planningApi.initializeChecklist(locale);
-      onItemsChange(() => result.items);
-      await applyStashedDemoProgress(result.items, onItemsChange);
+      const result = await planningApi.addChecklistItem(template.id, locale);
+      onItemsChange((current) => [
+        ...current.filter((entry) => entry.id !== result.item.id),
+        result.item,
+      ]);
     } catch {
-      toast.error(t("common.error_generic"));
+      toast.error(t("planning.checklist.add_error"));
     } finally {
-      setInitializing(false);
+      setAddingIds((current) => {
+        const next = new Set(current);
+        next.delete(template.id);
+        return next;
+      });
     }
   }
 
@@ -206,260 +229,225 @@ export function WeddingChecklist({
       aria-labelledby="wedding-checklist-title"
       data-checklist-surface="persistent"
     >
-      {!initialized ? (
-        <div className="flex min-h-[26rem] flex-col items-center justify-center px-4 py-12 text-center">
-          <span className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-lg bg-neutral-950 text-white dark:bg-paper-100 dark:text-neutral-950">
-            <ClipboardCheck size={30} aria-hidden="true" />
-          </span>
-          <h2
-            id="wedding-checklist-title"
-            className="font-grotesk text-2xl font-semibold tracking-[-0.025em] text-ink-900 sm:text-3xl dark:text-paper-50"
-          >
-            {t("planning.checklist.create_title")}
-          </h2>
-          <p className="mt-3 max-w-md text-sm leading-6 text-ink-600 dark:text-umber-200">
-            {t("planning.checklist.create_body")}
-          </p>
-          <button
-            type="button"
-            onClick={initialize}
-            disabled={initializing}
-            className="btn-primary mt-6 inline-flex items-center gap-2 disabled:opacity-60"
-          >
-            {initializing ? (
-              <Loader2 size={17} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <ClipboardCheck size={17} aria-hidden="true" />
-            )}
-            {initializing
-              ? t("planning.checklist.initializing")
-              : t("planning.checklist.create_action")}
-          </button>
-        </div>
-      ) : (
-        <div className="pb-2">
-          <header className="mb-7 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-2xl">
-              <h2
-                id="wedding-checklist-title"
-                className="font-grotesk text-3xl font-semibold leading-tight tracking-[-0.035em] text-ink-900 sm:text-4xl dark:text-paper-50"
-              >
-                {t("planning.checklist.title")}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-ink-600 sm:text-base dark:text-umber-200">
-                {t("planning.checklist.subtitle")}
-              </p>
-            </div>
-          </header>
-
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-            <div className="flex min-h-48 flex-col justify-between rounded-lg bg-neutral-950 p-5 text-white sm:p-6 dark:bg-black">
-              <div className="flex items-start justify-between gap-6">
-                <div>
-                  <p className="text-sm font-medium text-white/60">
-                    {t("planning.checklist.completed_count", { done: completed, total })}
-                  </p>
-                  <p className="mt-2 font-grotesk text-5xl font-semibold leading-none tracking-[-0.055em] tabular-nums sm:text-6xl">
-                    {percent}%
-                  </p>
-                </div>
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-white/10 text-white">
-                  <ClipboardCheck size={21} aria-hidden="true" />
-                </span>
-              </div>
-              <div
-                className="mt-8 h-1.5 overflow-hidden bg-white/20"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={percent}
-                aria-label={t("planning.checklist.percent_complete", { percent })}
-              >
-                <div
-                  className="h-full bg-white transition-[width] duration-300 motion-reduce:transition-none"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="flex min-h-48 flex-col justify-between rounded-lg border border-ink-900/15 bg-paper-50 p-5 sm:p-6 lg:w-72 dark:border-paper-50/15 dark:bg-umber-800">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-ink-900/[0.06] text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
-                <Download size={20} aria-hidden="true" />
-              </span>
-              <div className="mt-7">
-                <p className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-                  {t("planning.checklist.download_title")}
+      <h2 id="wedding-checklist-title" className="sr-only">
+        {t("planning.checklist.title")}
+      </h2>
+      <div className="pb-2">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="flex min-h-48 flex-col justify-between rounded-lg bg-neutral-950 p-5 text-white sm:p-6 dark:bg-black">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <p className="text-sm font-medium text-white/60">
+                  {t("planning.checklist.completed_count", { done: completed, total })}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setDownloadOpen((value) => !value)}
-                  aria-expanded={downloadOpen}
-                  aria-controls="wedding-checklist-download-options"
-                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-white dark:focus-visible:ring-paper-100"
-                >
-                  <SlidersHorizontal size={16} aria-hidden="true" />
-                  {t("planning.checklist.download_options")}
-                </button>
+                <p className="mt-2 font-grotesk text-5xl font-semibold leading-none tracking-[-0.055em] tabular-nums sm:text-6xl">
+                  {percent}%
+                </p>
               </div>
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-white/10 text-white">
+                <ClipboardCheck size={21} aria-hidden="true" />
+              </span>
             </div>
-          </div>
-
-          {downloadOpen && (
-            <section
-              id="wedding-checklist-download-options"
-              className="mt-3 rounded-lg border border-ink-900/15 bg-paper-50 p-5 sm:p-6 dark:border-paper-50/15 dark:bg-umber-800"
-              aria-label={t("planning.checklist.download_title")}
-            >
-              <h3 className="font-grotesk text-xl font-semibold tracking-[-0.02em] text-ink-900 dark:text-paper-50">
-                {t("planning.checklist.download_title")}
-              </h3>
-              <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">
-                {t("planning.checklist.download_body")}
-              </p>
-              <fieldset className="mt-5">
-                <legend className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-500 dark:text-umber-300">
-                  {t("planning.checklist.pdf_language")}
-                </legend>
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-ink-900/15 bg-ink-900/10 sm:grid-cols-5 dark:border-paper-50/15 dark:bg-paper-50/10">
-                  {LOCALES.map((option) => (
-                    <label
-                      key={option}
-                      className={`flex min-h-11 cursor-pointer items-center justify-center px-3 py-2 text-center text-sm font-semibold transition-colors ${pdfLocale === option ? "bg-neutral-950 text-white dark:bg-paper-100 dark:text-umber-900" : "bg-paper-50 text-ink-600 hover:bg-ink-50 hover:text-ink-900 dark:bg-umber-800 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"}`}
-                    >
-                      <input
-                        type="radio"
-                        name="checklist-pdf-locale"
-                        value={option}
-                        checked={pdfLocale === option}
-                        onChange={() => setPdfLocale(option)}
-                        className="sr-only"
-                      />
-                      {LOCALE_NAMES[option]}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label
-                  className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-md border p-4 transition-colors ${pdfMode === "progress" ? "border-neutral-950 bg-neutral-950 text-white dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900" : "border-ink-900/15 text-ink-900 hover:border-ink-900/40 dark:border-paper-50/15 dark:text-paper-50 dark:hover:border-paper-50/40"}`}
-                >
-                  <input
-                    type="radio"
-                    name="checklist-pdf-mode"
-                    checked={pdfMode === "progress"}
-                    onChange={() => setPdfMode("progress")}
-                    className="h-4 w-4 shrink-0 accent-white dark:accent-neutral-950"
-                  />
-                  <span className="text-sm font-medium">
-                    {t("planning.checklist.pdf_progress")}
-                  </span>
-                </label>
-                <label
-                  className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-md border p-4 transition-colors ${pdfMode === "blank" ? "border-neutral-950 bg-neutral-950 text-white dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900" : "border-ink-900/15 text-ink-900 hover:border-ink-900/40 dark:border-paper-50/15 dark:text-paper-50 dark:hover:border-paper-50/40"}`}
-                >
-                  <input
-                    type="radio"
-                    name="checklist-pdf-mode"
-                    checked={pdfMode === "blank"}
-                    onChange={() => setPdfMode("blank")}
-                    className="h-4 w-4 shrink-0 accent-white dark:accent-neutral-950"
-                  />
-                  <span className="text-sm font-medium">{t("planning.checklist.pdf_blank")}</span>
-                </label>
-              </div>
-              <div className="mt-3 grid gap-px overflow-hidden rounded-md border border-ink-900/15 bg-ink-900/10 sm:grid-cols-3 dark:border-paper-50/15 dark:bg-paper-50/10">
-                <PdfOption
-                  checked={includeDates}
-                  onChange={setIncludeDates}
-                  label={t("planning.checklist.include_dates")}
-                />
-                <PdfOption
-                  checked={includeOwners}
-                  onChange={setIncludeOwners}
-                  label={t("planning.checklist.include_owners")}
-                />
-                <PdfOption
-                  checked={remainingOnly}
-                  onChange={setRemainingOnly}
-                  label={t("planning.checklist.only_remaining")}
-                />
-              </div>
-              <div className="mt-5 flex justify-end">
-                <button
-                  type="button"
-                  onClick={downloadPdf}
-                  disabled={downloading}
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:opacity-60 sm:w-auto dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-white dark:focus-visible:ring-paper-100"
-                >
-                  {downloading ? (
-                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Download size={16} aria-hidden="true" />
-                  )}
-                  {t("planning.checklist.download_action")}
-                </button>
-              </div>
-            </section>
-          )}
-
-          <div className="sticky top-2 z-20 my-6 flex justify-center sm:my-8">
             <div
-              className="inline-grid w-full grid-cols-3 rounded-lg border border-ink-900/15 bg-paper-50/95 p-1 shadow-soft backdrop-blur sm:w-auto dark:border-paper-50/15 dark:bg-umber-900/95"
-              role="radiogroup"
-              aria-label={t("planning.checklist.title")}
+              className="mt-8 h-1.5 overflow-hidden bg-white/20"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={percent}
+              aria-label={t("planning.checklist.percent_complete", { percent })}
             >
-              {(["all", "todo", "done"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={filter === value}
-                  onClick={() => setFilter(value)}
-                  className={`min-h-10 min-w-24 rounded-md px-4 py-2 text-sm font-semibold transition-colors ${filter === value ? "bg-neutral-950 text-white dark:bg-paper-100 dark:text-umber-900" : "text-ink-600 hover:bg-ink-900/[0.06] hover:text-ink-900 dark:text-umber-200 dark:hover:bg-paper-50/10 dark:hover:text-paper-50"}`}
-                >
-                  {t(`planning.checklist.filter_${value}`)}
-                </button>
-              ))}
+              <div
+                className="h-full bg-white transition-[width] duration-300 motion-reduce:transition-none"
+                style={{ width: `${percent}%` }}
+              />
             </div>
           </div>
 
-          <div className="grid items-start gap-4 md:grid-cols-2" data-checklist-layout="two-column">
-            {sections.map((section) => {
-              const rows = section.items.flatMap((template) => {
-                const task = taskByTemplateId.get(template.id);
-                if (!task) return [];
+          <div className="flex min-h-48 flex-col justify-between rounded-lg border border-ink-900/15 bg-paper-50 p-5 sm:p-6 lg:w-72 dark:border-paper-50/15 dark:bg-umber-800">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-ink-900/[0.06] text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
+              <Download size={20} aria-hidden="true" />
+            </span>
+            <div className="mt-7">
+              <p className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+                {t("planning.checklist.download_title")}
+              </p>
+              <button
+                type="button"
+                onClick={() => setDownloadOpen((value) => !value)}
+                aria-expanded={downloadOpen}
+                aria-controls="wedding-checklist-download-options"
+                className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-white dark:focus-visible:ring-paper-100"
+              >
+                <SlidersHorizontal size={16} aria-hidden="true" />
+                {t("planning.checklist.download_options")}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {downloadOpen && (
+          <section
+            id="wedding-checklist-download-options"
+            className="mt-3 rounded-lg border border-ink-900/15 bg-paper-50 p-5 sm:p-6 dark:border-paper-50/15 dark:bg-umber-800"
+            aria-label={t("planning.checklist.download_title")}
+          >
+            <h3 className="font-grotesk text-xl font-semibold tracking-[-0.02em] text-ink-900 dark:text-paper-50">
+              {t("planning.checklist.download_title")}
+            </h3>
+            <p className="mt-1.5 text-sm text-ink-600 dark:text-umber-200">
+              {t("planning.checklist.download_body")}
+            </p>
+            <fieldset className="mt-5">
+              <legend className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-500 dark:text-umber-300">
+                {t("planning.checklist.pdf_language")}
+              </legend>
+              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-ink-900/15 bg-ink-900/10 sm:grid-cols-5 dark:border-paper-50/15 dark:bg-paper-50/10">
+                {LOCALES.map((option) => (
+                  <label
+                    key={option}
+                    className={`flex min-h-11 cursor-pointer items-center justify-center px-3 py-2 text-center text-sm font-semibold transition-colors ${pdfLocale === option ? "bg-neutral-950 text-white dark:bg-paper-100 dark:text-umber-900" : "bg-paper-50 text-ink-600 hover:bg-ink-50 hover:text-ink-900 dark:bg-umber-800 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="checklist-pdf-locale"
+                      value={option}
+                      checked={pdfLocale === option}
+                      onChange={() => setPdfLocale(option)}
+                      className="sr-only"
+                    />
+                    {LOCALE_NAMES[option]}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label
+                className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-md border p-4 transition-colors ${pdfMode === "progress" ? "border-neutral-950 bg-neutral-950 text-white dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900" : "border-ink-900/15 text-ink-900 hover:border-ink-900/40 dark:border-paper-50/15 dark:text-paper-50 dark:hover:border-paper-50/40"}`}
+              >
+                <input
+                  type="radio"
+                  name="checklist-pdf-mode"
+                  checked={pdfMode === "progress"}
+                  onChange={() => setPdfMode("progress")}
+                  className="h-4 w-4 shrink-0 accent-white dark:accent-neutral-950"
+                />
+                <span className="text-sm font-medium">{t("planning.checklist.pdf_progress")}</span>
+              </label>
+              <label
+                className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-md border p-4 transition-colors ${pdfMode === "blank" ? "border-neutral-950 bg-neutral-950 text-white dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900" : "border-ink-900/15 text-ink-900 hover:border-ink-900/40 dark:border-paper-50/15 dark:text-paper-50 dark:hover:border-paper-50/40"}`}
+              >
+                <input
+                  type="radio"
+                  name="checklist-pdf-mode"
+                  checked={pdfMode === "blank"}
+                  onChange={() => setPdfMode("blank")}
+                  className="h-4 w-4 shrink-0 accent-white dark:accent-neutral-950"
+                />
+                <span className="text-sm font-medium">{t("planning.checklist.pdf_blank")}</span>
+              </label>
+            </div>
+            <div className="mt-3 grid gap-px overflow-hidden rounded-md border border-ink-900/15 bg-ink-900/10 sm:grid-cols-3 dark:border-paper-50/15 dark:bg-paper-50/10">
+              <PdfOption
+                checked={includeDates}
+                onChange={setIncludeDates}
+                label={t("planning.checklist.include_dates")}
+              />
+              <PdfOption
+                checked={includeOwners}
+                onChange={setIncludeOwners}
+                label={t("planning.checklist.include_owners")}
+              />
+              <PdfOption
+                checked={remainingOnly}
+                onChange={setRemainingOnly}
+                label={t("planning.checklist.only_remaining")}
+              />
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={downloadPdf}
+                disabled={downloading}
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:opacity-60 sm:w-auto dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-white dark:focus-visible:ring-paper-100"
+              >
+                {downloading ? (
+                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Download size={16} aria-hidden="true" />
+                )}
+                {t("planning.checklist.download_action")}
+              </button>
+            </div>
+          </section>
+        )}
+
+        <div className="sticky top-2 z-20 my-6 flex justify-center sm:my-8">
+          <div
+            className="inline-grid w-full grid-cols-3 rounded-lg border border-ink-900/15 bg-paper-50/95 p-1 shadow-soft backdrop-blur sm:w-auto dark:border-paper-50/15 dark:bg-umber-900/95"
+            role="radiogroup"
+            aria-label={t("planning.checklist.title")}
+          >
+            {(["all", "todo", "done"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={filter === value}
+                onClick={() => setFilter(value)}
+                className={`min-h-10 min-w-24 rounded-md px-4 py-2 text-sm font-semibold transition-colors ${filter === value ? "bg-neutral-950 text-white dark:bg-paper-100 dark:text-umber-900" : "text-ink-600 hover:bg-ink-900/[0.06] hover:text-ink-900 dark:text-umber-200 dark:hover:bg-paper-50/10 dark:hover:text-paper-50"}`}
+              >
+                {t(`planning.checklist.filter_${value}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid items-start gap-4 md:grid-cols-2" data-checklist-layout="two-column">
+          {sections.map((section) => {
+            const rows = section.items.flatMap((template): ChecklistRow[] => {
+              const task = taskByTemplateId.get(template.id) ?? null;
+              if (task) {
                 if (filter === "todo" && task.done) return [];
                 if (filter === "done" && !task.done) return [];
                 return [{ template, task }];
-              });
-              if (rows.length === 0) return null;
-              const sectionDone = section.items.filter(
-                (entry) => taskByTemplateId.get(entry.id)?.done,
-              ).length;
-              const complete = section.items.length > 0 && sectionDone === section.items.length;
-              return (
-                <section
-                  key={section.id}
-                  className="overflow-hidden rounded-lg border border-ink-900/15 bg-paper-50 dark:border-paper-50/15 dark:bg-umber-800"
-                >
-                  <div className="flex min-h-16 items-center justify-between gap-3 border-b border-ink-900/10 bg-ink-900/[0.035] px-4 py-3.5 sm:px-5 dark:border-paper-50/10 dark:bg-paper-50/[0.035]">
-                    <h3 className="font-grotesk text-base font-semibold tracking-[-0.015em] text-ink-900 dark:text-paper-50">
-                      {section.title}
-                    </h3>
-                    <span
-                      className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold tabular-nums ${complete ? "bg-sage-100 text-sage-800 dark:bg-sage-400/15 dark:text-sage-300" : "bg-ink-900/[0.07] text-ink-600 dark:bg-paper-50/10 dark:text-umber-200"}`}
-                    >
-                      {t("planning.checklist.section_count", {
-                        done: sectionDone,
-                        total: section.items.length,
-                      })}
-                      {complete && (
-                        <Check size={12} aria-label={t("planning.checklist.section_complete")} />
-                      )}
-                    </span>
-                  </div>
-                  <ul className="divide-y divide-ink-900/10 dark:divide-paper-50/10">
-                    {rows.map(({ template, task }) => (
+              }
+              if (filter === "all") return [{ template, task: null }];
+              return [];
+            });
+            if (rows.length === 0) return null;
+            const sectionAdded = section.items.filter((entry) => taskByTemplateId.has(entry.id));
+            const sectionDone = sectionAdded.filter(
+              (entry) => taskByTemplateId.get(entry.id)?.done,
+            ).length;
+            const complete = sectionAdded.length > 0 && sectionDone === sectionAdded.length;
+            return (
+              <section
+                key={section.id}
+                className="overflow-hidden rounded-lg border border-ink-900/15 bg-paper-50 dark:border-paper-50/15 dark:bg-umber-800"
+              >
+                <div className="flex min-h-16 items-center justify-between gap-3 border-b border-ink-900/10 bg-ink-900/[0.035] px-4 py-3.5 sm:px-5 dark:border-paper-50/10 dark:bg-paper-50/[0.035]">
+                  <h3 className="font-grotesk text-base font-semibold tracking-[-0.015em] text-ink-900 dark:text-paper-50">
+                    {section.title}
+                  </h3>
+                  <span
+                    className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold tabular-nums ${complete ? "bg-sage-100 text-sage-800 dark:bg-sage-400/15 dark:text-sage-300" : "bg-ink-900/[0.07] text-ink-600 dark:bg-paper-50/10 dark:text-umber-200"}`}
+                  >
+                    {sectionAdded.length > 0
+                      ? t("planning.checklist.section_count", {
+                          done: sectionDone,
+                          total: sectionAdded.length,
+                        })
+                      : t("planning.checklist.section_suggestions", {
+                          count: section.items.length,
+                        })}
+                    {complete && (
+                      <Check size={12} aria-label={t("planning.checklist.section_complete")} />
+                    )}
+                  </span>
+                </div>
+                <ul className="divide-y divide-ink-900/10 dark:divide-paper-50/10">
+                  {rows.map(({ template, task }) =>
+                    task ? (
                       <li
                         key={template.id}
                         className="group flex min-w-0 items-start gap-3 px-4 py-4 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025]"
@@ -518,14 +506,48 @@ export function WeddingChecklist({
                           )}
                         </div>
                       </li>
-                    ))}
-                  </ul>
-                </section>
-              );
-            })}
-          </div>
+                    ) : (
+                      <li
+                        key={template.id}
+                        className="group flex min-w-0 items-start gap-3 px-4 py-4 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025]"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => addItem(template)}
+                          disabled={addingIds.has(template.id)}
+                          aria-label={t("planning.checklist.add_action")}
+                          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border-2 border-dashed border-ink-300 text-ink-400 transition-colors hover:border-ink-900 hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 dark:border-umber-500 dark:text-umber-300 dark:hover:border-paper-100 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+                        >
+                          {addingIds.has(template.id) ? (
+                            <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                          ) : (
+                            <Plus size={14} strokeWidth={2.5} aria-hidden="true" />
+                          )}
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <p className="break-words text-sm font-medium leading-5 text-ink-900 dark:text-paper-50">
+                            {template.title}
+                          </p>
+                          {template.dueDate && (
+                            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                              <span className="inline-flex items-center gap-1">
+                                <CalendarDays size={12} aria-hidden="true" />
+                                {t("planning.checklist.due_date", {
+                                  date: formatShortDate(template.dueDate, locale),
+                                })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              </section>
+            );
+          })}
         </div>
-      )}
+      </div>
     </section>
   );
 }

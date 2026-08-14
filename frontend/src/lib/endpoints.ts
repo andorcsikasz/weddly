@@ -1407,14 +1407,14 @@ export const planningApi = {
       "/api/planning/prompts/generate",
       { group },
     ),
-  /** Idempotently materialise the shared wedding checklist as normal Planning
-   *  tasks. Existing template/timeline tasks are linked where titles match. */
-  initializeChecklist: (locale: import("@shared/locales").UiLocale) =>
+  /** Approve a single catalog suggestion onto the couple's own Planning list.
+   *  Idempotent; reuses an equivalent existing template/timeline task where
+   *  titles match instead of duplicating it. */
+  addChecklistItem: (templateId: string, locale: import("@shared/locales").UiLocale) =>
     apiFetch<{
-      items: import("@shared/types").PlanningItem[];
-      created: number;
-      linked: number;
-    }>("POST", "/api/planning/checklist/initialize", { locale }),
+      item: import("@shared/types").PlanningItem;
+      created: boolean;
+    }>("POST", "/api/planning/checklist/items", { template_id: templateId, locale }),
 };
 
 export function weddingChecklistPdfUrl(options: {
