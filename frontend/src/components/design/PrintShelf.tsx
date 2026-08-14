@@ -52,9 +52,16 @@ export function PrintShelf({
             >
               {/* A fixed portrait canvas makes every grid row and label align.
                   Landscape cards are centred inside it; nothing is clipped by
-                  the selection tile, including the offset paper stack. */}
+                  the selection tile, including the offset paper stack. The
+                  inner span needs its own w-full: PrintCardPreview's root has
+                  no explicit width, and a `place-items-center` grid item with
+                  no declared width shrinks to fit-content, which (per spec)
+                  resolves the percentage widths deeper in the card as 0 —
+                  every line then wraps one character at a time. */}
               <span className="pointer-events-none grid aspect-[3/4] w-full place-items-center overflow-visible rounded p-0.5">
-                <PrintCardPreview document={documents[tpl]} thumbnail />
+                <span className="block w-full">
+                  <PrintCardPreview document={documents[tpl]} thumbnail />
+                </span>
               </span>
               <span className="truncate px-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                 {name}
