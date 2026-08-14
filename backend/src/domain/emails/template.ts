@@ -366,13 +366,17 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       <tr>
         <td align="center" style="padding:32px 16px;">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:${COLOR.card};border:1px solid ${COLOR.cardBorder};border-radius:14px;">
-            <!-- Brand header, top-left lockup. The logo PNG is a dark square
-                 with a white dove, so on the white card it reads as a dark
-                 rounded tile for free. A hairline rule separates the masthead
-                 from the letter. Wordmark in General Sans (the landing font). -->
+            <!-- Brand header, top-left lockup. /email/logo.png is a dedicated
+                 icon-only asset (dark square, white dove, no baked-in text) —
+                 NOT the site-wide /logo.png, which now carries the full
+                 wordmark lockup and would be illegible shrunk to 38px next to
+                 the HTML wordmark span below. So on the white card it reads
+                 as a dark rounded tile for free. A hairline rule separates
+                 the masthead from the letter. Wordmark in General Sans (the
+                 landing font). -->
             <tr>
               <td class="wd-header" align="left" style="padding:36px 40px 22px 40px;border-bottom:1px solid ${COLOR.divider};">
-                <img src="${escapeAttr(`${CONFIG.frontendBaseUrl}/logo.png`)}" width="38" height="38" alt="Weddly" style="display:inline-block;vertical-align:middle;border:0;outline:none;width:38px;height:38px;border-radius:10px;" />
+                <img src="${escapeAttr(`${CONFIG.frontendBaseUrl}/email/logo.png`)}" width="38" height="38" alt="Weddly" style="display:inline-block;vertical-align:middle;border:0;outline:none;width:38px;height:38px;border-radius:10px;" />
                 <span style="display:inline-block;vertical-align:middle;margin-left:11px;font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:19px;font-weight:600;letter-spacing:0.24em;color:${COLOR.ink};">WĒDDLY</span>
               </td>
             </tr>
