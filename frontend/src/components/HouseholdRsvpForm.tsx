@@ -43,6 +43,7 @@ import { rsvpApi } from "../lib/endpoints";
 import { formatDate, formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { drain, enqueue, makeKey, peekAll } from "../lib/rsvp_offline";
+import { parseSongRequests, serializeSongRequests, SongRequestList } from "./SongRequestList";
 
 /** Icon per meal choice — used by the icon-button selector that replaced
  *  the old dropdown so guests pick by glance instead of reading a list. */
@@ -1093,10 +1094,11 @@ export function HouseholdRsvpForm({
 
                     <div>
                       <label className="field-label">{t("rsvp.checkin_member_song")}</label>
-                      <input
-                        className="input"
-                        value={d.song_request}
-                        onChange={(e) => updateMember(d.id, { song_request: e.target.value })}
+                      <SongRequestList
+                        entries={parseSongRequests(d.song_request)}
+                        onChange={(next) =>
+                          updateMember(d.id, { song_request: serializeSongRequests(next) ?? "" })
+                        }
                       />
                     </div>
 
