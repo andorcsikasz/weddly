@@ -12,7 +12,6 @@ import {
   Coins,
   Compass,
   Flag,
-  GanttChartSquare,
   Gauge,
   Gift,
   Globe,
@@ -147,15 +146,9 @@ const ITEMS: NavItem[] = [
     icon: <ClipboardList size={18} />,
     group: "planning",
   },
-  // Gantt-style task timeline + supplier point-of-contact panel — desktop
-  // sidebar only. Sits between planning (define tasks) and schedule (lay
-  // out the wedding day) so the booking → schedule flow reads top-down.
-  {
-    to: "/app/timeline",
-    labelKey: "nav.timeline",
-    icon: <GanttChartSquare size={18} />,
-    group: "planning",
-  },
+  // Gantt-style task timeline still lives at /app/timeline, linked from the
+  // Planning page's Tasks-tab tool group — dropped off the sidebar rail
+  // 2026-08-14 so Planning is the one door into it rather than two.
   // ── Executing ─────────────────────────────────────────────────────
   // Day-of operations. Schedule lays out the run-of-show, Seating maps
   // the dining room, Logistics covers accommodation + transfers.

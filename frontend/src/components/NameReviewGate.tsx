@@ -64,11 +64,11 @@ export function NameReviewGate() {
       data-banner
       className="relative border-b border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100"
     >
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 text-sm sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
-        <AlertCircle size={16} className="shrink-0" aria-hidden="true" />
-        <p className="min-w-[14rem] flex-1">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5 text-xs sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-2 sm:text-sm lg:px-8 xl:max-w-screen-2xl xl:px-10">
+        <AlertCircle size={14} className="shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
+        <p className="min-w-0 flex-1 sm:min-w-[14rem]">
           <span className="font-semibold">{t("real_names.notice_title")}</span>{" "}
-          <span className="text-amber-800 dark:text-amber-200">
+          <span className="hidden text-amber-800 dark:text-amber-200 sm:inline">
             {t("real_names.notice_body", {
               names: `${couple.bride_name} & ${couple.groom_name}`,
             })}{" "}
