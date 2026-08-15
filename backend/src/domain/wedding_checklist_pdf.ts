@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, type PDFFont, type PDFPage, rgb } from "pdf-lib";
+import QRCode from "qrcode";
 import type { UiLocale } from "@shared/locales";
+import { CONFIG } from "../config";
 
 const MM_TO_PT = 2.83465;
 const mm = (value: number) => value * MM_TO_PT;
@@ -105,6 +107,22 @@ const COMPLETE = rgb(0.11, 0.4, 0.2); // sage-700
 const HEADER_LINE_HEIGHT = mm(4);
 const HEADER_BOTTOM_GAP = mm(2.5);
 const SECTION_GAP = mm(3.5);
+
+const LANDING_URL_LABEL = "tryweddly.com";
+const LANDING_URL = `${CONFIG.frontendBaseUrl}/?utm_source=checklist_pdf&utm_medium=print&utm_campaign=wedding_checklist`;
+
+/** Small enough to sit in the footer corner, dark enough at that size to
+ *  still scan. `light` matches PAPER so the code has no visible box edge
+ *  against the page background. */
+async function generateFooterQrPng(): Promise<Buffer> {
+  return QRCode.toBuffer(LANDING_URL, {
+    type: "png",
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 300,
+    color: { dark: "#101830", light: "#fbfaf5" },
+  });
+}
 
 export interface ChecklistLayoutMetric {
   height: number;
@@ -287,6 +305,7 @@ export async function renderWeddingChecklistPdf(
   const regular = await pdf.embedFont(REGULAR_BYTES, { subset: true });
   const bold = await pdf.embedFont(BOLD_BYTES, { subset: true });
   const heading = await pdf.embedFont(HEADING_BYTES, { subset: true });
+  const qrImage = await pdf.embedPng(await generateFooterQrPng());
   const pageW = mm(210);
   const pageH = mm(297);
   const marginX = mm(15);
@@ -435,6 +454,23 @@ export async function renderWeddingChecklistPdf(
       size: 7,
       font: regular,
       color: MUTED,
+    });
+
+    // Bottom-right corner, below the content floor (bottomY) so it never
+    // competes with a checklist line — a scannable way back to the site on
+    // a printed page that has long since left the browser.
+    const qrSize = mm(9);
+    const qrX = pageW - marginX - qrSize;
+    const qrY = mm(4);
+    page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+    const labelSize = 7;
+    const labelWidth = bold.widthOfTextAtSize(LANDING_URL_LABEL, labelSize);
+    page.drawText(LANDING_URL_LABEL, {
+      x: qrX - mm(2) - labelWidth,
+      y: qrY + qrSize / 2 - labelSize * 0.35,
+      size: labelSize,
+      font: bold,
+      color: ACCENT,
     });
     return page;
   };
