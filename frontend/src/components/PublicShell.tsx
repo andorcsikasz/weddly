@@ -485,8 +485,22 @@ function PublicFooter() {
   const onVendorPage = pathname === "/suppliers";
   const isAudiencePage = pathname === "/planners" || pathname === "/suppliers";
   const askGuestCode = useGuestCodePrompt();
+  // Every /eszkozok (HU) path has a /tools (EN) twin rendering the same
+  // component — the URL only picks which keyword-targeted SEO path a visitor
+  // lands on, the page's own text still follows `locale`. Non-hu locales get
+  // the EN path, same convention as the rest of the app's dual-locale routes.
   const couplesCardsPath =
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
+  const couplesGuestlistPath =
+    locale === "hu" ? "/eszkozok/vendeglista-sablon" : "/tools/guest-list-template";
+  const couplesBudgetPath =
+    locale === "hu"
+      ? "/eszkozok/eskuvo-koltsegvetes-kalkulator"
+      : "/tools/wedding-budget-calculator";
+  const couplesSeatingPath =
+    locale === "hu" ? "/eszkozok/ultetesi-rend-keszito" : "/tools/seating-chart-builder";
+  const couplesRsvpPath =
+    locale === "hu" ? "/eszkozok/rsvp-szoveg-generator" : "/tools/rsvp-text-generator";
   return (
     // The footer is a black slab in BOTH themes — an intentional hard edge that
     // closes the cream page. The `dark` class on the element (Tailwind's
@@ -588,11 +602,11 @@ function PublicFooter() {
         <FooterColumn title={t("landing.footer_couples")}>
           <FooterLink to="/signup">{t("landing.footer_couples_signup")}</FooterLink>
           <FooterLink to="/login">{t("landing.footer_couples_signin")}</FooterLink>
-          <FooterLink to="/eskuvoi-vendeglista">Esküvői vendéglista</FooterLink>
-          <FooterLink to="/eskuvoi-koltsegvetes-tervezo">Költségvetés tervező</FooterLink>
-          <FooterLink to="/online-eskuvoi-rsvp">Online esküvői RSVP</FooterLink>
-          <FooterLink to="/eskuvoi-ultetesi-rend-tervezo">Ültetési rend tervező</FooterLink>
-          <FooterLink to="/utmutato">Esküvőszervezési útmutatók</FooterLink>
+          <FooterLink to={couplesGuestlistPath}>{t("landing.footer_couples_guestlist")}</FooterLink>
+          <FooterLink to={couplesBudgetPath}>{t("landing.footer_couples_budget")}</FooterLink>
+          <FooterLink to={couplesSeatingPath}>{t("landing.footer_couples_seating")}</FooterLink>
+          <FooterLink to={couplesRsvpPath}>{t("landing.footer_couples_rsvp")}</FooterLink>
+          <FooterLink to={couplesCardsPath}>{t("landing.footer_couples_cards")}</FooterLink>
         </FooterColumn>
         {/* Mobile: Vendors + Guests stack in the right grid column (Guests
          *  directly under Vendors). `lg:contents` dissolves this wrapper on
@@ -600,7 +614,7 @@ function PublicFooter() {
          *  4-column brand+Couples+Vendors+Guests row is restored. */}
         <div className="flex flex-col gap-y-4 lg:contents">
           <FooterColumn title={t("landing.footer_vendors")}>
-            <FooterLink to="/eskuvoi-szolgaltatok">Esküvői szolgáltatók keresése</FooterLink>
+            <FooterLink to="/suppliers/browse">{t("landing.footer_vendors_browse")}</FooterLink>
             <FooterLink to="/suppliers">{t("landing.footer_vendors_waitlist")}</FooterLink>
           </FooterColumn>
           <FooterColumn title={t("landing.footer_planners")}>

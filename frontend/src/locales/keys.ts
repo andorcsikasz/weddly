@@ -2837,8 +2837,21 @@ export interface LocaleMessages {
     footer_couples_signin: string;
     footer_couples_features: string;
     footer_couples_cards: string;
+    /** For-couples footer column: locale-paired /tools (EN) / /eszkozok (HU)
+     *  link labels. Kept as dedicated footer keys (short nav-style label)
+     *  rather than reusing each tool page's own `page_h1` (full SEO sentence,
+     *  too long for a footer column). */
+    footer_couples_guestlist: string;
+    footer_couples_budget: string;
+    footer_couples_seating: string;
+    footer_couples_rsvp: string;
     footer_vendors_waitlist: string;
     footer_vendors_about: string;
+    /** For-suppliers footer column: the real, locale-neutral directory browse
+     *  page (`/suppliers/browse`) — replaces a link that used to hardcode
+     *  Hungarian text to a Hungarian-only SEO landing page regardless of the
+     *  visitor's chosen locale. */
+    footer_vendors_browse: string;
     footer_guests_enter: string;
     footer_guests_about: string;
     footer_legal_terms: string;
