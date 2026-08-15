@@ -40,7 +40,7 @@ export default function WeddingChecklistToolPage() {
       {/* Every section starts open — this is the complete list, not a
           teaser, so a visitor searching for "esküvői ellenőrzőlista" lands on
           a genuinely useful page rather than a preview of the landing widget. */}
-      <PublicWeddingChecklist previewSectionCount={11} />
+      <PublicWeddingChecklist previewSectionCount={11} showHeader={false} />
 
       <section className="relative">
         <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 sm:py-20">

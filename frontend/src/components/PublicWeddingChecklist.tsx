@@ -59,6 +59,7 @@ function convertAlreadyDismissed(): boolean {
 export function PublicWeddingChecklist({
   previewSectionCount = 3,
   teaser = false,
+  showHeader = true,
 }: {
   /** How many sections start expanded. Only matters when `teaser` is false —
    *  the dedicated tool page passes a number ≥ the section count so
@@ -69,6 +70,10 @@ export function PublicWeddingChecklist({
    *  list. The progress card becomes a link to the full tool page — the
    *  actual checking-things-off experience lives there. */
   teaser?: boolean;
+  /** The "Try your wedding checklist" title + subtitle. Off on the dedicated
+   *  tool page, which already carries its own SEO h1 + intro right above
+   *  this component — both together read as the same heading said twice. */
+  showHeader?: boolean;
 }) {
   const { t, locale } = useT();
   const toolHref = TOOL_FAQ_PATHS.wedding_checklist[contentLocale(locale)];
@@ -143,14 +148,16 @@ export function PublicWeddingChecklist({
   return (
     <section className="relative bg-paper-50 dark:bg-umber-900">
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
-        <div className="text-center">
-          <h2 className="font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 sm:text-3xl lg:text-4xl dark:text-paper-50">
-            {t("landing.checklist_demo_title")}
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-umber-700 sm:text-base dark:text-umber-300">
-            {t("landing.checklist_demo_subtitle")}
-          </p>
-        </div>
+        {showHeader && (
+          <div className="text-center">
+            <h2 className="font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 sm:text-3xl lg:text-4xl dark:text-paper-50">
+              {t("landing.checklist_demo_title")}
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-umber-700 sm:text-base dark:text-umber-300">
+              {t("landing.checklist_demo_subtitle")}
+            </p>
+          </div>
+        )}
 
         <div className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
           {teaser ? (
