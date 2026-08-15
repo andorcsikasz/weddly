@@ -331,25 +331,6 @@ function PublicHeader() {
            *  "Visszajelzés" lower-cases visually without a string rewrite,
            *  which keeps SEO + locale keys intact. */}
           <div className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 py-3 font-grotesk text-sm text-umber-800 sm:px-6 dark:text-paper-100">
-            {[
-              { to: "/eskuvoi-koltsegvetes-tervezo", label: "Költségvetés tervező" },
-              { to: "/eskuvoi-ultetesi-rend-tervezo", label: "Ültetési rend tervező" },
-              { to: "/online-eskuvoi-rsvp", label: "Online esküvői RSVP" },
-            ].map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
-                onClick={() => setMenuOpen(false)}
-              >
-                <ClipboardList
-                  size={16}
-                  aria-hidden="true"
-                  className="text-umber-600 dark:text-umber-300"
-                />
-                <span>{item.label}</span>
-              </Link>
-            ))}
             <Link
               to="/suppliers"
               className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
