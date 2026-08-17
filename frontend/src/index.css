@@ -1016,15 +1016,6 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
        all cases. The hero content clears the header via its own `pt-16`. */
     margin-top: -3.5rem;
     min-height: 100dvh;
-    /* Feeds the overlay's dissolve-into-next-section stop (only piece of the
-       overlay that has to differ by theme, since the section below is
-       bg-white in light / bg-umber-900 in dark). Everything else about the
-       scrim is identical in both themes — the photo is dark enough on its
-       own that one dark treatment reads correctly either way. */
-    --hero-dissolve: #ffffff;
-  }
-  .dark .hero-section {
-    --hero-dissolve: #1a1410;
   }
   @media (max-width: 639px) {
     /* The mobile header is taller than the sm+ one (h-11 icon buttons +
@@ -1087,11 +1078,8 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
        1. a left-to-right wash so the text column (left-aligned title + CTAs)
           always lands on a dark ground, whatever tone the photo has there;
        2. a gentle top-to-bottom wash so the header and the CTA row both get
-          a touch more depth than the vertical middle.
-     Only the third layer — the dissolve into the section below — differs by
-     theme, via --hero-dissolve (bg-white in light, bg-umber-900 in dark):
-     that's a seam-matching necessity, not a stylistic choice, so it's the
-     one thing that couldn't stay identical. */
+          a touch more depth than the vertical middle. The wash stays flat
+          below the content rather than darkening or dissolving at the bottom. */
   .hero-overlay {
     position: absolute;
     inset: 0;
@@ -1110,9 +1098,8 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
         rgba(10, 8, 6, 0.32) 0%,
         rgba(10, 8, 6, 0.1) 18%,
         rgba(10, 8, 6, 0.14) 60%,
-        rgba(10, 8, 6, 0.4) 100%
-      ),
-      linear-gradient(to top, var(--hero-dissolve) 0%, rgba(10, 8, 6, 0) 14%);
+        rgba(10, 8, 6, 0.14) 100%
+      );
   }
   @media (max-width: 639px) {
     .hero-overlay {
@@ -1127,10 +1114,8 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
           rgba(10, 8, 6, 0.68) 20%,
           rgba(10, 8, 6, 0.4) 38%,
           rgba(10, 8, 6, 0.16) 56%,
-          rgba(10, 8, 6, 0.26) 80%,
-          rgba(10, 8, 6, 0.46) 100%
-        ),
-        linear-gradient(to top, var(--hero-dissolve) 0%, rgba(10, 8, 6, 0) 10%);
+          rgba(10, 8, 6, 0.16) 100%
+        );
     }
   }
 
