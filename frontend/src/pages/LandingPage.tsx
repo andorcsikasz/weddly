@@ -262,7 +262,15 @@ export default function LandingPage() {
                     const [heroMain, heroSub] = t("landing.hero_title").split("\n");
                     return (
                       <>
-                        {heroMain}
+                        <span
+                          className={
+                            heroSub
+                              ? undefined
+                              : "block text-lg leading-none sm:text-4xl lg:text-5xl"
+                          }
+                        >
+                          {heroMain}
+                        </span>
                         {heroSub && (
                           <span className="mt-3 block whitespace-nowrap text-xl leading-none sm:mt-4 sm:text-5xl lg:mt-5 lg:text-6xl">
                             {heroSub}

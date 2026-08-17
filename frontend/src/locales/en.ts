@@ -2100,7 +2100,7 @@ const en: LocaleMessages = {
     back_home: "Back to the homepage",
   },
   landing: {
-    hero_title: "Low-cortisol wedding planning,\nwith one live plan for both of you.",
+    hero_title: "Low-cortisol wedding planning",
     hero_sub:
       "Two logins. One shared workspace. The same budget, guest list, RSVPs and seating chart, updated for both of you.",
     cta_signup: "Start planning",
