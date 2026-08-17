@@ -991,31 +991,40 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
 
   /* While the hero section is in view the header is transparent; flip icons
-     light so they read against the dark photo on the right half of the frame.
-     Scoped to sm+ ONLY: on phones the hero photo is anchored lower in the
-     frame, so the header sits over the light paper band at the top — white
-     icons there vanish. Below 640px the icons keep their dark default
-     (text-umber-800), which reads cleanly on that cream band. */
-  @media (min-width: 640px) {
-    html.landing-hero-active header [data-nav-icon] {
-      color: rgba(251, 250, 246, 0.90);
-    }
-    html.landing-hero-active header [data-nav-icon]:hover {
-      background-color: rgba(251, 250, 246, 0.15);
-      color: #fbfaf5;
-    }
+     light so they read against the dark photo. Unscoped by viewport now —
+     the hero scrim (below) is dark top-to-bottom on every breakpoint, unlike
+     the old cream-wash version which only ran dark on the right half, so
+     phones no longer need to keep the dark icon default. */
+  html.landing-hero-active header [data-nav-icon] {
+    color: rgba(251, 250, 246, 0.90);
+  }
+  html.landing-hero-active header [data-nav-icon]:hover {
+    background-color: rgba(251, 250, 246, 0.15);
+    color: #fbfaf5;
   }
 
   .hero-section {
     position: relative;
     overflow: hidden;
-    background: #fbfaf5;
+    /* Umber-900, not paper-50: the photo is dark in both themes now, so the
+       pre-decode/gap fallback should read as "dark photo loading", not flash
+       a cream rectangle first. */
+    background: #1a1410;
     /* Slide the section up under the sticky header on every viewport so the
        background photo fills right up behind the (translucent) header — the
        header keeps its own cream/backdrop-blur layer so it stays legible in
        all cases. The hero content clears the header via its own `pt-16`. */
     margin-top: -3.5rem;
     min-height: 100dvh;
+    /* Feeds the overlay's dissolve-into-next-section stop (only piece of the
+       overlay that has to differ by theme, since the section below is
+       bg-white in light / bg-umber-900 in dark). Everything else about the
+       scrim is identical in both themes — the photo is dark enough on its
+       own that one dark treatment reads correctly either way. */
+    --hero-dissolve: #ffffff;
+  }
+  .dark .hero-section {
+    --hero-dissolve: #1a1410;
   }
   @media (max-width: 639px) {
     /* The mobile header is taller than the sm+ one (h-11 icon buttons +
@@ -1038,138 +1047,91 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
 
   /* Full-bleed cover anchored to the top. cover scales the image up just
      enough to fill the section on any viewport, so there's never a blank
-     strip below it on taller-than-16:9 windows. On a ~16:9 desktop this is
-     effectively no zoom (cover ≈ 100% width); only taller windows crop a
-     little off the sides. Filter adds warmth and depth.
+     strip below it on taller-than-16:9 windows.
 
-     JPEG at 2560px, not the 3840px PNG it replaced. This is the landing
-     page's LCP element, and a photograph stored as PNG paid 1.6 MB for
-     lossless fidelity nobody can see: the layer is soft-focus to begin
-     with, sits under `filter: saturate()`, and is covered on its left half
-     by the cream overlay below. The JPEG is 235 KB, and 2560 still
-     oversamples every viewport this rule serves (phones take the separate
-     mobile cover). Preloaded in index.html, since a background-image is
-     not discoverable until the stylesheet has parsed. */
+     JPEG, not PNG: this is the landing page's LCP element, and the photo is
+     soft-focus to begin with, so a lossless format buys fidelity nobody can
+     see. Phones take a separately cropped portrait file (below) rather than
+     this one stretched/repositioned, since a landscape hand-holding shot
+     force-cropped to portrait via background-position just zooms in on
+     fabric texture — the mobile file is its own composition. Preloaded in
+     index.html, since a background-image is not discoverable until the
+     stylesheet has parsed.
+
+     One filter, one file, both themes: the source photo (dark suit, warm
+     stone, low-key lighting) is already dark enough that dimming it further
+     for `.dark` bought nothing but a murkier picture — all the light/dark
+     contrast work happens in .hero-overlay below instead. */
   .hero-photo-img {
     position: absolute;
     inset: 0;
     background-image: url("/cover-hero.jpg");
     background-size: cover;
-    background-position: center top;
+    background-position: 58% center;
     background-repeat: no-repeat;
     pointer-events: none;
-    filter: saturate(1.4) brightness(0.93);
+    filter: saturate(1.08);
   }
   @media (max-width: 639px) {
     .hero-photo-img {
-      /* Phones get their own editorial cover (the desktop crop is built for a
-         wide frame). It reads as a true background behind the hero text, like
-         desktop — the overlay below keeps the top readable and reveals the
-         photo in the lower band. */
       background-image: url("/hero-mobile-cover.jpg");
       background-position: center;
-      opacity: 0.9;
-      filter: saturate(1.05) brightness(0.98);
     }
   }
-  .dark .hero-photo-img {
-    opacity: 0.60;
-    filter: saturate(1.2) brightness(0.75);
-  }
 
-  /* Left content zone + smooth bottom dissolve into the page background.
-     Radial center sits a touch lower (54% vs 46%) so the cream mass anchors
-     around the title rather than the top third. The linear-gradient(to top)
-     layer fades the photo's bottom edge softly out.
-     That bottom layer ends on OPAQUE WHITE, not on cream at 98%: the section
-     under the hero is `bg-white`, so a fade that stops on paper-50 (or stops
-     2% short of opaque) meets it as a visible hairline across the full width.
-     The dissolve has to land on the exact colour of what follows. */
+  /* Uber-Eats-style scrim: a dark wash straight over the photo (not a cream
+     panel pushing the photo aside), so the title sits directly on the image
+     the way a food photo sits under bold white type. Two layers do the work
+     and are IDENTICAL in light and dark mode on purpose — the photo is dark
+     enough on its own that the scrim needs no per-theme tuning:
+       1. a left-to-right wash so the text column (left-aligned title + CTAs)
+          always lands on a dark ground, whatever tone the photo has there;
+       2. a gentle top-to-bottom wash so the header and the CTA row both get
+          a touch more depth than the vertical middle.
+     Only the third layer — the dissolve into the section below — differs by
+     theme, via --hero-dissolve (bg-white in light, bg-umber-900 in dark):
+     that's a seam-matching necessity, not a stylistic choice, so it's the
+     one thing that couldn't stay identical. */
   .hero-overlay {
     position: absolute;
     inset: 0;
     pointer-events: none;
     background:
       linear-gradient(
-        to top,
-        rgba(255, 255, 255, 1) 0%,
-        rgba(255, 255, 255, 0.9) 5%,
-        rgba(255, 255, 255, 0.5) 12%,
-        rgba(255, 255, 255, 0) 24%
-      ),
-      radial-gradient(
-        ellipse 64% 76% at 18% 54%,
-        rgba(251, 250, 246, 0.99) 0%,
-        rgba(251, 250, 246, 0.96) 30%,
-        rgba(251, 250, 246, 0.78) 48%,
-        rgba(251, 250, 246, 0.38) 66%,
-        rgba(251, 250, 246, 0.06) 100%
+        90deg,
+        rgba(10, 8, 6, 0.82) 0%,
+        rgba(10, 8, 6, 0.58) 26%,
+        rgba(10, 8, 6, 0.28) 46%,
+        rgba(10, 8, 6, 0.08) 62%,
+        rgba(10, 8, 6, 0) 76%
       ),
       linear-gradient(
-        90deg,
-        rgba(251, 250, 246, 0.92) 0%,
-        rgba(251, 250, 246, 0.75) 30%,
-        rgba(251, 250, 246, 0.26) 58%,
-        rgba(251, 250, 246, 0) 100%
-      );
+        180deg,
+        rgba(10, 8, 6, 0.32) 0%,
+        rgba(10, 8, 6, 0.1) 18%,
+        rgba(10, 8, 6, 0.14) 60%,
+        rgba(10, 8, 6, 0.4) 100%
+      ),
+      linear-gradient(to top, var(--hero-dissolve) 0%, rgba(10, 8, 6, 0) 14%);
   }
   @media (max-width: 639px) {
     .hero-overlay {
-      /* Cream is near-opaque behind the headline/sub/CTA at the top, then
-         thins out so the photo emerges in the lower band (behind the demo
-         card and below) — mirrors the desktop "text on cream, photo peeking"
-         read in a single-column layout. The first layer is a bottom dissolve:
-         the photo's lower edge fades back into paper-50 so it blends into the
-         budget section below instead of hard-cutting at the section boundary.
-         Same rule as the base overlay: it ends on opaque white because the
-         next section is white, and it starts fading a third of the way up so
-         the handover is long enough to read as haze rather than as an edge. */
+      /* Single column: the wash runs top-to-bottom instead of side-to-side,
+         near-opaque behind the headline/CTAs at the top (the mobile crop's
+         brightest band, the pale dress fabric) and thinning by mid-frame so
+         the photo still reads lower on the card. */
       background:
         linear-gradient(
-          to top,
-          rgba(255, 255, 255, 1) 0%,
-          rgba(255, 255, 255, 0.94) 6%,
-          rgba(255, 255, 255, 0.66) 14%,
-          rgba(255, 255, 255, 0.28) 24%,
-          rgba(255, 255, 255, 0) 34%
-        ),
-        linear-gradient(
           180deg,
-          rgba(251, 250, 246, 0.86) 0%,
-          rgba(251, 250, 246, 0.78) 20%,
-          rgba(251, 250, 246, 0.58) 38%,
-          rgba(251, 250, 246, 0.32) 58%,
-          rgba(251, 250, 246, 0.1) 100%
-        );
+          rgba(10, 8, 6, 0.88) 0%,
+          rgba(10, 8, 6, 0.68) 20%,
+          rgba(10, 8, 6, 0.4) 38%,
+          rgba(10, 8, 6, 0.16) 56%,
+          rgba(10, 8, 6, 0.26) 80%,
+          rgba(10, 8, 6, 0.46) 100%
+        ),
+        linear-gradient(to top, var(--hero-dissolve) 0%, rgba(10, 8, 6, 0) 10%);
     }
-  }
-  .dark .hero-overlay {
-    background:
-      /* Dark's dissolve lands on umber-900 (#1a1410) — the dark background of
-         the section below — not on the paper-900 the wash layers use, which
-         is four times lighter and drew the same hairline in reverse. */
-      linear-gradient(
-        to top,
-        rgba(26, 20, 16, 1) 0%,
-        rgba(26, 20, 16, 0.9) 5%,
-        rgba(26, 20, 16, 0.5) 12%,
-        rgba(26, 20, 16, 0) 24%
-      ),
-      radial-gradient(
-        ellipse 64% 76% at 18% 54%,
-        rgba(58, 51, 36, 0.99) 0%,
-        rgba(58, 51, 36, 0.96) 30%,
-        rgba(58, 51, 36, 0.78) 48%,
-        rgba(58, 51, 36, 0.38) 66%,
-        rgba(58, 51, 36, 0.06) 100%
-      ),
-      linear-gradient(
-        90deg,
-        rgba(58, 51, 36, 0.92) 0%,
-        rgba(58, 51, 36, 0.75) 30%,
-        rgba(58, 51, 36, 0.26) 58%,
-        rgba(58, 51, 36, 0) 100%
-      );
   }
 
   /* Content sits above media */

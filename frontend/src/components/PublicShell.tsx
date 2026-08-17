@@ -184,6 +184,7 @@ function PublicHeader() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           to="/"
+          data-nav-icon
           className="-my-1 inline-flex min-h-tap shrink-0 items-center text-umber-900 transition-colors hover:text-umber-800 sm:my-0 sm:min-h-0 dark:text-paper-50 dark:hover:text-umber-300"
         >
           {/* Header wordmark sits between Wordmark's md and lg presets:
@@ -212,6 +213,7 @@ function PublicHeader() {
               <Link
                 key={to}
                 to={to}
+                data-nav-icon
                 aria-current={active ? "page" : undefined}
                 className={`relative px-1 py-1.5 text-sm transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50 ${
                   active

@@ -83,8 +83,13 @@ import {
 // animates from 0fr → 1fr on hover/focus (overflow-hidden gives the grid track
 // a 0 min-width so it can fully collapse). aria-label carries the full label so
 // the control stays legible to assistive tech even while the text is clipped.
+// Deliberately theme-invariant (no dark: variants): these sit on the hero
+// photo, which is dark in both themes now, so the "light pill on a dark
+// ground" treatment that used to be the light-mode-only style is correct
+// everywhere. Keeping a `dark:` branch here would make the pill nearly
+// vanish into a dark-mode page background it never actually sits on.
 const roleChipClass =
-  "group inline-flex items-center rounded-full border border-paper-400/70 bg-paper-50/70 py-2 pl-2.5 pr-2.5 text-umber-900 shadow-soft transition-colors duration-200 hover:border-umber-800 hover:bg-umber-900 hover:text-paper-50 focus-visible:border-umber-800 focus-visible:bg-umber-900 focus-visible:text-paper-50 dark:border-umber-700 dark:bg-umber-800/50 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:bg-paper-50 dark:hover:text-umber-950 dark:focus-visible:border-paper-200 dark:focus-visible:bg-paper-50 dark:focus-visible:text-umber-950";
+  "group inline-flex items-center rounded-full border border-paper-50/40 bg-paper-50/15 py-2 pl-2.5 pr-2.5 text-paper-50 shadow-soft backdrop-blur-sm transition-colors duration-200 hover:border-paper-50/80 hover:bg-paper-50 hover:text-umber-900 focus-visible:border-paper-50/80 focus-visible:bg-paper-50 focus-visible:text-umber-900";
 const roleChipTextWrap =
   "grid grid-cols-[0fr] transition-[grid-template-columns] duration-300 ease-out group-hover:grid-cols-[1fr] group-focus-visible:grid-cols-[1fr]";
 const roleChipText =
@@ -229,13 +234,15 @@ export default function LandingPage() {
   return (
     <PublicShell>
       {/* ════════════════════════ 01 · HERO ════════════════════════
-          Oversized italic serif title hanging into the left margin, sub
-          + CTAs underneath. Mockup follows below as a full-bleed slab,
-          tilted slightly so it reads as "the product, peeking up". */}
+          Uber-Eats-style: bold white title straight on a full-bleed photo
+          under a dark scrim (see .hero-overlay), not a cream panel the photo
+          peeks out from. Title runs bigger and wraps tighter (shorter
+          max-width in `ch`) than before, for the same "the type IS the
+          hero" weight Uber Eats' own homepage headline carries. */}
       <section className="hero-section">
-        {/* Media layer — full image anchored to the right 62% of the section.
-            Cover scales by HEIGHT giving 849px horizontal overflow; left center
-            shows bouquet at 38-59% viewport, dress 59-85%, groom 85-100%. */}
+        {/* Media layer — full-bleed clasped-hands photo (see .hero-photo-img
+            for the desktop/mobile crop split), with .hero-overlay laid on
+            top as the dark scrim the title sits on. */}
         <div aria-hidden="true" className="hero-media">
           <div className="hero-photo-img" />
           <div className="hero-overlay" />
@@ -245,19 +252,19 @@ export default function LandingPage() {
         <div className="hero-content-wrap">
           {/* The phone min-height carries the same +5rem the CTA row adds to its
               top margin below: content and box grow together, so the centred
-              headline stays put and only the buttons travel down, off the
-              couple's faces. */}
+              headline stays put and only the buttons travel down, clear of
+              the clasped-hands focal point at the frame's vertical middle. */}
           <div className="mx-auto flex min-h-[calc(75svh+5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
             <div className="grid items-start gap-8 lg:items-center lg:gap-14">
               <div>
-                <h1 className="max-w-[18ch] font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:text-7xl sm:leading-[0.96] lg:text-8xl">
+                <h1 className="max-w-[16ch] font-grotesk text-5xl font-bold leading-[0.96] tracking-tight text-paper-50 sm:max-w-[12ch] sm:text-8xl sm:leading-[0.92] lg:max-w-[13ch] lg:text-9xl lg:leading-[0.9]">
                   {(() => {
                     const [heroMain, heroSub] = t("landing.hero_title").split("\n");
                     return (
                       <>
                         {heroMain}
                         {heroSub && (
-                          <span className="mt-2 block whitespace-nowrap text-lg leading-none sm:mt-3 sm:text-4xl lg:mt-4 lg:text-5xl">
+                          <span className="mt-3 block whitespace-nowrap text-xl leading-none sm:mt-4 sm:text-5xl lg:mt-5 lg:text-6xl">
                             {heroSub}
                           </span>
                         )}
@@ -270,7 +277,8 @@ export default function LandingPage() {
                     button is only as wide as its own label — a full-width slab
                     masks the couple behind it, and the photo is the point. The
                     row also sits 5rem lower there (paired with the wrapper's
-                    min-height above) so it lands below their faces. */}
+                    min-height above) so it clears the clasped hands rather
+                    than sitting on top of them. */}
                 <div className="mt-24 flex max-w-[17rem] flex-col items-start gap-3 sm:mt-6 sm:max-w-md sm:flex-row sm:flex-wrap sm:items-center">
                   <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg w-auto">
                     {t("landing.cta_signup")}
