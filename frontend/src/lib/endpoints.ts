@@ -706,8 +706,11 @@ export const referralApi = {
 export const billingApi = {
   /** Current subscription snapshot + price + founding spots for the couple. */
   status: () => apiFetch<BillingStatusResponse>("GET", "/api/billing/status"),
-  /** Start a Stripe-hosted Checkout — returns the redirect URL. */
-  checkout: () => apiFetch<{ url: string }>("POST", "/api/billing/checkout", {}),
+  /** Start a Stripe-hosted Checkout — returns the redirect URL. `termsVersion`
+   *  is only required the first time (see `status().subscription_terms_accepted`);
+   *  omit it once already accepted. */
+  checkout: (termsVersion?: string) =>
+    apiFetch<{ url: string }>("POST", "/api/billing/checkout", { terms_version: termsVersion }),
   /** Buy the 70%-off guest-page (vendégoldal) edit add-on for a planner-managed
    *  couple — returns the Stripe Checkout redirect URL. */
   guestPageAddonCheckout: () =>
@@ -722,9 +725,14 @@ export const billingApi = {
 export const plannerBillingApi = {
   /** Current planner subscription snapshot + per-tier prices + founding spots. */
   status: () => apiFetch<PlannerBillingStatus>("GET", "/api/planner/billing"),
-  /** Start a Stripe-hosted Checkout for a tier — returns the redirect URL. */
-  checkout: (tier: PlannerPlan) =>
-    apiFetch<{ url: string }>("POST", "/api/planner/billing/checkout", { tier }),
+  /** Start a Stripe-hosted Checkout for a tier — returns the redirect URL.
+   *  `termsVersion` is only required the first time (see
+   *  `status().subscription_terms_accepted`); omit once already accepted. */
+  checkout: (tier: PlannerPlan, termsVersion?: string) =>
+    apiFetch<{ url: string }>("POST", "/api/planner/billing/checkout", {
+      tier,
+      terms_version: termsVersion,
+    }),
   /** Open the Stripe Billing Portal — returns the redirect URL. */
   portal: () => apiFetch<{ url: string }>("POST", "/api/planner/billing/portal", {}),
 };
@@ -3316,10 +3324,21 @@ export const vendorBillingApi = {
       "/api/vendor/billing",
     ),
   /** Stripe Checkout in SETUP mode: save a card, no charge (opens the
-   *  3-free-inquiries lead window). Returns the hosted checkout URL. */
-  setup: () => apiFetch<{ url: string }>("POST", "/api/vendor/billing/setup"),
-  /** Classic subscription Checkout: the lapsed-vendor recovery path. */
-  checkout: () => apiFetch<{ url: string }>("POST", "/api/vendor/billing/checkout"),
+   *  3-free-inquiries lead window). Returns the hosted checkout URL.
+   *  `termsAcceptance` is only required the first time (see
+   *  `get().subscription_terms_accepted`); omit once already accepted. */
+  setup: (termsAcceptance?: { vendorTermsVersion: string; highlightedTermsAccepted: true }) =>
+    apiFetch<{ url: string }>("POST", "/api/vendor/billing/setup", {
+      vendor_terms_version: termsAcceptance?.vendorTermsVersion,
+      highlighted_terms_accepted: termsAcceptance?.highlightedTermsAccepted,
+    }),
+  /** Classic subscription Checkout: the lapsed-vendor recovery path. Same
+   *  `termsAcceptance` contract as `setup`. */
+  checkout: (termsAcceptance?: { vendorTermsVersion: string; highlightedTermsAccepted: true }) =>
+    apiFetch<{ url: string }>("POST", "/api/vendor/billing/checkout", {
+      vendor_terms_version: termsAcceptance?.vendorTermsVersion,
+      highlighted_terms_accepted: termsAcceptance?.highlightedTermsAccepted,
+    }),
   portal: () => apiFetch<{ url: string }>("POST", "/api/vendor/billing/portal"),
   /** Masked card + invoice history, read straight from Stripe. Answers with an
    *  empty `billing_active: false` payload rather than an error when there is
@@ -4137,18 +4156,25 @@ export const photoAlbumApi = {
   getPreview: (token: string): Promise<{ album: PhotoAlbumPublic; shotCount: 0; readOnly: true }> =>
     apiFetch("GET", `/api/photo-albums/${encodeURIComponent(token)}/preview`),
 
-  /** Public: register guest device before any upload. */
+  /** Public: register guest device before any upload. `email` absent leaves
+   *  whatever is already stored alone (the caller resends the stored value
+   *  once known); `marketingOptIn` is only sent on the deliberate opt-in
+   *  moment, never resent on a passive reload. */
   registerDevice(
     token: string,
     deviceId: string,
     guestName: string | null,
+    opts?: { email?: string | null; marketingOptIn?: boolean },
   ): Promise<{ album: PhotoAlbumPublic; shotCount: number }> {
+    const body: Record<string, unknown> = { device_id: deviceId, guest_name: guestName };
+    if (opts && "email" in opts) body.email = opts.email;
+    if (opts?.marketingOptIn !== undefined) body.marketing_opt_in = opts.marketingOptIn;
     return publicFilmFetch<{ album: PhotoAlbumPublic; shotCount: number }>(
       `/api/photo-albums/${token}/devices`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device_id: deviceId, guest_name: guestName }),
+        body: JSON.stringify(body),
       },
     );
   },

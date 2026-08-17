@@ -1823,6 +1823,22 @@ addColumnIfMissing("planner_waitlist", "sent_body", "sent_body TEXT");
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_album ON film_devices(album_id)");
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_device ON film_devices(album_id, device_id)");
 
+// Guest email on the wedding-film camera page: identifies a guest more
+// precisely than a first name (two "Anna"s no longer merge into one
+// participant), lets the couple get a guest's own photos back to them, and,
+// only with its own explicit checkbox, records marketing consent. Same
+// lowercased-key idiom as guest_name_key, for the same reason (case-insensitive
+// matching across sessions).
+addColumnIfMissing("film_devices", "email", "email TEXT");
+addColumnIfMissing("film_devices", "email_key", "email_key TEXT");
+addColumnIfMissing(
+  "film_devices",
+  "marketing_opt_in",
+  "marketing_opt_in INTEGER NOT NULL DEFAULT 0",
+);
+addColumnIfMissing("film_devices", "marketing_opt_in_at", "marketing_opt_in_at INTEGER");
+db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_email ON film_devices(album_id, email_key)");
+
 // planner_clients indexes live here (not schema.sql) per the May 2026 ordering rule.
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_planner_clients_planner ON planner_clients(planner_user_id)",

@@ -230,6 +230,9 @@ const hu: LocaleMessages = {
     subscribe_cta: "Előfizetés",
     manage_cta: "Előfizetés kezelése",
     opening: "Megnyitás…",
+    terms_accept_prefix: "Elolvastam és elfogadom az",
+    terms_accept_link: "előfizetési feltételeket",
+    terms_accept_suffix: ".",
     card_on_file: "Mentett kártya",
     card_expires: "lejár: {date}",
     disabled_note: "Az online fizetés még nem él. A hozzáférésetek vége előtt e-mailben szólunk.",
@@ -3185,7 +3188,10 @@ const hu: LocaleMessages = {
     end_before_start: "A hazaérkezés nem lehet korábbi az indulásnál.",
     edit_dates: "Dátumok szerkesztése",
     edit_destination: "Úti cél szerkesztése",
-    set_dates_cta: "Add meg a dátumokat",
+    // Short noun form, matching flight_short ("Repjegy") — this fills the
+    // same third-of-a-390px-tile slot, and the full CTA already lives in
+    // edit_dates as the tile's accessible action label.
+    set_dates_cta: "Dátumok",
     destination_empty_cta: "Add meg az úti célt",
     show_on_map: "Mutasd a térképen",
     map_not_found: "Nem találtuk meg ezt a helyet a térképen. Próbálj pontosabb címet.",
@@ -3492,6 +3498,13 @@ const hu: LocaleMessages = {
     preview_unavailable: "Az előnézet nem érhető el.",
     preview_unavailable_sub: "Jelentkezz be abba a munkaterületbe, amelyhez ez a film tartozik.",
     from_couple: "A pártól",
+    email_placeholder: "E-mail-címed",
+    email_hint: "Így később elküldjük a saját fotóidat, és meg tudunk különböztetni másoktól itt.",
+    email_invalid: "Ez az e-mail-cím nem tűnik helyesnek.",
+    marketing_opt_in_label: "Kérek alkalmankénti Weddly-híreket is.",
+    privacy_link: "Adatkezelés",
+    sent_toast: "Elküldve",
+    invite_aria: "Mások meghívása",
   },
   design: {
     title: "Arculat",
@@ -7801,7 +7814,7 @@ const hu: LocaleMessages = {
       "Hogyan kezeli a Wēddly az adataitokat: gyűjtött kategóriák, megőrzés, GDPR jogok, sütik és külső szolgáltatók.",
     page_title: "Adatvédelmi szabályzat",
     last_updated_label: "Utolsó frissítés",
-    last_updated_date: "2026-08-13",
+    last_updated_date: "2026-08-17",
     intro:
       "Ez az adatkezelési tájékoztató célja, hogy a Wēddly weboldal és alkalmazás látogatói, regisztrált felhasználói, hírlevél-feliratkozói, valamint a megjelenő szolgáltatók részletes, átlátható tájékoztatást kapjanak személyes adataik kezeléséről. Az adatkezelés során az Adatkezelő az alábbi jogszabályokat alkalmazza: az Európai Parlament és a Tanács 2016/679/EU rendeletét (GDPR); az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvényt (Infotv.); az elektronikus kereskedelmi szolgáltatásokról szóló 2001. évi CVIII. törvényt (Ektv.); és a gazdasági reklámtevékenység alapvető feltételeiről szóló 2008. évi XLVIII. törvényt (Grtv.).",
     controller_title: "Az adataitok kezelője",
@@ -8016,6 +8029,15 @@ const hu: LocaleMessages = {
     proc_workspace_basis: "Jogalap: GDPR 6. cikk (1) b), a felhasználói szerződés teljesítése.",
     proc_workspace_retention:
       "Megőrzési idő: a workspace aktív fennállásáig; szüneteltetés esetén 30 nap, utána végleges törlés.",
+    proc_guest_camera_title: "Esküvői Film — vendégkamera",
+    proc_guest_camera_data:
+      "Kezelt adatok: a vendég által a fényképezés előtt megadott név és e-mail-cím, az eszközazonosító, a beküldött fotók, valamint — kizárólag ha a jelölőnégyzetet bejelölte — a marketing hozzájárulás ténye, a megadás időpontjában használt IP-címmel és böngészővel.",
+    proc_guest_camera_purpose:
+      "Cél: az azonos keresztnevű vendégek megkülönböztetése, hogy a fotók és a lövésszám a megfelelő személyhez legyenek rendelve; hogy a pár (később mi magunk) el tudja küldeni a vendégnek a saját fotóit; valamint — kizárólag külön, kifejezett hozzájárulás esetén — alkalmankénti Weddly-hírek küldése.",
+    proc_guest_camera_basis:
+      "Jogalap: a név, az e-mail-cím és a fotók tekintetében GDPR 6. cikk (1) b), az igénybe vett vendégkamera-szolgáltatás teljesítése; kizárólag az opcionális marketing jelölőnégyzet tekintetében 6. cikk (1) a), az önkéntes és bármikor visszavonható hozzájárulás.",
+    proc_guest_camera_retention:
+      "Megőrzési idő: amíg az esküvői film létezik, vagy amíg a vendég a hello@tryweddly.com címen nem kéri a bejegyzése törlését. A marketing hozzájárulás a visszavonásig érvényes, ugyanezen az úton.",
     proc_newsletter_title: "Hírlevél és életciklus-megkeresések",
     proc_newsletter_data:
       "Kezelt adatok: e-mail-cím, feliratkozás időpontja, hozzájárulás ténye és időpontja.",
@@ -8244,6 +8266,108 @@ const hu: LocaleMessages = {
     contact_title: "Kapcsolat",
     contact_body:
       "Az ÁSZF-fel és a Wēddly szolgáltatóknak nyújtott szolgáltatásával kapcsolatos minden megkeresést a hello@tryweddly.com címre várunk. Jogellenes tartalom a minden oldalról elérhető bejelentő űrlapon is jelenthető. Az Üzemeltető Ektv. 4. § szerinti azonosító adatait az Impresszum oldal tartalmazza.",
+    en_section_label: "English",
+  },
+  couple_subscription_terms: {
+    seo_title: "Páros előfizetési feltételek (tervezet) · Wēddly",
+    seo_description:
+      "A Wēddly páros előfizetésének tervezett feltételei: megújulás, visszatérítés, elállási jog. Még nem hatályos, jogi átvilágításra vár.",
+    page_title: "Páros előfizetési feltételek",
+    last_updated_label: "Állapot",
+    last_updated_date: "Tervezet — még nem hatályos",
+    draft_notice:
+      "Ez a dokumentum áttekintésre készült TERVEZET. Nem esett át jogi átvilágításon, és még nem hatályos. Ezt a verziót egyetlen pár sem fogadta el, és jelenleg nem is tudja elfogadni — az előfizetéses fizetés emiatt nem indítható el.",
+    intro:
+      "A jelen feltételek a pár Wēddly esküvőszervező munkaterületéhez vásárolt előfizetésére vonatkoznának, a /terms alatti általános Felhasználási feltételek mellett. A szerződés részévé csak akkor válnak, ha a pár a fizetés előtt megjelenő elfogadó jelölőnégyzet bepipálásával kifejezetten elfogadja őket. Hatálybalépés után az automatikus megújulásra, a díjváltozásra és a felelősségkorlátozásra vonatkozó pontokat a Ptk. 6:78. § (2) bekezdése szerinti külön figyelemfelhívással fogjuk kiemelni.",
+    operator_title: "Üzemeltető és szerződő felek",
+    operator_body:
+      "Az Üzemeltető Csíkász Andor, magánszemélyként eljárva (kapcsolat: hello@tryweddly.com; a teljes Ektv. 4. § szerinti közzététel az Impresszum oldalon található). A másik fél (a 'Pár') az előfizetést vásárló Wēddly esküvőszervező munkaterület fiókjának tulajdonosa vagy tulajdonosai.",
+    scope_title: "A szolgáltatás terjedelme",
+    scope_body:
+      "Az előfizetés a próbaidőszak lejárta után is szerkeszthetővé teszi a pár munkaterületét: vendéglista, költségvetés, ültetési terv, idővonal, szolgáltatók nyomon követése, a vendégeknek szóló esküvői oldal és a kapcsolódó tervezőeszközök. A Wēddly tervezőeszköz; nem részes fele, és nem is garantálja a teljesítését egyetlen, a pár és egy szolgáltató, helyszín vagy vendég közötti megállapodásnak sem.",
+    acceptance_title: "Szerződéskötés és elfogadás",
+    acceptance_body:
+      "A szerződés akkor jön létre, amikor a pár a fizetési felületen bepipálja az elfogadó jelölőnégyzetet, és teljesíti a fizetést. Az Üzemeltető naplózza az elfogadást (időbélyeg, dokumentumverzió, IP-cím, user-agent), és vita esetén hivatkozhat erre a naplóra. Ez előtt a lépés előtt díj nem esedékes; önmagában egy elmentett kártya sosem keletkeztet fizetési kötelezettséget.",
+    billing_title: "Számlázás",
+    billing_body:
+      "Az előfizetés havonta, előre, a pár munkaterületének pénznemében, a Stripe-on keresztül kerül számlázásra. A fizetési felület a fizetés megtörténte előtt megmutatja a teljes árat és a megújulás dátumát.",
+    vat_title: "ÁFA",
+    vat_body:
+      "Az ÁFA a mindenkori magyar jogszabályok szerinti mértékben alkalmazandó. Ha a szerződés hatálybalépésekor az Üzemeltető nem alanya az ÁFA-nak, az árak ÁFA-mentesen kerülnek számlázásra, amit a számla is feltüntet.",
+    term_title: "Időtartam és automatikus megújulás",
+    term_body:
+      "Az előfizetés lemondásig havonta automatikusan megújul. A lemondás bármikor elérhető a számlázási beállításokban vagy a Stripe ügyfélportálon, és a folyó fizetett időszak végén lép hatályba; addig a pár teljes hozzáférést élvez. A folyó időszakra már kifizetett díj rendes lemondás esetén nem jár vissza.",
+    refund_title: "Visszatérítési szabályok",
+    refund_body:
+      "Az alább ismertetett törvényes elállási jogon kívül a már kifizetett díjak nem téríthetők vissza, kivéve, ha ezt jogszabály előírja, vagy az Üzemeltető saját belátása szerint kifejezetten biztosítja (például számlázási hiba esetén).",
+    withdrawal_title: "Elállási jog (14 nap)",
+    withdrawal_body:
+      "A fogyasztóként szerződő pár a 2011/83/EU irányelv és a 45/2014. (II. 26.) Korm. rendelet alapján az előfizetés megkezdésétől számított 14 napon belül, indokolás nélkül elállhat a szerződéstől a hello@tryweddly.com címre írt üzenettel. Ha a pár kifejezetten kéri, hogy a hozzáférés az elállási időszak alatt is folytatódjon, ezzel elfogadja, hogy elállás esetén meg kell térítenie az Üzemeltetőnek a már igénybe vett időszak arányos költségét, és hogy a fizetett időszak teljes leteltével az elállás joga megszűnik.",
+    changes_title: "A feltételek módosítása",
+    changes_body:
+      "Az Üzemeltető alapos okból (jogszabályváltozás, díjváltozás, új funkciók) módosíthatja a jelen feltételeket, legalább 15 nappal korábbi e-mailes értesítéssel. A módosítás hatálybalépése utáni további használat elfogadásnak minősül; az egyet nem értő pár a hatálybalépés előtt lemondhat.",
+    termination_title: "Megszűnés",
+    termination_body:
+      "Bármelyik fél bármikor megszüntetheti az előfizetést az Időtartam és automatikus megújulás pontban leírtak szerint. Az Üzemeltető a Felhasználási feltételek lényeges megszegése, fizetési elmaradás vagy jogellenes használat esetén felfüggesztheti vagy megszüntetheti a hozzáférést, ésszerű esetben előzetes írásbeli értesítéssel.",
+    governing_law_title: "Alkalmazandó jog és joghatóság",
+    governing_law_body:
+      "A jelen feltételekre a magyar jog irányadó, az alkalmazandó uniós fogyasztóvédelmi szabályokkal együtt. A fogyasztóként szerződő pár a lakóhelye szerinti bíróság előtti perlés jogát is megtartja.",
+    odr_title: "Panaszkezelés és vitarendezés",
+    odr_body:
+      "A számlázással vagy az előfizetéssel kapcsolatos panaszok a hello@tryweddly.com címre küldhetők; az Üzemeltető törekszik 30 napon belüli válaszra. A fogyasztóként szerződő pár az illetékes magyar békéltető testülethez is fordulhat; az aktuális elérhetőségek az Impresszum oldalon találhatók.",
+    contact_title: "Kapcsolat",
+    contact_body: "Az előfizetéssel kapcsolatos kérdéseket a hello@tryweddly.com címre várjuk.",
+    en_section_label: "English",
+  },
+  planner_subscription_terms: {
+    seo_title: "Esküvőszervezői előfizetési feltételek (tervezet) · Wēddly",
+    seo_description:
+      "A Wēddly esküvőszervezői előfizetési csomagjainak tervezett feltételei: megújulás, visszatérítés, elállási jog. Még nem hatályos, jogi átvilágításra vár.",
+    page_title: "Esküvőszervezői előfizetési feltételek",
+    last_updated_label: "Állapot",
+    last_updated_date: "Tervezet — még nem hatályos",
+    draft_notice:
+      "Ez a dokumentum áttekintésre készült TERVEZET. Nem esett át jogi átvilágításon, és még nem hatályos. Ezt a verziót egyetlen szervező sem fogadta el, és jelenleg nem is tudja elfogadni — az előfizetéses fizetés emiatt nem indítható el.",
+    intro:
+      "A jelen feltételek az esküvőszervező Wēddly fiókjához vásárolt előfizetésre vonatkoznának, a /terms alatti általános Felhasználási feltételek mellett. A szerződés részévé csak akkor válnak, ha a szervező a fizetés előtt megjelenő elfogadó jelölőnégyzet bepipálásával kifejezetten elfogadja őket. Hatálybalépés után az automatikus megújulásra, a díjváltozásra és a felelősségkorlátozásra vonatkozó pontokat a Ptk. 6:78. § (2) bekezdése szerinti külön figyelemfelhívással fogjuk kiemelni.",
+    operator_title: "Üzemeltető és szerződő felek",
+    operator_body:
+      "Az Üzemeltető Csíkász Andor, magánszemélyként eljárva (kapcsolat: hello@tryweddly.com; a teljes Ektv. 4. § szerinti közzététel az Impresszum oldalon található). A másik fél (a 'Szervező') az előfizetést vásárló fiók tulajdonosa, aki a Wēddly-n kezeli az esküvőszervezői ügyfeleit.",
+    scope_title: "A szolgáltatás terjedelme",
+    scope_body:
+      "Az előfizetés a fizetős Starter, Pro vagy Premium szervezői csomagot nyitja meg: magasabb kezelhető ügyfélszámot, párokkal folytatható alkalmazáson belüli üzenetküldést, közös tervezői naptárat, valamint magasabb csomagokon használati statisztikát és elsőbbségi támogatást, a vásárláskor az árazási oldalon leírtak szerint. A Wēddly a szervező munkáját segítő eszköz; nem részes fele, és nem is garantálja a teljesítését egyetlen, a szervező és ügyfél párjai közötti megállapodásnak sem.",
+    acceptance_title: "Szerződéskötés és elfogadás",
+    acceptance_body:
+      "A szerződés akkor jön létre, amikor a szervező a fizetési felületen bepipálja az elfogadó jelölőnégyzetet, és teljesíti a kiválasztott csomag díjának fizetését. Az Üzemeltető naplózza az elfogadást (időbélyeg, dokumentumverzió, IP-cím, user-agent), és vita esetén hivatkozhat erre a naplóra. Ez előtt a lépés előtt díj nem esedékes.",
+    billing_title: "Számlázás",
+    billing_body:
+      "Az előfizetés havonta, előre, a szervező munkaterületének pénznemében, a Stripe-on keresztül kerül számlázásra, a kiválasztott csomag (Starter, Pro vagy Premium) árán. Csomagváltás esetén a számlázott összeg a következő megújulástól változik. A fizetési felület a fizetés megtörténte előtt megmutatja a teljes árat és a megújulás dátumát.",
+    vat_title: "ÁFA",
+    vat_body:
+      "Az ÁFA a mindenkori magyar jogszabályok szerinti mértékben alkalmazandó. Ha a szerződés hatálybalépésekor az Üzemeltető nem alanya az ÁFA-nak, az árak ÁFA-mentesen kerülnek számlázásra, amit a számla is feltüntet.",
+    term_title: "Időtartam és automatikus megújulás",
+    term_body:
+      "Az előfizetés lemondásig havonta automatikusan megújul. A lemondás bármikor elérhető a számlázási beállításokban vagy a Stripe ügyfélportálon, és a folyó fizetett időszak végén lép hatályba; addig a szervező teljes hozzáférést élvez a fizetős csomaghoz. A folyó időszakra már kifizetett díj rendes lemondás esetén nem jár vissza.",
+    refund_title: "Visszatérítési szabályok",
+    refund_body:
+      "Az alább ismertetett elállási vagy visszatérítési jogon kívül a már kifizetett díjak nem téríthetők vissza, kivéve, ha ezt jogszabály előírja, vagy az Üzemeltető saját belátása szerint kifejezetten biztosítja (például számlázási hiba esetén).",
+    withdrawal_title: "Elállási / visszatérítési jog (14 nap)",
+    withdrawal_body:
+      "A szervező az első fizetős előfizetése esetén, indokolás nélkül megszüntetheti a szerződést, és a befizetett díj teljes visszatérítését kérheti a hello@tryweddly.com címre írt üzenettel, az első fizetett időszak kezdetétől számított 14 napon belül. Ha a szervező fogyasztóként, nem üzleti minőségben szerződik, helyette a 2011/83/EU irányelv és a 45/2014. (II. 26.) Korm. rendelet szerinti törvényes elállási jog alkalmazandó, a páros előfizetési feltételekben leírtakkal azonos módon.",
+    changes_title: "A feltételek módosítása",
+    changes_body:
+      "Az Üzemeltető alapos okból (jogszabályváltozás, díjváltozás, új funkciók) módosíthatja a jelen feltételeket, legalább 15 nappal korábbi e-mailes értesítéssel. A módosítás hatálybalépése utáni további használat elfogadásnak minősül; az egyet nem értő szervező a hatálybalépés előtt lemondhat.",
+    termination_title: "Megszűnés",
+    termination_body:
+      "Bármelyik fél bármikor megszüntetheti az előfizetést az Időtartam és automatikus megújulás pontban leírtak szerint. Az Üzemeltető a Felhasználási feltételek lényeges megszegése, fizetési elmaradás vagy jogellenes használat esetén felfüggesztheti vagy megszüntetheti a hozzáférést, ésszerű esetben előzetes írásbeli értesítéssel.",
+    governing_law_title: "Alkalmazandó jog és joghatóság",
+    governing_law_body:
+      "A jelen feltételekre a magyar jog irányadó, az alkalmazandó uniós szabályokkal együtt. A fogyasztóként szerződő szervező a lakóhelye szerinti bíróság előtti perlés jogát is megtartja.",
+    odr_title: "Panaszkezelés és vitarendezés",
+    odr_body:
+      "A számlázással vagy az előfizetéssel kapcsolatos panaszok a hello@tryweddly.com címre küldhetők; az Üzemeltető törekszik 30 napon belüli válaszra. A fogyasztóként szerződő szervező az illetékes magyar békéltető testülethez is fordulhat; az aktuális elérhetőségek az Impresszum oldalon találhatók.",
+    contact_title: "Kapcsolat",
+    contact_body: "Az előfizetéssel kapcsolatos kérdéseket a hello@tryweddly.com címre várjuk.",
     en_section_label: "English",
   },
   imprint: {
@@ -9626,6 +9750,9 @@ const hu: LocaleMessages = {
     cta_subscribe: "Előfizetés",
     cta_current: "Jelenlegi csomag",
     cta_switch: "Váltás erre",
+    terms_accept_prefix: "Elolvastam és elfogadom az",
+    terms_accept_link: "előfizetési feltételeket",
+    terms_accept_suffix: ".",
     manage_cta: "Számlázás kezelése",
     disabled_note: "Az előfizetés hamarosan elérhető.",
     checkout_error: "Nem sikerült elindítani a fizetést. Próbáld újra.",

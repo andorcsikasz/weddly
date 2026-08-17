@@ -138,9 +138,12 @@ export function H2({ children, id }: { children: ReactNode; id?: string }) {
   );
 }
 
-export function H3({ children }: { children: ReactNode }) {
+export function H3({ children, id }: { children: ReactNode; id?: string }) {
   return (
-    <h3 className="mt-6 font-grotesk text-lg font-semibold text-ink-800 dark:text-paper-100 sm:text-xl">
+    <h3
+      id={id}
+      className="mt-6 scroll-mt-24 font-grotesk text-lg font-semibold text-ink-800 dark:text-paper-100 sm:text-xl"
+    >
       {children}
     </h3>
   );
@@ -234,6 +237,14 @@ function PrivacyBodyForLocale({
         <p>{strings.proc_workspace_purpose}</p>
         <p>{strings.proc_workspace_basis}</p>
         <p>{strings.proc_workspace_retention}</p>
+      </ProcBlock>
+
+      <H3 id="guest-camera">{strings.proc_guest_camera_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_guest_camera_data}</p>
+        <p>{strings.proc_guest_camera_purpose}</p>
+        <p>{strings.proc_guest_camera_basis}</p>
+        <p>{strings.proc_guest_camera_retention}</p>
       </ProcBlock>
 
       <H3>{strings.proc_newsletter_title}</H3>

@@ -203,7 +203,7 @@ describe("photo-albums API", () => {
     const r = await req<{ album: object; shotCount: number }>(
       "POST",
       `/api/photo-albums/${albumToken}/devices`,
-      { device_id: "test-device-1", guest_name: "Ana" },
+      { device_id: "test-device-1", guest_name: "Ana", email: "ana@guest.test" },
     );
     expect(r.status).toBe(200);
     expect(r.data.shotCount).toBe(0);
@@ -364,6 +364,55 @@ describe("photo-albums API", () => {
     const svg = await res.text();
     expect(svg.trimStart()).toStartWith("<svg");
   });
+
+  test("naming a device for the first time without an email is rejected", async () => {
+    const r = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "no-email-device", guest_name: "Someone" },
+    );
+    expect(r.status).toBe(400);
+    expect(r.data.detail?.code).toBe("email_required");
+  });
+
+  test("a malformed email is rejected", async () => {
+    const r = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "bad-email-device", guest_name: "Someone", email: "not-an-email" },
+    );
+    expect(r.status).toBe(400);
+    expect(r.data.detail?.code).toBe("invalid_email");
+  });
+
+  test("the anonymous pre-check registration (no name yet) never requires an email", async () => {
+    const r = await req<{ album: object; shotCount: number }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "not-yet-named-device" },
+    );
+    expect(r.status).toBe(200);
+  });
+
+  test("a returning guest named before email was required stays grandfathered in", async () => {
+    const albumId = (
+      db.prepare("SELECT id FROM photo_albums WHERE upload_token = ?").get(albumToken) as {
+        id: number;
+      }
+    ).id;
+    db.prepare(
+      `INSERT INTO film_devices (album_id, device_id, guest_name, guest_name_key, joined_at, source)
+       VALUES (?, 'legacy-named-device', 'Old Guest', 'old guest', ?, 'guest')`,
+    ).run(albumId, Date.now());
+
+    // Reopening the link resends the same stored name and no email — exactly
+    // what the frontend's passive reload call does.
+    const r = await req<{ shotCount: number }>("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: "legacy-named-device",
+      guest_name: "Old Guest",
+    });
+    expect(r.status).toBe(200);
+  });
 });
 
 // ── helpers shared by the feature blocks ───────────────────────────────────────
@@ -388,6 +437,23 @@ async function guestUpload(
   fd.append("device_id", deviceId);
   if (claimedGuestName !== undefined) fd.append("guest_name", claimedGuestName);
   return fetch(`${BASE}/api/photo-albums/${albumPath}/photos`, { method: "POST", body: fd });
+}
+
+// Simulates a device that named itself before email became mandatory — a
+// direct row insert rather than a call through POST /devices, exactly like
+// the pre-existing 'couple-legacy-session' seed elsewhere in this file. Real
+// production rows in this shape predate the email column entirely.
+function insertLegacyGuestDevice(albumToken: string, deviceId: string, guestName: string): void {
+  const albumId = (
+    db.prepare("SELECT id FROM photo_albums WHERE upload_token = ?").get(albumToken) as {
+      id: number;
+    }
+  ).id;
+  const nameKey = guestName.trim().normalize("NFKC").toLocaleLowerCase("hu");
+  db.prepare(
+    `INSERT INTO film_devices (album_id, device_id, guest_name, guest_name_key, joined_at, source)
+     VALUES (?, ?, ?, ?, ?, 'guest')`,
+  ).run(albumId, deviceId, guestName, nameKey, Date.now());
 }
 
 // ── Feature A: custom guest-link slug (#17) ────────────────────────────────────
@@ -467,7 +533,11 @@ describe("participant soft-remove (#6)", () => {
     ({ token } = await bootstrapCouple("remove@weddly.test"));
     albumToken = await createAlbum(token);
     for (const d of ["dev-a", "dev-b"]) {
-      await req("POST", `/api/photo-albums/${albumToken}/devices`, { device_id: d, guest_name: d });
+      await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+        device_id: d,
+        guest_name: d,
+        email: `${d}@guest.test`,
+      });
     }
   });
 
@@ -564,14 +634,10 @@ describe("guest participant aggregation", () => {
   afterAll(() => wipeFilm());
 
   test("named sessions merge into one guest and couple sessions stay excluded", async () => {
-    await req("POST", `/api/photo-albums/${albumToken}/devices`, {
-      device_id: "ana-phone",
-      guest_name: "Ana",
-    });
-    await req("POST", `/api/photo-albums/${albumToken}/devices`, {
-      device_id: "ana-tablet",
-      guest_name: " ana ",
-    });
+    // Both sessions are legacy (no email on file) — grouping falls back to the
+    // same Hungarian-locale-folded name key it always used.
+    insertLegacyGuestDevice(albumToken, "ana-phone", "Ana");
+    insertLegacyGuestDevice(albumToken, "ana-tablet", " ana ");
     expect((await guestUpload(albumToken, "ana-phone")).status).toBe(201);
     expect((await guestUpload(albumToken, "ana-tablet")).status).toBe(201);
 
@@ -610,31 +676,29 @@ describe("guest participant aggregation", () => {
     expect(album.data.album.participantCount).toBe(1);
   });
 
-  test("the cap counts guests and removing a merged guest removes every session", async () => {
+  test("the cap counts guests, an impostor can't free-ride a legacy name, and removal frees the slot", async () => {
     db.prepare("UPDATE photo_albums SET guest_cap = 1 WHERE upload_token = ?").run(albumToken);
 
-    // Ana is already counted, so another named session is allowed at the cap.
-    const anotherSession = await req("POST", `/api/photo-albums/${albumToken}/devices`, {
-      device_id: "ana-laptop",
-      guest_name: "ANA",
-    });
-    expect(anotherSession.status).toBe(200);
+    // A brand-new device naming itself "ANA" has no way to prove it is the
+    // SAME Ana as the legacy, email-less group above (that group gave no
+    // email to match against) — so it is correctly treated as a second,
+    // distinct guest and refused at the cap. This is the exact mix-up email
+    // identity exists to prevent.
+    const impostor = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "ana-laptop", guest_name: "ANA", email: "ana-laptop@guest.test" },
+    );
+    expect(impostor.status).toBe(429);
+    expect(impostor.data.detail?.code).toBe("guest_cap_reached");
 
     const otherGuest = await req<{ detail?: { code?: string } }>(
       "POST",
       `/api/photo-albums/${albumToken}/devices`,
-      { device_id: "bea-phone", guest_name: "Bea" },
+      { device_id: "bea-phone", guest_name: "Bea", email: "bea@guest.test" },
     );
     expect(otherGuest.status).toBe(429);
     expect(otherGuest.data.detail?.code).toBe("guest_cap_reached");
-
-    const splitExistingGuest = await req<{ detail?: { code?: string } }>(
-      "POST",
-      `/api/photo-albums/${albumToken}/devices`,
-      { device_id: "ana-laptop", guest_name: "Bea" },
-    );
-    expect(splitExistingGuest.status).toBe(429);
-    expect(splitExistingGuest.data.detail?.code).toBe("guest_cap_reached");
 
     const list = await req<{ devices: Array<{ deviceId: string }>; total: number }>(
       "GET",
@@ -670,6 +734,83 @@ describe("guest participant aggregation", () => {
       { token },
     );
     expect(album.data.album.participantCount).toBe(0);
+
+    // With the slot free, a genuinely new guest can now join.
+    const nowFits = await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: "bea-phone",
+      guest_name: "Bea",
+      email: "bea@guest.test",
+    });
+    expect(nowFits.status).toBe(200);
+  });
+});
+
+// ── Feature B3: guest identity is keyed by email, not name ────────────────────
+// This is the core of the "avoid multiple logins with the same name" ask:
+// two different people sharing a first name must never be merged into one
+// guest, and the same guest reopening the link on a second device must be
+// recognized as themselves even if they retype their name differently.
+
+describe("guest identity by email", () => {
+  let token: string;
+  let albumToken: string;
+
+  beforeAll(async () => {
+    wipeFilm();
+    ({ token } = await bootstrapCouple("guest-email-identity@weddly.test"));
+    albumToken = await createAlbum(token);
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("two guests who share a first name but give different emails are not merged", async () => {
+    const first = await req<{ shotCount: number }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "anna-1", guest_name: "Anna", email: "anna.kovacs@guest.test" },
+    );
+    expect(first.status).toBe(200);
+    const second = await req<{ shotCount: number }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "anna-2", guest_name: "Anna", email: "anna.szabo@guest.test" },
+    );
+    expect(second.status).toBe(200);
+
+    const album = await req<{ album: { participantCount: number } }>(
+      "GET",
+      "/api/photo-albums/current",
+      undefined,
+      { token },
+    );
+    expect(album.data.album.participantCount).toBe(2);
+  });
+
+  test("the same guest reopening on a second device (retyped name, same email) is recognized as one guest", async () => {
+    const secondDevice = await req<{ shotCount: number }>(
+      "POST",
+      `/api/photo-albums/${albumToken}/devices`,
+      { device_id: "anna-1-tablet", guest_name: "anna", email: " Anna.Kovacs@Guest.test " },
+    );
+    expect(secondDevice.status).toBe(200);
+
+    const album = await req<{ album: { participantCount: number } }>(
+      "GET",
+      "/api/photo-albums/current",
+      undefined,
+      { token },
+    );
+    // Still 2 — the retyped session joined Anna Kovács, not a third guest.
+    expect(album.data.album.participantCount).toBe(2);
+
+    const list = await req<{ devices: Array<{ email: string | null; sessionCount: number }> }>(
+      "GET",
+      "/api/photo-albums/current/devices",
+      undefined,
+      { token },
+    );
+    const kovacs = list.data.devices.find((d) => d.email === "anna.kovacs@guest.test");
+    expect(kovacs?.sessionCount).toBe(2);
   });
 });
 
@@ -688,11 +829,11 @@ describe("per-guest quota and canonical attribution", () => {
 
   afterAll(() => wipeFilm());
 
-  test("same-name sessions share one limit and uploads use the registered name", async () => {
+  test("same-email sessions share one limit and uploads use the registered name", async () => {
     const firstRegistration = await req<{ shotCount: number }>(
       "POST",
       `/api/photo-albums/${albumToken}/devices`,
-      { device_id: "nora-phone", guest_name: "Nóra" },
+      { device_id: "nora-phone", guest_name: "Nóra", email: "nora@guest.test" },
     );
     expect(firstRegistration.status).toBe(200);
     expect(firstRegistration.data.shotCount).toBe(0);
@@ -701,10 +842,13 @@ describe("per-guest quota and canonical attribution", () => {
     expect(firstUpload.status).toBe(201);
     expect(((await firstUpload.json()) as { shotCount: number }).shotCount).toBe(1);
 
+    // Reopens on a second device: retypes the name with different casing and
+    // whitespace, but the email — now the primary identity — is the same one,
+    // just cased differently, exactly as autocapitalize on a phone would do.
     const secondRegistration = await req<{ shotCount: number }>(
       "POST",
       `/api/photo-albums/${albumToken}/devices`,
-      { device_id: "nora-tablet", guest_name: " nÓRA " },
+      { device_id: "nora-tablet", guest_name: " nÓRA ", email: "Nora@Guest.test" },
     );
     expect(secondRegistration.status).toBe(200);
     expect(secondRegistration.data.shotCount).toBe(1);

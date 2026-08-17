@@ -35,7 +35,11 @@ function response(body: unknown): Response {
 
 describe("<GuestPhotoPage> host preview", () => {
   it("persists a first-time guest name on the device before opening the camera", async () => {
-    const registrations: Array<{ device_id: string; guest_name: string | null }> = [];
+    const registrations: Array<{
+      device_id: string;
+      guest_name: string | null;
+      email?: string | null;
+    }> = [];
     globalThis.fetch = mock((_input: RequestInfo | URL, init?: RequestInit) => {
       if (typeof init?.body === "string") {
         registrations.push(
@@ -84,6 +88,9 @@ describe("<GuestPhotoPage> host preview", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "A neved" }), {
       target: { value: "  Nóra  " },
     });
+    fireEvent.change(screen.getByRole("textbox", { name: "E-mail-címed" }), {
+      target: { value: "nora@guest.test" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Mehet" }));
 
     await waitFor(() => expect(screen.getByText("A kamera ki van kapcsolva")).toBeInTheDocument());
@@ -91,8 +98,10 @@ describe("<GuestPhotoPage> host preview", () => {
     expect(registrations[1]).toMatchObject({
       device_id: registrations[0]?.device_id,
       guest_name: "Nóra",
+      email: "nora@guest.test",
     });
     expect(localStorage.getItem("weddly.film.new-guest-token.name")).toBe("Nóra");
+    expect(localStorage.getItem("weddly.film.new-guest-token.email")).toBe("nora@guest.test");
   });
 
   it("uses the authenticated read-only endpoint and never starts camera or guest mutations", async () => {
@@ -141,6 +150,9 @@ describe("<GuestPhotoPage> host preview", () => {
     expect(requests).toEqual([{ url: "/api/photo-albums/preview-token/preview", method: "GET" }]);
 
     fireEvent.change(screen.getByPlaceholderText("A neved"), { target: { value: "Andor" } });
+    fireEvent.change(screen.getByPlaceholderText("E-mail-címed"), {
+      target: { value: "andor@guest.test" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Kamera előnézete" }));
 
     await waitFor(() => expect(screen.getByText("Kamera-előnézet")).toBeInTheDocument());

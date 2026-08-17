@@ -450,6 +450,12 @@ export interface LocaleMessages {
     subscribe_cta: string;
     manage_cta: string;
     opening: string;
+    /** Point-of-purchase acceptance checkbox above the Subscribe button,
+     *  shown only until `subscription_terms_accepted` is true. Three parts
+     *  around the /terms/couple-subscription link. */
+    terms_accept_prefix: string;
+    terms_accept_link: string;
+    terms_accept_suffix: string;
     /** Label for the read-only card-on-file line on the billing tab. */
     card_on_file: string;
     /** Card expiry line; receives `{date}` as "MM/YY". */
@@ -4057,6 +4063,14 @@ export interface LocaleMessages {
     preview_unavailable: string;
     preview_unavailable_sub: string;
     from_couple: string;
+    email_placeholder: string;
+    email_hint: string;
+    email_invalid: string;
+    marketing_opt_in_label: string;
+    privacy_link: string;
+    /** Auto-dismissing pill shown after every shot but the first. */
+    sent_toast: string;
+    invite_aria: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   /** /app/design — the curated wedding visual-identity editor. */
@@ -9258,6 +9272,11 @@ export interface LocaleMessages {
     proc_workspace_purpose: string;
     proc_workspace_basis: string;
     proc_workspace_retention: string;
+    proc_guest_camera_title: string;
+    proc_guest_camera_data: string;
+    proc_guest_camera_purpose: string;
+    proc_guest_camera_basis: string;
+    proc_guest_camera_retention: string;
     proc_newsletter_title: string;
     proc_newsletter_data: string;
     proc_newsletter_purpose: string;
@@ -9456,6 +9475,89 @@ export interface LocaleMessages {
     governing_law_title: string;
     governing_law_body: string;
     /** EU 524/2013 link to the online dispute resolution platform. */
+    odr_title: string;
+    odr_body: string;
+    contact_title: string;
+    contact_body: string;
+    en_section_label: string;
+  };
+  /** /terms/couple-subscription — DRAFT billing terms for the couple
+   *  subscription, pending legal review. Not linked from the site's
+   *  footer/legal nav; only reachable from the checkout acceptance
+   *  checkbox and by direct URL. See CoupleSubscriptionTermsPage.tsx and
+   *  COUPLE_TERMS_REVIEWED in backend domain/payment_launch.ts. */
+  couple_subscription_terms: {
+    seo_title: string;
+    seo_description: string;
+    page_title: string;
+    last_updated_label: string;
+    last_updated_date: string;
+    /** Shown in an amber banner above the document itself — not legal
+     *  content, just a status note about the document's own review state. */
+    draft_notice: string;
+    intro: string;
+    operator_title: string;
+    operator_body: string;
+    scope_title: string;
+    scope_body: string;
+    acceptance_title: string;
+    acceptance_body: string;
+    billing_title: string;
+    billing_body: string;
+    vat_title: string;
+    vat_body: string;
+    term_title: string;
+    term_body: string;
+    refund_title: string;
+    refund_body: string;
+    withdrawal_title: string;
+    withdrawal_body: string;
+    changes_title: string;
+    changes_body: string;
+    termination_title: string;
+    termination_body: string;
+    governing_law_title: string;
+    governing_law_body: string;
+    odr_title: string;
+    odr_body: string;
+    contact_title: string;
+    contact_body: string;
+    en_section_label: string;
+  };
+  /** /terms/planner-subscription — DRAFT billing terms for the planner
+   *  subscription tiers, pending legal review. Same reachability rule as
+   *  couple_subscription_terms above. See PlannerSubscriptionTermsPage.tsx
+   *  and PLANNER_TERMS_REVIEWED in backend domain/payment_launch.ts. */
+  planner_subscription_terms: {
+    seo_title: string;
+    seo_description: string;
+    page_title: string;
+    last_updated_label: string;
+    last_updated_date: string;
+    draft_notice: string;
+    intro: string;
+    operator_title: string;
+    operator_body: string;
+    scope_title: string;
+    scope_body: string;
+    acceptance_title: string;
+    acceptance_body: string;
+    billing_title: string;
+    billing_body: string;
+    vat_title: string;
+    vat_body: string;
+    term_title: string;
+    term_body: string;
+    refund_title: string;
+    refund_body: string;
+    withdrawal_title: string;
+    withdrawal_body: string;
+    changes_title: string;
+    changes_body: string;
+    termination_title: string;
+    termination_body: string;
+    governing_law_title: string;
+    governing_law_body: string;
     odr_title: string;
     odr_body: string;
     contact_title: string;
@@ -10792,6 +10894,12 @@ export interface LocaleMessages {
     cta_subscribe: string;
     cta_current: string;
     cta_switch: string;
+    /** Point-of-purchase acceptance checkbox above the plan cards, shown only
+     *  until `subscription_terms_accepted` is true. Three parts around the
+     *  /terms/planner-subscription link. */
+    terms_accept_prefix: string;
+    terms_accept_link: string;
+    terms_accept_suffix: string;
     manage_cta: string;
     /** Shown on the cards while Stripe billing isn't wired server-side yet. */
     disabled_note: string;

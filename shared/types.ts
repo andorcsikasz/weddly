@@ -751,6 +751,12 @@ export interface FilmDevice {
   /** Representative session id for this guest (used by the remove endpoint). */
   deviceId: string;
   guestName: string | null;
+  /** Null for devices registered before email became required. */
+  email: string | null;
+  /** Opted in to occasional Weddly marketing email — their own explicit,
+   *  unticked-by-default checkbox, separate from the functional use of email
+   *  above. */
+  marketingOptIn: boolean;
   joinedAt: number;
   shotCount: number;
   /** Number of browser/device sessions merged into this host-list row. */

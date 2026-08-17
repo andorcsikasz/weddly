@@ -361,7 +361,14 @@ function ParticipantDashboard({
                 key={d.deviceId}
                 className="group flex items-center justify-between gap-2 text-xs text-umber-500"
               >
-                <span className="truncate">{d.guestName ?? t("media.film_anonymous")}</span>
+                <span className="min-w-0 truncate">
+                  {d.guestName ?? t("media.film_anonymous")}
+                  {d.email && (
+                    <span className="ml-1.5 text-umber-400" title={d.email}>
+                      · {d.email}
+                    </span>
+                  )}
+                </span>
                 <span className="ml-auto shrink-0 tabular-nums text-umber-500">
                   {t("media.film_shots_short").replace("{{n}}", String(d.shotCount))}
                 </span>

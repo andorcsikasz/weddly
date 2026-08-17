@@ -31,6 +31,7 @@ import type {
   PhotoAlbumPublic,
 } from "@shared/types";
 import { FILM_AESTHETICS, FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
+import { GUEST_PHOTO_MARKETING_NOTICE_VERSION } from "@shared/legal";
 import { CONFIG } from "../config";
 import { storage } from "../lib/storage";
 import { addAuditLog } from "../lib/audit";
@@ -40,6 +41,7 @@ import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment
 import { activateFilmAlbum } from "../domain/film";
 import { validateFilmSlug } from "../domain/film_slug";
 import { getCoupleForUser } from "../domain/couples";
+import { recordConsent } from "../domain/consents";
 import { HttpError, json, requireAuth, type Ctx, type Router } from "../lib/http";
 import { isUploadedHeif, type SniffedImageMime, sniffUploadedImage } from "../lib/image_sniff";
 import { rateLimit } from "../lib/rate_limit";
@@ -96,6 +98,29 @@ function guestNameKey(value: string | null): string | null {
   return value?.trim() ? value.trim().normalize("NFKC").toLocaleLowerCase("hu") : null;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LEN = 254;
+
+function emailKey(value: string | null): string | null {
+  return value?.trim() ? value.trim().toLowerCase() : null;
+}
+
+/** A guest's identity across sessions/devices, in descending precision: email
+ *  beats name beats a bare device. Email became mandatory the first time a
+ *  device is named (see `handleRegisterDevice`), so this resolves to the
+ *  email tier for every guest who joined after that; the name/device tiers
+ *  exist only so devices registered before email was required keep grouping
+ *  the way they always did, with no backfill. `alias` is the table alias
+ *  (including the trailing dot) used in the surrounding query, or "" when the
+ *  query has none. */
+function identityKeySql(alias: string): string {
+  return `CASE
+    WHEN ${alias}email_key IS NOT NULL THEN 'email:' || ${alias}email_key
+    WHEN ${alias}guest_name_key IS NOT NULL THEN 'name:' || ${alias}guest_name_key
+    ELSE 'device:' || ${alias}device_id
+  END`;
+}
+
 function countPhotos(albumId: number): number {
   // Hidden (purged) uploads (#6) are excluded from every visible count.
   return (
@@ -108,10 +133,10 @@ function countPhotos(albumId: number): number {
 }
 
 function countParticipants(albumId: number): number {
-  // This is a guest count, not a device/session count. Named sessions are
-  // merged case-insensitively; anonymous sessions remain separate because we
-  // have no stable identity with which to merge them. Couple uploads never
-  // consume guest capacity.
+  // This is a guest count, not a device/session count. Sessions sharing an
+  // email or (failing that) a name are merged case-insensitively; anonymous
+  // sessions remain separate because we have no stable identity with which to
+  // merge them. Couple uploads never consume guest capacity.
   return (
     db
       .prepare(
@@ -122,10 +147,7 @@ function countParticipants(albumId: number): number {
               WHERE album_id = ?
                 AND removed_at IS NULL
                 AND source = 'guest'
-              GROUP BY CASE
-                WHEN guest_name_key IS NULL THEN 'device:' || device_id
-                ELSE 'name:' || guest_name_key
-              END
+              GROUP BY ${identityKeySql("")}
            )`,
       )
       .get(albumId) as {
@@ -135,16 +157,36 @@ function countParticipants(albumId: number): number {
 }
 
 /** Count uploads against the same identity model used by the participant list.
- * Named browser sessions belong to one guest; an anonymous session can only be
- * identified by its device id. Keeping the quota calculation here prevents a
- * guest from resetting the per-person limit by opening the link in a second
- * browser. Hidden uploads intentionally still consume quota, matching the
- * previous per-device behaviour. */
+ * A guest's sessions are merged by email first, then by name; an anonymous
+ * session can only be identified by its device id. Keeping the quota
+ * calculation here prevents a guest from resetting the per-person limit by
+ * opening the link in a second browser. Hidden uploads intentionally still
+ * consume quota, matching the previous per-device behaviour. */
 function countParticipantShots(
   albumId: number,
   deviceId: string,
   guestName: string | null,
+  email: string | null,
 ): number {
+  const normalizedEmail = email?.trim() || null;
+  if (normalizedEmail) {
+    return (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS c
+             FROM photo_uploads pu
+            WHERE pu.album_id = ? AND pu.source = 'guest'
+              AND pu.device_id IN (
+                SELECT device_id
+                  FROM film_devices
+                 WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
+                   AND email_key = ?
+              )`,
+        )
+        .get(albumId, albumId, emailKey(normalizedEmail)) as { c: number }
+    ).c;
+  }
+
   const normalizedName = guestName?.trim() || null;
   if (normalizedName) {
     return (
@@ -587,26 +629,27 @@ async function handleListDevices(ctx: Ctx): Promise<Response> {
     | undefined;
   if (!row) throw new HttpError(404, "No album found");
 
-  const devices = db
-    .prepare(
-      `SELECT MIN(fd.device_id) AS deviceId,
-              MAX(NULLIF(TRIM(fd.guest_name), '')) AS guestName,
-              MIN(fd.joined_at) AS joinedAt,
-              fd.removed_at AS removedAt,
-              COUNT(pu.id) AS shotCount,
-              COUNT(DISTINCT fd.device_id) AS sessionCount
-         FROM film_devices fd
-         LEFT JOIN photo_uploads pu
-           ON pu.album_id = fd.album_id AND pu.device_id = fd.device_id
-          AND pu.hidden_at IS NULL AND pu.source = 'guest'
-        WHERE fd.album_id = ? AND fd.removed_at IS NULL AND fd.source = 'guest'
-        GROUP BY CASE
-          WHEN fd.guest_name_key IS NULL THEN 'device:' || fd.device_id
-          ELSE 'name:' || fd.guest_name_key
-        END
-        ORDER BY MIN(fd.joined_at) ASC`,
-    )
-    .all(row.id) as FilmDevice[];
+  const devices = (
+    db
+      .prepare(
+        `SELECT MIN(fd.device_id) AS deviceId,
+                MAX(NULLIF(TRIM(fd.guest_name), '')) AS guestName,
+                MAX(NULLIF(TRIM(fd.email), '')) AS email,
+                MAX(fd.marketing_opt_in) AS marketingOptIn,
+                MIN(fd.joined_at) AS joinedAt,
+                fd.removed_at AS removedAt,
+                COUNT(pu.id) AS shotCount,
+                COUNT(DISTINCT fd.device_id) AS sessionCount
+           FROM film_devices fd
+           LEFT JOIN photo_uploads pu
+             ON pu.album_id = fd.album_id AND pu.device_id = fd.device_id
+            AND pu.hidden_at IS NULL AND pu.source = 'guest'
+          WHERE fd.album_id = ? AND fd.removed_at IS NULL AND fd.source = 'guest'
+          GROUP BY ${identityKeySql("fd.")}
+          ORDER BY MIN(fd.joined_at) ASC`,
+      )
+      .all(row.id) as (Omit<FilmDevice, "marketingOptIn"> & { marketingOptIn: 0 | 1 })[]
+  ).map((d) => ({ ...d, marketingOptIn: d.marketingOptIn === 1 }));
 
   return json({ devices, total: devices.length });
 }
@@ -628,33 +671,45 @@ async function handleRemoveDevice(ctx: Ctx): Promise<Response> {
 
   const device = db
     .prepare(
-      `SELECT guest_name AS guestName, source
+      `SELECT guest_name AS guestName, email_key AS emailKey, source
          FROM film_devices
         WHERE album_id = ? AND device_id = ? AND removed_at IS NULL`,
     )
-    .get(row.id, deviceId) as { guestName: string | null; source: string } | undefined;
+    .get(row.id, deviceId) as
+    | { guestName: string | null; emailKey: string | null; source: string }
+    | undefined;
   if (!device) throw new HttpError(404, "Participant not found");
   if (device.source !== "guest") throw new HttpError(404, "Participant not found");
 
-  // The host list merges named sessions into one guest. Apply removal to the
-  // same group so a second browser/session cannot remain active invisibly.
+  // The host list merges sessions sharing an identity into one guest (email
+  // first, then name). Apply removal to the same group so a second
+  // browser/session cannot remain active invisibly.
   const participantDevices = (
-    device.guestName?.trim()
+    device.emailKey
       ? db
           .prepare(
             `SELECT device_id AS deviceId
                FROM film_devices
               WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
-                AND guest_name_key = ?`,
+                AND email_key = ?`,
           )
-          .all(row.id, guestNameKey(device.guestName))
-      : db
-          .prepare(
-            `SELECT device_id AS deviceId
-               FROM film_devices
-              WHERE album_id = ? AND device_id = ? AND removed_at IS NULL AND source = 'guest'`,
-          )
-          .all(row.id, deviceId)
+          .all(row.id, device.emailKey)
+      : device.guestName?.trim()
+        ? db
+            .prepare(
+              `SELECT device_id AS deviceId
+                 FROM film_devices
+                WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
+                  AND guest_name_key = ?`,
+            )
+            .all(row.id, guestNameKey(device.guestName))
+        : db
+            .prepare(
+              `SELECT device_id AS deviceId
+                 FROM film_devices
+                WHERE album_id = ? AND device_id = ? AND removed_at IS NULL AND source = 'guest'`,
+            )
+            .all(row.id, deviceId)
   ) as { deviceId: string }[];
   const participantDeviceIds = participantDevices.map((entry) => entry.deviceId);
 
@@ -746,15 +801,46 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
       : null;
   const normalizedGuestName = guestNameKey(guestName);
 
+  // Email is a separate, optional field on the wire — "email" absent from the
+  // body means "leave whatever is already stored alone" (the frontend resends
+  // it once known, same idiom as a partial PATCH elsewhere in this codebase),
+  // while an explicit null/empty string clears it.
+  const emailProvided = "email" in body;
+  let providedEmail: string | null = null;
+  if (emailProvided && typeof body.email === "string" && body.email.trim()) {
+    const raw = body.email.trim();
+    if (raw.length > MAX_EMAIL_LEN)
+      throw new HttpError(400, "Email is too long", { code: "invalid_email" });
+    if (!EMAIL_RE.test(raw))
+      throw new HttpError(400, "That doesn't look like an email address", {
+        code: "invalid_email",
+      });
+    providedEmail = raw;
+  } else if (emailProvided && body.email !== null && typeof body.email !== "string") {
+    throw new HttpError(400, "email must be a string or null");
+  }
+
+  const marketingOptInProvided =
+    typeof body.marketing_opt_in === "boolean" ? body.marketing_opt_in : null;
+
   // Enforce guest cap — only count new devices, not re-registrations.
   const existingDevice = db
     .prepare(
-      `SELECT removed_at, guest_name AS guestName, source
+      `SELECT removed_at, guest_name AS guestName, email, email_key AS emailKey,
+              marketing_opt_in AS marketingOptIn, marketing_opt_in_at AS marketingOptInAt, source
          FROM film_devices
         WHERE album_id = ? AND device_id = ?`,
     )
     .get(row.id, deviceId) as
-    | { removed_at: number | null; guestName: string | null; source: string }
+    | {
+        removed_at: number | null;
+        guestName: string | null;
+        email: string | null;
+        emailKey: string | null;
+        marketingOptIn: 0 | 1;
+        marketingOptInAt: number | null;
+        source: string;
+      }
     | undefined;
 
   // A soft-removed device (#6) cannot rejoin the film.
@@ -768,49 +854,66 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
     throw new HttpError(409, "Device id unavailable", { code: "device_id_unavailable" });
   }
 
-  // A named guest opening the camera in another browser creates a new session,
-  // not a new guest. Renaming one session from a multi-session guest can,
-  // however, split it into a new participant. Calculate that count delta so an
-  // existing device cannot bypass a full guest cap by changing its name.
-  const targetOtherCount = guestName
-    ? (
-        db
-          .prepare(
-            `SELECT COUNT(*) AS c
-               FROM film_devices
-              WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
-                AND device_id <> ?
-                AND guest_name_key = ?`,
-          )
-          .get(row.id, deviceId, normalizedGuestName) as { c: number }
-      ).c
-    : 0;
+  // Email became mandatory the moment a guest is FIRST named — an existing
+  // device that already carries a name was registered before this rule
+  // existed and is grandfathered in, so returning guests never get relocked
+  // out of a film they already joined.
+  const isFirstNaming = guestName !== null && !existingDevice?.guestName?.trim();
+  const finalEmail = emailProvided ? providedEmail : (existingDevice?.email ?? null);
+  if (isFirstNaming && !finalEmail) {
+    throw new HttpError(400, "Email required to join this film", { code: "email_required" });
+  }
+  const normalizedEmailKey = emailKey(finalEmail);
 
+  // A guest's identity is resolved email first, then name, then bare device —
+  // see identityKeySql. A device joining (or renaming into) a group that
+  // already has other members doesn't grow the guest count; leaving a group
+  // that still has others left doesn't shrink it either.
+  type Identity = { tier: "email" | "name" | "device"; key: string };
+  const newIdentity: Identity = normalizedEmailKey
+    ? { tier: "email", key: normalizedEmailKey }
+    : normalizedGuestName
+      ? { tier: "name", key: normalizedGuestName }
+      : { tier: "device", key: deviceId };
+
+  const albumId = row.id;
+  // Re-typed rather than read from the closure directly: control-flow
+  // narrowing (the typeof guard above) doesn't reach into a nested function
+  // declaration, so `deviceId` still reads as `unknown` from inside one.
+  const registeringDeviceId: string = deviceId;
+  function otherMembersOf(identity: Identity): number {
+    if (identity.tier === "device") return 0;
+    const column = identity.tier === "email" ? "email_key" : "guest_name_key";
+    return (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS c
+             FROM film_devices
+            WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
+              AND device_id <> ? AND ${column} = ?`,
+        )
+        .get(albumId, registeringDeviceId, identity.key) as { c: number }
+    ).c;
+  }
+
+  const targetOtherCount = otherMembersOf(newIdentity);
   let participantDelta = targetOtherCount > 0 ? 0 : 1;
   if (existingDevice) {
-    const oldName = existingDevice.guestName?.trim() || null;
+    const oldEmailKey = existingDevice.emailKey;
+    const oldNameKey = guestNameKey(existingDevice.guestName?.trim() || null);
+    const oldIdentity: Identity = oldEmailKey
+      ? { tier: "email", key: oldEmailKey }
+      : oldNameKey
+        ? { tier: "name", key: oldNameKey }
+        : { tier: "device", key: deviceId };
+
     const sameParticipant =
-      oldName === null && guestName === null
-        ? true
-        : oldName !== null && guestName !== null
-          ? guestNameKey(oldName) === normalizedGuestName
-          : false;
+      oldIdentity.tier === newIdentity.tier && oldIdentity.key === newIdentity.key;
 
     if (sameParticipant) {
       participantDelta = 0;
     } else {
-      const oldGroupSize = oldName
-        ? (
-            db
-              .prepare(
-                `SELECT COUNT(*) AS c
-                   FROM film_devices
-                  WHERE album_id = ? AND removed_at IS NULL AND source = 'guest'
-                    AND guest_name_key = ?`,
-              )
-              .get(row.id, guestNameKey(oldName)) as { c: number }
-          ).c
-        : 1;
+      const oldGroupSize = oldIdentity.tier === "device" ? 1 : otherMembersOf(oldIdentity) + 1;
       participantDelta =
         targetOtherCount > 0 ? (oldGroupSize === 1 ? -1 : 0) : oldGroupSize > 1 ? 1 : 0;
     }
@@ -820,15 +923,49 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
     throw new HttpError(429, "Guest cap reached for this film", { code: "guest_cap_reached" });
   }
 
-  // Upsert device row (update name if guest changes it).
+  const previousOptIn = existingDevice?.marketingOptIn === 1;
+  const finalOptIn = marketingOptInProvided !== null ? marketingOptInProvided : previousOptIn;
+  const optInJustGranted = finalOptIn && !previousOptIn;
+  const marketingOptInAt = optInJustGranted ? now() : (existingDevice?.marketingOptInAt ?? null);
+
+  // Upsert device row (update name/email/consent if the guest changes them).
   db.prepare(
     `INSERT INTO film_devices
-       (album_id, device_id, guest_name, guest_name_key, joined_at, source)
-     VALUES (?, ?, ?, ?, ?, 'guest')
+       (album_id, device_id, guest_name, guest_name_key, email, email_key,
+        marketing_opt_in, marketing_opt_in_at, joined_at, source)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'guest')
      ON CONFLICT(album_id, device_id) DO UPDATE SET
        guest_name = excluded.guest_name,
-       guest_name_key = excluded.guest_name_key`,
-  ).run(row.id, deviceId, guestName, normalizedGuestName, now());
+       guest_name_key = excluded.guest_name_key,
+       email = excluded.email,
+       email_key = excluded.email_key,
+       marketing_opt_in = excluded.marketing_opt_in,
+       marketing_opt_in_at = excluded.marketing_opt_in_at`,
+  ).run(
+    row.id,
+    deviceId,
+    guestName,
+    normalizedGuestName,
+    finalEmail,
+    normalizedEmailKey,
+    finalOptIn ? 1 : 0,
+    marketingOptInAt,
+    now(),
+  );
+
+  // Consent is only ever recorded on the moment it is freely given — never on
+  // a passive reload that merely resends the same stored value.
+  if (optInJustGranted) {
+    recordConsent({
+      subjectUserId: null,
+      subjectKind: "guest",
+      subjectRef: `photo_album:${row.id}:device:${deviceId}`,
+      document: "guest_photo_marketing",
+      version: GUEST_PHOTO_MARKETING_NOTICE_VERSION,
+      ip: ctx.clientIp,
+      userAgent: ctx.req.headers.get("user-agent"),
+    });
+  }
 
   const publicAlbum: PhotoAlbumPublic = {
     displayName: row.display_name,
@@ -843,7 +980,7 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
     coverImageUrl: row.cover_image_url,
   };
 
-  const shotCount = countParticipantShots(row.id, deviceId, guestName);
+  const shotCount = countParticipantShots(row.id, deviceId, guestName, finalEmail);
 
   return json({ album: publicAlbum, shotCount }, { status: 200 });
 }
@@ -1008,11 +1145,13 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   // Guest must have registered (cap is enforced at register time).
   const registered = db
     .prepare(
-      `SELECT removed_at, guest_name AS guestName
+      `SELECT removed_at, guest_name AS guestName, email
          FROM film_devices
         WHERE album_id = ? AND device_id = ? AND source = 'guest'`,
     )
-    .get(row.id, deviceId) as { removed_at: number | null; guestName: string | null } | undefined;
+    .get(row.id, deviceId) as
+    | { removed_at: number | null; guestName: string | null; email: string | null }
+    | undefined;
   if (!registered) throw new HttpError(403, "Device not registered — call /devices first");
   // A soft-removed device (#6) can no longer upload.
   if (registered.removed_at !== null)
@@ -1020,7 +1159,7 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
 
   // Shot limit check.
   if (row.shots_per_guest !== null) {
-    const used = countParticipantShots(row.id, deviceId, registered.guestName);
+    const used = countParticipantShots(row.id, deviceId, registered.guestName, registered.email);
     if (used >= row.shots_per_guest)
       throw new HttpError(429, "Shot limit reached", { code: "shot_limit" });
   }
@@ -1071,7 +1210,7 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   await storage.write(key, raw);
   db.prepare("UPDATE photo_uploads SET file_path = ? WHERE id = ?").run(publicUrl, uploadRow.id);
 
-  const shotCount = countParticipantShots(row.id, deviceId, guestName);
+  const shotCount = countParticipantShots(row.id, deviceId, guestName, registered.email);
 
   return json({ upload: { id: uploadRow.id, fileUrl: publicUrl }, shotCount }, { status: 201 });
 }

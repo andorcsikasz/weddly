@@ -23,7 +23,7 @@
 
 import type { FilmAesthetic, FilmUpload, PhotoAlbumPublic } from "@shared/types";
 import { FILM_FILTERS } from "@shared/types";
-import { Camera, Check, ImagePlus, SwitchCamera } from "lucide-react";
+import { Camera, Check, ImagePlus, Share2, SwitchCamera } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
@@ -49,6 +49,17 @@ function getStoredName(token: string): string | null {
 function storeName(token: string, name: string): void {
   localStorage.setItem(`weddly.film.${token}.name`, name);
 }
+
+function getStoredEmail(token: string): string | null {
+  const v = localStorage.getItem(`weddly.film.${token}.email`);
+  return v !== null && v !== "" ? v : null;
+}
+
+function storeEmail(token: string, email: string): void {
+  localStorage.setItem(`weddly.film.${token}.email`, email);
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const HEIF_MIME_TYPES = new Set([
   "image/heic",
@@ -343,10 +354,31 @@ function Viewfinder({
   const [flash, setFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
-  // Thank-you screen shown after a successful upload (does not auto-dismiss).
+  // Full-screen thank-you shown once, on the guest's very first-ever shot —
+  // it explains when photos surface and offers to invite others. Every shot
+  // after that is a quiet auto-dismissing toast instead, so shooting stays
+  // continuous: no tap is needed to get back to the viewfinder.
   const [sent, setSent] = useState(false);
   const [sentCount, setSentCount] = useState(0);
+  const [toastCount, setToastCount] = useState<number | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deviceId = preview ? "" : getDeviceId(token);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    },
+    [],
+  );
+
+  function shareInvite() {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: album.displayName, url }).catch(() => {});
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener");
+    }
+  }
 
   const live = status === "live";
   const blocked = status === "blocked";
@@ -390,8 +422,18 @@ function Viewfinder({
         onLimitReached();
       } else {
         onShotTaken(result.shotCount);
-        setSentCount(result.shotCount);
-        setSent(true);
+        if (result.shotCount === 1) {
+          // The very first shot this guest has ever taken: worth a full
+          // screen explaining what happens next and offering to invite others.
+          setSentCount(result.shotCount);
+          setSent(true);
+        } else {
+          // Every shot after that stays out of the guest's way — a brief
+          // pill, then straight back to a live, tappable shutter.
+          if (toastTimer.current) clearTimeout(toastTimer.current);
+          setToastCount(result.shotCount);
+          toastTimer.current = setTimeout(() => setToastCount(null), 1600);
+        }
       }
     } catch (err: unknown) {
       URL.revokeObjectURL(previewUrl);
@@ -464,6 +506,16 @@ function Viewfinder({
             {shotCount}/{max}
           </span>
         )}
+        <button
+          type="button"
+          onClick={shareInvite}
+          disabled={preview}
+          aria-label={t("photos.invite_aria")}
+          title={t("photos.invite_aria")}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
+        >
+          <Share2 size={16} aria-hidden="true" />
+        </button>
       </div>
 
       {/* ── Viewfinder ─────────────────────────────────────────────── */}
@@ -531,6 +583,17 @@ function Viewfinder({
             <p className="rounded-2xl bg-red-950/85 px-4 py-3 text-center text-[14px] font-medium text-red-200 backdrop-blur-sm">
               {error}
             </p>
+          </div>
+        )}
+
+        {/* Quiet per-shot confirmation after the first — fades on its own so
+            shooting stays continuous, no tap needed to get back to the lens. */}
+        {toastCount !== null && (
+          <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
+            <span className="flex items-center gap-1.5 rounded-full bg-black/60 px-3.5 py-1.5 font-grotesk text-[13px] font-semibold text-paper-50 backdrop-blur-sm">
+              <Check size={14} aria-hidden="true" />
+              {t("photos.sent_toast")} · {toastCount}
+            </span>
           </div>
         )}
 
@@ -609,14 +672,9 @@ function Viewfinder({
               <button type="button" onClick={() => setSent(false)} className={PRIMARY_BTN}>
                 {t("photos.sent_add_more")}
               </button>
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(window.location.href)}`}
-                target="_blank"
-                rel="noreferrer"
-                className={`${GHOST_BTN} block text-center`}
-              >
+              <button type="button" onClick={shareInvite} className={GHOST_BTN}>
                 {t("photos.sent_invite")}
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -717,7 +775,10 @@ export default function GuestPhotoPage() {
   const preview = searchParams.get("preview") === "1";
   const [state, setState] = useState<PageState>({ kind: "loading" });
   const [nameInput, setNameInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [nameSubmitting, setNameSubmitting] = useState(false);
+  const [nameFormError, setNameFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -734,9 +795,10 @@ export default function GuestPhotoPage() {
 
     const deviceId = getDeviceId(token);
     const storedName = getStoredName(token);
+    const storedEmail = getStoredEmail(token);
 
     photoAlbumApi
-      .registerDevice(token, deviceId, storedName)
+      .registerDevice(token, deviceId, storedName, { email: storedEmail })
       .then(({ album, shotCount }) => {
         if (!album.isUploadEnabled) {
           setState({ kind: "disabled" });
@@ -773,7 +835,7 @@ export default function GuestPhotoPage() {
       });
   }, [preview, token]);
 
-  async function handleNameSubmit(name: string) {
+  async function handleNameSubmit(name: string, email: string, optIn: boolean) {
     if (state.kind !== "name_capture") return;
     const { album } = state;
     if (preview) {
@@ -781,13 +843,24 @@ export default function GuestPhotoPage() {
       return;
     }
 
+    setNameFormError(null);
+    if (!EMAIL_RE.test(email)) {
+      setNameFormError(t("photos.email_invalid"));
+      return;
+    }
+
     // The initial anonymous registration only establishes capacity and film
-    // availability. Persist the chosen name server-side before opening the
-    // camera so attribution, merged sessions, and per-person quota all agree.
+    // availability. Persist the chosen name + email server-side before opening
+    // the camera so attribution, merged sessions, and per-person quota all
+    // agree — email is what tells two guests with the same first name apart.
     setNameSubmitting(true);
     try {
-      const registered = await photoAlbumApi.registerDevice(token, getDeviceId(token), name);
+      const registered = await photoAlbumApi.registerDevice(token, getDeviceId(token), name, {
+        email,
+        marketingOptIn: optIn,
+      });
       storeName(token, name);
+      storeEmail(token, email);
       if (
         registered.album.shotsPerGuest !== null &&
         registered.shotCount >= registered.album.shotsPerGuest
@@ -802,6 +875,12 @@ export default function GuestPhotoPage() {
         });
       }
     } catch (err: unknown) {
+      const detail = (err as { detail?: unknown })?.detail;
+      const code = (detail as { code?: string } | undefined)?.code;
+      if (code === "invalid_email" || code === "email_required") {
+        setNameFormError(t("photos.email_invalid"));
+        return;
+      }
       const status =
         err && typeof err === "object" && "status" in err
           ? (err as { status?: unknown }).status
@@ -874,7 +953,8 @@ export default function GuestPhotoPage() {
   }
 
   if (state.kind === "name_capture") {
-    const canSubmit = nameInput.trim().length > 0;
+    const emailLooksValid = EMAIL_RE.test(emailInput.trim());
+    const canSubmit = nameInput.trim().length > 0 && emailLooksValid;
     return (
       <>
         {preview && <PreviewBanner />}
@@ -886,7 +966,8 @@ export default function GuestPhotoPage() {
             onSubmit={(e) => {
               e.preventDefault();
               const trimmed = nameInput.trim();
-              if (trimmed) handleNameSubmit(trimmed);
+              const trimmedEmail = emailInput.trim();
+              if (trimmed && trimmedEmail) handleNameSubmit(trimmed, trimmedEmail, marketingOptIn);
             }}
           >
             <input
@@ -899,10 +980,50 @@ export default function GuestPhotoPage() {
               disabled={nameSubmitting}
               className="w-full rounded-2xl bg-paper-50/10 px-5 py-4 font-grotesk text-[17px] font-medium text-paper-50 placeholder-paper-50/30 outline-none transition-colors focus:bg-paper-50/15"
             />
+            <input
+              type="email"
+              inputMode="email"
+              autoCapitalize="off"
+              autoCorrect="off"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder={t("photos.email_placeholder")}
+              aria-label={t("photos.email_placeholder")}
+              disabled={nameSubmitting}
+              className="mt-3 w-full rounded-2xl bg-paper-50/10 px-5 py-4 font-grotesk text-[17px] font-medium text-paper-50 placeholder-paper-50/30 outline-none transition-colors focus:bg-paper-50/15"
+            />
+            <p className="mt-2 text-[13px] leading-relaxed text-paper-50/40">
+              {t("photos.email_hint")}
+            </p>
+            {nameFormError && (
+              <p className="mt-2 text-[13px] font-medium text-red-300" role="alert">
+                {nameFormError}
+              </p>
+            )}
+            <label className="mt-5 flex items-start gap-3 text-[13px] leading-relaxed text-paper-50/50">
+              <input
+                type="checkbox"
+                checked={marketingOptIn}
+                onChange={(e) => setMarketingOptIn(e.target.checked)}
+                disabled={nameSubmitting}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-paper-50/30 bg-transparent"
+              />
+              <span>
+                {t("photos.marketing_opt_in_label")}{" "}
+                <a
+                  href="/privacy#guest-camera"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline decoration-paper-50/30 underline-offset-2"
+                >
+                  {t("photos.privacy_link")}
+                </a>
+              </span>
+            </label>
             <button
               type="submit"
               disabled={!canSubmit || nameSubmitting}
-              className={`${PRIMARY_BTN} mt-3`}
+              className={`${PRIMARY_BTN} mt-5`}
             >
               {nameSubmitting
                 ? t("common.saving")

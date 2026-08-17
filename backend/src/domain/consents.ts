@@ -10,8 +10,11 @@ export type ConsentDocument =
   | "terms"
   | "vendor_terms"
   | "vendor_terms_highlighted"
+  | "couple_subscription_terms"
+  | "planner_subscription_terms"
   | "guest_health"
   | "guest_health_withdrawn"
+  | "guest_photo_marketing"
   | "vendor_beta_notice";
 
 interface RecordConsentInput {
@@ -44,4 +47,23 @@ export function recordConsent(input: RecordConsentInput): void {
     input.userAgent,
     now(),
   );
+}
+
+/** True when a `subject_kind = 'user'` row already accepted this exact
+ *  document/version. Point-of-purchase checkout handlers use this to skip
+ *  re-prompting a user who already accepted the current terms — only a
+ *  version bump (a real content change) should ask again. */
+export function hasAcceptedCurrentVersion(
+  subjectUserId: number,
+  document: ConsentDocument,
+  version: string,
+): boolean {
+  const row = db
+    .prepare(
+      `SELECT 1 FROM user_consents
+        WHERE subject_user_id = ? AND subject_kind = 'user'
+          AND document = ? AND version = ? LIMIT 1`,
+    )
+    .get(subjectUserId, document, version);
+  return row != null;
 }

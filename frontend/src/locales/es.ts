@@ -238,6 +238,9 @@ const es: LocaleMessages = {
     subscribe_cta: "Suscribirse",
     manage_cta: "Gestionar suscripción",
     opening: "Abriendo…",
+    terms_accept_prefix: "He leído y acepto las",
+    terms_accept_link: "condiciones de suscripción",
+    terms_accept_suffix: ".",
     card_on_file: "Tarjeta guardada",
     card_expires: "caduca: {date}",
     disabled_note:
@@ -3219,7 +3222,9 @@ const es: LocaleMessages = {
     end_before_start: "El regreso debe ser en la fecha de salida o posterior.",
     edit_dates: "Editar fechas",
     edit_destination: "Editar destino",
-    set_dates_cta: "Establecer las fechas",
+    // Short noun form, matching flight_short ("Vuelos") — same tile-width
+    // constraint; the full CTA lives in edit_dates as the accessible label.
+    set_dates_cta: "Fechas",
     destination_empty_cta: "Añadir un destino",
     show_on_map: "Ver en el mapa",
     map_not_found: "No hemos podido ubicarlo en el mapa. Prueba con una dirección más concreta.",
@@ -3530,6 +3535,13 @@ const es: LocaleMessages = {
     preview_unavailable: "Vista previa no disponible.",
     preview_unavailable_sub: "Inicia sesión en el espacio de trabajo propietario de esta película.",
     from_couple: "De la pareja",
+    email_placeholder: "Tu correo",
+    email_hint: "Así podemos enviarte tus propias fotos y distinguirte de otras personas aquí.",
+    email_invalid: "Ese correo no parece válido.",
+    marketing_opt_in_label: "Envíame también noticias ocasionales de Weddly.",
+    privacy_link: "Privacidad",
+    sent_toast: "Enviada",
+    invite_aria: "Invitar a otros",
   },
   design: {
     title: "Diseño",
@@ -8014,6 +8026,15 @@ const es: LocaleMessages = {
       "Base jurídica: art. 6.1.b del RGPD, ejecución del contrato de servicio con el usuario.",
     proc_workspace_retention:
       "Conservación: mientras el espacio de trabajo esté activo; al suspenderlo se aplica un periodo de gracia de 30 días, tras el cual los datos se borran de forma permanente.",
+    proc_guest_camera_title: "Wedding Film — cámara para invitados",
+    proc_guest_camera_data:
+      "Datos tratados: el nombre y el correo electrónico que un invitado escribe antes de fotografiar, el identificador del dispositivo, las fotos que envía y, solo si marca la casilla, el registro de que dio su consentimiento de marketing (con la IP y el navegador usados en ese momento).",
+    proc_guest_camera_purpose:
+      "Finalidad: distinguir a invitados que comparten nombre de pila para atribuir correctamente sus fotos y el número de disparos, permitir que la pareja (y, más adelante, nosotros) le envíe al invitado sus propias fotos y, solo con consentimiento explícito y separado, enviarle noticias ocasionales de Weddly.",
+    proc_guest_camera_basis:
+      "Base jurídica: art. 6.1.b del RGPD, ejecución del servicio de cámara para invitados que el invitado usa activamente, para el nombre, el correo y las fotos; art. 6.1.a, consentimiento libre y revocable, únicamente para la casilla opcional de marketing.",
+    proc_guest_camera_retention:
+      "Conservación: mientras exista el álbum de la boda, o hasta que el invitado pida a hello@tryweddly.com que borre su entrada. El consentimiento de marketing dura hasta que se revoque por la misma vía.",
     proc_newsletter_title: "Boletín y comunicaciones de ciclo de vida",
     proc_newsletter_data:
       "Datos recogidos: dirección de correo, marca de tiempo de la suscripción, registro del consentimiento (cuándo y cómo se dio).",
@@ -8244,6 +8265,116 @@ const es: LocaleMessages = {
     contact_body:
       "Todas las consultas sobre las ÁSZF y el servicio que Weddly presta a los proveedores deben dirigirse a hello@tryweddly.com. El contenido ilícito también puede notificarse mediante el formulario permanente enlazado desde todas las páginas. Los datos de identificación del Operador conforme al §4 de la Ektv. están disponibles en la página de Aviso legal.",
     en_section_label: "Inglés",
+  },
+  // couple_subscription_terms / planner_subscription_terms: DRAFT documents,
+  // not yet legally reviewed. Deliberately EN-only content here (matching
+  // subscription_terms above, which is also never read through t() for this
+  // locale) — the page always renders directly from the en/hu modules via
+  // its own internal language toggle, never from this object, so a Spanish
+  // translation would be pure write-only effort before the content is even
+  // approved. Retranslate once COUPLE_TERMS_REVIEWED / PLANNER_TERMS_REVIEWED
+  // flip in backend domain/payment_launch.ts.
+  couple_subscription_terms: {
+    seo_title: "Couple subscription terms (draft) · Weddly",
+    seo_description:
+      "Draft billing terms for Weddly's couple subscription: renewal, refunds, withdrawal rights. Not yet in effect, pending review.",
+    page_title: "Couple subscription terms",
+    last_updated_label: "Status",
+    last_updated_date: "Draft — not yet in effect",
+    draft_notice:
+      "This document is a DRAFT prepared for review. It has not been reviewed or approved and is not yet in effect. No couple has accepted, or can currently accept, this version — subscription checkout will not proceed until that happens.",
+    intro:
+      "These terms would govern the paid subscription a couple purchases for their Weddly wedding-planning workspace, alongside the general Terms of Service at /terms. They become part of the contract only once a couple expressly accepts them by checking the acceptance box shown before Checkout. Once in effect, the automatic-renewal, fee-change and liability clauses below will be highlighted for separate attention as required by §6:78(2) of the Hungarian Civil Code.",
+    operator_title: "Operator and contracting parties",
+    operator_body:
+      "The Operator is Andor Csíkász, acting as a natural person (contact: hello@tryweddly.com; the full §4 Ektv. disclosure is on the Imprint page). The other party (the 'Couple') is the account holder or holders of the Weddly wedding-planning workspace purchasing the subscription.",
+    scope_title: "Scope of the service",
+    scope_body:
+      "The subscription keeps the couple's workspace editable after the free trial ends: guest list, budget, seating chart, timeline, supplier tracking, the guest-facing wedding page and related planning tools. Weddly is a planning tool; it is not a party to, and does not guarantee the performance of, any agreement between the couple and a supplier, venue, or guest.",
+    acceptance_title: "Contract formation and acceptance",
+    acceptance_body:
+      "The contract is formed when the couple checks the acceptance box on the Checkout screen and completes payment. The Operator logs the acceptance (timestamp, document version, IP address, user-agent) and may rely on that log in case of a dispute. No fee is due before this step; a saved card alone never creates a payment obligation.",
+    billing_title: "Billing",
+    billing_body:
+      "The subscription is billed monthly, in advance, in the couple's workspace currency, through Stripe. The Checkout screen shows the total price and renewal date before payment is taken.",
+    vat_title: "VAT",
+    vat_body:
+      "VAT applies at the rate prescribed by Hungarian law from time to time. If the Operator is not VAT-registered when the contract takes effect, prices are invoiced VAT-free and the invoice states this.",
+    term_title: "Term and automatic renewal",
+    term_body:
+      "The subscription renews automatically every month until cancelled. Cancellation is available at any time from the billing settings page or the Stripe customer portal and takes effect at the end of the current paid period; the couple keeps full access until then. Fees already paid for the running period are not refunded on an ordinary cancellation.",
+    refund_title: "Refund policy",
+    refund_body:
+      "Outside the statutory right of withdrawal described below, fees already paid are non-refundable, except where required by law or expressly granted by the Operator at its discretion (for example, a billing error).",
+    withdrawal_title: "Right of withdrawal (14 days)",
+    withdrawal_body:
+      "A couple contracting as a consumer may, under EU Directive 2011/83/EU and Hungarian Government Decree 45/2014 (II. 26.), withdraw from the contract without giving reasons within 14 days of subscribing, by writing to hello@tryweddly.com. If the couple expressly requests that access continue during the withdrawal period, they accept that, on withdrawal, they must reimburse the Operator for the proportionate cost of any period already used, and that once the paid period has fully elapsed the right of withdrawal is lost.",
+    changes_title: "Changes to these terms",
+    changes_body:
+      "The Operator may amend these terms for valid reasons (changes in law, pricing, or new features), with at least 15 days' prior email notice. Continued use after a change takes effect constitutes acceptance; a couple who does not agree may cancel before the change takes effect.",
+    termination_title: "Termination",
+    termination_body:
+      "Either party may end the subscription at any time as described in Term and automatic renewal. The Operator may suspend or terminate access for material breach of the Terms of Service, non-payment, or unlawful use, with prior written notice where reasonably possible.",
+    governing_law_title: "Governing law and jurisdiction",
+    governing_law_body:
+      "These terms are governed by Hungarian law together with applicable EU consumer-protection regulations. A consumer couple retains the right to bring proceedings before the court of their place of residence.",
+    odr_title: "Complaints and dispute resolution",
+    odr_body:
+      "Complaints about billing or this subscription can be sent to hello@tryweddly.com; the Operator aims to reply within 30 days. A consumer couple may also contact the competent Hungarian conciliation body; current contact details are on the Imprint page.",
+    contact_title: "Contact",
+    contact_body: "Questions about this subscription should be addressed to hello@tryweddly.com.",
+    en_section_label: "English",
+  },
+  planner_subscription_terms: {
+    seo_title: "Planner subscription terms (draft) · Weddly",
+    seo_description:
+      "Draft billing terms for Weddly's planner subscription tiers: renewal, refunds, withdrawal rights. Not yet in effect, pending review.",
+    page_title: "Planner subscription terms",
+    last_updated_label: "Status",
+    last_updated_date: "Draft — not yet in effect",
+    draft_notice:
+      "This document is a DRAFT prepared for review. It has not been reviewed or approved and is not yet in effect. No planner has accepted, or can currently accept, this version — subscription checkout will not proceed until that happens.",
+    intro:
+      "These terms would govern the paid subscription a planner purchases for their Weddly planner account, alongside the general Terms of Service at /terms. They become part of the contract only once a planner expressly accepts them by checking the acceptance box shown before Checkout. Once in effect, the automatic-renewal, fee-change and liability clauses below will be highlighted for separate attention as required by §6:78(2) of the Hungarian Civil Code.",
+    operator_title: "Operator and contracting parties",
+    operator_body:
+      "The Operator is Andor Csíkász, acting as a natural person (contact: hello@tryweddly.com; the full §4 Ektv. disclosure is on the Imprint page). The other party (the 'Planner') is the account holder purchasing the subscription to manage their wedding-planning clients on Weddly.",
+    scope_title: "Scope of the service",
+    scope_body:
+      "The subscription unlocks the paid Starter, Pro, or Premium planner tier: a higher managed-client limit, in-app messaging with couples, a shared planning calendar, reference/review tools, and, on higher tiers, usage statistics and priority support, as described on the pricing page at the time of purchase. Weddly is a practice-management tool for the planner; it is not a party to, and does not guarantee the performance of, any agreement between the planner and their client couples.",
+    acceptance_title: "Contract formation and acceptance",
+    acceptance_body:
+      "The contract is formed when the planner checks the acceptance box on the Checkout screen and completes payment for the chosen tier. The Operator logs the acceptance (timestamp, document version, IP address, user-agent) and may rely on that log in case of a dispute. No fee is due before this step.",
+    billing_title: "Billing",
+    billing_body:
+      "The subscription is billed monthly, in advance, in the planner's workspace currency, through Stripe, at the price of the selected tier (Starter, Pro, or Premium). Switching tiers changes the amount billed from the next renewal. The Checkout screen shows the total price and renewal date before payment is taken.",
+    vat_title: "VAT",
+    vat_body:
+      "VAT applies at the rate prescribed by Hungarian law from time to time. If the Operator is not VAT-registered when the contract takes effect, prices are invoiced VAT-free and the invoice states this.",
+    term_title: "Term and automatic renewal",
+    term_body:
+      "The subscription renews automatically every month until cancelled. Cancellation is available at any time from the billing settings page or the Stripe customer portal and takes effect at the end of the current paid period; the planner keeps full access to the paid tier until then. Fees already paid for the running period are not refunded on an ordinary cancellation.",
+    refund_title: "Refund policy",
+    refund_body:
+      "Outside the withdrawal or refund right described below, fees already paid are non-refundable, except where required by law or expressly granted by the Operator at its discretion (for example, a billing error).",
+    withdrawal_title: "Withdrawal / refund right (14 days)",
+    withdrawal_body:
+      "On a planner's first paid subscription, the planner may end the contract and request a full refund of the fee paid, without giving reasons, by writing to hello@tryweddly.com within 14 days of the first paid period. If the planner contracts as a consumer rather than in a business capacity, the statutory withdrawal right under EU Directive 2011/83/EU and Hungarian Government Decree 45/2014 (II. 26.) applies instead, on the same terms as the couple subscription terms describe.",
+    changes_title: "Changes to these terms",
+    changes_body:
+      "The Operator may amend these terms for valid reasons (changes in law, pricing, or new features), with at least 15 days' prior email notice. Continued use after a change takes effect constitutes acceptance; a planner who does not agree may cancel before the change takes effect.",
+    termination_title: "Termination",
+    termination_body:
+      "Either party may end the subscription at any time as described in Term and automatic renewal. The Operator may suspend or terminate access for material breach of the Terms of Service, non-payment, or unlawful use, with prior written notice where reasonably possible.",
+    governing_law_title: "Governing law and jurisdiction",
+    governing_law_body:
+      "These terms are governed by Hungarian law together with applicable EU regulations. A planner contracting as a consumer retains the right to bring proceedings before the court of their place of residence.",
+    odr_title: "Complaints and dispute resolution",
+    odr_body:
+      "Complaints about billing or this subscription can be sent to hello@tryweddly.com; the Operator aims to reply within 30 days. A planner contracting as a consumer may also contact the competent Hungarian conciliation body; current contact details are on the Imprint page.",
+    contact_title: "Contact",
+    contact_body: "Questions about this subscription should be addressed to hello@tryweddly.com.",
+    en_section_label: "English",
   },
   imprint: {
     seo_title: "Aviso legal · Weddly",
@@ -9644,6 +9775,9 @@ const es: LocaleMessages = {
     cta_subscribe: "Suscribirse",
     cta_current: "Plan actual",
     cta_switch: "Cambiar a este",
+    terms_accept_prefix: "He leído y acepto las",
+    terms_accept_link: "condiciones de suscripción",
+    terms_accept_suffix: ".",
     manage_cta: "Gestionar facturación",
     disabled_note: "Las suscripciones estarán disponibles próximamente.",
     checkout_error: "No se ha podido iniciar el pago. Inténtalo de nuevo.",
