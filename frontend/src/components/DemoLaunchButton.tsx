@@ -16,7 +16,13 @@ import { markCurrentSessionDemo } from "../lib/demoSession";
 import { demoApi } from "../lib/endpoints";
 import { contentLocale, useT } from "../lib/i18n";
 
-export function DemoLaunchButton({ className = "" }: { className?: string }) {
+export function DemoLaunchButton({
+  className = "",
+  variant = "outline",
+}: {
+  className?: string;
+  variant?: "outline" | "primary";
+}) {
   const { t, locale } = useT();
   const navigate = useNavigate();
   const { setSession } = useAuth();
@@ -48,7 +54,7 @@ export function DemoLaunchButton({ className = "" }: { className?: string }) {
         onClick={launch}
         disabled={busy}
         aria-busy={busy}
-        className={`btn-outline btn-lifted btn-landing btn-lg disabled:cursor-wait disabled:opacity-80 ${className}`}
+        className={`${variant === "primary" ? "btn-primary" : "btn-outline"} btn-lifted btn-landing btn-lg disabled:cursor-wait disabled:opacity-80 ${className}`}
       >
         {busy ? (
           <>

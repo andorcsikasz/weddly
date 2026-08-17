@@ -288,10 +288,10 @@ export default function LandingPage() {
                     min-height above) so it clears the clasped hands rather
                     than sitting on top of them. */}
                 <div className="mt-24 flex max-w-[17rem] flex-col items-start gap-3 sm:mt-6 sm:max-w-md sm:flex-row sm:flex-wrap sm:items-center">
-                  <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg w-auto">
+                  <Link to="/signup" className="btn-outline btn-lifted btn-landing btn-lg w-auto">
                     {t("landing.cta_signup")}
                   </Link>
-                  <DemoLaunchButton className="w-auto whitespace-nowrap" />
+                  <DemoLaunchButton variant="primary" className="w-auto whitespace-nowrap" />
                 </div>
                 {/* Role escape-hatch chips: icon-only pills that reveal their
                  *  label on hover/focus. Same three audiences (+ icons) as the
