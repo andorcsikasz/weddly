@@ -89,4 +89,9 @@ export interface PlannerBillingStatus {
   /** Remaining founding slots (CAP − granted badges), clamped >= 0. Drives the
    *  "N of 25 free spots left" line. */
   founding_spots_left: number;
+  /** Whether this planner already has a current-version
+   *  `planner_subscription_terms` consent on file. */
+  subscription_terms_accepted: boolean;
+  /** Current PLANNER_SUBSCRIPTION_TERMS_VERSION. */
+  subscription_terms_version: string;
 }

@@ -9,7 +9,7 @@
 
 import { Check, Copy, CreditCard, Share2, Sparkles, Store, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { BillingStatusResponse, PaymentMethodCard, SubscriptionStatus } from "@shared/billing";
 import { useToast } from "../components/ui";
 import { billingApi, referralApi, type ReferralStatus } from "../lib/endpoints";
@@ -50,6 +50,7 @@ export default function BillingSettings() {
   const [data, setData] = useState<BillingStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<"idle" | "checkout" | "portal">("idle");
+  const [termsChecked, setTermsChecked] = useState(false);
   const [referral, setReferral] = useState<ReferralStatus | null>(null);
   const [copiedKey, setCopiedKey] = useState<RefKind | null>(null);
   const [card, setCard] = useState<PaymentMethodCard | null>(null);
@@ -121,7 +122,12 @@ export default function BillingSettings() {
   async function go(kind: "checkout" | "portal") {
     setBusy(kind);
     try {
-      const { url } = kind === "checkout" ? await billingApi.checkout() : await billingApi.portal();
+      const { url } =
+        kind === "checkout"
+          ? await billingApi.checkout(
+              data?.subscription_terms_accepted ? undefined : data?.subscription_terms_version,
+            )
+          : await billingApi.portal();
       window.location.href = url;
     } catch {
       toast.error(t("billing.error_generic"));
@@ -158,6 +164,7 @@ export default function BillingSettings() {
   const showManage = status === "active" || status === "past_due";
   const showSpots = status !== "founding" && data.founding_spots_left > 0;
   const bonusMonths = referral?.stats.bonus_months ?? 0;
+  const needsTermsCheckbox = !showManage && checkoutEnabled && !data.subscription_terms_accepted;
 
   return (
     <div className="mt-6 space-y-4">
@@ -195,13 +202,31 @@ export default function BillingSettings() {
             <button
               type="button"
               onClick={() => go("checkout")}
-              disabled={busy !== "idle"}
+              disabled={busy !== "idle" || (needsTermsCheckbox && !termsChecked)}
               className="btn-primary btn-lg w-full sm:ml-auto sm:w-auto"
             >
               {busy === "checkout" ? t("billing.opening") : t("billing.subscribe_cta")}
             </button>
           ) : null}
         </div>
+
+        {needsTermsCheckbox && (
+          <label className="mt-4 flex items-start gap-3 text-sm text-ink-700 dark:text-paper-200">
+            <input
+              type="checkbox"
+              checked={termsChecked}
+              onChange={(e) => setTermsChecked(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              {t("billing.terms_accept_prefix")}{" "}
+              <Link className="underline" to="/terms/couple-subscription" target="_blank">
+                {t("billing.terms_accept_link")}
+              </Link>
+              {t("billing.terms_accept_suffix")}
+            </span>
+          </label>
+        )}
 
         {/* Card on file — read-only brand/last-4/expiry pulled from Stripe.
          *  The card is only editable in the portal (the "Manage" button above),

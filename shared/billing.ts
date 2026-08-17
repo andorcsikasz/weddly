@@ -207,6 +207,13 @@ export interface BillingStatusResponse {
   /** Remaining founding slots (FOUNDING_CAP minus live founding members),
    *  clamped to >= 0. Drives the "N spots left" line. */
   founding_spots_left: number;
+  /** Whether this user already has a current-version
+   *  `couple_subscription_terms` consent on file. When true the checkout
+   *  page can skip the acceptance checkbox. */
+  subscription_terms_accepted: boolean;
+  /** Current COUPLE_SUBSCRIPTION_TERMS_VERSION — sent with the checkout
+   *  request body when `subscription_terms_accepted` is false. */
+  subscription_terms_version: string;
 }
 
 export type BillingReason =

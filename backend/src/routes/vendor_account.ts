@@ -36,7 +36,7 @@ interface LegalAcceptanceBody {
   highlighted_terms_accepted?: unknown;
 }
 
-function hasCurrentVendorAcceptance(userId: number): boolean {
+export function hasCurrentVendorAcceptance(userId: number): boolean {
   const rows = db
     .prepare(
       `SELECT document FROM user_consents

@@ -28,6 +28,7 @@ import {
 import type { VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
 import { vendorFeatureFlags, vendorPlanFromEntitlement } from "@shared/vendor_plan";
 import { isCurrency } from "@shared/currency";
+import { VENDOR_TERMS_VERSION } from "@shared/legal";
 import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 
@@ -35,6 +36,7 @@ import { CONFIG, STRIPE_ENABLED } from "../config";
  *  the rest. */
 const MAX_INVOICES = 12;
 import { claimStripeEvent, releaseStripeEvent, stripe } from "../domain/billing";
+import { recordConsent } from "../domain/consents";
 import { getUserById } from "../domain/users";
 import { getVendorAccountById } from "../domain/vendor_accounts";
 import {
@@ -51,7 +53,9 @@ import {
 } from "../domain/vendor_billing";
 import { resolveVendorAccount } from "../domain/vendor_clients";
 import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment_launch";
-import { type Ctx, HttpError, json, type Router } from "../lib/http";
+import { hasCurrentVendorAcceptance } from "./vendor_account";
+import { addAuditLog } from "../lib/audit";
+import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { log } from "../lib/logger";
 
 /** The vendor's pinned display currency (fallback: owner locale). */
@@ -140,8 +144,58 @@ function handleGetBilling(ctx: Ctx): Response {
     offer: currentVendorOffer(),
     plan,
     features,
+    subscription_terms_accepted: hasCurrentVendorAcceptance(account.owner_user_id),
+    subscription_terms_version: VENDOR_TERMS_VERSION,
   };
   return json(status);
+}
+
+/** Point-of-purchase terms gate shared by card setup and direct Checkout —
+ *  both create a Stripe session and are "point of purchase" moments. Skips
+ *  the prompt entirely for a vendor who already accepted at the current
+ *  VENDOR_TERMS_VERSION (registration, account editing, or a prior
+ *  checkout); otherwise requires explicit acceptance in this request's body
+ *  and records it, mirroring routes/vendor_account.ts's handleAcceptLegal. */
+async function ensureVendorTermsAccepted(
+  ctx: Ctx,
+  account: { id: number; owner_user_id: number },
+): Promise<void> {
+  const ownerId = account.owner_user_id;
+  if (hasCurrentVendorAcceptance(ownerId)) return;
+  const body = await readJson<{
+    vendor_terms_version?: unknown;
+    highlighted_terms_accepted?: unknown;
+  }>(ctx.req);
+  if (
+    body.vendor_terms_version !== VENDOR_TERMS_VERSION ||
+    body.highlighted_terms_accepted !== true
+  ) {
+    throw new HttpError(400, "Subscription terms must be accepted to continue", {
+      code: "terms_not_accepted",
+      terms_version: VENDOR_TERMS_VERSION,
+    });
+  }
+  const evidence = {
+    subjectUserId: ownerId,
+    subjectKind: "user" as const,
+    subjectRef: null,
+    ip: ctx.clientIp,
+    userAgent: ctx.req.headers.get("user-agent"),
+  };
+  recordConsent({ ...evidence, document: "vendor_terms", version: VENDOR_TERMS_VERSION });
+  recordConsent({
+    ...evidence,
+    document: "vendor_terms_highlighted",
+    version: VENDOR_TERMS_VERSION,
+  });
+  addAuditLog({
+    actor_user_id: ownerId,
+    couple_id: null,
+    action: "vendor.legal_acceptance",
+    target_kind: "vendor_account",
+    target_id: account.id,
+    after: { vendor_terms_version: VENDOR_TERMS_VERSION, at_checkout: true },
+  });
 }
 
 // ── POST /api/vendor/billing/setup ──────────────────────────────────────────
@@ -156,6 +210,7 @@ async function handleSetup(ctx: Ctx): Promise<Response> {
       code: "already_subscribed",
     });
   }
+  await ensureVendorTermsAccepted(ctx, account);
   const customerId = await ensureStripeCustomer(account.id);
   const session = await stripe().checkout.sessions.create(
     {
@@ -182,6 +237,7 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
   if (sub && (sub.subscription_status === "active" || sub.subscription_status === "past_due")) {
     throw new HttpError(400, "Already subscribed", { code: "already_subscribed" });
   }
+  await ensureVendorTermsAccepted(ctx, account);
   const currency = vendorCurrency(sub, account.owner_user_id);
   const customerId = await ensureStripeCustomer(account.id);
   const session = await stripe().checkout.sessions.create(

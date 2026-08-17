@@ -222,6 +222,12 @@ export interface VendorBillingStatus {
   /** The free window a vendor activating right now would get. Prefer this over
    *  reading the two counters, it already encodes which tier is live. */
   offer: VendorOffer;
+  /** Whether the vendor already has a current-version `vendor_terms` +
+   *  `vendor_terms_highlighted` consent on file (from registration/account
+   *  editing, or a prior checkout). When true, checkout skips the checkbox. */
+  subscription_terms_accepted: boolean;
+  /** Current VENDOR_TERMS_VERSION. */
+  subscription_terms_version: string;
 }
 
 /** Response of GET /api/public/vendor-stats: the three honest numbers the

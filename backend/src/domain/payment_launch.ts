@@ -24,16 +24,33 @@ interface LaunchRow {
   updated_by_user_id: number | null;
 }
 
-// Recurring checkout still lacks a product-specific, point-of-purchase terms
-// acceptance ledger for couples, planners, and vendors. This is deliberately
-// a code-owned gate rather than an environment flag: deployment configuration
-// must not be able to assert that an unimplemented contract boundary exists.
-// Remove this prerequisite only in the same change that implements and tests
-// exact-version checkout acceptance for all three products.
-const RECURRING_CHECKOUT_CONTRACT_READY = false;
-const recurringContract: [string, string] = [
+// Recurring checkout now has a point-of-purchase terms acceptance ledger
+// (domain/consents.ts's hasAcceptedCurrentVersion/recordConsent, wired into
+// the checkout handler of each product). This flag is deliberately still
+// code-owned rather than an environment variable, per the original
+// rationale: deployment configuration must not be able to assert that a
+// specific legal document has been reviewed. The MECHANISM is implemented
+// and tested for all three products; the underlying legal CONTENT is only
+// actually finalized for vendor (owner-reviewed, live at
+// /terms/vendor-subscription). Couple and planner subscription terms are a
+// fresh draft (/terms/couple-subscription, /terms/planner-subscription) —
+// flip their flag to true only after a human with legal authority has
+// reviewed and approved that draft.
+const VENDOR_TERMS_REVIEWED = true; // /terms/vendor-subscription — owner-reviewed, live
+const COUPLE_TERMS_REVIEWED = false; // /terms/couple-subscription — DRAFT, pending review
+const PLANNER_TERMS_REVIEWED = false; // /terms/planner-subscription — DRAFT, pending review
+
+const coupleTermsContract: [string, string] = [
   "PAID_CHECKOUT_TERMS_ACCEPTANCE",
-  RECURRING_CHECKOUT_CONTRACT_READY ? "implemented" : "",
+  COUPLE_TERMS_REVIEWED ? "implemented" : "",
+];
+const plannerTermsContract: [string, string] = [
+  "PAID_CHECKOUT_TERMS_ACCEPTANCE",
+  PLANNER_TERMS_REVIEWED ? "implemented" : "",
+];
+const vendorTermsContract: [string, string] = [
+  "PAID_CHECKOUT_TERMS_ACCEPTANCE",
+  VENDOR_TERMS_REVIEWED ? "implemented" : "",
 ];
 
 function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, value: string]> {
@@ -45,7 +62,7 @@ function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, val
   switch (product) {
     case "couple_subscriptions":
       return [
-        recurringContract,
+        coupleTermsContract,
         legalApproval,
         secret,
         ["STRIPE_WEBHOOK_SECRET", CONFIG.stripeWebhookSecret],
@@ -54,7 +71,7 @@ function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, val
       ];
     case "planner_subscriptions":
       return [
-        recurringContract,
+        plannerTermsContract,
         legalApproval,
         secret,
         ["STRIPE_PLANNER_WEBHOOK_SECRET", CONFIG.stripePlannerWebhookSecret],
@@ -67,7 +84,7 @@ function requiredConfig(product: PaymentLaunchProduct): Array<[name: string, val
       ];
     case "vendor_billing":
       return [
-        recurringContract,
+        vendorTermsContract,
         legalApproval,
         secret,
         ["STRIPE_VENDOR_WEBHOOK_SECRET", CONFIG.stripeVendorWebhookSecret],

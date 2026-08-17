@@ -362,7 +362,7 @@ describe("/api/admin/financial-planner/payment-launches", () => {
     expect(missingVersion.status).toBe(400);
   });
 
-  test("recurring products stay fail-closed until checkout terms acceptance is implemented", async () => {
+  test("couple/planner recurring checkout stay fail-closed pending terms review; vendor is ready", async () => {
     wipeAll();
     const token = await addAdmin();
     const old = {
@@ -390,11 +390,11 @@ describe("/api/admin/financial-planner/payment-launches", () => {
       CONFIG.stripePriceVendorEur = "price_vendor_eur";
       CONFIG.stripePriceVendorHuf = "price_vendor_huf";
 
-      for (const product of [
-        "couple_subscriptions",
-        "planner_subscriptions",
-        "vendor_billing",
-      ] as const) {
+      // Couple and planner subscription terms are a fresh draft pending human
+      // review (COUPLE_TERMS_REVIEWED / PLANNER_TERMS_REVIEWED in
+      // domain/payment_launch.ts) — the code-owned gate keeps them fail-closed
+      // regardless of how complete their Stripe config is.
+      for (const product of ["couple_subscriptions", "planner_subscriptions"] as const) {
         const launch = await req<PaymentLaunchesResponse>(
           "PATCH",
           "/api/admin/financial-planner/payment-launches",
@@ -411,6 +411,24 @@ describe("/api/admin/financial-planner/payment-launches", () => {
         expect(current.data.products[product]).toMatchObject({ enabled: false, ready: false });
         expect(current.data.products[product].missing).toContain("PAID_CHECKOUT_TERMS_ACCEPTANCE");
       }
+
+      // Vendor's subscription terms are already owner-reviewed and live at
+      // /terms/vendor-subscription (VENDOR_TERMS_REVIEWED = true), and the
+      // point-of-purchase ledger (hasAcceptedCurrentVersion/recordConsent) is
+      // wired into both vendor checkout endpoints — so with full Stripe
+      // config present, vendor_billing is actually launchable.
+      const vendorLaunch = await req<PaymentLaunchesResponse>(
+        "PATCH",
+        "/api/admin/financial-planner/payment-launches",
+        { product: "vendor_billing", enabled: true, expected_version: 0 },
+        { token },
+      );
+      expect(vendorLaunch.status).toBe(200);
+      expect(vendorLaunch.data.products.vendor_billing).toMatchObject({
+        enabled: true,
+        ready: true,
+        missing: [],
+      });
     } finally {
       CONFIG.stripeSecretKey = old.stripeSecretKey;
       CONFIG.stripeWebhookSecret = old.stripeWebhookSecret;

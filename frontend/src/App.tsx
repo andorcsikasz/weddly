@@ -46,6 +46,12 @@ import MarketingContentPage from "./pages/MarketingContentPage";
 const PrivacyPage = lazyWithReload(() => import("./pages/PrivacyPage"));
 const TermsPage = lazyWithReload(() => import("./pages/TermsPage"));
 const SubscriptionTermsPage = lazyWithReload(() => import("./pages/SubscriptionTermsPage"));
+const CoupleSubscriptionTermsPage = lazyWithReload(
+  () => import("./pages/CoupleSubscriptionTermsPage"),
+);
+const PlannerSubscriptionTermsPage = lazyWithReload(
+  () => import("./pages/PlannerSubscriptionTermsPage"),
+);
 const ImprintPage = lazyWithReload(() => import("./pages/ImprintPage"));
 const ContentNoticePage = lazyWithReload(() => import("./pages/ContentNoticePage"));
 
@@ -585,6 +591,25 @@ export default function App() {
           element={
             <Page>
               <SubscriptionTermsPage />
+            </Page>
+          }
+        />
+        {/* Draft, unreviewed content — reachable only by direct URL and from
+         *  the checkout acceptance checkbox, deliberately not in the site's
+         *  footer/legal nav. See CoupleSubscriptionTermsPage.tsx. */}
+        <Route
+          path="/terms/couple-subscription"
+          element={
+            <Page>
+              <CoupleSubscriptionTermsPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/terms/planner-subscription"
+          element={
+            <Page>
+              <PlannerSubscriptionTermsPage />
             </Page>
           }
         />

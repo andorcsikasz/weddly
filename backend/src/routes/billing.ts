@@ -12,6 +12,7 @@ import {
   type PaymentMethodResponse,
 } from "@shared/billing";
 import { isCurrency } from "@shared/currency";
+import { COUPLE_SUBSCRIPTION_TERMS_VERSION } from "@shared/legal";
 import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import {
@@ -27,14 +28,17 @@ import {
   stripe,
 } from "../domain/billing";
 import { billingAnchorRow, getCoupleForUser, toCoupleBilling } from "../domain/couples";
+import { hasAcceptedCurrentVersion, recordConsent } from "../domain/consents";
 import { activateFilmAlbum } from "../domain/film";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { getUserById } from "../domain/users";
 import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment_launch";
+import { addAuditLog } from "../lib/audit";
 import {
   type Ctx,
   HttpError,
   json,
+  readJson,
   requireAuth,
   requireVerifiedAuth,
   type Router,
@@ -70,6 +74,12 @@ function handleStatus(ctx: Ctx): Response {
     price: monthlyPrice(currency),
     founding_spots_left: Math.max(0, FOUNDING_CAP - foundingSlotsUsed()),
     has_partner: couple.partner_b_id != null,
+    subscription_terms_accepted: hasAcceptedCurrentVersion(
+      userId,
+      "couple_subscription_terms",
+      COUPLE_SUBSCRIPTION_TERMS_VERSION,
+    ),
+    subscription_terms_version: COUPLE_SUBSCRIPTION_TERMS_VERSION,
   };
   return json(body);
 }
@@ -92,6 +102,38 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
     });
   }
   requirePaymentLaunch("couple_subscriptions");
+  if (
+    !hasAcceptedCurrentVersion(
+      userId,
+      "couple_subscription_terms",
+      COUPLE_SUBSCRIPTION_TERMS_VERSION,
+    )
+  ) {
+    const body = await readJson<{ terms_version?: unknown }>(ctx.req);
+    if (body.terms_version !== COUPLE_SUBSCRIPTION_TERMS_VERSION) {
+      throw new HttpError(400, "Subscription terms must be accepted to continue", {
+        code: "terms_not_accepted",
+        terms_version: COUPLE_SUBSCRIPTION_TERMS_VERSION,
+      });
+    }
+    recordConsent({
+      subjectUserId: userId,
+      subjectKind: "user",
+      subjectRef: null,
+      document: "couple_subscription_terms",
+      version: COUPLE_SUBSCRIPTION_TERMS_VERSION,
+      ip: ctx.clientIp,
+      userAgent: ctx.req.headers.get("user-agent"),
+    });
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "couple.subscription_terms_accepted",
+      target_kind: "couple",
+      target_id: couple.id,
+      after: { subscription_terms_version: COUPLE_SUBSCRIPTION_TERMS_VERSION },
+    });
+  }
   const user = getUserById(userId);
   const currency = normaliseCurrency(couple.currency);
 

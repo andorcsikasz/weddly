@@ -111,15 +111,20 @@ function BillingBody({
   const toast = useToast();
   const [pendingTier, setPendingTier] = useState<PlannerPlan | null>(null);
   const [portalPending, setPortalPending] = useState(false);
+  const [termsChecked, setTermsChecked] = useState(false);
 
   const { billing: b, currency, prices, founding_spots_left } = billing;
   const status = b.subscription_status;
   const hasStripeSub = status === "active" || status === "past_due" || status === "canceled";
+  const needsTermsCheckbox = billing.checkout_enabled && !billing.subscription_terms_accepted;
 
   async function handleCheckout(tier: PlannerPlan) {
     setPendingTier(tier);
     try {
-      const { url } = await plannerBillingApi.checkout(tier);
+      const { url } = await plannerBillingApi.checkout(
+        tier,
+        billing.subscription_terms_accepted ? undefined : billing.subscription_terms_version,
+      );
       if (url) window.location.href = url;
     } catch {
       toast.error(t("planner_billing.checkout_error"));
@@ -196,6 +201,24 @@ function BillingBody({
         )}
       </div>
 
+      {needsTermsCheckbox && (
+        <label className="flex items-start gap-3 text-sm text-umber-700 dark:text-umber-300">
+          <input
+            type="checkbox"
+            checked={termsChecked}
+            onChange={(e) => setTermsChecked(e.target.checked)}
+            className="mt-1"
+          />
+          <span>
+            {t("planner_billing.terms_accept_prefix")}{" "}
+            <Link className="underline" to="/terms/planner-subscription" target="_blank">
+              {t("planner_billing.terms_accept_link")}
+            </Link>
+            {t("planner_billing.terms_accept_suffix")}
+          </span>
+        </label>
+      )}
+
       {/* Plan comparison + per-tier checkout */}
       <div className="grid gap-4 sm:grid-cols-3">
         {PLAN_ORDER.map((plan) => {
@@ -260,7 +283,7 @@ function BillingBody({
                   <button
                     type="button"
                     onClick={() => void handleCheckout(plan)}
-                    disabled={pendingTier !== null}
+                    disabled={pendingTier !== null || (needsTermsCheckbox && !termsChecked)}
                     className="btn-primary w-full disabled:opacity-60"
                   >
                     {t(

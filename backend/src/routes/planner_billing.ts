@@ -12,10 +12,12 @@ import {
   plannerCurrencyForLocale,
   plannerPrice,
 } from "@shared/planner_billing";
+import { PLANNER_SUBSCRIPTION_TERMS_VERSION } from "@shared/legal";
 import type { Currency, PlannerPlan } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import { db } from "../db";
 import { claimStripeEvent, releaseStripeEvent, stripe } from "../domain/billing";
+import { hasAcceptedCurrentVersion, recordConsent } from "../domain/consents";
 import { isPlannerPlan } from "../domain/planner";
 import {
   applyPlannerSubscriptionState,
@@ -30,6 +32,7 @@ import {
 } from "../domain/planner_billing";
 import { getUserById } from "../domain/users";
 import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment_launch";
+import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 function requirePlannerAuth(ctx: Ctx): number {
@@ -95,6 +98,12 @@ function handleStatus(ctx: Ctx): Response {
     currency,
     prices,
     founding_spots_left: plannerFoundingSpotsLeft(),
+    subscription_terms_accepted: hasAcceptedCurrentVersion(
+      userId,
+      "planner_subscription_terms",
+      PLANNER_SUBSCRIPTION_TERMS_VERSION,
+    ),
+    subscription_terms_version: PLANNER_SUBSCRIPTION_TERMS_VERSION,
   };
   return json(body);
 }
@@ -102,7 +111,7 @@ function handleStatus(ctx: Ctx): Response {
 // ── POST /api/planner/billing/checkout ──────────────────────────────────────
 async function handleCheckout(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
-  const body = await readJson<{ tier?: unknown }>(ctx.req);
+  const body = await readJson<{ tier?: unknown; terms_version?: unknown }>(ctx.req);
   if (!isPlannerPlan(body.tier)) {
     throw new HttpError(400, "`tier` must be 'starter', 'pro', or 'premium'");
   }
@@ -119,6 +128,37 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
     });
   }
   requirePaymentLaunch("planner_subscriptions");
+  if (
+    !hasAcceptedCurrentVersion(
+      userId,
+      "planner_subscription_terms",
+      PLANNER_SUBSCRIPTION_TERMS_VERSION,
+    )
+  ) {
+    if (body.terms_version !== PLANNER_SUBSCRIPTION_TERMS_VERSION) {
+      throw new HttpError(400, "Subscription terms must be accepted to continue", {
+        code: "terms_not_accepted",
+        terms_version: PLANNER_SUBSCRIPTION_TERMS_VERSION,
+      });
+    }
+    recordConsent({
+      subjectUserId: userId,
+      subjectKind: "user",
+      subjectRef: null,
+      document: "planner_subscription_terms",
+      version: PLANNER_SUBSCRIPTION_TERMS_VERSION,
+      ip: ctx.clientIp,
+      userAgent: ctx.req.headers.get("user-agent"),
+    });
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: null,
+      action: "planner.subscription_terms_accepted",
+      target_kind: "planner",
+      target_id: userId,
+      after: { subscription_terms_version: PLANNER_SUBSCRIPTION_TERMS_VERSION },
+    });
+  }
 
   // Reuse the planner's Stripe customer across re-subscribes so payment history
   // and the portal stay on one record.
