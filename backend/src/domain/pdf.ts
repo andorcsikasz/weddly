@@ -16,6 +16,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { type PDFFont, type PDFPage, PDFDocument, degrees, rgb } from "pdf-lib";
+import QRCode from "qrcode";
 import {
   type CoupleDesign,
   type FontFamilySlug,
@@ -28,11 +29,18 @@ import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets, tableHalfDims } from "@shared/seating";
 import type { Guest, MenuCard, SeatAssignment, SeatingTable } from "@shared/types";
 import type { PrintableCardDocument } from "@shared/print_cards";
+import { CONFIG } from "../config";
 
 const FONT_DIR = join(import.meta.dir, "pdf_fonts");
 const NOTO_REGULAR = readFileSync(join(FONT_DIR, "NotoSans-Regular.ttf"));
 const NOTO_BOLD = readFileSync(join(FONT_DIR, "NotoSans-Bold.ttf"));
 const NOTO_SC = readFileSync(join(FONT_DIR, "NotoSansSC-Regular.otf"));
+
+// Icon-only brand mark (dark tile, white dove, no baked-in text — same asset
+// the email header uses) copied under backend/ rather than read from
+// frontend/public, because the production image only ships backend/src into
+// the runtime container (see Dockerfile) — frontend/public never makes it in.
+const LOGO_MARK_PNG = readFileSync(join(import.meta.dir, "pdf_assets", "logo-mark.png"));
 
 // fontkit's layout() picks a ligature/contextual-alternate glyph per its own
 // shaping rules, but CustomFontEmbedder.widthOfTextAtSize sums each glyph's
@@ -80,6 +88,14 @@ const PACK_FONT_FILES: Partial<
     body: fullFont("EBGaramond-Regular.otf"),
   },
 };
+
+// Fixed brand faces for the operational Run-of-show PDF below, which has no
+// couple-chosen style pack to draw from. CormorantSC-SemiBold matches the
+// upright, tracked-caps treatment the real wordmark (frontend/public/logo.svg)
+// uses; CormorantGaramond-Italic matches the in-app H1/H2 heading face the
+// couple already sees on every page of their workspace.
+const BRAND_WORDMARK_FONT = fullFont("CormorantSC-SemiBold.otf");
+const BRAND_TITLE_FONT = fullFont("CormorantGaramond-Italic.otf");
 
 const FAMILY_FONT_FILES: Partial<Record<FontFamilySlug, PdfFontFile>> = {
   cormorant: fullFont("CormorantGaramond-Italic.otf"),
@@ -2151,6 +2167,28 @@ async function wrapLines(
 /** A4 portrait run-of-show. Two columns: time + label/notes/location. One
  *  row per event, sorted by starts_at_minutes (server-side). Adds new pages
  *  as needed when the timeline overflows. */
+const SCHEDULE_INK = rgb(0.06, 0.09, 0.19);
+const SCHEDULE_STEEL = rgb(0.33, 0.39, 0.55);
+const SCHEDULE_MUTED = rgb(0.5, 0.54, 0.65);
+const SCHEDULE_HAIRLINE = rgb(0.82, 0.85, 0.92);
+const SCHEDULE_RULE = rgb(0.16, 0.2, 0.38);
+
+const SCHEDULE_LANDING_URL = `${CONFIG.frontendBaseUrl}/?utm_source=schedule_pdf&utm_medium=print&utm_campaign=run_of_show`;
+const SCHEDULE_LANDING_LABEL = "tryweddly.com";
+
+/** Small footer QR, dark ink on plain white so it sits flush with the page —
+ *  same shape as the checklist PDF's, just re-tinted for a white (not cream)
+ *  page. */
+async function generateScheduleFooterQrPng(): Promise<Buffer> {
+  return QRCode.toBuffer(SCHEDULE_LANDING_URL, {
+    type: "png",
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 300,
+    color: { dark: "#101830", light: "#ffffff" },
+  });
+}
+
 export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Array> {
   const { width_mm: pageW, height_mm: pageH } = FORMATS.a4;
   const pdf = await PDFDocument.create();
@@ -2169,6 +2207,20 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
       return cjkFont;
     },
   };
+  // Fixed brand faces: the wordmark matches the real logo's tracked serif
+  // caps, the title matches the italic Cormorant the couple's own workspace
+  // headings already use. Both static OTFs must embed whole (see the
+  // PACK_FONT_FILES comment above) — no subsetting.
+  const brandWordmarkFont = await pdf.embedFont(BRAND_WORDMARK_FONT.bytes, {
+    subset: BRAND_WORDMARK_FONT.subset,
+    features: NO_LIGATURE_FEATURES,
+  });
+  const brandTitleFont = await pdf.embedFont(BRAND_TITLE_FONT.bytes, {
+    subset: BRAND_TITLE_FONT.subset,
+    features: NO_LIGATURE_FEATURES,
+  });
+  const logoImage = await pdf.embedPng(LOGO_MARK_PNG);
+  const qrImage = await pdf.embedPng(await generateScheduleFooterQrPng());
 
   // Page layout — margins in mm so the print stays predictable across A4
   // printers. The right column is everything left after the time column.
@@ -2176,7 +2228,6 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
   const marginTopHeader = 16;
   const headerHeightMm = 34; // brand strip + couple name + date + table head
   const marginBottom = 20; // leaves room for the footer brand line
-  const footerHeightMm = 10;
   const timeColWidthMm = 28;
   const colGutterMm = 6;
   const contentWidthMm = pageW - 2 * marginX;
@@ -2184,42 +2235,61 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
 
   let page = pdf.addPage([mm(pageW), mm(pageH)]);
 
-  // Draws the WEDDLY wordmark letter-by-letter so we can manually space it
-  // to match the brand's spaced-caps feel (pdf-lib has no letter-spacing).
-  function drawWordmark(p: typeof page, x: number, y: number, f: PDFFont): void {
-    const letters = "WEDDLY";
-    const size = 10;
-    const gap = mm(1.6); // extra spacing between characters
-    let cx = x;
-    for (const ch of letters) {
-      p.drawText(ch, { x: cx, y, size, font: f, color: rgb(0.06, 0.09, 0.19) });
-      cx += f.widthOfTextAtSize(ch, size) + gap;
-    }
-  }
-
   async function drawPageHeader(p: typeof page, withTableHead = true): Promise<void> {
-    // Brand mark — top-right corner
-    const markFont = helvBold;
-    const brandX = mm(pageW - marginX - 28);
-    const brandY = mm(pageH - marginTopHeader);
-    drawWordmark(p, brandX, brandY, markFont);
+    // Brand mark — top-right corner. The icon tile anchors the right margin;
+    // the tracked wordmark and tagline are measured and right-aligned to end
+    // flush with it, so the lockup holds together at any letter width.
+    const iconSize = mm(7);
+    const iconX = mm(pageW - marginX) - iconSize;
+    const iconY = mm(pageH - marginTopHeader) - iconSize + mm(1.2);
+    p.drawImage(logoImage, { x: iconX, y: iconY, width: iconSize, height: iconSize });
+
+    const wordmarkLetters = "WEDDLY".split("");
+    const wordmarkSize = 11;
+    const letterGap = mm(1.4);
+    const letterWidths = wordmarkLetters.map((ch) =>
+      brandWordmarkFont.widthOfTextAtSize(ch, wordmarkSize),
+    );
+    const wordmarkWidth =
+      letterWidths.reduce((sum, w) => sum + w, 0) + letterGap * (wordmarkLetters.length - 1);
+    const iconGap = mm(3);
+    const brandY = mm(pageH - marginTopHeader) - mm(1);
+    let cx = iconX - iconGap - wordmarkWidth;
+    wordmarkLetters.forEach((ch, i) => {
+      p.drawText(ch, {
+        x: cx,
+        y: brandY,
+        size: wordmarkSize,
+        font: brandWordmarkFont,
+        color: SCHEDULE_INK,
+      });
+      cx += (letterWidths[i] ?? 0) + letterGap;
+    });
     const tagline = "wedding planning";
+    const taglineSize = 6.5;
+    const taglineWidth = helv.widthOfTextAtSize(tagline, taglineSize);
     p.drawText(tagline, {
-      x: brandX,
+      x: iconX - iconGap - taglineWidth,
       y: brandY - mm(4.5),
-      size: 6.5,
+      size: taglineSize,
       font: helv,
-      color: rgb(0.5, 0.54, 0.65),
+      color: SCHEDULE_MUTED,
     });
 
-    // Couple name — left side, larger than before
+    // Couple name — left side, in the same italic serif their workspace
+    // headings use, so the printed page still reads as "their" Weddly.
     const title = safe(input.couple_display_name);
+    const titleFont = containsCjk(title)
+      ? await fontPair.getCjk()
+      : isLatinSafe(title)
+        ? brandTitleFont
+        : helvBold;
     p.drawText(title, {
       x: mm(marginX),
       y: mm(pageH - marginTopHeader),
-      size: 26,
-      font: await pickFontAsync(fontPair, title, "bold"),
-      color: rgb(0.06, 0.09, 0.19),
+      size: 27,
+      font: titleFont,
+      color: SCHEDULE_INK,
     });
     // Date + subtitle below the name
     const dateY = pageH - marginTopHeader - 9;
@@ -2230,7 +2300,7 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
         y: mm(dateY),
         size: 11,
         font: await pickFontAsync(fontPair, date, "regular"),
-        color: rgb(0.33, 0.39, 0.55),
+        color: SCHEDULE_STEEL,
       });
     }
     const subhead = "Időbeosztás / Run of show";
@@ -2239,7 +2309,7 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
       y: mm(dateY - 5.5),
       size: 9,
       font: await pickFontAsync(fontPair, subhead, "regular"),
-      color: rgb(0.5, 0.54, 0.65),
+      color: SCHEDULE_MUTED,
     });
 
     // Thick rule separating header from content
@@ -2248,7 +2318,7 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
       y: mm(pageH - marginTopHeader - 20),
       width: mm(contentWidthMm),
       height: 1.4,
-      color: rgb(0.16, 0.2, 0.38),
+      color: SCHEDULE_RULE,
     });
 
     if (withTableHead) {
@@ -2260,7 +2330,7 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
         y: mm(headY_mm),
         size: 9,
         font: await pickFontAsync(fontPair, timeHead, "bold"),
-        color: rgb(0.4, 0.45, 0.6),
+        color: SCHEDULE_STEEL,
       });
       const labelHead = "Esemény / Event";
       p.drawText(labelHead, {
@@ -2268,27 +2338,32 @@ export async function renderSchedulePdf(input: ScheduleInput): Promise<Uint8Arra
         y: mm(headY_mm),
         size: 9,
         font: await pickFontAsync(fontPair, labelHead, "bold"),
-        color: rgb(0.4, 0.45, 0.6),
+        color: SCHEDULE_STEEL,
       });
       p.drawRectangle({
         x: mm(marginX),
         y: mm(headY_mm - 2),
         width: mm(contentWidthMm),
         height: 0.5,
-        color: rgb(0.78, 0.82, 0.9),
+        color: SCHEDULE_HAIRLINE,
       });
     }
 
-    // Footer brand line at the very bottom
-    const footerText = "weddly.hu";
-    const footerSize = 7;
-    const footerW = helv.widthOfTextAtSize(footerText, footerSize);
-    p.drawText(footerText, {
-      x: mm(pageW / 2) - footerW / 2,
-      y: mm(footerHeightMm),
-      size: footerSize,
-      font: helv,
-      color: rgb(0.65, 0.68, 0.75),
+    // Footer — bottom-right corner, below the content floor (marginBottom)
+    // so it never competes with a schedule row: a scannable way back to the
+    // site on a page that has long since left the browser.
+    const qrSize = mm(8);
+    const qrX = mm(pageW - marginX) - qrSize;
+    const qrY = mm(5);
+    p.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+    const labelSize = 7;
+    const labelWidth = helvBold.widthOfTextAtSize(SCHEDULE_LANDING_LABEL, labelSize);
+    p.drawText(SCHEDULE_LANDING_LABEL, {
+      x: qrX - mm(2) - labelWidth,
+      y: qrY + qrSize / 2 - labelSize * 0.35,
+      size: labelSize,
+      font: helvBold,
+      color: SCHEDULE_STEEL,
     });
   }
 
