@@ -411,6 +411,22 @@ const STUBS: KindPayload = {
     contactEmailMasked: "c***@bloomstudio.com",
     adminUrl: `${BASE_URL}/app/admin/suppliers`,
   },
+  vendor_duplicate_admin_alert: {
+    source: "vendor_register",
+    displayName: "Bloom Studio",
+    email: "hello@bloomstudio.com",
+    newVendorAccountId: 42,
+    matches: [
+      {
+        vendorAccountId: 17,
+        vendorCode: "bloom-studio-v17",
+        displayName: "Bloom Studio",
+        contactEmail: "hello@bloomstudio.com",
+        ownerEmail: "owner@bloomstudio.com",
+      },
+    ],
+    adminUrl: `${BASE_URL}/app/admin/vendors`,
+  },
   vendor_claim_approved: {
     listingName: "Bloom Studio",
     managerUrl: `${BASE_URL}/vendor`,

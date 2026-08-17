@@ -774,6 +774,25 @@ export interface VendorClaimAdminAlertPayload {
   adminUrl: string;
 }
 
+export interface VendorDuplicateAdminAlertPayload {
+  /** Registration/conversion flow that created the possible duplicate. */
+  source: string;
+  /** Display name and email entered for the new vendor account. */
+  displayName: string;
+  email: string;
+  /** Null while a flow detects the match before inserting the account. */
+  newVendorAccountId: number | null;
+  matches: Array<{
+    vendorAccountId: number;
+    vendorCode: string | null;
+    displayName: string;
+    contactEmail: string | null;
+    ownerEmail: string;
+  }>;
+  /** Vendor admin page where the accounts can be reviewed and merged. */
+  adminUrl: string;
+}
+
 export interface VendorClaimApprovedPayload {
   /** Listing name to acknowledge ("Your listing 'Bloom Studio' is live"). */
   listingName: string;
@@ -1117,6 +1136,7 @@ export type KindPayload = {
   onboarding_campaign_reminder: OnboardingCampaignPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_admin_alert: VendorClaimAdminAlertPayload;
+  vendor_duplicate_admin_alert: VendorDuplicateAdminAlertPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
   vendor_moved_to_planner: VendorMovedToPlannerPayload;
   supplier_outreach: SupplierOutreachPayload;
@@ -4649,6 +4669,56 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       footnote: "Sent to admins whenever a listing claim starts.",
     },
   }),
+
+  vendor_duplicate_admin_alert: (p, ctx) => {
+    const matchLines = p.matches
+      .map(
+        (match) =>
+          `• #${match.vendorAccountId} (${match.vendorCode ?? "no code"}): ${match.displayName}, owner ${match.ownerEmail}${match.contactEmail ? `, contact ${match.contactEmail}` : ""}`,
+      )
+      .join("\n");
+    const newAccountLabel = p.newVendorAccountId == null ? "pending" : `#${p.newVendorAccountId}`;
+
+    return {
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `Lehetséges duplikált szolgáltató: ${p.displayName}`,
+        `Possible duplicate vendor: ${p.displayName}`,
+      ),
+      ctaUrl: p.adminUrl,
+      hu: {
+        preheader: `${p.displayName} neve vagy email-címe egyezik egy meglévő szolgáltatóval.`,
+        greeting: ctx.recipientName ? `Szia ${ctx.recipientName}!` : "Szia!",
+        paragraphs: [
+          "Egy új szolgáltatói fiók neve vagy email-címe egyezik legalább egy meglévő fiókkal.",
+          [
+            `• Forrás: ${p.source}`,
+            `• Új fiók: ${newAccountLabel} — ${p.displayName} <${p.email}>`,
+            "• Meglévő egyezések:",
+            matchLines,
+          ].join("\n"),
+          "Ha ugyanaz a vállalkozás regisztrált kétszer, az admin felületen egyesítsd a fiókokat. Ha valódi névazonosság, nincs teendő.",
+        ],
+        cta: "Szolgáltatók ellenőrzése",
+        footnote: "Ezt az értesítést minden név- vagy email-egyezésnél elküldjük az adminoknak.",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          "A new vendor account name or email matches at least one existing account.",
+          [
+            `• Source: ${p.source}`,
+            `• New account: ${newAccountLabel} — ${p.displayName} <${p.email}>`,
+            "• Existing matches:",
+            matchLines,
+          ].join("\n"),
+          "If the same business registered twice, merge the accounts in the admin console. If they are genuine namesakes, no action is needed.",
+        ],
+        cta: "Review vendors",
+        footnote: "Sent to admins whenever a vendor name or email match is detected.",
+      },
+    };
+  },
 
   // Admin moderation flipped a verified community-submitted supplier to
   // 'active', it's now visible to couples. Closes the verify → moderation

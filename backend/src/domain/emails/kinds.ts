@@ -78,6 +78,7 @@ export type EmailKind =
   | "wedding_farewell" // T+14: the last mail we ever send a married couple, then lifecycle goes silent
   | "vendor_claim_verify" // P2.C, sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
+  | "vendor_duplicate_admin_alert" // heads-up to admins when a new vendor matches an existing account
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
   | "vendor_moved_to_planner" // admin rerouted a mis-routed vendor account to the planner side
   | "supplier_outreach" // P2.E, couple-initiated cold outreach to a shortlisted vendor
@@ -330,6 +331,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // claim just started and a human may want to watch it. Same framing as
   // admin_moderation_digest; never opt-out.
   vendor_claim_admin_alert: "transactional",
+  // Transactional: internal ops correspondence to the admin allowlist. A new
+  // account matches an existing vendor and may need an immediate merge; never
+  // suppress an operational warning behind recipient preferences.
+  vendor_duplicate_admin_alert: "transactional",
   // Transactional: the vendor just completed the claim form (set their own
   // password, clicked through), this is the success confirmation closing
   // that loop. They now have a Weddly vendor account.
