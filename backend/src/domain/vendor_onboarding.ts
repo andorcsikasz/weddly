@@ -101,6 +101,7 @@ export function listPendingOnboardings(): AdminVendorView[] {
     display_name: row.business_name,
     company_name: null,
     contact_email: row.email,
+    secondary_contact_email: null,
     contact_phone: null,
     vat_number: null,
     onboarding_done: false,

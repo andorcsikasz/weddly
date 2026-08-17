@@ -31,7 +31,10 @@ export interface VendorAccountRow {
   address: string | null;
   city: string | null;
   postal_code: string | null;
+  secondary_contact_email: string | null;
   onboarding_done: number;
+  profile_nudge_last_at: number | null;
+  profile_nudge_count: number;
   created_at: number;
   updated_at: number;
 }
@@ -52,6 +55,7 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
     address: row.address,
     city: row.city,
     postal_code: row.postal_code,
+    secondary_contact_email: row.secondary_contact_email ?? null,
     onboarding_done: row.onboarding_done === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -217,6 +221,7 @@ export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
     display_name: row.display_name,
     company_name: row.company_name,
     contact_email: row.contact_email,
+    secondary_contact_email: row.secondary_contact_email ?? null,
     contact_phone: row.contact_phone,
     vat_number: row.vat_number,
     onboarding_done: row.onboarding_done === 1,

@@ -97,6 +97,7 @@ export interface VendorAccountRow {
   address: string | null;
   city: string | null;
   postal_code: string | null;
+  secondary_contact_email: string | null;
   onboarding_done: number;
   created_at: number;
   updated_at: number;
@@ -233,6 +234,7 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
     address: row.address,
     city: row.city,
     postal_code: row.postal_code,
+    secondary_contact_email: row.secondary_contact_email ?? null,
     onboarding_done: row.onboarding_done === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,

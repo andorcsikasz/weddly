@@ -16,6 +16,11 @@ import { createVendorListing } from "./listings";
 import { normaliseLocale, type UserRow } from "./users";
 import { createVendorAccount, getVendorAccountByOwnerUserId } from "./vendor_accounts";
 import { initVendorBilling } from "./vendor_billing";
+import {
+  alertVendorDuplicate,
+  findVendorAccountDuplicates,
+  type VendorDuplicateMatch,
+} from "./vendor_duplicate";
 
 export interface ConvertUserToVendorInput {
   category: SupplierCategory;
@@ -33,13 +38,23 @@ export interface ConvertUserToVendorInput {
  *  to finish their profile. Idempotent: re-running on a user that already owns
  *  a vendor account just re-ensures the role + billing row. Never touches
  *  `users.couple_id`, so any existing workspace data is preserved. Returns the
- *  vendor account id + whether a fresh account was created. */
+ *  vendor account id, whether a fresh account was created, and — when it was
+ *  — any existing vendor account this business name/email already matches
+ *  (see vendor_duplicate.ts; an admin rerouting a mis-routed account is
+ *  exactly the "even the admin can recreate the duplicate" case that module
+ *  exists to catch). */
 export function convertUserToVendor(
   user: UserRow,
   input: ConvertUserToVendorInput,
-): { vendorAccountId: number; created: boolean } {
+): { vendorAccountId: number; created: boolean; duplicateMatches: VendorDuplicateMatch[] } {
   const businessName = (input.businessName?.trim() || user.full_name).slice(0, 120);
   const currency = vendorCurrencyForLocale(normaliseLocale(user.locale));
+  // Read-only, before the transaction — only meaningful when this call is
+  // about to mint a NEW account (an idempotent re-run on an existing vendor
+  // isn't "creating a duplicate").
+  const duplicateMatches = getVendorAccountByOwnerUserId(user.id)
+    ? []
+    : findVendorAccountDuplicates({ displayName: businessName, email: user.email });
 
   const convert = db.transaction((): { vendorAccountId: number; created: boolean } => {
     db.prepare("UPDATE users SET role = 'vendor', updated_at = ? WHERE id = ?").run(now(), user.id);
@@ -71,5 +86,14 @@ export function convertUserToVendor(
     initVendorBilling(account.id, currency);
     return { vendorAccountId: account.id, created };
   });
-  return convert();
+  const result = convert();
+  if (result.created) {
+    alertVendorDuplicate(duplicateMatches, {
+      source: "admin.reroute_to_vendor",
+      displayName: businessName,
+      email: user.email,
+      newVendorAccountId: result.vendorAccountId,
+    });
+  }
+  return { ...result, duplicateMatches };
 }

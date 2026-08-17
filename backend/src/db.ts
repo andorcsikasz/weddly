@@ -1994,6 +1994,11 @@ addColumnIfMissing(
   "profile_nudge_count",
   "profile_nudge_count INTEGER NOT NULL DEFAULT 0",
 );
+// A retained-but-inactive contact address from a duplicate account merged into
+// this one (mergeVendorAccounts in domain/vendor_merge.ts). The primary
+// `contact_email` is the only address anything mails or shows the vendor as
+// their own; this is kept on file only so the old inbox isn't forgotten.
+addColumnIfMissing("vendor_accounts", "secondary_contact_email", "secondary_contact_email TEXT");
 // Vendor-written label behind category='other' listings: the "my service
 // isn't in the taxonomy yet" escape hatch on the signup form.
 addColumnIfMissing("listings", "custom_category", "custom_category TEXT");

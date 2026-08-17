@@ -144,6 +144,10 @@ export interface VendorAccount {
   address: string | null;
   city: string | null;
   postal_code: string | null;
+  /** A retained-but-inactive contact address from a duplicate account merged
+   *  into this one (see domain/vendor_merge.ts). Never mailed, never shown as
+   *  the vendor's own address — kept only so the old inbox is on file. */
+  secondary_contact_email: string | null;
   /** Whether the vendor has finished the post-signup onboarding wizard. The
    *  dashboard redirects into the wizard while this is false. True for accounts
    *  created via the claim flow (no wizard) and for all pre-wizard rows. */
@@ -168,6 +172,9 @@ export interface AdminVendorView {
   /** Legal company name shown small under the brand; null when unset. */
   company_name: string | null;
   contact_email: string | null;
+  /** Retained address from a duplicate account merged into this one; null on
+   *  every account that has never absorbed another. Admin-visible only. */
+  secondary_contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
   onboarding_done: boolean;

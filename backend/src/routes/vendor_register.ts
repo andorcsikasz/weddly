@@ -30,6 +30,7 @@ import { recordGrowthEvent } from "../domain/growth_events";
 import { createVendorListing, findVisibleDirectoryMatch } from "../domain/listings";
 import { buildSignupAcquisition } from "../domain/signup_meta";
 import { createVendorAccount } from "../domain/vendor_accounts";
+import { alertVendorDuplicate, findVendorAccountDuplicates } from "../domain/vendor_duplicate";
 import { initVendorBilling } from "../domain/vendor_billing";
 import { getUserById, getUserByEmail, toUser, type UserRow } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
@@ -254,6 +255,14 @@ function provisionVendor(
   ts: number,
 ): { userId: number; vendorAccountId: number } {
   assertNoUnclaimedDirectoryTwin(input);
+  // Read-only, before the transaction: does this name/email already belong to
+  // a vendor account? Never blocks — a real second business can share a name
+  // — but an admin should see it rather than a log line nobody reads (see
+  // vendor_duplicate.ts for why this exists).
+  const duplicateMatches = findVendorAccountDuplicates({
+    displayName: input.businessName,
+    email: input.email,
+  });
   let userId = 0;
   let vendorAccountId = 0;
   const tx = db.transaction(() => {
@@ -302,6 +311,12 @@ function provisionVendor(
     }
     throw e;
   }
+  alertVendorDuplicate(duplicateMatches, {
+    source: "vendor.register",
+    displayName: input.businessName,
+    email: input.email,
+    newVendorAccountId: vendorAccountId,
+  });
   return { userId, vendorAccountId };
 }
 

@@ -25,6 +25,8 @@ import {
   listAdminVendorAccounts,
   updateVendorAccount,
 } from "../domain/vendor_accounts";
+import { alertVendorDuplicate, findVendorAccountDuplicates } from "../domain/vendor_duplicate";
+import { mergeVendorAccounts } from "../domain/vendor_merge";
 import {
   cancelPendingOnboarding,
   cancelPendingOnboardingsByEmail,
@@ -328,6 +330,13 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     throw new HttpError(409, "An account with this email already exists", { code: "email_taken" });
   }
 
+  // Same name/email match an existing vendor already owns? Doesn't block —
+  // the admin might genuinely be onboarding a real second business with a
+  // shared name — but it's surfaced in the response AND logged the same way
+  // the self-serve path does, so this admin action can't quietly recreate the
+  // exact duplicate it's meant to prevent (see vendor_duplicate.ts).
+  const duplicateMatches = findVendorAccountDuplicates({ displayName: businessName, email });
+
   // One live activation link per email: supersede any prior admin-registered
   // pending row (createOnboardingToken only auto-cancels waitlist_id siblings).
   cancelPendingOnboardingsByEmail(email);
@@ -337,6 +346,12 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     email,
     category,
     locale: null,
+  });
+  alertVendorDuplicate(duplicateMatches, {
+    source: "admin.vendor_register",
+    displayName: businessName,
+    email,
+    newVendorAccountId: null,
   });
   const activateUrl = `${CONFIG.frontendBaseUrl}/vendor/activate/${encodeURIComponent(token.token)}`;
   await sendVendorActivationEmail({ to: email, businessName, activateUrl });
@@ -349,7 +364,10 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     target_id: token.id,
     after: { email, business_name: businessName, category },
   });
-  return json({ ok: true, onboarding_id: token.id }, { status: 201 });
+  return json(
+    { ok: true, onboarding_id: token.id, duplicate_matches: duplicateMatches },
+    { status: 201 },
+  );
 }
 
 /** Admin "Send reminder": email the vendor the "your listing is still
@@ -407,12 +425,48 @@ function handleRemindIncomplete(ctx: Ctx): Response {
   return json({ ok: true, missing });
 }
 
+/** Merge a duplicate vendor account into this one — the fix for two logins
+ *  ending up with a vendor_accounts row apiece for the same business (see
+ *  vendor_duplicate.ts). `:id` is the SURVIVING account (keeps its login,
+ *  vendor_code, business fields where set); `absorb_id` is the account being
+ *  retired; `surviving_listing_id` picks which of the two accounts' listings
+ *  (photos, directory reach, reviews) is the real one to carry forward — the
+ *  admin's call, never guessed. Everything else (availability, tasks,
+ *  payments, points, calendar, automations) moves onto the surviving account;
+ *  the retired account's login is kept (suspended, so its email stays taken
+ *  and can't spawn a third duplicate) and its contact email is retained on
+ *  the surviving account as `secondary_contact_email`. */
+async function handleMerge(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const keepId = parseId(ctx);
+  const body = await readJson<{ absorb_id?: unknown; surviving_listing_id?: unknown }>(ctx.req);
+
+  const absorbId = Number(body.absorb_id);
+  if (!Number.isInteger(absorbId) || absorbId < 1) {
+    throw new HttpError(400, "`absorb_id` must be a vendor account id");
+  }
+  if (typeof body.surviving_listing_id !== "string" || !body.surviving_listing_id.trim()) {
+    throw new HttpError(400, "`surviving_listing_id` is required");
+  }
+
+  const result = mergeVendorAccounts({
+    keepVendorAccountId: keepId,
+    absorbVendorAccountId: absorbId,
+    survivingListingId: body.surviving_listing_id.trim(),
+    actorAdminId: admin.id,
+  });
+
+  const merged = listAdminVendorAccounts().find((v) => v.id === keepId);
+  return json({ ok: true, ...result, vendor: merged ?? null });
+}
+
 export function registerAdminVendorRoutes(router: Router) {
   router.get("/api/admin/vendors", handleList, true);
   router.post("/api/admin/vendors/register", handleRegister, true);
   router.post("/api/admin/vendors/:id/suspend", handleSuspend, true);
   router.post("/api/admin/vendors/:id/reactivate", handleReactivate, true);
   router.post("/api/admin/vendors/:id/remind-incomplete", handleRemindIncomplete, true);
+  router.post("/api/admin/vendors/:id/merge", handleMerge, true);
   router.post("/api/admin/vendors/:id/convert-to-planner", handleConvertToPlanner, true);
   router.patch("/api/admin/vendors/:id", handleUpdate, true);
   router.delete("/api/admin/vendors/:id", handleDelete, true);

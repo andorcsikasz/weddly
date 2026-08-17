@@ -1278,7 +1278,7 @@ async function handleConvertToVendor(ctx: Ctx): Promise<Response> {
       ? body.business_name.trim().slice(0, 120)
       : null;
 
-  const { vendorAccountId, created } = convertUserToVendor(user, {
+  const { vendorAccountId, created, duplicateMatches } = convertUserToVendor(user, {
     category,
     customCategory,
     businessName,
@@ -1293,7 +1293,11 @@ async function handleConvertToVendor(ctx: Ctx): Promise<Response> {
     after: { email: user.email, vendor_account_id: vendorAccountId, category, created },
   });
 
-  return json({ ok: true, vendor_account_id: vendorAccountId });
+  return json({
+    ok: true,
+    vendor_account_id: vendorAccountId,
+    duplicate_matches: duplicateMatches,
+  });
 }
 
 export function registerAdminUserRoutes(router: Router) {
