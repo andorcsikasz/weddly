@@ -23,6 +23,7 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowUpRight,
+  Banknote,
   BedDouble,
   Bookmark,
   BookmarkCheck,
@@ -80,6 +81,7 @@ import {
   showsSpokenLanguages,
 } from "@shared/suppliers";
 import { pickListingBlurb } from "@shared/listing_language";
+import { packagePriceSummary } from "@shared/listing_pricing";
 import type { Currency } from "@shared/types";
 import { vendorPublicId } from "@shared/vendor_slug";
 import { Pill } from "../components/admin";
@@ -90,6 +92,7 @@ import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewsSection } from "../components/ReviewsSection";
 import { StarRow } from "../components/StarRow";
 import { intlLocale } from "../lib/format";
+import { formatPackagePrice } from "../lib/listingPricing";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
@@ -379,6 +382,7 @@ export default function SupplierDetailPage() {
   const saveAria = t(isSaved ? "suppliers.unsave_aria" : "suppliers.save_aria");
   const pickLabel = t(isPicked ? "suppliers.unpick_aria" : "suppliers.pick_aria");
   const shareLabel = t("suppliers.detail.cta.share");
+  const priceSummary = packagePriceSummary(detail.packages);
 
   return (
     // data-admin-shell opts every h1..h6 inside into the sans typography
@@ -422,12 +426,27 @@ export default function SupplierDetailPage() {
             <div className="mt-5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t(`suppliers.cat.${detail.category}`)} · {detail.city}
             </div>
-            <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
-              <span>{detail.name}</span>
-              {detail.vendor_account_id !== null && (
-                <VerifiedBadge size={28} complete={detail.listing_complete} />
-              )}
-            </h1>
+            {/* Share moved up next to the name (was demoted at the foot of the
+                CTA row, competing with Send inquiry for the eye down there).
+                It's the first interactive thing on the page now, same spot
+                the reference marketplace pages put it. */}
+            <div className="mt-1 flex items-start justify-between gap-3">
+              <h1 className="inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
+                <span>{detail.name}</span>
+                {detail.vendor_account_id !== null && (
+                  <VerifiedBadge size={28} complete={detail.listing_complete} />
+                )}
+              </h1>
+              <button
+                type="button"
+                onClick={shareVendor}
+                aria-label={shareLabel}
+                title={shareLabel}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-transparent text-ink-600 transition hover:border-ink-300 hover:bg-paper-100/70 hover:text-ink-800 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-800"
+              >
+                <Share2 size={14} aria-hidden />
+              </button>
+            </div>
             {detail.company_name && detail.company_name !== detail.name && (
               <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{detail.company_name}</p>
             )}
@@ -459,6 +478,23 @@ export default function SupplierDetailPage() {
                 </span>
               )}
               {detail.price_band !== null && <PriceBandDots band={detail.price_band} t={t} />}
+              {/* Exact price, straight from the vendor's own packages — the
+                  €€€ dots above are a manual, cooldown-protected signal, not
+                  a number. A real figure this high up (rather than buried
+                  past photos/videos/about in the Packages section) is what
+                  actually earns trust before a couple commits to inquiring. */}
+              {priceSummary && (
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-ink-900 dark:text-paper-50">
+                  <Banknote size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+                  {formatPackagePrice(
+                    priceSummary.range,
+                    priceSummary.mode,
+                    detail.currency,
+                    locale,
+                    t,
+                  )}
+                </span>
+              )}
               {/* Guest capacity + venue style — captured on the listing but
                   previously only shown on the compact directory card. Surface
                   them here too so the detail page (and its shared public twin)
@@ -489,81 +525,6 @@ export default function SupplierDetailPage() {
               {detail.vendor_account_id === null && (
                 <Pill tone="muted">{t("suppliers.detail.unclaimed")}</Pill>
               )}
-            </div>
-
-            {/* Primary actions. Send inquiry is the sole conversion target,
-                so it stays the one solid accent-filled button. Save, pick and
-                share are demoted to quiet outline secondaries that don't
-                compete for the eye. All four render on desktop here AND in the
-                sticky bottom bar on mobile (see end of this file).
-
-                Save and pick keep the directory's two-glyph vocabulary exactly:
-                a BLUSH HEART for the shortlist (cheap, many per category) and a
-                SAGE BOOKMARK for the pick (one per category, a commitment).
-                This page used to draw the save button in the picked treatment
-                (sage border, BookmarkCheck), so the two surfaces disagreed about
-                what a bookmark meant, and the pick could not be set here at
-                all. */}
-            <div className="mt-6 flex flex-wrap items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setComposeOpen(true)}
-                disabled={!canInquire}
-                title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
-                className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Send size={14} aria-hidden />
-                {inquireLabel}
-              </button>
-              <button
-                type="button"
-                onClick={toggleSaved}
-                aria-pressed={isSaved}
-                aria-label={saveAria}
-                title={saveAria}
-                data-testid="supplier-save-toggle"
-                className={
-                  isSaved
-                    ? "inline-flex items-center gap-1.5 rounded-full border border-blush-300 bg-blush-50 px-3 py-1.5 text-sm font-medium text-blush-700 transition hover:border-blush-400 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
-                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 dark:border-umber-700 dark:text-umber-200 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
-                }
-              >
-                <Heart
-                  size={14}
-                  aria-hidden
-                  className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-                />
-                {saveLabel}
-              </button>
-              <button
-                type="button"
-                onClick={togglePicked}
-                aria-pressed={isPicked}
-                aria-label={pickLabel}
-                title={pickLabel}
-                data-testid="supplier-pick-toggle"
-                className={
-                  isPicked
-                    ? "inline-flex items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1.5 text-sm font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
-                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-sage-400 hover:bg-sage-50 hover:text-sage-700 dark:border-umber-700 dark:text-umber-200 dark:hover:border-sage-600 dark:hover:bg-sage-600/20 dark:hover:text-sage-300"
-                }
-              >
-                {isPicked ? (
-                  <BookmarkCheck size={14} aria-hidden className="fill-sage-200" />
-                ) : (
-                  <Bookmark size={14} aria-hidden />
-                )}
-                {pickLabel}
-              </button>
-              <button
-                type="button"
-                onClick={shareVendor}
-                aria-label={shareLabel}
-                title={shareLabel}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 bg-transparent text-ink-600 transition hover:border-ink-300 hover:bg-paper-100/70 hover:text-ink-800 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-800"
-              >
-                <Share2 size={14} aria-hidden />
-              </button>
             </div>
 
             {/* Vendor contact (website / email / phone) lives solely in the
@@ -713,6 +674,70 @@ export default function SupplierDetailPage() {
             locale={locale}
             t={t}
           />
+          {/* Primary actions, moved here from the top of the page (owner
+              direction) — a couple checks the calendar right before deciding,
+              so the decision itself sits directly under it instead of miles
+              above. Send inquiry stays the one solid accent-filled button;
+              save and pick keep the directory's two-glyph vocabulary (BLUSH
+              HEART for the shortlist, SAGE BOOKMARK for the pick). Both still
+              render in the mobile sticky bar too (see end of this file) —
+              the sidebar sits below the fold on <lg. */}
+          <SidebarCard>
+            <div className="flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => setComposeOpen(true)}
+                disabled={!canInquire}
+                title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
+                className="btn-accent w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Send size={14} aria-hidden />
+                {inquireLabel}
+              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={toggleSaved}
+                  aria-pressed={isSaved}
+                  aria-label={saveAria}
+                  title={saveAria}
+                  data-testid="supplier-save-toggle"
+                  className={
+                    isSaved
+                      ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-300 bg-blush-50 px-3 py-1.5 text-sm font-medium text-blush-700 transition hover:border-blush-400 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
+                      : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 dark:border-umber-700 dark:text-umber-200 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+                  }
+                >
+                  <Heart
+                    size={14}
+                    aria-hidden
+                    className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+                  />
+                  {saveLabel}
+                </button>
+                <button
+                  type="button"
+                  onClick={togglePicked}
+                  aria-pressed={isPicked}
+                  aria-label={pickLabel}
+                  title={pickLabel}
+                  data-testid="supplier-pick-toggle"
+                  className={
+                    isPicked
+                      ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1.5 text-sm font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
+                      : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-sage-400 hover:bg-sage-50 hover:text-sage-700 dark:border-umber-700 dark:text-umber-200 dark:hover:border-sage-600 dark:hover:bg-sage-600/20 dark:hover:text-sage-300"
+                  }
+                >
+                  {isPicked ? (
+                    <BookmarkCheck size={14} aria-hidden className="fill-sage-200" />
+                  ) : (
+                    <Bookmark size={14} aria-hidden />
+                  )}
+                  {pickLabel}
+                </button>
+              </div>
+            </div>
+          </SidebarCard>
         </aside>
       </div>
 

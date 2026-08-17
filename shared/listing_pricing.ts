@@ -153,3 +153,29 @@ export function convertedPrice(
   };
   return range.min === null && range.max === null ? null : { mode: "total", range };
 }
+
+/** One "from X" / "X – Y" figure summarising ALL of a listing's packages, for
+ *  a prominent header placement — a couple should not have to scroll past
+ *  photos and the About section to find a real number. Deliberately separate
+ *  from `price_band` (manual, 30-day-cooldown-protected, see
+ *  routes/vendor_listing.ts): this is derived straight from the numbers the
+ *  vendor already typed into their packages and carries no such guard.
+ *
+ *  Packages are pooled only with packages of the SAME price_mode as the first
+ *  structured one: MAX_LISTING_PACKAGES is 3, so a listing mixing total and
+ *  per-person tiers is rare, and a range spanning both would compare a whole
+ *  day against one seat. Returns null when no package has a structured price
+ *  at all (the legacy `price_text` shape has nothing this can summarise). */
+export function packagePriceSummary(
+  packages: readonly PackagePrice[],
+): { mode: PackagePriceMode; range: PriceRange } | null {
+  const structured = packages.filter(hasStructuredPrice);
+  const mode = structured[0]?.price_mode ?? null;
+  if (mode === null) return null;
+  const pooled = structured.filter((p) => p.price_mode === mode);
+  const mins = pooled.map((p) => p.price_min).filter((v): v is number => v !== null);
+  const maxs = pooled.map((p) => p.price_max).filter((v): v is number => v !== null);
+  const min = mins.length > 0 ? Math.min(...mins) : null;
+  const max = maxs.length > 0 ? Math.max(...maxs) : null;
+  return min === null && max === null ? null : { mode, range: { min, max } };
+}

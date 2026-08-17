@@ -4,6 +4,7 @@ import {
   currencyForCountry,
   hasStructuredPrice,
   listingCurrency,
+  packagePriceSummary,
 } from "@shared/listing_pricing";
 
 describe("structured listing pricing", () => {
@@ -46,5 +47,43 @@ describe("structured listing pricing", () => {
     });
     expect(convertedPrice(price, { min: null, max: null })).toBeNull();
     expect(hasStructuredPrice({ ...price, price_mode: null })).toBe(false);
+  });
+});
+
+describe("packagePriceSummary", () => {
+  test("pools the min and max across every structured package", () => {
+    expect(
+      packagePriceSummary([
+        { price_min: 450_000, price_max: 600_000, price_mode: "total" },
+        { price_min: 200_000, price_max: 350_000, price_mode: "total" },
+      ]),
+    ).toEqual({ mode: "total", range: { min: 200_000, max: 600_000 } });
+  });
+
+  test("a legacy price_text-only package (no mode) is ignored, not zeroed", () => {
+    expect(
+      packagePriceSummary([{ price_min: null, price_max: null, price_mode: null }]),
+    ).toBeNull();
+  });
+
+  test("no packages at all summarises to nothing", () => {
+    expect(packagePriceSummary([])).toBeNull();
+  });
+
+  test("only pools packages matching the first structured package's mode", () => {
+    // A total-priced day rate and a per-person rate cannot share one range —
+    // pairing 800,000 total with 15,000/person would read as a discount.
+    expect(
+      packagePriceSummary([
+        { price_min: 800_000, price_max: 800_000, price_mode: "total" },
+        { price_min: 12_000, price_max: 18_000, price_mode: "per_person" },
+      ]),
+    ).toEqual({ mode: "total", range: { min: 800_000, max: 800_000 } });
+  });
+
+  test("an open-ended 'from' package still summarises", () => {
+    expect(
+      packagePriceSummary([{ price_min: 1_200_000, price_max: null, price_mode: "total" }]),
+    ).toEqual({ mode: "total", range: { min: 1_200_000, max: null } });
   });
 });

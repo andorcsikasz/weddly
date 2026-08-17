@@ -14,8 +14,9 @@ import type {
   SupplierReview,
 } from "@shared/suppliers";
 import { pickListingBlurb } from "@shared/listing_language";
+import { packagePriceSummary } from "@shared/listing_pricing";
 import { REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
-import { ExternalLink, Globe, MapPin, Phone, Star, Users } from "lucide-react";
+import { Banknote, ExternalLink, Globe, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ClaimListingModal } from "../components/ClaimListingModal";
@@ -32,6 +33,7 @@ import { ApiError } from "../lib/api";
 import { getVisitorToken, setVisitorToken, supplierApi, visitorApi } from "../lib/endpoints";
 import { intlLocale, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
+import { formatPackagePrice } from "../lib/listingPricing";
 import { reviewTagLabel } from "../lib/reviewTags";
 
 function StarRow({ value, size = 14 }: { value: number; size?: number }) {
@@ -441,6 +443,7 @@ export default function PublicVendorPage() {
         ? ratingAvg.toFixed(1).replace(".", ",")
         : ratingAvg.toFixed(1)
       : null;
+  const priceSummary = packagePriceSummary(detail.packages);
 
   return (
     <div className="min-h-screen bg-paper-50 dark:bg-umber-900">
@@ -488,6 +491,22 @@ export default function PublicVendorPage() {
                 </span>
               )}
               {detail.price_band !== null && <PriceBandDots band={detail.price_band} />}
+              {/* Exact price, straight from the vendor's own packages — see
+                  the matching note on the in-app SupplierDetailPage. Kept in
+                  sync so the shared public link never reads as a lesser
+                  version of the signed-in page. */}
+              {priceSummary && (
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-ink-900 dark:text-paper-50">
+                  <Banknote size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+                  {formatPackagePrice(
+                    priceSummary.range,
+                    priceSummary.mode,
+                    detail.currency,
+                    locale,
+                    t,
+                  )}
+                </span>
+              )}
               {/* Guest capacity — one of the first facts a couple checks on a
                   venue, and captured on the listing but previously only shown on
                   the compact directory card, never on this shareable page.
