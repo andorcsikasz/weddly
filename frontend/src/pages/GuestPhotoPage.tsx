@@ -23,7 +23,7 @@
 
 import type { FilmAesthetic, FilmUpload, PhotoAlbumPublic } from "@shared/types";
 import { FILM_FILTERS } from "@shared/types";
-import { Camera, Check, ImagePlus, Share2, SwitchCamera } from "lucide-react";
+import { Camera, Check, ImagePlus, RotateCcw, Share2, SwitchCamera } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
@@ -323,6 +323,36 @@ function useCamera(facing: Facing, enabled = true) {
   return { videoRef, canvasRef, status, capture };
 }
 
+// ─── upload queue ─────────────────────────────────────────────────────────────
+// Capture and upload are deliberately decoupled: a shot is captured instantly
+// (a canvas snapshot, no network) and handed to a background queue, so a slow
+// venue wifi never blocks the shutter — the whole point of "continuous
+// shooting". The queue uploads one item at a time (photo ordering, and the
+// backend's own per-device rate bucket, both want that), retries a transient
+// failure with backoff, and keeps trying once the browser's `online` event
+// fires again for anything that gave up. A genuinely bad file (HEIC, over
+// size, the shot cap) fails once and never retries.
+
+const MAX_UPLOAD_ATTEMPTS = 4;
+const RETRY_BACKOFF_MS = [1200, 3000, 6000];
+// Hold the shutter this long before it starts firing repeatedly.
+const BURST_HOLD_MS = 320;
+const BURST_INTERVAL_MS = 450;
+const QUEUE_DISPLAY_MAX = 4;
+const QUEUE_RETAIN_MAX = 20;
+
+interface QueueItem {
+  id: string;
+  file: File;
+  previewUrl: string;
+  status: "queued" | "uploading" | "retrying" | "failed" | "done";
+  attempts: number;
+  /** A network blip or a full rate bucket is worth retrying; a rejected file
+   *  or a full shot cap never will be, no matter how many times it's tried. */
+  retryable: boolean;
+  errorMessage?: string;
+}
+
 // ─── viewfinder ───────────────────────────────────────────────────────────────
 
 function Viewfinder({
@@ -350,10 +380,24 @@ function Viewfinder({
   // chrome with a clearly marked, inert viewfinder instead.
   const { videoRef, canvasRef, status, capture } = useCamera(facing, !preview);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
   const [flash, setFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
+  // The queue's CONTENTS live in a ref, not state — every mutation is
+  // synchronous (append, status flip, drop) and `bump()` is the one signal
+  // that tells React to re-render off the ref's current values. This sidesteps
+  // stale closures in the async upload loop that a plain useState queue would
+  // otherwise hit.
+  const queueRef = useRef<QueueItem[]>([]);
+  const [, setQueueTick] = useState(0);
+  const unmountedRef = useRef(false);
+  const bump = useCallback(() => {
+    if (!unmountedRef.current) setQueueTick((v) => v + 1);
+  }, []);
+  const processingRef = useRef(false);
+  // Set once a successful upload reports the guest is at their cap, so the
+  // queue loop and any in-progress burst stop reaching for a device that's
+  // about to be swapped out for the limit_reached screen.
+  const limitReachedRef = useRef(false);
   // Full-screen thank-you shown once, on the guest's very first-ever shot —
   // it explains when photos surface and offers to invite others. Every shot
   // after that is a quiet auto-dismissing toast instead, so shooting stays
@@ -364,12 +408,14 @@ function Viewfinder({
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deviceId = preview ? "" : getDeviceId(token);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    unmountedRef.current = false;
+    return () => {
+      unmountedRef.current = true;
       if (toastTimer.current) clearTimeout(toastTimer.current);
-    },
-    [],
-  );
+      for (const item of queueRef.current) URL.revokeObjectURL(item.previewUrl);
+    };
+  }, []);
 
   function shareInvite() {
     const url = window.location.href;
@@ -384,18 +430,139 @@ function Viewfinder({
   const blocked = status === "blocked";
   const cssFilter = filterStyle(album.filmAesthetic);
   const max = album.shotsPerGuest ?? 0;
+  const pendingCount = queueRef.current.filter(
+    (i) => i.status === "queued" || i.status === "uploading" || i.status === "retrying",
+  ).length;
 
-  // Object URLs for the last-shot thumbnail leak a blob per photo otherwise.
-  useEffect(
-    () => () => {
-      if (lastPhotoUrl) URL.revokeObjectURL(lastPhotoUrl);
-    },
-    [lastPhotoUrl],
-  );
+  function handleUploadSuccess(newShotCount: number) {
+    if (album.shotsPerGuest !== null && newShotCount >= album.shotsPerGuest) {
+      limitReachedRef.current = true;
+      onLimitReached();
+      return;
+    }
+    onShotTaken(newShotCount);
+    if (newShotCount === 1) {
+      setSentCount(newShotCount);
+      setSent(true);
+    } else {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToastCount(newShotCount);
+      toastTimer.current = setTimeout(() => setToastCount(null), 1600);
+    }
+  }
 
-  async function shoot(file: File) {
-    if (preview || uploading) return;
-    setError(null);
+  /** Resolves once the item is settled one way or another: done, waiting out
+   *  a retry backoff (re-queued for the next loop pass), or permanently
+   *  failed. Never throws — every branch of `photoAlbumApi.upload` rejecting
+   *  is handled here. */
+  async function uploadOne(item: QueueItem) {
+    try {
+      const result = await photoAlbumApi.upload(token, item.file, {
+        deviceId,
+        guestName: guestName ?? undefined,
+        filterApplied: album.filmAesthetic,
+        preview,
+      });
+      item.status = "done";
+      bump();
+      handleUploadSuccess(result.shotCount);
+    } catch (err: unknown) {
+      const httpStatus =
+        typeof (err as { status?: unknown })?.status === "number"
+          ? (err as { status: number }).status
+          : null;
+      const code = (err as { detail?: { code?: string } })?.detail?.code;
+
+      if (code === "shot_limit") {
+        item.status = "failed";
+        item.retryable = false;
+        bump();
+        // Nothing else already queued behind this guest's cap can succeed
+        // either — fail them now instead of burning a request each to find out.
+        for (const other of queueRef.current) {
+          if (other.status === "queued") {
+            other.status = "failed";
+            other.retryable = false;
+          }
+        }
+        limitReachedRef.current = true;
+        bump();
+        onLimitReached();
+        return;
+      }
+      if (code === "heic_not_supported") {
+        item.status = "failed";
+        item.retryable = false;
+        item.errorMessage = t("photos.error_heic");
+        bump();
+        return;
+      }
+      if (httpStatus === 413) {
+        item.status = "failed";
+        item.retryable = false;
+        item.errorMessage = t("photos.error_too_large");
+        bump();
+        return;
+      }
+      if (httpStatus === 400) {
+        item.status = "failed";
+        item.retryable = false;
+        item.errorMessage = t("photos.error_bad_type");
+        bump();
+        return;
+      }
+      // No status at all means fetch() itself threw — no connectivity. A 429
+      // here is the upload rate bucket (distinct from the shot_limit code
+      // above), and 5xx is hopefully transient. All three are worth retrying.
+      const retryable = httpStatus === null || httpStatus === 429 || httpStatus >= 500;
+      item.attempts += 1;
+      if (retryable && item.attempts <= MAX_UPLOAD_ATTEMPTS) {
+        item.status = "retrying";
+        bump();
+        await new Promise((resolve) =>
+          setTimeout(resolve, RETRY_BACKOFF_MS[item.attempts - 1] ?? RETRY_BACKOFF_MS.at(-1)),
+        );
+        if (unmountedRef.current) return;
+        // Back on the queue for the loop's next pass. If we're still offline
+        // the upload will fail again immediately and re-arm; no busy-loop —
+        // the 'online' listener is what wakes a fully exhausted item back up.
+        item.status = navigator.onLine ? "queued" : "failed";
+        bump();
+        return;
+      }
+      item.status = "failed";
+      item.retryable = retryable;
+      item.errorMessage = t("photos.error_generic");
+      bump();
+    }
+  }
+
+  async function runQueue() {
+    if (processingRef.current) return;
+    processingRef.current = true;
+    try {
+      for (;;) {
+        if (unmountedRef.current || limitReachedRef.current) return;
+        const next = queueRef.current.find((i) => i.status === "queued");
+        if (!next) return;
+        next.status = "uploading";
+        bump();
+        await uploadOne(next);
+      }
+    } finally {
+      processingRef.current = false;
+    }
+  }
+
+  function pruneQueue() {
+    if (queueRef.current.length <= QUEUE_RETAIN_MAX) return;
+    const dropped = queueRef.current.slice(0, queueRef.current.length - QUEUE_RETAIN_MAX);
+    for (const d of dropped) URL.revokeObjectURL(d.previewUrl);
+    queueRef.current = queueRef.current.slice(-QUEUE_RETAIN_MAX);
+  }
+
+  function enqueueCapture(file: File) {
+    if (preview || limitReachedRef.current) return;
     // There is no HEVC/libheif decoder in either runtime. Fail before sending
     // multi-megabyte iPhone originals, while the backend independently sniffs
     // the bytes so renamed/spoofed files receive the same specific guidance.
@@ -403,68 +570,129 @@ function Viewfinder({
       setError(t("photos.error_heic"));
       return;
     }
-    setUploading(true);
+    // Optimistic cap check so a burst doesn't spend requests it already knows
+    // will fail; the LAST legitimate upload's own server response is what
+    // authoritatively flips the screen via handleUploadSuccess.
+    if (max > 0 && shotCount + pendingCount >= max) return;
+    setError(null);
     setFlash(true);
     setTimeout(() => setFlash(false), 120);
-    const previewUrl = URL.createObjectURL(file);
-    try {
-      const result = await photoAlbumApi.upload(token, file, {
-        deviceId,
-        guestName: guestName ?? undefined,
-        filterApplied: album.filmAesthetic,
-        preview,
-      });
-      setLastPhotoUrl((old) => {
-        if (old) URL.revokeObjectURL(old);
-        return previewUrl;
-      });
-      if (album.shotsPerGuest !== null && result.shotCount >= album.shotsPerGuest) {
-        onLimitReached();
-      } else {
-        onShotTaken(result.shotCount);
-        if (result.shotCount === 1) {
-          // The very first shot this guest has ever taken: worth a full
-          // screen explaining what happens next and offering to invite others.
-          setSentCount(result.shotCount);
-          setSent(true);
-        } else {
-          // Every shot after that stays out of the guest's way — a brief
-          // pill, then straight back to a live, tappable shutter.
-          if (toastTimer.current) clearTimeout(toastTimer.current);
-          setToastCount(result.shotCount);
-          toastTimer.current = setTimeout(() => setToastCount(null), 1600);
+    queueRef.current = [
+      ...queueRef.current,
+      {
+        id: crypto.randomUUID(),
+        file,
+        previewUrl: URL.createObjectURL(file),
+        status: "queued",
+        attempts: 0,
+        retryable: true,
+      },
+    ];
+    pruneQueue();
+    bump();
+    void runQueue();
+  }
+
+  function retryQueueItem(id: string) {
+    const item = queueRef.current.find((i) => i.id === id);
+    if (!item || item.status !== "failed" || !item.retryable) return;
+    item.status = "queued";
+    item.attempts = 0;
+    bump();
+    void runQueue();
+  }
+
+  // Anything that gave up while offline gets one more try the moment the
+  // browser tells us connectivity is back — a guest at a venue with patchy
+  // wifi shouldn't have to notice and tap retry themselves.
+  useEffect(() => {
+    function handleOnline() {
+      let changed = false;
+      for (const item of queueRef.current) {
+        if (item.status === "failed" && item.retryable) {
+          item.status = "queued";
+          item.attempts = 0;
+          changed = true;
         }
       }
-    } catch (err: unknown) {
-      URL.revokeObjectURL(previewUrl);
-      const detail = (err as { detail?: unknown })?.detail;
-      const code = (detail as { code?: string } | undefined)?.code;
-      if (code === "heic_not_supported") {
-        setError(t("photos.error_heic"));
-      } else if (code === "shot_limit") {
-        onLimitReached();
-        return;
-      } else {
-        const status = (err as { status?: number })?.status;
-        if (status === 413) setError(t("photos.error_too_large"));
-        else if (status === 400) setError(t("photos.error_bad_type"));
-        else setError(t("photos.error_generic"));
+      if (changed) {
+        bump();
+        void runQueue();
       }
-    } finally {
-      setUploading(false);
     }
-  }
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
+
+  // A shot still queued/uploading/retrying when the guest tries to leave is a
+  // shot that never reaches the couple — worth the native "are you sure".
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      const hasPending = queueRef.current.some(
+        (i) => i.status === "queued" || i.status === "uploading" || i.status === "retrying",
+      );
+      if (hasPending) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   function openPicker() {
     if (preview) return;
     fileInputRef.current?.click();
   }
 
-  async function handleShutter() {
+  async function captureOnce() {
+    if (preview || limitReachedRef.current || !live) return;
+    if (max > 0 && shotCount + pendingCount >= max) return;
+    const file = await capture(facing === "user");
+    if (file) enqueueCapture(file);
+  }
+
+  // Tap = one shot. Hold = a burst, firing every BURST_INTERVAL_MS until
+  // release. Pointer events drive the hold; the native click that follows a
+  // mouse/touch release (and the only event a keyboard Enter/Space produces)
+  // is what fires the single-tap capture — `burstEngaged` is the flag that
+  // stops that same click from ALSO firing once a hold already has.
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const burstIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const burstEngagedRef = useRef(false);
+
+  function stopBurst() {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+    if (burstIntervalRef.current) {
+      clearInterval(burstIntervalRef.current);
+      burstIntervalRef.current = null;
+    }
+  }
+
+  useEffect(() => stopBurst, []);
+
+  function handleShutterPointerDown() {
+    if (preview || !live) return;
+    burstEngagedRef.current = false;
+    pressTimerRef.current = setTimeout(() => {
+      burstEngagedRef.current = true;
+      void captureOnce();
+      burstIntervalRef.current = setInterval(() => void captureOnce(), BURST_INTERVAL_MS);
+    }, BURST_HOLD_MS);
+  }
+
+  async function handleShutterClick() {
     if (preview) return;
+    stopBurst();
+    if (burstEngagedRef.current) {
+      burstEngagedRef.current = false;
+      return;
+    }
     if (live) {
-      const file = await capture(facing === "user");
-      if (file) void shoot(file);
+      await captureOnce();
       return;
     }
     // No live camera: the native sheet is the only way to reach the lens.
@@ -473,8 +701,14 @@ function Viewfinder({
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) void shoot(file);
+    if (file) enqueueCapture(file);
     e.target.value = "";
+  }
+
+  function handleQueueThumbTap(item: QueueItem) {
+    if (item.status !== "failed") return;
+    if (item.retryable) retryQueueItem(item.id);
+    else if (item.errorMessage) setError(item.errorMessage);
   }
 
   const sentSub = album.revealAt
@@ -503,7 +737,7 @@ function Viewfinder({
         )}
         {max > 0 && (
           <span className="shrink-0 rounded-full bg-paper-50/10 px-2.5 py-1 font-grotesk text-[13px] font-bold tabular-nums text-paper-50">
-            {shotCount}/{max}
+            {Math.min(shotCount + pendingCount, max)}/{max}
           </span>
         )}
         <button
@@ -597,16 +831,51 @@ function Viewfinder({
           </div>
         )}
 
-        {/* Last shot — proof the photo landed, no caption needed. */}
-        {lastPhotoUrl && (
-          <div className="absolute bottom-4 right-4 h-14 w-14 overflow-hidden rounded-2xl border-2 border-paper-50/25 shadow-lg">
-            <img
-              src={lastPhotoUrl}
-              alt=""
-              aria-hidden="true"
-              className="h-full w-full object-cover"
-              style={{ filter: cssFilter }}
-            />
+        {/* Recent shots — proof they landed, and where a stuck one can be
+            retried. Uploading/retrying show a spinner or an amber dot; a
+            permanently failed one shows why (bad file) or offers a retry
+            (network) right on the thumbnail — no separate screen for it. */}
+        {queueRef.current.length > 0 && (
+          <div className="absolute bottom-4 right-4 flex gap-2">
+            {queueRef.current.slice(-QUEUE_DISPLAY_MAX).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleQueueThumbTap(item)}
+                disabled={item.status !== "failed"}
+                aria-label={
+                  item.status === "failed" && item.retryable ? t("photos.queue_retry") : undefined
+                }
+                className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-paper-50/25 shadow-lg disabled:cursor-default"
+              >
+                <img
+                  src={item.previewUrl}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-full w-full object-cover"
+                  style={{ filter: cssFilter }}
+                />
+                {(item.status === "queued" || item.status === "uploading") && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-paper-50/40 border-t-paper-50" />
+                  </span>
+                )}
+                {item.status === "retrying" && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <span className="h-2 w-2 rounded-full bg-amber-400" />
+                  </span>
+                )}
+                {item.status === "failed" && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/55">
+                    {item.retryable ? (
+                      <RotateCcw size={16} className="text-paper-50" aria-hidden="true" />
+                    ) : (
+                      <span className="font-grotesk text-[15px] font-bold text-red-300">!</span>
+                    )}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -617,7 +886,7 @@ function Viewfinder({
           <button
             type="button"
             onClick={openPicker}
-            disabled={preview || uploading}
+            disabled={preview}
             aria-label={t("photos.upload_existing")}
             title={t("photos.upload_existing")}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
@@ -629,12 +898,16 @@ function Viewfinder({
         <div className="flex justify-center">
           <button
             type="button"
-            disabled={preview || uploading || status === "starting"}
-            onClick={handleShutter}
+            disabled={preview || status === "starting"}
+            onPointerDown={handleShutterPointerDown}
+            onPointerUp={stopBurst}
+            onPointerCancel={stopBurst}
+            onPointerLeave={stopBurst}
+            onClick={handleShutterClick}
             aria-label={t("photos.take_photo")}
             className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-4 border-paper-50/35 bg-paper-50 transition-transform active:scale-90 disabled:opacity-50"
           >
-            {uploading && (
+            {pendingCount > 0 && (
               <span className="h-6 w-6 animate-spin rounded-full border-2 border-ink-300 border-t-ink-950" />
             )}
           </button>
@@ -645,7 +918,6 @@ function Viewfinder({
             <button
               type="button"
               onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}
-              disabled={uploading}
               aria-label={t("photos.flip_camera")}
               title={t("photos.flip_camera")}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"

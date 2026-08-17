@@ -31,6 +31,7 @@ export type EmailKind =
   | "rsvp_received_for_couple" // couple gets a notification when a guest RSVPs
   | "rsvp_received_household_for_couple" // aggregated notification: whole party RSVP'd in one go
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
+  | "guest_photos_ready" // couple's "email guests their photos" action on /app/media, one-shot per guest
   | "group_gift_notification" // guest opted into updates for a shared wishlist contribution
   | "guest_invite" // sent to a guest with a one-click /rsvp/{code} link
   | "guest_major_update" // couple-composed "something important changed" broadcast to opted-in guests
@@ -185,6 +186,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   rsvp_received_for_couple: "transactional",
   rsvp_received_household_for_couple: "transactional",
   rsvp_thanks_for_guest: "transactional",
+  // Transactional: the guest gave their email specifically so the couple
+  // could send their own shots back, and this mail is that promise kept, on
+  // the couple's own explicit click. No account, same framing as the RSVP
+  // thank-you above.
+  guest_photos_ready: "transactional",
   group_gift_notification: "transactional",
   // Transactional: the couple explicitly clicked "send invite" for this
   // guest in /app/guests, the recipient is waiting on the link.

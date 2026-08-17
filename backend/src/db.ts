@@ -1839,6 +1839,12 @@ addColumnIfMissing(
 addColumnIfMissing("film_devices", "marketing_opt_in_at", "marketing_opt_in_at INTEGER");
 db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_email ON film_devices(album_id, email_key)");
 
+// Stamped on every device row in a guest's identity group once the couple's
+// "email guests their photos" action has mailed that guest — the group-wide
+// stamp (not per-device) is what makes a second click only reach guests who
+// joined or uploaded since the last round, never a repeat send.
+addColumnIfMissing("film_devices", "photos_emailed_at", "photos_emailed_at INTEGER");
+
 // planner_clients indexes live here (not schema.sql) per the May 2026 ordering rule.
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_planner_clients_planner ON planner_clients(planner_user_id)",

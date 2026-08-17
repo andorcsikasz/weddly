@@ -923,3 +923,116 @@ describe("couple-upload source tag (#11)", () => {
     expect(sources).toEqual(["couple", "guest"]);
   });
 });
+
+// ── Feature D: email guests their own photos ───────────────────────────────────
+
+function emailLogCount(coupleId: number, kind: string): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM email_log WHERE couple_id = ? AND kind = ?")
+    .get(coupleId, kind) as { n: number };
+  return row.n;
+}
+
+describe("email guests their photos", () => {
+  let token: string;
+  let coupleId: number;
+  let albumToken: string;
+
+  beforeAll(async () => {
+    wipeFilm();
+    const bootstrapped = await bootstrapCouple("email-guests@weddly.test");
+    token = bootstrapped.token;
+    coupleId = bootstrapped.coupleId;
+    albumToken = await createAlbum(token);
+
+    // Contributed and gave an email — the target audience.
+    await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: "sent-1",
+      guest_name: "Anna",
+      email: "anna@guest.test",
+    });
+    expect((await guestUpload(albumToken, "sent-1")).status).toBe(201);
+
+    // Registered, gave an email, but never actually shot anything — must not
+    // be told "your shot is in there" when it isn't.
+    await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: "no-photo-1",
+      guest_name: "Bea",
+      email: "bea@guest.test",
+    });
+
+    // A legacy, email-less device that DID contribute — can't be reached at all.
+    const albumId = (
+      db.prepare("SELECT id FROM photo_albums WHERE upload_token = ?").get(albumToken) as {
+        id: number;
+      }
+    ).id;
+    db.prepare(
+      `INSERT INTO film_devices (album_id, device_id, guest_name, guest_name_key, joined_at, source)
+       VALUES (?, 'legacy-1', 'Csilla', 'csilla', ?, 'guest')`,
+    ).run(albumId, Date.now());
+    expect((await guestUpload(albumToken, "legacy-1")).status).toBe(201);
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("refuses to send before the reveal", async () => {
+    const r = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/photo-albums/current/email-guests",
+      {},
+      { token },
+    );
+    expect(r.status).toBe(400);
+    expect(r.data.detail?.code).toBe("not_revealed");
+    expect(emailLogCount(coupleId, "guest_photos_ready")).toBe(0);
+  });
+
+  test("mails only the contributing, emailed guest — once", async () => {
+    db.exec(`UPDATE photo_albums SET reveal_at = 1 WHERE upload_token = '${albumToken}'`);
+
+    const first = await req<{ sent: number; alreadyEmailed: number }>(
+      "POST",
+      "/api/photo-albums/current/email-guests",
+      {},
+      { token },
+    );
+    expect(first.status).toBe(200);
+    expect(first.data.sent).toBe(1);
+    expect(first.data.alreadyEmailed).toBe(0);
+    expect(emailLogCount(coupleId, "guest_photos_ready")).toBe(1);
+
+    // A second round reaches nobody new — Anna is already marked, Bea has no
+    // photo, Csilla has no email.
+    const second = await req<{ sent: number; alreadyEmailed: number }>(
+      "POST",
+      "/api/photo-albums/current/email-guests",
+      {},
+      { token },
+    );
+    expect(second.status).toBe(200);
+    expect(second.data.sent).toBe(0);
+    expect(second.data.alreadyEmailed).toBe(1);
+    expect(emailLogCount(coupleId, "guest_photos_ready")).toBe(1);
+  });
+
+  test("a guest who joins and contributes afterward is caught by the next round", async () => {
+    await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: "sent-2",
+      guest_name: "Dóra",
+      email: "dora@guest.test",
+    });
+    expect((await guestUpload(albumToken, "sent-2")).status).toBe(201);
+
+    const r = await req<{ sent: number; alreadyEmailed: number }>(
+      "POST",
+      "/api/photo-albums/current/email-guests",
+      {},
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.sent).toBe(1);
+    expect(r.data.alreadyEmailed).toBe(1);
+    expect(emailLogCount(coupleId, "guest_photos_ready")).toBe(2);
+  });
+});

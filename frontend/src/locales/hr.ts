@@ -2361,18 +2361,20 @@ const hr: LocaleMessages = {
     pricing_bullet_4: "Pauza bilo kada · 30 dana počeka",
     pricing_bullet_referral: "Preporuke: 1 mjesec na nas po pozvanom paru, 2 po dobavljaču",
     pricing_v2_note: "Kad se rana mjesta popune, novi parovi kreću s 2 tjedna isprobavanja.",
+    pricing_vendor_note: "Mjesečno, otkažite bilo kada — ili godišnje, uz 25% popusta.",
     pricing_vendor_callout: "Vaša prva 3 para idu na nas.",
     pricing_vendor_callout_detail:
-      "Tri para mogu doći do vas prije nego što se išta naplati. Zarađivati počinjemo tek nakon što je Weddly pred vas već stavio posao, a prva se naknada obračunava od 1. sljedećeg mjeseca.",
+      "Sve Pro funkcije ostaju otključane dok vas ne kontaktiraju tri para. Nakon toga pretplatite se jednim klikom — ništa se nikad ne naplaćuje automatski, a godišnjim plaćanjem štedite 25%.",
     pricing_vendor_value_note:
-      "Vaša stranica ostaje objavljena i uređiva bez pretplate. Pro otvara izravne upite, kalendar i pult s klijentima.",
+      "Vaša stranica ostaje objavljena i uređiva bez pretplate. Pro otvara samo ono što vam donosi zaradu: izravne upite, kalendar i pult s klijentima.",
     pricing_vendor_bullet_1: "Vaša prva 3 para idu na nas",
-    pricing_vendor_bullet_2: "Vaš oglas ostaje objavljen, s pretplatom ili bez nje",
-    pricing_vendor_bullet_3: "Izravni upiti, ponude i jedan zajednički razgovor",
-    pricing_vendor_bullet_4: "Kalendar dostupnosti · dvosmjerna Google sinkronizacija",
-    pricing_vendor_bullet_5: "Otkažite bilo kada, stranica ostaje",
+    pricing_vendor_bullet_2: "Vaš oglas zauvijek ostaje objavljen, s pretplatom ili bez nje",
+    pricing_vendor_bullet_3: "Izravni upiti i ponude u jednom zajedničkom razgovoru",
+    pricing_vendor_bullet_4:
+      "Kalendar uživo, dvosmjerna Google sinkronizacija — bez dvostrukih rezervacija",
+    pricing_vendor_bullet_5: "Plaćajte godišnje i uštedite 25% na Pro",
     pricing_vendor_cta: "Objavite svoj obrt",
-    pricing_planner_note: "Tri paketa · Starter, Pro, Premium.",
+    pricing_planner_note: "Tri paketa · Starter, Pro, Premium. Uštedite 25% uz godišnje plaćanje.",
     pricing_planner_callout: "Uđite rano i prve 2 godine idu na nas.",
     pricing_planner_callout_detail:
       "Pult za organizatore još gradimo zajedno sa studijima koji ga koriste. Pridružite se dok je tako i vaš paket ide na nas dvije godine, sa svime otključanim.",
@@ -3394,6 +3396,12 @@ const hr: LocaleMessages = {
       "Stara poveznica, prilagođena poveznica i svi ispisani QR kodovi odmah će prestati vrijediti. Novu poveznicu i QR kod morat ćete ponovno podijeliti.",
     film_rotate_link_confirm: "Opozovi i izradi novu poveznicu",
     film_rotate_link_done: "Nova poveznica za goste je spremna.",
+    film_email_guests: "Pošalji fotografije gostima e-poštom",
+    film_email_guests_body:
+      "Svaki gost koji je pridonio i ima e-adresu dobiva poveznicu na galeriju. Onima kojima je već poslano neće se ponovno slati.",
+    film_email_guests_confirm: "Pošalji",
+    film_email_guests_done: "Poslano {{n}} gostima.",
+    film_email_guests_none: "Svima koji imaju fotografije već je poslano.",
     participant_remove: "Ukloni",
     participant_removed: "Sudionik je uklonjen",
     participant_remove_title: "Uklonite sudionika",
@@ -3483,6 +3491,7 @@ const hr: LocaleMessages = {
     privacy_link: "Privatnost",
     sent_toast: "Poslano",
     invite_aria: "Pozovi druge",
+    queue_retry: "Dodirni za ponovni pokušaj",
   },
   design: {
     title: "Dizajn",

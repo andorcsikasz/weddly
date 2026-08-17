@@ -2400,18 +2400,20 @@ const es: LocaleMessages = {
       "Recomendaciones: 1 mes de regalo por pareja invitada, 2 por proveedor",
     pricing_v2_note:
       "Cuando se llenen las plazas iniciales, las nuevas parejas empiezan con la prueba de 2 semanas.",
+    pricing_vendor_note: "Mensual, cancela cuando quieras — o en pago anual, con un 25% menos.",
     pricing_vendor_callout: "Tus 3 primeras parejas corren de nuestra cuenta.",
     pricing_vendor_callout_detail:
-      "Tres parejas pueden llegar hasta ti antes de que se cobre nada. Solo empezamos a ganar después de que Weddly ya te haya puesto trabajo delante, y la primera cuota se factura desde el día 1 del mes siguiente.",
+      "Todas las funciones Pro están abiertas hasta que tres parejas te contacten. A partir de ahí te suscribes con un clic — nunca cobramos nada en automático, y pagando en anual te ahorras un 25%.",
     pricing_vendor_value_note:
-      "Tu página sigue publicada y editable sin suscripción. Pro es lo que abre las consultas directas, el calendario y la mesa de clientes.",
+      "Tu página sigue publicada y editable sin suscripción. Pro solo abre lo que te trae ingresos: consultas directas, calendario y mesa de clientes.",
     pricing_vendor_bullet_1: "Tus 3 primeras parejas corren de nuestra cuenta",
-    pricing_vendor_bullet_2: "Tu ficha sigue publicada, con suscripción o sin ella",
-    pricing_vendor_bullet_3: "Consultas directas, presupuestos y un hilo compartido",
-    pricing_vendor_bullet_4: "Calendario de disponibilidad · sincronización Google en dos sentidos",
-    pricing_vendor_bullet_5: "Cancela cuando quieras, tu página se queda",
+    pricing_vendor_bullet_2: "Tu ficha sigue publicada para siempre, con suscripción o sin ella",
+    pricing_vendor_bullet_3: "Consultas directas y presupuestos en un hilo compartido",
+    pricing_vendor_bullet_4:
+      "Calendario en vivo, sincronización Google en dos sentidos — sin dobles reservas",
+    pricing_vendor_bullet_5: "Paga en anual y ahorra un 25% en Pro",
     pricing_vendor_cta: "Publica tu negocio",
-    pricing_planner_note: "Tres planes · Starter, Pro, Premium.",
+    pricing_planner_note: "Tres planes · Starter, Pro, Premium. Ahorra un 25% en pago anual.",
     pricing_planner_callout: "Entra pronto y tus 2 primeros años corren de nuestra cuenta.",
     pricing_planner_callout_detail:
       "Seguimos construyendo la mesa de planners junto a los estudios que la usan. Únete mientras sea así y tu plan corre de nuestra cuenta durante dos años, con todo incluido.",
@@ -3457,6 +3459,12 @@ const es: LocaleMessages = {
       "El enlace anterior, el enlace personalizado y todos los códigos QR impresos dejarán de funcionar de inmediato. Tendrás que volver a compartir el enlace y el QR nuevos.",
     film_rotate_link_confirm: "Revocar y crear un enlace nuevo",
     film_rotate_link_done: "El nuevo enlace de invitados está listo.",
+    film_email_guests: "Enviar las fotos a los invitados",
+    film_email_guests_body:
+      "Cada invitado que participó y tiene un correo registrado recibe un enlace a la galería. A quien ya se le envió no se le repite.",
+    film_email_guests_confirm: "Enviar",
+    film_email_guests_done: "Enviado a {{n}} invitados.",
+    film_email_guests_none: "Ya se envió a todos los que tienen fotos.",
     participant_remove: "Eliminar",
     participant_removed: "Participante eliminado",
     participant_remove_title: "Eliminar participante",
@@ -3542,6 +3550,7 @@ const es: LocaleMessages = {
     privacy_link: "Privacidad",
     sent_toast: "Enviada",
     invite_aria: "Invitar a otros",
+    queue_retry: "Toca para reintentar",
   },
   design: {
     title: "Diseño",

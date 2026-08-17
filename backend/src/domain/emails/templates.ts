@@ -217,6 +217,17 @@ export interface RsvpThanksForGuestPayload {
   rsvpStatus: "yes" | "no" | "maybe";
   rsvpPageUrl: string;
 }
+export interface GuestPhotosReadyPayload {
+  /** "Mia & Lucas", used in the subject + body. */
+  coupleDisplayName: string;
+  /** The name this guest registered on the wedding-film camera page. */
+  guestName: string;
+  /** The guest camera's public gallery — the same link they shot into. */
+  galleryUrl: string;
+  /** Total photos in the film right now, not just this guest's own — the
+   *  gallery is shared, everyone sees everyone's shots. */
+  photoCount: number;
+}
 export interface GuestInvitePayload {
   /** "Mia & Lucas", used in the subject + body so the recipient knows
    *  whose wedding they're being invited to. */
@@ -1089,6 +1100,7 @@ export type KindPayload = {
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
   rsvp_received_household_for_couple: RsvpReceivedHouseholdForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
+  guest_photos_ready: GuestPhotosReadyPayload;
   group_gift_notification: GroupGiftNotificationPayload;
   guest_invite: GuestInvitePayload;
   guest_major_update: GuestMajorUpdatePayload;
@@ -2463,6 +2475,32 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Update your response",
       footnote: "Open the link any time if anything changes.",
+    },
+  }),
+
+  guest_photos_ready: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `A ${p.coupleDisplayName} esküvői fotók megtekinthetők`,
+      `${p.coupleDisplayName}'s wedding photos are ready to view`,
+    ),
+    ctaUrl: p.galleryUrl,
+    hu: {
+      preheader: `${p.photoCount} fotó vár rád ${p.coupleDisplayName} esküvői filmjében.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `${p.coupleDisplayName} megnyitotta a vendégek fotóit — a tiéd is köztük van, ${p.photoCount} kép várja, hogy megnézd.`,
+        "Ugyanazon a linken éred el, amin fotóztál.",
+      ],
+      cta: "Fotók megnézése",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `${p.coupleDisplayName} just opened up the wedding film — your shot is in there, along with ${p.photoCount} others.`,
+        "Same link you used to take it.",
+      ],
+      cta: "View the photos",
     },
   }),
 

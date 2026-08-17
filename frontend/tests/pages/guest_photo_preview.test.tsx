@@ -220,4 +220,121 @@ describe("<GuestPhotoPage> host preview", () => {
     expect(requests).toHaveLength(1);
     expect(requests[0]?.url).toContain("/api/photo-albums/live-token/devices");
   });
+
+  it("queues a second picked photo behind the first instead of blocking on it", async () => {
+    localStorage.setItem("weddly.film.live-token.name", "Anna");
+    const uploadCalls: number[] = [];
+    let nextShotCount = 0;
+    globalThis.fetch = mock((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/devices")) {
+        return Promise.resolve(
+          response({
+            album: {
+              displayName: "Andor & Sári",
+              weddingDate: "2026-08-08",
+              slug: null,
+              title: null,
+              shotsPerGuest: 5,
+              isUploadEnabled: true,
+              eventEndsAt: null,
+              revealAt: null,
+              filmAesthetic: "natural",
+              coverImageUrl: null,
+            },
+            shotCount: 0,
+          }),
+        );
+      }
+      nextShotCount += 1;
+      uploadCalls.push(nextShotCount);
+      return Promise.resolve(
+        response({ upload: { id: nextShotCount, fileUrl: "/x.jpg" }, shotCount: nextShotCount }),
+      );
+    }) as unknown as typeof fetch;
+    Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: undefined });
+
+    const { container } = render(
+      <I18nProvider>
+        <MemoryRouter initialEntries={["/photos/live-token"]}>
+          <Routes>
+            <Route path="/photos/:token" element={<GuestPhotoPage />} />
+          </Routes>
+        </MemoryRouter>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText("A kamera ki van kapcsolva")).toBeInTheDocument());
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]');
+
+    // Two picks fired back to back, with no await between them — the second
+    // must not have to wait for the first's network round trip to resolve.
+    fireEvent.change(input as HTMLInputElement, {
+      target: { files: [new File([new Uint8Array([1])], "a.jpg", { type: "image/jpeg" })] },
+    });
+    fireEvent.change(input as HTMLInputElement, {
+      target: { files: [new File([new Uint8Array([2])], "b.jpg", { type: "image/jpeg" })] },
+    });
+
+    // The first upload's own success screen (shotCount === 1) confirms both
+    // were accepted rather than the second silently overwriting the first.
+    await waitFor(() => expect(screen.getByText("Megvan.")).toBeInTheDocument());
+    await waitFor(() => expect(uploadCalls).toEqual([1, 2]));
+  });
+
+  it("retries a failed upload automatically and it eventually lands", async () => {
+    localStorage.setItem("weddly.film.live-token.name", "Anna");
+    let uploadAttempts = 0;
+    globalThis.fetch = mock((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/devices")) {
+        return Promise.resolve(
+          response({
+            album: {
+              displayName: "Andor & Sári",
+              weddingDate: "2026-08-08",
+              slug: null,
+              title: null,
+              shotsPerGuest: 5,
+              isUploadEnabled: true,
+              eventEndsAt: null,
+              revealAt: null,
+              filmAesthetic: "natural",
+              coverImageUrl: null,
+            },
+            shotCount: 0,
+          }),
+        );
+      }
+      uploadAttempts += 1;
+      if (uploadAttempts === 1) {
+        // No .status on this rejection — indistinguishable from fetch()
+        // itself throwing because the guest briefly lost connectivity.
+        return Promise.reject(new TypeError("Failed to fetch"));
+      }
+      return Promise.resolve(response({ upload: { id: 1, fileUrl: "/x.jpg" }, shotCount: 1 }));
+    }) as unknown as typeof fetch;
+    Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: undefined });
+
+    const { container } = render(
+      <I18nProvider>
+        <MemoryRouter initialEntries={["/photos/live-token"]}>
+          <Routes>
+            <Route path="/photos/:token" element={<GuestPhotoPage />} />
+          </Routes>
+        </MemoryRouter>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText("A kamera ki van kapcsolva")).toBeInTheDocument());
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]');
+    fireEvent.change(input as HTMLInputElement, {
+      target: { files: [new File([new Uint8Array([1])], "a.jpg", { type: "image/jpeg" })] },
+    });
+
+    await waitFor(() => expect(screen.getByText("Megvan.")).toBeInTheDocument(), {
+      timeout: 4000,
+    });
+    expect(uploadAttempts).toBe(2);
+  });
 });

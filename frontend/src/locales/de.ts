@@ -2415,18 +2415,21 @@ const de: LocaleMessages = {
       "Empfehlungen: 1 Monat auf uns pro eingeladenem Paar, 2 pro Dienstleister",
     pricing_v2_note:
       "Sind die frühen Plätze belegt, starten neue Paare mit den 2 Wochen zum Ausprobieren.",
+    pricing_vendor_note: "Monatlich, jederzeit kündbar — oder jährlich, mit 25 % Rabatt.",
     pricing_vendor_callout: "Ihre ersten 3 Paare gehen auf uns.",
     pricing_vendor_callout_detail:
-      "Drei Paare können Sie erreichen, bevor irgendetwas berechnet wird. Wir verdienen erst, nachdem Weddly Ihnen bereits Arbeit gebracht hat, und der erste Beitrag wird ab dem 1. des Folgemonats fällig.",
+      "Alle Pro-Funktionen bleiben offen, bis drei Paare Sie erreicht haben. Danach abonnieren Sie mit einem Klick — es wird nie automatisch abgebucht, und bei jährlicher Zahlung sparen Sie 25 %.",
     pricing_vendor_value_note:
-      "Ihre Seite bleibt auch ohne Abo online und bearbeitbar. Pro öffnet die direkten Anfragen, den Kalender und den Kundenbereich.",
+      "Ihre Seite bleibt auch ohne Abo online und bearbeitbar. Pro schaltet nur frei, was Ihnen Einnahmen bringt: direkte Anfragen, den Kalender und den Kundenbereich.",
     pricing_vendor_bullet_1: "Ihre ersten 3 Paare gehen auf uns",
-    pricing_vendor_bullet_2: "Ihr Eintrag bleibt online, mit Abo oder ohne",
-    pricing_vendor_bullet_3: "Direkte Anfragen, Angebote und ein gemeinsamer Verlauf",
-    pricing_vendor_bullet_4: "Verfügbarkeitskalender · Google-Sync in beide Richtungen",
-    pricing_vendor_bullet_5: "Jederzeit kündbar, Ihre Seite bleibt",
+    pricing_vendor_bullet_2: "Ihr Eintrag bleibt für immer online, mit Abo oder ohne",
+    pricing_vendor_bullet_3: "Direkte Anfragen und Angebote in einem gemeinsamen Verlauf",
+    pricing_vendor_bullet_4:
+      "Live-Kalender, Google-Sync in beide Richtungen — keine Doppelbuchungen",
+    pricing_vendor_bullet_5: "Jährlich zahlen, 25 % bei Pro sparen",
     pricing_vendor_cta: "Betrieb eintragen",
-    pricing_planner_note: "Drei Pakete · Starter, Pro, Premium.",
+    pricing_planner_note:
+      "Drei Pakete · Starter, Pro, Premium. Bei jährlicher Zahlung 25 % sparen.",
     pricing_planner_callout: "Früh dabei, dann gehen die ersten 2 Jahre auf uns.",
     pricing_planner_callout_detail:
       "Den Planer-Bereich bauen wir noch gemeinsam mit den Büros, die ihn nutzen. Kommen Sie dazu, solange das gilt, und Ihr Paket geht zwei Jahre auf uns, alles freigeschaltet.",
@@ -3464,6 +3467,12 @@ const de: LocaleMessages = {
       "Der bisherige Gästelink, der individuelle Link und alle gedruckten QR-Codes werden sofort ungültig. Der neue Link und QR-Code müssen erneut geteilt werden.",
     film_rotate_link_confirm: "Widerrufen und neuen Link erstellen",
     film_rotate_link_done: "Der neue Gästelink ist bereit.",
+    film_email_guests: "Fotos per E-Mail an Gäste senden",
+    film_email_guests_body:
+      "Jeder beitragende Gast mit hinterlegter E-Mail-Adresse erhält einen Link zur Galerie. Bereits benachrichtigte Gäste erhalten keine erneute E-Mail.",
+    film_email_guests_confirm: "Senden",
+    film_email_guests_done: "An {{n}} Gäste gesendet.",
+    film_email_guests_none: "Alle mit Fotos wurden bereits benachrichtigt.",
     participant_remove: "Entfernen",
     participant_removed: "Teilnehmer entfernt",
     participant_remove_title: "Teilnehmer entfernen",
@@ -3552,6 +3561,7 @@ const de: LocaleMessages = {
     privacy_link: "Datenschutz",
     sent_toast: "Gesendet",
     invite_aria: "Andere einladen",
+    queue_retry: "Zum Wiederholen tippen",
   },
   design: {
     title: "Design",

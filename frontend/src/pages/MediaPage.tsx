@@ -961,6 +961,7 @@ export default function MediaPage() {
   const [slugError, setSlugError] = useState<string | null>(null);
   const [savingSlug, setSavingSlug] = useState(false);
   const [rotatingGuestLink, setRotatingGuestLink] = useState(false);
+  const [emailingGuests, setEmailingGuests] = useState(false);
   const [togglingUpload, setTogglingUpload] = useState(false);
   const [reopenRequested, setReopenRequested] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -1130,6 +1131,30 @@ export default function MediaPage() {
       toast.error(t("common.error_generic"));
     } finally {
       setRotatingGuestLink(false);
+    }
+  }
+
+  async function emailGuestsPhotos() {
+    if (emailingGuests) return;
+    const ok = await confirm({
+      title: t("media.film_email_guests"),
+      body: t("media.film_email_guests_body"),
+      confirmLabel: t("media.film_email_guests_confirm"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setEmailingGuests(true);
+    try {
+      const { sent } = await photoAlbumApi.emailGuestsPhotos();
+      toast.success(
+        sent > 0
+          ? t("media.film_email_guests_done").replace("{{n}}", String(sent))
+          : t("media.film_email_guests_none"),
+      );
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setEmailingGuests(false);
     }
   }
   const totalCapacity =
@@ -1644,6 +1669,25 @@ export default function MediaPage() {
                         {t("media.film_guest_view")}
                       </span>
                     </a>
+                    {/* Only once revealed — a link to a locked gallery would
+                        greet the guest with "come back later" instead of
+                        their own photos. */}
+                    {(album.revealAt === null || Date.now() >= album.revealAt) &&
+                      uploads.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => void emailGuestsPhotos()}
+                          disabled={emailingGuests}
+                          className="group flex flex-1 flex-col items-center gap-2 disabled:opacity-50"
+                        >
+                          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-paper-100 text-umber-900 transition-colors group-hover:bg-paper-200">
+                            <Mail size={22} aria-hidden="true" />
+                          </span>
+                          <span className="text-xs font-medium text-umber-700">
+                            {t("media.film_email_guests")}
+                          </span>
+                        </button>
+                      )}
                   </div>
                   {/* Reveal explainer — the one paragraph worth keeping, since
                         "guests can't see any of this yet" is genuinely

@@ -4126,6 +4126,12 @@ export const photoAlbumApi = {
       confirmation,
     }),
 
+  /** Mail every contributing guest with an email on file that their photos
+   *  are ready. Idempotent — re-running only reaches guests who joined or
+   *  uploaded since the last round. */
+  emailGuestsPhotos: (): Promise<{ sent: number; alreadyEmailed: number }> =>
+    apiFetch("POST", "/api/photo-albums/current/email-guests", {}),
+
   /** Host-only: all uploads bypassing reveal lock. */
   listPhotos: (): Promise<{ uploads: FilmUpload[]; total: number }> =>
     apiFetch("GET", "/api/photo-albums/current/photos"),

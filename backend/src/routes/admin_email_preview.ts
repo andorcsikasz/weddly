@@ -123,6 +123,12 @@ const STUBS: KindPayload = {
     rsvpStatus: "yes",
     rsvpPageUrl: `${BASE_URL}/rsvp/preview-code`,
   },
+  guest_photos_ready: {
+    coupleDisplayName: "Mia & Lucas",
+    guestName: "Kovács Béla",
+    galleryUrl: `${BASE_URL}/photos/preview-token`,
+    photoCount: 84,
+  },
   group_gift_notification: {
     isNewPledger: true,
     itemTitle: "Hétvégi pihenés",

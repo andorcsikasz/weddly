@@ -2960,7 +2960,8 @@ export interface LocaleMessages {
     /** Per-period suffix beside the price ("/ month" / "/ hó"). */
     pricing_amount_sub: string;
     /** Early-access window + the regular price it reverts to after the cutover.
-     *  Shared by the couple and vendor tickets: the cadence is the same. */
+     *  Couples-only: the vendor ticket has its own cadence note (below), since
+     *  the vendor ticket is the one with an annual option. */
     pricing_early_note: string;
     /** Tooltip on the price "i" — the low-cortisol / BigMac value line. */
     pricing_value_note: string;
@@ -2976,6 +2977,10 @@ export interface LocaleMessages {
      *  lives in Settings → Billing once signed in. */
     pricing_bullet_referral: string;
     pricing_v2_note: string;
+    /** Vendor ticket's own cadence note (parallel to pricing_early_note):
+     *  monthly, cancel any time, OR annually at a 25% discount — marketing
+     *  copy only, no Stripe annual price wired yet. */
+    pricing_vendor_note: string;
     /** Vendor ticket. The callout carries the whole proposition: the first
      *  VENDOR_FREE_LEAD_CREDITS couples reach the vendor before anything is
      *  charged, so nothing is billed until Weddly has already delivered work. */
@@ -3981,6 +3986,11 @@ export interface LocaleMessages {
     film_rotate_link_body: string;
     film_rotate_link_confirm: string;
     film_rotate_link_done: string;
+    film_email_guests: string;
+    film_email_guests_body: string;
+    film_email_guests_confirm: string;
+    film_email_guests_done: string;
+    film_email_guests_none: string;
     participant_remove: string;
     participant_removed: string;
     participant_remove_title: string;
@@ -4071,6 +4081,7 @@ export interface LocaleMessages {
     /** Auto-dismissing pill shown after every shot but the first. */
     sent_toast: string;
     invite_aria: string;
+    queue_retry: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   /** /app/design — the curated wedding visual-identity editor. */

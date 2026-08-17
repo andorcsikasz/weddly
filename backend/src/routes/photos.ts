@@ -42,6 +42,7 @@ import { activateFilmAlbum } from "../domain/film";
 import { validateFilmSlug } from "../domain/film_slug";
 import { getCoupleForUser } from "../domain/couples";
 import { recordConsent } from "../domain/consents";
+import { sendKind } from "../domain/emails";
 import { HttpError, json, requireAuth, type Ctx, type Router } from "../lib/http";
 import { isUploadedHeif, type SniffedImageMime, sniffUploadedImage } from "../lib/image_sniff";
 import { rateLimit } from "../lib/rate_limit";
@@ -591,6 +592,110 @@ async function handleRotateGuestLink(ctx: Ctx): Promise<Response> {
   });
 
   return json({ album: toAlbum(updated), previousLinkInvalidated: true });
+}
+
+/** POST /api/photo-albums/current/email-guests — mail every contributing
+ *  guest with an email on file that their own shots are ready to view.
+ *  Idempotent per guest identity: re-running only reaches guests who joined
+ *  or uploaded since the last round (`photos_emailed_at` gates it), so a
+ *  couple can press it again later without re-mailing anyone twice. */
+async function handleEmailGuestsPhotos(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple found");
+
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
+  if (!row) throw new HttpError(404, "No album found");
+
+  // Sending a link to a gallery that's still locked would greet the guest
+  // with "come back later" instead of their own photos — wait for reveal.
+  if (row.reveal_at !== null && now() < row.reveal_at) {
+    throw new HttpError(400, "Photos have not been revealed yet", { code: "not_revealed" });
+  }
+
+  const photoCount = countPhotos(row.id);
+  if (photoCount === 0) {
+    return json({ sent: 0, alreadyEmailed: 0 });
+  }
+
+  const devicesWithPhotos = new Set(
+    (
+      db
+        .prepare(
+          `SELECT DISTINCT device_id AS deviceId
+             FROM photo_uploads
+            WHERE album_id = ? AND source = 'guest' AND hidden_at IS NULL`,
+        )
+        .all(row.id) as { deviceId: string }[]
+    ).map((r) => r.deviceId),
+  );
+
+  const groups = db
+    .prepare(
+      `SELECT MAX(NULLIF(TRIM(guest_name), '')) AS guestName,
+              MAX(NULLIF(TRIM(email), '')) AS email,
+              MAX(photos_emailed_at) AS photosEmailedAt,
+              GROUP_CONCAT(device_id) AS deviceIds
+         FROM film_devices
+        WHERE album_id = ? AND removed_at IS NULL AND source = 'guest' AND email_key IS NOT NULL
+        GROUP BY ${identityKeySql("")}`,
+    )
+    .all(row.id) as Array<{
+    guestName: string | null;
+    email: string | null;
+    photosEmailedAt: number | null;
+    deviceIds: string;
+  }>;
+
+  const galleryUrl = `${CONFIG.frontendBaseUrl}/photos/${row.slug ?? row.upload_token}`;
+  const ts = now();
+  let sent = 0;
+  let alreadyEmailed = 0;
+
+  for (const group of groups) {
+    if (!group.email) continue;
+    if (group.photosEmailedAt !== null) {
+      alreadyEmailed++;
+      continue;
+    }
+    const deviceIds = group.deviceIds.split(",");
+    if (!deviceIds.some((d) => devicesWithPhotos.has(d))) continue;
+
+    void sendKind(
+      "guest_photos_ready",
+      {
+        coupleDisplayName: couple.display_name,
+        guestName: group.guestName ?? "",
+        galleryUrl,
+        photoCount,
+      },
+      {
+        user: null,
+        guest: { email: group.email, full_name: group.guestName ?? "" },
+        couple_id: couple.id,
+        submitterUserId: userId,
+      },
+    );
+    const placeholders = deviceIds.map(() => "?").join(", ");
+    db.prepare(
+      `UPDATE film_devices SET photos_emailed_at = ?
+        WHERE album_id = ? AND device_id IN (${placeholders})`,
+    ).run(ts, row.id, ...deviceIds);
+    sent++;
+  }
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "film.guests.email_photos",
+    target_kind: "photo_album",
+    target_id: row.id,
+    after: { sent, alreadyEmailed },
+  });
+
+  return json({ sent, alreadyEmailed });
 }
 
 /** GET /api/photo-albums/current/photos — host view, bypasses reveal lock. */
@@ -1297,6 +1402,7 @@ export function registerPhotoRoutes(router: Router): void {
   router.get("/api/photo-albums/current", handleGetCurrentAlbum, true);
   router.patch("/api/photo-albums/current", handleUpdateAlbum, true);
   router.post("/api/photo-albums/current/rotate-link", handleRotateGuestLink, true);
+  router.post("/api/photo-albums/current/email-guests", handleEmailGuestsPhotos, true);
   router.post("/api/photo-albums/current/photos", handleCoupleUpload, true);
   router.get("/api/photo-albums/current/photos", handleListPhotos, true);
   router.get("/api/photo-albums/current/devices", handleListDevices, true);
