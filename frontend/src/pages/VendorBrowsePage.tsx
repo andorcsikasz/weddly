@@ -35,6 +35,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { CountryPicker } from "../components/CountryPicker";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { Wordmark } from "../components/Wordmark";
+import { SmartImage } from "../components/ui/SmartImage";
 import { CATEGORY_ICON } from "../lib/category_icons";
 import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -195,10 +196,11 @@ function SkeletonNav() {
 // around every tile turned 90 vendors into 90 boxes; dropping the chrome lets
 // the photography carry the page and the caption sit on the page background,
 // the way a marketplace feed reads.
-function VendorCard({
+export function VendorCard({
   id,
   name,
   city,
+  category,
   categoryLabel,
   distanceLabel,
   hero,
@@ -208,33 +210,51 @@ function VendorCard({
   id: string;
   name: string;
   city: string;
+  /** Drives the fallback glyph — see `hero`. */
+  category: SupplierCategory;
   categoryLabel: string;
   /** "35 km" on a nearby card, absent on an in-town one. Rendered as a third
    *  segment of the same muted line: at this size a badge over the photo would
    *  compete with the verified check, and the distance is a fact, not a claim. */
   distanceLabel?: string;
-  /** Null when the listing has no photograph. The teaser endpoint only ever
-   *  returned photographed entries; the full catalogue shows everyone, and a
-   *  card with an empty frame is still a card the visitor can open. */
+  /** Null when the listing has no photograph — falls back to the category
+   *  glyph, same as the full catalogue. A non-null URL that fails to LOAD
+   *  (stale reference, vanished file) falls back the same way rather than
+   *  showing the browser's broken-image glyph; see the `failedSrc` state
+   *  below. */
   hero: string | null;
   /** Registered Weddly vendor — same blue check as the in-app directory. */
   verified: boolean;
   /** Listing setup finished — fills the check in. See `<VerifiedBadge>`. */
   listingComplete: boolean;
 }) {
+  // Keyed by the src that failed, so a new hero after an edit gets its own
+  // chance rather than staying stuck on the glyph. Same pattern as
+  // WishlistPicture's onError fallback.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const showHero = hero && hero !== failedSrc;
+  const Icon = CATEGORY_ICON[category];
   return (
     <Link
       to={`/suppliers/${encodeURIComponent(id)}`}
       className="group block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100"
     >
       <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-paper-200 dark:bg-umber-700">
-        {hero && (
-          <img
+        {showHero ? (
+          <SmartImage
             src={hero}
             alt={name}
             loading="lazy"
+            onError={() => setFailedSrc(hero)}
+            wrapperClassName="h-full w-full"
             className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.06]"
           />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-paper-50 text-ink-400 shadow-sm dark:bg-umber-800 dark:text-umber-300">
+              <Icon size={22} aria-hidden />
+            </span>
+          </div>
         )}
         {/* The affordance, not a label: on hover the card admits it opens a
             profile. Pointer-only, so nothing is hidden from touch or AT — the
@@ -367,6 +387,7 @@ function CategoryRow({
               id={v.id}
               name={v.name}
               city={v.city}
+              category={v.category}
               categoryLabel={t(`suppliers.cat.${v.category}`)}
               distanceLabel={
                 v.distance_km == null
@@ -610,6 +631,7 @@ function CatalogueGrid({
               id={v.id}
               name={v.name}
               city={v.city}
+              category={v.category}
               categoryLabel={t(`suppliers.cat.${v.category}`)}
               hero={v.hero_image_url ?? v.gallery_urls?.[0] ?? null}
               verified={v.vendor_account_id !== null}
