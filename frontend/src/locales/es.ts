@@ -2148,7 +2148,7 @@ const es: LocaleMessages = {
     back_home: "Volver a la página de inicio",
   },
   landing: {
-    hero_title: "Planificación de boda sin estrés,\ncon un único plan en directo para los dos.",
+    hero_title: "Planificación de boda sin estrés",
     hero_sub:
       "Dos accesos. Un espacio compartido. El mismo presupuesto, lista de invitados, RSVP y plano de mesas, siempre actualizado.",
     cta_signup: "Empieza a planear",

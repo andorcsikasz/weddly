@@ -237,9 +237,10 @@ export default function LandingPage() {
       {/* ════════════════════════ 01 · HERO ════════════════════════
           Uber-Eats-style: bold white title straight on a full-bleed photo
           under a dark scrim (see .hero-overlay), not a cream panel the photo
-          peeks out from. Title runs bigger and wraps tighter (shorter
-          max-width in `ch`) than before, for the same "the type IS the
-          hero" weight Uber Eats' own homepage headline carries. */}
+          peeks out from. The title itself is a single clean line in every
+          locale on purpose — sized and worded to match the proportions of
+          Uber Eats' own one-line homepage headline ("Order delivery near
+          you"), not the tall, page-dominating stack this used to be. */}
       <section className="hero-section">
         {/* Media layer — full-bleed clasped-hands photo (see .hero-photo-img
             for the desktop/mobile crop split), with .hero-overlay laid on
@@ -258,28 +259,8 @@ export default function LandingPage() {
           <div className="mx-auto flex min-h-[calc(75svh+5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
             <div className="grid items-start gap-8 lg:items-center lg:gap-14">
               <div>
-                <h1 className="max-w-[16ch] font-grotesk text-5xl font-bold leading-[0.96] tracking-tight text-paper-50 sm:max-w-[12ch] sm:text-8xl sm:leading-[0.92] lg:max-w-[13ch] lg:text-9xl lg:leading-[0.9]">
-                  {(() => {
-                    const [heroMain, heroSub] = t("landing.hero_title").split("\n");
-                    return (
-                      <>
-                        <span
-                          className={
-                            heroSub
-                              ? undefined
-                              : "block text-lg leading-none sm:text-4xl lg:text-5xl"
-                          }
-                        >
-                          {heroMain}
-                        </span>
-                        {heroSub && (
-                          <span className="mt-3 block whitespace-nowrap text-xl leading-none sm:mt-4 sm:text-5xl lg:mt-5 lg:text-6xl">
-                            {heroSub}
-                          </span>
-                        )}
-                      </>
-                    );
-                  })()}
+                <h1 className="font-grotesk text-4xl font-bold leading-[1.1] tracking-tight text-paper-50 sm:text-5xl lg:text-6xl">
+                  {t("landing.hero_title")}
                 </h1>
                 {/* Signup + demo sit side by side: sign up, or look around
                     first. Stacked on phones, inline from sm up. On phones each

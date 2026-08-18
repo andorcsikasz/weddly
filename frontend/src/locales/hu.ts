@@ -2118,7 +2118,7 @@ const hu: LocaleMessages = {
     back_home: "Vissza a főoldalra",
   },
   landing: {
-    hero_title: "Esküvőszervező alkalmazás\npároknak, egy közös tervvel.",
+    hero_title: "Esküvőtervezés, stressz nélkül",
     hero_sub:
       "Két belépés. Egy közös felület. Ugyanaz a költségvetés, vendéglista, RSVP és ültetési rend, mindkettőtöknek naprakészen.",
     cta_signup: "Kezdjétek el",

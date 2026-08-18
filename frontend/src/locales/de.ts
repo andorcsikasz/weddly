@@ -2177,7 +2177,7 @@ const de: LocaleMessages = {
     back_home: "Zurück zur Startseite",
   },
   landing: {
-    hero_title: "Stressarme Hochzeitsplanung,\nmit einem gemeinsamen Live-Plan für Sie beide.",
+    hero_title: "Stressarme Hochzeitsplanung",
     hero_sub:
       "Zwei Zugänge. Ein gemeinsamer Arbeitsbereich. Budget, Gästeliste, Zusagen und Sitzplan sind für Sie beide immer aktuell.",
     cta_signup: "Planung starten",

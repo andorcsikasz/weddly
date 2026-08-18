@@ -2127,7 +2127,7 @@ const hr: LocaleMessages = {
     back_home: "Natrag na početnu stranicu",
   },
   landing: {
-    hero_title: "Planiranje vjenčanja bez stresa,\nuz jedan zajednički plan uživo za vas oboje.",
+    hero_title: "Planiranje vjenčanja bez stresa",
     hero_sub:
       "Dvije prijave. Jedan zajednički prostor. Isti proračun, popis gostiju, RSVP-i i raspored sjedenja, uvijek ažurni.",
     cta_signup: "Krenite s planiranjem",
