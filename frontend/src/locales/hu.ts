@@ -2447,7 +2447,8 @@ const hu: LocaleMessages = {
     hero_title: "Egy kattintásra a pároktól.",
     closing_title: "A következő esküvői szezon most dől el.",
     closing_cta: "Foglald le a helyed",
-    benefits_heading: "Gyors foglalás. Nagyobb elérés. Értékelhető profil. Így jön a növekedés.",
+    benefits_heading:
+      "Gyors foglalások. Nagyobb elérés. Több értékelés.\nÍgy növekszik a vállalkozásod.",
     benefit_1_title: "Élesben ma, nem hónapok múlva",
     benefit_1_body: "A profilod aznap élesedik. Fizetni csak három valódi megkeresés után kell.",
     benefit_2_title: "Nem egy végtelen listában tűnsz el",

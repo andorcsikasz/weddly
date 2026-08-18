@@ -150,7 +150,7 @@ export default function VendorsPage() {
           what keeps the profile growing after that. */}
       <section className="bg-paper-100/60 dark:bg-umber-900/40">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
-          <p className="mx-auto max-w-3xl text-center font-grotesk text-2xl font-medium leading-snug tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
+          <p className="mx-auto max-w-3xl whitespace-pre-line text-center font-grotesk text-2xl font-medium leading-snug tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
             {t("vendors.benefits_heading")}
           </p>
           <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
