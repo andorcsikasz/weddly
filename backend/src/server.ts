@@ -159,6 +159,8 @@ import { registerSupplierRoutes } from "./routes/suppliers";
 import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
 import { retireLegacyTaxonomy, seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
+import { runListingGalleryBackfill } from "./domain/listing_gallery_backfill";
+import { runListingImageBackfill } from "./domain/listing_image_backfill";
 import { backfillPartnerPropagation, reconcileWishlistSectionFlag } from "./domain/couples";
 import { seedDoNotContact } from "./domain/emails/optouts";
 import { ensureDefaultSchedules } from "./domain/campaign_schedules";
@@ -1200,9 +1202,21 @@ if (process.env.NODE_ENV !== "test") {
   // link but no image (created before link-preview shipped). Non-blocking and
   // self-limiting — each row is attempted exactly once. See the module header.
   startWishlistImageBackfill();
-  // Supplier photographs are never scraped or re-hosted automatically. A
-  // claimed vendor may upload its own portfolio; unclaimed listings remain
-  // factual, image-free cards until a documented licence/authorisation exists.
+  // Give unclaimed directory vendors a real card photo when their own website
+  // publishes one. Seeded, hand-picked galleries go first so their strongest
+  // image wins the hero slot; the generic website/og:image pass then fills the
+  // remaining rows. Both sweeps are non-blocking, one-shot, SSRF-guarded and
+  // re-host the bytes locally, so a slow/dead third-party site neither delays
+  // readiness nor leaves the browser hotlinking an external image.
+  void runListingGalleryBackfill()
+    .catch((err) => {
+      log.warn("listing.gallery_backfill.failed", { error: String(err) });
+    })
+    .then(() =>
+      runListingImageBackfill().catch((err) => {
+        log.warn("listing.hero_backfill.failed", { error: String(err) });
+      }),
+    );
   // Boot-time guard against re-introducing the legacy `sendEmail` direct-call
   // pattern. The May 2026 "phishy email" bug lived for months because nothing
   // flagged it; this scan emits a `mailer.integrity.violation` warning at boot
