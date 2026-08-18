@@ -9,9 +9,14 @@
 // Design mirrors domain/wishlist_image_backfill:
 //  - Non-blocking: server.ts fires the sweep AFTER Bun.serve() is listening and
 //    never awaits it, so a slow venue site can't delay readiness.
-//  - One attempt per row: every attempt stamps `hero_checked_at` (hit or miss),
-//    so a site without a usable og:image is tried exactly once and never
-//    re-hammered on the next deploy.
+//  - Every attempt stamps `hero_checked_at` (hit or miss). A MISS is retried
+//    after RECHECK_AFTER_MS, not abandoned forever — same idiom as
+//    domain/google_places_sync's `REFRESH_AFTER_MS`, and for the same reason:
+//    a site that had nothing usable in June can easily have a real gallery by
+//    September (measured directly — zichypark-hotel.hu's homepage had no
+//    og:image and no candidate the first time it was checked; a later check
+//    against the same code found a passable photo on the first body-image
+//    candidate, because the site itself had changed in between).
 //  - Vendor-owned listings are skipped (vendor_account_id set) — a paying vendor
 //    manages their own hero via vendor_listing.ts, which always wins.
 //  - Bounded fan-out: a small worker pool keeps a burst of legacy rows from
@@ -19,7 +24,11 @@
 
 import { db, now } from "../db";
 import { seededGalleryIds } from "./listing_gallery_backfill";
-import { fetchLinkPreview, fetchPageImageCandidates } from "../lib/link_preview";
+import {
+  fetchLinkPreview,
+  fetchPageImageCandidates,
+  withGalleryFullSizeCandidates,
+} from "../lib/link_preview";
 import { fetchRemoteImage } from "../lib/remote_image";
 import { log } from "../lib/logger";
 import { storage } from "../lib/storage";
@@ -30,6 +39,10 @@ const MAX_ROWS = 2000;
 // fetchLinkPreview + fetchRemoteImage each time out within a few seconds, so a
 // handful in flight keeps the sweep quick without a thundering herd.
 const CONCURRENCY = 4;
+// A miss is retried after a month, mirroring google_places_sync's own
+// REFRESH_AFTER_MS — long enough that a dead domain isn't re-crawled on every
+// deploy, short enough that a venue site rebuilt over a season gets picked up.
+const RECHECK_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
 // Quality gate. A homepage og:image is often a tiny logo or a skinny
 // promo-banner, neither of which makes a good card hero. We reject what we can
@@ -40,10 +53,13 @@ const CONCURRENCY = 4;
 const MIN_SHORT_EDGE = 200;
 const MIN_LONG_EDGE = 400;
 const MAX_ASPECT_RATIO = 4;
-// How many body-image candidates to download before giving up on a site. Four
-// is enough to walk past a header logo or two and still reach the slider,
-// without turning one listing into a crawl of the whole homepage.
-const BODY_IMAGE_ATTEMPTS = 4;
+// How many body-image candidates to download before giving up on a site.
+// Measured against real misses: a header logo, a flag-icon row, or a run of
+// gallery-plugin thumbnails routinely fills the first 4-8 slots before the
+// first real photo (karolyi.org.hu's actual hero was candidate #5). Ten stays
+// well under fetchPageImageCandidates's own 12-candidate cap while covering
+// that run, without turning one listing into a crawl of the whole homepage.
+const BODY_IMAGE_ATTEMPTS = 10;
 
 /** True when an image is good enough to use as a card hero. Unmeasured images
  *  (width/height null) pass — the gate only rejects what it can prove is junk. */
@@ -69,7 +85,8 @@ interface BackfillRow {
 }
 
 /** Rows eligible for an auto hero: active, not vendor-owned, with a website but
- *  no hero and never previously attempted.
+ *  no hero — either never attempted, or last attempted far enough back
+ *  (RECHECK_AFTER_MS) that the site has plausibly changed since.
  *
  *  A listing that ships a CURATED gallery seed is held back until the gallery
  *  sweep has had its turn (`gallery_checked_at` stamped). Both sweeps start
@@ -81,6 +98,10 @@ interface BackfillRow {
  *  first. If the gallery sweep comes back empty, `gallery_checked_at` is
  *  stamped anyway and the next boot lets og:image fill in — the hold-back
  *  delays this sweep, it never cancels it.
+ *
+ *  Never-checked rows sort first, then oldest-checked — the rows that have
+ *  had the longest to grow a real website win a re-check before a row that
+ *  missed last week.
  *
  *  Exported for tests. */
 export function listListingsNeedingHeroBackfill(limit: number): BackfillRow[] {
@@ -94,22 +115,22 @@ export function listListingsNeedingHeroBackfill(limit: number): BackfillRow[] {
       `SELECT id, website FROM listings
          WHERE vendor_account_id IS NULL
            AND hero_image_url IS NULL
-           AND hero_checked_at IS NULL
+           AND (hero_checked_at IS NULL OR hero_checked_at < ?)
            AND status = 'active'
            AND website IS NOT NULL
            AND TRIM(website) != ''
            ${holdBack}
-         ORDER BY id ASC
+         ORDER BY hero_checked_at IS NOT NULL, hero_checked_at ASC, id ASC
          LIMIT ?`,
     )
-    .all(...seeded, limit) as BackfillRow[];
+    .all(now() - RECHECK_AFTER_MS, ...seeded, limit) as BackfillRow[];
 }
 
 /** Resolve a listing's website → og:image → download bytes → store under
  *  `listings/<id>/hero.<ext>` and persist the public URL. Stamps
- *  `hero_checked_at` on every attempt (hit or miss) so a site without a usable
- *  image drops out of the backfill set permanently. Returns true only when an
- *  image was actually stored. Never throws.
+ *  `hero_checked_at` on every attempt (hit or miss); a miss just leaves the row
+ *  eligible again after RECHECK_AFTER_MS rather than dropping it forever.
+ *  Returns true only when an image was actually stored. Never throws.
  *
  *  Also the per-row entry point reused at community-submission time so a freshly
  *  submitted supplier gets a hero alongside its text enrichment.
@@ -151,11 +172,12 @@ export async function fetchAndStoreListingHero(
   // back to the photos in the page body — the slider and the gallery strip are
   // where these businesses actually put their pictures. Candidates are tried in
   // document order (the hero image of a site is near the top far more often
-  // than not) and each still has to clear the quality gate, which is what keeps
-  // a stray logo out. Capped, because a page can list dozens.
+  // than not), expanded with each gallery-plugin thumbnail's full-size sibling,
+  // and each still has to clear the quality gate, which is what keeps a stray
+  // logo out. Capped, because a page can list dozens.
   if (!img) {
     try {
-      const candidates = await fetchPageImageCandidates(website);
+      const candidates = withGalleryFullSizeCandidates(await fetchPageImageCandidates(website));
       for (const url of candidates.slice(0, BODY_IMAGE_ATTEMPTS)) {
         const candidate = await fetchRemoteImage(url);
         if (candidate && gate(candidate)) {

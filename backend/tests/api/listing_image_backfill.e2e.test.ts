@@ -1,8 +1,9 @@
 // Supplier listing hero auto-fill + the hero_checked_at marker. A curated /
 // community listing with a website but no vendor-uploaded hero is eligible; the
-// per-row fetch stamps hero_checked_at on every attempt (hit or miss) so a site
-// without a usable og:image is tried exactly once. We point the fetch at a
-// blocked localhost URL so it exercises the soft-fail path with no real network.
+// per-row fetch stamps hero_checked_at on every attempt (hit or miss), and a
+// miss is only re-tried once RECHECK_AFTER_MS has passed (the site may have
+// grown real content since). We point the fetch at a blocked localhost URL so
+// it exercises the soft-fail path with no real network.
 
 import "../setup";
 
@@ -64,12 +65,12 @@ function insertListing(
 const idsIn = (limit: number) => listListingsNeedingHeroBackfill(limit).map((r) => r.id);
 
 describe("listing hero backfill eligibility", () => {
-  test("only active, vendor-less rows with a website and no hero/checked are listed", () => {
+  test("only active, vendor-less rows with a website and no hero are listed", () => {
     wipeAll();
 
     insertListing("c-hero-eligible");
     insertListing("c-hero-has-image", { hero: "/uploads/listings/x/hero.jpg" });
-    insertListing("c-hero-already-checked", { checkedAt: 123 });
+    insertListing("c-hero-recently-checked", { checkedAt: Date.now() });
     insertListing("c-hero-pending", { status: "pending" });
     insertListing("c-hero-no-website", { website: null });
     insertListing("c-hero-empty-website", { website: "   " });
@@ -77,10 +78,30 @@ describe("listing hero backfill eligibility", () => {
     const pending = idsIn(500);
     expect(pending).toContain("c-hero-eligible");
     expect(pending).not.toContain("c-hero-has-image");
-    expect(pending).not.toContain("c-hero-already-checked");
+    expect(pending).not.toContain("c-hero-recently-checked");
     expect(pending).not.toContain("c-hero-pending");
     expect(pending).not.toContain("c-hero-no-website");
     expect(pending).not.toContain("c-hero-empty-website");
+  });
+
+  test("a miss older than the recheck window becomes eligible again, but a hit never does", () => {
+    wipeAll();
+
+    const staleMissCheckedAt = Date.now() - 31 * 24 * 60 * 60 * 1000; // 31 days ago
+    insertListing("c-hero-stale-miss", { checkedAt: staleMissCheckedAt });
+    // Same age, but it DID resolve a hero — hero_image_url excludes it regardless
+    // of how long ago it was checked, since there's nothing left to retry for.
+    insertListing("c-hero-stale-hit", {
+      checkedAt: staleMissCheckedAt,
+      hero: "/uploads/listings/x/hero.jpg",
+    });
+
+    // A large limit: never-checked rows (the curated seed, thousands of them)
+    // sort ahead of a stale recheck, so a small LIMIT would starve this row out
+    // without the ordering actually being wrong.
+    const pending = idsIn(5000);
+    expect(pending).toContain("c-hero-stale-miss");
+    expect(pending).not.toContain("c-hero-stale-hit");
   });
 });
 
@@ -100,7 +121,7 @@ describe("listing hero backfill fetch", () => {
     expect(idsIn(500)).not.toContain("c-hero-fetch");
   });
 
-  test("a stamped row leaves the eligible set, so the sweep never re-hammers it", async () => {
+  test("a freshly stamped row leaves the eligible set, so the sweep doesn't immediately re-hammer it", async () => {
     wipeAll();
     insertListing("c-hero-once");
 
@@ -108,7 +129,8 @@ describe("listing hero backfill fetch", () => {
     expect(rowOf("c-hero-once").hero_checked_at).not.toBeNull();
 
     // listListingsNeedingHeroBackfill is what runListingImageBackfill draws from,
-    // so dropping out of it means the boot sweep won't attempt the row again.
+    // so dropping out of it means the boot sweep won't attempt the row again
+    // until RECHECK_AFTER_MS has passed (see the recheck-window test above).
     expect(idsIn(500)).not.toContain("c-hero-once");
   });
 });

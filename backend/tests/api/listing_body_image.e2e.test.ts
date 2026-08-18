@@ -13,7 +13,10 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { extractBodyImageCandidates } from "../../src/lib/link_preview";
+import {
+  extractBodyImageCandidates,
+  withGalleryFullSizeCandidates,
+} from "../../src/lib/link_preview";
 import { isAcceptableHero } from "../../src/domain/listing_image_backfill";
 
 const BASE = "https://venue.test/";
@@ -89,5 +92,28 @@ describe("extractBodyImageCandidates", () => {
     expect(isAcceptableHero(1600, 200)).toBe(false); // banner strip
     expect(isAcceptableHero(1024, 683)).toBe(true); // a real photo
     expect(isAcceptableHero(null, null)).toBe(true); // unmeasurable, don't block
+  });
+});
+
+describe("withGalleryFullSizeCandidates", () => {
+  test("inserts a gallery-plugin thumb's full-size sibling right after it", () => {
+    const out = withGalleryFullSizeCandidates([
+      "https://venue.test/gallery/wedding/thumbs/thumbs_hall-001.jpg",
+      "https://venue.test/gallery/wedding/thumbs/thumbs_hall-002.jpg?v=2",
+    ]);
+    expect(out).toEqual([
+      "https://venue.test/gallery/wedding/thumbs/thumbs_hall-001.jpg",
+      "https://venue.test/gallery/wedding/hall-001.jpg",
+      "https://venue.test/gallery/wedding/thumbs/thumbs_hall-002.jpg?v=2",
+      "https://venue.test/gallery/wedding/hall-002.jpg?v=2",
+    ]);
+  });
+
+  test("leaves non-thumb candidates untouched and dedupes", () => {
+    const out = withGalleryFullSizeCandidates([
+      "https://venue.test/photos/ceremony.jpg",
+      "https://venue.test/photos/ceremony.jpg",
+    ]);
+    expect(out).toEqual(["https://venue.test/photos/ceremony.jpg"]);
   });
 });

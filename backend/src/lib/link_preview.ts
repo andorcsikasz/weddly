@@ -410,6 +410,31 @@ export function extractBodyImageCandidates(html: string, baseUrl: string): strin
   return out;
 }
 
+/** NextGEN Gallery and its lookalikes (common on small WordPress venue sites)
+ *  serve every body image pre-shrunk from a `.../thumbs/thumbs_<name>` path,
+ *  with the real photo sitting one folder up at `.../<name>` — a fixed plugin
+ *  convention, not a guess. Measured on puchner.hu: all 12 body candidates
+ *  were 200×150 thumbnails, and every one of them had a full-size sibling.
+ *  Inserts the derived URL right after each thumb it's derived from, so it is
+ *  tried early rather than at the tail of the candidate list. Pure, exported
+ *  for tests. */
+export function withGalleryFullSizeCandidates(urls: string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const add = (u: string) => {
+    if (seen.has(u)) return;
+    seen.add(u);
+    out.push(u);
+  };
+  const THUMB_RE = /^(.*\/)thumbs\/thumbs_([^/?#]+)((?:\?[^#]*)?)$/i;
+  for (const u of urls) {
+    add(u);
+    const m = u.match(THUMB_RE);
+    if (m) add(`${m[1]}${m[2]}${m[3]}`);
+  }
+  return out;
+}
+
 /** Fetch a page and return its body photo candidates. Same SSRF guard, timeout
  *  and redirect handling as `fetchLinkPreview`; the only difference is that it
  *  reads past `</head>`, since that is where the photos live. Never throws:
