@@ -1016,15 +1016,6 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
        all cases. The hero content clears the header via its own `pt-16`. */
     margin-top: -3.5rem;
     min-height: 100dvh;
-    /* Feeds the overlay's dissolve-into-next-section stop — the one piece of
-       the scrim that DOES have to differ by theme, since the section below
-       is bg-white in light / bg-umber-900 in dark. Without a matching
-       dissolve here the photo hard-cuts into that section with a visible
-       seam. */
-    --hero-dissolve: #ffffff;
-  }
-  .dark .hero-section {
-    --hero-dissolve: #1a1410;
   }
   @media (max-width: 639px) {
     /* The mobile header is taller than the sm+ one (h-11 icon buttons +
@@ -1035,6 +1026,12 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
        fills right to the top edge. */
     .hero-section {
       margin-top: -4.25rem;
+      /* svh, not dvh: dvh tracks the browser chrome collapsing/expanding as
+         the visitor scrolls, so the section kept resizing mid-scroll and the
+         whole page jumped under them. svh is the height with the chrome
+         fully shown, so it can't change while scrolling — matches the
+         content wrapper below, which is already svh-based on mobile. */
+      min-height: 100svh;
     }
   }
 
@@ -1085,15 +1082,14 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
      — just enough for the white title/CTAs to hold contrast over the text
      column, not a general dimmer over the whole frame. The photo carries its
      own mood already; a heavy wash on top of it read as a flat grey slab
-     rather than the photo. Three layers, identical in light and dark mode
-     except the last:
+     rather than the photo. No fade-to-white at the bottom edge (that used to
+     dissolve into the section below via --hero-dissolve): it washed out the
+     bottom of the photo, so the section now cuts straight into the next one.
+     Two layers, identical in light and dark mode:
        1. a left-to-right wash for the text column, tapering out well before
           the frame's midpoint so most of the photo is untouched;
        2. a faint top-to-bottom wash — barely there, just enough depth under
-          the header and CTA row;
-       3. the dissolve into the section below, via --hero-dissolve (the one
-          layer that has to differ by theme, to land on that section's own
-          background color rather than leaving a hairline seam). */
+          the header and CTA row. */
   .hero-overlay {
     position: absolute;
     inset: 0;
@@ -1113,8 +1109,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
         rgba(10, 8, 6, 0.04) 20%,
         rgba(10, 8, 6, 0.08) 75%,
         rgba(10, 8, 6, 0.22) 100%
-      ),
-      linear-gradient(to top, var(--hero-dissolve) 0%, rgba(10, 8, 6, 0) 7%);
+      );
   }
   @media (max-width: 639px) {
     .hero-overlay {
@@ -1122,17 +1117,15 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
          near-opaque behind the headline/CTAs at the top (the mobile crop's
          brightest band, the pale dress fabric) and thinning fast so the
          photo carries most of the frame. */
-      background:
-        linear-gradient(
-          180deg,
-          rgba(10, 8, 6, 0.74) 0%,
-          rgba(10, 8, 6, 0.5) 16%,
-          rgba(10, 8, 6, 0.22) 32%,
-          rgba(10, 8, 6, 0.06) 48%,
-          rgba(10, 8, 6, 0.1) 82%,
-          rgba(10, 8, 6, 0.18) 100%
-        ),
-        linear-gradient(to top, var(--hero-dissolve) 0%, rgba(10, 8, 6, 0) 10%);
+      background: linear-gradient(
+        180deg,
+        rgba(10, 8, 6, 0.74) 0%,
+        rgba(10, 8, 6, 0.5) 16%,
+        rgba(10, 8, 6, 0.22) 32%,
+        rgba(10, 8, 6, 0.06) 48%,
+        rgba(10, 8, 6, 0.1) 82%,
+        rgba(10, 8, 6, 0.18) 100%
+      );
     }
   }
 

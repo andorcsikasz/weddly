@@ -255,8 +255,11 @@ export default function LandingPage() {
           {/* The phone min-height carries the same +5rem the CTA row adds to its
               top margin below: content and box grow together, so the centred
               headline stays put and only the buttons travel down, clear of
-              the clasped-hands focal point at the frame's vertical middle. */}
-          <div className="mx-auto flex min-h-[calc(75svh+5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
+              the clasped-hands focal point at the frame's vertical middle.
+              From sm up the block is bottom-anchored instead of centred, so
+              it lands at the same height as the clasped hands rather than
+              floating above them. */}
+          <div className="mx-auto flex min-h-[calc(75svh+5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-end sm:px-6 sm:pb-24 lg:pb-28">
             <div className="grid items-start gap-8 lg:items-center lg:gap-14">
               <div>
                 <h1 className="font-grotesk text-4xl font-bold leading-[1.1] tracking-tight text-paper-50 sm:text-5xl lg:text-6xl">
@@ -1487,8 +1490,10 @@ function PricingDeck() {
 
   // How far a card sits from centre in its side slots. Fanned, that is a
   // fraction of the deck so ~11rem of each peek stays clear of the front
-  // ticket; narrow, it is the whole deck plus a gap, which turns the same
-  // three nodes into an ordinary swipe carousel with nothing peeking.
+  // ticket; narrow, a phone has no room for readable peek text but plenty
+  // for a stacked-card SLIVER (see PricingPeek's `lg:contents` swap), so the
+  // deck stays a real 3D stack of tickets rather than collapsing to a flat
+  // one-at-a-time carousel.
   const deckRef = useRef<HTMLDivElement>(null);
   const [deckW, setDeckW] = useState(0);
   useEffect(() => {
@@ -1499,7 +1504,7 @@ function PricingDeck() {
     setDeckW(el.offsetWidth);
     return () => ro.disconnect();
   }, []);
-  const step = fanned ? deckW * 0.215 : deckW + 24;
+  const step = fanned ? deckW * 0.215 : deckW * 0.15;
 
   // Pointer drag. `dragPx` offsets every card live so the deck tracks the
   // finger 1:1; on release anything past a fifth of a step commits a rotation.
@@ -1531,7 +1536,10 @@ function PricingDeck() {
     setDragPx(0);
     if (!from) return;
     if (from.moved) swallowClick.current = true;
-    if (step > 0 && Math.abs(dx) > step * 0.2) rotate(dx < 0 ? 1 : -1);
+    // A floor on top of the 20%-of-step rule: the mobile step is small (a
+    // peek sliver, not a full deck width), so a bare percentage would flip
+    // the deck on a jiggle a visitor meant as vertical scroll.
+    if (step > 0 && Math.abs(dx) > Math.max(step * 0.2, 32)) rotate(dx < 0 ? 1 : -1);
   };
 
   // Every amount comes from the shared billing constants, never from copy: a
@@ -1620,19 +1628,13 @@ function PricingDeck() {
                 type="button"
                 aria-pressed={isActive}
                 onClick={() => setActive(id)}
-                className={`flex min-h-tap min-w-32 flex-col items-center gap-1.5 rounded-xl border px-3 py-3 transition-colors duration-300 sm:min-w-0 ${
+                className={`flex min-h-tap min-w-32 items-center justify-center whitespace-nowrap rounded-xl border px-4 py-3 font-grotesk text-xs font-semibold uppercase tracking-[0.14em] transition-colors duration-300 sm:min-w-0 ${
                   isActive
-                    ? "border-umber-400 bg-paper-50 dark:border-umber-400 dark:bg-umber-800"
-                    : "border-paper-300 hover:bg-paper-100/70 dark:border-umber-700 dark:hover:bg-umber-800/60"
+                    ? "border-umber-400 bg-paper-50 text-umber-900 dark:border-umber-400 dark:bg-umber-800 dark:text-paper-50"
+                    : "border-paper-300 text-umber-600 hover:bg-paper-100/70 dark:border-umber-700 dark:text-umber-300 dark:hover:bg-umber-800/60"
                 }`}
               >
-                <span className="whitespace-nowrap font-grotesk text-[10px] font-semibold uppercase tracking-[0.14em] text-umber-600 dark:text-umber-300">
-                  {card.label}
-                </span>
-                <span className="whitespace-nowrap font-serif text-lg leading-none text-umber-900 dark:text-paper-50">
-                  {card.from ? `${fromLabel} ` : ""}
-                  {formatNumber(card.amount, locale)} {symbol}
-                </span>
+                {card.label}
               </button>
             );
           })}
@@ -1690,7 +1692,7 @@ function PricingDeck() {
               key={id}
               className="absolute left-1/2 top-0 h-full w-full max-w-lg [filter:drop-shadow(0_20px_28px_rgba(16,24,48,0.16))]"
               style={{
-                transform: `translateX(calc(-50% + ${p * step}px)) rotate(${(fanned ? 3 : 0) * p}deg) scale(${1 - 0.06 * ap})`,
+                transform: `translateX(calc(-50% + ${p * step}px)) rotate(${3 * p}deg) scale(${1 - 0.06 * ap})`,
                 zIndex: Math.round(20 - ap * 10),
                 transition:
                   dragFrom.current || stillness
@@ -1931,25 +1933,33 @@ function PricingPeek({
         isLeft ? "lg:pr-[21rem]" : "lg:items-end lg:pl-[21rem] lg:text-right"
       }`}
     >
-      <span className="inline-flex items-center gap-1.5 font-grotesk text-[11px] font-semibold uppercase tracking-[0.18em] text-umber-500 dark:text-umber-300">
-        {card.icon}
-        {card.label}
-      </span>
-      {card.from && (
-        <span className="mt-2 font-grotesk text-xs text-umber-600 dark:text-umber-300">
-          {fromLabel}
+      {/* Below lg a peek is a pure silhouette: no room to say anything
+          readable in a sliver this thin, so the card behind reads as depth
+          (fill + border + the front ticket's perforation notch showing
+          through it) rather than as cut-off text. `lg:contents` un-wraps at
+          the breakpoint that already has a padded strip for it, so the
+          desktop layout is byte-for-byte what it was before. */}
+      <span className="hidden lg:contents">
+        <span className="inline-flex items-center gap-1.5 font-grotesk text-[11px] font-semibold uppercase tracking-[0.18em] text-umber-500 dark:text-umber-300">
+          {card.icon}
+          {card.label}
         </span>
-      )}
-      <span className={`flex items-end gap-1.5 ${card.from ? "mt-0.5" : "mt-3"}`}>
-        <span className="font-serif text-4xl leading-none text-umber-900 dark:text-paper-50">
-          {formatNumber(card.amount, locale)}
+        {card.from && (
+          <span className="mt-2 font-grotesk text-xs text-umber-600 dark:text-umber-300">
+            {fromLabel}
+          </span>
+        )}
+        <span className={`flex items-end gap-1.5 ${card.from ? "mt-0.5" : "mt-3"}`}>
+          <span className="font-serif text-4xl leading-none text-umber-900 dark:text-paper-50">
+            {formatNumber(card.amount, locale)}
+          </span>
+          <span className="font-serif text-xl leading-none text-umber-600 dark:text-umber-200">
+            {symbol}
+          </span>
         </span>
-        <span className="font-serif text-xl leading-none text-umber-600 dark:text-umber-200">
-          {symbol}
+        <span className="mt-1.5 font-grotesk text-xs text-umber-600 dark:text-umber-300">
+          {perMonth}
         </span>
-      </span>
-      <span className="mt-1.5 font-grotesk text-xs text-umber-600 dark:text-umber-300">
-        {perMonth}
       </span>
     </button>
   );
