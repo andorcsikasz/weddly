@@ -5216,7 +5216,7 @@ const hu: LocaleMessages = {
     unsave_aria: "Mentés visszavonása",
     save_no_couple: "Töltsd ki a profilodat a mentéshez.",
     saved_filter: "Mentett ({n})",
-    pick_aria: "Választott szolgáltató",
+    pick_aria: "Elmentem",
     unpick_aria: "Választás visszavonása",
     picked_filter_idle: "Csak a választottak ({n})",
     picked_filter_active: "Csak a választottak látszanak, koppints a feloldáshoz ({n})",

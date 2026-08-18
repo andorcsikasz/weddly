@@ -677,24 +677,15 @@ export default function SupplierDetailPage() {
           {/* Primary actions, moved here from the top of the page (owner
               direction) — a couple checks the calendar right before deciding,
               so the decision itself sits directly under it instead of miles
-              above. Send inquiry stays the one solid accent-filled button;
-              save and pick keep the directory's two-glyph vocabulary (BLUSH
-              HEART for the shortlist, SAGE BOOKMARK for the pick). Both still
-              render in the mobile sticky bar too (see end of this file) —
-              the sidebar sits below the fold on <lg. */}
+              above. Save and pick sit in their own tinted strip ABOVE Send
+              inquiry, so the two-glyph vocabulary (BLUSH HEART for the
+              shortlist, SAGE BOOKMARK for the pick) reads as its own group
+              rather than blending into the white card behind the one solid
+              accent CTA. Both still render in the mobile sticky bar too (see
+              end of this file) — the sidebar sits below the fold on <lg. */}
           <SidebarCard>
             <div className="flex flex-col gap-2.5">
-              <button
-                type="button"
-                onClick={() => setComposeOpen(true)}
-                disabled={!canInquire}
-                title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
-                className="btn-accent w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Send size={14} aria-hidden />
-                {inquireLabel}
-              </button>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 rounded-2xl bg-paper-100 p-1.5 dark:bg-umber-800/50">
                 <button
                   type="button"
                   onClick={toggleSaved}
@@ -705,11 +696,11 @@ export default function SupplierDetailPage() {
                   className={
                     isSaved
                       ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-300 bg-blush-50 px-3 py-1.5 text-sm font-medium text-blush-700 transition hover:border-blush-400 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
-                      : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 dark:border-umber-700 dark:text-umber-200 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+                      : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-600 transition hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
                   }
                 >
                   <Heart
-                    size={14}
+                    size={16}
                     aria-hidden
                     className={isSaved ? "fill-blush-500 text-blush-500" : ""}
                   />
@@ -725,17 +716,27 @@ export default function SupplierDetailPage() {
                   className={
                     isPicked
                       ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1.5 text-sm font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
-                      : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-sage-400 hover:bg-sage-50 hover:text-sage-700 dark:border-umber-700 dark:text-umber-200 dark:hover:border-sage-600 dark:hover:bg-sage-600/20 dark:hover:text-sage-300"
+                      : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-600 transition hover:border-sage-400 hover:bg-sage-50 hover:text-sage-700 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-sage-600 dark:hover:bg-sage-600/20 dark:hover:text-sage-300"
                   }
                 >
                   {isPicked ? (
-                    <BookmarkCheck size={14} aria-hidden className="fill-sage-200" />
+                    <BookmarkCheck size={16} aria-hidden className="fill-sage-200" />
                   ) : (
-                    <Bookmark size={14} aria-hidden />
+                    <Bookmark size={16} aria-hidden />
                   )}
                   {pickLabel}
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={() => setComposeOpen(true)}
+                disabled={!canInquire}
+                title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
+                className="btn-accent w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Send size={16} aria-hidden />
+                {inquireLabel}
+              </button>
             </div>
           </SidebarCard>
         </aside>
