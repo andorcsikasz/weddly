@@ -2252,10 +2252,11 @@ describe("admin analytics", () => {
     expect(r.data.total_picks).toBe(0);
     expect(r.data.picks_per_couple.count).toBe(0);
     expect(r.data.top_picks.length).toBe(0);
-    // 31 since the celebrant split (76338e14) gave szertartásvezető its own
-    // category and táncoktatás joined the entertainment group. The scaffold
+    // 30: the celebrant split (76338e14) gave szertartásvezető its own
+    // category and táncoktatás joined the entertainment group (31), then
+    // 'stationery' merged into 'invitation_graphics' (30). The scaffold
     // lists every category, picked or not.
-    expect(r.data.category_coverage.length).toBe(31);
+    expect(r.data.category_coverage.length).toBe(30);
     expect(r.data.source_breakdown.curated).toBe(0);
     expect(r.data.source_breakdown.community).toBe(0);
     expect(r.data.source_breakdown.diy).toBe(0);

@@ -2393,6 +2393,10 @@ function backfillReferenceCodes(): void {
 // itself is reconciled by seedSupplierTaxonomy + the legacy-hide pass in
 // server.ts. Splits land on their default child (photographers stay photography,
 // DJs stay dj, etc.); the empty spin-offs fill as vendors register.
+//
+// 'stationery' → 'invitation_graphics' (August 2026) is a later merge of the
+// same kind: two paper-goods categories collapsed into one, so it rides the
+// same remap rather than a new mechanism.
 const LEGACY_CATEGORY_REMAP: Record<string, string> = {
   photo_video: "photography",
   music_dj: "dj",
@@ -2401,10 +2405,17 @@ const LEGACY_CATEGORY_REMAP: Record<string, string> = {
   rings: "wedding_jewelry",
   wedding_website: "invitation_graphics",
   pizza: "food_trucks",
+  stationery: "invitation_graphics",
 };
 remapLegacySupplierCategories();
 function remapLegacySupplierCategories(): void {
-  const plainTables = ["listings", "community_suppliers", "couple_suppliers", "vendor_onboarding"];
+  const plainTables = [
+    "listings",
+    "community_suppliers",
+    "couple_suppliers",
+    "vendor_onboarding",
+    "vendor_waitlist",
+  ];
   let total = 0;
   for (const [oldSlug, newSlug] of Object.entries(LEGACY_CATEGORY_REMAP)) {
     for (const table of plainTables) {

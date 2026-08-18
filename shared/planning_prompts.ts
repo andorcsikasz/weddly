@@ -1096,7 +1096,7 @@ export const PROMPT_SEEDS: readonly PromptSeed[] = [
       hu: "Az ülésrend és a névkártya a végleges létszámból készül, ezért a lemondásokat is át kell adni. A neveket ellenőriztesd vissza nyomtatás előtt.",
       en: "The seating chart and place cards are built from the final headcount, so cancellations must be passed on. Have the names proofread before printing.",
     },
-    supplier_category: "stationery",
+    supplier_category: "invitation_graphics",
     condition: "printed_stationery",
     default_priority: 1,
   },

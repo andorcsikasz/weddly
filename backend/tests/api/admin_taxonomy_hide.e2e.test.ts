@@ -95,6 +95,50 @@ function seededCategoryId(slug: string): number {
   return row.id;
 }
 
+// Regression: a category can be retired out of a SURVIVING group (stationery
+// merged into invitation_graphics, both under paper_design), not just an
+// entire legacy group. retireLegacyTaxonomy() must catch this case too —
+// hide the orphaned category slug while leaving its still-valid group and
+// sibling category alone.
+describe("supplier taxonomy — retiring one category out of a surviving group", () => {
+  test("hides a category dropped from SEED without touching its group or sibling", () => {
+    wipeAll();
+    // Simulate a pre-merge prod DB: re-insert the retired 'stationery' slug
+    // under the same group as the still-valid 'invitation_graphics'.
+    const groupId = (
+      db.prepare("SELECT id FROM supplier_groups WHERE slug = 'paper_design'").get() as {
+        id: number;
+      }
+    ).id;
+    const ts = Date.now();
+    db.prepare(
+      `INSERT INTO supplier_categories
+         (group_id, slug, label_hu, label_en, budget_category, sort_order, created_at, updated_at)
+       VALUES (?, 'stationery', 'Meghívó & papíráru', 'Invitations & paper goods', 'stationery', 5, ?, ?)`,
+    ).run(groupId, ts, ts);
+
+    expect(() => {
+      seedSupplierTaxonomy();
+      retireLegacyTaxonomy();
+    }).not.toThrow();
+
+    const stationery = db
+      .prepare("SELECT hidden FROM supplier_categories WHERE slug = 'stationery'")
+      .get() as { hidden: number } | undefined;
+    expect(stationery?.hidden).toBe(1);
+
+    const group = db
+      .prepare("SELECT hidden FROM supplier_groups WHERE slug = 'paper_design'")
+      .get() as { hidden: number } | undefined;
+    expect(group?.hidden).toBe(0);
+
+    const sibling = db
+      .prepare("SELECT hidden FROM supplier_categories WHERE slug = 'invitation_graphics'")
+      .get() as { hidden: number } | undefined;
+    expect(sibling?.hidden).toBe(0);
+  });
+});
+
 describe("PATCH /api/admin/supplier-categories/:id — hidden flag", () => {
   test("category hide → public taxonomy filters it out, admin endpoint still surfaces it", async () => {
     wipeAll();

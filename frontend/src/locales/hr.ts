@@ -2232,7 +2232,7 @@ const hr: LocaleMessages = {
     card_guests_title: "Vi ste gost?",
     card_guests_body: "Upišite kod s pozivnice i odgovorite u par minuta.",
     card_guests_cta: "Upišite kod",
-    suppliers_section_title: "Odabrani katalog",
+    suppliers_section_title: "Popis pružatelja",
     suppliers_search_label: "Pronađite dobavljača",
     suppliers_search_placeholder: "Grad, kategorija ili dobavljač",
     suppliers_search_submit: "Traži",

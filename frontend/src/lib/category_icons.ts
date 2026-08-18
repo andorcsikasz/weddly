@@ -23,7 +23,6 @@ import {
   Hand,
   Lightbulb,
   type LucideIcon,
-  Mail,
   Martini,
   Mic,
   MoreHorizontal,
@@ -71,7 +70,6 @@ export const CATEGORY_ICON: Record<SupplierCategory, LucideIcon> = {
   hair_makeup: Scissors,
   nails: Hand,
   wedding_jewelry: Gem,
-  stationery: Mail,
   invitation_graphics: PenTool,
   transport: Car,
   other: MoreHorizontal,
@@ -85,7 +83,7 @@ export const GROUP_ICON: Record<SupplierGroup, LucideIcon> = {
   media: Camera,
   entertainment: Music,
   fashion_beauty: Shirt,
-  paper_design: Mail,
+  paper_design: PenTool,
   transport: Car,
 };
 

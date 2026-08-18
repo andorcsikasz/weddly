@@ -47,7 +47,6 @@ export type SupplierCategory =
   | "nails"
   | "wedding_jewelry"
   // Paper goods & design
-  | "stationery"
   | "invitation_graphics"
   // Transport
   | "transport"
@@ -144,7 +143,6 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
   hair_makeup: "hair_makeup",
   nails: "hair_makeup",
   wedding_jewelry: "rings",
-  stationery: "stationery",
   invitation_graphics: "stationery",
   transport: "transport",
   other: "other",
@@ -182,7 +180,6 @@ export const SUPPLIER_CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   hair_makeup: "Smink & haj",
   nails: "Köröm",
   wedding_jewelry: "Ékszer",
-  stationery: "Meghívó & papíráru",
   invitation_graphics: "Meghívó & esküvői grafika",
   transport: "Transzfer",
   other: "Egyéb",
@@ -220,7 +217,6 @@ export const SUPPLIER_CATEGORY_LABEL_EN: Record<SupplierCategory, string> = {
   hair_makeup: "Hair & makeup",
   nails: "Nails",
   wedding_jewelry: "Wedding jewelry",
-  stationery: "Invitations & paper goods",
   invitation_graphics: "Invitation & wedding graphics",
   transport: "Wedding transport",
   other: "Other",
@@ -260,7 +256,7 @@ export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
     id: "fashion_beauty",
     categories: ["bridal_boutique", "suit_formal", "hair_makeup", "nails", "wedding_jewelry"],
   },
-  { id: "paper_design", categories: ["stationery", "invitation_graphics"] },
+  { id: "paper_design", categories: ["invitation_graphics"] },
   { id: "transport", categories: ["transport"] },
 ];
 
@@ -347,7 +343,6 @@ export const SUPPLIER_CAPACITY_KIND: Record<SupplierCategory, SupplierCapacityKi
   hair_makeup: null,
   nails: null,
   wedding_jewelry: null,
-  stationery: null,
   invitation_graphics: null,
   transport: null,
   other: null,
@@ -419,7 +414,6 @@ export const SUPPLIER_SPEAKS_LANGUAGES: Record<SupplierCategory, boolean> = {
   hair_makeup: false,
   nails: false,
   wedding_jewelry: false,
-  stationery: false,
   invitation_graphics: false,
   transport: false,
   other: false,
@@ -1369,7 +1363,6 @@ export const REVIEW_TAGS_BY_CATEGORY: Record<SupplierCategory, readonly Supplier
   hair_makeup: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   nails: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   wedding_jewelry: ["creative", ...UNIVERSAL_REVIEW_TAGS],
-  stationery: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   invitation_graphics: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   rental_equipment: [...UNIVERSAL_REVIEW_TAGS],
   transport: ["accessible", "kid_friendly", "pet_friendly", ...UNIVERSAL_REVIEW_TAGS],

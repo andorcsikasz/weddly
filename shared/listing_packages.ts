@@ -172,13 +172,9 @@ export const PACKAGE_NAME_SUGGESTIONS: Record<SupplierCategory, { hu: string[]; 
     hu: ["Jegygyűrűpár", "Egyedi ékszer", "Prémium kollekció"],
     en: ["Wedding band pair", "Bespoke jewelry", "Premium collection"],
   },
-  stationery: {
-    hu: ["Meghívó szett", "Teljes papírdekor", "Egyedi arculat"],
-    en: ["Invitation set", "Full paper suite", "Bespoke identity"],
-  },
   invitation_graphics: {
-    hu: ["Meghívó grafika", "Teljes grafikai csomag", "Grafika + weboldal"],
-    en: ["Invitation design", "Full graphics suite", "Graphics + website"],
+    hu: ["Meghívó csomag", "Teljes papír & grafikai csomag", "Egyedi arculat + weboldal"],
+    en: ["Invitation package", "Full paper & graphics suite", "Bespoke identity + website"],
   },
   rental_equipment: {
     hu: ["Alap bérlés", "Bútor + dekor bérlés", "Teljes technika"],

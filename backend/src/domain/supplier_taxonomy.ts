@@ -505,12 +505,6 @@ const SEED: SeedGroup[] = [
     label_en: "Paper goods & design",
     categories: [
       {
-        slug: "stationery",
-        label_hu: "Meghívó & papíráru",
-        label_en: "Invitations & paper goods",
-        budget: "stationery",
-      },
-      {
         slug: "invitation_graphics",
         label_hu: "Meghívó & esküvői grafika",
         label_en: "Invitation & wedding graphics",
@@ -595,30 +589,37 @@ export function seedSupplierTaxonomy(): void {
   invalidateTaxonomyCache();
 }
 
-/** The v2 taxonomy (July 2026) reshaped the groups. The additive seed above adds
- *  the new groups/categories but never removes the old ones, so on an existing
- *  DB the pre-v2 groups (planning, atmosphere, experience, style, details) and
- *  their categories linger and would show alongside the new structure — some as
- *  duplicate slugs for categories that moved groups. This idempotent pass
- *  soft-hides any group not in the current SEED plus every category under it,
- *  leaving the admin able to un-hide/audit them. Run once per boot after the
- *  seed. Categories that kept their group (venue, catering, …) are untouched. */
+/** The additive seed above adds groups/categories but never removes the old
+ *  ones, so on an existing DB a group or a single category dropped from SEED
+ *  (a whole v2 restructure, or one category later merged into another —
+ *  e.g. 'stationery' folding into 'invitation_graphics') lingers and would
+ *  show alongside the new structure. This idempotent pass soft-hides:
+ *  any group not in the current SEED (plus every category under it, even one
+ *  that would otherwise still be valid), AND any category not in the current
+ *  SEED under any group — which is what catches a category retired out of a
+ *  group that itself stays visible. Leaves the admin able to un-hide/audit
+ *  either. Run once per boot after the seed. A category that kept its slug
+ *  (venue, catering, …) is untouched either way. */
 export function retireLegacyTaxonomy(): void {
   const validGroups = SEED.map((g) => g.slug);
-  const placeholders = validGroups.map(() => "?").join(",");
+  const validCategories = SEED.flatMap((g) => g.categories.map((c) => c.slug));
+  const groupPlaceholders = validGroups.map(() => "?").join(",");
+  const catPlaceholders = validCategories.map(() => "?").join(",");
   const ts = now();
   const hiddenGroups = db
     .prepare(
       `UPDATE supplier_groups SET hidden = 1, updated_at = ?
-        WHERE hidden = 0 AND slug NOT IN (${placeholders})`,
+        WHERE hidden = 0 AND slug NOT IN (${groupPlaceholders})`,
     )
     .run(ts, ...validGroups).changes;
   const hiddenCats = db
     .prepare(
       `UPDATE supplier_categories SET hidden = 1, updated_at = ?
-        WHERE hidden = 0 AND group_id IN (SELECT id FROM supplier_groups WHERE hidden = 1)`,
+        WHERE hidden = 0
+          AND (group_id IN (SELECT id FROM supplier_groups WHERE hidden = 1)
+               OR slug NOT IN (${catPlaceholders}))`,
     )
-    .run(ts).changes;
+    .run(ts, ...validCategories).changes;
   if (hiddenGroups > 0 || hiddenCats > 0) {
     invalidateTaxonomyCache();
     console.log(`[taxonomy] retired ${hiddenGroups} legacy group(s), ${hiddenCats} category(ies)`);

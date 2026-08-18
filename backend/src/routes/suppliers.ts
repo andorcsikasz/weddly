@@ -908,7 +908,6 @@ const SHOWCASE_CATEGORY_ORDER: SupplierCategory[] = [
   "sound_tech",
   "nails",
   "wedding_jewelry",
-  "stationery",
   "invitation_graphics",
   "rental_equipment",
   "transport",

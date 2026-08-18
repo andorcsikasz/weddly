@@ -2283,7 +2283,7 @@ const de: LocaleMessages = {
     card_guests_body:
       "Geben Sie den Code von Ihrer Einladung ein und antworten Sie in ein paar Minuten.",
     card_guests_cta: "Code eingeben",
-    suppliers_section_title: "Ein kuratierter Katalog",
+    suppliers_section_title: "Dienstleisterliste",
     suppliers_search_label: "Dienstleister finden",
     suppliers_search_placeholder: "Stadt, Kategorie oder Dienstleister",
     suppliers_search_submit: "Suchen",

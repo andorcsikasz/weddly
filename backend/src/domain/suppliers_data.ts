@@ -4557,7 +4557,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "amare-meghivok",
     name: "Amare Esküvői Meghívók",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Budapest",
     address: "1137 Budapest, Szent István park 18.",
     capacity_min: null,
@@ -4574,7 +4574,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "meghivoink",
     name: "Meghivoink.hu",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Szeged",
     address: "6728 Szeged, Pihenő utca 47.",
     capacity_min: null,
@@ -4591,7 +4591,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "webalbum-eskuvoi-meghivo",
     name: "Webalbum Stúdió",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Budapest",
     address: "1075 Budapest",
     capacity_min: null,
@@ -4607,7 +4607,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "edmo-design",
     name: "Edmo Design",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4623,7 +4623,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "patria-nyomda",
     name: "Pátria Nyomda Zrt.",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Budapest",
     address: "1117 Budapest, Hunyadi János út 7.",
     capacity_min: null,
@@ -4640,7 +4640,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "grafit-pencil-nyomda",
     name: "Grafit Pencil Nyomda",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4656,7 +4656,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "papirfalva",
     name: "Papírfalva",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4672,7 +4672,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "miss-lulli-decor",
     name: "MISS LULLI Decor",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4689,7 +4689,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "copyguru",
     name: "COPYGURU",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4705,7 +4705,7 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "vinczemill",
     name: "Vinczemill",
-    category: "stationery",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
