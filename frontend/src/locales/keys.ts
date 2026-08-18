@@ -3076,6 +3076,10 @@ export interface LocaleMessages {
      *  same "couples choose here" claim said twice. */
     closing_title: string;
     closing_cta: string;
+    /** Kicker line above the benefit grid: the whole speed → reach → reviews
+     *  → growth chain in one sentence, so the three cards below read as its
+     *  proof rather than three unrelated facts. */
+    benefits_heading: string;
     benefit_1_title: string;
     benefit_1_body: string;
     benefit_2_title: string;
@@ -6395,7 +6399,6 @@ export interface LocaleMessages {
       hair_makeup: string;
       nails: string;
       wedding_jewelry: string;
-      stationery: string;
       invitation_graphics: string;
       transport: string;
       other: string;

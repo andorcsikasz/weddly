@@ -2423,13 +2423,16 @@ const en: LocaleMessages = {
     hero_title: "Be one click away.",
     closing_title: "Next wedding season is being decided now.",
     closing_cta: "Take your spot",
-    benefit_1_title: "The inquiries come first, the invoice after",
-    benefit_1_body:
-      "Everything is yours to use from day one, and you only pay after three real inquiries.",
-    benefit_2_title: "You can be up the same day",
-    benefit_2_body: "Inquiries land in your own inbox, and you reply to the couple directly.",
-    benefit_3_title: "A short list, not an endless catalogue",
-    benefit_3_body: "Couples only see hand-picked suppliers who fit their city and their budget.",
+    benefits_heading:
+      "Fast bookings. Wider reach. A reviewable profile. That's how growth happens.",
+    benefit_1_title: "Live today, not months from now",
+    benefit_1_body: "Your profile goes live the same day. You only pay after three real inquiries.",
+    benefit_2_title: "You won't disappear into an endless list",
+    benefit_2_body:
+      "Couples only see hand-picked vendors who fit them, and they write straight to you.",
+    benefit_3_title: "Reviews bring the next couple",
+    benefit_3_body:
+      "Every finished wedding becomes a review. From there, your profile grows on its own.",
     form_title: "Join the waitlist",
     form_business_label: "Business name",
     form_email_label: "Email",
@@ -5384,7 +5387,6 @@ const en: LocaleMessages = {
       hair_makeup: "Hair & makeup",
       nails: "Nails",
       wedding_jewelry: "Wedding jewelry",
-      stationery: "Invitations & paper goods",
       invitation_graphics: "Invitation & wedding graphics",
       transport: "Wedding transport",
       other: "Other",

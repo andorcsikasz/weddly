@@ -28,7 +28,7 @@
 //      because the header already carries one (icon on desktop, menu item on
 //      mobile) and a second one just competes with the signup button.
 
-import { ArrowLeft, ArrowRight, Gem, Inbox, Receipt, Share2, Store } from "lucide-react";
+import { ArrowLeft, ArrowRight, Rocket, Share2, Star, Store, Target } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
@@ -143,23 +143,34 @@ export default function VendorsPage() {
         </div>
       </section>
 
-      {/* Benefits. Order is deliberate: what it costs, how fast you are live,
-          why the list is short. */}
+      {/* Benefits. The kicker states the whole chain up front (speed → reach →
+          reviews → growth) and the three cards are its proof, connected by an
+          arrow on desktop so the causality reads as a picture, not just prose.
+          Order is deliberate: how fast you are live, why the list is short,
+          what keeps the profile growing after that. */}
       <section className="bg-paper-100/60 dark:bg-umber-900/40">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
-          <div className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
+          <p className="mx-auto max-w-3xl text-center font-grotesk text-2xl font-medium leading-snug tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
+            {t("vendors.benefits_heading")}
+          </p>
+          <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
             <Benefit
-              icon={<Receipt size={22} strokeWidth={1.75} aria-hidden />}
+              index="01"
+              icon={<Rocket size={22} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_1_title")}
               body={t("vendors.benefit_1_body")}
             />
+            <BenefitArrow />
             <Benefit
-              icon={<Inbox size={22} strokeWidth={1.75} aria-hidden />}
+              index="02"
+              icon={<Target size={22} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_2_title")}
               body={t("vendors.benefit_2_body")}
             />
+            <BenefitArrow />
             <Benefit
-              icon={<Gem size={22} strokeWidth={1.75} aria-hidden />}
+              index="03"
+              icon={<Star size={22} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_3_title")}
               body={t("vendors.benefit_3_body")}
             />
@@ -281,13 +292,49 @@ function ClosingBand() {
   );
 }
 
-function Benefit({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
+/** The arrow between two benefit cards on desktop — the visual the section is
+ *  built around. It is what turns three separate facts into a single flow
+ *  the eye follows toward the closing card (reviews → growth), which prose
+ *  alone can only assert. Hidden below `lg` where the cards stack: a
+ *  sideways arrow between full-width rows would read as a stray glyph. */
+function BenefitArrow() {
   return (
-    <article className="card flex h-full items-start gap-3.5 !p-5">
-      <span className="mt-0.5 inline-flex shrink-0 text-ink-900 dark:text-paper-50">{icon}</span>
+    <span
+      className="hidden items-center justify-center text-umber-300 lg:flex dark:text-umber-600"
+      aria-hidden
+    >
+      <ArrowRight size={20} strokeWidth={1.75} />
+    </span>
+  );
+}
+
+function Benefit({
+  icon,
+  index,
+  title,
+  body,
+}: {
+  icon: ReactNode;
+  /** Faint corner numeral ("01"/"02"/"03") — reads as a sequence, not just a
+   *  set of three cards, which is what the arrows between them promise. */
+  index: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <article className="card relative flex h-full flex-col gap-3 !p-6">
+      <span
+        className="absolute top-4 right-5 font-grotesk text-3xl font-semibold text-paper-300 select-none dark:text-umber-700"
+        aria-hidden
+      >
+        {index}
+      </span>
+      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-umber-100 text-umber-900 dark:bg-umber-700/50 dark:text-paper-50">
+        {icon}
+      </span>
       <div className="min-w-0">
-        <h3 className="font-grotesk text-base text-ink-900 dark:text-paper-50">{title}</h3>
-        <p className="mt-1 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
+        <h3 className="font-grotesk text-lg text-ink-900 dark:text-paper-50">{title}</h3>
+        <p className="mt-1.5 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
       </div>
     </article>
   );

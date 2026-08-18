@@ -2476,15 +2476,17 @@ const es: LocaleMessages = {
     hero_title: "A un clic de distancia.",
     closing_title: "La próxima temporada de bodas se decide ahora.",
     closing_cta: "Reserva tu plaza",
-    benefit_1_title: "Primero llegan las solicitudes, la factura después",
+    benefits_heading:
+      "Reservas rápidas. Más alcance. Un perfil que se puede valorar. Así llega el crecimiento.",
+    benefit_1_title: "En marcha hoy, no dentro de meses",
     benefit_1_body:
-      "Puedes usarlo todo desde el primer día y solo pagas tras tres solicitudes reales.",
-    benefit_2_title: "Puedes estar publicado el mismo día",
+      "Tu perfil se publica el mismo día. Solo pagas después de tres solicitudes reales.",
+    benefit_2_title: "No te pierdes en una lista interminable",
     benefit_2_body:
-      "Las solicitudes llegan a tu propio correo y respondes directamente a la pareja.",
-    benefit_3_title: "Una lista corta, no un catálogo interminable",
+      "Las parejas solo ven proveedores seleccionados a mano que encajan con ellas, y te escriben directamente a ti.",
+    benefit_3_title: "Las reseñas traen a la siguiente pareja",
     benefit_3_body:
-      "Las parejas solo ven proveedores seleccionados a mano que encajan con su ciudad y su presupuesto.",
+      "Cada boda terminada se convierte en una reseña. A partir de ahí, tu perfil crece solo.",
     form_title: "Únete a la lista de espera",
     form_business_label: "Nombre del negocio",
     form_email_label: "Correo electrónico",
@@ -5487,7 +5489,6 @@ const es: LocaleMessages = {
       hair_makeup: "Peluquería y maquillaje",
       nails: "Uñas",
       wedding_jewelry: "Joyería nupcial",
-      stationery: "Invitaciones y papelería",
       invitation_graphics: "Invitaciones y diseño gráfico de boda",
       transport: "Transporte para bodas",
       other: "Otro",
