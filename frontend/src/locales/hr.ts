@@ -48,10 +48,9 @@ const hr: LocaleMessages = {
     tagline: "Planiranje vjenčanja bez stresa, uz jedan zajednički plan uživo za vas oboje.",
   },
   seo: {
-    home_title:
-      "Wēddly · Planiranje vjenčanja bez stresa, uz jedan zajednički plan uživo za vas oboje.",
+    home_title: "Wēddly · Planiranje vjenčanja bez stresa",
     home_description:
-      "Planiranje vjenčanja bez stresa, uz jedan zajednički plan uživo za vas oboje. Dvije prijave drže proračun, goste, RSVP-e i sjedenje usklađenima.",
+      "Planiranje vjenčanja bez stresa, zajedno s partnerom. Dvije prijave drže proračun, goste, RSVP-e i raspored sjedenja uvijek usklađenima.",
     login_title: "Prijava · Weddly",
     login_description: "Prijavite se u svoj Weddly radni prostor za parove.",
     register_title: "Otvorite zajednički radni prostor · Weddly",

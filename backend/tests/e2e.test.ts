@@ -11323,7 +11323,7 @@ describe("seo: renderIndexHtml meta injection", () => {
     const html = render("weddly.hu", "/", false, "hu-HU,hu;q=0.9");
     expect(html).toContain(`<html lang="hu"`);
     expect(html).toContain(`<meta property="og:locale" content="hu_HU" />`);
-    expect(html).toContain(`Esküvőszervező alkalmazás pároknak | Weddly`);
+    expect(html).toContain(`Esküvőtervezés, stressz nélkül | Weddly`);
   });
 });
 

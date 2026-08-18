@@ -35,10 +35,9 @@ const es: LocaleMessages = {
     tagline: "Planificación de boda sin estrés, con un único plan en directo para los dos.",
   },
   seo: {
-    home_title:
-      "Wēddly · Planificación de boda sin estrés, con un único plan en directo para los dos.",
+    home_title: "Wēddly · Planificación de boda sin estrés",
     home_description:
-      "Planificación de boda sin estrés, con un único plan en directo para los dos. Dos accesos mantienen presupuesto, invitados, RSVP y mesas sincronizados.",
+      "Planificación de boda sin estrés, compartida por los dos. Dos accesos mantienen presupuesto, invitados, RSVP y mesas siempre sincronizados.",
     login_title: "Iniciar sesión · Weddly",
     login_description: "Inicia sesión en vuestro espacio de trabajo de pareja de Weddly.",
     register_title: "Crea vuestro espacio de trabajo de pareja · Weddly",

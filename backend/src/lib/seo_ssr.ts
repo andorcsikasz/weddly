@@ -458,7 +458,7 @@ const META: Record<SeoLocale, LocaleMeta> = {
   hu: {
     lang: "hu",
     ogLocale: "hu_HU",
-    title: "Esküvőszervező alkalmazás pároknak | Weddly",
+    title: "Esküvőtervezés, stressz nélkül | Weddly",
     description:
       "Tervezzétek együtt az esküvőt: közös költségvetés, vendéglista, személyes RSVP-linkek és vizuális ültetési rend egy helyen, pároknak.",
     twDescription: "Nyugodt esküvőszervezés, egyetlen közös, naprakész tervvel kettőtöknek.",
@@ -470,11 +470,11 @@ const META: Record<SeoLocale, LocaleMeta> = {
   en: {
     lang: "en",
     ogLocale: "en_US",
-    title: "Wēddly · Low-cortisol wedding planning, with one live plan for both of you.",
+    title: "Wēddly · Low-cortisol wedding planning",
     // Kept inside the 120-160 char SERP window (see meta-length guard in
     // tests/api/seo_meta_length.e2e.test.ts).
     description:
-      "Low-cortisol wedding planning, with one live plan for both of you. Two logins keep the budget, guest list, RSVPs and seating in sync.",
+      "Low-cortisol wedding planning, shared by both of you. Two logins keep the budget, guest list, RSVPs and seating chart always in sync.",
     twDescription: "Low-cortisol wedding planning, with one live plan for both of you.",
     ogImageAlt: "Wēddly · Low-cortisol wedding planning, with one live plan for both of you.",
     brandName: "Wēddly",

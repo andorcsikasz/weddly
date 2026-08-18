@@ -46,10 +46,9 @@ const de: LocaleMessages = {
     tagline: "Stressarme Hochzeitsplanung mit einem gemeinsamen Live-Plan für Sie beide.",
   },
   seo: {
-    home_title:
-      "Wēddly · Stressarme Hochzeitsplanung mit einem gemeinsamen Live-Plan für Sie beide.",
+    home_title: "Wēddly · Stressarme Hochzeitsplanung",
     home_description:
-      "Stressarme Hochzeitsplanung mit einem gemeinsamen Live-Plan für Sie beide. Zwei Zugänge halten Budget, Gästeliste, Zusagen und Sitzplan synchron.",
+      "Stressarme Hochzeitsplanung, gemeinsam für Sie beide. Zwei Zugänge halten Budget, Gästeliste, Zusagen und Sitzplan immer synchron.",
     login_title: "Anmelden · Weddly",
     login_description: "Melden Sie sich in Ihrem Weddly-Arbeitsbereich für Paare an.",
     register_title: "Gemeinsamen Arbeitsbereich anlegen · Weddly",

@@ -34,9 +34,9 @@ const en: LocaleMessages = {
     tagline: "Low-cortisol wedding planning, with one live plan for both of you.",
   },
   seo: {
-    home_title: "Wēddly · Low-cortisol wedding planning, with one live plan for both of you.",
+    home_title: "Wēddly · Low-cortisol wedding planning",
     home_description:
-      "Low-cortisol wedding planning, with one live plan for both of you. Two logins keep the budget, guest list, RSVPs and seating in sync.",
+      "Low-cortisol wedding planning, shared by both of you. Two logins keep the budget, guest list, RSVPs and seating chart always in sync.",
     login_title: "Sign in · Weddly",
     login_description: "Sign in to your Weddly couple workspace.",
     register_title: "Create your couple workspace · Weddly",

@@ -34,7 +34,7 @@ const hu: LocaleMessages = {
     tagline: "Nyugodt esküvőszervezés, egyetlen közös, naprakész tervvel kettőtöknek.",
   },
   seo: {
-    home_title: "Esküvőszervező alkalmazás pároknak | Weddly",
+    home_title: "Esküvőtervezés, stressz nélkül | Weddly",
     home_description:
       "Tervezzétek együtt az esküvőt: közös költségvetés, vendéglista, személyes RSVP-linkek és vizuális ültetési rend egy helyen, pároknak.",
     login_title: "Bejelentkezés · Wēddly",
