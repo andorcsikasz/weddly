@@ -1,21 +1,27 @@
 // One-time Stripe setup for PLANNER billing: creates the "Weddly Planner" product
-// and six recurring monthly Prices (3 tiers × EUR/HUF), then prints the price ids
-// to drop into the environment as STRIPE_PRICE_PLANNER_<TIER>_<CCY>.
+// and TWELVE recurring Prices (3 tiers × EUR/HUF × monthly/annual), then prints
+// the price ids to drop into the environment as STRIPE_PRICE_PLANNER_<TIER>_<CCY>
+// (monthly) and STRIPE_PRICE_PLANNER_<TIER>_<CCY>_ANNUAL.
 //
 // Usage (test mode first!):
 //   STRIPE_SECRET_KEY=sk_test_... bun backend/scripts/stripe_setup_planner.ts
 //
 // Re-running creates NEW prices each time — run once per Stripe account/mode and
 // keep the printed ids. Amounts must match shared/planner_billing.ts
-// PLANNER_TIER_PRICE.
+// PLANNER_TIER_PRICE / PLANNER_TIER_ANNUAL_PRICE (the annual price is exactly
+// 25% off twelve months of the monthly price, never a separately-typed number).
+//
+// The annual price ids are OPTIONAL at the application level: leaving the
+// *_ANNUAL env vars unset simply means the planner billing page never offers
+// the annual toggle, and the existing monthly-only launch is untouched.
 //
 // Currency note: Stripe expects the amount in each currency's minor unit.
-//   EUR 29.00 -> 2900 (cents)
+//   EUR 29.00 -> 2900 (cents), EUR 261.00 -> 26100
 //   HUF       -> Stripe treats HUF with 2 decimals BUT requires whole-forint
 //                amounts, so 11 900 Ft -> 1190000 (must be divisible by 100).
 
 import Stripe from "stripe";
-import { PLANNER_TIER_PRICE } from "../../shared/planner_billing";
+import { PLANNER_TIER_ANNUAL_PRICE, PLANNER_TIER_PRICE } from "../../shared/planner_billing";
 import type { PlannerPlan } from "../../shared/types";
 
 const key = process.env.STRIPE_SECRET_KEY;
@@ -54,8 +60,24 @@ for (const tier of TIERS) {
     recurring: { interval: "month" },
     nickname: `Weddly Planner ${tier} (HUF)`,
   });
+  const eurAnnual = await stripe.prices.create({
+    product: product.id,
+    currency: "eur",
+    unit_amount: PLANNER_TIER_ANNUAL_PRICE[tier].EUR * 100, // cents
+    recurring: { interval: "year" },
+    nickname: `Weddly Planner ${tier} annual (EUR, -25%)`,
+  });
+  const hufAnnual = await stripe.prices.create({
+    product: product.id,
+    currency: "huf",
+    unit_amount: PLANNER_TIER_ANNUAL_PRICE[tier].HUF * 100, // whole-forint, divisible by 100
+    recurring: { interval: "year" },
+    nickname: `Weddly Planner ${tier} annual (HUF, -25%)`,
+  });
   envLines.push(`STRIPE_PRICE_PLANNER_${tier.toUpperCase()}_EUR=${eur.id}`);
   envLines.push(`STRIPE_PRICE_PLANNER_${tier.toUpperCase()}_HUF=${huf.id}`);
+  envLines.push(`STRIPE_PRICE_PLANNER_${tier.toUpperCase()}_EUR_ANNUAL=${eurAnnual.id}`);
+  envLines.push(`STRIPE_PRICE_PLANNER_${tier.toUpperCase()}_HUF_ANNUAL=${hufAnnual.id}`);
 }
 
 console.log("\n[stripe_setup_planner] Done. Set these env vars (Railway / backend/.env):\n");

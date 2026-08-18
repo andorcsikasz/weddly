@@ -9,8 +9,8 @@ import {
   type PaymentLaunchState,
 } from "@shared/admin_financial_planner";
 import { GUEST_PAGE_ADDON_PRICE, MONTHLY_PRICE } from "@shared/billing";
-import { PLANNER_TIER_PRICE } from "@shared/planner_billing";
-import { VENDOR_MONTHLY_PRICE } from "@shared/vendor_billing";
+import { PLANNER_TIER_ANNUAL_PRICE, PLANNER_TIER_PRICE } from "@shared/planner_billing";
+import { VENDOR_ANNUAL_PRICE, VENDOR_MONTHLY_PRICE } from "@shared/vendor_billing";
 import { CONFIG, REQUIRE_PROD_HARDENING } from "../config";
 import { db, now } from "../db";
 import { HttpError } from "../lib/http";
@@ -121,6 +121,11 @@ type PriceExpectation = {
   currency: "eur" | "huf";
   unitAmount: number;
   recurring: boolean;
+  /** Stripe's `price.recurring.interval` this price must carry. Ignored when
+   *  `recurring` is false. Defaults to "month" below for every existing
+   *  (pre-annual) call site, so this is additive, not a behaviour change for
+   *  anything already configured. */
+  interval?: "month" | "year";
 };
 
 const minorAmount = (displayAmount: number) => Math.round(displayAmount * 100);
@@ -145,24 +150,58 @@ function expectedPrices(product: PaymentLaunchProduct): PriceExpectation[] {
         },
       ];
     case "planner_subscriptions":
-      return (["starter", "pro", "premium"] as const).flatMap((tier) => [
-        {
-          id: CONFIG.stripePricePlanner[tier].EUR,
-          label: `planner ${tier} EUR`,
-          currency: "eur" as const,
-          unitAmount: minorAmount(PLANNER_TIER_PRICE[tier].EUR),
-          recurring: true,
-        },
-        {
-          id: CONFIG.stripePricePlanner[tier].HUF,
-          label: `planner ${tier} HUF`,
-          currency: "huf" as const,
-          unitAmount: minorAmount(PLANNER_TIER_PRICE[tier].HUF),
-          recurring: true,
-        },
-      ]);
-    case "vendor_billing":
-      return [
+      return (["starter", "pro", "premium"] as const).flatMap((tier): PriceExpectation[] => {
+        const monthly: PriceExpectation[] = [
+          {
+            id: CONFIG.stripePricePlanner[tier].EUR,
+            label: `planner ${tier} EUR`,
+            currency: "eur" as const,
+            unitAmount: minorAmount(PLANNER_TIER_PRICE[tier].EUR),
+            recurring: true,
+          },
+          {
+            id: CONFIG.stripePricePlanner[tier].HUF,
+            label: `planner ${tier} HUF`,
+            currency: "huf" as const,
+            unitAmount: minorAmount(PLANNER_TIER_PRICE[tier].HUF),
+            recurring: true,
+          },
+        ];
+        // Annual is optional and validated ONLY when configured — an unset
+        // annual price must never block (or even touch) the monthly launch
+        // that is already live for this tier.
+        const annualEur = CONFIG.stripePricePlannerAnnual[tier].EUR;
+        const annualHuf = CONFIG.stripePricePlannerAnnual[tier].HUF;
+        const annual: PriceExpectation[] = [
+          ...(annualEur
+            ? [
+                {
+                  id: annualEur,
+                  label: `planner ${tier} EUR annual`,
+                  currency: "eur" as const,
+                  unitAmount: minorAmount(PLANNER_TIER_ANNUAL_PRICE[tier].EUR),
+                  recurring: true,
+                  interval: "year" as const,
+                },
+              ]
+            : []),
+          ...(annualHuf
+            ? [
+                {
+                  id: annualHuf,
+                  label: `planner ${tier} HUF annual`,
+                  currency: "huf" as const,
+                  unitAmount: minorAmount(PLANNER_TIER_ANNUAL_PRICE[tier].HUF),
+                  recurring: true,
+                  interval: "year" as const,
+                },
+              ]
+            : []),
+        ];
+        return [...monthly, ...annual];
+      });
+    case "vendor_billing": {
+      const monthly: PriceExpectation[] = [
         {
           id: CONFIG.stripePriceVendorEur,
           label: "vendor EUR",
@@ -178,6 +217,35 @@ function expectedPrices(product: PaymentLaunchProduct): PriceExpectation[] {
           recurring: true,
         },
       ];
+      // Same optional-annual rule as the planner case above.
+      const annual: PriceExpectation[] = [
+        ...(CONFIG.stripePriceVendorEurAnnual
+          ? [
+              {
+                id: CONFIG.stripePriceVendorEurAnnual,
+                label: "vendor EUR annual",
+                currency: "eur" as const,
+                unitAmount: minorAmount(VENDOR_ANNUAL_PRICE.EUR),
+                recurring: true,
+                interval: "year" as const,
+              },
+            ]
+          : []),
+        ...(CONFIG.stripePriceVendorHufAnnual
+          ? [
+              {
+                id: CONFIG.stripePriceVendorHufAnnual,
+                label: "vendor HUF annual",
+                currency: "huf" as const,
+                unitAmount: minorAmount(VENDOR_ANNUAL_PRICE.HUF),
+                recurring: true,
+                interval: "year" as const,
+              },
+            ]
+          : []),
+      ];
+      return [...monthly, ...annual];
+    }
     case "guest_page_addon":
       return [
         {
@@ -216,6 +284,10 @@ export function paymentPriceValidationIssues(
     unitAmount: number;
     recurring: boolean;
     live: boolean;
+    /** Required recurring interval; only checked when `recurring` is true.
+     *  Defaults to "month" so every pre-annual caller keeps its existing
+     *  behaviour without passing this. */
+    interval?: "month" | "year";
   },
   actual: {
     active: boolean;
@@ -234,9 +306,12 @@ export function paymentPriceValidationIssues(
   if (actual.currency !== expected.currency) issues.push(`currency must be ${expected.currency}`);
   if (actual.unitAmount !== expected.unitAmount)
     issues.push(`amount must be ${expected.unitAmount}`);
-  if (expected.recurring && actual.interval !== "month") issues.push("price must recur monthly");
+  const expectedInterval = expected.interval ?? "month";
+  if (expected.recurring && actual.interval !== expectedInterval) {
+    issues.push(`price must recur ${expectedInterval === "year" ? "annually" : "monthly"}`);
+  }
   if (expected.recurring && actual.intervalCount !== 1) {
-    issues.push("price must recur every one month");
+    issues.push(`price must recur every one ${expectedInterval}`);
   }
   if (!expected.recurring && actual.type !== "one_time") issues.push("price must be one-time");
   if (!actual.productActive) issues.push("product inactive or deleted");
@@ -309,6 +384,7 @@ export async function validatePaymentLaunchActivation(
           currency: expected.currency,
           unitAmount: expected.unitAmount,
           recurring: expected.recurring,
+          interval: expected.interval,
           live: liveKey,
         },
         {

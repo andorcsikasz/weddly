@@ -1619,6 +1619,14 @@ export interface LocaleMessages {
       manage: string;
       checkout_unavailable: string;
       per_month: string;
+      /** Suffix beside the annual price, e.g. "/ year". */
+      per_year: string;
+      /** Segmented-toggle labels on the resubscribe card. */
+      interval_monthly: string;
+      interval_annual: string;
+      /** Shown under the price once "annual" is selected — marketing-only
+       *  (matches the landing pricing card), states the -25% saving. */
+      annual_discount_note: string;
       compare_title: string;
       you_are_here: string;
       payment_portal_note: string;
@@ -1639,6 +1647,9 @@ export interface LocaleMessages {
       billing_starts_line: string;
       /** Receives `{date}`. */
       next_payment_line: string;
+      /** Receives `{date}` — same as next_payment_line but for a vendor whose
+       *  live Stripe subscription bills annually. */
+      next_payment_line_annual: string;
       past_due_line: string;
       leads_exhausted_line: string;
       subscribe_cta: string;
@@ -7221,6 +7232,28 @@ export interface LocaleMessages {
     users_search_clear: string;
     users_search_empty: string;
     users_search_empty_help: string;
+    /** Facet filter bar rendered under the search box — chip toggles for
+     *  billing status / verification / flagged / account type, plus an
+     *  inactivity-days select. All additive with the search box and with
+     *  each other; narrows every list below (workspaces, orphans, demo). */
+    users_filters_clear_all: string;
+    users_filter_billing_label: string;
+    users_filter_billing_trialing: string;
+    users_filter_billing_founding: string;
+    users_filter_billing_paying: string;
+    users_filter_billing_lapsed: string;
+    users_filter_verified_label: string;
+    users_filter_verified_verified: string;
+    users_filter_verified_unverified: string;
+    users_filter_flagged: string;
+    users_filter_account_type_label: string;
+    users_filter_account_admin: string;
+    users_filter_account_vendor: string;
+    users_filter_account_planner: string;
+    users_filter_inactivity_label: string;
+    users_filter_inactivity_any: string;
+    users_filter_inactivity_days: string;
+    users_filter_clear: string;
     /** Toggle copy for the collapsed demo workspaces summary. The summary
      *  line surfaces "{n} demo munkaterületek · utolsó 24h: {m}" with a
      *  Megjelenítés / Elrejtés button on the right. */
@@ -10888,6 +10921,14 @@ export interface LocaleMessages {
     feat_priority_support: string;
     /** "{price}/mo" — price already currency-formatted by the component. */
     price_per_month: string;
+    /** "{price}/yr" — price already currency-formatted by the component. */
+    price_per_year: string;
+    /** Segmented-toggle labels above the tier grid. */
+    interval_monthly: string;
+    interval_annual: string;
+    /** Shown under a tier's price once "annual" is selected — marketing-only
+     *  (matches the landing pricing card), states the -25% saving. */
+    annual_discount_note: string;
     /** "{n} of 25 free founding spots left". */
     founding_spots: string;
     /** Status banner lines. `state_founding` takes {date}; `state_trial` {days}. */

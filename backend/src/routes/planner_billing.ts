@@ -8,7 +8,9 @@
 
 import type Stripe from "stripe";
 import {
+  type BillingInterval,
   type PlannerBillingStatus,
+  plannerAnnualPrice,
   plannerCurrencyForLocale,
   plannerPrice,
 } from "@shared/planner_billing";
@@ -67,15 +69,50 @@ function periodEndMs(sub: Stripe.Subscription): number | null {
   return secs ? secs * 1000 : null;
 }
 
-/** Resolve the planner tier a subscription is for, from its line item price id. */
+/** Resolve the planner tier a subscription is for, from its line item price id.
+ *  Checks both the monthly and annual price sets — an annual subscriber's
+ *  price id only ever matches the annual entry. */
 function tierOfSubscription(sub: Stripe.Subscription): PlannerPlan | null {
   const priceId = sub.items?.data?.[0]?.price?.id;
   if (!priceId) return null;
   for (const tier of ["starter", "pro", "premium"] as const) {
-    const perTier = CONFIG.stripePricePlanner[tier];
-    if (priceId === perTier.EUR || priceId === perTier.HUF) return tier;
+    const monthly = CONFIG.stripePricePlanner[tier];
+    const annual = CONFIG.stripePricePlannerAnnual[tier];
+    if (
+      priceId === monthly.EUR ||
+      priceId === monthly.HUF ||
+      priceId === annual.EUR ||
+      priceId === annual.HUF
+    ) {
+      return tier;
+    }
   }
   return null;
+}
+
+/** The billing cadence Stripe is actually charging, read off the
+ *  subscription's own line-item price. Mirrors the vendor-side helper. */
+function intervalOfSubscription(sub: Stripe.Subscription): BillingInterval | null {
+  const raw = sub.items?.data?.[0]?.price?.recurring?.interval;
+  return raw === "year" ? "year" : raw === "month" ? "month" : null;
+}
+
+/** Per-tier annual prices for this currency, or null when even one tier's
+ *  annual Stripe price is unconfigured — deliberately all-or-nothing so the
+ *  UI never offers annual on two tiers and silently falls back to monthly on
+ *  the third. */
+function annualPlannerPricesOrNull(currency: Currency): Record<PlannerPlan, number> | null {
+  const tiers = ["starter", "pro", "premium"] as const;
+  const configured = tiers.every((tier) => {
+    const perTier = CONFIG.stripePricePlannerAnnual[tier];
+    return currency === "HUF" ? Boolean(perTier.HUF) : Boolean(perTier.EUR);
+  });
+  if (!configured) return null;
+  return {
+    starter: plannerAnnualPrice("starter", currency),
+    pro: plannerAnnualPrice("pro", currency),
+    premium: plannerAnnualPrice("premium", currency),
+  };
 }
 
 // ── GET /api/planner/billing ────────────────────────────────────────────────
@@ -97,6 +134,7 @@ function handleStatus(ctx: Ctx): Response {
     billing: toPlannerBilling(sub, tier),
     currency,
     prices,
+    annual_prices: annualPlannerPricesOrNull(currency),
     founding_spots_left: plannerFoundingSpotsLeft(),
     subscription_terms_accepted: hasAcceptedCurrentVersion(
       userId,
@@ -111,10 +149,21 @@ function handleStatus(ctx: Ctx): Response {
 // ── POST /api/planner/billing/checkout ──────────────────────────────────────
 async function handleCheckout(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
-  const body = await readJson<{ tier?: unknown; terms_version?: unknown }>(ctx.req);
+  const body = await readJson<{ tier?: unknown; interval?: unknown; terms_version?: unknown }>(
+    ctx.req,
+  );
   if (!isPlannerPlan(body.tier)) {
     throw new HttpError(400, "`tier` must be 'starter', 'pro', or 'premium'");
   }
+  if (
+    body.interval !== undefined &&
+    body.interval !== null &&
+    body.interval !== "month" &&
+    body.interval !== "year"
+  ) {
+    throw new HttpError(400, "`interval` must be 'month' or 'year'", { code: "bad_interval" });
+  }
+  const interval: BillingInterval = body.interval === "year" ? "year" : "month";
   const tier = body.tier;
   const user = getUserById(userId);
   const currency = plannerCurrency(userId);
@@ -180,7 +229,7 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
     {
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: priceIdForPlannerTier(tier, currency), quantity: 1 }],
+      line_items: [{ price: priceIdForPlannerTier(tier, currency, interval), quantity: 1 }],
       // Stamp the planner id on BOTH the session and the subscription so the
       // webhook can resolve the planner from either object.
       subscription_data: { metadata: { planner_user_id: String(userId) } },
@@ -191,7 +240,7 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
       cancel_url: `${CONFIG.frontendBaseUrl}/app/planner/billing?checkout=cancel`,
     },
     {
-      idempotencyKey: `planner-checkout-${userId}-${tier}-${sub.subscription_status}-${sub.stripe_subscription_id ?? "none"}`,
+      idempotencyKey: `planner-checkout-${userId}-${tier}-${interval}-${sub.subscription_status}-${sub.stripe_subscription_id ?? "none"}`,
     },
   );
   return json({ url: session.url });
@@ -258,6 +307,7 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
               stripeStatus: sub.status,
               currentPeriodEnd: periodEndMs(sub),
               tier: tierOfSubscription(sub),
+              billingInterval: intervalOfSubscription(sub),
               observedAt: event.created * 1000,
             });
           }
@@ -275,6 +325,7 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
             stripeStatus: sub.status,
             currentPeriodEnd: periodEndMs(sub),
             tier: tierOfSubscription(sub),
+            billingInterval: intervalOfSubscription(sub),
             observedAt: event.created * 1000,
           });
         }

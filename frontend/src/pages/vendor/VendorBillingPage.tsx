@@ -83,6 +83,8 @@ export default function VendorBillingPage() {
   const [features, setFeatures] = useState<VendorFeatureFlags | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [checkoutEnabled, setCheckoutEnabled] = useState(false);
+  const [annualPrice, setAnnualPrice] = useState<number | null>(null);
+  const [checkoutInterval, setCheckoutInterval] = useState<"month" | "year">("month");
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
   const [busyAction, setBusyAction] = useState<MoneyAction | null>(null);
@@ -102,6 +104,7 @@ export default function VendorBillingPage() {
       setFeatures(res.features);
       setEnabled(res.enabled);
       setCheckoutEnabled(res.checkout_enabled);
+      setAnnualPrice(res.annual_price);
       vendorBillingApi
         .details()
         .then(setDetails)
@@ -119,22 +122,25 @@ export default function VendorBillingPage() {
 
   /** Kick off a Stripe-hosted flow: mint the redirect URL, then leave. The
    *  busy flag stays on until navigation (or flips off with the error note). */
-  const startMoneyAction = useCallback(async (action: MoneyAction) => {
-    setBusyAction(action);
-    setActionFailed(false);
-    try {
-      const { url } =
-        action === "setup"
-          ? await vendorBillingApi.setup()
-          : action === "checkout"
-            ? await vendorBillingApi.checkout()
-            : await vendorBillingApi.portal();
-      window.location.href = url;
-    } catch {
-      setActionFailed(true);
-      setBusyAction(null);
-    }
-  }, []);
+  const startMoneyAction = useCallback(
+    async (action: MoneyAction) => {
+      setBusyAction(action);
+      setActionFailed(false);
+      try {
+        const { url } =
+          action === "setup"
+            ? await vendorBillingApi.setup()
+            : action === "checkout"
+              ? await vendorBillingApi.checkout(undefined, checkoutInterval)
+              : await vendorBillingApi.portal();
+        window.location.href = url;
+      } catch {
+        setActionFailed(true);
+        setBusyAction(null);
+      }
+    },
+    [checkoutInterval],
+  );
 
   if (loading) {
     return <BillingSkeleton title={t("vendor.billing.page_title")} />;
@@ -168,9 +174,12 @@ export default function VendorBillingPage() {
       date: formatDateMs(billing.trial_ends_at, locale),
     });
   } else if ((status === "active" || status === "past_due") && billing.current_period_end != null) {
-    statusDateLine = t("vendor.billing.next_payment_line", {
-      date: formatDateMs(billing.current_period_end, locale),
-    });
+    statusDateLine = t(
+      billing.billing_interval === "year"
+        ? "vendor.billing.next_payment_line_annual"
+        : "vendor.billing.next_payment_line",
+      { date: formatDateMs(billing.current_period_end, locale) },
+    );
   } else if (billing.reason === "trial_expired") {
     statusDateLine = t("vendor.billing.trial_expired_line");
   } else if (billing.reason === "leads_exhausted") {
@@ -320,10 +329,19 @@ export default function VendorBillingPage() {
                 {t("vendor.billing.upgrade_value")}
               </p>
               <p className="mt-1 text-sm font-semibold text-ink-900 dark:text-paper-50">
-                {priceLabel}
+                {checkoutInterval === "year" && annualPrice != null
+                  ? `${formatMoney(annualPrice, billing.currency, locale)}${t("vendor.billing.per_year")}`
+                  : priceLabel}
               </p>
             </div>
           </div>
+          {annualPrice != null && (
+            <IntervalToggle
+              value={checkoutInterval}
+              onChange={setCheckoutInterval}
+              annualNote={t("vendor.billing.annual_discount_note")}
+            />
+          )}
           <MoneyButton
             label={t("vendor.billing.subscribe_cta")}
             busyLabel={t("vendor.billing.redirecting")}
@@ -558,6 +576,47 @@ function MoneyButton({
       <Crown size={16} aria-hidden="true" />
       <span>{busy ? busyLabel : label}</span>
     </button>
+  );
+}
+
+/** Monthly / annual segmented switch for the subscribe CTA. Only rendered
+ *  when an annual price is actually configured (see the `annualPrice != null`
+ *  guard at the call site) — there is never a state where this offers a
+ *  cadence checkout can't charge. */
+function IntervalToggle({
+  value,
+  onChange,
+  annualNote,
+}: {
+  value: "month" | "year";
+  onChange: (interval: "month" | "year") => void;
+  annualNote: string;
+}) {
+  const { t } = useT();
+  const pill = (interval: "month" | "year", label: string) => (
+    <button
+      type="button"
+      aria-pressed={value === interval}
+      onClick={() => onChange(interval)}
+      className={
+        value === interval
+          ? "flex-1 rounded-full bg-blush-500 px-3 py-1.5 text-xs font-semibold text-white"
+          : "flex-1 rounded-full px-3 py-1.5 text-xs font-medium text-ink-600 hover:text-ink-900 dark:text-paper-300 dark:hover:text-paper-50"
+      }
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1 rounded-full bg-paper-200 p-1 dark:bg-umber-800">
+        {pill("month", t("vendor.billing.interval_monthly"))}
+        {pill("year", t("vendor.billing.interval_annual"))}
+      </div>
+      {value === "year" && (
+        <p className="text-xs text-blush-700 dark:text-blush-300">{annualNote}</p>
+      )}
+    </div>
   );
 }
 

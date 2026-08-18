@@ -1195,6 +1195,10 @@ const hr: LocaleMessages = {
       checkout_unavailable:
         "Plaćanje na internetu još nije dostupno. Javit ćemo vam se e-poštom prije bilo kakvog dospijeća.",
       per_month: "/mj",
+      per_year: "/god",
+      interval_monthly: "Mjesečno",
+      interval_annual: "Godišnje",
+      annual_discount_note: "Plaćajte godišnje i uštedite 25%.",
       compare_title: "Usporedite planove",
       you_are_here: "Ovdje ste",
       payment_portal_note:
@@ -1215,6 +1219,7 @@ const hr: LocaleMessages = {
       billing_starts_line:
         "Isporučeno je svih {total} besplatnih upita. Za nastavak Pro plana potrebna je izričita pretplata.",
       next_payment_line: "Sljedeće plaćanje: {date}.",
+      next_payment_line_annual: "Sljedeće plaćanje: {date}. Godišnja pretplata.",
       past_due_line: "Zadnje plaćanje nije uspjelo. Ažurirajte karticu u portalu za naplatu.",
       leads_exhausted_line:
         "Besplatni upiti su iskorišteni pa je Pro pauziran. Ništa nije naplaćeno; izričito se pretplatite za nastavak.",
@@ -6112,7 +6117,25 @@ const hr: LocaleMessages = {
     users_search_clear: "Očisti pretragu",
     users_search_empty: "Nema rezultata",
     users_search_empty_help:
-      "Pokušajte s drugom riječi ili očistite pretragu da se vrati cijeli popis.",
+      "Pokušajte s drugom riječi, ili očistite pretragu i filtre da se vrati cijeli popis.",
+    users_filters_clear_all: "Očisti pretragu i filtre",
+    users_filter_billing_label: "Naplata:",
+    users_filter_billing_trialing: "Probno",
+    users_filter_billing_founding: "Osnivač",
+    users_filter_billing_paying: "Plaća",
+    users_filter_billing_lapsed: "Isteklo",
+    users_filter_verified_label: "Potvrda:",
+    users_filter_verified_verified: "Potvrđeno",
+    users_filter_verified_unverified: "Nepotvrđeno",
+    users_filter_flagged: "Samo označeni",
+    users_filter_account_type_label: "Vrsta računa:",
+    users_filter_account_admin: "Admin",
+    users_filter_account_vendor: "Pružatelj usluga",
+    users_filter_account_planner: "Organizator",
+    users_filter_inactivity_label: "Aktivnost:",
+    users_filter_inactivity_any: "Bilo kada",
+    users_filter_inactivity_days: "{n}+ dana neaktivan",
+    users_filter_clear: "Očisti filtre",
     demo_workspaces_show: "Prikaži",
     demo_workspaces_hide: "Sakrij",
     demo_workspaces_summary_one: "{n} demo radni prostor",
@@ -8089,7 +8112,7 @@ const hr: LocaleMessages = {
       "Weddlyjevi opći uvjeti za dobavljače: naknade, naplata, produljenje, odgovornost, rangiranje, pritužbe, mađarsko i EU pravo.",
     page_title: "Uvjeti pretplate za dobavljače (ÁSZF)",
     last_updated_label: "Verzija",
-    last_updated_date: "na snazi od 2026-08-13",
+    last_updated_date: "na snazi od 2026-08-18",
     intro:
       "Ovi Opći uvjeti poslovanja (ÁSZF) uređuju Weddlyjevu pretplatu za dobavljače. Postaju dio ugovora između strana kada ih Dobavljač izričito prihvati klikom na „Prihvaćam” tijekom registracije. Prema čl. 6:78(2) mađarskog Građanskog zakonika izričito su istaknute i uz posebnu pažnju prihvaćene sljedeće odredbe: ograničenje odgovornosti, automatsko produljenje, promjena naknada, jednostrana izmjena Općih uvjeta, nadležnost te označavanje sponzoriranih prikaza.",
     operator_title: "Operator i ugovorne strane",
@@ -8118,7 +8141,7 @@ const hr: LocaleMessages = {
       "PDV se primjenjuje po stopi koju propisuje mađarsko pravo u danom trenutku. Ako Operator na dan stupanja ugovora na snagu nije obveznik PDV-a (primjerice, oslobođeni mali poduzetnik), cijene se fakturiraju bez PDV-a, a račun to navodi. Nakon upisa u sustav PDV-a objavljene su cijene neto cijene na koje se dodaje PDV.",
     term_title: "Trajanje, produljenje, raskid",
     term_body:
-      "Trenutačno ponuđena plaćena pretplata mjesečna je i obnavlja se svaki mjesec dok je Dobavljač ne otkaže u aplikaciji ili e-poštom na hello@tryweddly.com. Otkaz zaustavlja sljedeću obnovu; već plaćeni ciklus dostupan je do kraja. Naknada za tekući ciklus ne vraća se osim prema jamstvu povrata ili potrošačkom pravu na odustanak. Nakon toga osnovni javni zapis ostaje aktivan i uređiv u besplatnom planu, dok Pro funkcije i istaknuti prikazi prestaju. Godišnji plan trenutačno se ne nudi.",
+      "Dobavljačev odabrani ciklus naplate – mjesečni ili godišnji – automatski se obnavlja u vlastitom ritmu dok ga Dobavljač ne otkaže u aplikaciji ili e-poštom na hello@tryweddly.com. Otkaz zaustavlja sljedeću obnovu; već plaćeni ciklus (kupljeni mjesec ili godina) dostupan je do kraja. Naknada za tekući ciklus ne vraća se kod redovnog otkaza, osim prema jamstvu povrata ili potrošačkom pravu na odustanak. Nakon otkaza osnovni javni zapis ostaje aktivan i uređiv u besplatnom planu, dok Pro funkcije i istaknuti prikazi prestaju.",
     refund_title: "Jamstvo povrata novca (B2B 14 dana)",
     refund_body:
       "Kod prve plaćene pretplate Dobavljač može, bez navođenja razloga, raskinuti ugovor i zatražiti puni povrat plaćene naknade slanjem e-pošte na hello@tryweddly.com unutar prvih 14 dana prvog plaćenog ciklusa. Jamstvo se ne primjenjuje: (a) kod ponovnih registracija ili promjene paketa, (b) ako je Dobavljač tijekom razdoblja od 14 dana izričito koristio prilagođenu promotivnu ili sadržajnu uslugu Operatora. Povrat se izvršava izvornim kanalom plaćanja u roku od 14 dana od primitka zahtjeva.",
@@ -8268,13 +8291,13 @@ const hr: LocaleMessages = {
       "The contract is formed when the planner checks the acceptance box on the Checkout screen and completes payment for the chosen tier. The Operator logs the acceptance (timestamp, document version, IP address, user-agent) and may rely on that log in case of a dispute. No fee is due before this step.",
     billing_title: "Billing",
     billing_body:
-      "The subscription is billed monthly, in advance, in the planner's workspace currency, through Stripe, at the price of the selected tier (Starter, Pro, or Premium). Switching tiers changes the amount billed from the next renewal. The Checkout screen shows the total price and renewal date before payment is taken.",
+      "The subscription is billed monthly or annually — in advance, in the planner's workspace currency, through Stripe — at the price of the selected tier (Starter, Pro, or Premium) and billing cycle; the annual cycle is offered at a fixed 25% discount against twelve months of the monthly price. Switching tiers changes the amount billed from the next renewal. The Checkout screen shows the total price, billing cycle and renewal date before payment is taken.",
     vat_title: "VAT",
     vat_body:
       "VAT applies at the rate prescribed by Hungarian law from time to time. If the Operator is not VAT-registered when the contract takes effect, prices are invoiced VAT-free and the invoice states this.",
     term_title: "Term and automatic renewal",
     term_body:
-      "The subscription renews automatically every month until cancelled. Cancellation is available at any time from the billing settings page or the Stripe customer portal and takes effect at the end of the current paid period; the planner keeps full access to the paid tier until then. Fees already paid for the running period are not refunded on an ordinary cancellation.",
+      "The subscription renews automatically at the chosen cadence — monthly or annually — until cancelled. Cancellation is available at any time from the billing settings page or the Stripe customer portal and takes effect at the end of the current paid period; the planner keeps full access to the paid tier until then. Fees already paid for the running period are not refunded on an ordinary cancellation.",
     refund_title: "Refund policy",
     refund_body:
       "Outside the withdrawal or refund right described below, fees already paid are non-refundable, except where required by law or expressly granted by the Operator at its discretion (for example, a billing error).",
@@ -9667,6 +9690,10 @@ const hr: LocaleMessages = {
     feat_references: "Javni referentni profil",
     feat_priority_support: "Prioritetna podrška",
     price_per_month: "{price}/mj.",
+    price_per_year: "{price}/god.",
+    interval_monthly: "Mjesečno",
+    interval_annual: "Godišnje",
+    annual_discount_note: "Plaćajte godišnje i uštedite 25%.",
     founding_spots: "Još {n} od 25 mjesta za osnivače",
     state_founding: "Član osnivač · naš gost do {date}",
     state_trial: "Proba · još {days} dana",

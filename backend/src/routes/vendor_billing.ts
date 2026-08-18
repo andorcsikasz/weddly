@@ -18,10 +18,12 @@
 
 import type Stripe from "stripe";
 import {
+  type BillingInterval,
   type VendorBilling,
   type VendorBillingDetails,
   type VendorBillingStatus,
   VENDOR_FREE_LEAD_CREDITS,
+  vendorAnnualPrice,
   vendorCurrencyForLocale,
   vendorPrice,
 } from "@shared/vendor_billing";
@@ -64,13 +66,44 @@ function vendorCurrency(sub: VendorSubRow | null, ownerUserId: number): Currency
   return vendorCurrencyForLocale(getUserById(ownerUserId)?.locale);
 }
 
-/** The Stripe Price id for the vendor monthly plan in this currency. */
-function vendorPriceId(currency: Currency): string {
+/** The Stripe Price id for the vendor plan in this currency + cadence. Annual
+ *  falls back to a clear 503 rather than silently charging monthly instead —
+ *  a vendor who picked "annual, -25%" must never be billed the monthly price
+ *  because the env var happened to be unset. */
+function vendorPriceId(currency: Currency, interval: BillingInterval): string {
+  if (interval === "year") {
+    const id =
+      currency === "HUF" ? CONFIG.stripePriceVendorHufAnnual : CONFIG.stripePriceVendorEurAnnual;
+    if (!id) {
+      throw new HttpError(503, "Annual vendor billing is not configured", {
+        code: "billing_interval_unavailable",
+      });
+    }
+    return id;
+  }
   const id = currency === "HUF" ? CONFIG.stripePriceVendorHuf : CONFIG.stripePriceVendorEur;
   if (!id) {
     throw new HttpError(503, "Vendor billing is not configured", { code: "billing_disabled" });
   }
   return id;
+}
+
+/** Parse + validate the optional `interval` field carried by the checkout
+ *  request body. Defaults to monthly, the plan every existing integration
+ *  (and every vendor who doesn't touch the toggle) still expects. */
+function parseBillingInterval(value: unknown): BillingInterval {
+  if (value === "year") return "year";
+  if (value === undefined || value === null || value === "month") return "month";
+  throw new HttpError(400, "`interval` must be 'month' or 'year'", { code: "bad_interval" });
+}
+
+/** The annual price for the billing-status payload, or null when no annual
+ *  Stripe price is configured for this currency — the UI reads null as "no
+ *  annual toggle", never as a price to charge. */
+function annualVendorPriceOrNull(currency: Currency): number | null {
+  const id =
+    currency === "HUF" ? CONFIG.stripePriceVendorHufAnnual : CONFIG.stripePriceVendorEurAnnual;
+  return id ? vendorAnnualPrice(currency) : null;
 }
 
 /** Stripe moved `current_period_end` onto subscription items in recent API
@@ -82,6 +115,16 @@ function periodEndMs(sub: Stripe.Subscription): number | null {
   };
   const secs = s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? null;
   return secs ? secs * 1000 : null;
+}
+
+/** The billing cadence Stripe is actually charging, read off the
+ *  subscription's own line-item price — never trusted from anything the
+ *  client sent. Null when the price carries no recognisable recurring
+ *  interval (shouldn't happen for a real subscription, but a webhook must
+ *  never throw on a shape it doesn't expect). */
+function intervalOfSubscription(sub: Stripe.Subscription): BillingInterval | null {
+  const raw = sub.items?.data?.[0]?.price?.recurring?.interval;
+  return raw === "year" ? "year" : raw === "month" ? "month" : null;
 }
 
 /** Reuse the vendor's Stripe customer across setup/checkout so the saved card,
@@ -110,6 +153,7 @@ async function ensureStripeCustomer(vendorAccountId: number): Promise<string> {
 function noSubBilling(currency: Currency): VendorBilling {
   return {
     subscription_status: "none",
+    billing_interval: "month",
     trial_ends_at: null,
     founding_until: null,
     is_founding_member: false,
@@ -139,6 +183,7 @@ function handleGetBilling(ctx: Ctx): Response {
     billing,
     currency,
     price: vendorPrice(currency),
+    annual_price: annualVendorPriceOrNull(currency),
     founding_spots_left: vendorFoundingSpotsLeft(),
     early_spots_left: vendorEarlySpotsLeft(),
     offer: currentVendorOffer(),
@@ -154,18 +199,18 @@ function handleGetBilling(ctx: Ctx): Response {
  *  both create a Stripe session and are "point of purchase" moments. Skips
  *  the prompt entirely for a vendor who already accepted at the current
  *  VENDOR_TERMS_VERSION (registration, account editing, or a prior
- *  checkout); otherwise requires explicit acceptance in this request's body
- *  and records it, mirroring routes/vendor_account.ts's handleAcceptLegal. */
-async function ensureVendorTermsAccepted(
+ *  checkout); otherwise requires explicit acceptance in the ALREADY-PARSED
+ *  request body and records it, mirroring routes/vendor_account.ts's
+ *  handleAcceptLegal. Takes the parsed body rather than `ctx` because a
+ *  Request body stream can only be read once — `handleCheckout` also needs
+ *  `interval` off the same body, so callers read it once and share it. */
+function ensureVendorTermsAccepted(
   ctx: Ctx,
   account: { id: number; owner_user_id: number },
-): Promise<void> {
+  body: { vendor_terms_version?: unknown; highlighted_terms_accepted?: unknown },
+): void {
   const ownerId = account.owner_user_id;
   if (hasCurrentVendorAcceptance(ownerId)) return;
-  const body = await readJson<{
-    vendor_terms_version?: unknown;
-    highlighted_terms_accepted?: unknown;
-  }>(ctx.req);
   if (
     body.vendor_terms_version !== VENDOR_TERMS_VERSION ||
     body.highlighted_terms_accepted !== true
@@ -210,7 +255,11 @@ async function handleSetup(ctx: Ctx): Promise<Response> {
       code: "already_subscribed",
     });
   }
-  await ensureVendorTermsAccepted(ctx, account);
+  const setupBody = await readJson<{
+    vendor_terms_version?: unknown;
+    highlighted_terms_accepted?: unknown;
+  }>(ctx.req);
+  ensureVendorTermsAccepted(ctx, account, setupBody);
   const customerId = await ensureStripeCustomer(account.id);
   const session = await stripe().checkout.sessions.create(
     {
@@ -237,14 +286,20 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
   if (sub && (sub.subscription_status === "active" || sub.subscription_status === "past_due")) {
     throw new HttpError(400, "Already subscribed", { code: "already_subscribed" });
   }
-  await ensureVendorTermsAccepted(ctx, account);
+  const body = await readJson<{
+    interval?: unknown;
+    vendor_terms_version?: unknown;
+    highlighted_terms_accepted?: unknown;
+  }>(ctx.req);
+  ensureVendorTermsAccepted(ctx, account, body);
+  const interval = parseBillingInterval(body.interval);
   const currency = vendorCurrency(sub, account.owner_user_id);
   const customerId = await ensureStripeCustomer(account.id);
   const session = await stripe().checkout.sessions.create(
     {
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: vendorPriceId(currency), quantity: 1 }],
+      line_items: [{ price: vendorPriceId(currency, interval), quantity: 1 }],
       subscription_data: { metadata: { vendor_account_id: String(account.id) } },
       client_reference_id: String(account.id),
       metadata: { vendor_account_id: String(account.id) },
@@ -253,7 +308,7 @@ async function handleCheckout(ctx: Ctx): Promise<Response> {
       cancel_url: `${CONFIG.frontendBaseUrl}/vendor/billing?checkout=cancel`,
     },
     {
-      idempotencyKey: `vendor-checkout-${account.id}-${sub?.subscription_status ?? "none"}-${sub?.stripe_subscription_id ?? "none"}`,
+      idempotencyKey: `vendor-checkout-${account.id}-${interval}-${sub?.subscription_status ?? "none"}-${sub?.stripe_subscription_id ?? "none"}`,
     },
   );
   return json({ url: session.url });
@@ -392,6 +447,7 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
               subscriptionId: sub.id,
               stripeStatus: sub.status,
               currentPeriodEnd: periodEndMs(sub),
+              billingInterval: intervalOfSubscription(sub),
               observedAt: event.created * 1000,
             });
           }
@@ -408,6 +464,7 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
             subscriptionId: sub.id,
             stripeStatus: sub.status,
             currentPeriodEnd: periodEndMs(sub),
+            billingInterval: intervalOfSubscription(sub),
             observedAt: event.created * 1000,
           });
         }

@@ -13,12 +13,17 @@
 //  - Once the cohort fills, new planners get a short 3-day trial → paid.
 //  - Lapse/cancel → hard read-only gate (402), like couples + vendors.
 
-import { type BillingReason, computeEntitlement, type SubscriptionStatus } from "./billing";
+import {
+  type BillingInterval,
+  type BillingReason,
+  computeEntitlement,
+  type SubscriptionStatus,
+} from "./billing";
 import { type BillingCurrency, toBillingCurrency } from "./currency";
 import type { Currency, PlannerPlan, UnixMs } from "./types";
 
 export { computeEntitlement };
-export type { BillingReason, SubscriptionStatus };
+export type { BillingInterval, BillingReason, SubscriptionStatus };
 
 /** First N planners to activate get a free founding window. Counted by granted
  *  badge (is_founding_member = 1); a slot is spent permanently on grant, so an
@@ -52,11 +57,42 @@ export function plannerPrice(tier: PlannerPlan, currency: Currency): number {
   return PLANNER_TIER_PRICE[tier][toBillingCurrency(currency)];
 }
 
+/** Annual plan price per tier per display currency: exactly 25% off twelve
+ *  months of PLANNER_TIER_PRICE (× 9). Keep in sync with the Stripe planner
+ *  annual Price objects (backend/scripts/stripe_setup_planner.ts). */
+export const PLANNER_TIER_ANNUAL_PRICE: Record<PlannerPlan, Record<BillingCurrency, number>> = {
+  starter: {
+    HUF: PLANNER_TIER_PRICE.starter.HUF * 9,
+    EUR: PLANNER_TIER_PRICE.starter.EUR * 9,
+    USD: PLANNER_TIER_PRICE.starter.USD * 9,
+  },
+  pro: {
+    HUF: PLANNER_TIER_PRICE.pro.HUF * 9,
+    EUR: PLANNER_TIER_PRICE.pro.EUR * 9,
+    USD: PLANNER_TIER_PRICE.pro.USD * 9,
+  },
+  premium: {
+    HUF: PLANNER_TIER_PRICE.premium.HUF * 9,
+    EUR: PLANNER_TIER_PRICE.premium.EUR * 9,
+    USD: PLANNER_TIER_PRICE.premium.USD * 9,
+  },
+};
+
+/** The annual-plan price for a tier on this currency, prepaid once a year. */
+export function plannerAnnualPrice(tier: PlannerPlan, currency: Currency): number {
+  return PLANNER_TIER_ANNUAL_PRICE[tier][toBillingCurrency(currency)];
+}
+
 /** Billing snapshot attached to the planner's billing surface + onboarding. */
 export interface PlannerBilling {
   subscription_status: SubscriptionStatus;
   /** The tier this planner is on (source of truth: users.planner_plan). */
   tier: PlannerPlan;
+  /** The cadence actually being billed — only meaningful once a Stripe
+   *  subscription exists; 'month' is the harmless default the rest of the
+   *  time (trial/founding bill nothing yet). Set from the Stripe
+   *  subscription's own price, never chosen client-side. */
+  billing_interval: BillingInterval;
   /** Epoch ms — end of the trial (planner 26+). Null unless trialing. */
   trial_ends_at: UnixMs | null;
   /** Epoch ms — end of the 2-year founding window. Null when not founding. */
@@ -86,6 +122,11 @@ export interface PlannerBillingStatus {
   currency: Currency;
   /** Per-tier monthly price in `currency`, for rendering the plan cards. */
   prices: Record<PlannerPlan, number>;
+  /** Per-tier annual price (25% off × 12), same currency. Null when annual
+   *  Stripe prices aren't configured, so the UI hides the annual toggle
+   *  rather than offer a cadence it can't charge. All-or-nothing across
+   *  tiers: the setup script mints all six annual prices together. */
+  annual_prices: Record<PlannerPlan, number> | null;
   /** Remaining founding slots (CAP − granted badges), clamped >= 0. Drives the
    *  "N of 25 free spots left" line. */
   founding_spots_left: number;

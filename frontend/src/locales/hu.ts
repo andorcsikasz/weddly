@@ -1175,6 +1175,10 @@ const hu: LocaleMessages = {
       checkout_unavailable:
         "Az online fizetés még nem érhető el. Időben e-mailt küldünk, mielőtt bármi esedékes lenne.",
       per_month: "/hó",
+      per_year: "/év",
+      interval_monthly: "Havonta",
+      interval_annual: "Évente",
+      annual_discount_note: "Évente fizetve -25%-ot spórolsz.",
       compare_title: "Csomagok összehasonlítása",
       you_are_here: "Itt tartasz",
       payment_portal_note:
@@ -1196,6 +1200,7 @@ const hu: LocaleMessages = {
       billing_starts_line:
         "Mind a(z) {total} ajándék megkeresés megérkezett. A Pro folytatásához külön előfizetés szükséges.",
       next_payment_line: "Következő fizetés: {date}.",
+      next_payment_line_annual: "Következő fizetés: {date}. Éves előfizetés.",
       past_due_line:
         "Az utolsó fizetésed sikertelen volt. Frissítsd a kártyád a fizetési portálon.",
       leads_exhausted_line:
@@ -6186,7 +6191,25 @@ const hu: LocaleMessages = {
     users_search_clear: "Keresés törlése",
     users_search_empty: "Nincs találat",
     users_search_empty_help:
-      "Próbálj más kulcsszót, vagy töröld a keresést a teljes lista visszahozásához.",
+      "Próbálj más kulcsszót, vagy töröld a keresést és a szűrőket a teljes lista visszahozásához.",
+    users_filters_clear_all: "Keresés és szűrők törlése",
+    users_filter_billing_label: "Fizetés:",
+    users_filter_billing_trialing: "Próba",
+    users_filter_billing_founding: "Alapító",
+    users_filter_billing_paying: "Fizető",
+    users_filter_billing_lapsed: "Lejárt",
+    users_filter_verified_label: "Hitelesítés:",
+    users_filter_verified_verified: "Hitelesítve",
+    users_filter_verified_unverified: "Nem hitelesített",
+    users_filter_flagged: "Csak megjelöltek",
+    users_filter_account_type_label: "Fióktípus:",
+    users_filter_account_admin: "Admin",
+    users_filter_account_vendor: "Szolgáltató",
+    users_filter_account_planner: "Tervező",
+    users_filter_inactivity_label: "Inaktivitás:",
+    users_filter_inactivity_any: "Bármikor",
+    users_filter_inactivity_days: "{n}+ napja",
+    users_filter_clear: "Szűrők törlése",
     demo_workspaces_show: "Megjelenítés",
     demo_workspaces_hide: "Elrejtés",
     demo_workspaces_summary_one: "{n} demo munkaterület",
@@ -8178,7 +8201,7 @@ const hu: LocaleMessages = {
       "A Wēddly szolgáltatói ÁSZF-je: díjak, számlázás, megújulás, felelősség, rangsorolás, panaszkezelés, magyar és EU jog.",
     page_title: "Szolgáltatói előfizetési feltételek (ÁSZF)",
     last_updated_label: "Verzió",
-    last_updated_date: "hatályos 2026-08-13",
+    last_updated_date: "hatályos 2026-08-18",
     intro:
       "A jelen Általános Szerződési Feltételek (ÁSZF) a Wēddly szolgáltatói (vendor) előfizetésére vonatkozó szabályokat tartalmazzák. Az ÁSZF a regisztrációkor kifejezett, kattintásos elfogadás útján válik a felek között létrejövő szerződés részévé. Az alábbi szakaszok közül a Ptk. 6:78. § (2) bekezdés szerinti kifejezett figyelemfelhívással elfogadott rendelkezésnek minősül a felelősség-korlátozás, az automatikus megújulás, a díjmódosítás, az egyoldalú ÁSZF-módosítás, a joghatóság, valamint a kiemelt megjelenések feltüntetésére vonatkozó kikötés.",
     operator_title: "Üzemeltető és szerződő felek",
@@ -8201,13 +8224,13 @@ const hu: LocaleMessages = {
       "A hatálybalépéskor az alapszintű katalógus-megjelenés díjmentes, a fizetős checkout le van tiltva. Fizetős indulás előtt a Wēddly a fiókban és a Checkoutban közzéteszi a pontos csomagot, teljes árat, adózást, számlázási időszakot és megújulási feltételeket, legalább 30 nappal előre értesít, és külön kifejezett fizetési megerősítést kér. Regisztráció vagy bankkártya mentése önmagában nem keletkeztet fizetési kötelezettséget.",
     billing_title: "Számlázás",
     billing_body:
-      "Jogi aktiválás után a jelenleg kínált szolgáltatói csomag havi és előre fizetett, Stripe-on keresztül. A végső Checkout-képernyőnek az egyértelmű fizetési művelet előtt mutatnia kell a teljes összeget, adókat, megújulási napot és lemondási feltételeket. A Wēddly csak jogszerű számlázási és adózási háttérrel fogadhat fizetést. Éves szolgáltatói csomag jelenleg nincs.",
+      "Jogi aktiválás után a Vendor havi vagy éves, előre fizetett számlázási ciklus közül választhat, Stripe-on keresztül. Az éves ciklus a havi ár tizenkétszeresének 25%-os kedvezményével érhető el. A végső Checkout-képernyőnek az egyértelmű fizetési művelet előtt mutatnia kell a teljes összeget, a számlázási ciklust, adókat, megújulási napot és lemondási feltételeket. A Wēddly csak jogszerű számlázási és adózási háttérrel fogadhat fizetést.",
     vat_title: "ÁFA",
     vat_body:
       "Az ÁFA mértéke a magyar jog szerint érvényes mindenkori kulcs. Amennyiben az Üzemeltető a hatálybalépéskor még nem ÁFA-alany (pl. alanyi adómentes mikrovállalkozás), az ár ÁFA-mentesen kerül kiszámlázásra, és ennek tényét a számla feltünteti. ÁFA-bejegyzés esetén a hirdetett árak nettó árak, amelyekre az ÁFA hozzáadódik.",
     term_title: "Időtartam, megújulás, felmondás",
     term_body:
-      "A jelenleg kínált fizetős előfizetés havi, és havonta megújul, amíg a Vendor a Wēddly alkalmazásban vagy a hello@tryweddly.com címen le nem mondja. A lemondás a következő megújulást állítja le; a már kifizetett ciklus annak végéig elérhető. A folyó ciklus díja rendes lemondáskor nem jár vissza, kivéve a pénzvisszafizetési garancia vagy fogyasztói elállás esetét. Lemondás után az alap nyilvános adatlap az ingyenes csomagban továbbra is él és szerkeszthető, a Pro funkciók és kiemelések megszűnnek. Éves csomag jelenleg nincs.",
+      "A Vendor által választott számlázási ciklus – havi vagy éves – a saját ütemében automatikusan megújul, amíg a Vendor a Wēddly alkalmazásban vagy a hello@tryweddly.com címen le nem mondja. A lemondás a következő megújulást állítja le; a már kifizetett ciklus (a megvásárolt hónap vagy év) annak végéig elérhető. A folyó ciklus díja rendes lemondáskor nem jár vissza, kivéve a pénzvisszafizetési garancia vagy fogyasztói elállás esetét. Lemondás után az alap nyilvános adatlap az ingyenes csomagban továbbra is él és szerkeszthető, a Pro funkciók és kiemelések megszűnnek.",
     refund_title: "Pénzvisszafizetési garancia (B2B 14 nap)",
     refund_body:
       "Új Vendor első fizetős előfizetésénél a Vendor az első fizetett ciklus első 14 napján belül indokolás nélkül, e-mailben (hello@tryweddly.com) kérheti a szerződés felmondását és a teljes megfizetett díj visszafizetését. A garancia nem alkalmazandó: (a) ismételt regisztráció vagy csomagváltás esetén, (b) ha a Vendor a 14 napos időszakon belül az Üzemeltető által kifejezetten egyedi tartalmi vagy promóciós szolgáltatást vett igénybe. A visszafizetést a kérelem beérkezésétől számított 14 napon belül teljesítjük az eredeti fizetési csatornán.",
@@ -8349,13 +8372,13 @@ const hu: LocaleMessages = {
       "A szerződés akkor jön létre, amikor a szervező a fizetési felületen bepipálja az elfogadó jelölőnégyzetet, és teljesíti a kiválasztott csomag díjának fizetését. Az Üzemeltető naplózza az elfogadást (időbélyeg, dokumentumverzió, IP-cím, user-agent), és vita esetén hivatkozhat erre a naplóra. Ez előtt a lépés előtt díj nem esedékes.",
     billing_title: "Számlázás",
     billing_body:
-      "Az előfizetés havonta, előre, a szervező munkaterületének pénznemében, a Stripe-on keresztül kerül számlázásra, a kiválasztott csomag (Starter, Pro vagy Premium) árán. Csomagváltás esetén a számlázott összeg a következő megújulástól változik. A fizetési felület a fizetés megtörténte előtt megmutatja a teljes árat és a megújulás dátumát.",
+      "Az előfizetés havonta vagy évente, előre, a szervező munkaterületének pénznemében, a Stripe-on keresztül kerül számlázásra, a kiválasztott csomag (Starter, Pro vagy Premium) és számlázási ciklus árán; az éves ciklus a havi ár tizenkétszeresének 25%-os kedvezményével érhető el. Csomagváltás esetén a számlázott összeg a következő megújulástól változik. A fizetési felület a fizetés megtörténte előtt megmutatja a teljes árat, a számlázási ciklust és a megújulás dátumát.",
     vat_title: "ÁFA",
     vat_body:
       "Az ÁFA a mindenkori magyar jogszabályok szerinti mértékben alkalmazandó. Ha a szerződés hatálybalépésekor az Üzemeltető nem alanya az ÁFA-nak, az árak ÁFA-mentesen kerülnek számlázásra, amit a számla is feltüntet.",
     term_title: "Időtartam és automatikus megújulás",
     term_body:
-      "Az előfizetés lemondásig havonta automatikusan megújul. A lemondás bármikor elérhető a számlázási beállításokban vagy a Stripe ügyfélportálon, és a folyó fizetett időszak végén lép hatályba; addig a szervező teljes hozzáférést élvez a fizetős csomaghoz. A folyó időszakra már kifizetett díj rendes lemondás esetén nem jár vissza.",
+      "Az előfizetés a választott ütemben – havonta vagy évente – lemondásig automatikusan megújul. A lemondás bármikor elérhető a számlázási beállításokban vagy a Stripe ügyfélportálon, és a folyó fizetett időszak végén lép hatályba; addig a szervező teljes hozzáférést élvez a fizetős csomaghoz. A folyó időszakra már kifizetett díj rendes lemondás esetén nem jár vissza.",
     refund_title: "Visszatérítési szabályok",
     refund_body:
       "Az alább ismertetett elállási vagy visszatérítési jogon kívül a már kifizetett díjak nem téríthetők vissza, kivéve, ha ezt jogszabály előírja, vagy az Üzemeltető saját belátása szerint kifejezetten biztosítja (például számlázási hiba esetén).",
@@ -9749,6 +9772,10 @@ const hu: LocaleMessages = {
     feat_references: "Nyilvános referencia profil",
     feat_priority_support: "Prioritásos ügyfélszolgálat",
     price_per_month: "{price}/hó",
+    price_per_year: "{price}/év",
+    interval_monthly: "Havonta",
+    interval_annual: "Évente",
+    annual_discount_note: "Évente fizetve -25%-ot spórolsz.",
     founding_spots: "Még {n} alapító hely a 25-ből",
     state_founding: "Alapító tag · {date}-ig a vendégünk",
     state_trial: "Próbaidőszak · még {days} nap",

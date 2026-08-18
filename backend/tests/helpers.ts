@@ -180,6 +180,13 @@ function withConsentVersions(method: string, path: string, body: unknown): unkno
 export function wipeAll(): void {
   const tables = [
     "audit_log",
+    // GDPR consent ledger (privacy/terms/vendor_terms/…). Missing from this
+    // list let a prior test file's recorded acceptances leak into the next
+    // one's "expect zero consent rows" assertions whenever both run in the
+    // same bun:test process (found while adding annual-billing terms
+    // acceptance coverage: checkout_terms_acceptance.e2e.test.ts failed only
+    // when run after vendor_register.e2e.test.ts, never alone).
+    "user_consents",
     "couple_pause_requests",
     "seat_assignments",
     "seating_conflicts",

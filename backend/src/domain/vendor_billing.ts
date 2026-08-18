@@ -12,6 +12,7 @@
 // (called from the webhook and from inquiry creation respectively).
 
 import {
+  type BillingInterval,
   computeVendorEntitlement,
   type SubscriptionStatus,
   VENDOR_EARLY_CAP,
@@ -44,6 +45,7 @@ export interface VendorSubRow {
   lead_credits_used: number;
   billing_starts_at: number | null;
   currency: string;
+  billing_interval: string;
   created_at: number;
   updated_at: number;
 }
@@ -169,6 +171,7 @@ export function toVendorBilling(row: VendorSubRow, nowMs: number = Date.now()): 
   }
   return {
     subscription_status: status,
+    billing_interval: (row.billing_interval === "year" ? "year" : "month") as BillingInterval,
     trial_ends_at: row.trial_ends_at,
     founding_until: row.founding_until,
     is_founding_member: row.is_founding_member === 1,
@@ -261,6 +264,11 @@ export function applyVendorSubscriptionState(
     subscriptionId: string | null;
     stripeStatus: string;
     currentPeriodEnd: number | null;
+    /** The Stripe subscription's own billing cadence (its price's
+     *  recurring.interval). Null leaves the stored cadence untouched — a
+     *  cancellation event carries no price to read it from, and the vendor's
+     *  invoice history still wants to say which cadence they were on. */
+    billingInterval?: BillingInterval | null;
     observedAt?: number; // Stripe event creation time; server time for direct reads
   },
 ): void {
@@ -274,6 +282,7 @@ export function applyVendorSubscriptionState(
               WHEN ? = 'past_due' THEN COALESCE(past_due_since, ?)
               ELSE NULL
             END,
+            billing_interval = COALESCE(?, billing_interval),
             updated_at = ?
       WHERE vendor_account_id = ?`,
   ).run(
@@ -282,6 +291,7 @@ export function applyVendorSubscriptionState(
     opts.currentPeriodEnd,
     mapped,
     observedAt,
+    opts.billingInterval ?? null,
     ts,
     vendorAccountId,
   );

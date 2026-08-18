@@ -1199,6 +1199,10 @@ const es: LocaleMessages = {
       checkout_unavailable:
         "El pago online aún no está disponible. Te avisaremos por email antes de cualquier cobro.",
       per_month: "/mes",
+      per_year: "/año",
+      interval_monthly: "Mensual",
+      interval_annual: "Anual",
+      annual_discount_note: "Paga en anual y ahorra un 25%.",
       compare_title: "Comparar planes",
       you_are_here: "Estás aquí",
       payment_portal_note:
@@ -1220,6 +1224,7 @@ const es: LocaleMessages = {
       billing_starts_line:
         "Entregadas las {total} solicitudes de cortesía. Para continuar con Pro debes suscribirte expresamente.",
       next_payment_line: "Próximo pago: {date}.",
+      next_payment_line_annual: "Próximo pago: {date}. Suscripción anual.",
       past_due_line: "Tu último pago falló. Actualiza tu tarjeta en el portal de facturación.",
       leads_exhausted_line:
         "Tus solicitudes de cortesía se han agotado, así que Pro está en pausa. No se ha cobrado nada; suscríbete expresamente para continuar.",
@@ -6171,7 +6176,25 @@ const es: LocaleMessages = {
     users_search_clear: "Borrar búsqueda",
     users_search_empty: "Sin coincidencias",
     users_search_empty_help:
-      "Prueba con otra palabra clave o borra la búsqueda para recuperar la lista completa.",
+      "Prueba con otra palabra clave, o borra la búsqueda y los filtros para recuperar la lista completa.",
+    users_filters_clear_all: "Borrar búsqueda y filtros",
+    users_filter_billing_label: "Facturación:",
+    users_filter_billing_trialing: "Prueba",
+    users_filter_billing_founding: "Fundador",
+    users_filter_billing_paying: "De pago",
+    users_filter_billing_lapsed: "Vencido",
+    users_filter_verified_label: "Verificación:",
+    users_filter_verified_verified: "Verificado",
+    users_filter_verified_unverified: "Sin verificar",
+    users_filter_flagged: "Solo marcados",
+    users_filter_account_type_label: "Tipo de cuenta:",
+    users_filter_account_admin: "Admin",
+    users_filter_account_vendor: "Proveedor",
+    users_filter_account_planner: "Wedding planner",
+    users_filter_inactivity_label: "Actividad:",
+    users_filter_inactivity_any: "Cualquier momento",
+    users_filter_inactivity_days: "{n}+ días inactivo",
+    users_filter_clear: "Borrar filtros",
     demo_workspaces_show: "Mostrar",
     demo_workspaces_hide: "Ocultar",
     demo_workspaces_summary_one: "{n} espacio de trabajo demo",
@@ -8176,7 +8199,7 @@ const es: LocaleMessages = {
       "ÁSZF de proveedores de Weddly: tarifas, facturación, renovación, responsabilidad, posicionamiento, reclamaciones, legislación húngara y de la UE.",
     page_title: "Condiciones de suscripción para proveedores (ÁSZF)",
     last_updated_label: "Versión",
-    last_updated_date: "en vigor desde el 2026-08-13",
+    last_updated_date: "en vigor desde el 2026-08-18",
     intro:
       "Estas Condiciones Generales de Contratación (ÁSZF) rigen la suscripción de proveedores de Weddly. Pasan a formar parte del contrato entre las partes cuando el Proveedor las acepta expresamente haciendo clic en «Acepto» durante el registro. En virtud del §6:78(2) del Código Civil húngaro, las siguientes cláusulas se destacan y se aceptan expresamente con especial atención: la limitación de responsabilidad, la renovación automática, los cambios de tarifas, la modificación unilateral de las ÁSZF, la jurisdicción y la divulgación de los emplazamientos patrocinados.",
     operator_title: "Operador y partes contratantes",
@@ -8205,7 +8228,7 @@ const es: LocaleMessages = {
       "El IVA se aplica al tipo prescrito en cada momento por la legislación húngara. Si el Operador no es sujeto pasivo del IVA cuando el contrato entra en vigor (por ejemplo, pequeña empresa exenta), los precios se facturan sin IVA y la factura así lo indica. Una vez dado de alta en el IVA, los precios publicados son precios netos a los que se añade el IVA.",
     term_title: "Duración, renovación y rescisión",
     term_body:
-      "La suscripción de pago disponible es mensual y se renueva cada mes hasta que el Proveedor la cancele en la app o por correo a hello@tryweddly.com. La cancelación detiene la siguiente renovación; el ciclo ya pagado sigue disponible hasta su fin. No se reembolsa el ciclo en curso salvo Garantía de reembolso o desistimiento del consumidor. Después, la ficha pública básica permanece activa y editable en el plan gratuito, mientras terminan las funciones Pro y los emplazamientos destacados. Actualmente no se ofrece plan anual.",
+      "El ciclo de facturación elegido por el Proveedor — mensual o anual — se renueva automáticamente a su propio ritmo hasta que el Proveedor lo cancele en la aplicación o por correo a hello@tryweddly.com. La cancelación detiene la siguiente renovación; el ciclo ya pagado (el mes o el año adquirido) sigue disponible hasta su fin. La cuota del ciclo en curso no se reembolsa en una cancelación ordinaria, salvo que aplique la Garantía de reembolso o el derecho de desistimiento del consumidor. Tras la cancelación, la ficha pública básica permanece activa y editable en el plan gratuito, mientras terminan las funciones Pro y los emplazamientos destacados.",
     refund_title: "Garantía de reembolso (B2B 14 días)",
     refund_body:
       "En la primera suscripción de pago del Proveedor, este podrá rescindir el contrato y solicitar el reembolso íntegro de la tarifa abonada, sin necesidad de justificación, escribiendo a hello@tryweddly.com dentro de los primeros 14 días del primer ciclo de pago. La garantía no es aplicable: (a) en registros posteriores o cambios de plan, (b) cuando el Proveedor haya utilizado expresamente un servicio promocional o de contenidos a medida del Operador durante el periodo de 14 días. Los reembolsos se efectúan a través del canal de pago original en un plazo de 14 días desde la recepción de la solicitud.",
@@ -8355,13 +8378,13 @@ const es: LocaleMessages = {
       "The contract is formed when the planner checks the acceptance box on the Checkout screen and completes payment for the chosen tier. The Operator logs the acceptance (timestamp, document version, IP address, user-agent) and may rely on that log in case of a dispute. No fee is due before this step.",
     billing_title: "Billing",
     billing_body:
-      "The subscription is billed monthly, in advance, in the planner's workspace currency, through Stripe, at the price of the selected tier (Starter, Pro, or Premium). Switching tiers changes the amount billed from the next renewal. The Checkout screen shows the total price and renewal date before payment is taken.",
+      "The subscription is billed monthly or annually — in advance, in the planner's workspace currency, through Stripe — at the price of the selected tier (Starter, Pro, or Premium) and billing cycle; the annual cycle is offered at a fixed 25% discount against twelve months of the monthly price. Switching tiers changes the amount billed from the next renewal. The Checkout screen shows the total price, billing cycle and renewal date before payment is taken.",
     vat_title: "VAT",
     vat_body:
       "VAT applies at the rate prescribed by Hungarian law from time to time. If the Operator is not VAT-registered when the contract takes effect, prices are invoiced VAT-free and the invoice states this.",
     term_title: "Term and automatic renewal",
     term_body:
-      "The subscription renews automatically every month until cancelled. Cancellation is available at any time from the billing settings page or the Stripe customer portal and takes effect at the end of the current paid period; the planner keeps full access to the paid tier until then. Fees already paid for the running period are not refunded on an ordinary cancellation.",
+      "The subscription renews automatically at the chosen cadence — monthly or annually — until cancelled. Cancellation is available at any time from the billing settings page or the Stripe customer portal and takes effect at the end of the current paid period; the planner keeps full access to the paid tier until then. Fees already paid for the running period are not refunded on an ordinary cancellation.",
     refund_title: "Refund policy",
     refund_body:
       "Outside the withdrawal or refund right described below, fees already paid are non-refundable, except where required by law or expressly granted by the Operator at its discretion (for example, a billing error).",
@@ -9773,6 +9796,10 @@ const es: LocaleMessages = {
     feat_references: "Perfil público de referencias",
     feat_priority_support: "Soporte prioritario",
     price_per_month: "{price}/mes",
+    price_per_year: "{price}/año",
+    interval_monthly: "Mensual",
+    interval_annual: "Anual",
+    annual_discount_note: "Paga en anual y ahorra un 25%.",
     founding_spots: "Quedan {n} de 25 plazas de miembro fundador",
     state_founding: "Miembro fundador · nuestro invitado hasta el {date}",
     state_trial: "Prueba · quedan {days} días",

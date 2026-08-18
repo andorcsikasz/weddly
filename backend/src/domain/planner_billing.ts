@@ -9,6 +9,7 @@
 // updatePlannerPlan. The webhook maps a Stripe price → tier → updatePlannerPlan.
 
 import {
+  type BillingInterval,
   type BillingReason,
   computeEntitlement,
   type PlannerBilling,
@@ -36,6 +37,7 @@ export interface PlannerSubRow {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   currency: string;
+  billing_interval: string;
   created_at: number;
   updated_at: number;
 }
@@ -133,6 +135,7 @@ export function toPlannerBilling(
   return {
     subscription_status: status,
     tier,
+    billing_interval: (row.billing_interval === "year" ? "year" : "month") as BillingInterval,
     trial_ends_at: row.trial_ends_at,
     founding_until: row.founding_until,
     is_founding_member: row.is_founding_member === 1,
@@ -166,10 +169,18 @@ export function setPlannerStripeCustomerId(userId: number, customerId: string): 
   ).run(customerId, now(), userId);
 }
 
-/** The recurring Price id to charge a planner, picked by tier + display currency.
- *  Throws 503 (billing_price_missing) when the price isn't configured. */
-export function priceIdForPlannerTier(tier: PlannerPlan, currency: Currency): string {
-  const perTier = CONFIG.stripePricePlanner[tier];
+/** The recurring Price id to charge a planner, picked by tier + display
+ *  currency + cadence. Throws 503 (billing_price_missing) when the price
+ *  isn't configured — for `interval: "year"` this can be true even when the
+ *  monthly price IS configured, since the annual prices are an independent,
+ *  optional set (see CONFIG.stripePricePlannerAnnual). */
+export function priceIdForPlannerTier(
+  tier: PlannerPlan,
+  currency: Currency,
+  interval: BillingInterval = "month",
+): string {
+  const perTier =
+    interval === "year" ? CONFIG.stripePricePlannerAnnual[tier] : CONFIG.stripePricePlanner[tier];
   const id = currency === "HUF" ? perTier.HUF : perTier.EUR;
   if (!id) {
     throw new HttpError(503, "No Stripe planner price configured for this tier", {
@@ -179,12 +190,21 @@ export function priceIdForPlannerTier(tier: PlannerPlan, currency: Currency): st
   return id;
 }
 
-/** Reverse map a Stripe price id back to a planner tier (for the webhook). Null
- *  when the price isn't one of the planner tiers. */
+/** Reverse map a Stripe price id back to a planner tier (for the webhook),
+ *  checking both the monthly and annual price sets. Null when the price isn't
+ *  one of the planner tiers. */
 export function tierForPriceId(priceId: string): PlannerPlan | null {
   for (const tier of ["starter", "pro", "premium"] as const) {
-    const perTier = CONFIG.stripePricePlanner[tier];
-    if (priceId === perTier.EUR || priceId === perTier.HUF) return tier;
+    const monthly = CONFIG.stripePricePlanner[tier];
+    const annual = CONFIG.stripePricePlannerAnnual[tier];
+    if (
+      priceId === monthly.EUR ||
+      priceId === monthly.HUF ||
+      priceId === annual.EUR ||
+      priceId === annual.HUF
+    ) {
+      return tier;
+    }
   }
   return null;
 }
@@ -200,6 +220,9 @@ export function applyPlannerSubscriptionState(
     stripeStatus: string;
     currentPeriodEnd: number | null;
     tier: PlannerPlan | null;
+    /** The Stripe subscription's own billing cadence. Null leaves the stored
+     *  cadence untouched (see the matching vendor-side note). */
+    billingInterval?: BillingInterval | null;
     observedAt?: number; // Stripe event creation time; server time for direct reads
   },
 ): void {
@@ -213,9 +236,19 @@ export function applyPlannerSubscriptionState(
               WHEN ? = 'past_due' THEN COALESCE(past_due_since, ?)
               ELSE NULL
             END,
+            billing_interval = COALESCE(?, billing_interval),
             updated_at = ?
       WHERE user_id = ?`,
-  ).run(mapped, opts.subscriptionId, opts.currentPeriodEnd, mapped, observedAt, ts, userId);
+  ).run(
+    mapped,
+    opts.subscriptionId,
+    opts.currentPeriodEnd,
+    mapped,
+    observedAt,
+    opts.billingInterval ?? null,
+    ts,
+    userId,
+  );
   // Only move the tier for live subscriptions — a cancel shouldn't silently
   // change which tier the planner is remembered on (they revert to read-only,
   // not to a different plan).

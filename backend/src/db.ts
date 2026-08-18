@@ -2574,6 +2574,27 @@ addColumnIfMissing("community_suppliers", "capacity_max", "capacity_max INTEGER"
 addColumnIfMissing("community_suppliers", "venue_style", "venue_style TEXT");
 addColumnIfMissing("community_suppliers", "spoken_languages", "spoken_languages TEXT");
 
+// ── Annual billing: a second cadence, not a second price table ──────────────
+// Both vendor and planner subscriptions can now be billed monthly OR annually
+// (25% off × 12, shared/vendor_billing.ts + shared/planner_billing.ts). The
+// cadence is set ONLY by applyVendorSubscriptionState / applyPlannerSubscriptionState
+// from the Stripe subscription's own price.recurring.interval — never chosen
+// or trusted from the checkout request body — so the stored value can never
+// disagree with what Stripe is actually charging. Default 'month' is correct
+// for every pre-existing row (all of them were monthly-only) and for a row
+// that has never reached a paid Stripe subscription yet (trial/founding/lead
+// window bill nothing, so the column is inert until then).
+addColumnIfMissing(
+  "vendor_subscriptions",
+  "billing_interval",
+  "billing_interval TEXT NOT NULL DEFAULT 'month'",
+);
+addColumnIfMissing(
+  "planner_subscriptions",
+  "billing_interval",
+  "billing_interval TEXT NOT NULL DEFAULT 'month'",
+);
+
 // ── Public counters: withholding one, which is not the same as boosting it ───
 // A boost of 0 says "the measured number is what we show"; there was no way to
 // say "we are not quoting this one at all" while the figure is young. Additive

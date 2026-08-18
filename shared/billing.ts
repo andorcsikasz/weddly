@@ -38,6 +38,12 @@ export const SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
   "none",
 ];
 
+/** Recurring cadence a paid subscription bills on. Shared by vendor and
+ *  planner billing (couples have no annual option). Mirrors Stripe's own
+ *  `price.recurring.interval` values, which is what the webhook reads to
+ *  derive it — never stored independently of what Stripe actually charged. */
+export type BillingInterval = "month" | "year";
+
 /** Fail-closed Stripe lifecycle mapping shared by couples, planners and
  * vendors. Only confirmed active/trialing subscriptions grant paid access;
  * `past_due` receives the bounded dunning grace below. */

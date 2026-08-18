@@ -709,6 +709,7 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
     ? toVendorBilling(sub)
     : {
         subscription_status: "trialing" as const,
+        billing_interval: "month" as const,
         trial_ends_at: null,
         founding_until: null,
         is_founding_member: false,

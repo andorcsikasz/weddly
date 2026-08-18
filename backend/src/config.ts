@@ -392,6 +392,25 @@ export const CONFIG = {
       HUF: process.env.STRIPE_PRICE_PLANNER_PREMIUM_HUF ?? "",
     },
   },
+  /** Annual (25%-off) counterpart of stripePricePlanner, one per tier per
+   *  currency. All optional: empty means annual billing simply isn't offered
+   *  for that tier/currency yet (checkout falls back to monthly-only), so
+   *  these can never regress a working monthly-only planner launch. Create
+   *  them with backend/scripts/stripe_setup_planner.ts. */
+  stripePricePlannerAnnual: {
+    starter: {
+      EUR: process.env.STRIPE_PRICE_PLANNER_STARTER_EUR_ANNUAL ?? "",
+      HUF: process.env.STRIPE_PRICE_PLANNER_STARTER_HUF_ANNUAL ?? "",
+    },
+    pro: {
+      EUR: process.env.STRIPE_PRICE_PLANNER_PRO_EUR_ANNUAL ?? "",
+      HUF: process.env.STRIPE_PRICE_PLANNER_PRO_HUF_ANNUAL ?? "",
+    },
+    premium: {
+      EUR: process.env.STRIPE_PRICE_PLANNER_PREMIUM_EUR_ANNUAL ?? "",
+      HUF: process.env.STRIPE_PRICE_PLANNER_PREMIUM_HUF_ANNUAL ?? "",
+    },
+  },
   /** Signing secret for the SEPARATE planner Stripe webhook endpoint
    *  (`whsec_…`). Distinct from the couple/vendor webhook so signatures never
    *  collide — register it as its own endpoint in the Stripe dashboard. */
@@ -402,6 +421,12 @@ export const CONFIG = {
    *  checkout returns 503 (billing never blocks boot). */
   stripePriceVendorEur: process.env.STRIPE_PRICE_VENDOR_EUR ?? "",
   stripePriceVendorHuf: process.env.STRIPE_PRICE_VENDOR_HUF ?? "",
+  /** Annual (25%-off) counterpart of the vendor monthly prices above. Both
+   *  optional: empty means annual billing isn't offered yet, so setting these
+   *  can never regress a working monthly-only vendor launch. Create them with
+   *  backend/scripts/stripe_setup_vendor.ts. */
+  stripePriceVendorEurAnnual: process.env.STRIPE_PRICE_VENDOR_EUR_ANNUAL ?? "",
+  stripePriceVendorHufAnnual: process.env.STRIPE_PRICE_VENDOR_HUF_ANNUAL ?? "",
   /** Signing secret for the SEPARATE vendor Stripe webhook endpoint
    *  (`whsec_…`), its own endpoint in the Stripe dashboard, like the planner
    *  one. */

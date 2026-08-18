@@ -112,8 +112,9 @@ function BillingBody({
   const [pendingTier, setPendingTier] = useState<PlannerPlan | null>(null);
   const [portalPending, setPortalPending] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
+  const [interval, setInterval] = useState<"month" | "year">("month");
 
-  const { billing: b, currency, prices, founding_spots_left } = billing;
+  const { billing: b, currency, prices, annual_prices, founding_spots_left } = billing;
   const status = b.subscription_status;
   const hasStripeSub = status === "active" || status === "past_due" || status === "canceled";
   const needsTermsCheckbox = billing.checkout_enabled && !billing.subscription_terms_accepted;
@@ -123,6 +124,7 @@ function BillingBody({
     try {
       const { url } = await plannerBillingApi.checkout(
         tier,
+        interval,
         billing.subscription_terms_accepted ? undefined : billing.subscription_terms_version,
       );
       if (url) window.location.href = url;
@@ -219,6 +221,33 @@ function BillingBody({
         </label>
       )}
 
+      {/* Monthly / annual switch — only shown once annual Stripe prices are
+          actually configured for every tier, so this never offers a cadence
+          checkout can't charge. */}
+      {annual_prices && (
+        <div className="flex items-center gap-1 self-start rounded-full bg-paper-200 p-1 dark:bg-umber-800">
+          {(["month", "year"] as const).map((iv) => (
+            <button
+              key={iv}
+              type="button"
+              aria-pressed={interval === iv}
+              onClick={() => setInterval(iv)}
+              className={
+                interval === iv
+                  ? "rounded-full bg-eucalyptus-500 px-3 py-1.5 text-xs font-semibold text-white"
+                  : "rounded-full px-3 py-1.5 text-xs font-medium text-umber-600 hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
+              }
+            >
+              {t(
+                iv === "month"
+                  ? "planner_billing.interval_monthly"
+                  : "planner_billing.interval_annual",
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Plan comparison + per-tier checkout */}
       <div className="grid gap-4 sm:grid-cols-3">
         {PLAN_ORDER.map((plan) => {
@@ -248,10 +277,19 @@ function BillingBody({
 
               <div className="mt-4 border-t border-paper-200 pt-4 dark:border-umber-800">
                 <p className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-                  {t("planner_billing.price_per_month", {
-                    price: formatPrice(prices[plan], currency, locale),
-                  })}
+                  {interval === "year" && annual_prices
+                    ? t("planner_billing.price_per_year", {
+                        price: formatPrice(annual_prices[plan], currency, locale),
+                      })
+                    : t("planner_billing.price_per_month", {
+                        price: formatPrice(prices[plan], currency, locale),
+                      })}
                 </p>
+                {interval === "year" && annual_prices && (
+                  <p className="mt-0.5 text-xs text-eucalyptus-700 dark:text-eucalyptus-300">
+                    {t("planner_billing.annual_discount_note")}
+                  </p>
+                )}
               </div>
 
               <ul className="mt-4 space-y-2 text-sm text-umber-700 dark:text-umber-300">

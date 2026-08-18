@@ -32,12 +32,17 @@
 // the grant stamps (is_founding_member vs is_early_member), which is also what
 // each cap counts.
 
-import { type BillingReason, computeEntitlement, type SubscriptionStatus } from "./billing";
+import {
+  type BillingInterval,
+  type BillingReason,
+  computeEntitlement,
+  type SubscriptionStatus,
+} from "./billing";
 import { type BillingCurrency, toBillingCurrency } from "./currency";
 import type { Currency, UnixMs } from "./types";
 
 export { computeEntitlement };
-export type { BillingReason, SubscriptionStatus };
+export type { BillingInterval, BillingReason, SubscriptionStatus };
 
 /** Vendor statuses = the shared set plus the vendor-only "lead_window": card
  *  on file, riding free until the first VENDOR_FREE_LEAD_CREDITS inquiries
@@ -169,9 +174,31 @@ export function vendorPrice(currency: Currency): number {
   return VENDOR_MONTHLY_PRICE[toBillingCurrency(currency)];
 }
 
+/** Annual plan price per display currency: exactly 25% off twelve months of
+ *  VENDOR_MONTHLY_PRICE (× 9), never a separately-typed number that could
+ *  drift from the discount the marketing copy promises. Keep in sync with the
+ *  Stripe vendor annual Price objects when annual billing goes live
+ *  (backend/scripts/stripe_setup_vendor.ts). */
+export const VENDOR_ANNUAL_PRICE: Record<BillingCurrency, number> = {
+  HUF: VENDOR_MONTHLY_PRICE.HUF * 9,
+  EUR: VENDOR_MONTHLY_PRICE.EUR * 9,
+  USD: VENDOR_MONTHLY_PRICE.USD * 9,
+};
+
+/** The annual-plan price a vendor on this currency pays, prepaid once a year. */
+export function vendorAnnualPrice(currency: Currency): number {
+  return VENDOR_ANNUAL_PRICE[toBillingCurrency(currency)];
+}
+
 /** Billing snapshot attached to the vendor's /vendor view + onboarding. */
 export interface VendorBilling {
   subscription_status: VendorSubscriptionStatus;
+  /** The cadence the vendor is actually being billed on — only meaningful once
+   *  a Stripe subscription exists (active/past_due/canceled); 'month' is the
+   *  harmless default the rest of the time (trial, lead_window, founding all
+   *  bill nothing yet). Set from the Stripe subscription's own price, never
+   *  chosen client-side. */
+  billing_interval: BillingInterval;
   /** Epoch ms — end of the trial (vendor 101+). Null unless trialing. */
   trial_ends_at: UnixMs | null;
   /** Epoch ms — end of the 1-year founding window. Null when not founding. */
@@ -213,6 +240,10 @@ export interface VendorBillingStatus {
   billing: VendorBilling;
   currency: Currency;
   price: number;
+  /** The annual-plan price in the same currency (25% off price × 12). Null
+   *  when no annual Stripe price is configured for this currency, so the UI
+   *  can hide the annual toggle rather than offer a price it can't charge. */
+  annual_price: number | null;
   /** Remaining founding slots (CAP − granted badges), clamped >= 0. Drives the
    *  public "N of 100 spots left" line. */
   founding_spots_left: number;

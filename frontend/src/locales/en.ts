@@ -1169,6 +1169,10 @@ const en: LocaleMessages = {
       checkout_unavailable:
         "Online checkout isn't available yet. We'll email you before anything is due.",
       per_month: "/mo",
+      per_year: "/yr",
+      interval_monthly: "Monthly",
+      interval_annual: "Annually",
+      annual_discount_note: "Pay annually and save 25%.",
       compare_title: "Compare plans",
       you_are_here: "You are here",
       payment_portal_note: "Online payments are coming. We will email you before anything is due.",
@@ -1187,6 +1191,7 @@ const en: LocaleMessages = {
       billing_starts_line:
         "All {total} complimentary inquiries delivered. Subscribe explicitly to continue Pro.",
       next_payment_line: "Next payment: {date}.",
+      next_payment_line_annual: "Next payment: {date}. Annual subscription.",
       past_due_line: "Your last payment failed. Update your card in the billing portal.",
       leads_exhausted_line:
         "Your complimentary inquiries are used up, so Pro is paused. Nothing was charged; subscribe explicitly to continue.",
@@ -6132,7 +6137,25 @@ const en: LocaleMessages = {
     users_search_clear: "Clear search",
     users_search_empty: "No match",
     users_search_empty_help:
-      "Try a different keyword, or clear the search to bring back the full list.",
+      "Try a different keyword, or clear the search and filters to bring back the full list.",
+    users_filters_clear_all: "Clear search & filters",
+    users_filter_billing_label: "Billing:",
+    users_filter_billing_trialing: "Trial",
+    users_filter_billing_founding: "Founding",
+    users_filter_billing_paying: "Paying",
+    users_filter_billing_lapsed: "Lapsed",
+    users_filter_verified_label: "Verification:",
+    users_filter_verified_verified: "Verified",
+    users_filter_verified_unverified: "Unverified",
+    users_filter_flagged: "Flagged only",
+    users_filter_account_type_label: "Account type:",
+    users_filter_account_admin: "Admin",
+    users_filter_account_vendor: "Vendor",
+    users_filter_account_planner: "Planner",
+    users_filter_inactivity_label: "Activity:",
+    users_filter_inactivity_any: "Any time",
+    users_filter_inactivity_days: "{n}+ days inactive",
+    users_filter_clear: "Clear filters",
     demo_workspaces_show: "Show",
     demo_workspaces_hide: "Hide",
     demo_workspaces_summary_one: "{n} demo workspace",
@@ -8103,7 +8126,7 @@ const en: LocaleMessages = {
       "Weddly's vendor ÁSZF: fees, billing, renewal, liability, ranking, complaints, Hungarian and EU law.",
     page_title: "Vendor subscription terms (ÁSZF)",
     last_updated_label: "Version",
-    last_updated_date: "effective 2026-08-13",
+    last_updated_date: "effective 2026-08-18",
     intro:
       "These General Terms and Conditions (ÁSZF) govern Weddly's vendor subscription. They become part of the contract between the parties when the Vendor expressly accepts them by clicking 'I accept' during registration. Under §6:78(2) of the Hungarian Civil Code, the following clauses are expressly highlighted and accepted with separate attention: the limitation of liability, automatic renewal, fee changes, unilateral amendment of the ÁSZF, jurisdiction, and the disclosure of sponsored placements.",
     operator_title: "Operator and contracting parties",
@@ -8126,13 +8149,13 @@ const en: LocaleMessages = {
       "On the effective date, basic directory listing is free and paid checkout is disabled. Before paid launch, Weddly will publish the exact plan, total price, tax treatment, billing period and renewal terms in the account and Checkout, notify Vendors at least 30 days in advance, and require a separate express payment confirmation. A registration or saved card alone never creates a payment obligation.",
     billing_title: "Billing",
     billing_body:
-      "When legally enabled, the currently offered vendor plan is monthly and prepaid through Stripe. The final Checkout screen must show the total, taxes, renewal date and cancellation terms before an unambiguous payment action. Weddly must have lawful invoicing and tax arrangements in place before accepting payment. No annual vendor plan is currently offered.",
+      "When legally enabled, the Vendor may choose to pay monthly or annually, prepaid through Stripe; the annual cycle is offered at a fixed 25% discount against twelve months of the monthly price. The final Checkout screen must show the total, the billing cycle, taxes, renewal date and cancellation terms before an unambiguous payment action. Weddly must have lawful invoicing and tax arrangements in place before accepting payment.",
     vat_title: "VAT",
     vat_body:
       "VAT applies at the rate prescribed by Hungarian law from time to time. If the Operator is not a VAT-registered taxpayer when the contract takes effect (for example, exempt small business), prices are invoiced VAT-free and the invoice indicates this. Once VAT-registered, the published prices are net prices to which VAT is added.",
     term_title: "Term, renewal, termination",
     term_body:
-      "The currently offered paid subscription is monthly and renews monthly until the Vendor cancels in the Weddly app or by email to hello@tryweddly.com. Cancellation stops the next renewal; the already-paid cycle remains available until its end. Fees already paid for the running cycle are not refunded on ordinary cancellation, except where the Refund guarantee or the Consumer right of withdrawal applies. After cancellation, the basic public listing remains live and editable on the free plan, while paid Pro features and any featured placement end. No annual plan is currently offered.",
+      "The Vendor's chosen billing cycle — monthly or annual — renews automatically at its own cadence until the Vendor cancels in the Weddly app or by email to hello@tryweddly.com. Cancellation stops the next renewal; the already-paid cycle (the month or year already purchased) remains available until its end. Fees already paid for the running cycle are not refunded on ordinary cancellation, except where the Refund guarantee or the Consumer right of withdrawal applies. After cancellation, the basic public listing remains live and editable on the free plan, while paid Pro features and any featured placement end.",
     refund_title: "Refund guarantee (B2B 14 days)",
     refund_body:
       "On the Vendor's first paid subscription, the Vendor may terminate the contract and request a full refund of the paid fee, without giving reasons, by emailing hello@tryweddly.com within the first 14 days of the first paid cycle. The guarantee does not apply: (a) on subsequent registrations or plan changes, (b) where the Vendor has expressly used a bespoke promotional or content service of the Operator during the 14-day period. Refunds are issued via the original payment channel within 14 days of receiving the request.",
@@ -8274,13 +8297,13 @@ const en: LocaleMessages = {
       "The contract is formed when the planner checks the acceptance box on the Checkout screen and completes payment for the chosen tier. The Operator logs the acceptance (timestamp, document version, IP address, user-agent) and may rely on that log in case of a dispute. No fee is due before this step.",
     billing_title: "Billing",
     billing_body:
-      "The subscription is billed monthly, in advance, in the planner's workspace currency, through Stripe, at the price of the selected tier (Starter, Pro, or Premium). Switching tiers changes the amount billed from the next renewal. The Checkout screen shows the total price and renewal date before payment is taken.",
+      "The subscription is billed monthly or annually — in advance, in the planner's workspace currency, through Stripe — at the price of the selected tier (Starter, Pro, or Premium) and billing cycle; the annual cycle is offered at a fixed 25% discount against twelve months of the monthly price. Switching tiers changes the amount billed from the next renewal. The Checkout screen shows the total price, billing cycle and renewal date before payment is taken.",
     vat_title: "VAT",
     vat_body:
       "VAT applies at the rate prescribed by Hungarian law from time to time. If the Operator is not VAT-registered when the contract takes effect, prices are invoiced VAT-free and the invoice states this.",
     term_title: "Term and automatic renewal",
     term_body:
-      "The subscription renews automatically every month until cancelled. Cancellation is available at any time from the billing settings page or the Stripe customer portal and takes effect at the end of the current paid period; the planner keeps full access to the paid tier until then. Fees already paid for the running period are not refunded on an ordinary cancellation.",
+      "The subscription renews automatically at the chosen cadence — monthly or annually — until cancelled. Cancellation is available at any time from the billing settings page or the Stripe customer portal and takes effect at the end of the current paid period; the planner keeps full access to the paid tier until then. Fees already paid for the running period are not refunded on an ordinary cancellation.",
     refund_title: "Refund policy",
     refund_body:
       "Outside the withdrawal or refund right described below, fees already paid are non-refundable, except where required by law or expressly granted by the Operator at its discretion (for example, a billing error).",
@@ -9679,6 +9702,10 @@ const en: LocaleMessages = {
     feat_references: "Public reference profile",
     feat_priority_support: "Priority support",
     price_per_month: "{price}/mo",
+    price_per_year: "{price}/yr",
+    interval_monthly: "Monthly",
+    interval_annual: "Annually",
+    annual_discount_note: "Pay annually and save 25%.",
     founding_spots: "{n} of 25 founding spots left",
     state_founding: "Founding member · our guest until {date}",
     state_trial: "Trial · {days} days left",

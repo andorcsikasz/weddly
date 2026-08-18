@@ -12,7 +12,7 @@ export const TERMS_VERSION = "2026-08-12";
 /** Vendor-specific B2B/B2C subscription terms served at
  *  `/terms/vendor-subscription`. Kept separate from the general site terms so
  *  the acceptance ledger identifies the exact contract the vendor saw. */
-export const VENDOR_TERMS_VERSION = "2026-08-13";
+export const VENDOR_TERMS_VERSION = "2026-08-18";
 /** Couple subscription terms served at `/terms/couple-subscription`. DRAFT —
  *  pending legal/owner review; see `COUPLE_TERMS_REVIEWED` in
  *  `domain/payment_launch.ts`, which gates recurring couple checkout on that
@@ -21,7 +21,7 @@ export const COUPLE_SUBSCRIPTION_TERMS_VERSION = "2026-08-17";
 /** Planner subscription terms served at `/terms/planner-subscription`. DRAFT —
  *  pending legal/owner review; see `PLANNER_TERMS_REVIEWED` in
  *  `domain/payment_launch.ts`. */
-export const PLANNER_SUBSCRIPTION_TERMS_VERSION = "2026-08-17";
+export const PLANNER_SUBSCRIPTION_TERMS_VERSION = "2026-08-18";
 /** Explicit-consent text shown beside optional RSVP allergy/dietary fields. */
 export const GUEST_HEALTH_NOTICE_VERSION = "2026-08-13";
 

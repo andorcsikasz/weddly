@@ -726,11 +726,14 @@ export const plannerBillingApi = {
   /** Current planner subscription snapshot + per-tier prices + founding spots. */
   status: () => apiFetch<PlannerBillingStatus>("GET", "/api/planner/billing"),
   /** Start a Stripe-hosted Checkout for a tier — returns the redirect URL.
+   *  `interval` defaults to monthly; pass "year" for the -25% annual plan
+   *  (only meaningful when `status().annual_prices` is non-null).
    *  `termsVersion` is only required the first time (see
    *  `status().subscription_terms_accepted`); omit once already accepted. */
-  checkout: (tier: PlannerPlan, termsVersion?: string) =>
+  checkout: (tier: PlannerPlan, interval?: "month" | "year", termsVersion?: string) =>
     apiFetch<{ url: string }>("POST", "/api/planner/billing/checkout", {
       tier,
+      interval,
       terms_version: termsVersion,
     }),
   /** Open the Stripe Billing Portal — returns the redirect URL. */
@@ -3333,11 +3336,17 @@ export const vendorBillingApi = {
       highlighted_terms_accepted: termsAcceptance?.highlightedTermsAccepted,
     }),
   /** Classic subscription Checkout: the lapsed-vendor recovery path. Same
-   *  `termsAcceptance` contract as `setup`. */
-  checkout: (termsAcceptance?: { vendorTermsVersion: string; highlightedTermsAccepted: true }) =>
+   *  `termsAcceptance` contract as `setup`. `interval` defaults to monthly;
+   *  pass "year" for the -25% annual plan (only meaningful when
+   *  `get().annual_price` is non-null). */
+  checkout: (
+    termsAcceptance?: { vendorTermsVersion: string; highlightedTermsAccepted: true },
+    interval?: "month" | "year",
+  ) =>
     apiFetch<{ url: string }>("POST", "/api/vendor/billing/checkout", {
       vendor_terms_version: termsAcceptance?.vendorTermsVersion,
       highlighted_terms_accepted: termsAcceptance?.highlightedTermsAccepted,
+      interval,
     }),
   portal: () => apiFetch<{ url: string }>("POST", "/api/vendor/billing/portal"),
   /** Masked card + invoice history, read straight from Stripe. Answers with an
