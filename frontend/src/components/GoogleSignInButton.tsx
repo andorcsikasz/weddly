@@ -17,27 +17,40 @@ import { authApi } from "../lib/endpoints";
 import { contentLocale, useT } from "../lib/i18n";
 import { useToast } from "./ui";
 
-const GSI_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
+// GSI's `renderButton({ locale })` option is unreliable — it renders "Sign
+// in with Google" in whatever language the user's signed-in Google session
+// prefers, ignoring the value we pass, which is how an English page ended up
+// with a Hungarian Google button. The `hl` query param on the script tag
+// itself DOES control the button's language reliably. UI_LOCALES codes
+// (en/hu/es/hr/de) are all valid Google `hl` values as-is.
+function gsiScriptSrc(hl: string): string {
+  return `https://accounts.google.com/gsi/client?hl=${hl}`;
+}
 
 // Module-level cache so React strict-mode double-mounts and per-page mounts
 // don't reload the script. Resolves the moment `window.google.accounts.id`
-// is available.
+// is available. Keyed by nothing — the first mount's locale wins the `hl`
+// for the lifetime of the page, since GSI has no supported way to re-language
+// an already-loaded script.
 let gsiReady: Promise<void> | null = null;
 
-function loadGsi(): Promise<void> {
+function loadGsi(hl: string): Promise<void> {
   if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
   const w = window as unknown as { google?: { accounts?: { id?: unknown } } };
   if (w.google?.accounts?.id) return Promise.resolve();
   if (gsiReady) return gsiReady;
+  const src = gsiScriptSrc(hl);
   gsiReady = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${GSI_SCRIPT_SRC}"]`);
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src^="https://accounts.google.com/gsi/client"]`,
+    );
     if (existing) {
       existing.addEventListener("load", () => resolve());
       existing.addEventListener("error", () => reject(new Error("Failed to load GSI")));
       return;
     }
     const s = document.createElement("script");
-    s.src = GSI_SCRIPT_SRC;
+    s.src = src;
     s.async = true;
     s.defer = true;
     s.onload = () => resolve();
@@ -138,6 +151,8 @@ interface Props {
   /** When provided, replaces the default toast on error so callers (the
    *  SessionExpiredDialog) can render the message inside their own banner. */
   onError?: (message: string) => void;
+  /** High-contrast, squared-off treatment for monochrome product surfaces. */
+  appearance?: "default" | "uber";
 }
 
 const CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "") as string;
@@ -151,6 +166,7 @@ export function GoogleSignInButton({
   onCredential,
   onSuccess,
   onError,
+  appearance = "default",
 }: Props) {
   const { t, locale } = useT();
   const { setSession } = useAuth();
@@ -175,7 +191,7 @@ export function GoogleSignInButton({
     }
     let cancelled = false;
 
-    loadGsi()
+    loadGsi(locale)
       .then(() => {
         if (cancelled) return;
         const gsi = getGsi();
@@ -241,16 +257,15 @@ export function GoogleSignInButton({
         const width = Math.min(400, hostRef.current.clientWidth || 320);
         gsi.renderButton(hostRef.current, {
           type: "standard",
-          theme: "outline",
+          theme: appearance === "uber" ? "filled_black" : "outline",
           size: "large",
           text: mode === "signup" ? "signup_with" : "signin_with",
-          // Pill = fully rounded edges. Matches the rest of Weddly's auth
-          // surfaces, which use generous radii on primary CTAs.
-          shape: "pill",
-          // Centred logo + text reads more like a branded CTA than the
-          // left-aligned default (which leaves a big gap of whitespace
-          // between the G and the label at the button's full width).
-          logo_alignment: "center",
+          // Auth surfaces stay pill-shaped by default; monochrome product
+          // surfaces can opt into the sharper, high-contrast treatment.
+          shape: appearance === "uber" ? "rectangular" : "pill",
+          // Default auth buttons centre the brand lockup. The monochrome
+          // variant uses a more utilitarian left-aligned action layout.
+          logo_alignment: appearance === "uber" ? "left" : "center",
           width,
           locale: locale === "hu" ? "hu_HU" : locale === "es" ? "es" : "en_US",
         });
@@ -294,6 +309,7 @@ export function GoogleSignInButton({
     onCredential,
     onSuccess,
     onError,
+    appearance,
     locale,
     navigate,
     setSession,
@@ -303,6 +319,16 @@ export function GoogleSignInButton({
 
   if (hidden) return null;
   // Min-height matches Google's "large" button so the layout doesn't jump
-  // while the script loads.
-  return <div ref={hostRef} className="flex min-h-[44px] w-full justify-center" />;
+  // while the script loads. GSI's "rectangular" shape has no radius option
+  // that lines up with the app's own `rounded-xl` CTAs, so on the monochrome
+  // surface we clip Google's button to match rather than let it sit
+  // square-cornered next to every other rounded button in the flow.
+  return (
+    <div
+      ref={hostRef}
+      className={`flex min-h-[44px] w-full justify-center ${
+        appearance === "uber" ? "overflow-hidden rounded-xl" : ""
+      }`}
+    />
+  );
 }

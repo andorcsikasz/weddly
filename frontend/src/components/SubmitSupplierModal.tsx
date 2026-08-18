@@ -479,22 +479,34 @@ export function SubmitSupplierModal({
       <Dialog
         open={open}
         role="dialog"
-        size="lg"
+        size="sm"
         title={t("suppliers.submit.title")}
+        titleClassName="text-2xl font-bold tracking-[-0.035em] sm:text-[2rem] sm:leading-none"
         onClose={onClose}
       >
-        <div className="mx-auto max-w-md py-2 text-center">
-          <h3 className="text-base font-semibold text-ink-900 dark:text-paper-50">
+        <div className="pb-2 pt-3 sm:pb-3 sm:pt-5">
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-xl bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+            aria-hidden="true"
+          >
+            <Mail size={22} strokeWidth={2.25} />
+          </div>
+          <h3 className="mt-7 max-w-sm text-[1.75rem] font-bold leading-[1.05] tracking-[-0.04em] text-ink-900 sm:text-[2.25rem] dark:text-paper-50">
             {t("suppliers.submit.visitor_verify_title")}
           </h3>
-          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+          <p className="mt-4 max-w-sm text-base leading-6 text-ink-600 dark:text-umber-200">
             {t("suppliers.submit.visitor_verify_body")}
           </p>
-          <div className="mt-5 flex justify-center">
-            <GoogleSignInButton mode="signin" onCredential={onVisitorVerify} />
+          <div className="mt-8 w-full">
+            <GoogleSignInButton mode="signin" appearance="uber" onCredential={onVisitorVerify} />
           </div>
           {verifyError && (
-            <p className="mt-3 text-xs text-rose-600 dark:text-rose-300">{verifyError}</p>
+            <p
+              role="alert"
+              className="mt-4 border-l-2 border-rose-600 pl-3 text-sm text-rose-700 dark:border-rose-300 dark:text-rose-300"
+            >
+              {verifyError}
+            </p>
           )}
         </div>
       </Dialog>
