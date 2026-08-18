@@ -749,15 +749,14 @@ export default function VendorBrowsePage() {
     };
   }, [country, city]);
 
-  // Towns for the picker above: every town in the active country, counted
-  // across all categories, so the list is the same whichever category the
-  // visitor is looking at. Deliberately NOT derived from the sampler payload —
-  // that only knows the handful of vendors it sampled, and a "Szeged 3" chip
-  // that means "3 of the 6 we happened to show" is a lie in every language.
+  // Towns for the picker and map: every town in the active country, narrowed
+  // to the active category when there is one. The server counts the full public
+  // directory, not the sampler payload, so every marker and count represents
+  // the catalogue the visitor can actually open.
   useEffect(() => {
     let cancelled = false;
     supplierApi
-      .publicDirectory({ country, limit: 1 })
+      .publicDirectory({ category: activeCategory, country, limit: 1 })
       .then((r) => {
         if (!cancelled) setCityFacets(r.cities);
       })
@@ -767,7 +766,7 @@ export default function VendorBrowsePage() {
     return () => {
       cancelled = true;
     };
-  }, [country]);
+  }, [activeCategory, country]);
 
   // Pull planners out of the vendor rails — they get their own reframed module.
   const gridCategories = categories?.filter((c) => c.category !== "wedding_planner") ?? [];
@@ -980,6 +979,7 @@ export default function VendorBrowsePage() {
       {mapOpen && (
         <TownMapModal
           towns={cityFacets}
+          category={activeCategory}
           onSelectCity={(nextCity) => {
             const next = new URLSearchParams(params);
             if (nextCity) next.set("city", nextCity);

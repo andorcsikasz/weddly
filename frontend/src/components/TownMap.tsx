@@ -1,10 +1,8 @@
-// Non-interactive Leaflet viewport for TownMapModal: a fixed frame around the
-// towns it is handed, one pin per town. Dragging, scroll-zoom, double-click
-// zoom, box-zoom and keyboard panning are all switched off, so it reads as a
-// backdrop graphic rather than a map to explore — nothing on screen invites a
-// visitor to try. Real OSM tiles (the same server SupplierMap.tsx already
-// hits) rather than a hand-drawn country outline, so a new market added to
-// the directory needs no new art: the towns it comes with just place
+// Interactive Leaflet map for TownMapModal: it opens framed around the towns
+// it is handed, then behaves like a normal map — visitors can pan and zoom by
+// mouse, touch or keyboard. Real OSM tiles (the same server SupplierMap.tsx
+// already hits) rather than a hand-drawn country outline, so a new market added
+// to the directory needs no new art: the towns it comes with just place
 // themselves correctly.
 //
 // Lazy-imported from TownMapModal, matching the PinnedMap / SupplierMap
@@ -12,10 +10,12 @@
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import type { SupplierCategory } from "@shared/suppliers";
 import { MapPin } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { categoryIcon } from "../lib/category_icons";
 import { useT } from "../lib/i18n";
 
 export interface PlacedTown {
@@ -30,9 +30,8 @@ export interface PlacedTown {
 const FALLBACK_CENTER: [number, number] = [47.16, 19.51];
 const FIT_OPTIONS: L.FitBoundsOptions = { padding: [36, 36], maxZoom: 10 };
 
-/** Frames the towns once on mount. No re-fit on change: the modal that hosts
- *  this never mutates its town list after opening, and a locked view is the
- *  point. */
+/** Frames the towns on mount (and if the active category changes while the
+ *  modal is open). After that initial framing, the visitor owns the viewport. */
 function FitToTowns({ towns }: { towns: PlacedTown[] }) {
   const map = useMap();
   useEffect(() => {
@@ -54,9 +53,13 @@ function FitToTowns({ towns }: { towns: PlacedTown[] }) {
 
 export default function TownMap({
   towns,
+  category,
   onSelect,
 }: {
   towns: PlacedTown[];
+  /** When the directory is filtered, every town marker represents suppliers
+   *  in that category, so it uses the same glyph as their cards. */
+  category: SupplierCategory | null;
   /** Fires with the town name; the caller (TownMapModal) applies the filter
    *  and closes the modal. */
   onSelect: (city: string) => void;
@@ -65,13 +68,13 @@ export default function TownMap({
     <MapContainer
       center={FALLBACK_CENTER}
       zoom={7}
-      dragging={false}
-      zoomControl={false}
-      scrollWheelZoom={false}
-      doubleClickZoom={false}
-      touchZoom={false}
-      boxZoom={false}
-      keyboard={false}
+      dragging
+      zoomControl
+      scrollWheelZoom
+      doubleClickZoom
+      touchZoom
+      boxZoom
+      keyboard
       style={{ height: "100%", width: "100%" }}
     >
       <FitToTowns towns={towns} />
@@ -80,18 +83,25 @@ export default function TownMap({
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {towns.map((t) => (
-        <TownPin key={t.city} town={t} onSelect={onSelect} />
+        <TownPin key={t.city} town={t} category={category} onSelect={onSelect} />
       ))}
     </MapContainer>
   );
 }
 
 /** One marker: a plain round badge, same footprint SupplierMap's pins use, so
- *  the two maps in the app read as one visual family. No count badge on the
- *  pin itself — the town list under the map already carries the number, and a
- *  digit on every pin at country zoom would be unreadable. */
-function TownPin({ town, onSelect }: { town: PlacedTown; onSelect: (city: string) => void }) {
+ *  the two maps in the app read as one visual family. */
+function TownPin({
+  town,
+  category,
+  onSelect,
+}: {
+  town: PlacedTown;
+  category: SupplierCategory | null;
+  onSelect: (city: string) => void;
+}) {
   const { t } = useT();
+  const Glyph = category ? categoryIcon(category) : MapPin;
   const [host] = useState(() => {
     const el = document.createElement("div");
     el.className = "relative flex h-[30px] w-[30px] items-center justify-center";
@@ -112,7 +122,7 @@ function TownPin({ town, onSelect }: { town: PlacedTown; onSelect: (city: string
     <>
       {createPortal(
         <span className="grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-full border-2 border-paper-50 bg-ink-800 text-paper-50 shadow-sm transition-colors hover:bg-blush-600">
-          <MapPin size={15} strokeWidth={2} aria-hidden />
+          <Glyph size={15} strokeWidth={2} aria-hidden />
         </span>,
         host,
       )}
@@ -120,7 +130,6 @@ function TownPin({ town, onSelect }: { town: PlacedTown; onSelect: (city: string
         position={[town.lat, town.lng]}
         icon={icon}
         title={`${town.city} · ${t("vendorBrowse.results_count", { count: town.count })}`}
-        keyboard={false}
         eventHandlers={{ click: () => onSelect(town.city) }}
       />
     </>

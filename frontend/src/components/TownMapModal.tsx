@@ -1,13 +1,9 @@
-// "Explore by town" map for the public vendor browser — the Uber Eats "Cities
-// near me" pattern (a map with pins over a heading + "view all" link, a plain
-// list of names underneath), opened from a button beside the country/city
-// filters rather than sitting inline on the page. The filter row already
-// answers "which town" for anyone willing to type or scroll a list; this is
-// the scan-a-map alternative for anyone who isn't.
-//
-// See TownMap.tsx for why the map itself is a locked-down Leaflet view rather
-// than a flat image.
+// "Explore by town" map for the public vendor browser, opened from a button
+// beside the country/city filters. The filter row already offers the town-name
+// list, so this modal gives the map all of its available space rather than
+// repeating those names underneath it.
 
+import type { SupplierCategory } from "@shared/suppliers";
 import { X } from "lucide-react";
 import { Suspense, lazy, useEffect, useId, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -25,10 +21,12 @@ export interface TownMapTown {
 
 export default function TownMapModal({
   towns,
+  category,
   onSelectCity,
   onClose,
 }: {
   towns: TownMapTown[];
+  category: SupplierCategory | null;
   /** null clears the filter ("view all towns"). Either way the modal closes
    *  itself right after — this is a picker, not a panel to keep browsing in. */
   onSelectCity: (city: string | null) => void;
@@ -113,7 +111,7 @@ export default function TownMapModal({
           </div>
         </header>
 
-        <div className="h-64 shrink-0 bg-paper-200 sm:h-80 dark:bg-umber-700">
+        <div className="min-h-0 flex-1 bg-paper-200 dark:bg-umber-700">
           <Suspense
             fallback={
               <div className="flex h-full items-center justify-center text-sm text-ink-500 dark:text-umber-300">
@@ -121,23 +119,8 @@ export default function TownMapModal({
               </div>
             }
           >
-            <TownMap towns={placed} onSelect={(city) => pick(city)} />
+            <TownMap towns={placed} category={category} onSelect={(city) => pick(city)} />
           </Suspense>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <div className="flex flex-wrap gap-x-5 gap-y-2.5">
-            {sorted.map((c) => (
-              <button
-                key={c.city}
-                type="button"
-                onClick={() => pick(c.city)}
-                className="text-[13px] tracking-tight text-ink-600 underline-offset-4 transition hover:text-ink-900 hover:underline dark:text-umber-200 dark:hover:text-paper-50"
-              >
-                {c.city} <span className="text-ink-400 dark:text-umber-400">{c.count}</span>
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </div>,
