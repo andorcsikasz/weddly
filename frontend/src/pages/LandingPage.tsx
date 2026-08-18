@@ -396,6 +396,17 @@ export default function LandingPage() {
         </Suspense>
       )}
 
+      {/* ════════════════════════ Checklist — teaser card ════════════════════════
+          A single stat card, not the full interactive list: title, live
+          progress (reads the same localStorage stash the tool page writes
+          to), download. Clicking the card hands the visitor off to the
+          dedicated /eszkozok tool page — that's where the section-by-section
+          browsing, per-item checking and the "save this progress" signup
+          nudge actually live (see PublicWeddingChecklist.tsx, WeddingChecklist.tsx).
+          Sits above the budget demo so the no-signup, immediately-useful tool
+          is the first "try it" beat right under the directory. */}
+      <PublicWeddingChecklist teaser />
+
       {/* ════════════════════════ Interactive "Try it" demo ════════════════════════
           A no-signup budget calculator using the real DEFAULT_BUDGET_SPLIT.
           The CTA stashes the visitor's numbers into the onboarding draft so
@@ -545,15 +556,6 @@ export default function LandingPage() {
           "composite from beta interviews" disclaimer stamped three times
           read as a confession of synthetic social proof. Bring it back
           when we have one real beta couple willing to be named. */}
-
-      {/* ════════════════════════ 06 · Checklist — teaser card ════════════════════
-          A single stat card, not the full interactive list: title, live
-          progress (reads the same localStorage stash the tool page writes
-          to), download. Clicking the card hands the visitor off to the
-          dedicated /eszkozok tool page — that's where the section-by-section
-          browsing, per-item checking and the "save this progress" signup
-          nudge actually live (see PublicWeddingChecklist.tsx, WeddingChecklist.tsx). */}
-      <PublicWeddingChecklist teaser />
 
       {/* ════════════════════════ 09 · Audience — LEDGER ════════════════════════
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
