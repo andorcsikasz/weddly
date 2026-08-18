@@ -1,3 +1,4 @@
+import type { SubscriptionStatus } from "@shared/billing";
 import type { AdminCoupleView, AdminEmailLogEntry, AdminUserView } from "@shared/types";
 import { formatLastActive, intlLocale } from "../lib/format";
 import {
@@ -30,7 +31,13 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type { SupplierCategory } from "@shared/suppliers";
-import { AdminEmptyState, AdminPageHeader, AdminSectionHeader, Pill } from "../components/admin";
+import {
+  AdminEmptyState,
+  AdminFilterChip,
+  AdminPageHeader,
+  AdminSectionHeader,
+  Pill,
+} from "../components/admin";
 import { ConvertToVendorDialog } from "../components/ConvertToVendorDialog";
 import { FlagUserDialog } from "../components/FlagUserDialog";
 import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -64,6 +71,48 @@ function daysLeftUntil(unixMs: number): number {
         (24 * 60 * 60 * 1000),
     ),
   );
+}
+
+/** Collapses the six raw subscription statuses into the four buckets an admin
+ *  actually filters by — mirrors renderBillingPill's own grouping so the
+ *  filter chips never disagree with the pill shown on the row. */
+type BillingFilterBucket = "trialing" | "founding" | "paying" | "lapsed";
+const BILLING_FILTER_BUCKETS: readonly BillingFilterBucket[] = [
+  "trialing",
+  "founding",
+  "paying",
+  "lapsed",
+];
+function billingFilterBucket(s: SubscriptionStatus): BillingFilterBucket {
+  if (s === "trialing") return "trialing";
+  if (s === "founding") return "founding";
+  if (s === "active" || s === "past_due") return "paying";
+  return "lapsed"; // canceled | none
+}
+
+type AccountTypeFilterBucket = "admin" | "vendor" | "planner";
+const ACCOUNT_TYPE_FILTER_BUCKETS: readonly AccountTypeFilterBucket[] = [
+  "admin",
+  "vendor",
+  "planner",
+];
+
+/** How many days of inactivity a row must clear to match — 0 means "any". */
+const INACTIVITY_DAY_OPTIONS = [0, 7, 14, 30, 60] as const;
+
+/** Calendar days since `lastSeenAt`, or +Infinity when nobody has ever been
+ *  seen — so a never-active row always clears an inactivity threshold rather
+ *  than being excluded by a null check. */
+function daysSinceSeen(lastSeenAt: number | null): number {
+  if (lastSeenAt == null) return Number.POSITIVE_INFINITY;
+  return Math.floor((Date.now() - lastSeenAt) / (24 * 60 * 60 * 1000));
+}
+
+function toggleInSet<T>(set: ReadonlySet<T>, value: T): Set<T> {
+  const next = new Set(set);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return next;
 }
 
 function workspaceLabel(c: AdminCoupleView): string {
@@ -177,6 +226,49 @@ export default function AdminUsersPage() {
     const handle = window.setTimeout(() => setSearchQuery(searchInput.trim().toLowerCase()), 150);
     return () => window.clearTimeout(handle);
   }, [searchInput]);
+
+  // Facet filters — narrow every list below (workspaces, orphans, demo) the
+  // same additive way the search box does, so e.g. "unverified" + "inactive
+  // 30+ days" can be combined instead of hand-scanning every section. Each
+  // facet ANDs into the row's match; a multi-select facet (billing, account
+  // type) ORs within itself. Chip-filter pattern shared with the
+  // suppliers/waitlist admin pages (AdminFilterChip).
+  const [billingFilter, setBillingFilter] = useState<Set<BillingFilterBucket>>(new Set());
+  const [verifiedFilter, setVerifiedFilter] = useState<"all" | "verified" | "unverified">("all");
+  const [flaggedOnlyFilter, setFlaggedOnlyFilter] = useState(false);
+  const [accountTypeFilter, setAccountTypeFilter] = useState<Set<AccountTypeFilterBucket>>(
+    new Set(),
+  );
+  const [inactivityDays, setInactivityDays] = useState<number>(0);
+
+  const hasActiveFacetFilters =
+    billingFilter.size > 0 ||
+    verifiedFilter !== "all" ||
+    flaggedOnlyFilter ||
+    accountTypeFilter.size > 0 ||
+    inactivityDays > 0;
+  const activeFacetFilterCount =
+    billingFilter.size +
+    (verifiedFilter !== "all" ? 1 : 0) +
+    (flaggedOnlyFilter ? 1 : 0) +
+    accountTypeFilter.size +
+    (inactivityDays > 0 ? 1 : 0);
+  // Single flag for "the view is currently narrowed" — text or facets, same
+  // consequence everywhere it's read: force sections open, hide the manual
+  // fold controls, suppress the new-signups digest, drive the empty state.
+  const isFiltering = searchQuery !== "" || hasActiveFacetFilters;
+  function clearFacetFilters() {
+    setBillingFilter(new Set());
+    setVerifiedFilter("all");
+    setFlaggedOnlyFilter(false);
+    setAccountTypeFilter(new Set());
+    setInactivityDays(0);
+  }
+  function clearAllFilters() {
+    setSearchInput("");
+    setSearchQuery("");
+    clearFacetFilters();
+  }
 
   // Collapsed-by-default demo summary. Real couples win the above-the-fold
   // real estate; the demo list opens on demand. Stays collapsed across
@@ -384,7 +476,7 @@ export default function AdminUsersPage() {
   // card always shows the primary as context, with the matched extra listed
   // beneath it. Groups with no match at all drop out.
   function filterGroupsForDisplay(groups: OwnerGroup[]): OwnerGroup[] {
-    if (searchQuery === "") return groups;
+    if (!isFiltering) return groups;
     return groups.filter((g) => g.workspaces.some(coupleMatches));
   }
   // Demo activity in the last 24h — drives the collapsed summary headline so
@@ -461,7 +553,7 @@ export default function AdminUsersPage() {
     }
     return false;
   }
-  function coupleMatches(c: AdminCoupleView): boolean {
+  function coupleTextMatches(c: AdminCoupleView): boolean {
     if (searchQuery === "") return true;
     const members = c.partners
       .map((p) => userById.get(p.id))
@@ -478,24 +570,106 @@ export default function AdminUsersPage() {
       searchQuery,
     );
   }
-  function orphanMatches(u: AdminUserView): boolean {
+  function orphanTextMatches(u: AdminUserView): boolean {
     if (searchQuery === "") return true;
     return matchesQuery([u.full_name, u.email], searchQuery);
   }
+  // ── Facet predicates ────────────────────────────────────────────────────
+  // Billing has no meaning for a workspace-less account, so an active billing
+  // filter excludes every orphan/demo user outright rather than ignoring it.
+  function facetMatchesUser(u: AdminUserView): boolean {
+    if (billingFilter.size > 0) return false;
+    if (verifiedFilter === "verified" && !u.verified_email) return false;
+    if (verifiedFilter === "unverified" && u.verified_email) return false;
+    if (flaggedOnlyFilter && u.active_flag == null) return false;
+    if (accountTypeFilter.size > 0) {
+      const matchesType =
+        (accountTypeFilter.has("admin") && u.is_admin) ||
+        (accountTypeFilter.has("vendor") && u.account_type === "vendor") ||
+        (accountTypeFilter.has("planner") && u.account_type === "planner");
+      if (!matchesType) return false;
+    }
+    if (inactivityDays > 0 && daysSinceSeen(u.last_seen_at) < inactivityDays) return false;
+    return true;
+  }
+  // Billing + inactivity read off the workspace itself; verified/flagged/
+  // account-type match if ANY resolvable member qualifies, so filtering for
+  // "unverified" surfaces a workspace where one partner hasn't clicked yet.
+  function facetMatchesCouple(c: AdminCoupleView): boolean {
+    if (
+      billingFilter.size > 0 &&
+      !billingFilter.has(billingFilterBucket(c.billing.subscription_status))
+    )
+      return false;
+    if (inactivityDays > 0 && daysSinceSeen(c.last_seen_at) < inactivityDays) return false;
+    if (verifiedFilter !== "all" || flaggedOnlyFilter || accountTypeFilter.size > 0) {
+      const members = resolveAdminWorkspaceMembers(c, userById);
+      const anyMemberMatches = members.some(({ user }) => {
+        if (!user) return false;
+        if (verifiedFilter === "verified" && !user.verified_email) return false;
+        if (verifiedFilter === "unverified" && user.verified_email) return false;
+        if (flaggedOnlyFilter && user.active_flag == null) return false;
+        if (accountTypeFilter.size > 0) {
+          const matchesType =
+            (accountTypeFilter.has("admin") && user.is_admin) ||
+            (accountTypeFilter.has("vendor") && user.account_type === "vendor") ||
+            (accountTypeFilter.has("planner") && user.account_type === "planner");
+          if (!matchesType) return false;
+        }
+        return true;
+      });
+      if (!anyMemberMatches) return false;
+    }
+    return true;
+  }
+  function coupleMatches(c: AdminCoupleView): boolean {
+    return coupleTextMatches(c) && facetMatchesCouple(c);
+  }
+  function orphanMatches(u: AdminUserView): boolean {
+    return orphanTextMatches(u) && facetMatchesUser(u);
+  }
 
+  // coupleMatches/orphanMatches close over searchQuery + userById + the facet
+  // filter states; every dep array below lists them so a facet-only change
+  // (no search text) still recomputes the memo.
   const filteredRealCouples = useMemo(
-    () => (searchQuery === "" ? realCouples : realCouples.filter(coupleMatches)),
-    // coupleMatches closes over searchQuery + userById; both are deps already
-    // captured by the realCouples + searchQuery deps.
-    [realCouples, searchQuery, userById],
+    () => (!isFiltering ? realCouples : realCouples.filter(coupleMatches)),
+    [
+      realCouples,
+      searchQuery,
+      userById,
+      billingFilter,
+      verifiedFilter,
+      flaggedOnlyFilter,
+      accountTypeFilter,
+      inactivityDays,
+    ],
   );
   const filteredBetaCouples = useMemo(
-    () => (searchQuery === "" ? betaCouples : betaCouples.filter(coupleMatches)),
-    [betaCouples, searchQuery, userById],
+    () => (!isFiltering ? betaCouples : betaCouples.filter(coupleMatches)),
+    [
+      betaCouples,
+      searchQuery,
+      userById,
+      billingFilter,
+      verifiedFilter,
+      flaggedOnlyFilter,
+      accountTypeFilter,
+      inactivityDays,
+    ],
   );
   const filteredFlaggedCouples = useMemo(
-    () => (searchQuery === "" ? flaggedCouples : flaggedCouples.filter(coupleMatches)),
-    [flaggedCouples, searchQuery, userById],
+    () => (!isFiltering ? flaggedCouples : flaggedCouples.filter(coupleMatches)),
+    [
+      flaggedCouples,
+      searchQuery,
+      userById,
+      billingFilter,
+      verifiedFilter,
+      flaggedOnlyFilter,
+      accountTypeFilter,
+      inactivityDays,
+    ],
   );
   // Owner groups split into pairs (primary has both partners) vs solo (primary
   // is a one-member workspace), search-filtered and sorted for display. An
@@ -504,17 +678,30 @@ export default function AdminUsersPage() {
   // Married graduates out of BOTH pair + solo lists (a solo whose wedding passed
   // is married too), into its own section, so the Couple/Solo lists only ever
   // show couples still in the run-up.
+  const groupFilterDeps = [
+    ownerGroups,
+    searchQuery,
+    userById,
+    sortKey,
+    sortDir,
+    todayIso,
+    billingFilter,
+    verifiedFilter,
+    flaggedOnlyFilter,
+    accountTypeFilter,
+    inactivityDays,
+  ] as const;
   const marriedGroups = useMemo(
     () => sortGroups(filterGroupsForDisplay(ownerGroups.filter(isMarried))),
-    [ownerGroups, searchQuery, userById, sortKey, sortDir, todayIso],
+    groupFilterDeps,
   );
   const pairedGroups = useMemo(
     () => sortGroups(filterGroupsForDisplay(ownerGroups.filter((g) => g.paired && !isMarried(g)))),
-    [ownerGroups, searchQuery, userById, sortKey, sortDir, todayIso],
+    groupFilterDeps,
   );
   const soloGroups = useMemo(
     () => sortGroups(filterGroupsForDisplay(ownerGroups.filter((g) => !g.paired && !isMarried(g)))),
-    [ownerGroups, searchQuery, userById, sortKey, sortDir, todayIso],
+    groupFilterDeps,
   );
   // Header stat counts are per-OWNER (one card each), computed over the full
   // unfiltered set so the top-of-page tally stays stable while searching.
@@ -527,42 +714,45 @@ export default function AdminUsersPage() {
     () => ownerGroups.filter((g) => !g.paired && !isMarried(g)).length,
     [ownerGroups, todayIso],
   );
+  const orphanFilterDeps = [
+    searchQuery,
+    billingFilter,
+    verifiedFilter,
+    flaggedOnlyFilter,
+    accountTypeFilter,
+    inactivityDays,
+  ] as const;
   const filteredOrphans = useMemo(
-    () => (searchQuery === "" ? orphans : orphans.filter(orphanMatches)),
-    [orphans, searchQuery],
+    () => (!isFiltering ? orphans : orphans.filter(orphanMatches)),
+    [orphans, ...orphanFilterDeps],
   );
   // Demo accounts are the only place a demo vendor/planner is listed (they're
   // filtered out of the dedicated admin Vendors/Planners pages), so the Demo
-  // section stays searchable — otherwise a search for a demo account by name
-  // would turn up nothing.
+  // section stays filterable — otherwise filtering for a demo account by name
+  // or facet would turn up nothing.
   const filteredDemoCouples = useMemo(
-    () => (searchQuery === "" ? demoCouples : demoCouples.filter(coupleMatches)),
-    [demoCouples, searchQuery, userById],
+    () => (!isFiltering ? demoCouples : demoCouples.filter(coupleMatches)),
+    [demoCouples, userById, ...orphanFilterDeps],
   );
   const filteredDemoVendors = useMemo(
-    () => (searchQuery === "" ? demoVendors : demoVendors.filter(orphanMatches)),
-    [demoVendors, searchQuery],
+    () => (!isFiltering ? demoVendors : demoVendors.filter(orphanMatches)),
+    [demoVendors, ...orphanFilterDeps],
   );
   const filteredDemoPlanners = useMemo(
-    () => (searchQuery === "" ? demoPlanners : demoPlanners.filter(orphanMatches)),
-    [demoPlanners, searchQuery],
+    () => (!isFiltering ? demoPlanners : demoPlanners.filter(orphanMatches)),
+    [demoPlanners, ...orphanFilterDeps],
   );
   const filteredDemoTotal =
     filteredDemoCouples.length + filteredDemoVendors.length + filteredDemoPlanners.length;
-  const isSearching = searchQuery !== "";
-  // Auto-expand the beta bucket while searching so matching beta workspaces
-  // surface inline instead of hiding behind the collapsed summary.
-  const betaListOpen = betaOpen || isSearching;
-  const flaggedListOpen = flaggedOpen || isSearching;
-  // The collapsible real-signup lists force open during an active search so
-  // hits are never hidden behind a fold; the fold toggle is suppressed then.
-  const couplesListOpen = couplesOpen || isSearching;
-  const soloListOpen = soloOpen || isSearching;
-  const marriedListOpen = marriedOpen || isSearching;
-  const orphansListOpen = orphansOpen || isSearching;
-  // Auto-expand the demo bucket while searching so matching demo accounts
-  // surface inline instead of hiding behind the collapsed summary.
-  const demoListOpen = demoOpen || isSearching;
+  // Auto-expand while filtering (search or facets) so matches never hide
+  // behind a fold; the fold toggle itself is suppressed then (see below).
+  const betaListOpen = betaOpen || isFiltering;
+  const flaggedListOpen = flaggedOpen || isFiltering;
+  const couplesListOpen = couplesOpen || isFiltering;
+  const soloListOpen = soloOpen || isFiltering;
+  const marriedListOpen = marriedOpen || isFiltering;
+  const orphansListOpen = orphansOpen || isFiltering;
+  const demoListOpen = demoOpen || isFiltering;
   const totalFilteredHits =
     filteredRealCouples.length +
     filteredBetaCouples.length +
@@ -1707,26 +1897,107 @@ export default function AdminUsersPage() {
                 </button>
               )}
             </div>
+
+            {/* ── Facet filter bar ────────────────────────────────────────
+             *  Chip toggles + one select, all additive with the search box
+             *  and with each other. Always visible (not tucked behind a
+             *  collapse) so the active narrowing is legible at a glance —
+             *  that transparency is the point, not just the filtering. */}
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="eyebrow text-neutral-500 dark:text-umber-300">
+                  {t("admin.users_filter_billing_label")}
+                </span>
+                {BILLING_FILTER_BUCKETS.map((b) => (
+                  <AdminFilterChip
+                    key={b}
+                    active={billingFilter.has(b)}
+                    onClick={() => setBillingFilter((cur) => toggleInSet(cur, b))}
+                    label={t(`admin.users_filter_billing_${b}`)}
+                  />
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="eyebrow text-neutral-500 dark:text-umber-300">
+                  {t("admin.users_filter_verified_label")}
+                </span>
+                {(["verified", "unverified"] as const).map((v) => (
+                  <AdminFilterChip
+                    key={v}
+                    active={verifiedFilter === v}
+                    onClick={() => setVerifiedFilter((cur) => (cur === v ? "all" : v))}
+                    label={t(`admin.users_filter_verified_${v}`)}
+                  />
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <AdminFilterChip
+                  active={flaggedOnlyFilter}
+                  onClick={() => setFlaggedOnlyFilter((v) => !v)}
+                  label={t("admin.users_filter_flagged")}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="eyebrow text-neutral-500 dark:text-umber-300">
+                  {t("admin.users_filter_account_type_label")}
+                </span>
+                {ACCOUNT_TYPE_FILTER_BUCKETS.map((a) => (
+                  <AdminFilterChip
+                    key={a}
+                    active={accountTypeFilter.has(a)}
+                    onClick={() => setAccountTypeFilter((cur) => toggleInSet(cur, a))}
+                    label={t(`admin.users_filter_account_${a}`)}
+                  />
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="eyebrow text-neutral-500 dark:text-umber-300">
+                  {t("admin.users_filter_inactivity_label")}
+                </span>
+                <select
+                  value={inactivityDays}
+                  onChange={(e) => setInactivityDays(Number(e.target.value))}
+                  aria-label={t("admin.users_filter_inactivity_label")}
+                  className={`rounded-lg border px-2 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 ${
+                    inactivityDays > 0
+                      ? "border-neutral-900 bg-neutral-900 text-paper-100 dark:border-neutral-500/50 dark:bg-neutral-500/30 dark:text-neutral-100"
+                      : "border-paper-300 bg-paper-50 text-neutral-950 dark:border-umber-700 dark:bg-umber-800 dark:text-neutral-200"
+                  }`}
+                >
+                  {INACTIVITY_DAY_OPTIONS.map((d) => (
+                    <option key={d} value={d}>
+                      {d === 0
+                        ? t("admin.users_filter_inactivity_any")
+                        : t("admin.users_filter_inactivity_days", { n: d })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {hasActiveFacetFilters && (
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm inline-flex items-center gap-1 text-blush-700 dark:text-blush-300"
+                  onClick={clearFacetFilters}
+                >
+                  <X size={12} aria-hidden />
+                  {t("admin.users_filter_clear")}
+                  <span className="tabular-nums">({activeFacetFilterCount})</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* When the search returns no hits in EITHER workspace or orphan
-           *  lists, hand off to the empty state. Demo workspaces are hidden
-           *  during active search regardless. */}
-          {isSearching && totalFilteredHits === 0 ? (
+          {/* When filtering (search text and/or facets) returns no hits in
+           *  ANY workspace or orphan list, hand off to the empty state. Demo
+           *  workspaces are hidden while filtering regardless. */}
+          {isFiltering && totalFilteredHits === 0 ? (
             <AdminEmptyState
               icon={<Search size={28} aria-hidden />}
               title={t("admin.users_search_empty")}
               description={t("admin.users_search_empty_help")}
               action={
-                <button
-                  type="button"
-                  className="btn-outline btn-sm"
-                  onClick={() => {
-                    setSearchInput("");
-                    setSearchQuery("");
-                  }}
-                >
-                  {t("admin.users_search_clear")}
+                <button type="button" className="btn-outline btn-sm" onClick={clearAllFilters}>
+                  {t("admin.users_filters_clear_all")}
                 </button>
               }
             />
@@ -1736,9 +2007,9 @@ export default function AdminUsersPage() {
                *  visit, couples + solo users together, no sub-categories.
                *  Pinned to the very top so a returning admin triages what's new
                *  first; the same rows still appear in their own sections below.
-               *  Hidden when empty or while searching (search drives the lists
-               *  below). ─────────────────────────────────────────────────── */}
-              {!isSearching && unseenCount > 0 && (
+               *  Hidden when empty or while filtering (search or facets — the
+               *  lists below take over). ────────────────────────────────── */}
+              {!isFiltering && unseenCount > 0 && (
                 <section id="admin-section-new" className="mb-6 scroll-mt-20">
                   <AdminSectionHeader
                     title={t("admin.new_section")}
@@ -1766,7 +2037,7 @@ export default function AdminUsersPage() {
                     { n: pairedGroups.length },
                   )}
                   collapse={
-                    !isSearching
+                    !isFiltering
                       ? {
                           open: couplesOpen,
                           onToggle: () => setCouplesOpen((v) => !v),
@@ -1798,7 +2069,7 @@ export default function AdminUsersPage() {
                     { n: soloGroups.length },
                   )}
                   collapse={
-                    !isSearching
+                    !isFiltering
                       ? {
                           open: soloOpen,
                           onToggle: () => setSoloOpen((v) => !v),
@@ -1830,7 +2101,7 @@ export default function AdminUsersPage() {
                     { n: marriedGroups.length },
                   )}
                   collapse={
-                    !isSearching
+                    !isFiltering
                       ? {
                           open: marriedOpen,
                           onToggle: () => setMarriedOpen((v) => !v),
@@ -1857,7 +2128,7 @@ export default function AdminUsersPage() {
                *  by default like the demo bucket, but unlike demos it stays
                *  searchable: an active search auto-expands the list to reveal
                *  matching beta workspaces. ──────────────────────────────────── */}
-              {flaggedCouples.length > 0 && (filteredFlaggedCouples.length > 0 || !isSearching) && (
+              {flaggedCouples.length > 0 && (filteredFlaggedCouples.length > 0 || !isFiltering) && (
                 <section className="mb-6">
                   <AdminSectionHeader
                     title={t("admin.flagged_section")}
@@ -1868,7 +2139,7 @@ export default function AdminUsersPage() {
                       { n: flaggedCouples.length },
                     )}
                     collapse={
-                      !isSearching
+                      !isFiltering
                         ? {
                             open: flaggedOpen,
                             onToggle: () => setFlaggedOpen((v) => !v),
@@ -1888,7 +2159,7 @@ export default function AdminUsersPage() {
                 </section>
               )}
 
-              {betaCouples.length > 0 && (filteredBetaCouples.length > 0 || !isSearching) && (
+              {betaCouples.length > 0 && (filteredBetaCouples.length > 0 || !isFiltering) && (
                 <section id="admin-section-beta" className="mb-6 scroll-mt-20">
                   <AdminSectionHeader
                     title={t("admin.beta_workspaces_section")}
@@ -1899,7 +2170,7 @@ export default function AdminUsersPage() {
                       { n: betaCouples.length },
                     )}
                     collapse={
-                      !isSearching
+                      !isFiltering
                         ? {
                             open: betaOpen,
                             onToggle: () => setBetaOpen((v) => !v),
@@ -1926,7 +2197,7 @@ export default function AdminUsersPage() {
                *  honest; the backend purge worker reaps them on its own
                *  schedule, so no destructive action surface here. Suppressed
                *  while searching — results live in the lists above. ────────── */}
-              {demoTotal > 0 && (filteredDemoTotal > 0 || !isSearching) && (
+              {demoTotal > 0 && (filteredDemoTotal > 0 || !isFiltering) && (
                 <section id="admin-section-demo" className="mb-6 scroll-mt-20">
                   <AdminSectionHeader
                     title={t("admin.demo_section")}
@@ -1942,7 +2213,7 @@ export default function AdminUsersPage() {
                       </span>
                     }
                     collapse={
-                      !isSearching
+                      !isFiltering
                         ? {
                             open: demoOpen,
                             onToggle: () => setDemoOpen((v) => !v),
@@ -2071,7 +2342,7 @@ export default function AdminUsersPage() {
                     { n: filteredOrphans.length },
                   )}
                   actions={
-                    !isSearching ? (
+                    !isFiltering ? (
                       <SectionToggle
                         open={orphansOpen}
                         onToggle={() => setOrphansOpen((v) => !v)}
