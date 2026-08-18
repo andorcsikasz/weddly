@@ -10043,6 +10043,9 @@ const hu: LocaleMessages = {
     nearby_body:
       "Magában a városban kevés szolgáltató van, ezért itt van minden, ami egy órán belül elérhető. A távolságok {city} központjától számítva.",
     distance_km: "{km} km",
+    map_button: "Böngészés térképen",
+    map_title: "Böngéssz település szerint",
+    map_view_all: "Mind a(z) {count} település",
   },
 };
 

@@ -814,11 +814,22 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
     categoryCounts.set(s.category, (categoryCounts.get(s.category) ?? 0) + 1);
   }
   const cityCounts = new Map<string, number>();
+  // Mean of that town's own placed listings, same idiom as the showcase's
+  // `nearby_origin` — feeds the "explore by town" map, not the count-only
+  // chips this map used to be the whole of.
+  const cityCoordSum = new Map<string, { lat: number; lng: number; n: number }>();
   for (const s of cards) {
     if (category && s.category !== category) continue;
     if (!matchesText(s)) continue;
     if (!s.city.trim()) continue;
     cityCounts.set(s.city, (cityCounts.get(s.city) ?? 0) + 1);
+    if (s.lat != null && s.lng != null) {
+      const acc = cityCoordSum.get(s.city) ?? { lat: 0, lng: 0, n: 0 };
+      acc.lat += s.lat;
+      acc.lng += s.lng;
+      acc.n += 1;
+      cityCoordSum.set(s.city, acc);
+    }
   }
   const countryCounts = new Map<string, number>();
   for (const s of assembleDirectoryBase({ category: null, country: null })) {
@@ -838,7 +849,15 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
       .map(([c, count]) => ({ category: c, count }))
       .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category)),
     cities: [...cityCounts.entries()]
-      .map(([city, count]) => ({ city, count }))
+      .map(([city, count]) => {
+        const coord = cityCoordSum.get(city);
+        return {
+          city,
+          count,
+          lat: coord ? coord.lat / coord.n : null,
+          lng: coord ? coord.lng / coord.n : null,
+        };
+      })
       .sort((a, b) => b.count - a.count || a.city.localeCompare(b.city))
       .slice(0, 60),
     countries: [...countryCounts.entries()]

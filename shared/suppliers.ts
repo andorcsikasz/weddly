@@ -1636,7 +1636,11 @@ export interface PublicDirectoryPage {
   /** Facets for the filter UI, each counted against the OTHER active filters so
    *  a chip never offers a combination that returns nothing. */
   categories: { category: SupplierCategory; count: number }[];
-  cities: { city: string; count: number }[];
+  /** `lat`/`lng` are the mean of that town's own placed listings (same idiom
+   *  as the showcase's `nearby_origin`), null when none of them have a
+   *  coordinate. Feeds the "explore by town" map on the browse page; the
+   *  count-only fields elsewhere in the app don't need it. */
+  cities: { city: string; count: number; lat: number | null; lng: number | null }[];
   countries: SupplierCountryCount[];
 }
 

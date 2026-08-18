@@ -11237,5 +11237,12 @@ export interface LocaleMessages {
     /** Distance suffix on a nearby card's meta line. `{km}` is a whole number
      *  of kilometres, straight-line from the filtered town. */
     distance_km: string;
+    /** Trigger beside the country/town pickers, opens TownMapModal. */
+    map_button: string;
+    /** Modal heading. */
+    map_title: string;
+    /** Top-right link in the modal; clears the town filter. `{count}` is the
+     *  number of towns listed, same figure the town chips below it sum to. */
+    map_view_all: string;
   };
 }

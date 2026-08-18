@@ -9975,6 +9975,9 @@ const en: LocaleMessages = {
     nearby_body:
       "Only a few vendors are listed in the town itself, so here is everything within an hour's drive. Distances are measured from {city}.",
     distance_km: "{km} km",
+    map_button: "Browse by map",
+    map_title: "Explore by town",
+    map_view_all: "View all {count} towns",
   },
 };
 

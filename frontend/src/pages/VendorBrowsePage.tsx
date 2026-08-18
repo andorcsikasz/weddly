@@ -29,10 +29,19 @@ import type {
   SupplierCountryCount,
 } from "@shared/suppliers";
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
-import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Map as MapIcon,
+  MapPin,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CountryPicker } from "../components/CountryPicker";
+import TownMapModal from "../components/TownMapModal";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { Wordmark } from "../components/Wordmark";
 import { SmartImage } from "../components/ui/SmartImage";
@@ -708,9 +717,12 @@ export default function VendorBrowsePage() {
   // every country listed once one is selected (a client-side count would drop
   // to just the filtered country and strand the visitor there).
   const [countries, setCountries] = useState<SupplierCountryCount[]>([]);
-  const [cityFacets, setCityFacets] = useState<{ city: string; count: number }[]>([]);
+  const [cityFacets, setCityFacets] = useState<
+    { city: string; count: number; lat: number | null; lng: number | null }[]
+  >([]);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [showPill, setShowPill] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
   const closingRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -905,6 +917,22 @@ export default function VendorBrowsePage() {
             with one child, `justify-between` simply leaves them at the start. */}
         <div className="mt-4 flex flex-col gap-4 sm:mt-5 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 lg:shrink-0">
+            {/* Country first, town second: the wider filter reads before the
+                narrower one it scopes. */}
+            {countries.length > 1 && (
+              <CountryPicker
+                value={country}
+                onChange={setCountry}
+                tone="ink"
+                allLabel={t("suppliers.country_filter_all")}
+                ariaLabel={t("suppliers.country_filter_label")}
+                options={countries.map((c) => ({
+                  code: c.code,
+                  label: countryName(c.code, locale === "hu" ? "hu" : "en"),
+                  count: c.count,
+                }))}
+              />
+            )}
             {/* Town, beside country, same control. The town used to arrive only
                 from the landing typeahead and could be removed but never
                 CHOSEN here, which left a visitor who wanted "photographers in
@@ -931,23 +959,36 @@ export default function VendorBrowsePage() {
                 }))}
               />
             )}
-            {countries.length > 1 && (
-              <CountryPicker
-                value={country}
-                onChange={setCountry}
-                tone="ink"
-                allLabel={t("suppliers.country_filter_all")}
-                ariaLabel={t("suppliers.country_filter_label")}
-                options={countries.map((c) => ({
-                  code: c.code,
-                  label: countryName(c.code, locale === "hu" ? "hu" : "en"),
-                  count: c.count,
-                }))}
-              />
+            {/* Opens the "explore by town" map instead of sitting inline: a
+                visitor who wants to scan a map rather than type is a minority
+                of one, not a whole section's worth of page. Needs at least one
+                placeable town, or the modal would open on an empty map. */}
+            {cityFacets.some((c) => c.lat != null && c.lng != null) && (
+              <button
+                type="button"
+                onClick={() => setMapOpen(true)}
+                className="inline-flex min-h-tap items-center gap-2 rounded-full border border-ink-900/15 bg-transparent px-4 text-sm font-medium text-ink-700 transition hover:border-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:border-paper-50/20 dark:text-paper-100 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900"
+              >
+                <MapIcon size={15} aria-hidden />
+                <span>{t("vendorBrowse.map_button")}</span>
+              </button>
             )}
           </div>
         </div>
       </section>
+
+      {mapOpen && (
+        <TownMapModal
+          towns={cityFacets}
+          onSelectCity={(nextCity) => {
+            const next = new URLSearchParams(params);
+            if (nextCity) next.set("city", nextCity);
+            else next.delete("city");
+            setParams(next, { replace: false });
+          }}
+          onClose={() => setMapOpen(false)}
+        />
+      )}
 
       {/* The rail and the rails it indexes share one box on purpose: `sticky` is
           bounded by its parent, so the index rides along for exactly as long as
