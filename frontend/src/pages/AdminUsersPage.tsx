@@ -958,6 +958,21 @@ export default function AdminUsersPage() {
         <span className="min-w-0 truncate text-xs text-neutral-500 dark:text-umber-300">
           {partner.email}
         </span>
+        {/* This member was channelled to a real vendor/planner account after
+            joining — the workspace is preserved (non-destructive) but they're
+            no longer a couple, so say so rather than render them like an
+            active partner. Matches the badge renderUserInfo shows on the
+            Szolgáltatók/Szervezők pages themselves. */}
+        {partner.account_type === "vendor" && (
+          <Pill tone="ink" icon={<Store size={11} aria-hidden />}>
+            {t("admin.badge_vendor")}
+          </Pill>
+        )}
+        {partner.account_type === "planner" && (
+          <Pill tone="ink" icon={<Briefcase size={11} aria-hidden />}>
+            {t("admin.badge_planner")}
+          </Pill>
+        )}
       </div>
     );
   }

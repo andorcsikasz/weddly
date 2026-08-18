@@ -546,7 +546,17 @@ export interface AdminCoupleView {
   bride_name: string | null;
   groom_name: string | null;
   status: CoupleStatus;
-  partners: { id: number; full_name: string; email: string }[];
+  partners: {
+    id: number;
+    full_name: string;
+    email: string;
+    /** "couple" for an ordinary member; "vendor"/"planner" when this member
+     *  was channelled to that account type after joining the workspace — the
+     *  workspace itself is preserved (non-destructive), but they're no longer
+     *  a couple, so the admin list has to say so rather than render them like
+     *  an active partner. */
+    account_type: "couple" | "vendor" | "planner";
+  }[];
   /** The user who owns/created this workspace: the `owner`-role member (whoever
    *  onboarded it or spun it up as an additional event), falling back to
    *  `partner_a_id` for legacy rows. The admin overview groups every workspace

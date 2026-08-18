@@ -2,6 +2,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import type { AdminVendorView } from "@shared/listings";
+import type { AdminCoupleView } from "@shared/types";
 import { db } from "../../src/db";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
@@ -81,7 +82,7 @@ describe("admin convert user to vendor", () => {
   test("converted account leaves the users list and appears on the vendors page", async () => {
     wipeAll();
     const adminToken = await bootstrapAdmin();
-    await bootstrapCouple("mover@weddly.test");
+    const { coupleId } = await bootstrapCouple("mover@weddly.test");
     const u = userByEmail("mover@weddly.test");
 
     await req(
@@ -103,6 +104,22 @@ describe("admin convert user to vendor", () => {
       { token: adminToken },
     );
     expect(vendors.data.active.some((v) => v.owner_email === "mover@weddly.test")).toBe(true);
+
+    // The old couple workspace stays visible (never deleted — non-destructive
+    // by design, and it's still the only place an admin can resolve this
+    // account's pre-conversion identity), but its member must now read as a
+    // vendor rather than an ordinary live partner — otherwise the workspace
+    // silently keeps looking like an active couple forever.
+    const couples = await req<{ couples: AdminCoupleView[] }>(
+      "GET",
+      "/api/admin/couples",
+      undefined,
+      { token: adminToken },
+    );
+    const row = couples.data.couples.find((c) => c.id === coupleId);
+    expect(row?.partners).toContainEqual(
+      expect.objectContaining({ email: "mover@weddly.test", account_type: "vendor" }),
+    );
   });
 
   test("category 'other' requires a custom label", async () => {

@@ -210,6 +210,15 @@ interface PartnerRow {
   id: number;
   full_name: string;
   email: string;
+  account_type: "couple" | "vendor" | "planner";
+}
+
+interface PartnerQueryRow {
+  id: number;
+  full_name: string;
+  email: string;
+  role: string;
+  user_type: string;
 }
 
 function partnersForCouple(coupleId: number): PartnerRow[] {
@@ -217,16 +226,32 @@ function partnersForCouple(coupleId: number): PartnerRow[] {
   // `users.couple_id` (the per-user *active workspace* pointer). The pointer
   // moves when an owner creates/switches workspaces, which used to make their
   // other couples render memberless / email-less in this list.
-  return db
+  const rows = db
     .prepare(
-      `SELECT u.id, u.full_name, u.email
+      `SELECT u.id, u.full_name, u.email, u.role, u.user_type
          FROM couple_members cm
          JOIN users u ON u.id = cm.user_id
         WHERE cm.couple_id = ?
           AND u.email NOT LIKE '%@purged.local'
         ORDER BY u.id ASC`,
     )
-    .all(coupleId) as PartnerRow[];
+    .all(coupleId) as PartnerQueryRow[];
+  // A member "channelled" to a vendor/planner account (admin.user_convert_to_vendor
+  // / convertUserToPlanner) never leaves this workspace — see the non-destructive
+  // guarantee on convertUserToVendor — and stays out of /api/admin/users on
+  // purpose (they have their own Szolgáltatók/Szervezők page). Their historical
+  // couple identity still has to resolve HERE, so the flag rides along with it:
+  // without it the row renders identically to a live couple partner and the
+  // workspace silently keeps reading as an active trial/couple long after its
+  // only member became a vendor (reported 2026-08-18 — "joe & Noah" kept
+  // showing as an ordinary couple after being channelled to the "La Contessa
+  // Kastélyhotel" vendor account).
+  return rows.map((r) => ({
+    id: r.id,
+    full_name: r.full_name,
+    email: r.email,
+    account_type: r.role === "vendor" ? "vendor" : r.user_type === "planner" ? "planner" : "couple",
+  }));
 }
 
 /** One pass over audit_log → demo couples, aggregating feature-prefix
