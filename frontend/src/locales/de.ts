@@ -10136,6 +10136,8 @@ const de: LocaleMessages = {
     map_title: "Nach Ort entdecken",
     map_view_all: "Alle {count} Orte ansehen",
     map_category_note: "Nur {category} wird angezeigt",
+    map_countries_hint: "Eine Markierung pro Land — auswählen, um die Orte darin zu sehen.",
+    map_back_to_countries: "Alle Länder",
   },
 };
 

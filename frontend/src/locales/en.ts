@@ -9983,6 +9983,8 @@ const en: LocaleMessages = {
     map_title: "Explore by town",
     map_view_all: "View all {count} towns",
     map_category_note: "Showing {category} only",
+    map_countries_hint: "One pin per country — pick one to see its towns.",
+    map_back_to_countries: "All countries",
   },
 };
 

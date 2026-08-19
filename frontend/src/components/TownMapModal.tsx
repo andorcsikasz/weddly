@@ -2,14 +2,20 @@
 // beside the country/city filters. The filter row already offers the town-name
 // list, so this modal gives the map all of its available space rather than
 // repeating those names underneath it.
+//
+// Continent-wide (no country picked yet), one marker per TOWN is unreadable —
+// hundreds of pins stack on top of each other over central Europe. So the
+// modal opens on one pin per COUNTRY instead, and drills into that country's
+// towns on click (see `drillCountry`), staying open rather than closing like
+// a town pick does: picking a country is scoping the search, not finishing it.
 
 import type { SupplierCategory } from "@shared/suppliers";
-import { X } from "lucide-react";
-import { Suspense, lazy, useEffect, useId, useMemo, useRef } from "react";
+import { ChevronLeft, X } from "lucide-react";
+import { Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { categoryIcon } from "../lib/category_icons";
 import { useT } from "../lib/i18n";
-import type { PlacedTown } from "./TownMap";
+import type { PlacedCountry, PlacedTown } from "./TownMap";
 
 const TownMap = lazy(() => import("./TownMap"));
 
@@ -20,17 +26,38 @@ export interface TownMapTown {
   lng: number | null;
 }
 
+export interface TownMapCountryPin {
+  code: string;
+  count: number;
+  lat: number | null;
+  lng: number | null;
+}
+
 export default function TownMapModal({
   towns,
+  countryPins,
   category,
+  activeCountry,
   onSelectCity,
+  onSelectCountry,
   onClose,
 }: {
   towns: TownMapTown[];
+  /** One entry per country, scoped the same way `towns` is. Only worth
+   *  showing as its own view when there's more than one to pick between. */
+  countryPins: TownMapCountryPin[];
   category: SupplierCategory | null;
+  /** The country filter already applied on the page behind the modal, if
+   *  any. Non-null skips straight to that country's towns, matching what the
+   *  visitor already picked outside the map. */
+  activeCountry: string | null;
   /** null clears the filter ("view all towns"). Either way the modal closes
    *  itself right after — this is a picker, not a panel to keep browsing in. */
   onSelectCity: (city: string | null) => void;
+  /** Fires when a country pin is picked (or the visitor backs out to "all
+   *  countries"). Unlike `onSelectCity`, this does NOT close the modal — the
+   *  visitor is narrowing the map, not finishing with it. */
+  onSelectCountry: (code: string | null) => void;
   onClose: () => void;
 }) {
   const { t } = useT();
@@ -40,6 +67,26 @@ export default function TownMapModal({
   // Only rendered while `category` is set (see the header below); the "" arm
   // never reaches the screen, it just keeps categoryIcon's string param happy.
   const CategoryGlyph = categoryIcon(category ?? "");
+
+  const placedCountries = useMemo(
+    (): PlacedCountry[] =>
+      countryPins
+        .filter(
+          (c): c is TownMapCountryPin & { lat: number; lng: number } =>
+            c.lat != null && c.lng != null,
+        )
+        .map((c) => ({ code: c.code, count: c.count, lat: c.lat, lng: c.lng }))
+        .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code)),
+    [countryPins],
+  );
+
+  // The map's own drill state: which country it's showing towns for, distinct
+  // from the page's `activeCountry` because clicking a pin has to feel
+  // instant while the parent re-fetches that country's town facets in the
+  // background. Starts wherever the page already was — a visitor who picked
+  // a country outside the map skips straight to its towns.
+  const [drillCountry, setDrillCountry] = useState<string | null>(activeCountry);
+  const showingCountries = drillCountry == null && placedCountries.length > 1;
 
   const sorted = useMemo(
     () => [...towns].sort((a, b) => b.count - a.count || a.city.localeCompare(b.city)),
@@ -76,6 +123,16 @@ export default function TownMapModal({
     onClose();
   }
 
+  function pickCountry(code: string) {
+    setDrillCountry(code);
+    onSelectCountry(code);
+  }
+
+  function backToCountries() {
+    setDrillCountry(null);
+    onSelectCountry(null);
+  }
+
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4 backdrop-blur-sm"
@@ -106,6 +163,22 @@ export default function TownMapModal({
                 {t("vendorBrowse.map_category_note", { category: t(`suppliers.cat.${category}`) })}
               </p>
             )}
+            {showingCountries ? (
+              <p className="mt-1 text-[13px] font-medium text-ink-500 dark:text-umber-300">
+                {t("vendorBrowse.map_countries_hint")}
+              </p>
+            ) : (
+              placedCountries.length > 1 && (
+                <button
+                  type="button"
+                  onClick={backToCountries}
+                  className="mt-1 inline-flex items-center gap-1 text-[13px] font-medium text-ink-500 underline-offset-4 transition hover:text-ink-900 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+                >
+                  <ChevronLeft size={14} aria-hidden />
+                  {t("vendorBrowse.map_back_to_countries")}
+                </button>
+              )
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <button
@@ -134,7 +207,11 @@ export default function TownMapModal({
               </div>
             }
           >
-            <TownMap towns={placed} category={category} onSelect={(city) => pick(city)} />
+            {showingCountries ? (
+              <TownMap mode="country" countries={placedCountries} onSelect={pickCountry} />
+            ) : (
+              <TownMap towns={placed} category={category} onSelect={(city) => pick(city)} />
+            )}
           </Suspense>
         </div>
       </div>

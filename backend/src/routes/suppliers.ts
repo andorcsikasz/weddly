@@ -23,6 +23,7 @@ import {
   parseSpokenLanguages,
   SUPPLIER_GROUPS,
 } from "@shared/suppliers";
+import { countryName } from "@shared/country_list";
 import { listingCurrency } from "@shared/listing_pricing";
 import { searchPublicVendors } from "../domain/vendor_search";
 import {
@@ -813,9 +814,13 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
   // the town. Folded so "Fotó" finds "foto" and vice versa.
   const q = qParam ? foldForSearch(qParam) : "";
   const cityFolded = cityParam ? foldForSearch(cityParam) : "";
-  const matchesText = (s: DirectorySupplier) =>
+  // Typed to the BASE shape, not the vote-overlaid `DirectorySupplier`, so the
+  // country-pin loop below can reuse it against a second, country-unscoped
+  // assembly without mapping through `withVotes` first.
+  const matchesText = (s: DirectorySupplierBase) =>
     !q || foldForSearch(s.name).includes(q) || foldForSearch(s.city).includes(q);
-  const matchesCity = (s: DirectorySupplier) => !cityFolded || foldForSearch(s.city) === cityFolded;
+  const matchesCity = (s: DirectorySupplierBase) =>
+    !cityFolded || foldForSearch(s.city) === cityFolded;
 
   // Facets are counted against the OTHER active filters, so picking a category
   // never leaves a city chip that returns nothing (and vice versa).
@@ -829,11 +834,28 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
   // `nearby_origin` — feeds the "explore by town" map, not the count-only
   // chips this map used to be the whole of.
   const cityCoordSum = new Map<string, { lat: number; lng: number; n: number }>();
+  // First-seen wins: a city name is one country's in practice (every non-HU
+  // curated batch suffixes its towns with ", XX", so a bare name is HU by
+  // construction). Lets the client auto-set the country filter — and scope
+  // the map — the moment a town is picked, instead of asking the visitor to
+  // also pick the country themselves.
+  const cityCountryOf = new Map<string, string>();
   for (const s of cards) {
-    if (category && s.category !== category) continue;
-    if (!matchesText(s)) continue;
-    if (!s.city.trim()) continue;
+    // A handful of curated entries (nationwide food trucks, mobile services)
+    // carry the bare country name as their `city` — the least-wrong value
+    // available when the business genuinely has no fixed town. That is a
+    // fact worth keeping on the CARD, but it is not a town anyone can pick
+    // from a list, so it never becomes a facet: offering "Magyarország" as a
+    // town filter option promises a level of specificity that pick doesn't
+    // have.
+    if (
+      !s.city.trim() ||
+      s.city === countryName(s.country, "hu") ||
+      s.city === countryName(s.country, "en")
+    )
+      continue;
     cityCounts.set(s.city, (cityCounts.get(s.city) ?? 0) + 1);
+    if (!cityCountryOf.has(s.city)) cityCountryOf.set(s.city, s.country);
     if (s.lat != null && s.lng != null) {
       const acc = cityCoordSum.get(s.city) ?? { lat: 0, lng: 0, n: 0 };
       acc.lat += s.lat;
@@ -846,6 +868,32 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
   for (const s of assembleDirectoryBase({ category: null, country: null })) {
     if (!s.hero_image_url) continue;
     countryCounts.set(s.country, (countryCounts.get(s.country) ?? 0) + 1);
+  }
+  // Mean per COUNTRY, so the map can collapse to one pin per country when no
+  // country is picked yet, instead of every town in the catalogue at once.
+  // Deliberately built off a country-UNSCOPED assembly, same reason as
+  // `countryCounts` above rather than the already-scoped `cards`: once a
+  // visitor has drilled into one country, `cards` only has that one left in
+  // it, and a facet that can only ever show the one country already picked
+  // is useless for the "zoom back out" pin. Category and the text query still
+  // apply, matching `cities`, so a category filter shrinks it like it shrinks
+  // the town facet.
+  const countryPinCounts = new Map<string, number>();
+  const countryPinCoordSum = new Map<string, { lat: number; lng: number; n: number }>();
+  const worldCards = country
+    ? assembleDirectoryBase({ category: null, country: null }).filter((b) => b.hero_image_url)
+    : cards;
+  for (const s of worldCards) {
+    if (category && s.category !== category) continue;
+    if (!matchesText(s)) continue;
+    countryPinCounts.set(s.country, (countryPinCounts.get(s.country) ?? 0) + 1);
+    if (s.lat != null && s.lng != null) {
+      const acc = countryPinCoordSum.get(s.country) ?? { lat: 0, lng: 0, n: 0 };
+      acc.lat += s.lat;
+      acc.lng += s.lng;
+      acc.n += 1;
+      countryPinCoordSum.set(s.country, acc);
+    }
   }
 
   const filtered = cards
@@ -868,6 +916,9 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
           count,
           lat: coord ? coord.lat / coord.n : null,
           lng: coord ? coord.lng / coord.n : null,
+          // Always set — every row that reached cityCounts passed through the
+          // loop above, which stamps this before the count.
+          country: cityCountryOf.get(city) as string,
         };
       })
       .sort((a, b) => b.count - a.count || a.city.localeCompare(b.city))
@@ -882,6 +933,17 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
       .slice(0, 500),
     countries: [...countryCounts.entries()]
       .map(([code, count]) => ({ code, count }))
+      .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code)),
+    country_pins: [...countryPinCounts.entries()]
+      .map(([code, count]) => {
+        const coord = countryPinCoordSum.get(code);
+        return {
+          code,
+          count,
+          lat: coord ? coord.lat / coord.n : null,
+          lng: coord ? coord.lng / coord.n : null,
+        };
+      })
       .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code)),
   };
   return json(payload);

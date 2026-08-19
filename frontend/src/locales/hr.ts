@@ -9969,6 +9969,8 @@ const hr: LocaleMessages = {
     map_title: "Istražite po gradu",
     map_view_all: "Pogledajte svih {count} gradova",
     map_category_note: "Prikazuje se samo: {category}",
+    map_countries_hint: "Jedna oznaka po državi — odaberite jednu za prikaz njezinih gradova.",
+    map_back_to_countries: "Sve države",
   },
 };
 

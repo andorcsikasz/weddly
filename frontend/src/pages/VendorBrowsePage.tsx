@@ -550,13 +550,11 @@ function CatalogueGrid({
   category,
   city,
   country,
-  onCity,
   t,
 }: {
   category: SupplierCategory;
   city: string | null;
   country: string | null;
-  onCity: (city: string | null) => void;
   t: T;
 }) {
   const [page, setPage] = useState<PublicDirectoryPage | null>(null);
@@ -623,38 +621,6 @@ function CatalogueGrid({
           </p>
         )}
       </div>
-
-      {/* Town chips, counted inside the active category so none of them leads
-          to an empty page. */}
-      {(page?.cities.length ?? 0) > 1 && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onCity(null)}
-            className={`rounded-full border px-3 py-1.5 text-[13px] transition ${
-              city === null
-                ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-ink-900"
-                : "border-ink-900/15 text-ink-600 hover:border-ink-900/40 dark:border-paper-50/20 dark:text-umber-200"
-            }`}
-          >
-            {t("vendorBrowse.all_towns")}
-          </button>
-          {(page?.cities ?? []).slice(0, 14).map((c) => (
-            <button
-              key={c.city}
-              type="button"
-              onClick={() => onCity(c.city)}
-              className={`rounded-full border px-3 py-1.5 text-[13px] transition ${
-                city === c.city
-                  ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-ink-900"
-                  : "border-ink-900/15 text-ink-600 hover:border-ink-900/40 dark:border-paper-50/20 dark:text-umber-200"
-              }`}
-            >
-              {c.city} <span className="text-ink-400 dark:text-umber-400">{c.count}</span>
-            </button>
-          ))}
-        </div>
-      )}
 
       {vendors.length === 0 && !loading ? (
         <p className="py-16 text-center text-[15px] text-ink-500 dark:text-umber-300">
@@ -746,7 +712,12 @@ export default function VendorBrowsePage() {
   // to just the filtered country and strand the visitor there).
   const [countries, setCountries] = useState<SupplierCountryCount[]>([]);
   const [cityFacets, setCityFacets] = useState<
-    { city: string; count: number; lat: number | null; lng: number | null }[]
+    { city: string; count: number; lat: number | null; lng: number | null; country: string }[]
+  >([]);
+  // One entry per country, scoped the same way cityFacets is — feeds the map's
+  // collapsed view (see TownMapModal) when no country is picked yet.
+  const [countryPinFacets, setCountryPinFacets] = useState<
+    { code: string; count: number; lat: number | null; lng: number | null }[]
   >([]);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [showPill, setShowPill] = useState(false);
@@ -786,10 +757,16 @@ export default function VendorBrowsePage() {
     supplierApi
       .publicDirectory({ category: activeCategory, country, limit: 1 })
       .then((r) => {
-        if (!cancelled) setCityFacets(r.cities);
+        if (!cancelled) {
+          setCityFacets(r.cities);
+          setCountryPinFacets(r.country_pins);
+        }
       })
       .catch(() => {
-        if (!cancelled) setCityFacets([]);
+        if (!cancelled) {
+          setCityFacets([]);
+          setCountryPinFacets([]);
+        }
       });
     return () => {
       cancelled = true;
@@ -913,6 +890,23 @@ export default function VendorBrowsePage() {
     el?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   }
 
+  // The one place a town gets picked, from the dropdown, the map's town view,
+  // or a map country pin closing back out to "every town" in that country.
+  // Setting the country alongside it is what keeps the map in sync too — it
+  // reads `country` as its own `activeCountry` prop, so a visitor never has to
+  // pick both separately for one place.
+  function selectCity(nextCity: string | null) {
+    const next = new URLSearchParams(params);
+    if (nextCity) {
+      next.set("city", nextCity);
+      const facet = cityFacets.find((c) => c.city === nextCity);
+      if (facet) setCountry(facet.country);
+    } else {
+      next.delete("city");
+    }
+    setParams(next, { replace: false });
+  }
+
   return (
     <div className="min-h-screen bg-paper-50 dark:bg-umber-900">
       <TopBar t={t} />
@@ -969,12 +963,7 @@ export default function VendorBrowsePage() {
             {cityFacets.length > 1 && (
               <CountryPicker
                 value={city}
-                onChange={(nextCity) => {
-                  const next = new URLSearchParams(params);
-                  if (nextCity) next.set("city", nextCity);
-                  else next.delete("city");
-                  setParams(next, { replace: false });
-                }}
+                onChange={selectCity}
                 tone="ink"
                 icon={MapPin}
                 allLabel={t("vendorBrowse.all_towns")}
@@ -1009,13 +998,11 @@ export default function VendorBrowsePage() {
       {mapOpen && (
         <TownMapModal
           towns={cityFacets}
+          countryPins={countryPinFacets}
           category={activeCategory}
-          onSelectCity={(nextCity) => {
-            const next = new URLSearchParams(params);
-            if (nextCity) next.set("city", nextCity);
-            else next.delete("city");
-            setParams(next, { replace: false });
-          }}
+          activeCountry={country}
+          onSelectCity={selectCity}
+          onSelectCountry={setCountry}
           onClose={() => setMapOpen(false)}
         />
       )}
@@ -1035,18 +1022,7 @@ export default function VendorBrowsePage() {
         {/* Body */}
         <main className="mx-auto max-w-7xl px-4 pb-14 pt-6 sm:px-6 lg:px-8">
           {activeCategory ? (
-            <CatalogueGrid
-              category={activeCategory}
-              city={city}
-              country={country}
-              onCity={(nextCity) => {
-                const next = new URLSearchParams(params);
-                if (nextCity) next.set("city", nextCity);
-                else next.delete("city");
-                setParams(next, { replace: false });
-              }}
-              t={t}
-            />
+            <CatalogueGrid category={activeCategory} city={city} country={country} t={t} />
           ) : categories === null ? (
             <div aria-label={t("common.loading")}>
               <LoadingRails />

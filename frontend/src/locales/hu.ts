@@ -10052,6 +10052,8 @@ const hu: LocaleMessages = {
     map_title: "Böngéssz település szerint",
     map_view_all: "Mind a(z) {count} település",
     map_category_note: "Csak: {category}",
+    map_countries_hint: "Egy tű országonként — válassz egyet a települések megtekintéséhez.",
+    map_back_to_countries: "Minden ország",
   },
 };
 

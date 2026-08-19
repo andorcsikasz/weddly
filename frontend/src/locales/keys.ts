@@ -11258,5 +11258,11 @@ export interface LocaleMessages {
      *  the map's scope is stated rather than left to the pin glyphs to imply.
      *  `{category}` is the already-localised category label. */
     map_category_note: string;
+    /** Subtitle shown when the map opens on one pin per country (no country
+     *  picked yet) instead of one per town. */
+    map_countries_hint: string;
+    /** Link that zooms the map back out from one country's towns to the
+     *  continent-wide, one-pin-per-country view. */
+    map_back_to_countries: string;
   };
 }

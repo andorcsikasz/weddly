@@ -10082,6 +10082,8 @@ const es: LocaleMessages = {
     map_title: "Explora por localidad",
     map_view_all: "Ver las {count} localidades",
     map_category_note: "Mostrando solo {category}",
+    map_countries_hint: "Un marcador por país — elige uno para ver sus localidades.",
+    map_back_to_countries: "Todos los países",
   },
 };
 
