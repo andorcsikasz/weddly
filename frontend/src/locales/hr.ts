@@ -9915,6 +9915,8 @@ const hr: LocaleMessages = {
     notFoundTitle: "Ovaj dobavljač nije pronađen",
     notFoundBody: "Oglas se možda promijenio ili je poveznica zastarjela.",
     browseCta: "Pregledajte dobavljače",
+    browseAllCta: "Svi dobavljači",
+    inquiryCta: "Pošaljite upit",
     bandTitle: "Isplanirajte vjenčanje uz Weddly",
     bandBody:
       "Proračun, popis gostiju, raspored sjedenja i dobavljači, u jednom zajedničkom radnom prostoru za oboje.",
@@ -9949,6 +9951,8 @@ const hr: LocaleMessages = {
     all_towns: "Svi gradovi",
     city_filter_clear: "Poništite filtar grada",
     city_filter_label: "Filtrirajte po gradu",
+    town_search_placeholder: "Pretraži gradove…",
+    town_search_empty: "Nema podudaranja za tu pretragu.",
     rail_prev: "Prethodni",
     rail_next: "Sljedeći",
     planner_badge: "Suradnja",
@@ -9964,6 +9968,7 @@ const hr: LocaleMessages = {
     map_button: "Pregled na karti",
     map_title: "Istražite po gradu",
     map_view_all: "Pogledajte svih {count} gradova",
+    map_category_note: "Prikazuje se samo: {category}",
   },
 };
 

@@ -143,17 +143,29 @@ export interface RedactableProfile {
 }
 
 /**
- * Cut an unclaimed profile down to a factual teaser: no third-party photo,
- * imported biography, price or phone.
+ * Cut an IMPORTED profile down to a teaser while it is still unclaimed: one
+ * photo, no bio, no price, no phone.
  *
  * The distinction this enforces is about consent, not about quality. An entry
  * we assembled ourselves from what a business publishes on its own website is
  * untouched. An entry whose bio, photos, price and phone were lifted from the
  * profile that business built on ANOTHER platform is different — they wrote
  * that for someone else's directory, and republishing all of it here before
- * they have accepted anything is not ours to do. Public availability and an
- * og:image tag are not copyright licences, so every unclaimed listing also
- * loses photographs. The factual name, town, category and website remain.
+ * they have accepted anything is not ours to do. One photo and the facts
+ * (name, town, category, website) is enough for a couple to recognise them and
+ * for the business to be findable; the rest waits for the claim.
+ *
+ * Every field here is gated on `profile_imported`, hero_image_url and
+ * gallery_urls included — a 2026-08-12 edit dropped that gate from just those
+ * two, which widened "hide a lifted photo" into "hide every unclaimed
+ * listing's photo, including ones our own hero backfill fetched from the
+ * business's own site." That silently emptied the catalogue's list views
+ * (`assembleDirectoryBase`, both the public browser and the in-app couple
+ * directory) of photos for the ~95% of the directory that was never imported,
+ * while the detail page — a different code path — kept showing them, so a
+ * card and its own "Open" link disagreed about whether the vendor had a
+ * photo. `imported_profile_teaser.e2e.test.ts`'s "untouched" case didn't
+ * assert on the photo fields, which is how it shipped uncaught.
  *
  * Claiming is the acceptance: the moment `vendor_account_id` is set the vendor
  * owns the card and every field returns, including anything they have since
@@ -167,20 +179,20 @@ export function redactUnclaimedImport<T extends RedactableProfile>(
   card: T,
   gate: { profile_imported: boolean; vendor_account_id: number | null },
 ): T {
-  if (gate.vendor_account_id !== null) return card;
+  if (!gate.profile_imported || gate.vendor_account_id !== null) return card;
   return {
     ...card,
     // "" rather than null: the DTO types these as strings on the card shape and
     // callers concatenate them. Empty reads as "no bio" everywhere.
-    ...(gate.profile_imported && card.blurb_hu !== undefined ? { blurb_hu: "" } : {}),
-    ...(gate.profile_imported && card.blurb_en !== undefined ? { blurb_en: "" } : {}),
-    ...(gate.profile_imported && card.contact_phone !== undefined ? { contact_phone: null } : {}),
-    ...(gate.profile_imported && card.contact_phone_alt !== undefined
-      ? { contact_phone_alt: null }
+    ...(card.blurb_hu !== undefined ? { blurb_hu: "" } : {}),
+    ...(card.blurb_en !== undefined ? { blurb_en: "" } : {}),
+    ...(card.contact_phone !== undefined ? { contact_phone: null } : {}),
+    ...(card.contact_phone_alt !== undefined ? { contact_phone_alt: null } : {}),
+    ...(card.price_band !== undefined ? { price_band: null } : {}),
+    // One picture, and specifically the one already chosen as the card face.
+    ...(card.gallery_urls !== undefined
+      ? { gallery_urls: card.hero_image_url ? [card.hero_image_url] : [] }
       : {}),
-    ...(gate.profile_imported && card.price_band !== undefined ? { price_band: null } : {}),
-    ...(card.hero_image_url !== undefined ? { hero_image_url: null } : {}),
-    ...(card.gallery_urls !== undefined ? { gallery_urls: [] } : {}),
   };
 }
 

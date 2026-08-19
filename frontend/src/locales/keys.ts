@@ -11179,6 +11179,12 @@ export interface LocaleMessages {
     notFoundTitle: string;
     notFoundBody: string;
     browseCta: string;
+    /** Back-link above the gallery, into the catalogue this page has no other
+     *  way back to (a shared link or a search result skips it entirely). */
+    browseAllCta: string;
+    /** Anonymous visitors can't actually message a vendor — this routes to
+     *  signup, same destination as every other CTA on the page. */
+    inquiryCta: string;
     bandTitle: string;
     bandBody: string;
     bandCta: string;
@@ -11219,6 +11225,10 @@ export interface LocaleMessages {
     city_filter_clear: string;
     /** Aria-label on the town picker beside the country one. */
     city_filter_label: string;
+    /** Placeholder for the type-to-filter box inside the town picker's list. */
+    town_search_placeholder: string;
+    /** Shown in the town picker when a search matches no town. */
+    town_search_empty: string;
     /** Aria-labels for the desktop scrubbers on each category rail. */
     rail_prev: string;
     rail_next: string;
@@ -11244,5 +11254,9 @@ export interface LocaleMessages {
     /** Top-right link in the modal; clears the town filter. `{count}` is the
      *  number of towns listed, same figure the town chips below it sum to. */
     map_view_all: string;
+    /** Subtitle under the modal heading when a category filter is active, so
+     *  the map's scope is stated rather than left to the pin glyphs to imply.
+     *  `{category}` is the already-localised category label. */
+    map_category_note: string;
   };
 }

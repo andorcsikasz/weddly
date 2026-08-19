@@ -16,7 +16,7 @@ import type {
 import { pickListingBlurb } from "@shared/listing_language";
 import { packagePriceSummary } from "@shared/listing_pricing";
 import { REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
-import { Banknote, ExternalLink, Globe, MapPin, Phone, Star, Users } from "lucide-react";
+import { ArrowLeft, Banknote, ExternalLink, Globe, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ClaimListingModal } from "../components/ClaimListingModal";
@@ -453,6 +453,18 @@ export default function PublicVendorPage() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
           {/* ── MAIN ─────────────────────────────────────────────────────── */}
           <main className="min-w-0">
+            {/* The only way back into the catalogue this page ever offered was
+                the browser's own back button — dead the moment someone arrived
+                via a shared link or a search result. Carries the category
+                forward so "back" lands on a relevant filtered view, not the
+                bare rails. */}
+            <Link
+              to={`/suppliers/browse?category=${detail.category}`}
+              className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 transition hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+            >
+              <ArrowLeft size={15} aria-hidden />
+              {t("publicVendor.browseAllCta")}
+            </Link>
             <VendorGallery
               images={detail.gallery_urls ?? []}
               name={detail.name}
@@ -627,6 +639,17 @@ export default function PublicVendorPage() {
 
           {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
           <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+            {/* Every other CTA on this page is a generic "plan your wedding"
+                pitch; this one is attached to the vendor a visitor is actually
+                looking at. It can't send anything — an anonymous visitor has
+                no thread to write into — so it goes straight to signup rather
+                than opening a form that would 401. */}
+            <Link
+              to="/signup"
+              className="flex w-full items-center justify-center rounded-2xl bg-ink-900 px-5 py-3.5 text-sm font-semibold text-paper-50 shadow-elevated transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+            >
+              {t("publicVendor.inquiryCta")}
+            </Link>
             <PublicContactCard detail={detail} availability={availability} locale={locale} t={t} />
           </aside>
         </div>

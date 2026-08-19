@@ -7,6 +7,7 @@ import type { SupplierCategory } from "@shared/suppliers";
 import { X } from "lucide-react";
 import { Suspense, lazy, useEffect, useId, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
+import { categoryIcon } from "../lib/category_icons";
 import { useT } from "../lib/i18n";
 import type { PlacedTown } from "./TownMap";
 
@@ -36,6 +37,9 @@ export default function TownMapModal({
   const titleId = useId();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  // Only rendered while `category` is set (see the header below); the "" arm
+  // never reaches the screen, it just keeps categoryIcon's string param happy.
+  const CategoryGlyph = categoryIcon(category ?? "");
 
   const sorted = useMemo(
     () => [...towns].sort((a, b) => b.count - a.count || a.city.localeCompare(b.city)),
@@ -86,12 +90,23 @@ export default function TownMapModal({
         className="relative flex h-[min(680px,85vh)] w-[min(880px,92vw)] flex-col overflow-hidden rounded-2xl bg-paper-50 shadow-pop dark:bg-umber-800"
       >
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-          <h2
-            id={titleId}
-            className="font-grotesk text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50"
-          >
-            {t("vendorBrowse.map_title")}
-          </h2>
+          <div>
+            <h2
+              id={titleId}
+              className="font-grotesk text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50"
+            >
+              {t("vendorBrowse.map_title")}
+            </h2>
+            {/* The pins already carry the category's own glyph; this line is
+                what tells a visitor the WHOLE map is scoped to it, rather than
+                leaving them to notice a repeated icon and guess. */}
+            {category && (
+              <p className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-ink-500 dark:text-umber-300">
+                <CategoryGlyph size={13} aria-hidden />
+                {t("vendorBrowse.map_category_note", { category: t(`suppliers.cat.${category}`) })}
+              </p>
+            )}
+          </div>
           <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"

@@ -9998,6 +9998,8 @@ const hu: LocaleMessages = {
     notFoundTitle: "Ez a szolgáltató nem található",
     notFoundBody: "Lehet, hogy a lista megváltozott vagy a link elavult.",
     browseCta: "Szolgáltatók böngészése",
+    browseAllCta: "Összes szolgáltató",
+    inquiryCta: "Megkeresés küldése",
     bandTitle: "Tervezd meg az esküvődet a Weddly-vel",
     bandBody:
       "Költségvetés, vendéglista, ültetés, szolgáltatók, egy közös felületen, mindkettőtöknek.",
@@ -10032,6 +10034,8 @@ const hu: LocaleMessages = {
     all_towns: "Minden település",
     city_filter_clear: "Város szűrő törlése",
     city_filter_label: "Szűrés településre",
+    town_search_placeholder: "Település keresése…",
+    town_search_empty: "Nincs találat erre a keresésre.",
     rail_prev: "Előzőek",
     rail_next: "Következők",
     planner_badge: "Együttműködés",
@@ -10047,6 +10051,7 @@ const hu: LocaleMessages = {
     map_button: "Böngészés térképen",
     map_title: "Böngéssz település szerint",
     map_view_all: "Mind a(z) {count} település",
+    map_category_note: "Csak: {category}",
   },
 };
 

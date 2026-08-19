@@ -10,13 +10,23 @@
 // One button now: it states the current filter, and opens a list. The closed
 // state is the answer, the open state is the question.
 
-import { Check, ChevronDown, Globe, type LucideIcon } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { Check, ChevronDown, Globe, type LucideIcon, Search } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 export interface CountryOption {
   code: string;
   label: string;
   count: number;
+}
+
+/** Accent/case-insensitive match so typing "buda" or "szekesfehervar" (no
+ *  Hungarian diacritics — most people don't bother on a phone keyboard) still
+ *  finds "Budapest" / "Székesfehérvár". */
+function foldForSearch(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 export function CountryPicker({
@@ -27,6 +37,8 @@ export function CountryPicker({
   ariaLabel,
   icon: Icon = Globe,
   tone = "brand",
+  searchPlaceholder,
+  searchEmptyLabel,
 }: {
   /** null = every country. */
   value: string | null;
@@ -45,15 +57,32 @@ export function CountryPicker({
    *  directory uses; `ink` is the flat near-black one the public browse page
    *  runs, where every control on the page is monochrome. */
   tone?: "brand" | "ink";
+  /** Turns on the type-to-filter search box pinned above the list. Omit for a
+   *  short list (countries) where scrolling is already faster than typing; a
+   *  town list can run to 60+ rows, where scrolling one at a time is the
+   *  slower of the two. */
+  searchPlaceholder?: string;
+  /** Shown in place of the list when a search matches nothing. */
+  searchEmptyLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
-  // Which row the keyboard is on. Index 0 is always the "all countries" row.
+  const [query, setQuery] = useState("");
+  // Which row the keyboard is on. Index 0 is always the "all countries" row
+  // (or, once a search narrows the list, the first surviving row).
   const [active, setActive] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const listId = useId();
 
-  const rows: (CountryOption | null)[] = [null, ...options];
+  const folded = foldForSearch(query.trim());
+  const filteredOptions = useMemo(
+    () => (folded ? options.filter((o) => foldForSearch(o.label).includes(folded)) : options),
+    [options, folded],
+  );
+  // The "every X" row stays pinned above the results regardless of the search
+  // text — it's a clear-filter action, not a candidate to search for.
+  const rows: (CountryOption | null)[] = [null, ...filteredOptions];
   const selected = value === null ? null : (options.find((o) => o.code === value) ?? null);
   const selectedIndex =
     value === null
@@ -74,15 +103,25 @@ export function CountryPicker({
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
 
+  // A search that narrows past the previously-active row would otherwise leave
+  // `active` pointing at a row that no longer renders — Enter would then do
+  // nothing, silently.
+  useEffect(() => {
+    if (active >= rows.length) setActive(0);
+  }, [active, rows.length]);
+
   function openMenu() {
+    setQuery("");
     setActive(selectedIndex);
     setOpen(true);
+    if (searchPlaceholder) requestAnimationFrame(() => searchRef.current?.focus());
   }
 
   function choose(index: number) {
     const row = rows[index];
     onChange(row === null || row === undefined ? null : row.code);
     setOpen(false);
+    setQuery("");
     triggerRef.current?.focus();
   }
 
@@ -94,6 +133,12 @@ export function CountryPicker({
       }
       return;
     }
+    // The search box owns its own keys: Space and Home/End have to type a
+    // space and move the text cursor rather than select a row or jump to the
+    // list's ends. Only Escape/ArrowUp/ArrowDown/Enter are shared with the
+    // list below, matching the combobox pattern (arrow keys browse results
+    // while the caret stays in the field).
+    const typing = ev.target instanceof HTMLInputElement;
     if (ev.key === "Escape") {
       ev.preventDefault();
       setOpen(false);
@@ -104,13 +149,22 @@ export function CountryPicker({
     } else if (ev.key === "ArrowUp") {
       ev.preventDefault();
       setActive((i) => (i - 1 + rows.length) % rows.length);
-    } else if (ev.key === "Home") {
+    } else if (ev.key === "Home" && !typing) {
       ev.preventDefault();
       setActive(0);
-    } else if (ev.key === "End") {
+    } else if (ev.key === "End" && !typing) {
       ev.preventDefault();
       setActive(rows.length - 1);
-    } else if (ev.key === "Enter" || ev.key === " ") {
+    } else if (ev.key === "Enter") {
+      ev.preventDefault();
+      // A search with no surviving row must not fall through to `active`'s
+      // stale value — that was still 0 (the pinned "every X" row) from before
+      // the last keystroke, so Enter on a typo silently CLEARED the filter
+      // instead of doing nothing. Leave the menu open so the search is still
+      // there to fix.
+      if (typing && folded && filteredOptions.length === 0) return;
+      choose(active);
+    } else if (ev.key === " " && !typing) {
       ev.preventDefault();
       choose(active);
     }
@@ -154,42 +208,82 @@ export function CountryPicker({
           count column, and the trigger has to render the selected count too.
           Keyboard and AT semantics are hand-wired above to match. */}
       {open && (
-        <ul
-          id={listId}
-          role="listbox"
-          aria-label={ariaLabel}
-          className="absolute left-0 z-40 mt-2 max-h-80 w-64 animate-fade-in overflow-y-auto rounded-2xl border border-paper-300 bg-paper-50 p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
-        >
-          {rows.map((row, i) => {
-            const isSelected = row === null ? value === null : value === row.code;
-            return (
-              <li key={row?.code ?? "__all"}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  onClick={() => choose(i)}
-                  onMouseEnter={() => setActive(i)}
-                  className={`flex min-h-tap w-full items-center gap-3 rounded-xl px-3 text-left text-sm transition ${
-                    i === active
-                      ? "bg-paper-200 dark:bg-umber-700"
-                      : "hover:bg-paper-100 dark:hover:bg-umber-700/60"
-                  } ${isSelected ? "font-medium text-ink-900 dark:text-paper-50" : "text-ink-700 dark:text-paper-100"}`}
-                >
-                  <span className="flex w-4 shrink-0 justify-center">
-                    {isSelected && <Check size={14} strokeWidth={3} aria-hidden />}
-                  </span>
-                  <span className="flex-1 truncate">{row === null ? allLabel : row.label}</span>
-                  {row !== null && (
-                    <span className="shrink-0 text-xs tabular-nums text-ink-400 dark:text-umber-300">
-                      {row.count}
+        <div className="absolute left-0 z-40 mt-2 w-64 animate-fade-in overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800">
+          {searchPlaceholder && (
+            <div className="border-b border-paper-200 p-2 dark:border-umber-700">
+              <div className="relative">
+                <Search
+                  size={14}
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+                  aria-hidden
+                />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  value={query}
+                  onChange={(ev) => {
+                    const next = ev.target.value;
+                    setQuery(next);
+                    // Typing narrows toward a specific town, so Enter should
+                    // pick the first match rather than "every town" — the row
+                    // that's always pinned at index 0.
+                    const nextFiltered = next.trim()
+                      ? options.filter((o) =>
+                          foldForSearch(o.label).includes(foldForSearch(next.trim())),
+                        )
+                      : options;
+                    setActive(nextFiltered.length > 0 ? 1 : 0);
+                  }}
+                  placeholder={searchPlaceholder}
+                  aria-label={searchPlaceholder}
+                  aria-controls={listId}
+                  className="min-h-tap w-full rounded-lg border border-paper-300 bg-paper-50 py-2 pl-8 pr-2 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-ink-300 dark:border-umber-600 dark:bg-umber-900 dark:text-paper-50 dark:placeholder:text-umber-400"
+                />
+              </div>
+            </div>
+          )}
+          <ul
+            id={listId}
+            role="listbox"
+            aria-label={ariaLabel}
+            className="max-h-72 overflow-y-auto p-1"
+          >
+            {rows.map((row, i) => {
+              const isSelected = row === null ? value === null : value === row.code;
+              return (
+                <li key={row?.code ?? "__all"}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => choose(i)}
+                    onMouseEnter={() => setActive(i)}
+                    className={`flex min-h-tap w-full items-center gap-3 rounded-xl px-3 text-left text-sm transition ${
+                      i === active
+                        ? "bg-paper-200 dark:bg-umber-700"
+                        : "hover:bg-paper-100 dark:hover:bg-umber-700/60"
+                    } ${isSelected ? "font-medium text-ink-900 dark:text-paper-50" : "text-ink-700 dark:text-paper-100"}`}
+                  >
+                    <span className="flex w-4 shrink-0 justify-center">
+                      {isSelected && <Check size={14} strokeWidth={3} aria-hidden />}
                     </span>
-                  )}
-                </button>
+                    <span className="flex-1 truncate">{row === null ? allLabel : row.label}</span>
+                    {row !== null && (
+                      <span className="shrink-0 text-xs tabular-nums text-ink-400 dark:text-umber-300">
+                        {row.count}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+            {searchPlaceholder && folded && filteredOptions.length === 0 && (
+              <li className="px-3 py-6 text-center text-sm text-ink-400 dark:text-umber-400">
+                {searchEmptyLabel ?? null}
               </li>
-            );
-          })}
-        </ul>
+            )}
+          </ul>
+        </div>
       )}
     </div>
   );

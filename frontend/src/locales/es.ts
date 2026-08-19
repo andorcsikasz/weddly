@@ -10028,6 +10028,8 @@ const es: LocaleMessages = {
     notFoundTitle: "No se ha podido encontrar este proveedor",
     notFoundBody: "Puede que la ficha haya cambiado o que el enlace esté desactualizado.",
     browseCta: "Explorar proveedores",
+    browseAllCta: "Ver todos los proveedores",
+    inquiryCta: "Enviar una consulta",
     bandTitle: "Organiza tu boda con Weddly",
     bandBody:
       "Presupuesto, lista de invitados, distribución de mesas y proveedores, en un espacio de trabajo compartido para los dos.",
@@ -10062,6 +10064,8 @@ const es: LocaleMessages = {
     all_towns: "Todas las localidades",
     city_filter_clear: "Quitar el filtro de ciudad",
     city_filter_label: "Filtrar por localidad",
+    town_search_placeholder: "Buscar localidad…",
+    town_search_empty: "No hay localidades que coincidan.",
     rail_prev: "Ver anteriores",
     rail_next: "Ver siguientes",
     planner_badge: "Colaboración",
@@ -10077,6 +10081,7 @@ const es: LocaleMessages = {
     map_button: "Explorar en el mapa",
     map_title: "Explora por localidad",
     map_view_all: "Ver las {count} localidades",
+    map_category_note: "Mostrando solo {category}",
   },
 };
 

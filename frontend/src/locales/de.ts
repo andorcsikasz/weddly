@@ -10082,6 +10082,8 @@ const de: LocaleMessages = {
     notFoundTitle: "Dieser Dienstleister wurde nicht gefunden",
     notFoundBody: "Der Eintrag hat sich vielleicht geändert oder der Link ist veraltet.",
     browseCta: "Dienstleister ansehen",
+    browseAllCta: "Alle Dienstleister ansehen",
+    inquiryCta: "Anfrage senden",
     bandTitle: "Planen Sie Ihre Hochzeit mit Weddly",
     bandBody:
       "Budget, Gästeliste, Sitzplan und Dienstleister, in einem gemeinsamen Arbeitsbereich für Sie beide.",
@@ -10116,6 +10118,8 @@ const de: LocaleMessages = {
     all_towns: "Alle Orte",
     city_filter_clear: "Ortsfilter zurücksetzen",
     city_filter_label: "Nach Ort filtern",
+    town_search_placeholder: "Ort suchen…",
+    town_search_empty: "Keine Orte gefunden.",
     rail_prev: "Zurück",
     rail_next: "Weiter",
     planner_badge: "Zusammenarbeit",
@@ -10131,6 +10135,7 @@ const de: LocaleMessages = {
     map_button: "Auf der Karte durchsuchen",
     map_title: "Nach Ort entdecken",
     map_view_all: "Alle {count} Orte ansehen",
+    map_category_note: "Nur {category} wird angezeigt",
   },
 };
 

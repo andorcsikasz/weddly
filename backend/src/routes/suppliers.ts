@@ -796,7 +796,18 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
   );
   // Public browse: no session, so no correspondence and no numbers. The phone a
   // visitor may see here is the masked teaser on the detail page, nothing else.
-  const cards = base.map((b) => withVotes(b, scores, null, completeIds, EMPTY_IDS));
+  //
+  // Photos-only, same policy the showcase teaser already holds (every
+  // PublicShowcaseVendor carries a real hero_image_url) — this endpoint just
+  // didn't apply it. A card with the fallback glyph looks abandoned rather
+  // than curated at this page's scale (the catalogue is hundreds of rows, most
+  // imported from public registries with no photo of their own), and a
+  // visitor comparing vendors reads a blank tile as "nothing here" long before
+  // they'd read it as "hasn't uploaded one yet". The row still exists — a
+  // vendor who adds a photo appears on their next visit with no other change.
+  const cards = base
+    .filter((b) => b.hero_image_url)
+    .map((b) => withVotes(b, scores, null, completeIds, EMPTY_IDS));
 
   // Free-text match over the fields a visitor would type: the business name and
   // the town. Folded so "Fotó" finds "foto" and vice versa.
@@ -833,6 +844,7 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
   }
   const countryCounts = new Map<string, number>();
   for (const s of assembleDirectoryBase({ category: null, country: null })) {
+    if (!s.hero_image_url) continue;
     countryCounts.set(s.country, (countryCounts.get(s.country) ?? 0) + 1);
   }
 
@@ -859,7 +871,15 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
         };
       })
       .sort((a, b) => b.count - a.count || a.city.localeCompare(b.city))
-      .slice(0, 60),
+      // Was capped at 60, which silently dropped every smaller town from the
+      // town picker AND the map — findable only by typing its name straight
+      // into the ?city= URL. That cap made sense while the picker was a plain
+      // scrollable list; now that it's searchable, a town with a couple of
+      // vendors deserves to be selectable too. ~750 distinct towns exist across
+      // the whole directory at time of writing, so this comfortably covers the
+      // real (already filtered, per-category/-country) list without being
+      // unbounded against a pathological future.
+      .slice(0, 500),
     countries: [...countryCounts.entries()]
       .map(([code, count]) => ({ code, count }))
       .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code)),

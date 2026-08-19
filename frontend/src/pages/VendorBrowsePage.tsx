@@ -36,11 +36,15 @@ import {
   ChevronRight,
   Map as MapIcon,
   MapPin,
+  Moon,
+  Sun,
+  UserPlus,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CountryPicker } from "../components/CountryPicker";
+import { LocaleSwitcher } from "../components/LocaleSwitcher";
 import TownMapModal from "../components/TownMapModal";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { Wordmark } from "../components/Wordmark";
@@ -49,6 +53,7 @@ import { CATEGORY_ICON } from "../lib/category_icons";
 import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+import { useTheme } from "../lib/useTheme";
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -81,16 +86,36 @@ function scrollBehavior(): ScrollBehavior {
 }
 
 function TopBar({ t }: { t: T }) {
+  const [theme, setTheme] = useTheme("light");
+  const iconButtonClass =
+    "inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-ink-900/[0.06] hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 sm:h-9 sm:w-9 dark:text-paper-200 dark:hover:bg-paper-50/10 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900";
+
   return (
     <header className="sticky top-0 z-30 border-b border-ink-900/10 bg-paper-50/80 backdrop-blur-xl dark:border-paper-50/10 dark:bg-umber-900/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link to="/" aria-label="Weddly" className="inline-flex items-center">
           <Wordmark size="sm" className="text-ink-900 dark:text-paper-50" />
         </Link>
-        {/* Two CTAs share the right cluster: couples sign up (the black pill),
-            vendors get listed (a quiet text link that only fills on hover). The
-            vendor link is sm+ only so the phone header keeps one action. */}
+        {/* Global display controls lead the right cluster, followed by the two
+            CTAs: couples sign up (the black pill), vendors get listed (a quiet
+            text link that only fills on hover). The vendor link is sm+ only so
+            the phone header keeps one action. */}
         <div className="flex items-center gap-1 sm:gap-2">
+          <LocaleSwitcher buttonClassName={iconButtonClass} />
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className={iconButtonClass}
+            aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+            aria-pressed={theme === "dark"}
+            title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+          >
+            {theme === "dark" ? (
+              <Sun size={18} aria-hidden="true" />
+            ) : (
+              <Moon size={18} aria-hidden="true" />
+            )}
+          </button>
           <Link
             to="/suppliers/signup"
             className="hidden rounded-full px-4 py-2.5 text-sm font-medium tracking-tight text-ink-600 transition hover:bg-ink-900/[0.06] hover:text-ink-900 sm:inline-flex dark:text-paper-200 dark:hover:bg-paper-50/10 dark:hover:text-paper-50"
@@ -99,9 +124,12 @@ function TopBar({ t }: { t: T }) {
           </Link>
           <Link
             to="/signup"
-            className="inline-flex items-center rounded-full bg-ink-900 px-5 py-2.5 text-sm font-semibold tracking-tight text-paper-50 transition hover:bg-ink-950 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink-900 text-sm font-semibold tracking-tight text-paper-50 transition hover:bg-ink-950 sm:h-auto sm:w-auto sm:px-5 sm:py-2.5 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
+            aria-label={t("vendorBrowse.cta_couple")}
+            title={t("vendorBrowse.cta_couple")}
           >
-            {t("vendorBrowse.cta_couple")}
+            <UserPlus size={18} aria-hidden="true" className="sm:hidden" />
+            <span className="hidden sm:inline">{t("vendorBrowse.cta_couple")}</span>
           </Link>
         </div>
       </div>
@@ -642,7 +670,7 @@ function CatalogueGrid({
               city={v.city}
               category={v.category}
               categoryLabel={t(`suppliers.cat.${v.category}`)}
-              hero={v.hero_image_url ?? v.gallery_urls?.[0] ?? null}
+              hero={v.hero_image_url}
               verified={v.vendor_account_id !== null}
               listingComplete={v.listing_complete}
             />
@@ -951,6 +979,8 @@ export default function VendorBrowsePage() {
                 icon={MapPin}
                 allLabel={t("vendorBrowse.all_towns")}
                 ariaLabel={t("vendorBrowse.city_filter_label")}
+                searchPlaceholder={t("vendorBrowse.town_search_placeholder")}
+                searchEmptyLabel={t("vendorBrowse.town_search_empty")}
                 options={cityFacets.map((c) => ({
                   code: c.city,
                   label: c.city,
@@ -1051,11 +1081,11 @@ export default function VendorBrowsePage() {
           bleed and near-black — after a page of light photo rows, the one thing
           that can stop the scroll is the page changing colour entirely. */}
       <section ref={closingRef} className="bg-ink-950 px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="mx-auto max-w-[17ch] font-grotesk text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-paper-50">
+        <div className="mx-auto max-w-5xl text-center">
+          <h2 className="mx-auto font-grotesk text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-paper-50 lg:whitespace-nowrap">
             {t("vendorBrowse.convert_title")}
           </h2>
-          <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-paper-200/70">
+          <p className="mx-auto mt-5 max-w-2xl whitespace-pre-line text-[15px] leading-relaxed text-paper-200/70">
             {t("vendorBrowse.convert_sub")}
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-5 sm:flex-row">

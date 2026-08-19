@@ -9930,6 +9930,8 @@ const en: LocaleMessages = {
     notFoundTitle: "This vendor could not be found",
     notFoundBody: "The listing may have changed or the link is out of date.",
     browseCta: "Browse vendors",
+    browseAllCta: "Browse all vendors",
+    inquiryCta: "Send an inquiry",
     bandTitle: "Plan your wedding with Weddly",
     bandBody: "Budget, guest list, seating and vendors, in one shared workspace for both of you.",
     bandCta: "Get started",
@@ -9963,6 +9965,8 @@ const en: LocaleMessages = {
     all_towns: "Every town",
     city_filter_clear: "Clear the city filter",
     city_filter_label: "Filter by town",
+    town_search_placeholder: "Search towns…",
+    town_search_empty: "No towns match that search.",
     rail_prev: "Show previous",
     rail_next: "Show next",
     planner_badge: "Collaboration",
@@ -9978,6 +9982,7 @@ const en: LocaleMessages = {
     map_button: "Browse by map",
     map_title: "Explore by town",
     map_view_all: "View all {count} towns",
+    map_category_note: "Showing {category} only",
   },
 };
 

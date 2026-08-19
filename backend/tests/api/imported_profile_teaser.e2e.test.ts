@@ -32,16 +32,18 @@ function listingRow(id: string): {
   contact_phone: string | null;
   blurb_hu: string | null;
   price_band: number | null;
+  hero_image_url: string | null;
 } {
   return db
     .prepare(
-      "SELECT profile_imported, contact_phone, blurb_hu, price_band FROM listings WHERE id = ?",
+      "SELECT profile_imported, contact_phone, blurb_hu, price_band, hero_image_url FROM listings WHERE id = ?",
     )
     .get(id) as {
     profile_imported: number;
     contact_phone: string | null;
     blurb_hu: string | null;
     price_band: number | null;
+    hero_image_url: string | null;
   };
 }
 
@@ -124,6 +126,14 @@ describe("imported profiles are redacted until claimed", () => {
 
   test("an entry we researched ourselves is untouched", async () => {
     wipeAll();
+    // Hero backfill is a boot sweep against the open internet (see the seed
+    // test above) — it never populates hero_image_url in this environment, so
+    // this listing needs one stamped by hand to test the redaction rather
+    // than an absence the test DB would produce either way.
+    db.prepare("UPDATE listings SET hero_image_url = ? WHERE id = ?").run(
+      "/uploads/listings/24frames/hero.jpg",
+      OWN_RESEARCH_ID,
+    );
     const { token } = await bootstrapCouple("teaser-control@weddly.test");
     expect(listingRow(OWN_RESEARCH_ID).profile_imported).toBe(0);
     const card = await cardFor(OWN_RESEARCH_ID, token);
@@ -134,6 +144,11 @@ describe("imported profiles are redacted until claimed", () => {
     // gate" is now asked of the flag the card kept.
     expect(card?.has_contact_phone).toBe(true);
     expect(card?.price_band).not.toBeNull();
+    // Regression guard for the 2026-08-12 bug: hero_image_url/gallery_urls
+    // were briefly redacted for EVERY unclaimed listing regardless of
+    // profile_imported, which silently emptied the catalogue of photos for
+    // the vast majority of the directory that was never imported.
+    expect(card?.hero_image_url).toBeTruthy();
   });
 
   test("claiming the listing puts everything back", async () => {
