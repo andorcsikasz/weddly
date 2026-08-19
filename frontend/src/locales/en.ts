@@ -9951,7 +9951,7 @@ const en: LocaleMessages = {
     subtitle:
       "Every vendor on Weddly, free to browse. Pick a category for the whole list, filter by town, and open any profile for photos, prices and reviews.",
     couples_stat: "{count} couples are planning their wedding on Weddly right now",
-    cta_couple: "Start planning free",
+    cta_couple: "Start planning",
     cta_vendor: "Join as vendor",
     empty: "The directory is filling up, check back soon.",
     convert_title: "Plan the whole wedding here",

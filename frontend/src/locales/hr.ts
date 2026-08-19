@@ -9937,7 +9937,7 @@ const hr: LocaleMessages = {
     subtitle:
       "Svi dobavljači na Weddlyju, slobodni za pregledavanje. Odaberite kategoriju za cijeli popis, filtrirajte po gradu i otvorite bilo koji profil za fotografije, cijene i recenzije.",
     couples_stat: "{count} parova upravo planira vjenčanje na Weddlyju",
-    cta_couple: "Počnite planirati besplatno",
+    cta_couple: "Počnite planirati",
     cta_vendor: "Pridružite se kao dobavljač",
     empty: "Katalog se popunjava, navratite uskoro.",
     convert_title: "Isplanirajte cijelo vjenčanje ovdje",

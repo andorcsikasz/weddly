@@ -10104,7 +10104,7 @@ const de: LocaleMessages = {
     subtitle:
       "Alle Dienstleister auf Weddly, frei zum Stöbern. Wählen Sie eine Kategorie für die ganze Liste, filtern Sie nach Ort und öffnen Sie ein Profil für Fotos, Preise und Bewertungen.",
     couples_stat: "{count} Paare planen gerade ihre Hochzeit auf Weddly",
-    cta_couple: "Kostenlos planen",
+    cta_couple: "Planung starten",
     cta_vendor: "Als Dienstleister mitmachen",
     empty: "Der Katalog füllt sich gerade, schauen Sie bald wieder vorbei.",
     convert_title: "Planen Sie hier die ganze Hochzeit",
