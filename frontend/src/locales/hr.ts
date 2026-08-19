@@ -9965,7 +9965,7 @@ const hr: LocaleMessages = {
     nearby_body:
       "U samom gradu upisano je tek nekoliko dobavljača, pa je ovdje sve unutar sat vremena vožnje. Udaljenosti se mjere od središta ({city}).",
     distance_km: "{km} km",
-    map_button: "Pregled na karti",
+    map_button: "Karta",
     map_title: "Istražite po gradu",
     map_view_all: "Pogledajte svih {count} gradova",
     map_category_note: "Prikazuje se samo: {category}",

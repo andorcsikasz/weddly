@@ -10132,7 +10132,7 @@ const de: LocaleMessages = {
     nearby_body:
       "Im Ort selbst sind nur wenige Dienstleister eingetragen, hier ist deshalb alles im Umkreis einer Autostunde. Die Entfernungen sind ab {city} gemessen.",
     distance_km: "{km} km",
-    map_button: "Auf der Karte durchsuchen",
+    map_button: "Karte",
     map_title: "Nach Ort entdecken",
     map_view_all: "Alle {count} Orte ansehen",
     map_category_note: "Nur {category} wird angezeigt",

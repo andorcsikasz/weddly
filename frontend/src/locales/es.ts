@@ -10078,7 +10078,7 @@ const es: LocaleMessages = {
     nearby_body:
       "En la ciudad hay pocos proveedores, así que aquí está todo lo que queda a menos de una hora. Las distancias se miden desde {city}.",
     distance_km: "{km} km",
-    map_button: "Explorar en el mapa",
+    map_button: "Mapa",
     map_title: "Explora por localidad",
     map_view_all: "Ver las {count} localidades",
     map_category_note: "Mostrando solo {category}",
