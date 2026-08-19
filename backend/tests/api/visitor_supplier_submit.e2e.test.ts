@@ -159,6 +159,60 @@ describe("verified visitor suggests a supplier", () => {
     db.prepare("DELETE FROM listings WHERE id = 'vvexisting1'").run();
   });
 
+  test("a typo'd/variant name in the same city+category still points to the existing listing", async () => {
+    const { deviceToken } = await verifiedVisitor("vsub5@example.com");
+    const ts = Date.now();
+    // Mirrors the real bug (community supplier #15, 2026-08-19): a curated
+    // listing named "X–Y-kastély Faluváros" already live, and a self-submitter
+    // typed "X Y Kastely" (no dash, no diacritics, no town suffix) as new.
+    // Fictitious name/city so it can't collide with the real seeded directory.
+    db.prepare(
+      `INSERT INTO listings
+         (id, source, category, name, city, website, blurb_hu, blurb_en, status, content_hash, created_at, updated_at)
+       VALUES ('vvexisting2', 'curated', 'venue', 'VVSup–Teszt-kastély Faluváros', 'Faluváros',
+               '', '', '', 'active', 'h', ?, ?)`,
+    ).run(ts, ts);
+
+    const dup = await req<{ detail?: { code?: string; existing?: { id: string } } }>(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        name: "VVSup Teszt Kastely",
+        address: "Kossuth Lajos utca 2",
+        city: "Faluváros",
+        contact_email: "dup5@vvsup.example.com",
+      },
+      { headers: { "X-Visitor-Token": deviceToken } },
+    );
+    expect(dup.status).toBe(409);
+    expect(dup.data.detail?.code).toBe("already_listed");
+    expect(dup.data.detail?.existing?.id).toBe("vvexisting2");
+
+    // A same-name venue in a DIFFERENT town must not be blocked — the loose
+    // match is gated on city so two unrelated "X Kastély" venues never collide.
+    const notDup = await req<{ pending: boolean }>(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        name: "VVSup Teszt Kastely",
+        address: "Fő utca 1",
+        city: "Sárvár",
+        contact_email: "notdup5@vvsup.example.com",
+      },
+      { headers: { "X-Visitor-Token": deviceToken } },
+    );
+    expect(notDup.status).toBe(201);
+    expect(notDup.data.pending).toBe(true);
+
+    db.prepare("DELETE FROM listings WHERE id = 'vvexisting2'").run();
+    db.prepare(
+      "DELETE FROM listings WHERE source = 'community' AND name = 'VVSup Teszt Kastely'",
+    ).run();
+    db.prepare("DELETE FROM community_suppliers WHERE name = 'VVSup Teszt Kastely'").run();
+  });
+
   test("the vendor's own email is required of a visitor", async () => {
     const { deviceToken } = await verifiedVisitor("vsub4@example.com");
     const res = await req<{ detail?: { code?: string } }>(

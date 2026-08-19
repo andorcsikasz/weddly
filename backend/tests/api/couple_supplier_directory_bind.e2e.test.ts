@@ -93,6 +93,43 @@ describe("couple supplier ↔ directory binding", () => {
       expect(r.data.detail?.existing?.id).toBe("bindtest-2");
     });
 
+    test("a typo'd/variant name in the same city is still refused, not published as a duplicate", async () => {
+      // Mirrors the real bug (community supplier #15, 2026-08-19): a couple's
+      // DIY card named "Teleki Tisza Kastély" got published as a brand new
+      // listing while "Teleki–Tisza-kastély Nagykovácsi" was already live at
+      // the same address — an en-dash and the town's own name baked into the
+      // listing's title were enough to break exact-fold equality. Same shape
+      // here: dash + trailing town word dropped, diacritics dropped.
+      insertListing("bindtest-9", "Próba–Kastély Zebegény");
+      const { token } = await bootstrapCouple("bind-typo@weddly.test");
+
+      const r = await req<ErrorBody>(
+        "POST",
+        "/api/couple-suppliers",
+        { name: "Proba Kastely", category: "venue", city: "Zebegény" },
+        { token },
+      );
+      expect(r.status).toBe(409);
+      expect(r.data.detail?.code).toBe("already_listed");
+      expect(r.data.detail?.existing?.id).toBe("bindtest-9");
+    });
+
+    test("the same variant name in a DIFFERENT city is not blocked", async () => {
+      // The loose match is gated on the couple's own city — two differently
+      // owned "X Kastély" venues in two different towns must never collide.
+      insertListing("bindtest-10", "Próba–Kastély Zebegény");
+      const { token } = await bootstrapCouple("bind-typo-other-city@weddly.test");
+
+      const r = await req<{ supplier: SupplierDTO; listing_id: string | null }>(
+        "POST",
+        "/api/couple-suppliers",
+        { name: "Proba Kastely", category: "venue", city: "Sárvár" },
+        { token },
+      );
+      expect(r.status).toBe(201);
+      expect(r.data.supplier.listing_id).not.toBe("bindtest-10");
+    });
+
     test("a mis-categorised exact name is refused too — it is the same place, filed wrong", async () => {
       insertListing("bindtest-3", TWIN_NAME);
       const { token } = await bootstrapCouple("bind-miscat@weddly.test");

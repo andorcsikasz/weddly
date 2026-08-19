@@ -186,7 +186,9 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   // different vendor" — so what the guard actually stops is the SILENT duplicate,
   // never a couple who looked at the listing and said no.
   const confirmedDifferent = body.confirm_not_listed === true;
-  const twin = confirmedDifferent ? null : findDirectoryTwinByName(parsed.name, parsed.category);
+  const twin = confirmedDifferent
+    ? null
+    : findDirectoryTwinByName(parsed.name, parsed.category, { city: parsed.city });
   if (twin) {
     throw new HttpError(409, `Already on Weddly: ${twin.name}`, {
       code: "already_listed",

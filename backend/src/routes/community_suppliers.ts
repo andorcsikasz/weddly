@@ -238,6 +238,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     website: input.website,
     name: input.name,
     city: input.city,
+    category: input.category,
   });
   if (alreadyListed) {
     throw new HttpError(409, `Already on Weddly: ${alreadyListed.name}`, {

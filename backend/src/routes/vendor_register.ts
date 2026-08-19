@@ -229,6 +229,7 @@ function assertNoUnclaimedDirectoryTwin(input: VendorProvisionInput): void {
     website: input.website ?? "",
     name: input.businessName,
     city: input.city ?? "",
+    category: input.category,
   });
   if (!match) return;
   if (match.vendor_account_id !== null) {

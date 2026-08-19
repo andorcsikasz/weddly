@@ -52,7 +52,7 @@ interface Row {
  *  would be nagging about something the couple settled. */
 function directoryMatchFor(r: Row): CoupleSupplierDirectoryMatch | null {
   if (r.listing_id || r.not_listed_confirmed === 1) return null;
-  return findDirectoryTwinByName(r.name, r.category as SupplierCategory);
+  return findDirectoryTwinByName(r.name, r.category as SupplierCategory, { city: r.city });
 }
 
 function toDto(r: Row): CoupleSupplier {
@@ -439,6 +439,7 @@ export function publishAsCommunityListing(
   // business is one listing no matter how many couples booked it.
   const queued = findDirectoryTwinByName(row.name, row.category as SupplierCategory, {
     includePending: true,
+    city: row.city,
   });
   if (queued) {
     bindListing(row.id, coupleId, queued.id);

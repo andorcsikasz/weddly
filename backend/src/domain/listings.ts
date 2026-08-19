@@ -43,6 +43,7 @@ import {
   parseSpokenLanguages,
   SUPPLIER_TWIN_MIN_CHARS,
   type SupplierCategory,
+  TWIN_LOOSE_MIN_CHARS,
   type VenueStyle,
   VENUE_STYLES,
 } from "@shared/suppliers";
@@ -1416,12 +1417,25 @@ function hostnameOf(website: string): string | null {
  *  the submitter that their suggestion duplicates an existing listing — curated,
  *  claimed, or an already-approved community entry — so we point them to it
  *  instead of queuing a dupe. Website hostname is the strong signal (prefer a
- *  claimed/curated hit); an exact name+city match is the fallback. Only 'active'
- *  (publicly visible) rows count — a pending entry isn't "on the site" yet. */
+ *  claimed/curated hit); an exact name+city match is next; a FOLDED name in the
+ *  same city/category is the last, loosest check. Only 'active' (publicly
+ *  visible) rows count — a pending entry isn't "on the site" yet.
+ *
+ *  The folded fallback exists because the exact check missed a real one: a
+ *  vendor self-submitted "Teleki Tisza Kastély" while "Teleki–Tisza-kastély
+ *  Nagykovácsi" was already live at the same address — same business, an
+ *  en-dash and the town name were the only difference, and `LOWER(name) =
+ *  LOWER(?)` doesn't see past that (community supplier #15, 2026-08-19). Same
+ *  folded-name + loose prefix/contains rule `findSupplierTwins` already uses
+ *  as a client-side "looks like a match" hint, but gated on the SAME CITY
+ *  (not just category) since this one blocks the submission outright rather
+ *  than merely suggesting — two differently-owned "X Kastély" venues in two
+ *  different towns must never collide here. */
 export function findVisibleDirectoryMatch(opts: {
   website: string;
   name: string;
   city: string;
+  category?: SupplierCategory | null;
 }): DirectoryMatch | null {
   const host = hostnameOf(opts.website);
   if (host) {
@@ -1447,6 +1461,32 @@ export function findVisibleDirectoryMatch(opts: {
       )
       .get(name, city) as DirectoryMatch | undefined;
     if (byNameCity) return byNameCity;
+
+    const folded = foldSupplierName(name);
+    if (folded.length >= TWIN_LOOSE_MIN_CHARS) {
+      const candidates = (
+        opts.category
+          ? db
+              .prepare(
+                `SELECT id, name, city, source, vendor_account_id FROM listings
+                  WHERE status = 'active' AND category = ? AND LOWER(city) = LOWER(?)`,
+              )
+              .all(opts.category, city)
+          : db
+              .prepare(
+                `SELECT id, name, city, source, vendor_account_id FROM listings
+                  WHERE status = 'active' AND LOWER(city) = LOWER(?)`,
+              )
+              .all(city)
+      ) as DirectoryMatch[];
+      for (const row of candidates) {
+        const c = foldSupplierName(row.name);
+        if (!c) continue;
+        if (c !== folded && !c.startsWith(folded) && !folded.startsWith(c)) continue;
+        if (row.source === "curated" && !isCuratedPubliclyVisible(row.id)) continue;
+        return row;
+      }
+    }
   }
   return null;
 }
@@ -1464,11 +1504,23 @@ export function findVisibleDirectoryMatch(opts: {
  *
  *  Same-category first: a venue is compared against venues. A cross-category
  *  exact name match still counts, because a couple filing "Hertelendy Kastély"
- *  under Catering has mis-categorised the place, not found a second one. */
+ *  under Catering has mis-categorised the place, not found a second one.
+ *
+ *  When `city` is given, a THIRD tier runs between the two above: a folded
+ *  loose prefix/contains match within the same city. Exact-fold equality alone
+ *  missed a real duplicate — a couple's DIY card named "Teleki Tisza Kastély"
+ *  published as a brand new listing while "Teleki–Tisza-kastély Nagykovácsi"
+ *  was already live at the same address, because an en-dash and the town's own
+ *  name in the listing's title were enough to break `===` (community supplier
+ *  #15, 2026-08-19). Same rule `findSupplierTwins` already uses client-side as
+ *  a "looks like a match" hint, gated on the couple's own city so two
+ *  differently-owned "X Kastély" venues in two different towns never collide
+ *  here — a hard requirement this backstop didn't need before, since it only
+ *  ever did exact matches. */
 export function findDirectoryTwinByName(
   name: string,
   category: SupplierCategory,
-  opts: { includePending?: boolean } = {},
+  opts: { includePending?: boolean; city?: string | null } = {},
 ): DirectoryTwin | null {
   const folded = foldSupplierName(name);
   if (folded.length < SUPPLIER_TWIN_MIN_CHARS) return null;
@@ -1489,6 +1541,17 @@ export function findDirectoryTwinByName(
     .all(...statuses, category) as DirectoryTwinRow[];
   const hit = inCategory.find((r) => foldSupplierName(r.name) === folded);
   if (hit) return visibleTwin(hit);
+
+  const city = opts.city?.trim();
+  if (city && folded.length >= TWIN_LOOSE_MIN_CHARS) {
+    const sameCity = inCategory.filter((r) => r.city?.trim().toLowerCase() === city.toLowerCase());
+    for (const row of sameCity) {
+      const c = foldSupplierName(row.name);
+      if (!c || (c !== folded && !c.startsWith(folded) && !folded.startsWith(c))) continue;
+      const twin = visibleTwin(row);
+      if (twin) return twin;
+    }
+  }
 
   // Mis-categorised: plain lower-case equality across every category. Cheaper
   // than folding the whole table, and a mis-filed name is normally typed the

@@ -826,8 +826,10 @@ export function cityDisplayName(city: string): string {
  *  matches a large slice of the directory and every suggestion would be noise. */
 export const SUPPLIER_TWIN_MIN_CHARS = 3;
 /** A non-exact (prefix / contained) hit needs a longer query still: "kastely"
- *  is contained in dozens of venue names and means nothing on its own. */
-const TWIN_LOOSE_MIN_CHARS = 6;
+ *  is contained in dozens of venue names and means nothing on its own.
+ *  Exported so a server-side loose match (`findVisibleDirectoryMatch`) uses
+ *  the same threshold rather than a second hand-picked number. */
+export const TWIN_LOOSE_MIN_CHARS = 6;
 
 /** Legal forms couples type or omit at random. Dropped before comparing so
  *  "Hertelendy Kastély Kft." is the same place as "Hertelendy Kastély". Only
@@ -1632,9 +1634,25 @@ export interface PublicDirectoryPage {
   /** `lat`/`lng` are the mean of that town's own placed listings (same idiom
    *  as the showcase's `nearby_origin`), null when none of them have a
    *  coordinate. Feeds the "explore by town" map on the browse page; the
-   *  count-only fields elsewhere in the app don't need it. */
-  cities: { city: string; count: number; lat: number | null; lng: number | null }[];
+   *  count-only fields elsewhere in the app don't need it. `country` is the
+   *  alpha-2 of whichever listing populated the city first — a town name is
+   *  one country's in practice, so this is what lets picking a town also set
+   *  the country filter, rather than asking the visitor to set both. */
+  cities: {
+    city: string;
+    count: number;
+    lat: number | null;
+    lng: number | null;
+    country: string;
+  }[];
   countries: SupplierCountryCount[];
+  /** One entry per country, `lat`/`lng` the mean of that country's own placed
+   *  listings (same idiom as `cities`), counted against the same category/text
+   *  filters as `cities` — unlike `countries` above, which stays unscoped so
+   *  the country PICKER never loses an option. Feeds the map's collapsed
+   *  view when no country is picked yet: one pin per country instead of one
+   *  per town, which is unreadable at continent scale. */
+  country_pins: { code: string; count: number; lat: number | null; lng: number | null }[];
 }
 
 /** `GET /api/suppliers/:id/contact` — one listing's published PHONE, the only
