@@ -22,6 +22,7 @@ import type {
 } from "@shared/suppliers";
 import {
   SUPPLIER_GROUPS,
+  VOTE_MIN_REVIEWS,
   collapseSettledCategories,
   isOutOfCountryScope,
   partitionByCountryScope,
@@ -3633,7 +3634,7 @@ function PhoneReveal({
   );
 }
 
-function VoteRow({
+export function VoteRow({
   supplier,
   onVote,
   t,
@@ -3642,6 +3643,10 @@ function VoteRow({
   onVote: (id: string, value: -1 | 0 | 1) => void;
   t: (key: string) => string;
 }) {
+  // A card with a handful of votes and no reviews reads as a verdict on a
+  // business nobody has actually reviewed. Hidden below the threshold rather
+  // than disabled, since a greyed-out control still invites a tap.
+  if (supplier.reviews_count < VOTE_MIN_REVIEWS) return null;
   const my = supplier.user_vote;
   // Tap-again-to-clear: if the user already cast this vote, the next tap
   // sends 0 (removes the vote); otherwise the new direction wins.

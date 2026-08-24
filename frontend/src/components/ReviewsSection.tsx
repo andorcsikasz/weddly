@@ -89,6 +89,7 @@ export function ReviewsSection({
   currency,
   isAdmin,
   onChange,
+  hideHeader = false,
 }: {
   subject: ReviewSubject;
   reviews: SupplierReview[];
@@ -101,6 +102,10 @@ export function ReviewsSection({
   currency: Currency | null;
   isAdmin: boolean;
   onChange: () => Promise<void>;
+  /** Skips the "Reviews (n)" heading + inline star chip. For callers that
+   *  already show that summary elsewhere — the ReviewSummaryCard bars, or a
+   *  modal's own title bar — so the count isn't drawn twice on one screen. */
+  hideHeader?: boolean;
 }) {
   const { t, locale } = useT();
   const toast = useToast();
@@ -185,18 +190,20 @@ export function ReviewsSection({
   };
 
   return (
-    <section className="mb-10">
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-          {t("suppliers.detail.reviews.title")} ({count})
-        </h2>
-        {avg !== null && count >= 3 && (
-          <span className="inline-flex items-center gap-2 text-sm">
-            <StarRow value={Math.round(avg)} size={14} />
-            <span className="font-medium">{avg.toFixed(1)}</span>
-          </span>
-        )}
-      </div>
+    <section className={hideHeader ? undefined : "mb-10"}>
+      {!hideHeader && (
+        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+            {t("suppliers.detail.reviews.title")} ({count})
+          </h2>
+          {avg !== null && count >= 3 && (
+            <span className="inline-flex items-center gap-2 text-sm">
+              <StarRow value={Math.round(avg)} size={14} />
+              <span className="font-medium">{avg.toFixed(1)}</span>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Composer opens for admins (editorial voice) and for any verified user
           who hasn't already reviewed this subject. Engaged couples additionally

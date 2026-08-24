@@ -23,6 +23,8 @@ import { ClaimListingModal } from "../components/ClaimListingModal";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
+import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
+import { Dialog } from "../components/ui";
 import { VendorGallery } from "../components/VendorGallery";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
@@ -351,6 +353,9 @@ export default function PublicVendorPage() {
   // Anonymous-friendly: the modal mails the listing's own contact address, so
   // a business owner who found this page on Google needs no account first.
   const [claimOpen, setClaimOpen] = useState(false);
+  // The reviews list + composer live behind this modal now (see
+  // ReviewSummaryCard); `wantsReview` opens it straight to the composer.
+  const [reviewsOpen, setReviewsOpen] = useState(wantsReview);
 
   useEffect(() => {
     let cancelled = false;
@@ -377,14 +382,6 @@ export default function PublicVendorPage() {
   useEffect(() => {
     if (data?.detail) document.title = `${data.detail.name} · Wēddly`;
   }, [data]);
-
-  // Once the page is rendered, a `?review=1` link scrolls the reviews section
-  // into view so a forwarded client lands on the composer rather than the hero.
-  useEffect(() => {
-    if (!wantsReview || !data?.detail) return;
-    const el = document.getElementById("reviews");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [wantsReview, data]);
 
   // Count a public-profile view once the real vendor payload has loaded. Keyed
   // on the resolved listing id (v{N}) so a shared link feeds the same reach
@@ -589,19 +586,24 @@ export default function PublicVendorPage() {
               </section>
             )}
 
-            {/* Reviews (read-only) */}
+            {/* Reviews — the average + 1-5★ bars stay on the page; the list
+                and the composer open in a modal (see ReviewSummaryCard). */}
             <section id="reviews" className="mt-10 scroll-mt-24">
-              <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-                <h2 className="text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-                  {t("suppliers.detail.reviews.title")} ({ratingCount})
-                </h2>
-                {ratingAvg !== null && ratingCount >= 3 && (
-                  <span className="inline-flex items-center gap-2 text-sm">
-                    <StarRow value={Math.round(ratingAvg)} size={14} />
-                    <span className="font-medium">{ratingAvg.toFixed(1)}</span>
-                  </span>
-                )}
-              </div>
+              <ReviewSummaryCard
+                summary={detail.reviews_summary}
+                locale={locale}
+                t={t}
+                onOpen={() => setReviewsOpen(true)}
+              />
+            </section>
+            <Dialog
+              open={reviewsOpen}
+              onClose={() => setReviewsOpen(false)}
+              title={`${t("suppliers.detail.reviews.title")} (${ratingCount})`}
+              role="dialog"
+              closeOnBackdrop
+              size="lg"
+            >
               {reviews.length === 0 ? (
                 <p className="text-sm italic text-ink-500 dark:text-umber-300">
                   {t("suppliers.detail.reviews.empty")}
@@ -620,7 +622,7 @@ export default function PublicVendorPage() {
                 t={t}
                 onSubmitted={reloadDetail}
               />
-            </section>
+            </Dialog>
 
             {/* Public Q&A (read-only) — only when there is public content */}
             {comments.length > 0 && (

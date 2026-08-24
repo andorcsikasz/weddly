@@ -210,6 +210,7 @@ beforeEach(() => {
     has_contact_phone: false,
     votes_score: 0,
     user_vote: 0,
+    reviews_count: 0,
     listing_complete: true,
     bookable: true,
     videos: [],

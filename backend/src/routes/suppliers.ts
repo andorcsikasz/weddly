@@ -50,7 +50,7 @@ import {
   type ShowcaseVendorRow,
 } from "../domain/listings";
 import { maskAddressForPublic } from "../domain/contact_mask";
-import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
+import { getReviewCountsMap, getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
 import { getAvailability, isIsoDate, listingIdsUnavailableOn } from "../domain/supplier_bookings";
 import { isAdminEmail, requireAdmin } from "../domain/users";
@@ -76,6 +76,7 @@ function withVotes(
   coupleVotes: Map<string, VoteValue> | null,
   completeIds: ReadonlySet<string>,
   phoneEarnedIds: ReadonlySet<string>,
+  reviewCounts: Map<string, number>,
 ): DirectorySupplier {
   // The exception to the nulling below, and the only one: a vendor this couple
   // has actually corresponded with. See domain/vendor_correspondence.ts for why
@@ -103,6 +104,7 @@ function withVotes(
     votes_score: scores.get(base.id) ?? 0,
     user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
     listing_complete: completeIds.has(base.id),
+    reviews_count: reviewCounts.get(base.id) ?? 0,
   };
 }
 
@@ -284,9 +286,12 @@ async function handleList(ctx: Ctx): Promise<Response> {
   // along on the card instead of costing a reveal tap and a quota slot. One
   // query, and none at all for an anonymous browser or a workspace-less user.
   const phoneEarnedIds = couple ? correspondingListingIds(couple.id) : EMPTY_IDS;
+  const reviewCounts = getReviewCountsMap();
 
   return json({
-    suppliers: allBase.map((b) => withVotes(b, scores, coupleVotes, completeIds, phoneEarnedIds)),
+    suppliers: allBase.map((b) =>
+      withVotes(b, scores, coupleVotes, completeIds, phoneEarnedIds, reviewCounts),
+    ),
     countries,
   });
 }
@@ -512,6 +517,7 @@ function buildSupplierDetail(
   const scores = getScoresMap();
   const couple = opts.viewerUserId ? getCoupleForUser(opts.viewerUserId) : null;
   const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
+  const reviewsSummary = getReviewSummary(id);
   const directory: DirectorySupplier = {
     ...base,
     // The detail page IS allowed to carry the PHONE (one listing, one caller,
@@ -535,9 +541,9 @@ function buildSupplierDetail(
     // Solid check vs hollow one. Only a claimed listing is asked — nothing else
     // renders a badge, and the checklist is the vendor's, not the catalogue's.
     listing_complete: base.vendor_account_id !== null && completeListingIds([base.id]).has(base.id),
+    reviews_count: reviewsSummary.reviews_count,
   };
 
-  const reviewsSummary = getReviewSummary(id);
   const availability = getAvailability(id);
 
   // Teaser gate for an imported profile nobody has claimed: bio, price band,
@@ -806,9 +812,10 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
   // visitor comparing vendors reads a blank tile as "nothing here" long before
   // they'd read it as "hasn't uploaded one yet". The row still exists — a
   // vendor who adds a photo appears on their next visit with no other change.
+  const reviewCounts = getReviewCountsMap();
   const cards = base
     .filter((b) => b.hero_image_url)
-    .map((b) => withVotes(b, scores, null, completeIds, EMPTY_IDS));
+    .map((b) => withVotes(b, scores, null, completeIds, EMPTY_IDS, reviewCounts));
 
   // Free-text match over the fields a visitor would type: the business name and
   // the town. Folded so "Fotó" finds "foto" and vice versa.

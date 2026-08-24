@@ -470,6 +470,20 @@ export function recomputeSupplierAggregate(supplierId: string): void {
   ).run(supplierId, avg, reviewsCount, JSON.stringify(topTags), ts);
 }
 
+/** Map of supplier_id → published review count, for every supplier that has
+ *  an aggregate row. Missing keys = 0 (no published review yet). Mirrors
+ *  `getScoresMap` in `supplier_votes.ts` — one query for the whole catalogue
+ *  rather than a per-card lookup. */
+export function getReviewCountsMap(): Map<string, number> {
+  const rows = db.prepare("SELECT supplier_id, reviews_count FROM supplier_aggregates").all() as {
+    supplier_id: string;
+    reviews_count: number;
+  }[];
+  const out = new Map<string, number>();
+  for (const r of rows) out.set(r.supplier_id, r.reviews_count);
+  return out;
+}
+
 /** Read the aggregate row + compute the histogram. Histogram is computed at
  *  read time (cheap, only 5 buckets) rather than denormalised — keeps the
  *  aggregate-recompute path simple. */

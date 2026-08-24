@@ -651,6 +651,10 @@ export interface DirectorySupplier extends DirectorySupplierBase {
    *  Always `false` on unclaimed curated/community entries, which wear no
    *  badge at all — the vendor checklist has no meaning for them. */
   listing_complete: boolean;
+  /** Published review count from `supplier_aggregates` (0 when the row hasn't
+   *  been created yet). Drives VOTE_MIN_REVIEWS: the card's up/downvote widget
+   *  stays hidden below that count. */
+  reviews_count: number;
 }
 
 /** One entry in the `/api/suppliers` country picker: an ISO alpha-2 code and
@@ -1385,6 +1389,10 @@ export const REVIEW_AMOUNT_NOTE_MAX_CHARS = 80;
  *  fat-fingered figure from becoming a wild outlier; ~1 billion covers any real
  *  wedding line item in any supported currency. */
 export const REVIEW_AMOUNT_MAX = 1_000_000_000;
+/** A listing's community up/downvote widget stays hidden until it has this
+ *  many published reviews — below that a handful of votes reads as a verdict
+ *  on a business nobody has actually reviewed yet. */
+export const VOTE_MIN_REVIEWS = 20;
 
 export type CommentVisibility = "admin_internal" | "public" | "vendor_only";
 export type BookingStatus =

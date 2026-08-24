@@ -20,7 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowUpRight,
   Banknote,
@@ -90,12 +90,13 @@ import { ComposeDialog } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewsSection } from "../components/ReviewsSection";
+import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
 import { StarRow } from "../components/StarRow";
 import { intlLocale } from "../lib/format";
 import { formatPackagePrice } from "../lib/listingPricing";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
-import { Skeleton, useConfirm, useToast } from "../components/ui";
+import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { VendorGallery } from "../components/VendorGallery";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
@@ -151,6 +152,11 @@ export default function SupplierDetailPage() {
   const isAdmin = user?.is_admin ?? false;
   const { supplier_id: supplierIdRaw } = useParams<{ supplier_id: string }>();
   const supplierId = supplierIdRaw ?? "";
+  // `?review=1` (RateVendorsPage's post-wedding nudge, same deep link the
+  // public page's share/campaign links use) opens the reviews modal straight
+  // to the composer instead of leaving the couple to find the CTA themselves.
+  const [searchParams] = useSearchParams();
+  const wantsReview = searchParams.get("review") === "1";
 
   const [detail, setDetail] = useState<SupplierDetail | null>(null);
   const [reviews, setReviews] = useState<SupplierReview[] | null>(null);
@@ -172,6 +178,9 @@ export default function SupplierDetailPage() {
   const [bookings, setBookings] = useState<SupplierBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapOpen, setMapOpen] = useState(false);
+  // The reviews list + composer live behind this modal now (see
+  // ReviewSummaryCard); `wantsReview` opens it on arrival.
+  const [reviewsOpen, setReviewsOpen] = useState(wantsReview);
   // Report dialog (community listings only). Holds the numeric id + name.
   const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
 
@@ -615,19 +624,39 @@ export default function SupplierDetailPage() {
             </section>
           )}
 
-          {/* Reviews */}
-          <ReviewsSection
-            subject={{ kind: "supplier", id: supplierId }}
-            reviews={reviews ?? []}
-            avg={ratingAvg}
-            count={ratingCount}
-            canReview={canReview}
-            alreadyReviewed={alreadyReviewed}
-            category={detail.category}
-            onChange={refresh}
-            currency={coupleCurrency}
-            isAdmin={isAdmin}
-          />
+          {/* Reviews — the average + 1-5★ bars stay on the page; the list and
+              the composer open in a modal so the page doesn't scroll through
+              every review to reach Q&A and the calendar below. */}
+          <section className="mb-10">
+            <ReviewSummaryCard
+              summary={detail.reviews_summary}
+              locale={locale}
+              t={t}
+              onOpen={() => setReviewsOpen(true)}
+            />
+          </section>
+          <Dialog
+            open={reviewsOpen}
+            onClose={() => setReviewsOpen(false)}
+            title={`${t("suppliers.detail.reviews.title")} (${ratingCount})`}
+            role="dialog"
+            closeOnBackdrop
+            size="lg"
+          >
+            <ReviewsSection
+              subject={{ kind: "supplier", id: supplierId }}
+              reviews={reviews ?? []}
+              avg={ratingAvg}
+              count={ratingCount}
+              canReview={canReview}
+              alreadyReviewed={alreadyReviewed}
+              category={detail.category}
+              onChange={refresh}
+              currency={coupleCurrency}
+              isAdmin={isAdmin}
+              hideHeader
+            />
+          </Dialog>
 
           {/* Q&A */}
           <CommentsSection

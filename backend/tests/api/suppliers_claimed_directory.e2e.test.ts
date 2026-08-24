@@ -250,6 +250,53 @@ describe("voting on a registered vendor's listing", () => {
   });
 });
 
+describe("reviews_count on the catalogue card", () => {
+  interface CountedCard {
+    id: string;
+    reviews_count: number;
+  }
+
+  test("a published review raises reviews_count on the list AND the detail page", async () => {
+    wipeAll();
+    const { listingId } = await seedRegisteredVendor(
+      "review-count-vendor@weddly.test",
+      "Percount Photography",
+      "photography",
+    );
+    const reviewer = await bootstrapCouple("review-count-reviewer@weddly.test");
+
+    const created = await req<{ id: number }>(
+      "POST",
+      `/api/suppliers/${listingId}/reviews`,
+      { rating: 5 },
+      { token: reviewer.token },
+    );
+    expect(created.status).toBe(201);
+
+    const list = await req<{ suppliers: CountedCard[] }>("GET", "/api/suppliers?country=all");
+    const card = list.data.suppliers.find((s) => s.id === listingId);
+    expect(card?.reviews_count).toBe(1);
+
+    const detail = await req<CountedCard>("GET", `/api/suppliers/${listingId}`, undefined, {
+      token: reviewer.token,
+    });
+    expect(detail.data.reviews_count).toBe(1);
+  });
+
+  test("a listing with no reviews reports reviews_count 0, not undefined", async () => {
+    wipeAll();
+    const { listingId } = await seedRegisteredVendor(
+      "review-count-vendor2@weddly.test",
+      "Zero Reviews Kft",
+      "dj",
+    );
+
+    const list = await req<{ suppliers: CountedCard[] }>("GET", "/api/suppliers?country=all");
+    const card = list.data.suppliers.find((s) => s.id === listingId);
+    expect(card?.reviews_count).toBe(0);
+  });
+});
+
 // Regression: a vendor who CLAIMS a curated listing gets vendor_account_id set
 // on the existing curated row, but its stored `source` stays 'curated' (the
 // claim UPDATE doesn't touch it, and resolveSupplierBase hands back the static
