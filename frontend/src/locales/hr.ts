@@ -357,6 +357,11 @@ const hr: LocaleMessages = {
     suggestion_use: "Odaberite",
     suggestion_hint:
       "Odaberite jednu i dolaze njezina adresa, oznaka na karti i telefon. Nastavite tipkati da dodate lokaciju koju još nemamo.",
+    remove_cta: "Uklonite lokaciju",
+    remove_confirm_title: "Uklonite svoju lokaciju?",
+    remove_confirm_body:
+      "Time se lokacija briše s nadzorne ploče, stranice za goste i karte. Novu možete odabrati bilo kada.",
+    remove_confirm_action: "Uklonite",
   },
   wedding_site_editor: {
     page_title: "Stranica vjenčanja",

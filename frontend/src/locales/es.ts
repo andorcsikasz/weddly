@@ -350,6 +350,11 @@ const es: LocaleMessages = {
     suggestion_use: "Usar",
     suggestion_hint:
       "Al elegir uno, su dirección, su punto en el mapa y su teléfono vienen con él. Si no está, sigue escribiendo el nombre.",
+    remove_cta: "Quitar el lugar",
+    remove_confirm_title: "¿Quitar vuestro lugar?",
+    remove_confirm_body:
+      "Esto elimina el lugar de vuestro panel, la página de invitados y el mapa. Podéis elegir uno nuevo cuando queráis.",
+    remove_confirm_action: "Quitar",
   },
   wedding_site_editor: {
     page_title: "Web de la boda",

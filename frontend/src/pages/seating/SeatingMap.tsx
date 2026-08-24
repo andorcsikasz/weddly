@@ -134,6 +134,10 @@ interface Props {
   onSeatRelease?: (guestId: number) => void;
   /** Pointer-event chair drag: called when the drag gesture ends (drop or release). */
   onChairDragFinish?: () => void;
+  /** Called when the user drags a table body in seat mode (where tables can't
+   *  actually move) instead of tapping it — the page offers to switch to
+   *  Floor plan mode rather than silently swallowing the gesture. */
+  onAttemptMoveInSeatMode?: () => void;
 }
 
 type DragState =
@@ -205,6 +209,7 @@ export function SeatingMap({
   onSeatRelease,
   onChairDragFinish,
   aisleWarnIds,
+  onAttemptMoveInSeatMode,
 }: Props) {
   // Aisle-warning chip dismissal — resets whenever the offending set changes
   // so a new violation resurfaces the hint.
@@ -1138,6 +1143,7 @@ export function SeatingMap({
                     rotationOverride={localRot.get(table.id)}
                     canRotate={!seatMode && onRotate !== undefined}
                     onRotateHandleDown={(e) => startRotate(e, table)}
+                    onAttemptMoveInSeatMode={onAttemptMoveInSeatMode}
                     pxPerMm={pxPerMm}
                     rotateHandleLabel={t("seating.rotate_handle_aria")}
                     roleDescription={t("seating.table_roledescription")}
@@ -1492,6 +1498,9 @@ interface TableShapeProps {
   /** Screen px per world mm at the current zoom — drives label legibility tiers. */
   pxPerMm?: number;
   rotateHandleLabel?: string;
+  /** Called when the user drags (not taps) the table body while seatMode is
+   *  on — tables don't move here, so this offers the switch to edit mode. */
+  onAttemptMoveInSeatMode?: () => void;
   t: (
     key:
       | "seating.add_seat"
@@ -1535,6 +1544,7 @@ function TableShape({
   rotateHandleLabel,
   aisleWarned = false,
   roleDescription,
+  onAttemptMoveInSeatMode,
   t,
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
@@ -1625,25 +1635,43 @@ function TableShape({
   // table follows the cursor without waiting on the server.
   const rotation = (((rotationOverride ?? table.rotation_deg ?? 0) % 360) + 360) % 360;
 
-  // Rotate handle: shown on selection in edit mode. Plain round tables with
-  // no marked seats skip it — spinning a featureless circle does nothing —
-  // but a round table with disabled/baby chairs rotates its seat numbering,
-  // which is a real capability (point the gap at the dance floor).
-  const showRotateHandle =
-    canRotate &&
-    isSelected &&
-    !seatMode &&
-    !(
-      table.shape === "round" &&
-      (table.disabled_seats?.length ?? 0) === 0 &&
-      (table.baby_seats?.length ?? 0) === 0
-    );
+  // Rotate handle: shown on selection in edit mode, for every shape — round
+  // tables included. Rotating a round table still moves which chair is #1,
+  // which matters for disabled/baby seats and for aligning printed place
+  // cards to how the table is approached, so the handle is never withheld.
+  const showRotateHandle = canRotate && isSelected && !seatMode;
+
+  // In seat mode the table body doesn't move — a plain tap still selects it
+  // via onClick below — but a mouse drag means the user reached for edit-mode
+  // muscle memory. Rather than swallow it silently, watch for movement past a
+  // small threshold and offer the one-click way back. Mouse-only: seat mode
+  // deliberately leaves touch-action: auto so touch users can pan/scroll the
+  // canvas, and a finger drag there is far more likely to be a scroll.
+  function handleSeatModePointerDown(e: React.PointerEvent<SVGGElement>) {
+    if (e.button !== 0 || e.pointerType !== "mouse" || !onAttemptMoveInSeatMode) return;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    function onMove(ev: PointerEvent) {
+      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > 6) {
+        cleanup();
+        onAttemptMoveInSeatMode?.();
+      }
+    }
+    function cleanup() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", cleanup);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", cleanup);
+  }
 
   return (
     <g
       transform={`translate(${cx} ${cy}) rotate(${rotation})`}
       data-seating-table={table.id}
-      onPointerDown={seatMode ? undefined : onPointerDown}
+      onPointerDown={
+        seatMode ? (onAttemptMoveInSeatMode ? handleSeatModePointerDown : undefined) : onPointerDown
+      }
       onClick={
         seatMode && !tapMode
           ? (e: React.MouseEvent<SVGGElement>) => {

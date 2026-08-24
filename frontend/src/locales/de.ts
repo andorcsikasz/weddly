@@ -360,6 +360,11 @@ const de: LocaleMessages = {
     suggestion_use: "Übernehmen",
     suggestion_hint:
       "Wählen Sie eine aus, dann kommen Adresse, Kartenmarkierung und Telefonnummer gleich mit. Tippen Sie weiter, um eine Location hinzuzufügen, die wir noch nicht haben.",
+    remove_cta: "Location entfernen",
+    remove_confirm_title: "Location entfernen?",
+    remove_confirm_body:
+      "Damit verschwindet die Location vom Dashboard, von der Gästeseite und von der Karte. Sie können jederzeit eine neue wählen.",
+    remove_confirm_action: "Entfernen",
   },
   wedding_site_editor: {
     page_title: "Hochzeitsseite",

@@ -339,6 +339,11 @@ const en: LocaleMessages = {
     suggestion_use: "Use",
     suggestion_hint:
       "Pick one and its address, map pin and phone come with it. Keep typing to add a venue we don't have yet.",
+    remove_cta: "Remove venue",
+    remove_confirm_title: "Remove your venue?",
+    remove_confirm_body:
+      "This clears the venue from your dashboard, guest page and map. You can pick a new one any time.",
+    remove_confirm_action: "Remove",
   },
   wedding_site_editor: {
     page_title: "Wedding website",
@@ -4860,6 +4865,9 @@ const en: LocaleMessages = {
     bride_label: "Bride",
     groom_label: "Groom",
     confirm_delete_table: "Delete this table?",
+    confirm_switch_floor_plan_title: "Switch to Floor plan to move tables?",
+    confirm_switch_floor_plan_body: "Tables can only be repositioned in Floor plan mode.",
+    confirm_switch_floor_plan_confirm: "Switch to Floor plan",
     unassigned_guests: "Unassigned guests",
     no_unassigned: "Everyone is seated!",
     go_to_guests: "Manage guests",

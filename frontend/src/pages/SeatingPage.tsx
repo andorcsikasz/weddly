@@ -1123,6 +1123,19 @@ export default function SeatingPage() {
     await patchTable(table, { rotation_deg: next });
   }
 
+  // Seat mode disables table drag entirely — a drag gesture there means the
+  // user reached for edit-mode muscle memory, so offer the switch instead of
+  // silently doing nothing.
+  async function handleAttemptMoveInSeatMode() {
+    const ok = await confirm({
+      title: t("seating.confirm_switch_floor_plan_title"),
+      body: t("seating.confirm_switch_floor_plan_body"),
+      confirmLabel: t("seating.confirm_switch_floor_plan_confirm"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (ok) setMode("edit");
+  }
+
   async function deleteTable(table: SeatingTable) {
     const ok = await confirm({
       title: t("seating.confirm_delete_table"),
@@ -1965,6 +1978,7 @@ export default function SeatingPage() {
                   setDraggingSeatedId(null);
                   setUnassignedHover(false);
                 }}
+                onAttemptMoveInSeatMode={handleAttemptMoveInSeatMode}
               />
             </div>
 

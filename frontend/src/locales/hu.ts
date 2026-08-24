@@ -341,6 +341,11 @@ const hu: LocaleMessages = {
     suggestion_use: "Ezt",
     suggestion_hint:
       "Ha kiválasztod, a címe, a térképi jelölője és a telefonszáma is jön vele. Ha nincs köztük, csak írd tovább a nevet.",
+    remove_cta: "Helyszín eltávolítása",
+    remove_confirm_title: "Eltávolítod a helyszínt?",
+    remove_confirm_body:
+      "Ezzel eltűnik a helyszín a vezérlőpultról, a vendégoldalról és a térképről. Bármikor választhattok újat.",
+    remove_confirm_action: "Eltávolítás",
   },
   wedding_site_editor: {
     page_title: "Esküvői weboldal",
@@ -4899,6 +4904,9 @@ const hu: LocaleMessages = {
     bride_label: "Menyasszony",
     groom_label: "Vőlegény",
     confirm_delete_table: "Biztos törölhető ez az asztal?",
+    confirm_switch_floor_plan_title: "Az asztalok mozgatásához válts Terem nézetre?",
+    confirm_switch_floor_plan_body: "Az asztalok csak Terem nézetben mozgathatók.",
+    confirm_switch_floor_plan_confirm: "Váltás Terem nézetre",
     unassigned_guests: "Nem leültetett vendégek",
     no_unassigned: "Mindenki le van ültetve!",
     go_to_guests: "Vendégek kezelése",
