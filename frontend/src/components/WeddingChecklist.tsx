@@ -248,7 +248,7 @@ export function WeddingChecklist({
       </h2>
       <div className="pb-2">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-          <div className="flex min-h-48 flex-col justify-between rounded-lg bg-neutral-950 p-5 text-white sm:p-6 dark:bg-black">
+          <div className="flex min-h-48 flex-col justify-between rounded-lg bg-neutral-950 p-5 text-white sm:p-6 dark:border dark:border-paper-50/15 dark:bg-umber-950">
             <div className="flex items-start justify-between gap-6">
               <div>
                 <p className="text-sm font-medium text-white/60">

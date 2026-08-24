@@ -2741,10 +2741,15 @@ function RsvpBadge({ status }: { status: RsvpStatus }) {
           : t("guests.rsvp_badge_pending");
   return (
     <span className={cls} aria-label={label} title={label}>
-      <span aria-hidden="true" className="mr-1">
+      <span aria-hidden="true" className="sm:mr-1">
         {glyph}
       </span>
-      {t(`guests.rsvp_${status}`)}
+      {/* The glyph + aria-label/title already carry the status on narrow
+       *  screens; the spelled-out word only rejoins at sm+. Visible on every
+       *  size it used to be, it was the single biggest space cost in the
+       *  guest row (a household member's name truncated to a few characters
+       *  next to "⌛ Várakozik" plus three action icons on a 390px phone). */}
+      <span className="hidden sm:inline">{t(`guests.rsvp_${status}`)}</span>
     </span>
   );
 }
