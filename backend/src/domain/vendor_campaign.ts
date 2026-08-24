@@ -19,7 +19,6 @@
 // opens, and why sends are keyed by address rather than by listing.
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { listingLocalLanguage } from "@shared/listing_language";
 import { isUiLocale, type UiLocale } from "@shared/locales";
 import { isVendorSelfServeBlocked, supplierCategoryLabel } from "@shared/suppliers";
 import { vendorPublicId } from "@shared/vendor_slug";
@@ -69,24 +68,17 @@ export function resolveListingCountry(row: { id: string; source: string; city: s
   return "HU";
 }
 
-/** Which language we write to a business in this country: their own, whenever
- *  Weddly has that language at all.
+/** Which language we write to a business in this country: Hungarian for a
+ *  Hungarian listing, English for every other country.
  *
- *  This used to be "HU or English", which was right while HU and EN were the
- *  only copy that existed and became wrong the moment the directory took in
- *  Croatian and German businesses — the point of the rule was never "English
- *  for foreigners", it was "not a Hungarian mail nobody in the office can
- *  read", and a Croatian photographer reading English is the same problem one
- *  notch quieter. `listingLocalLanguage` is the same country→language table
- *  the listing editor labels its description box from, so the language we
- *  WRITE to a vendor in and the language we ask them to write in agree.
- *
- *  Per-kind copy is still optional: a kind with no block for this locale
- *  renders its English card (see `pickBlocks`), so a language can be pointed
- *  at here before every mail has been translated into it. */
+ *  This briefly matched each vendor's own local language instead (German for
+ *  Austria, Spanish for Spain, ...), keyed off the same table the listing
+ *  editor uses for the vendor's own description box. Owner call 2026-08-24:
+ *  a foreign vendor gets English, full stop — the write-to language and the
+ *  ask-them-to-write-in language are allowed to disagree; this one is about
+ *  what WE can proofread and reply to, not about being read most fluently. */
 export function localeForCountry(country: string): UiLocale {
-  const local = listingLocalLanguage(country).code;
-  return isUiLocale(local) ? local : "en";
+  return country.trim().toUpperCase() === "HU" ? "hu" : "en";
 }
 
 /** Narrow a mail locale to the pair our hu/en-only content tables are keyed by

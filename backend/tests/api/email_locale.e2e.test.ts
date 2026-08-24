@@ -265,20 +265,18 @@ describe("sendKind: picks up users.locale from the DB", () => {
   });
 });
 
-// The country → language rule the claim campaign writes by. It is the same
-// table the listing editor labels its description box from, which is what
-// makes "we write to you in Croatian" and "we ask you to write Croatian"
-// the same decision rather than two that can drift.
+// The country → language rule the claim campaign writes by. Owner call
+// 2026-08-24: a foreign vendor gets English, full stop. A prior version of
+// this matched the vendor's own local language instead (German for Austria,
+// Croatian for Croatia, ...) — that reasoning is preserved in git, but the
+// rule now is deliberately back to HU-or-English.
 describe("who gets written to in which language", () => {
-  test("a listing's country picks the mail language, not just HU-or-English", () => {
+  test("a listing's country picks HU for Hungary and English for everyone else", () => {
     expect(localeForCountry("HU")).toBe("hu");
-    expect(localeForCountry("HR")).toBe("hr");
-    expect(localeForCountry("DE")).toBe("de");
-    expect(localeForCountry("AT")).toBe("de");
-    expect(localeForCountry("ES")).toBe("es");
-    // A country whose language we ship no UI for still gets English rather
-    // than a Hungarian mail nobody in the office can read — the original point
-    // of the rule, preserved.
+    expect(localeForCountry("HR")).toBe("en");
+    expect(localeForCountry("DE")).toBe("en");
+    expect(localeForCountry("AT")).toBe("en");
+    expect(localeForCountry("ES")).toBe("en");
     expect(localeForCountry("SK")).toBe("en");
     expect(localeForCountry("FR")).toBe("en");
   });
@@ -287,8 +285,9 @@ describe("who gets written to in which language", () => {
     // They picked it themselves, which beats anything geography implies.
     expect(localeForVendor("de", "HR")).toBe("de");
     expect(localeForVendor("hu-HU", "DE")).toBe("hu");
-    // No account locale captured → fall through to the country.
-    expect(localeForVendor(null, "HR")).toBe("hr");
+    // No account locale captured → fall through to the country, which is now
+    // just HU-or-English.
+    expect(localeForVendor(null, "HR")).toBe("en");
     // A language we do not ship is not honoured, it is not a card we have.
     expect(localeForVendor("fr", "HR")).toBe("en");
   });
