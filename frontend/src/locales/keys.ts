@@ -5752,6 +5752,9 @@ export interface LocaleMessages {
     bride_label: string;
     groom_label: string;
     confirm_delete_table: string;
+    confirm_switch_floor_plan_title: string;
+    confirm_switch_floor_plan_body: string;
+    confirm_switch_floor_plan_confirm: string;
     unassigned_guests: string;
     no_unassigned: string;
     go_to_guests: string;
