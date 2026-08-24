@@ -32,7 +32,9 @@ export const SLOVAKIA_OPEN_WEB_2026_08: RawDirectoryEntry[] = [
   {
     id: "sk26-alexia-clinic-002",
     name: "Alexia Clinic",
-    category: "other",
+    // Sourced as "Alexia Beauty Studio" (gallery path) from a Slovak wedding
+    // vendor directory — bridal hair/makeup, not a medical clinic.
+    category: "hair_makeup",
     city: "Trenčín, SK",
     address: "Cintorínska 980/11, 91101",
     capacity_min: null,
