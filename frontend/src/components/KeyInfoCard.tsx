@@ -266,9 +266,14 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
     [venue?.linkedSupplierId, directoryById],
   );
   // Where the venue row links to: an effectively-linked directory venue opens
-  // its own vendor card; any other venue (DIY / free-text / detached) falls back
-  // to the vendors hub. Mirrors the supplier-row behaviour.
-  const venueLinkTo = venueVendorHref(linkedDir?.id);
+  // its own vendor card. Any other venue (DIY / free-text / detached) has no
+  // card of its own to open, so it goes straight to the one place it CAN be
+  // managed or removed — the guest-page venue picker — rather than the
+  // generic vendors hub, which showed nothing about this venue and read as a
+  // dead click.
+  const venueLinkTo = linkedDir?.id
+    ? venueVendorHref(linkedDir.id)
+    : "/app/guest-page?edit=venue_manage";
 
   const hasCoordinator = Boolean(fields.coordinator_name || fields.coordinator_phone);
   const hasEmergency = Boolean(fields.emergency_name || fields.emergency_phone);

@@ -589,6 +589,13 @@ export interface LocaleMessages {
     /** One line under the suggestion list explaining what picking does, since
      *  "use the listing" and "type your own" produce different records. */
     suggestion_hint: string;
+    /** Clears the venue everywhere it's rendered. Shown whenever a venue is
+     *  set, including one with no directory link (typed by hand, or a stale
+     *  pick the couple renamed away from) — the only surface that can. */
+    remove_cta: string;
+    remove_confirm_title: string;
+    remove_confirm_body: string;
+    remove_confirm_action: string;
   };
   /** Couple-facing editor for the public wedding-website at /w/:slug — flips
    *  the publish toggle and edits venue name + hero image. Reachable at

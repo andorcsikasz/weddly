@@ -223,8 +223,9 @@ describe("<KeyInfoCard>", () => {
     expect(screen.queryByText("Aranybástya")).not.toBeInTheDocument();
     expect(container.querySelector('a[href="tel:+36301112222"]')).toBeTruthy();
     // Renamed away from the pick → the row detaches from the stale vendor: it
-    // links to the hub, not the picked venue's detail page.
-    expect(container.querySelector('a[href="/app/vendors"]')).toBeTruthy();
+    // has no detail page of its own to open, so it goes to the guest-page venue
+    // manager (where it CAN be fixed or removed), not the picked venue's page.
+    expect(container.querySelector('a[href="/app/guest-page?edit=venue_manage"]')).toBeTruthy();
     expect(container.querySelector('a[href="/app/suppliers/v1"]')).toBeNull();
 
     // Coordinator + emergency rows with their own call buttons.
@@ -265,8 +266,9 @@ describe("<KeyInfoCard>", () => {
 
     expect(screen.getByText("Sári Csárda")).toBeInTheDocument();
     expect(screen.getByText("Dunakiliti")).toBeInTheDocument();
-    // No pick → the row links to the vendors hub (no detail page to open).
-    expect(container.querySelector('a[href="/app/vendors"]')).toBeTruthy();
+    // No pick and no detail page of its own → the row goes to the guest-page
+    // venue manager, where a free-text venue can actually be changed or removed.
+    expect(container.querySelector('a[href="/app/guest-page?edit=venue_manage"]')).toBeTruthy();
     // No phone available in the free-text path.
     expect(screen.queryByText("Call")).not.toBeInTheDocument();
     // No suppliers → the add-vendors CTA.
@@ -302,9 +304,11 @@ describe("<KeyInfoCard>", () => {
     expect(screen.queryByText("Aranybástya")).not.toBeInTheDocument();
     // No call button dialling the stale vendor's number.
     expect(container.querySelector('a[href="tel:+3612008817"]')).toBeNull();
-    // The row links to the vendors hub, never the stale vendor's detail page.
+    // The row links to the guest-page venue manager, never the stale vendor's
+    // detail page — that's also the only place a detached venue like this one
+    // can be re-picked or removed.
     expect(container.querySelector('a[href="/app/suppliers/v1"]')).toBeNull();
-    expect(container.querySelector('a[href="/app/vendors"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/app/guest-page?edit=venue_manage"]')).toBeTruthy();
   });
 
   it("shows the set-venue CTA when there is no venue at all", async () => {

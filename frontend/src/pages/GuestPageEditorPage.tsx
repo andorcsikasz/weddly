@@ -248,6 +248,7 @@ function VenuePicker({
   busy,
   onSelect,
   onAdd,
+  onRemove,
 }: {
   vendors: VenueVendor[];
   selectedId: string | null;
@@ -255,6 +256,7 @@ function VenuePicker({
   busy: boolean;
   onSelect: (v: VenueVendor) => void;
   onAdd: () => void;
+  onRemove: () => void;
 }) {
   const { t } = useT();
   // A free-text venue with no matching vendor row — surfaced so an existing
@@ -263,6 +265,7 @@ function VenuePicker({
     currentName.trim() && !vendors.some((v) => v.name.trim() === currentName.trim())
       ? currentName.trim()
       : "";
+  const hasVenue = Boolean(selectedId) || Boolean(legacyName);
 
   return (
     <div className="flex flex-col gap-3">
@@ -337,14 +340,26 @@ function VenuePicker({
         </ul>
       )}
 
-      <button
-        type="button"
-        onClick={onAdd}
-        className="inline-flex items-center gap-1.5 self-start rounded-full border border-dashed border-paper-400 px-3.5 py-2 text-sm font-medium text-ink-700 transition-colors hover:border-blush-300 hover:bg-paper-100/60 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-700/50"
-      >
-        <Plus size={15} aria-hidden />
-        {t("venue_picker.add_cta")}
-      </button>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="inline-flex items-center gap-1.5 self-start rounded-full border border-dashed border-paper-400 px-3.5 py-2 text-sm font-medium text-ink-700 transition-colors hover:border-blush-300 hover:bg-paper-100/60 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-700/50"
+        >
+          <Plus size={15} aria-hidden />
+          {t("venue_picker.add_cta")}
+        </button>
+        {hasVenue && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onRemove}
+            className="text-sm font-medium text-ink-500 underline decoration-ink-300 underline-offset-2 transition-colors hover:text-blush-700 disabled:opacity-60 dark:text-umber-300 dark:decoration-umber-600 dark:hover:text-blush-300"
+          >
+            {t("venue_picker.remove_cta")}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -784,11 +799,15 @@ export default function GuestPageEditorPage() {
 
   // Deep-link `?edit=venue` (the design page's "add venue location" prompt) opens
   // the pin editor once the couple has loaded, then strips the param so a refresh
-  // or back-nav doesn't re-pop the dialog.
+  // or back-nav doesn't re-pop the dialog. `?edit=venue_manage` (the dashboard
+  // Kulcsinfó card, for a venue with no directory link to open its own page)
+  // opens the pick/remove dialog instead — same strip-after-open shape.
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
-    if (searchParams.get("edit") !== "venue" || !couple) return;
-    void openVenuePin();
+    const wants = searchParams.get("edit");
+    if (!couple || (wants !== "venue" && wants !== "venue_manage")) return;
+    if (wants === "venue") void openVenuePin();
+    else setEditPanel("venue");
     const next = new URLSearchParams(searchParams);
     next.delete("edit");
     setSearchParams(next, { replace: true });
@@ -1066,6 +1085,45 @@ export default function GuestPageEditorPage() {
         venue_phone: v.phone.trim() || null,
         location_lat: v.lat,
         location_lng: v.lng,
+      });
+      setCouple(r.couple);
+      setVenueName(r.couple.venue_name ?? "");
+      setVenueCity(r.couple.venue_city ?? "");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("wedding_site_editor.save_error_generic"));
+    } finally {
+      setVenueBusy(false);
+    }
+  }
+
+  // Clear the venue entirely: the pick, the flattened name/city/address/phone
+  // and the map pin, all in one call — the couple ends up back at the "no
+  // venue" empty state everywhere it's rendered (dashboard, guest page, run
+  // sheet). This is the only place a venue with no directory link (typed by
+  // hand, or a stale pick the couple renamed away from) can be removed at
+  // all: it never had a card to un-pick from the vendors list.
+  async function removeVenue() {
+    if (!couple || venueBusy) return;
+    const ok = await confirm({
+      title: t("venue_picker.remove_confirm_title"),
+      body: t("venue_picker.remove_confirm_body"),
+      confirmLabel: t("venue_picker.remove_confirm_action"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setVenueBusy(true);
+    setError(null);
+    setVenuePickId(null);
+    setSelection(couple.id, "venue", null);
+    try {
+      const r = await coupleApi.update({
+        venue_name: null,
+        venue_city: null,
+        venue_address: null,
+        venue_phone: null,
+        location_lat: null,
+        location_lng: null,
       });
       setCouple(r.couple);
       setVenueName(r.couple.venue_name ?? "");
@@ -2146,6 +2204,7 @@ export default function GuestPageEditorPage() {
             busy={venueBusy}
             onSelect={(v) => void applyVenue(v)}
             onAdd={() => setVenueMode("add")}
+            onRemove={() => void removeVenue()}
           />
         ) : (
           <AddVenueForm
