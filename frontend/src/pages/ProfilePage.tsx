@@ -75,7 +75,7 @@ import {
   isPlausibleDateIso,
   todayIso,
 } from "../lib/format";
-import { contentLocale, type Locale, useT } from "../lib/i18n";
+import { contentLocale, LOCALE_NAMES, LOCALES, type Locale, useT } from "../lib/i18n";
 import { realNameErrorKey } from "../lib/real_names";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -1546,9 +1546,11 @@ function CoupleMonogram({ bride, groom }: { bride: string; groom: string }) {
 
 /** "Your account" card — the actual *user* identity surface that was
  *  missing from the page. Email is read-only (lives in the Security card),
- *  display name is inline-editable, language is a two-button toggle that
- *  both updates `users.locale` server-side AND flips the UI locale
- *  immediately so the user sees the change before reload. */
+ *  display name is inline-editable, language is a dropdown over every
+ *  `LOCALES` entry (the same list + endonym labels the header's
+ *  `LocaleSwitcher` uses, so the two pickers can't drift apart) that both
+ *  updates `users.locale` server-side AND flips the UI locale immediately
+ *  so the user sees the change before reload. */
 function AccountSection({
   user,
   t,
@@ -1740,32 +1742,19 @@ function AccountSection({
           <p className="mt-1 text-[11px] text-ink-500 dark:text-umber-300">
             {t("profile.account_locale_help")}
           </p>
-          <div
-            role="radiogroup"
+          <select
+            value={locale}
+            onChange={(e) => saveLocale(e.target.value as Locale)}
+            disabled={savingLocale !== null}
             aria-label={t("profile.account_locale_label")}
-            className="mt-2 inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
+            className="input mt-2 max-w-xs"
           >
-            {(["hu", "en"] as const).map((l) => {
-              const active = l === locale;
-              return (
-                <button
-                  key={l}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => saveLocale(l)}
-                  disabled={savingLocale !== null}
-                  className={`min-w-[80px] px-4 py-3 text-sm font-medium transition-colors sm:py-1.5 sm:text-xs ${
-                    active
-                      ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                      : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
-                  }`}
-                >
-                  {t(`profile.account_locale_${l}`)}
-                </button>
-              );
-            })}
-          </div>
+            {LOCALES.map((l) => (
+              <option key={l} value={l}>
+                {LOCALE_NAMES[l]}
+              </option>
+            ))}
+          </select>
         </li>
       </ul>
     </section>

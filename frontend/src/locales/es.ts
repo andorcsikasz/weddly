@@ -5623,6 +5623,9 @@ const es: LocaleMessages = {
         visitorComposerTitle: "Escribir una reseña",
         visitorPrompt: "Confirma tu correo con Google para dejar una reseña. No hace falta cuenta.",
         visitorSubmitted: "¡Gracias! Tu reseña ya está publicada.",
+        summaryTitle: "Resumen de valoraciones",
+        seeAllCta: "Ver las {n} reseñas",
+        writeFirstCta: "Sé el primero en opinar",
       },
       comments: {
         title: "Preguntas y respuestas",
@@ -5761,10 +5764,11 @@ const es: LocaleMessages = {
     pinvite_duplicate: "duplicados",
     pinvite_invalid: "no válidos",
     pinvite_suspicious: "sospechosos",
+    pinvite_bad_name: "nombre inválido",
     pinvite_clean_cta: "Limpiar lista",
     pinvite_clean_done: "{n} filas eliminadas",
     pinvite_import_result:
-      "Importados {imported}. Omitidos: {registered} registrados, {optout} dados de baja, {dup} duplicados, {invalid} inválidos.",
+      "Importados {imported}. Omitidos: {registered} registrados, {optout} dados de baja, {dup} duplicados, {invalid} inválidos, {badName} nombre inválido.",
     pinvite_stat_total: "Contactos",
     pinvite_stat_queued: "En cola",
     pinvite_stat_registered: "Registrados",
@@ -7522,8 +7526,6 @@ const es: LocaleMessages = {
     account_locale_label: "Idioma",
     account_locale_help:
       "Fija el idioma de la interfaz de Weddly en todos los dispositivos en los que inicies sesión.",
-    account_locale_hu: "Magyar",
-    account_locale_en: "English",
     account_locale_save_success: "Idioma actualizado.",
     verify_title: "Confirma tu correo electrónico",
     verify_body:

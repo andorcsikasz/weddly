@@ -6581,6 +6581,14 @@ export interface LocaleMessages {
         visitorComposerTitle: string;
         visitorPrompt: string;
         visitorSubmitted: string;
+        /** Heading on the summary card (average + 1-5★ distribution bars)
+         *  that replaced the always-visible list on the detail pages. */
+        summaryTitle: string;
+        /** CTA that opens the reviews modal. Receives `{n}` — the review
+         *  count — when at least one review exists. */
+        seeAllCta: string;
+        /** Same CTA's copy for a supplier with zero reviews yet. */
+        writeFirstCta: string;
       };
       comments: {
         title: string;
@@ -6729,6 +6737,7 @@ export interface LocaleMessages {
     pinvite_duplicate: string;
     pinvite_invalid: string;
     pinvite_suspicious: string;
+    pinvite_bad_name: string;
     pinvite_clean_cta: string;
     /** Toast after cleaning; receives {n} removed rows. */
     pinvite_clean_done: string;
@@ -8787,8 +8796,6 @@ export interface LocaleMessages {
     account_name_save_success: string;
     account_locale_label: string;
     account_locale_help: string;
-    account_locale_hu: string;
-    account_locale_en: string;
     account_locale_save_success: string;
     /** Prominent verify-email section, shown when verified_email = false. */
     verify_title: string;

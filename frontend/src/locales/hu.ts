@@ -5570,6 +5570,9 @@ const hu: LocaleMessages = {
         visitorComposerTitle: "Írj értékelést",
         visitorPrompt: "Az értékeléshez erősítsd meg az e-mailed Google-lal. Nem kell fiók.",
         visitorSubmitted: "Köszönjük! Az értékelésed megjelent.",
+        summaryTitle: "Vélemények összegzése",
+        seeAllCta: "Mind a {n} vélemény",
+        writeFirstCta: "Legyél te az első, aki értékel",
       },
       comments: {
         title: "Kérdések és válaszok",
@@ -5707,10 +5710,11 @@ const hu: LocaleMessages = {
     pinvite_duplicate: "duplikált",
     pinvite_invalid: "hibás",
     pinvite_suspicious: "gyanús",
+    pinvite_bad_name: "hibás név",
     pinvite_clean_cta: "Lista tisztítása",
     pinvite_clean_done: "{n} sor eltávolítva",
     pinvite_import_result:
-      "Importálva: {imported}. Kihagyva: {registered} regisztrált, {optout} leiratkozott, {dup} duplikált, {invalid} hibás.",
+      "Importálva: {imported}. Kihagyva: {registered} regisztrált, {optout} leiratkozott, {dup} duplikált, {invalid} hibás, {badName} hibás név.",
     pinvite_stat_total: "Kontakt",
     pinvite_stat_queued: "Sorban",
     pinvite_stat_registered: "Regisztrált",
@@ -7530,8 +7534,6 @@ const hu: LocaleMessages = {
     account_name_save_success: "Név frissítve.",
     account_locale_label: "Nyelv",
     account_locale_help: "A Weddly felület nyelvét állítja be minden eszközön, ahol bejelentkezel.",
-    account_locale_hu: "Magyar",
-    account_locale_en: "English",
     account_locale_save_success: "Nyelv frissítve.",
     verify_title: "Erősítsd meg az e-mail címed",
     verify_body:

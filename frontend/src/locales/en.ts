@@ -5521,6 +5521,9 @@ const en: LocaleMessages = {
         visitorComposerTitle: "Write a review",
         visitorPrompt: "Confirm your email with Google to leave a review. No account needed.",
         visitorSubmitted: "Thanks! Your review is live.",
+        summaryTitle: "Ratings summary",
+        seeAllCta: "See all {n} reviews",
+        writeFirstCta: "Be the first to review",
       },
       comments: {
         title: "Questions & answers",
@@ -5658,10 +5661,11 @@ const en: LocaleMessages = {
     pinvite_duplicate: "duplicate",
     pinvite_invalid: "invalid",
     pinvite_suspicious: "suspicious",
+    pinvite_bad_name: "bad name",
     pinvite_clean_cta: "Clean list",
     pinvite_clean_done: "{n} rows removed",
     pinvite_import_result:
-      "Imported {imported}. Skipped: {registered} registered, {optout} opted out, {dup} duplicate, {invalid} invalid.",
+      "Imported {imported}. Skipped: {registered} registered, {optout} opted out, {dup} duplicate, {invalid} invalid, {badName} bad name.",
     pinvite_stat_total: "Contacts",
     pinvite_stat_queued: "Queued",
     pinvite_stat_registered: "Registered",
@@ -7467,8 +7471,6 @@ const en: LocaleMessages = {
     account_name_save_success: "Name updated.",
     account_locale_label: "Language",
     account_locale_help: "Sets the Weddly UI language across every device you sign in on.",
-    account_locale_hu: "Magyar",
-    account_locale_en: "English",
     account_locale_save_success: "Language updated.",
     verify_title: "Confirm your email",
     verify_body:

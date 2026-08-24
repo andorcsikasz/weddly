@@ -5566,6 +5566,9 @@ const hr: LocaleMessages = {
         visitorPrompt:
           "Potvrdite svoju e-poštu putem Googlea da biste ostavili recenziju. Račun nije potreban.",
         visitorSubmitted: "Hvala! Vaša je recenzija objavljena.",
+        summaryTitle: "Sažetak ocjena",
+        seeAllCta: "Pogledajte svih {n} recenzija",
+        writeFirstCta: "Budite prvi koji će ocijeniti",
       },
       comments: {
         title: "Pitanja i odgovori",
@@ -5704,10 +5707,11 @@ const hr: LocaleMessages = {
     pinvite_duplicate: "duplikat",
     pinvite_invalid: "neispravno",
     pinvite_suspicious: "sumnjivo",
+    pinvite_bad_name: "neispravno ime",
     pinvite_clean_cta: "Očisti popis",
     pinvite_clean_done: "Uklonjeno redaka: {n}",
     pinvite_import_result:
-      "Uvezeno: {imported}. Preskočeno: {registered} registriranih, {optout} odjavljenih, {dup} duplikata, {invalid} neispravnih.",
+      "Uvezeno: {imported}. Preskočeno: {registered} registriranih, {optout} odjavljenih, {dup} duplikata, {invalid} neispravnih, {badName} neispravnih imena.",
     pinvite_stat_total: "Kontakti",
     pinvite_stat_queued: "Na čekanju",
     pinvite_stat_registered: "Registrirani",
@@ -7446,8 +7450,6 @@ const hr: LocaleMessages = {
     account_name_save_success: "Ime je ažurirano.",
     account_locale_label: "Jezik",
     account_locale_help: "Postavlja jezik Weddly sučelja na svakom uređaju na kojem se prijavite.",
-    account_locale_hu: "Magyar",
-    account_locale_en: "English",
     account_locale_save_success: "Jezik je ažuriran.",
     verify_title: "Potvrdite svoju e-poštu",
     verify_body:

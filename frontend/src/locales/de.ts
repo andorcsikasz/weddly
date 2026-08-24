@@ -5679,6 +5679,9 @@ const de: LocaleMessages = {
         visitorPrompt:
           "Bestätigen Sie Ihre E-Mail-Adresse mit Google, um eine Bewertung zu hinterlassen. Ein Konto ist nicht nötig.",
         visitorSubmitted: "Vielen Dank! Ihre Bewertung ist online.",
+        summaryTitle: "Bewertungsübersicht",
+        seeAllCta: "Alle {n} Bewertungen ansehen",
+        writeFirstCta: "Erste Bewertung schreiben",
       },
       comments: {
         title: "Fragen & Antworten",
@@ -5817,10 +5820,11 @@ const de: LocaleMessages = {
     pinvite_duplicate: "Duplikat",
     pinvite_invalid: "ungültig",
     pinvite_suspicious: "verdächtig",
+    pinvite_bad_name: "ungültiger Name",
     pinvite_clean_cta: "Liste bereinigen",
     pinvite_clean_done: "{n} Zeilen entfernt",
     pinvite_import_result:
-      "Importiert: {imported}. Übersprungen: {registered} registriert, {optout} abgemeldet, {dup} doppelt, {invalid} ungültig.",
+      "Importiert: {imported}. Übersprungen: {registered} registriert, {optout} abgemeldet, {dup} doppelt, {invalid} ungültig, {badName} ungültiger Name.",
     pinvite_stat_total: "Kontakte",
     pinvite_stat_queued: "Eingereiht",
     pinvite_stat_registered: "Registriert",
@@ -7580,8 +7584,6 @@ const de: LocaleMessages = {
     account_locale_label: "Sprache",
     account_locale_help:
       "Legt die Sprache der Weddly-Oberfläche auf jedem Gerät fest, auf dem Sie sich anmelden.",
-    account_locale_hu: "Magyar",
-    account_locale_en: "English",
     account_locale_save_success: "Sprache aktualisiert.",
     verify_title: "Bestätigen Sie Ihre E-Mail",
     verify_body:
