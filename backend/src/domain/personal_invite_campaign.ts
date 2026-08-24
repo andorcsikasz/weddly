@@ -33,6 +33,7 @@ import {
 } from "@shared/personal_invite_campaign";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
+import { addAuditLog } from "../lib/audit";
 import { HttpError } from "../lib/http";
 import { sendKind } from "./emails/send";
 import { addOptOut, isOptedOut, normalizeEmail } from "./vendor_campaign";
@@ -246,6 +247,19 @@ export function updateCampaign(
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// A personal name (unlike a vendor/business name) never legitimately contains
+// a digit or anything but letters, marks, spaces, periods, apostrophes or
+// hyphens. `\p{L}`/`\p{M}` rather than [a-z] so every script's own diacritics
+// pass (same reasoning as foldName in shared/real_names.ts). This is what
+// catches a source CSV that quoted a whole export row ("price,id,date,name")
+// into the name column - see backend/scripts/fix_personal_invite_garbled_names.ts
+// for the 2026-08-24 incident this guards against.
+const VALID_NAME_RE = /^[\p{L}\p{M}\s.'-]+$/u;
+
+function isBadName(name: string): boolean {
+  return name.length > 0 && !VALID_NAME_RE.test(name);
+}
+
 /** Parse a `name,email` CSV (with header) into contacts. Handles the UTF-8 BOM,
  *  double-quoted fields and quoted commas. Rows missing an email are dropped by
  *  the importer's invalid-email guard, not here. */
@@ -320,7 +334,9 @@ export function importContacts(
     skipped_optout: 0,
     skipped_duplicate: 0,
     skipped_invalid: 0,
+    skipped_bad_name: 0,
   };
+  const badNameRows: { name: string; email: string }[] = [];
   const ts = now();
   const seen = new Set<string>();
   const insert = db.prepare(
@@ -334,6 +350,11 @@ export function importContacts(
       const name = (c.name ?? "").trim();
       if (!EMAIL_RE.test(email)) {
         result.skipped_invalid++;
+        continue;
+      }
+      if (isBadName(name)) {
+        result.skipped_bad_name++;
+        if (badNameRows.length < 25) badNameRows.push({ name, email });
         continue;
       }
       if (seen.has(email)) {
@@ -356,7 +377,49 @@ export function importContacts(
     }
   });
   tx(contacts);
+  if (badNameRows.length > 0) {
+    alertBadNames(campaign.id, campaign.slug, result.skipped_bad_name, badNameRows);
+  }
   return result;
+}
+
+/** Fire-and-forget admin alert for an import that contained names with a digit
+ *  or other non-letter character - almost always a source CSV that quoted a
+ *  whole export row (price, id, timestamp, name) into the name column. Never
+ *  blocks the import: a mailer hiccup must not fail an otherwise-good import.
+ *  Always leaves an audit_log row regardless of whether the mail goes out. */
+function alertBadNames(
+  campaignId: number,
+  campaignSlug: string,
+  count: number,
+  samples: { name: string; email: string }[],
+): void {
+  addAuditLog({
+    actor_user_id: null,
+    couple_id: null,
+    action: "personal_invite.campaign.bad_name_detected",
+    target_kind: "personal_invite_campaign",
+    target_id: campaignId,
+    note: campaignSlug,
+    after: { count, samples },
+  });
+
+  for (const to of CONFIG.adminEmails) {
+    void sendKind(
+      "personal_invite_bad_name_admin_alert",
+      {
+        campaignSlug,
+        count,
+        samples,
+        adminUrl: `${CONFIG.frontendBaseUrl}/app/admin/campaigns?tab=personal`,
+      },
+      {
+        user: null,
+        guest: { email: to, full_name: "" },
+        sender: "admin",
+      },
+    );
+  }
 }
 
 // ── Stats + listing ────────────────────────────────────────────────────────────

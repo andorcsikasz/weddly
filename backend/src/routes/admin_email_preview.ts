@@ -433,6 +433,15 @@ const STUBS: KindPayload = {
     ],
     adminUrl: `${BASE_URL}/app/admin/vendors`,
   },
+  personal_invite_bad_name_admin_alert: {
+    campaignSlug: "friends-and-family-2026-08",
+    count: 2,
+    samples: [
+      { name: "Anna123", email: "anna@example.com" },
+      { name: "Béla!!!", email: "bela@example.com" },
+    ],
+    adminUrl: `${BASE_URL}/app/admin/campaigns?tab=personal`,
+  },
   vendor_claim_approved: {
     listingName: "Bloom Studio",
     managerUrl: `${BASE_URL}/vendor`,

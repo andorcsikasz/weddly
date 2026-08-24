@@ -62,7 +62,7 @@ function fmtStamp(ms: number, locale: Locale, withTime: boolean): string {
 // rows on import; this mirrors the objective checks (email format + in-file
 // duplicates) plus an obvious test-account heuristic so the admin can SEE and
 // strip the junk before importing. `ok` rows are the ones that survive Clean.
-type RowStatus = "ok" | "duplicate" | "invalid" | "suspicious";
+type RowStatus = "ok" | "duplicate" | "invalid" | "suspicious" | "bad_name";
 interface PreviewRow {
   name: string;
   email: string;
@@ -72,6 +72,11 @@ interface PreviewRow {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Obvious test/demo accounts (by name or the test app's domain) — outliers.
 const TEST_RE = /\b(teszt|test|demo)\b|colibriapp/i;
+// A personal name never legitimately contains a digit or anything but
+// letters/marks/spaces/periods/apostrophes/hyphens — same rule the server
+// enforces in domain/personal_invite_campaign.ts (isBadName). Catches a
+// source CSV that quoted a whole export row into the name column.
+const VALID_NAME_RE = /^[\p{L}\p{M}\s.'-]+$/u;
 
 function parseContacts(csv: string): PreviewRow[] {
   const rows: PreviewRow[] = [];
@@ -86,6 +91,7 @@ function parseContacts(csv: string): PreviewRow[] {
     const lc = email.toLowerCase();
     let status: RowStatus;
     if (!EMAIL_RE.test(email)) status = "invalid";
+    else if (name.length > 0 && !VALID_NAME_RE.test(name)) status = "bad_name";
     else if (seen.has(lc)) status = "duplicate";
     else {
       seen.add(lc);
@@ -553,7 +559,7 @@ function ContactImport({
 
   const preview = useMemo(() => parseContacts(csv), [csv]);
   const counts = useMemo(() => {
-    const c = { ok: 0, duplicate: 0, invalid: 0, suspicious: 0 };
+    const c = { ok: 0, duplicate: 0, invalid: 0, suspicious: 0, bad_name: 0 };
     for (const r of preview) c[r.status] += 1;
     return c;
   }, [preview]);
@@ -575,6 +581,7 @@ function ContactImport({
   function statusLabel(s: Exclude<RowStatus, "ok">): string {
     if (s === "duplicate") return t("admin.pinvite_duplicate");
     if (s === "invalid") return t("admin.pinvite_invalid");
+    if (s === "bad_name") return t("admin.pinvite_bad_name");
     return t("admin.pinvite_suspicious");
   }
 
@@ -608,6 +615,7 @@ function ContactImport({
           optout: res.result.skipped_optout,
           dup: res.result.skipped_duplicate,
           invalid: res.result.skipped_invalid,
+          badName: res.result.skipped_bad_name,
         }),
       );
       await onImported();
@@ -678,6 +686,11 @@ function ContactImport({
                   {counts.invalid} {t("admin.pinvite_invalid")}
                 </span>
               )}
+              {counts.bad_name > 0 && (
+                <span className="rounded-full bg-rose-100 px-2 py-0.5 font-medium text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">
+                  {counts.bad_name} {t("admin.pinvite_bad_name")}
+                </span>
+              )}
               {counts.suspicious > 0 && (
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-400/20 dark:text-amber-200">
                   {counts.suspicious} {t("admin.pinvite_suspicious")}
@@ -719,6 +732,7 @@ function ContactImport({
               optout: lastImport.skipped_optout,
               dup: lastImport.skipped_duplicate,
               invalid: lastImport.skipped_invalid,
+              badName: lastImport.skipped_bad_name,
             })}
           </p>
         )}

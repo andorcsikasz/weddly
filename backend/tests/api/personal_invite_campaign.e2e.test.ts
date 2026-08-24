@@ -194,6 +194,7 @@ describe("personal-invite campaign", () => {
       skipped_optout: 0,
       skipped_duplicate: 1,
       skipped_invalid: 1,
+      skipped_bad_name: 0,
     });
     expect(r.data.stats.hu).toBe(3);
     expect(r.data.stats.en).toBe(1);
@@ -203,6 +204,54 @@ describe("personal-invite campaign", () => {
     expect(en?.locale).toBe("en");
     const hu = sends.find((s) => s.email === "anna@gmail.com");
     expect(hu?.locale).toBe("hu");
+  });
+
+  test("a name with digits or punctuation is never imported, and admin is alerted", async () => {
+    const campaign = await createCampaign("friends-bad-name");
+
+    const r = await req<{ result: PersonalInviteImportResult }>(
+      "POST",
+      `/api/admin/personal-invite/campaigns/${campaign.id}/import`,
+      {
+        contacts: [
+          { name: "Zöld Anna", email: "clean@gmail.com" },
+          // The 2026-08-24 incident shape: a source CSV that quoted a whole
+          // export row (price, order id, timestamp, name) into the name field.
+          { name: "0.0000,56955,6/11/21 21:13,Szigeti Kristóf", email: "kristof@gmail.com" },
+          { name: "dr. Kiss Bernadett", email: "bernadett@gmail.com" }, // legit: period allowed
+          { name: "Balla Réka- Erzsébet", email: "reka@gmail.com" }, // legit: hyphen allowed
+        ],
+      },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.result).toEqual({
+      imported: 3,
+      skipped_registered: 0,
+      skipped_optout: 0,
+      skipped_duplicate: 0,
+      skipped_invalid: 0,
+      skipped_bad_name: 1,
+    });
+
+    const sends = listSends(campaign.id, 100);
+    expect(sends.some((s) => s.email === "kristof@gmail.com")).toBe(false);
+    expect(sends.some((s) => s.email === "bernadett@gmail.com")).toBe(true);
+    expect(sends.some((s) => s.email === "reka@gmail.com")).toBe(true);
+
+    const alert = db
+      .prepare(
+        "SELECT kind, to_email FROM email_log WHERE kind = 'personal_invite_bad_name_admin_alert' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { kind: string; to_email: string } | undefined;
+    expect(alert?.to_email).toBe("admin@test.test");
+
+    const audit = db
+      .prepare(
+        "SELECT action, note FROM audit_log WHERE action = 'personal_invite.campaign.bad_name_detected' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { action: string; note: string } | undefined;
+    expect(audit?.note).toBe("friends-bad-name");
   });
 
   test("paced sender honours the daily cap and drains over multiple windows", async () => {
@@ -281,8 +330,8 @@ describe("personal-invite campaign", () => {
       `/api/admin/personal-invite/campaigns/${campaign.id}/import`,
       {
         contacts: [
-          { name: "S1", email: "s1@sweep.test" },
-          { name: "S2", email: "s2@sweep.test" },
+          { name: "Sweep One", email: "s1@sweep.test" },
+          { name: "Sweep Two", email: "s2@sweep.test" },
         ],
       },
       { token },

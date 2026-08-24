@@ -804,6 +804,16 @@ export interface VendorDuplicateAdminAlertPayload {
   adminUrl: string;
 }
 
+export interface PersonalInviteBadNameAdminAlertPayload {
+  campaignSlug: string;
+  /** Total rows rejected in this import for a non-letter/digit character. */
+  count: number;
+  /** First few offending rows, raw as imported, for a quick eyeball. */
+  samples: Array<{ name: string; email: string }>;
+  /** Personal-invite admin console, campaign pre-selected. */
+  adminUrl: string;
+}
+
 export interface VendorClaimApprovedPayload {
   /** Listing name to acknowledge ("Your listing 'Bloom Studio' is live"). */
   listingName: string;
@@ -1149,6 +1159,7 @@ export type KindPayload = {
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_admin_alert: VendorClaimAdminAlertPayload;
   vendor_duplicate_admin_alert: VendorDuplicateAdminAlertPayload;
+  personal_invite_bad_name_admin_alert: PersonalInviteBadNameAdminAlertPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
   vendor_moved_to_planner: VendorMovedToPlannerPayload;
   supplier_outreach: SupplierOutreachPayload;
@@ -4754,6 +4765,39 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ],
         cta: "Review vendors",
         footnote: "Sent to admins whenever a vendor name or email match is detected.",
+      },
+    };
+  },
+
+  personal_invite_bad_name_admin_alert: (p, ctx) => {
+    const sampleLines = p.samples.map((s) => `• ${s.name || "(empty)"} <${s.email}>`).join("\n");
+    return {
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `${p.count} gyanús név a(z) "${p.campaignSlug}" listában`,
+        `${p.count} suspicious name(s) in "${p.campaignSlug}"`,
+      ),
+      ctaUrl: p.adminUrl,
+      hu: {
+        preheader: "Egy import számot vagy szokatlan írásjelet tartalmazó nevet hozott be.",
+        greeting: ctx.recipientName ? `Szia ${ctx.recipientName}!` : "Szia!",
+        paragraphs: [
+          `A(z) "${p.campaignSlug}" személyes meghívó lista importja ${p.count} olyan sort tartalmazott, ahol a név mezőben szám vagy nem betű karakter szerepelt — ez általában azt jelenti, hogy a forrás CSV egy másik oszlopot (árat, azonosítót, dátumot) is belekevert a névbe. Ezeket a sorokat a rendszer nem importálta.`,
+          ["• Első néhány érintett sor:", sampleLines].join("\n"),
+          "Ellenőrizd a forrás CSV-t, mielőtt újra importálod ezeket a címeket.",
+        ],
+        cta: "Kampány megnyitása",
+        footnote: "Ezt minden importnál elküldjük, ha bármelyik név gyanús karaktert tartalmaz.",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `The "${p.campaignSlug}" personal-invite import had ${p.count} row(s) where the name field contained a digit or non-letter character — usually a sign the source CSV mixed another column (a price, an id, a date) into the name. Those rows were not imported.`,
+          ["• First few affected rows:", sampleLines].join("\n"),
+          "Check the source CSV before re-importing those addresses.",
+        ],
+        cta: "Open campaign",
+        footnote: "Sent whenever an import contains a name with a suspicious character.",
       },
     };
   },

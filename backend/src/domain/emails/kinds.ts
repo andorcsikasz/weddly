@@ -80,6 +80,7 @@ export type EmailKind =
   | "vendor_claim_verify" // P2.C, sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
   | "vendor_duplicate_admin_alert" // heads-up to admins when a new vendor matches an existing account
+  | "personal_invite_bad_name_admin_alert" // heads-up to admins when a personal-invite import contains names with digits/non-letter characters (corrupted source data)
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
   | "vendor_moved_to_planner" // admin rerouted a mis-routed vendor account to the planner side
   | "supplier_outreach" // P2.E, couple-initiated cold outreach to a shortlisted vendor
@@ -341,6 +342,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // account matches an existing vendor and may need an immediate merge; never
   // suppress an operational warning behind recipient preferences.
   vendor_duplicate_admin_alert: "transactional",
+  // Transactional: internal ops correspondence to the admin allowlist. A
+  // personal-invite import contained corrupted names (digits/punctuation from
+  // a bad source column) and may need cleanup before the campaign resumes;
+  // never suppress an operational warning behind recipient preferences.
+  personal_invite_bad_name_admin_alert: "transactional",
   // Transactional: the vendor just completed the claim form (set their own
   // password, clicked through), this is the success confirmation closing
   // that loop. They now have a Weddly vendor account.

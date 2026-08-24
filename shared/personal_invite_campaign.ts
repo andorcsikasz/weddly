@@ -103,6 +103,7 @@ export interface PersonalInviteImportResult {
   skipped_optout: number;
   skipped_duplicate: number;
   skipped_invalid: number;
+  skipped_bad_name: number;
 }
 
 export interface CreatePersonalInviteCampaignInput {
