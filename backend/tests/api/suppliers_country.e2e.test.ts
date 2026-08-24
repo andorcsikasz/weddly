@@ -133,9 +133,14 @@ describe("GET /api/suppliers — country scoping", () => {
     for (const code of ["HU", "SK", "AT", "HR", "RO", "SI"]) {
       expect(codes).toContain(code);
     }
-    // Counts are positive and sorted biggest-first (HU is by far the largest).
-    expect(r.data.countries[0]?.code).toBe("HU");
+    // Counts are positive and sorted biggest-first. Which country leads is
+    // data-driven now that national catalogues can expand independently.
     for (const c of r.data.countries) expect(c.count).toBeGreaterThan(0);
+    for (let index = 1; index < r.data.countries.length; index += 1) {
+      expect(r.data.countries[index - 1]!.count).toBeGreaterThanOrEqual(
+        r.data.countries[index]!.count,
+      );
+    }
     // The list is stable regardless of who's scoped: a HU couple still sees
     // the full country roster so their picker can offer every option.
     const token = await onboardCoupleInCountry("hu-roster@weddly.test", "HU");

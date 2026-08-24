@@ -26,6 +26,7 @@ import { db, now } from "../db";
 import { seededGalleryIds } from "./listing_gallery_backfill";
 import {
   fetchLinkPreview,
+  fetchLikelyMediaPageLinks,
   fetchPageImageCandidates,
   withGalleryFullSizeCandidates,
 } from "../lib/link_preview";
@@ -38,7 +39,10 @@ import { storage } from "../lib/storage";
 const MAX_ROWS = 2000;
 // fetchLinkPreview + fetchRemoteImage each time out within a few seconds, so a
 // handful in flight keeps the sweep quick without a thundering herd.
-const CONCURRENCY = 4;
+const CONCURRENCY = Math.max(
+  1,
+  Math.min(12, Number(process.env.LISTING_IMAGE_BACKFILL_CONCURRENCY ?? 4) || 4),
+);
 // A miss is retried after a month, mirroring google_places_sync's own
 // REFRESH_AFTER_MS — long enough that a dead domain isn't re-crawled on every
 // deploy, short enough that a venue site rebuilt over a season gets picked up.
@@ -79,9 +83,74 @@ const applyHeroStmt = db.prepare(
   "UPDATE listings SET hero_image_url = ?, hero_checked_at = ? WHERE id = ?",
 );
 
+/** Repair listings whose official gallery was mirrored successfully but whose
+ * first seed image failed, leaving the profile with thumbnails and no card
+ * image. The oldest local gallery photo is already validated and public, so it
+ * is a stronger and cheaper hero than crawling the website again. */
+export function promoteExistingGalleryHeroes(): number {
+  const rows = db
+    .prepare(
+      `SELECT l.id,
+              (SELECT p.url
+                 FROM listing_photos p
+                WHERE p.listing_id = l.id AND p.url LIKE '/uploads/%'
+                ORDER BY p.id ASC
+                LIMIT 1) AS url
+         FROM listings l
+        WHERE l.vendor_account_id IS NULL
+          AND l.hero_image_url IS NULL
+          AND l.status = 'active'
+          AND EXISTS (
+            SELECT 1 FROM listing_photos p
+             WHERE p.listing_id = l.id AND p.url LIKE '/uploads/%'
+          )`,
+    )
+    .all() as Array<{ id: string; url: string }>;
+  if (rows.length === 0) return 0;
+  const ts = now();
+  const promote = db.prepare(
+    "UPDATE listings SET hero_image_url = ?, hero_checked_at = ? WHERE id = ? AND hero_image_url IS NULL",
+  );
+  const transaction = db.transaction(() => {
+    for (const row of rows) promote.run(row.url, ts, row.id);
+  });
+  transaction();
+  return rows.length;
+}
+
 interface BackfillRow {
   id: string;
   website: string;
+}
+
+/** Normalise legacy scheme-less URLs and refuse third-party profile/directory
+ * hosts. Their page imagery is frequently a stock category banner (measured on
+ * moja-djelatnost.hr) or account UI, not a photo published by the supplier. */
+export function officialSupplierWebsite(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  let url: URL;
+  try {
+    url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+  const host = url.hostname.toLowerCase().replace(/^www\./, "");
+  const thirdPartyHosts = [
+    "facebook.com",
+    "instagram.com",
+    "moja-djelatnost.hr",
+    "booking.com",
+    "tripadvisor.com",
+    "tripadvisor.co.uk",
+    "weddingwire.com",
+    "zankyou.com",
+  ];
+  if (thirdPartyHosts.some((blocked) => host === blocked || host.endsWith(`.${blocked}`))) {
+    return null;
+  }
+  return url.toString();
 }
 
 /** Rows eligible for an auto hero: active, not vendor-owned, with a website but
@@ -142,6 +211,12 @@ export async function fetchAndStoreListingHero(
   website: string,
   opts: { skipQualityGate?: boolean } = {},
 ): Promise<boolean> {
+  const officialWebsite = officialSupplierWebsite(website);
+  if (!officialWebsite) {
+    markCheckedStmt.run(now(), id);
+    log.info("listing.hero_backfill.skipped_third_party", { id, website });
+    return false;
+  }
   const gate = (candidate: NonNullable<Awaited<ReturnType<typeof fetchRemoteImage>>>): boolean => {
     if (opts.skipQualityGate) return true;
     if (isAcceptableHero(candidate.width, candidate.height)) return true;
@@ -158,7 +233,7 @@ export async function fetchAndStoreListingHero(
 
   let img: Awaited<ReturnType<typeof fetchRemoteImage>> = null;
   try {
-    const preview = await fetchLinkPreview(website);
+    const preview = await fetchLinkPreview(officialWebsite);
     if (preview.image_url) {
       const candidate = await fetchRemoteImage(preview.image_url);
       if (candidate && gate(candidate)) img = candidate;
@@ -177,7 +252,9 @@ export async function fetchAndStoreListingHero(
   // logo out. Capped, because a page can list dozens.
   if (!img) {
     try {
-      const candidates = withGalleryFullSizeCandidates(await fetchPageImageCandidates(website));
+      const candidates = withGalleryFullSizeCandidates(
+        await fetchPageImageCandidates(officialWebsite),
+      );
       for (const url of candidates.slice(0, BODY_IMAGE_ATTEMPTS)) {
         const candidate = await fetchRemoteImage(url);
         if (candidate && gate(candidate)) {
@@ -185,6 +262,33 @@ export async function fetchAndStoreListingHero(
           log.info("listing.hero_backfill.body_image", { id, url });
           break;
         }
+      }
+    } catch {
+      img = null;
+    }
+  }
+
+  // Some sites intentionally keep the homepage sparse and link to a dedicated
+  // wedding/gallery/portfolio page. Only follow same-host links discovered in
+  // the official homepage, then apply the same download and quality gates.
+  if (!img) {
+    try {
+      const pages = await fetchLikelyMediaPageLinks(officialWebsite);
+      for (const pageUrl of pages.slice(0, 4)) {
+        const preview = await fetchLinkPreview(pageUrl).catch(() => null);
+        const candidates = withGalleryFullSizeCandidates([
+          ...(preview?.image_url ? [preview.image_url] : []),
+          ...(await fetchPageImageCandidates(pageUrl)),
+        ]);
+        for (const url of candidates.slice(0, BODY_IMAGE_ATTEMPTS)) {
+          const candidate = await fetchRemoteImage(url);
+          if (candidate && gate(candidate)) {
+            img = candidate;
+            log.info("listing.hero_backfill.subpage_image", { id, pageUrl, url });
+            break;
+          }
+        }
+        if (img) break;
       }
     } catch {
       img = null;
@@ -213,6 +317,8 @@ export async function fetchAndStoreListingHero(
 /** Sweep listings missing a hero and resolve each once. Safe to call on every
  *  boot: once stamped, rows never re-enter the set. */
 export async function runListingImageBackfill(): Promise<void> {
+  const promoted = promoteExistingGalleryHeroes();
+  if (promoted > 0) log.info("listing.hero_backfill.promoted_gallery", { promoted });
   const rows = listListingsNeedingHeroBackfill(MAX_ROWS);
   if (rows.length === 0) return;
 

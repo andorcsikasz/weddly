@@ -673,14 +673,43 @@ function publicUploadKey(key: string): boolean {
   if (!listing) return false;
   const listingId = listing[1];
   if (!listingId) return false;
-  // No provenance/licence column exists for operator-imported media, so only a
-  // vendor-owned profile may publish listing objects. Unclaimed scraped objects
-  // already present in storage stay inaccessible.
-  return Boolean(
-    db
-      .prepare("SELECT 1 FROM listings WHERE id = ? AND vendor_account_id IS NOT NULL LIMIT 1")
-      .get(listingId),
-  );
+  const listingRow = db
+    .prepare(
+      `SELECT vendor_account_id, source, profile_imported, hero_image_url
+         FROM listings
+        WHERE id = ? AND status = 'active'
+        LIMIT 1`,
+    )
+    .get(listingId) as
+    | {
+        vendor_account_id: number | null;
+        source: string;
+        profile_imported: number;
+        hero_image_url: string | null;
+      }
+    | undefined;
+  if (!listingRow) return false;
+
+  // A claimed vendor owns its namespace and may publish hero, gallery and
+  // package objects through the authenticated listing routes.
+  if (listingRow.vendor_account_id !== null) return true;
+
+  // Curated profiles may also use the local image mirror, but only for URLs
+  // recorded in the public listing. Imported/unclaimed profiles intentionally
+  // publish one teaser image (redactUnclaimedImport), so their exact hero is
+  // allowed while their gallery remains closed until the vendor claims it.
+  // Editor-researched profiles may publish their recorded gallery too. An
+  // arbitrary file copied under either id stays private.
+  if (listingRow.source !== "curated") return false;
+  const publicUrl = `/uploads/${key}`;
+  const withoutQuery = (url: string | null): string | null => url?.split("?")[0] ?? null;
+  if (withoutQuery(listingRow.hero_image_url) === publicUrl) return true;
+  if (listingRow.profile_imported === 1) return false;
+
+  const photos = db
+    .prepare("SELECT url FROM listing_photos WHERE listing_id = ?")
+    .all(listingId) as Array<{ url: string }>;
+  return photos.some((photo) => withoutQuery(photo.url) === publicUrl);
 }
 
 async function tryServeStatic(req: Request, pathname: string): Promise<Response | null> {

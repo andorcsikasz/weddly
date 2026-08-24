@@ -363,6 +363,11 @@ export default function SuppliersPage() {
   // Couple shortlist ("saved" star). Server-side + shared between partners via
   // the supplier_saved store; starts empty and hydrates once we know the couple.
   const [saved, setSavedState] = useState<Set<string>>(new Set());
+  // Cards whose hero_image_url failed to LOAD (stale reference, vanished file)
+  // rather than being null — falls back to the same category placeholder a
+  // photo-less card shows, instead of the browser's broken-image glyph. Same
+  // onError pattern as VendorCard on /suppliers/browse.
+  const [failedHeroIds, setFailedHeroIds] = useState<Set<string>>(new Set());
   // Step-chain overflow detection. We render the right-edge fade only when
   // the row actually overflows so the gradient doesn't leave a phantom
   // white slab on wide screens where every group already fits.
@@ -2759,13 +2764,14 @@ export default function SuppliersPage() {
                       top-right; the contact actions float bottom-left so they
                       live ON the card rather than in a separate text footer. */}
                       <div className="relative h-40 w-full shrink-0 bg-paper-200 dark:bg-umber-700">
-                        {s.hero_image_url ? (
+                        {s.hero_image_url && !failedHeroIds.has(s.id) ? (
                           <SmartImage
                             src={s.hero_image_url}
                             alt=""
                             wrapperClassName="h-full w-full"
                             className="h-full w-full object-cover"
                             loading="lazy"
+                            onError={() => setFailedHeroIds((cur) => new Set(cur).add(s.id))}
                           />
                         ) : (
                           // No hero image: a deliberate-looking category badge, not
@@ -3338,7 +3344,7 @@ function ChainStep({
  *  monogram on unclaimed / curated rows the vendor hasn't filled. The slot
  *  size matches the listing card's leading column on every viewport so the
  *  layout doesn't shift between cards with and without an uploaded image. */
-function Avatar({
+export function Avatar({
   name,
   heroUrl,
   category,
@@ -3359,8 +3365,20 @@ function Avatar({
   const base =
     "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-paper-300 font-grotesk text-lg text-ink-700 dark:border-umber-700 dark:text-paper-100";
   const Icon = category ? CATEGORY_ICON[category] : null;
-  const inner = heroUrl ? (
-    <img src={heroUrl} alt={name} className="h-full w-full object-cover" loading="lazy" />
+  // A non-null heroUrl that fails to LOAD (stale reference, vanished file)
+  // falls back to the icon/monogram the same way a null one does, rather than
+  // showing the browser's broken-image glyph. Keyed by the src that failed so
+  // a new hero after an edit gets its own chance.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const showHero = heroUrl && heroUrl !== failedSrc;
+  const inner = showHero ? (
+    <img
+      src={heroUrl}
+      alt={name}
+      className="h-full w-full object-cover"
+      loading="lazy"
+      onError={() => setFailedSrc(heroUrl)}
+    />
   ) : Icon ? (
     <Icon size={18} aria-hidden />
   ) : (

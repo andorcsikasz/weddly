@@ -14,6 +14,8 @@ import {
   fetchAndStoreListingHero,
   isAcceptableHero,
   listListingsNeedingHeroBackfill,
+  officialSupplierWebsite,
+  promoteExistingGalleryHeroes,
 } from "../../src/domain/listing_image_backfill";
 import { imageDimensions } from "../../src/lib/image_dims";
 
@@ -65,6 +67,17 @@ function insertListing(
 const idsIn = (limit: number) => listListingsNeedingHeroBackfill(limit).map((r) => r.id);
 
 describe("listing hero backfill eligibility", () => {
+  test("normalises first-party sites and rejects social/directory profile hosts", () => {
+    expect(officialSupplierWebsite("venue.example/weddings")).toBe(
+      "https://venue.example/weddings",
+    );
+    expect(officialSupplierWebsite("https://www.venue.example/")).toBe(
+      "https://www.venue.example/",
+    );
+    expect(officialSupplierWebsite("https://www.moja-djelatnost.hr/vendor/123")).toBeNull();
+    expect(officialSupplierWebsite("www.facebook.com/vendor")).toBeNull();
+  });
+
   test("only active, vendor-less rows with a website and no hero are listed", () => {
     wipeAll();
 
@@ -106,6 +119,30 @@ describe("listing hero backfill eligibility", () => {
 });
 
 describe("listing hero backfill fetch", () => {
+  test("promotes an existing local gallery photo when the hero is missing", () => {
+    wipeAll();
+    insertListing("c-gallery-promotion", { website: null });
+    // A legacy remote seed may precede the successfully mirrored copy. The
+    // promotion must choose the local upload it can safely publish, not merely
+    // the first photo row.
+    db.prepare("INSERT INTO listing_photos (listing_id, url, created_at) VALUES (?, ?, ?)").run(
+      "c-gallery-promotion",
+      "https://third-party.example/legacy.jpg",
+      0,
+    );
+    db.prepare("INSERT INTO listing_photos (listing_id, url, created_at) VALUES (?, ?, ?)").run(
+      "c-gallery-promotion",
+      "/uploads/listings/c-gallery-promotion/gallery/official.jpg",
+      1,
+    );
+
+    expect(promoteExistingGalleryHeroes()).toBeGreaterThanOrEqual(1);
+    expect(rowOf("c-gallery-promotion").hero_image_url).toBe(
+      "/uploads/listings/c-gallery-promotion/gallery/official.jpg",
+    );
+    expect(rowOf("c-gallery-promotion").hero_checked_at).not.toBeNull();
+  });
+
   test("a blocked website stamps hero_checked_at, leaves hero null, and drops out of the set", async () => {
     wipeAll();
     insertListing("c-hero-fetch");

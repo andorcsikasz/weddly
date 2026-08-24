@@ -733,24 +733,27 @@ describe("vendor campaign — every invite opens with the referral line", () => 
   }
 
   test("a curated import opens with its verifiable public-data source", async () => {
+    // "0"-prefixed so this fixture sorts before the whole real curated
+    // directory (6,000+ rows now) under the target preview's `ORDER BY id`,
+    // regardless of how large that directory grows.
     seedListing({
-      id: "curated-one",
+      id: "0curated-one",
       name: "Curated Studio",
       city: "Budapest",
       contact_email: "curated@example.hu",
     });
 
-    const body = inviteBodyFor(targetNamed(await targetsFor(), "curated-one"));
+    const body = inviteBodyFor(targetNamed(await targetsFor(), "0curated-one"));
     expect(body).toContain("Nyilvánosan elérhető üzleti adatokkal");
     expect(body).not.toContain("ajánlotta");
     expect(body).toContain("egy év Weddly Pro");
     expect(body).toContain("díjmentesen fent marad");
-    expect(body).toContain("/suppliers/curated-one");
+    expect(body).toContain("/suppliers/0curated-one");
   });
 
   test("a community listing uses the same truthful campaign copy until provenance is passed", async () => {
     seedListing({
-      id: "c9001",
+      id: "0c9001",
       name: "Couple Suggested Kft",
       city: "Budapest",
       contact_email: "suggested@example.hu",
@@ -758,7 +761,7 @@ describe("vendor campaign — every invite opens with the referral line", () => 
       submitter_type: "user",
     });
 
-    const body = inviteBodyFor(targetNamed(await targetsFor(), "c9001"));
+    const body = inviteBodyFor(targetNamed(await targetsFor(), "0c9001"));
     expect(body).toContain("Nyilvánosan elérhető üzleti adatokkal");
     expect(body).not.toContain("ajánlotta");
   });

@@ -15,6 +15,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import {
   extractBodyImageCandidates,
+  extractLikelyMediaPageLinks,
   withGalleryFullSizeCandidates,
 } from "../../src/lib/link_preview";
 import { isAcceptableHero } from "../../src/domain/listing_image_backfill";
@@ -31,7 +32,14 @@ describe("extractBodyImageCandidates", () => {
     expect(extractBodyImageCandidates(html, BASE)).toEqual([
       "https://venue.test/img/hall.jpg",
       "https://venue.test/img/garden.jpeg",
-      "https://venue.test/img/terrace-320.webp",
+      "https://venue.test/img/terrace-960.webp",
+    ]);
+  });
+
+  test("chooses the largest responsive candidate instead of a rejected thumbnail", () => {
+    const html = `<img srcset="/img/hall-320.jpg 320w, /img/hall-768.jpg 768w, /img/hall-1600.jpg 1600w">`;
+    expect(extractBodyImageCandidates(html, BASE)).toEqual([
+      "https://venue.test/img/hall-1600.jpg",
     ]);
   });
 
@@ -115,5 +123,29 @@ describe("withGalleryFullSizeCandidates", () => {
       "https://venue.test/photos/ceremony.jpg",
     ]);
     expect(out).toEqual(["https://venue.test/photos/ceremony.jpg"]);
+  });
+});
+
+describe("extractLikelyMediaPageLinks", () => {
+  test("prefers same-site wedding and gallery links across supported languages", () => {
+    const html = `<nav>
+      <a href="/kapcsolat">Kapcsolat</a>
+      <a href="/galeria">Galéria</a>
+      <a href="/hochzeiten">Hochzeiten</a>
+      <a href="https://venue.test/en/weddings">Weddings</a>
+      <a href="https://tracking.other.test/gallery">External gallery</a>
+    </nav>`;
+    expect(extractLikelyMediaPageLinks(html, BASE)).toEqual([
+      "https://venue.test/hochzeiten",
+      "https://venue.test/en/weddings",
+      "https://venue.test/galeria",
+    ]);
+  });
+
+  test("dedupes links, strips fragments and ignores unsafe schemes", () => {
+    const html = `<a href="/portfolio#one">Portfolio</a>
+      <a href="/portfolio#two">Fotók</a>
+      <a href="mailto:hello@venue.test">Wedding email</a>`;
+    expect(extractLikelyMediaPageLinks(html, BASE)).toEqual(["https://venue.test/portfolio"]);
   });
 });

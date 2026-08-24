@@ -17,7 +17,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { DIRECTORY } from "../../src/domain/suppliers_data";
+import { DIRECTORY, hasWeddingRelevantProvenance } from "../../src/domain/suppliers_data";
 import { VENUE_STYLES } from "@shared/suppliers";
 
 describe("curated directory integrity", () => {
@@ -100,6 +100,44 @@ describe("curated directory integrity", () => {
     expect(bad).toEqual([]);
   });
 
+  test("the Croatian scale batch only lists vendors with explicit wedding evidence", () => {
+    const hrScale = DIRECTORY.filter((s) => s.id.startsWith("hr-scale-"));
+    expect(hrScale.length).toBeGreaterThanOrEqual(50);
+    expect(DIRECTORY.some((s) => s.name === "GATE FILM")).toBe(false);
+    for (const supplier of hrScale) {
+      expect(hasWeddingRelevantProvenance(supplier)).toBe(true);
+      expect(supplier.country).toBe("HR");
+      expect(supplier.city.endsWith(", HR")).toBe(true);
+      expect(supplier.address?.trim()).not.toBe("");
+      expect(supplier.website).toMatch(/^https?:\/\//);
+      expect(supplier.contact_email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+      expect(supplier.contact_phone?.replace(/\D/g, "").length).toBeGreaterThanOrEqual(8);
+      expect(supplier.blurb_hu.trim()).not.toBe("");
+      expect(supplier.blurb_en.trim()).not.toBe("");
+      expect(supplier.gallery_urls?.[0]).toMatch(/^https?:\/\//);
+    }
+  });
+
+  test("the Spanish scale batch only lists wedding-marketplace vendors", () => {
+    const esScale = DIRECTORY.filter((s) => s.id.startsWith("es-scale-"));
+    expect(esScale).toHaveLength(424);
+    expect(
+      DIRECTORY.some((s) => s.website === "https://administradoresdefincasvalencia.net/"),
+    ).toBe(false);
+    for (const supplier of esScale) {
+      expect(hasWeddingRelevantProvenance(supplier)).toBe(true);
+      expect(supplier.country).toBe("ES");
+      expect(supplier.city.endsWith(", ES")).toBe(true);
+      expect(supplier.address?.trim()).not.toBe("");
+      expect(supplier.website).toMatch(/^https?:\/\//);
+      expect(supplier.contact_email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+      expect(supplier.contact_phone?.replace(/\D/g, "").length).toBeGreaterThanOrEqual(9);
+      expect(supplier.blurb_hu.trim()).not.toBe("");
+      expect(supplier.blurb_en.trim()).not.toBe("");
+      expect(supplier.gallery_urls?.[0]).toMatch(/^https?:\/\//);
+    }
+  });
+
   test("the Polish batch is present and scoped to PL", () => {
     const pl = DIRECTORY.filter((s) => s.country === "PL");
     expect(pl.length).toBeGreaterThanOrEqual(200);
@@ -107,5 +145,113 @@ describe("curated directory integrity", () => {
       expect(s.city.endsWith(", PL")).toBe(true);
       expect(s.source).toBe("curated");
     }
+  });
+
+  test("the Austrian open-web batch is present, complete and scoped to AT", () => {
+    const ids = [
+      "schloss-hof-estate",
+      "burg-forchtenstein-wedding",
+      "villa-bergzauber-rossleithen",
+      "beim-boeckhiasl",
+      "weingarten-resort-unterlamm",
+      "schloss-an-der-eisenstrasse",
+      "wallhof-schwertberg",
+      "fuerstbergergut",
+      "rooftop-7301",
+      "schloss-gurhof",
+    ];
+    for (const id of ids) {
+      const venue = DIRECTORY.find((s) => s.id === id);
+      expect(venue).toBeDefined();
+      expect(venue?.country).toBe("AT");
+      expect(venue?.category).toBe("venue");
+      expect(venue?.website).toMatch(/^https:\/\//);
+      expect(venue?.contact_email).toMatch(/@/);
+      expect(venue?.blurb_hu.trim()).not.toBe("");
+      expect(venue?.blurb_en.trim()).not.toBe("");
+      expect(venue?.gallery_urls?.length).toBeGreaterThanOrEqual(3);
+      expect(venue?.lat).not.toBeNull();
+      expect(venue?.lng).not.toBeNull();
+    }
+  });
+
+  test("the Teleki–Tisza castle profile is contact-complete and gallery-rich", () => {
+    const venue = DIRECTORY.find((supplier) => supplier.id === "teleki-tisza-kastely-nagykovacsi");
+    expect(venue).toBeDefined();
+    expect(venue?.name).toBe("Teleki–Tisza-kastély Nagykovácsi");
+    expect(venue?.address).toBe("2094 Nagykovácsi, Kossuth Lajos utca 2.");
+    expect(venue?.capacity_min).toBe(30);
+    expect(venue?.capacity_max).toBe(140);
+    expect(venue?.website).toContain("scoutevent.hu/teleki-tisza-kastely/");
+    expect(venue?.contact_email).toBe("eskuvo@scoutevent.hu");
+    expect(venue?.contact_phone).toBe("+36 20 290 4021");
+    expect(venue?.contact_phone_alt).toBe("+36 20 380 0806");
+    expect(venue?.gallery_urls).toHaveLength(10);
+    expect(venue?.blurb_hu).toContain("170 m²-es");
+    expect(venue?.blurb_en).toContain("170 m²");
+    expect(venue?.blurb_hu).toContain("vezeték nélküli mikrofon");
+    expect(venue?.blurb_en).toContain("wireless microphone");
+  });
+
+  test("the 2026 Austrian and Slovak expansion is contact-complete and has image seeds", () => {
+    const expansion = DIRECTORY.filter(
+      (supplier) => supplier.id.startsWith("at26-") || supplier.id.startsWith("sk26-"),
+    );
+    expect(expansion).toHaveLength(364);
+    expect(expansion.filter((supplier) => supplier.country === "AT")).toHaveLength(221);
+    expect(expansion.filter((supplier) => supplier.country === "SK")).toHaveLength(143);
+
+    for (const supplier of expansion) {
+      const expectedCountry = supplier.id.startsWith("at26-") ? "AT" : "SK";
+      expect(supplier.country).toBe(expectedCountry);
+      expect(supplier.city.endsWith(`, ${expectedCountry}`)).toBe(true);
+      expect(supplier.address?.trim()).not.toBe("");
+      expect(supplier.address).toMatch(/\d{4,5}/);
+      expect(supplier.website).toMatch(/^https?:\/\//);
+      expect(supplier.contact_email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+      expect(supplier.contact_phone?.replace(/\D/g, "").length).toBeGreaterThanOrEqual(7);
+      expect(supplier.blurb_hu.trim()).not.toBe("");
+      expect(supplier.blurb_en.trim()).not.toBe("");
+      expect(supplier.gallery_urls?.[0]).toMatch(/^https?:\/\//);
+    }
+  });
+
+  test("the GA4-prioritised European expansion covers every zero-supply market", () => {
+    const expansion = DIRECTORY.filter((supplier) => supplier.id.startsWith("ga4eu26-"));
+    const expectedMinimums: Record<string, number> = {
+      IE: 5,
+      NL: 20,
+      GB: 13,
+      DE: 18,
+      SE: 13,
+      CH: 12,
+      BE: 18,
+      CZ: 5,
+    };
+    expect(expansion).toHaveLength(104);
+    for (const [country, minimum] of Object.entries(expectedMinimums)) {
+      expect(
+        expansion.filter((supplier) => supplier.country === country).length,
+      ).toBeGreaterThanOrEqual(minimum);
+    }
+    for (const supplier of expansion) {
+      expect(supplier.city.endsWith(`, ${supplier.country}`)).toBe(true);
+      expect(supplier.address?.trim()).not.toBe("");
+      // http(s), not https-only: a handful of real venues in this batch (e.g.
+      // n1-bsc.de, oneplus.be, wikevent.se) genuinely have no TLS certificate,
+      // confirmed by hand, and dropping them would put DE/BE/SE back under
+      // their zero-supply-market minimum. Same "seed is server-fetched, never
+      // hotlinked" reasoning as the gallery-seed test above.
+      expect(supplier.website).toMatch(/^https?:\/\//);
+      expect(supplier.contact_email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+      expect(supplier.contact_phone?.replace(/\D/g, "").length).toBeGreaterThanOrEqual(7);
+      expect(supplier.gallery_urls?.[0]).toMatch(/^https?:\/\//);
+      expect(supplier.lat).not.toBeNull();
+      expect(supplier.lng).not.toBeNull();
+    }
+  });
+
+  test("the curated directory contains at least 2,000 vendors", () => {
+    expect(DIRECTORY.length).toBeGreaterThanOrEqual(2_000);
   });
 });

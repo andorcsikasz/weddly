@@ -48,8 +48,17 @@ const MAX_KM_FROM_TOWN = 40;
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry");
 const refresh = args.includes("--refresh");
+const townFallback = args.includes("--town-fallback");
 const limitArg = args.indexOf("--limit");
 const limit = limitArg >= 0 ? Number.parseInt(args[limitArg + 1] ?? "", 10) : Number.NaN;
+const prefixArg = args.indexOf("--prefix");
+const prefixes =
+  prefixArg >= 0
+    ? (args[prefixArg + 1] ?? "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+    : [];
 
 const COUNTRY_NAME = new Map(COUNTRIES.map((c) => [c.code, c.en]));
 
@@ -136,13 +145,17 @@ function pick(s: (typeof DIRECTORY)[number]) {
   };
 }
 
-const queue = Number.isFinite(limit) ? candidates.slice(0, limit) : candidates;
+const scopedCandidates =
+  prefixes.length > 0
+    ? candidates.filter((candidate) => prefixes.some((prefix) => candidate.id.startsWith(prefix)))
+    : candidates;
+const queue = Number.isFinite(limit) ? scopedCandidates.slice(0, limit) : scopedCandidates;
 console.log(
-  `[geocode] ${candidates.length} candidates (${candidates.filter((c) => c.reason === "missing").length} unplaced with an address, ${
-    candidates.filter((c) => c.reason === "town").length
+  `[geocode] ${scopedCandidates.length} candidates (${scopedCandidates.filter((c) => c.reason === "missing").length} unplaced with an address, ${
+    scopedCandidates.filter((c) => c.reason === "town").length
   } unplaced town-only, ${
-    candidates.filter((c) => c.reason === "stacked").length
-  } sharing a town-centre pin), running ${queue.length}${dryRun ? " (dry run)" : ""}`,
+    scopedCandidates.filter((c) => c.reason === "stacked").length
+  } sharing a town-centre pin), running ${queue.length}${prefixes.length > 0 ? ` for ${prefixes.join(",")}` : ""}${dryRun ? " (dry run)" : ""}`,
 );
 
 // ── Run ────────────────────────────────────────────────────────────────────
@@ -165,7 +178,7 @@ for (const [i, c] of queue.entries()) {
     continue;
   }
   const anchor = CITY_COORDS[c.city] ?? null;
-  const hit = hits.find((h) => {
+  let hit = hits.find((h) => {
     if (h.lat == null || h.lng == null) return false;
     if (h.country && h.country !== c.country) return false;
     if (anchor) return haversineKm(anchor.lat, anchor.lng, h.lat, h.lng) <= MAX_KM_FROM_TOWN;
@@ -175,6 +188,16 @@ for (const [i, c] of queue.entries()) {
     const where = normalize(h.city ?? h.label);
     return where.includes(normalize(town));
   });
+  if ((!hit || hit.lat == null || hit.lng == null) && townFallback) {
+    const townHits = await suggestAddresses(`${town}, ${country}`, "en");
+    await Bun.sleep(THROTTLE_MS);
+    hit = townHits?.find(
+      (candidate) =>
+        candidate.lat != null &&
+        candidate.lng != null &&
+        (!candidate.country || candidate.country === c.country),
+    );
+  }
   if (!hit || hit.lat == null || hit.lng == null) {
     (hits.length === 0 ? noHit : rejected).push(`${c.id} (${c.city}) ← ${query}`);
     continue;

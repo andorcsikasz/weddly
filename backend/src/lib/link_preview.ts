@@ -380,9 +380,26 @@ export function extractBodyImageCandidates(html: string, baseUrl: string): strin
   for (const tag of html.match(/<img\b[^>]*>/gi) ?? []) {
     push(tag.match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1]);
     push(tag.match(/\bdata-(?:src|lazy-src|original)\s*=\s*["']([^"']+)["']/i)?.[1]);
-    // srcset is "url 320w, url 640w" — the first URL is enough, the quality
-    // gate cares about the pixels it actually downloads.
-    push(tag.match(/\b(?:data-)?srcset\s*=\s*["']([^"',\s]+)/i)?.[1]);
+    // Responsive sites list the smallest candidate first. Choosing that 320w
+    // thumbnail made the quality gate reject a venue even when the same tag
+    // advertised a 1600w original, so prefer the largest declared width/density.
+    const srcset = tag.match(/\b(?:data-)?srcset\s*=\s*["']([^"']+)["']/i)?.[1];
+    if (srcset) {
+      const candidates = srcset
+        .split(",")
+        .map((entry, order) => {
+          const parts = entry.trim().split(/\s+/);
+          const url = parts[0];
+          const descriptor = parts[1] ?? "";
+          const score = Number.parseFloat(descriptor) || order + 1;
+          return { url, score, order };
+        })
+        .filter((candidate): candidate is { url: string; score: number; order: number } =>
+          Boolean(candidate.url),
+        )
+        .sort((a, b) => b.score - a.score || b.order - a.order);
+      push(candidates[0]?.url);
+    }
   }
   for (const m of html.matchAll(/background-image\s*:\s*url\((["']?)([^"')]+)\1\)/gi)) {
     push(m[2]);
@@ -439,12 +456,12 @@ export function withGalleryFullSizeCandidates(urls: string[]): string[] {
  *  and redirect handling as `fetchLinkPreview`; the only difference is that it
  *  reads past `</head>`, since that is where the photos live. Never throws:
  *  any failure resolves to an empty list. */
-export async function fetchPageImageCandidates(rawUrl: string): Promise<string[]> {
+async function fetchPageBody(rawUrl: string): Promise<{ html: string; finalUrl: string } | null> {
   let current: string;
   try {
     current = (await assertSafeUrl(rawUrl)).toString();
   } catch {
-    return [];
+    return null;
   }
 
   const controller = new AbortController();
@@ -463,20 +480,87 @@ export async function fetchPageImageCandidates(rawUrl: string): Promise<string[]
       });
       if (res.status >= 300 && res.status < 400) {
         const location = res.headers.get("location");
-        if (!location) return [];
+        if (!location) return null;
         current = (await assertSafeUrl(new URL(location, current).toString())).toString();
         continue;
       }
-      if (!res.ok) return [];
-      if (!(res.headers.get("content-type") ?? "").includes("html")) return [];
-      return extractBodyImageCandidates(await readCappedBody(res), current);
+      if (!res.ok) return null;
+      if (!(res.headers.get("content-type") ?? "").includes("html")) return null;
+      return { html: await readCappedBody(res), finalUrl: current };
     }
-    return [];
+    return null;
   } catch {
-    return [];
+    return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+export async function fetchPageImageCandidates(rawUrl: string): Promise<string[]> {
+  const page = await fetchPageBody(rawUrl);
+  return page ? extractBodyImageCandidates(page.html, page.finalUrl) : [];
+}
+
+/** Find same-site pages that are more likely than the homepage to contain
+ * useful supplier photography. Small venue sites commonly keep every wedding
+ * photo under a Galéria / Hochzeit / Svadba / Weddings link while the homepage
+ * contains only a logo. We discover those links from the site's own HTML
+ * instead of guessing paths, keep only the same host, and return the strongest
+ * matches first. */
+export function extractLikelyMediaPageLinks(html: string, baseUrl: string): string[] {
+  let base: URL;
+  try {
+    base = new URL(baseUrl);
+  } catch {
+    return [];
+  }
+  const normalHost = (host: string) => host.toLowerCase().replace(/^www\./, "");
+  const strong = /wedding|hochzeit|eskuv|svadb|svadob|vjen[cč]|ślub|slub|wesele|wesel/i;
+  const visual = /galer|portfolio|photo|foto|képek|kepek/i;
+  const supporting = /event|rendezv|ceremon|venue|helysz[ií]n/i;
+  const candidates: Array<{ url: string; score: number; order: number }> = [];
+  let order = 0;
+  for (const match of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
+    const attrs = match[1] ?? "";
+    const href = attrs.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1]?.trim();
+    if (!href || href.startsWith("#") || /^(?:mailto|tel|javascript):/i.test(href)) continue;
+    const label = (match[2] ?? "").replace(/<[^>]+>/g, " ");
+    let url: URL;
+    try {
+      url = new URL(decodeEntities(href), base);
+    } catch {
+      continue;
+    }
+    if (!/^https?:$/.test(url.protocol) || normalHost(url.hostname) !== normalHost(base.hostname)) {
+      continue;
+    }
+    // Score the path/query and human label, never the hostname: a domain such
+    // as `wedding-events.example` would otherwise make every ordinary link on
+    // the site look relevant.
+    const signal = `${url.pathname} ${url.search} ${decodeEntities(label)}`;
+    const score =
+      (strong.test(signal) ? 4 : 0) +
+      (visual.test(signal) ? 3 : 0) +
+      (supporting.test(signal) ? 1 : 0);
+    if (score === 0) continue;
+    url.hash = "";
+    candidates.push({ url: url.toString(), score, order: order++ });
+  }
+  const seen = new Set<string>();
+  return candidates
+    .sort((a, b) => b.score - a.score || a.order - b.order)
+    .map((candidate) => candidate.url)
+    .filter((url) => {
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    })
+    .slice(0, 6);
+}
+
+export async function fetchLikelyMediaPageLinks(rawUrl: string): Promise<string[]> {
+  const page = await fetchPageBody(rawUrl);
+  return page ? extractLikelyMediaPageLinks(page.html, page.finalUrl) : [];
 }
 
 /** Whole-body twin of `readCappedHtml`: same byte cap, no early `</head>` exit. */

@@ -143,7 +143,7 @@ describe("private uploads are not reachable at a public /uploads/ URL", () => {
     await response.arrayBuffer();
   });
 
-  test("an unclaimed listing cannot publish operator-imported media", async () => {
+  test("an unclaimed listing cannot publish unreferenced operator-imported media", async () => {
     wipeAll();
     const ts = Date.now();
     db.prepare(
@@ -156,5 +156,65 @@ describe("private uploads are not reachable at a public /uploads/ URL", () => {
     const response = await fetch(`${BASE}/uploads/${key}`);
     expect(response.status).not.toBe(200);
     await response.arrayBuffer();
+  });
+
+  test("a researched curated listing can publish only its recorded local hero and gallery", async () => {
+    wipeAll();
+    const ts = Date.now();
+    const listingId = "researched-image-test";
+    const heroKey = `listings/${listingId}/hero.webp`;
+    const galleryKey = `listings/${listingId}/gallery/official.webp`;
+    const strayKey = `listings/${listingId}/gallery/unreferenced.webp`;
+    db.prepare(
+      `INSERT INTO listings
+         (id, source, category, name, city, status, hero_image_url, profile_imported, created_at, updated_at)
+       VALUES (?, 'curated', 'venue', 'Researched venue', 'Nagykovácsi', 'active', ?, 0, ?, ?)`,
+    ).run(listingId, `/uploads/${heroKey}?v=${ts}`, ts, ts);
+    db.prepare("INSERT INTO listing_photos (listing_id, url, created_at) VALUES (?, ?, ?)").run(
+      listingId,
+      `/uploads/${galleryKey}`,
+      ts,
+    );
+    await storage.write(heroKey, new Blob(["curated hero"]));
+    await storage.write(galleryKey, new Blob(["curated gallery"]));
+    await storage.write(strayKey, new Blob(["must stay private"]));
+
+    const hero = await fetch(`${BASE}/uploads/${heroKey}?v=${ts}`);
+    expect(hero.status).toBe(200);
+    expect(await hero.text()).toBe("curated hero");
+    const gallery = await fetch(`${BASE}/uploads/${galleryKey}`);
+    expect(gallery.status).toBe(200);
+    expect(await gallery.text()).toBe("curated gallery");
+
+    const stray = await fetch(`${BASE}/uploads/${strayKey}`);
+    expect(stray.status).not.toBe(200);
+    await stray.arrayBuffer();
+  });
+
+  test("an imported profile exposes its one recorded teaser hero but not its gallery", async () => {
+    wipeAll();
+    const ts = Date.now();
+    const listingId = "imported-image-test";
+    const heroKey = `listings/${listingId}/hero.webp`;
+    const galleryKey = `listings/${listingId}/gallery/lifted.webp`;
+    db.prepare(
+      `INSERT INTO listings
+         (id, source, category, name, city, status, hero_image_url, profile_imported, created_at, updated_at)
+       VALUES (?, 'curated', 'photography', 'Imported teaser', 'Budapest', 'active', ?, 1, ?, ?)`,
+    ).run(listingId, `/uploads/${heroKey}`, ts, ts);
+    db.prepare("INSERT INTO listing_photos (listing_id, url, created_at) VALUES (?, ?, ?)").run(
+      listingId,
+      `/uploads/${galleryKey}`,
+      ts,
+    );
+    await storage.write(heroKey, new Blob(["one public teaser"]));
+    await storage.write(galleryKey, new Blob(["private until claimed"]));
+
+    const hero = await fetch(`${BASE}/uploads/${heroKey}`);
+    expect(hero.status).toBe(200);
+    expect(await hero.text()).toBe("one public teaser");
+    const gallery = await fetch(`${BASE}/uploads/${galleryKey}`);
+    expect(gallery.status).not.toBe(200);
+    await gallery.arrayBuffer();
   });
 });

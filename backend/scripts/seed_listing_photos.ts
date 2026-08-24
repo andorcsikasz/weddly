@@ -57,15 +57,36 @@ interface Venue {
   name: string;
   website: string;
   gallery_urls?: string[];
+  photo_quality_verified?: boolean;
 }
 
-const venues: Venue[] = JSON.parse(await Bun.file(inPath).text());
+const parsed: Venue[] = JSON.parse(await Bun.file(inPath).text());
+// Research reports may include rejected candidates for auditability. They are
+// deliberately kept out of the photo/import pipeline.
+const venues: Venue[] = parsed.filter(
+  (venue) => (venue as Venue & { accepted?: boolean }).accepted !== false,
+);
 
 /** Where a site keeps its photos when the homepage is a JS-built splash with
  *  nothing an HTML read can see. Tried only after the homepage comes back
  *  empty, so an ordinary site costs one request as before. Polish paths
  *  because that is the batch this was written for; add others as needed. */
-const GALLERY_PATHS = ["/galeria", "/galeria-zdjec", "/oferta", "/wesela", "/sala"];
+const GALLERY_PATHS = [
+  "/gallery",
+  "/weddings",
+  "/events",
+  "/hochzeit",
+  "/hochzeiten",
+  "/bruiloft",
+  "/trouwen",
+  "/brollop",
+  "/svatba",
+  "/galeria",
+  "/galeria-zdjec",
+  "/oferta",
+  "/wesela",
+  "/sala",
+];
 
 async function collect(v: Venue): Promise<string[]> {
   if (!v.website) return [];
@@ -120,7 +141,10 @@ await Promise.all(
       const urls = await collect(v);
       if (urls.length > 0) {
         v.gallery_urls = urls;
+        v.photo_quality_verified = true;
         withPhotos++;
+      } else {
+        v.photo_quality_verified = false;
       }
       done++;
       if (done % 10 === 0) console.log(`  ${done}/${venues.length}, ${withPhotos} with photos`);
