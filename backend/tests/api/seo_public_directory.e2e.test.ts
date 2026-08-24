@@ -17,12 +17,25 @@
 
 import "../setup";
 
-import { describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 import type { PublicDirectoryPage } from "@shared/suppliers";
 import { req } from "../helpers";
+import { db } from "../../src/db";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { renderIndexHtml, renderSitemapXml } from "../../src/lib/seo_ssr";
 import { vendorPublicId } from "@shared/vendor_slug";
+
+// The public directory is photos-only by policy (handlePublicDirectory in
+// routes/suppliers.ts filters on hero_image_url) - a real curated listing
+// only gets one from a separate async backfill/admin flow, never inline in
+// suppliers_data.ts, so a freshly-seeded test DB has none. Stamp every
+// boot-seeded listing with a placeholder so this suite exercises the same
+// "whole catalogue" the policy promises, rather than an empty one.
+beforeAll(() => {
+  db.prepare(
+    "UPDATE listings SET hero_image_url = 'https://picsum.photos/seed/weddly-test/800/600' WHERE hero_image_url IS NULL",
+  ).run();
+});
 
 const TEMPLATE = `<!doctype html>
 <html lang="hu">
