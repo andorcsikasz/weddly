@@ -165,8 +165,6 @@ describe("PlannerDetailPage", () => {
   });
 
   it("shows the star rating and the reviews a planner has collected", async () => {
-    // Three published reviews is the cold-start floor, so this is the first
-    // state in which an average may be shown at all.
     detail.rating = 4.3;
     detail.reviews_count = 3;
     detail.reviews_summary = {

@@ -1171,8 +1171,6 @@ const hr: LocaleMessages = {
       page_title: "Recenzije",
       page_body: "Što su o vama napisali provjereni parovi u Weddly katalogu.",
       count_label: "{n} recenzija",
-      cold_start_note:
-        "Prosjek se pojavljuje na vašem javnom profilu nakon 3 objavljene recenzije.",
       empty_title: "Još nema recenzija",
       empty_body:
         "Recenzije su sada otvorene svima s kojima ste radili, bez Weddly računa. Podijelite poveznicu iznad s nekoliko dosadašnjih klijenata i ovdje će se pojaviti vaše prve ocjene.",

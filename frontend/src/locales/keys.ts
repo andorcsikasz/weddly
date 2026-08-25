@@ -1597,7 +1597,6 @@ export interface LocaleMessages {
       page_body: string;
       /** Receives `{n}` — published review count. */
       count_label: string;
-      cold_start_note: string;
       empty_title: string;
       empty_body: string;
       load_more: string;

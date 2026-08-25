@@ -177,7 +177,7 @@ describe("planner reviews", () => {
     expect(second.data.detail?.code).toBe("already_reviewed");
   });
 
-  test("the average reaches the card and the detail only above the cold-start floor", async () => {
+  test("the average reaches the card and the detail from the very first review", async () => {
     const plannerId = await makePlanner("pr-agg@weddly.test");
     const couples = [];
     for (let i = 0; i < 3; i++) {
@@ -185,7 +185,7 @@ describe("planner reviews", () => {
     }
     const viewer = couples[0]!;
 
-    // Two reviews: counted, but no average yet.
+    // The first review already carries an average — no cold-start floor.
     await postReview(plannerId, couples[0]!.token, { rating: 5 });
     await postReview(plannerId, couples[1]!.token, { rating: 4 });
     let detail = await req<PlannerDirectoryDetail>(
@@ -195,9 +195,8 @@ describe("planner reviews", () => {
       { token: viewer.token },
     );
     expect(detail.data.reviews_count).toBe(2);
-    expect(detail.data.rating).toBeNull();
+    expect(detail.data.rating).toBeCloseTo(4.5, 5);
 
-    // The third crosses the floor.
     await postReview(plannerId, couples[2]!.token, { rating: 3 });
     detail = await req<PlannerDirectoryDetail>(
       "GET",

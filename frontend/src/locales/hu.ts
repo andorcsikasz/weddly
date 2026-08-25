@@ -1152,7 +1152,6 @@ const hu: LocaleMessages = {
       page_title: "Vélemények",
       page_body: "Amit az igazolt párok írtak rólad a Weddly katalógusban.",
       count_label: "{n} vélemény",
-      cold_start_note: "Az átlag 3 megjelent vélemény után jelenik meg a nyilvános adatlapodon.",
       empty_title: "Még nincs véleményed",
       empty_body:
         "A vélemények mostantól bárkitől jöhetnek, akivel dolgoztál, Weddly-fiók nélkül is. Oszd meg a fenti linked pár korábbi pároddal, és az első értékelések itt fognak megjelenni.",

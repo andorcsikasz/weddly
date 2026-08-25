@@ -1146,7 +1146,6 @@ const en: LocaleMessages = {
       page_title: "Reviews",
       page_body: "What verified couples wrote about you in the Weddly directory.",
       count_label: "{n} reviews",
-      cold_start_note: "The average appears on your public profile after 3 published reviews.",
       empty_title: "No reviews yet",
       empty_body:
         "Reviews are now open to anyone you've worked with, no Weddly account needed. Share your link above with a few past clients and your first ratings will show up here.",

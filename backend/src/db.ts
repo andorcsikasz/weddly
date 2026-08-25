@@ -2642,3 +2642,30 @@ export function getVisitorSystemUserId(): number {
 }
 // Materialize at boot so the row exists before any request references it.
 getVisitorSystemUserId();
+
+// ── Review-summary cold-start gate lowered to 1 (was 3, 2026-08-25) ────────
+// recomputeSupplierAggregate only writes avg_rating on the review write path,
+// so a supplier already sitting at 1-2 published reviews keeps the NULL an
+// earlier boot stored under the old threshold until something touches that
+// review again. This one-time sweep fills it in directly from the live
+// reviews rather than waiting for a write; self-limiting because a filled
+// avg_rating no longer matches the WHERE clause on the next boot.
+{
+  const filled = db
+    .prepare(
+      `UPDATE supplier_aggregates
+          SET avg_rating = (
+                SELECT AVG(rating) FROM supplier_reviews
+                 WHERE supplier_reviews.supplier_id = supplier_aggregates.supplier_id
+                   AND published = 1 AND deleted_at IS NULL
+              ),
+              updated_at = ?
+        WHERE avg_rating IS NULL AND reviews_count >= 1`,
+    )
+    .run(now());
+  if (filled.changes > 0) {
+    console.log(
+      `[db.backfill] revealed avg_rating on ${filled.changes} supplier(s) held below the old 3-review floor`,
+    );
+  }
+}

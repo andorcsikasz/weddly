@@ -1176,7 +1176,6 @@ const es: LocaleMessages = {
       page_title: "Reseñas",
       page_body: "Lo que las parejas verificadas escribieron sobre ti en el directorio de Weddly.",
       count_label: "{n} reseñas",
-      cold_start_note: "La media aparece en tu perfil público tras 3 reseñas publicadas.",
       empty_title: "Aún no hay reseñas",
       empty_body:
         "Ahora las reseñas están abiertas a cualquiera con quien hayas trabajado, sin necesidad de una cuenta de Weddly. Comparte tu enlace de arriba con algunos clientes anteriores y tus primeras valoraciones aparecerán aquí.",

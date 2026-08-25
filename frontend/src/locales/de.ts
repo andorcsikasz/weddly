@@ -1198,8 +1198,6 @@ const de: LocaleMessages = {
       page_title: "Bewertungen",
       page_body: "Was bestätigte Paare im Weddly-Katalog über Sie geschrieben haben.",
       count_label: "{n} Bewertungen",
-      cold_start_note:
-        "Der Durchschnitt erscheint nach 3 veröffentlichten Bewertungen auf Ihrem öffentlichen Profil.",
       empty_title: "Noch keine Bewertungen",
       empty_body:
         "Bewertungen stehen jetzt allen offen, mit denen Sie gearbeitet haben, ganz ohne Weddly-Konto. Teilen Sie Ihren Link oben mit ein paar früheren Kunden, dann erscheinen hier Ihre ersten Bewertungen.",

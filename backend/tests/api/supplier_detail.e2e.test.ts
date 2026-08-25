@@ -86,20 +86,19 @@ describe("supplier reviews (admin v1)", () => {
     }>("GET", `/api/suppliers/${encodeURIComponent(sid)}/reviews`, undefined, { token });
     expect(list.status).toBe(200);
     expect(list.data.items.length).toBe(1);
-    // Cold-start gate: avg is null below 3 published reviews.
-    expect(list.data.summary.avg_rating).toBeNull();
+    // Cold-start gate: avg populates from the very first published review.
+    expect(list.data.summary.avg_rating).toBeCloseTo(4, 5);
     expect(list.data.summary.reviews_count).toBe(1);
   });
 
-  test("aggregate avg_rating populates once threshold of 3 published reviews is reached", async () => {
+  test("aggregate avg_rating keeps updating as more reviews come in", async () => {
     const token = await registerAdmin();
     const sid = curatedSupplierId();
 
-    // Need 3 published reviews from distinct couples (or with NULL couple_id).
-    // Admin author = NULL couple_id, so the partial unique index doesn't bite
-    // when we insert directly under different author_user_ids. We bypass the
-    // API to seed two extra admin-style rows (no second admin user exists in
-    // the test env).
+    // Two extra reviews from distinct authors (admin author = NULL couple_id,
+    // so the partial unique index doesn't bite when inserted directly under
+    // different author_user_ids). We bypass the API to seed them (no second
+    // admin user exists in the test env).
     const now = Date.now();
     const stmt = db.prepare(
       `INSERT INTO supplier_reviews

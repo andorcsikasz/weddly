@@ -176,8 +176,8 @@ export default function VendorReviewsPage() {
 
       {listingId && <CollectReviewsCard listingId={listingId} listingName={listingName} />}
 
-      {/* Aggregate header — average only appears past the cold-start gate
-          (>= 3 published reviews), matching the public card. */}
+      {/* Aggregate header — the average appears from the very first published
+          review, matching the public card. */}
       {summary && summary.reviews_count > 0 && (
         <section className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
           <div className="flex items-center gap-3">
@@ -191,11 +191,6 @@ export default function VendorReviewsPage() {
               </span>
             </div>
           </div>
-          {summary.avg_rating == null && (
-            <p className="text-sm text-ink-500 dark:text-paper-400">
-              {t("vendor.reviews.cold_start_note")}
-            </p>
-          )}
           {summary.top_tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {summary.top_tags.map((tt) => (

@@ -38,8 +38,10 @@ const VISITOR_FALLBACK_NAME = "Verified visitor";
 const VALID_TAGS: ReadonlySet<string> = new Set(SUPPLIER_REVIEW_TAGS);
 
 /** Cold-start gate: don't publish an aggregate until this many published
- *  reviews exist. A single 1-star shouldn't read as a supplier's reputation. */
-const MIN_REVIEWS_FOR_AGGREGATE = 3;
+ *  reviews exist. Owner call 2026-08-25: show the Google-style summary from
+ *  the very first review rather than withholding it — the count next to the
+ *  average is what tells a reader how much to trust it. */
+const MIN_REVIEWS_FOR_AGGREGATE = 1;
 
 export interface ReviewRow {
   id: number;
