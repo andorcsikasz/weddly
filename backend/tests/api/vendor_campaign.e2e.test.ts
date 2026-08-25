@@ -390,6 +390,59 @@ describe("vendor claim-invite campaign", () => {
     expect(listing.vendor_account_id).not.toBeNull();
   });
 
+  test("completing a claim stamps users.locale from the listing's country, not NULL", async () => {
+    // Regression for ae9d4552: users.locale was left NULL after claiming, so
+    // every transactional mail afterwards (approval, profile share) fell back
+    // to the legacy bilingual HU+EN stack instead of the single-language card
+    // the claim mail itself used to reach the vendor.
+    seedListing({
+      id: "locale-hu",
+      name: "Locale HU",
+      city: "Budapest",
+      contact_email: "own@lhu.hu",
+    });
+    seedListing({
+      id: "locale-it",
+      name: "Locale IT",
+      city: "Lake Como, IT",
+      category: "venue",
+      contact_email: "own@lit.com",
+    });
+    const campaign = await makeCampaign();
+    await sendCampaignBatch(rowOf(campaign), 10);
+
+    const byEmail = new Map(sendRows().map((r) => [r.email, r]));
+    const huSend = byEmail.get("own@lhu.hu");
+    const itSend = byEmail.get("own@lit.com");
+    if (!huSend || !itSend) throw new Error("expected both sends");
+
+    const huRedirect = await raw(`/r/vendor-invite/${huSend.claim_token}`);
+    const huComplete = await req<{ user: { locale: string | null } }>(
+      "POST",
+      "/api/vendor/claim/complete",
+      {
+        token: claimTokenFromLocation(huRedirect.location),
+        password: "vendorpass123",
+        full_name: "HU Owner",
+      },
+    );
+    expect(huComplete.status).toBe(201);
+    expect(huComplete.data.user.locale).toBe("hu");
+
+    const itRedirect = await raw(`/r/vendor-invite/${itSend.claim_token}`);
+    const itComplete = await req<{ user: { locale: string | null } }>(
+      "POST",
+      "/api/vendor/claim/complete",
+      {
+        token: claimTokenFromLocation(itRedirect.location),
+        password: "vendorpass123",
+        full_name: "IT Owner",
+      },
+    );
+    expect(itComplete.status).toBe(201);
+    expect(itComplete.data.user.locale).toBe("en");
+  });
+
   test("an expired claim is healed by the redirect instead of dead-ending", async () => {
     seedListing({ id: "stale", name: "Stale Co", city: "Budapest", contact_email: "own@stale.hu" });
     const campaign = await makeCampaign();
