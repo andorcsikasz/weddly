@@ -263,10 +263,15 @@ export const CROATIA_2026_08: RawDirectoryEntry[] = [
     capacity_min: null,
     capacity_max: 560,
     blurb_hu:
-      "A Westin Zagreb nagy létszámú városi esküvőkre alkalmas konferenciahotel. A Crystal Ballroom elegáns, formális vacsorához és nagyszínpados programhoz is használható. A sok szoba és a központi fekvés nagy vendégszámnál csökkenti a logisztikai kockázatot.",
+      "A Westin Zagreb nagy létszámú városi esküvőkre alkalmas ötcsillagos konferenciahotel. A több mint 700 négyzetméteres Crystal Ballroom megosztható, bankett-elrendezésben pedig legfeljebb 560 vendéget fogad. A 17. emeleti Opera terem panorámás, intimebb alternatíva, esküvői vacsoránál legfeljebb 150 fővel. A szálloda cateringet, színpadot, táncteret, világítást, menütervezést és képzett esküvőszervezői segítséget is kínál. A központi fekvés és a helyszíni szobák nagy vagy nemzetközi vendéglistánál egyszerűsítik a logisztikát.",
     blurb_en:
-      "A conference hotel that takes a large city wedding. The Crystal Ballroom carries a formal dinner and a full stage programme. With this many rooms and a central address, a big guest list stops being a logistics problem.",
+      "The Westin Zagreb is a five-star conference hotel equipped for a large city wedding. Its Crystal Ballroom covers more than 700 square metres, can be divided and seats up to 560 guests in banquet layout. The panoramic Opera room on the seventeenth floor is a more intimate alternative for a wedding dinner of up to 150. Catering, a stage, dance floor, lighting, menu design and trained wedding-planning support are available in-house. A central address and hotel accommodation simplify logistics for a large or international guest list.",
     website: "https://www.marriott.com/en-us/hotels/zagwi-the-westin-zagreb/overview/",
+    gallery_urls: [
+      "https://cache.marriott.com/content/dam/marriott-renditions/ZAGWI/zagwi-crystal-ballroom-4974-hor-clsc.jpg",
+      "https://cache.marriott.com/content/dam/marriott-renditions/ZAGWI/zagwi-salon-opera-4997-hor-clsc.jpg",
+      "https://cache.marriott.com/content/dam/marriott-renditions/ZAGWI/zagwi-salon-opera-4996-hor-clsc.jpg",
+    ],
     ...noContact,
     // Capacity is room and layout dependent, and the hotel can run several events at once, so
     // ask about exclusivity.
@@ -672,10 +677,18 @@ export const CROATIA_2026_08: RawDirectoryEntry[] = [
     capacity_min: 50,
     capacity_max: 80,
     blurb_hu:
-      "A Laganini Čiovo közvetlen vízparti beach club intim és közepes esküvőkhöz. A természetes kő, fa és tengerpart laza, mégis prémium hangulatot ad. Naplementés vacsorához kevés dekoráció is elegendő.",
+      "A Laganini Čiovo több mint ezer négyzetméteres, közvetlen vízparti beach club intim és közepes esküvőkhöz. A természetes kő, fa, tengerpart és panoráma laza, mégis prémium mediterrán hangulatot ad. A helyszín tájékoztatása szerint egy esküvő napján a pár ünnepe az egyetlen rendezvény, így a tér és a személyzet nem oszlik meg másik eseménnyel. A csapat vintage glam, klasszikus black tie vagy modern art deco témához is vállal személyre szabott részleteket és koordinációt. A helyszíni étterem miatt a ceremónia, a naplementés vacsora és az esti program ugyanazon a helyen szervezhető.",
     blurb_en:
-      "A beach club on the water for an intimate or mid-sized wedding. Stone, timber and the shoreline give a relaxed but premium feel. At a sunset dinner very little styling is needed.",
+      "Laganini Čiovo is a beachfront club of more than one thousand square metres for an intimate or mid-sized wedding. Natural stone, timber, the shoreline and wide views create a relaxed but premium Mediterranean setting. The venue states that a couple's wedding is its only event that day, so the space and team are not split with another celebration. Its team can coordinate personalised details for themes ranging from vintage glam and classic black tie to modern art deco. With a restaurant on site, the ceremony, sunset dinner and evening programme can stay in one location.",
     website: "https://www.laganinibeachclub.com/",
+    gallery_urls: [
+      "https://static.wixstatic.com/media/a91692_ce1fa2b016e04a2eb6749698dbc64801.jpg",
+      "https://static.wixstatic.com/media/a91692_bf32f6f227cd425684fd9fd01dabd4b3.jpg",
+      "https://static.wixstatic.com/media/a91692_b2f9ec758f5949cb97134949efabe416.jpg",
+      "https://static.wixstatic.com/media/a91692_3efb2800c18743c69d29f3ad0a3adc48.jpg",
+      "https://static.wixstatic.com/media/a91692_93dcdc1f1f224c6199f6e5f2620ea2f7.jpg",
+      "https://static.wixstatic.com/media/a91692_850fa6c43c4040569a509751c110540e.jpg",
+    ],
     ...noContact,
     // Capacity depends on the layout, and outdoor music generally runs to midnight, so plan
     // the afterparty.
@@ -3671,10 +3684,18 @@ export const CROATIA_FOOD_2026_08: RawDirectoryEntry[] = [
     capacity_min: null,
     capacity_max: null,
     blurb_hu:
-      "A Dolce Mondo zágrábi műhely esküvői tortákat és teljes desszertasztalokat is kínál. A szolgáltató telefonon, Instagramon és Facebookon érhető el, nyilvános email címet nem közöl. A koncepciót, a darabszámot és a kiszállítás időpontját közvetlenül kell véglegesíteni.",
+      "A Dolce Mondo zágrábi cukrászműhely egyedi esküvői tortákat és teljes desszertasztalokat készít. A hivatalos galériában többszintes, virágos, minimalista és merészebb színvilágú torták is szerepelnek. A desszertasztal összeállításába aprósütemények, pohárdesszertek, cake popok és gyümölcsös elemek is bekerülhetnek. A műhely hétfőtől szombatig működik, érdeklődni két közvetlen telefonszámon, valamint Instagramon és Facebookon lehet. A választott dizájnt, az ízeket, a darabszámot, az allergéneket és a kiszállítás időpontját minden esküvőnél külön érdemes véglegesíteni.",
     blurb_en:
-      "A Zagreb workshop offering wedding cakes and full dessert tables. Reachable by phone, Instagram and Facebook; no email is published. Concept, piece count and the delivery slot are settled directly.",
+      "Dolce Mondo is a Zagreb pastry workshop producing bespoke wedding cakes and complete dessert tables. Its official gallery shows tiered cakes in floral, minimalist and bolder colour-led designs. A dessert-table order can combine small cakes, individual desserts, cake pops and fruit elements. The workshop operates from Monday to Saturday and accepts enquiries through two direct phone numbers, Instagram and Facebook. The design, flavours, quantity, allergens and delivery window should be confirmed separately for each wedding.",
     website: "https://dolcemondo.hr/",
+    gallery_urls: [
+      "https://i0.wp.com/dolcemondo.hr/wp-content/uploads/2026/06/1000138373-scaled.jpg?w=1920&ssl=1",
+      "https://i0.wp.com/dolcemondo.hr/wp-content/uploads/2026/06/1000137056-scaled.jpg?w=1920&ssl=1",
+      "https://i0.wp.com/dolcemondo.hr/wp-content/uploads/2026/06/1000134516-scaled.jpg?w=1920&ssl=1",
+      "https://i0.wp.com/dolcemondo.hr/wp-content/uploads/2026/06/1000133123-scaled.jpg?w=1920&ssl=1",
+      "https://i0.wp.com/dolcemondo.hr/wp-content/uploads/2026/06/1000062266-scaled.jpg?w=1920&ssl=1",
+      "https://i0.wp.com/dolcemondo.hr/wp-content/uploads/2025/01/1000081292-scaled.jpg?w=1920&ssl=1",
+    ],
     ...noContact,
     contact_phone: "+385 91 600 8453",
     contact_phone_alt: "+385 91 761 3642",
@@ -6649,10 +6670,10 @@ export const CROATIA_PHOTOGRAPHERS_2026_08: RawDirectoryEntry[] = [
     capacity_min: null,
     capacity_max: null,
     blurb_hu:
-      "A Makarska Weddings a Photo Brzica fotó- és filmes esküvői márkája a makarskai riviérán. A szolgáltató Dalmácia több kiemelt destination helyszínét, valamint közvetlen emailt és telefonszámot sorol fel. A szigeti logisztikát, a kompköltséget és a fotós-filmes csapat létszámát részletesen kell egyeztetni.",
+      "A Makarska Weddings a Photo Brzica fotó- és filmes esküvői márkája a makarskai riviérán. Egész napos és egyedi fotózást, elopement- és jegyesfotózást, valamint rövid, filmszerű esküvői videót kínál. A csomagokhoz privát, jelszóval védett online galéria és nagy felbontású letöltés tartozik, opcionálisan drónfelvétel is kérhető. A szolgáltató Split, Makarska, Brač, Hvar és Dubrovnik térségében dolgozik, csúcsszezonra pedig 6–12 hónappal korábbi foglalást javasol. Szigeti esküvőnél a kompmenetrendet, az utazási költséget és a fotós-filmes csapat pontos létszámát is bele kell írni az ajánlatba.",
     blurb_en:
-      "Photo and film on the Makarska riviera, covering Split, Dubrovnik, Hvar, Korčula and Brač. Island dates mean ferries and timing, so get the logistics and the crew size in the quote.",
-    website: "",
+      "Makarska Weddings is Photo Brzica's wedding photography and film brand on the Makarska Riviera. Services include full-day and tailored photography, elopements, engagement sessions and short cinematic wedding films. Packages include a private password-protected online gallery with high-resolution downloads, while drone coverage is available as an option. The team covers Split, Makarska, Brač, Hvar and Dubrovnik and recommends booking peak-season dates six to twelve months ahead. For an island wedding, the quote should spell out ferry timing, travel costs and the exact photography and film crew size.",
+    website: "https://makarskaweddings.com/",
     ...noContact,
     contact_email: "hello@makarskaweddings.com",
     contact_phone: "+385 95 522 5691",

@@ -858,6 +858,23 @@ async function handleRequest(req: Request): Promise<Response> {
     });
   }
 
+  // The old weddly.hu -> tryweddly.com recovery redirect appended `?h=1` to
+  // escape browsers that had cached the previous redirect in the other
+  // direction. It is only a cache-buster, but waiting for the SPA to remove it
+  // means crawlers first receive a query-string URL with a `noindex` header.
+  // Consolidate it at the server instead, preserving any real query parameters.
+  if (url.searchParams.has("h")) {
+    url.searchParams.delete("h");
+    const search = url.searchParams.toString();
+    return new Response(null, {
+      status: PRESERVE_METHOD.has(req.method) ? 308 : 301,
+      headers: {
+        Location: `${url.pathname}${search ? `?${search}` : ""}`,
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
+  }
+
   // Singular-typo redirect — /planner → /planners (permanent, browser-cached).
   if (url.pathname === "/planner") {
     return new Response(null, {
@@ -1163,10 +1180,12 @@ async function serveOne(req: Request): Promise<Response> {
   }
   // Keep-out-of-the-index rides here rather than on the SPA branch, for the
   // same reason the baseline headers do: it must not depend on which branch
-  // answered. A private-by-token URL is equally un-indexable whether it came
-  // back as SSR HTML, a redirect or a 404.
+  // answered. Redirects are the exception — their target response owns the
+  // indexing decision, and attaching `noindex` to the hop can leave Search
+  // Console reporting a robots exclusion instead of consolidating the URL.
   const responseUrl = new URL(req.url);
-  if (isNoIndexPath(responseUrl.pathname) || responseUrl.search.length > 0) {
+  const isRedirect = res.status >= 300 && res.status < 400;
+  if (!isRedirect && (isNoIndexPath(responseUrl.pathname) || responseUrl.search.length > 0)) {
     headers.set("X-Robots-Tag", "noindex, follow, noarchive");
   }
   return new Response(res.body, { status: res.status, headers });

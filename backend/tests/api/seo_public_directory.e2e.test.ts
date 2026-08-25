@@ -111,6 +111,23 @@ describe("GET /api/public/vendors — the whole catalogue, for anybody", () => {
 });
 
 describe("the sitemap offers substantial vendor pages", () => {
+  test("the GSC enrichment batch clears the shared prose and photo gate", () => {
+    const xml = renderSitemapXml(null);
+    for (const id of [
+      "casa-dos-penedos-sintra",
+      "hotel-bellevue-dubrovnik",
+      "the-westin-zagreb",
+      "laganini-beach-club-ciovo",
+      "hotel-ossowski",
+      "weigert-images",
+      "dwor-rybieniec",
+      "restauracja-trzy-korony",
+      "dolce-mondo-zagreb",
+    ]) {
+      expect(xml, id).toContain(`<loc>https://tryweddly.com/suppliers/${id}</loc>`);
+    }
+  });
+
   test("a substantial curated vendor's pretty URL is in the file", () => {
     const xml = renderSitemapXml(null);
     const entry = DIRECTORY.find((candidate) => {

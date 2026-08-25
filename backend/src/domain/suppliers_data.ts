@@ -5757,10 +5757,12 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
     address: "Pera Čingrije 7, 20000 Dubrovnik, Croatia",
     capacity_min: null,
     capacity_max: null,
-    blurb_hu: "Boutique luxushotel Dubrovnikban, intim esküvőkhöz és exkluzív eseményekhez.",
-    blurb_en: "Boutique luxury hotel in Dubrovnik for intimate weddings and exclusive events.",
+    blurb_hu:
+      "A Hotel Bellevue Dubrovnik a Miramare-öböl fölött, egy harminc méter magas sziklafalba épült ötcsillagos boutique hotel, panorámás adriai kilátással. Dubrovnik történelmi központja körülbelül tíz perc sétára van, miközben a hotel alatt kavicsos strand húzódik. A szobák és lakosztályok többsége tengerre néz, több kategóriához saját erkély is tartozik. A helyszíni éttermek között Michelin Guide által ajánlott fine dining és közvetlenül a partnál kialakított, intimebb étterem is található. A rendezvényterek és a külön értékesítési csapat intim, magas színvonalú destination esküvőkhöz ad teljes helyszíni hátteret.",
+    blurb_en:
+      "Hotel Bellevue Dubrovnik is a five-star boutique hotel built into a thirty-metre cliff above Miramare Bay, with sweeping Adriatic views. Dubrovnik's historic centre is about a ten-minute walk away, while a pebble beach sits directly below the hotel. Most rooms and suites face the sea, and several categories add a private balcony. On-site dining ranges from a Michelin Guide-recommended fine-dining restaurant to a more intimate restaurant beside the beach. Its event spaces and dedicated sales team provide a complete setting for an intimate, high-end destination wedding.",
     website: "https://www.adriaticluxuryhotels.com/hotel-bellevue-dubrovnik/",
-    contact_email: "events@alh.hr",
+    contact_email: "mice@alh.hr",
     contact_phone: "+385 20 300 300",
     lat: null,
     lng: null,
@@ -8251,11 +8253,12 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
     address: "Rua Marechal Saldanha 21, 2710-631 Sintra, Portugal",
     capacity_min: null,
     capacity_max: null,
-    blurb_hu: "Romantikus sintrai kúria kertekkel körülvéve, meghitt és elegáns esküvőkhöz.",
+    blurb_hu:
+      "A Casa dos Penedos Sintra zöld tájába simuló történelmi kúria, ahol a természet és a hely múltja egyszerre része az élménynek. A kecses építészet, a romantikus teraszok és a békés kertek többféle hátteret adnak a szertartáshoz, a vacsorához és a fotózáshoz. A meleg hangulatú belső terek rosszabb idő esetén is karakteres alternatívát kínálnak. A helyszín legfeljebb 600 vendéget fogad, ezért meghitt vacsorához és nagyobb esküvőhöz is alakítható. A Penha Longa Catering csapata a vendéglátást és az esküvő részleteinek közvetlen egyeztetését is egy kézben kezeli.",
     blurb_en:
-      "Romantic Sintra manor house surrounded by gardens, suited to intimate and stylish celebrations.",
+      "Casa dos Penedos is a historic manor tucked into Sintra's green landscape, where the natural setting and the house's past are both part of the experience. Its graceful architecture, romantic terraces and peaceful gardens provide distinct backdrops for a ceremony, dinner and portraits. Warm interior rooms give the celebration a characterful alternative when the weather changes. The venue hosts up to 600 guests, allowing it to accommodate both an intimate dinner and a larger wedding. Penha Longa Catering handles the food and direct planning details through its dedicated wedding team.",
     website: "https://www.penhalongacatering.com/en/portfolio/casa-dos-penedos/",
-    contact_email: null,
+    contact_email: "wedding.penhalonga@penhalonga.com",
     contact_phone: null,
     lat: 38.795691,
     lng: -9.38834,
@@ -20462,10 +20465,15 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
     capacity_min: null,
     capacity_max: null,
     blurb_hu:
-      "A Weigert Images alapítója. Elsősorban Magyarországon és Ausztriában fotóz, de egész Európában vállal esküvőket, a hangulatra és az érzelmes pillanatokra építve. Kapcsolat a weboldal űrlapján.",
+      "Joseph Weigert a Weigert Images alapítója és esküvői fotósa. Elsősorban Magyarországon és Ausztriában dolgozik, de Európa más országaiba is vállal utazást. Képi világa a hangulatra, a természetes érzelmekre és az esküvő történetének egységes bemutatására épít. A nyilvános portfólióban egész napos esküvők és részletközpontú páros képek egyaránt láthatók. Az elérhetőség és az egyedi csomag részletei a weboldal kapcsolatfelvételi űrlapján egyeztethetők.",
     blurb_en:
-      "Founder of Weigert Images. Works mainly in Hungary and Austria and travels across Europe, building on mood and emotion. Contact runs through the form on his site.",
+      "Joseph Weigert is the founder and wedding photographer behind Weigert Images. He works mainly in Hungary and Austria and also travels elsewhere in Europe. His visual approach centres on atmosphere, natural emotion and a coherent account of the wedding day. The public portfolio combines full-day celebrations with detail-led couple portraits. Availability and a tailored package can be discussed through the contact form on his website.",
     website: "https://weigertimages.com/",
+    gallery_urls: [
+      "https://www.weigertimages.com/wp-content/uploads/2017/07/wedding-slideshow-16.jpg",
+      "https://www.weigertimages.com/wp-content/uploads/2016/06/wedding-slideshow-08.jpg",
+      "https://www.weigertimages.com/wp-content/uploads/2016/06/wedding-slideshow-07.jpg",
+    ],
     ...noContact,
     source: "curated",
     price_band: null,

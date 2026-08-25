@@ -1571,10 +1571,17 @@ export const POLAND_2026_08: RawDirectoryEntry[] = [
     capacity_min: null,
     capacity_max: null,
     blurb_hu:
-      "Dwór Rybieniec to dwór w miejscowości Poznań (województwo wielkopolskie). Na miejscu: stoły okrągłe, stoły prostokątne, klimatyzacja, parking na miejscu i ogród lub taras. Kuchnia regionalna, polska i śródziemnomorska, dostępne są opcje wegetariańskie i wegańskie.",
+      "Dwór Rybieniec to Poznań közelében, vidéki környezetben működő kúria és esküvői helyszín. A világos rendezvényterem körasztalos és hosszú asztalos elrendezéshez is alakítható, klimatizált, és saját parkoló tartozik hozzá. A kertben szabadtéri szertartás tartható, így a ceremónia és a vacsora egy helyszínen maradhat. A konyha regionális, lengyel és mediterrán fogásokból állít össze menüt, vegetáriánus és vegán lehetőségekkel. A helyszíni szállást, a menü részleteit és az esküvő napi kizárólagosságát az ajánlatban külön érdemes rögzíteni.",
     blurb_en:
-      "Dwór Rybieniec is a manor house in Poznań, Greater Poland. The venue has round tables, rectangular tables, air conditioning, on-site parking and a garden or terrace. The kitchen covers regional, Polish and Mediterranean cooking, with vegetarian and vegan menus.",
-    website: "",
+      "Dwór Rybieniec is a country manor and wedding venue near Poznań. Its bright function room can be arranged with round or long tables and includes air conditioning and on-site parking. An outdoor ceremony can be held in the garden, keeping the vows and reception in one place. Menus draw on regional, Polish and Mediterranean cooking, with vegetarian and vegan options available. Accommodation, final menu details and exclusive use on the wedding date should be confirmed in the proposal.",
+    website: "https://www.dworwrybiencu.pl",
+    gallery_urls: [
+      "https://www.dworwrybiencu.pl/wp-content/uploads/2026/05/wesela_header.jpg",
+      "https://www.dworwrybiencu.pl/wp-content/uploads/2026/05/wesela_sala.jpeg",
+      "https://www.dworwrybiencu.pl/wp-content/uploads/2026/05/wesela_plener.jpg",
+      "https://www.dworwrybiencu.pl/wp-content/uploads/2026/05/wesela_menu.jpg",
+      "https://www.dworwrybiencu.pl/wp-content/uploads/2026/05/wesela_noclegi.jpg",
+    ],
     ...noContact,
     source: "curated",
     price_band: null,
@@ -1616,10 +1623,18 @@ export const POLAND_2026_08: RawDirectoryEntry[] = [
     capacity_min: null,
     capacity_max: 120,
     blurb_hu:
-      "Hotel Ossowski to hotel w miejscowości Kobylnica (województwo wielkopolskie). Obiekt przyjmuje wesela do 120 osób, do dyspozycji są 4 sale. Na miejscu: stoły prostokątne, klimatyzacja, parking na miejscu i ogród lub taras. Kuchnia polska, dostępne są opcje wegetariańskie i wegańskie. Nocleg na miejscu dla 140 osób.",
+      "A Hotel Ossowski Kobylnicában, Poznań közelében működő szálloda és esküvői helyszín, több mint húszéves rendezvényszervezési tapasztalattal. Négy klimatizált terme közül a bálterem 120, a kisebb termek 60, 40 vagy 30 vendég számára alkalmasak. Nyáron a termekhez kapcsolódó kertek pihenőteret adnak, a gondozott kert és a 150 éves fenyves pedig fotózási helyszínként is használható. A csomag asztal-, terem- és bejáratdekorációt, valamint ajándék szobát is tartalmazhat a párnak, a gyerekeknek pedig játszótér és külön kérhető animátor áll rendelkezésre. A szálloda helyben legfeljebb 140 vendéget tud elszállásolni, az egyedi lengyel, vegetáriánus vagy vegán menüt pedig a párral együtt állítja össze.",
     blurb_en:
-      "Hotel Ossowski is a hotel in Kobylnica, Greater Poland. It seats weddings of up to 120 guests across 4 halls. The venue has rectangular tables, air conditioning, on-site parking and a garden or terrace. The kitchen covers Polish cooking, with vegetarian and vegan menus. Rooms on site sleep up to 140.",
+      "Hotel Ossowski is a hotel and wedding venue in Kobylnica near Poznań, with more than twenty years of event experience. Its four air-conditioned rooms seat 120, 60, 40 or 30 guests, allowing the layout to match the size of the celebration. In summer, gardens beside the rooms provide outdoor breakout space, while the landscaped grounds and 150-year-old pine forest work as portrait locations. A package can include table, room and entrance decoration plus a complimentary room for the couple; children have a playground and optional entertainers. Accommodation is available for up to 140 guests, and Polish, vegetarian or vegan menu details are agreed individually with the couple.",
     website: "https://www.hotel-ossowski.com.pl",
+    gallery_urls: [
+      "https://www.hotel-ossowski.com.pl/wp-content/uploads/2023/04/1642545445527_1162.jpg",
+      "https://www.hotel-ossowski.com.pl/wp-content/uploads/2023/04/16425454383866_1180.jpg",
+      "https://www.hotel-ossowski.com.pl/wp-content/uploads/2023/04/16425453923147_1158.jpg",
+      "https://www.hotel-ossowski.com.pl/wp-content/uploads/2023/04/16425449891625_20210611163637.jpg",
+      "https://www.hotel-ossowski.com.pl/wp-content/uploads/2023/04/16425449876031_mg9434.jpg",
+      "https://www.hotel-ossowski.com.pl/wp-content/uploads/2023/04/16425449861145_mg9429.jpg",
+    ],
     ...noContact,
     contact_email: "marketing@hotel-ossowski.com.pl",
     source: "curated",
@@ -2397,7 +2412,15 @@ export const POLAND_2026_08: RawDirectoryEntry[] = [
       "Restauracja Trzy Korony to restauracja w miejscowości Bobolice (województwo zachodniopomorskie). Obiekt przyjmuje wesela od 35 do 200 osób. Na miejscu: stoły okrągłe, stoły prostokątne, klimatyzacja, parking na miejscu i ogród lub taras. Kuchnia regionalna i polska, dostępne są opcje wegetariańskie i wegańskie. Nocleg na miejscu dla 80 osób.",
     blurb_en:
       "Restauracja Trzy Korony is a restaurant in Bobolice, West Pomerania. It seats weddings of 35 to 200 guests. The venue has round tables, rectangular tables, air conditioning, on-site parking and a garden or terrace. The kitchen covers regional and Polish cooking, with vegetarian and vegan menus. Rooms on site sleep up to 80.",
-    website: "",
+    website: "http://www.restauracjatrzykorony.pl",
+    gallery_urls: [
+      "http://www.restauracjatrzykorony.pl/galeria_slider/Galeria_01.jpg",
+      "http://www.restauracjatrzykorony.pl/galeria_slider/Galeria_02.jpg",
+      "http://www.restauracjatrzykorony.pl/galeria_slider/Galeria_03.jpg",
+      "http://www.restauracjatrzykorony.pl/galeria_slider/Galeria_04.jpg",
+      "http://www.restauracjatrzykorony.pl/galeria_slider/Galeria_05.jpg",
+      "http://www.restauracjatrzykorony.pl/galeria_slider/Galeria_06.jpg",
+    ],
     ...noContact,
     contact_email: "poczta@restauracjatrzykorony.pl",
     source: "curated",

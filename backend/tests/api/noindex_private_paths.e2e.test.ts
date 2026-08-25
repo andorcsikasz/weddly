@@ -31,6 +31,29 @@ async function robotsTagFor(path: string): Promise<string | null> {
 }
 
 describe("private-by-token pages are never indexable", () => {
+  test("legacy vendor URLs and the h cache-buster consolidate with clean redirects", async () => {
+    for (const [path, location] of [
+      ["/vendors/lod-harmonia", "/suppliers/lod-harmonia"],
+      ["/about?h=1", "/about"],
+      ["/suppliers?h=1&utm_source=gsc", "/suppliers?utm_source=gsc"],
+    ] as const) {
+      const res = await fetch(`${BASE}${path}`, {
+        headers: { Accept: "text/html" },
+        redirect: "manual",
+      });
+      expect(res.status, path).toBe(301);
+      expect(res.headers.get("location"), path).toBe(location);
+      expect(res.headers.get("x-robots-tag"), path).toBeNull();
+      await res.arrayBuffer();
+    }
+  });
+
+  test("meaningful tool state remains browseable but does not create a second indexed URL", async () => {
+    const tag = await robotsTagFor("/tools/100-questions-before-marriage?deck=roots");
+    expect(tag).toContain("noindex");
+    expect(tag).toContain("follow");
+  });
+
   test("a household's own guest-page view carries noindex, the public one does not", async () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("noindex@weddly.test");
