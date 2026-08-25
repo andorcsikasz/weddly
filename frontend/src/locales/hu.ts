@@ -539,7 +539,8 @@ const hu: LocaleMessages = {
     label_blurb_lang: "Leírás ({lang})",
     blurb_lang_aria: "A leírás nyelve",
     blurb_lang_filled: "már kitöltve",
-    label_blurb_hint: "Legfeljebb 2000 karakter. A párok ezt látják a hirdetésed kártyáján.",
+    label_blurb_hint:
+      "Írj 3–5 tartalmas mondatot arról, mit nyújtotok és miben vagytok különleges. Legfeljebb 2000 karakter.",
     label_city: "Város",
     label_address: "Cím",
     label_website: "Weboldal",
@@ -644,7 +645,7 @@ const hu: LocaleMessages = {
     hero_size_hint: "Ajánlott méret: 1200×800 px (3:2 arány), így vágjuk a katalóguskártyán",
     section_gallery: "Galéria",
     gallery_intro:
-      "Mutasd meg a munkáidat több fotón. A párok a nyilvános adatlapodon látják őket, a borítókép után.",
+      "Tölts fel 3–7 erős portfólióképet. A párok a nyilvános adatlapodon látják őket, a borítókép után.",
     gallery_add: "Fotó hozzáadása",
     gallery_count: "{n} / {max} fotó",
     gallery_delete: "Fotó törlése",
@@ -1277,7 +1278,7 @@ const hu: LocaleMessages = {
       company_listing_link: "A nyilvános adatlapod szerkesztése (fotó, árazás, kapacitás)",
       bio_title: "Bemutatkozás",
       bio_body:
-        "Ez a szöveg jelenik meg a nyilvános adatlapodon a pároknak. Írd meg mindkét nyelven, ha nemzetközi párokat is vállalsz.",
+        "Ez a szöveg jelenik meg a nyilvános adatlapodon. Írj 3–5 tartalmas mondatot, és töltsd ki mindkét nyelven, ha nemzetközi párokat is vállalsz.",
       bio_hu: "Magyar bemutatkozás",
       bio_en: "Angol bemutatkozás",
       data_delete_heading: "Fiók törlése",
@@ -2640,7 +2641,7 @@ const hu: LocaleMessages = {
     save_error: "Nem sikerült menteni. Próbáld újra.",
     listing_title: "A hirdetésed",
     listing_body: "Így fognak látni a párok. Bármikor módosíthatod.",
-    blurb_placeholder: "Egy-két mondat arról, mit csináltok, és miért vagytok jó választás.",
+    blurb_placeholder: "3–5 mondat arról, mit csináltok, és miért vagytok jó választás.",
     price_band_label: "Árkategória",
     hero_cta: "Borítókép feltöltése",
     hero_replace: "Kép cseréje",
@@ -10024,6 +10025,10 @@ const hu: LocaleMessages = {
     ownerNoticeClaim: "Profil átvétele",
     ownerNoticeContact: "Javítás vagy törlés kérése",
     ownerNoticePrivacy: "Miért szerepel itt?",
+  },
+  vendorLocation: {
+    notFoundTitle: "Ez a kombináció nem található",
+    notFoundBody: "Ehhez a kategóriához és városhoz még nincs elég szolgáltató a katalógusban.",
   },
   vendorBrowse: {
     title: "Szolgáltatók böngészése",

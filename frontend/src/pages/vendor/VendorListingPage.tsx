@@ -1304,6 +1304,9 @@ export default function VendorListingPage() {
                   )}
                 </>
               )}
+              <p className="text-xs text-ink-500 dark:text-umber-300">
+                {t("vendor_home.label_blurb_hint")}
+              </p>
             </fieldset>
 
             <fieldset

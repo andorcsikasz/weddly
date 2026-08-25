@@ -11220,6 +11220,17 @@ export interface LocaleMessages {
     ownerNoticeContact: string;
     ownerNoticePrivacy: string;
   };
+  /** Category × city SEO landing pages, `/eskuvoi-szolgaltatok/:cat/:city`
+   *  (HU) and `/wedding-vendors/:cat/:city` (EN). The h1/intro themselves are
+   *  built from `supplierCategoryLabel` + the resolved city, not from these
+   *  keys — kept in sync with the SSR copy in `locationPageCopy`
+   *  (backend/src/lib/seo_ssr.ts) by construction rather than by a second
+   *  hand-written template. These two keys cover only the one state that
+   *  isn't data-driven: a slug pair that doesn't resolve. */
+  vendorLocation: {
+    notFoundTitle: string;
+    notFoundBody: string;
+  };
   vendorBrowse: {
     title: string;
     subtitle: string;

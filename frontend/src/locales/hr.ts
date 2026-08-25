@@ -555,7 +555,8 @@ const hr: LocaleMessages = {
     label_blurb_lang: "Opis ({lang})",
     blurb_lang_aria: "Jezik opisa",
     blurb_lang_filled: "već ispunjeno",
-    label_blurb_hint: "Do 2000 znakova. Parovi ovo vide na kartici vašeg oglasa.",
+    label_blurb_hint:
+      "Napišite 3–5 korisnih rečenica o svojoj ponudi i onome što vas izdvaja. Najviše 2000 znakova.",
     label_city: "Grad",
     label_address: "Ulica i kućni broj",
     label_website: "Web stranica",
@@ -661,7 +662,7 @@ const hr: LocaleMessages = {
       "Preporučena veličina: 1200×800 px (omjer 3:2), točan izrez vaše kartice u katalogu",
     section_gallery: "Galerija",
     gallery_intro:
-      "Pokažite svoj rad s još fotografija. Parovi ih vide na vašem javnom profilu, iza naslovne fotografije.",
+      "Dodajte 3–7 svojih najboljih fotografija portfelja. Parovi ih vide na vašem javnom profilu, iza naslovne fotografije.",
     gallery_add: "Dodajte fotografiju",
     gallery_count: "{n} / {max} fotografija",
     gallery_delete: "Izbrišite fotografiju",
@@ -1294,7 +1295,7 @@ const hr: LocaleMessages = {
       company_listing_link: "Uredite svoj javni oglas (fotografija, cijene, kapacitet)",
       bio_title: "O vašoj tvrtki",
       bio_body:
-        "Ovaj se tekst pojavljuje na vašem javnom oglasu za parove. Napišite ga na oba jezika ako primate i inozemne parove.",
+        "Ovaj se tekst pojavljuje na vašem javnom oglasu. Napišite 3–5 korisnih rečenica na oba jezika ako radite i s inozemnim parovima.",
       bio_hu: "Opis na mađarskom",
       bio_en: "Opis na engleskom",
       data_delete_heading: "Brisanje računa",
@@ -2629,7 +2630,7 @@ const hr: LocaleMessages = {
     save_error: "Spremanje nije uspjelo. Pokušajte ponovno.",
     listing_title: "Vaš oglas",
     listing_body: "Ovako će vas parovi vidjeti. Možete to promijeniti kad god.",
-    blurb_placeholder: "Rečenica ili dvije o tome čime se bavite i zašto ste pravi izbor.",
+    blurb_placeholder: "3–5 rečenica o tome čime se bavite i zašto ste pravi izbor.",
     price_band_label: "Cjenovni raspon",
     hero_cta: "Prenesite naslovnu fotografiju",
     hero_replace: "Zamijenite fotografiju",
@@ -9941,6 +9942,10 @@ const hr: LocaleMessages = {
     ownerNoticeClaim: "Preuzmite ovaj profil",
     ownerNoticeContact: "Zatražite ispravak ili uklanjanje",
     ownerNoticePrivacy: "Zašto je ovo ovdje?",
+  },
+  vendorLocation: {
+    notFoundTitle: "Ova kombinacija nije pronađena",
+    notFoundBody: "Za ovu kategoriju i grad još nema dovoljno ponuđača u katalogu.",
   },
   vendorBrowse: {
     title: "Pregledajte dobavljače za vjenčanja",

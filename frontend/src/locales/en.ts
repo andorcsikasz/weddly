@@ -531,7 +531,8 @@ const en: LocaleMessages = {
     label_blurb_lang: "Description ({lang})",
     blurb_lang_aria: "Description language",
     blurb_lang_filled: "already filled in",
-    label_blurb_hint: "Up to 2000 characters. Couples see this on your listing card.",
+    label_blurb_hint:
+      "Write 3–5 useful sentences about what you offer and what makes you different. Up to 2000 characters.",
     label_city: "City",
     label_address: "Street address",
     label_website: "Website",
@@ -638,7 +639,7 @@ const en: LocaleMessages = {
       "Recommended size: 1200×800 px (3:2 ratio), the exact crop of your catalogue card",
     section_gallery: "Gallery",
     gallery_intro:
-      "Show off your work with more photos. Couples see them on your public profile, after the cover photo.",
+      "Add 3–7 of your strongest portfolio photos. Couples see them on your public profile, after the cover photo.",
     gallery_add: "Add photo",
     gallery_count: "{n} / {max} photos",
     gallery_delete: "Delete photo",
@@ -1266,7 +1267,7 @@ const en: LocaleMessages = {
       company_listing_link: "Edit your public listing (photo, pricing, capacity)",
       bio_title: "About your business",
       bio_body:
-        "This text appears on your public listing for couples. Write it in both languages if you also take international couples.",
+        "This text appears on your public listing. Write 3–5 useful sentences in both languages if you also work with international couples.",
       bio_hu: "Hungarian bio",
       bio_en: "English bio",
       data_delete_heading: "Delete account",
@@ -2618,7 +2619,7 @@ const en: LocaleMessages = {
     save_error: "Couldn't save. Try again.",
     listing_title: "Your listing",
     listing_body: "This is how couples will see you. You can change it any time.",
-    blurb_placeholder: "A line or two about what you do and what makes you a great fit.",
+    blurb_placeholder: "3–5 sentences about what you do and what makes you a great fit.",
     price_band_label: "Price range",
     hero_cta: "Upload a cover photo",
     hero_replace: "Replace photo",
@@ -9955,6 +9956,10 @@ const en: LocaleMessages = {
     ownerNoticeClaim: "Claim this profile",
     ownerNoticeContact: "Request a correction or removal",
     ownerNoticePrivacy: "Why is this here?",
+  },
+  vendorLocation: {
+    notFoundTitle: "This combination could not be found",
+    notFoundBody: "There aren't enough listings in the catalogue for this category and city yet.",
   },
   vendorBrowse: {
     title: "Browse wedding vendors",

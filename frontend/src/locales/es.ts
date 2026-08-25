@@ -556,7 +556,8 @@ const es: LocaleMessages = {
     label_blurb_lang: "Descripción ({lang})",
     blurb_lang_aria: "Idioma de la descripción",
     blurb_lang_filled: "ya rellenado",
-    label_blurb_hint: "Hasta 2000 caracteres. Las parejas lo ven en la tarjeta de tu ficha.",
+    label_blurb_hint:
+      "Escribe entre 3 y 5 frases útiles sobre lo que ofreces y qué te hace diferente. Hasta 2000 caracteres.",
     label_city: "Ciudad",
     label_address: "Dirección postal",
     label_website: "Sitio web",
@@ -665,7 +666,7 @@ const es: LocaleMessages = {
       "Tamaño recomendado: 1200×800 px (proporción 3:2), el recorte exacto de tu tarjeta de catálogo",
     section_gallery: "Galería",
     gallery_intro:
-      "Luce tu trabajo con más fotos. Las parejas las ven en tu perfil público, después de la foto de portada.",
+      "Añade entre 3 y 7 de tus mejores fotos de portafolio. Las parejas las ven en tu perfil público, después de la portada.",
     gallery_add: "Añadir foto",
     gallery_count: "{n} / {max} fotos",
     gallery_delete: "Eliminar foto",
@@ -1300,7 +1301,7 @@ const es: LocaleMessages = {
       company_listing_link: "Edita tu ficha pública (foto, precios, capacidad)",
       bio_title: "Sobre tu negocio",
       bio_body:
-        "Este texto aparece en tu ficha pública para las parejas. Escríbelo en ambos idiomas si también aceptas parejas internacionales.",
+        "Este texto aparece en tu ficha pública. Escribe entre 3 y 5 frases útiles en ambos idiomas si también trabajas con parejas internacionales.",
       bio_hu: "Biografía en húngaro",
       bio_en: "Biografía en inglés",
       data_delete_heading: "Eliminar cuenta",
@@ -2675,7 +2676,7 @@ const es: LocaleMessages = {
     save_error: "No se pudo guardar. Inténtalo de nuevo.",
     listing_title: "Tu ficha",
     listing_body: "Así te verán las parejas. Puedes cambiarlo cuando quieras.",
-    blurb_placeholder: "Una o dos líneas sobre lo que haces y por qué encajas tan bien.",
+    blurb_placeholder: "Entre 3 y 5 frases sobre lo que haces y por qué encajas tan bien.",
     price_band_label: "Rango de precios",
     hero_cta: "Sube una foto de portada",
     hero_replace: "Cambiar foto",
@@ -10054,6 +10055,11 @@ const es: LocaleMessages = {
     ownerNoticeClaim: "Reclamar este perfil",
     ownerNoticeContact: "Pedir una corrección o la eliminación",
     ownerNoticePrivacy: "¿Por qué aparece aquí?",
+  },
+  vendorLocation: {
+    notFoundTitle: "No se encontró esta combinación",
+    notFoundBody:
+      "Todavía no hay suficientes proveedores en el catálogo para esta categoría y ciudad.",
   },
   vendorBrowse: {
     title: "Explora proveedores de bodas",

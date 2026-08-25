@@ -118,8 +118,12 @@ function withVotes(
  *  vendor visible to a signed-in couple and invisible to a visitor would be a
  *  listing whose own share link outranks it.
  *
- *  `country: null` means no scoping at all. */
-function assembleDirectoryBase(opts: {
+ *  `country: null` means no scoping at all. Exported for
+ *  `domain/vendor_locations.ts`, which needs the exact same catalogue (photo
+ *  presence included) to count listings per category × city combination —
+ *  same "one catalogue, not two hand-kept copies" reasoning as the rest of
+ *  this comment. */
+export function assembleDirectoryBase(opts: {
   category: SupplierCategory | null;
   country: string | null;
   geo?: { lat: number; lng: number; radiusKm: number } | null;

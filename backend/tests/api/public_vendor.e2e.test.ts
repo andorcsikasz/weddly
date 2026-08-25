@@ -15,7 +15,12 @@ import { createVendorAccount } from "../../src/domain/vendor_accounts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { maskPhoneForAnonymous } from "../../src/domain/phone_mask";
 import { maskAddressForPublic } from "../../src/domain/contact_mask";
-import { HU_HOST, lookupVendorPageMeta, renderIndexHtml } from "../../src/lib/seo_ssr";
+import {
+  HU_HOST,
+  lookupVendorPageMeta,
+  renderIndexHtml,
+  renderSitemapXml,
+} from "../../src/lib/seo_ssr";
 import { canonicalListingId, slugifyName, vendorPublicId } from "@shared/vendor_slug";
 
 async function registerAdmin(): Promise<string> {
@@ -523,6 +528,35 @@ describe("per-supplier SSR og:card meta (/suppliers/:id)", () => {
       acceptLanguage: "en-US,en;q=0.9",
     });
     expect(html).toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
+  });
+
+  test("indexing requires at least three meaningful sentences and three distinct photos", async () => {
+    const id = await seedClaimedVendorNoHero("seo-quality@weddly.test", "Quality Photo Studio");
+    const threeSentences =
+      "Természetes hangulatú esküvői fotókat készítünk Budapesten és környékén. " +
+      "A párokat már a tervezés során személyes konzultációval és részletes idővonallal segítjük. " +
+      "Az átadott válogatás gondosan szerkesztett, nagy felbontású képeket tartalmaz.";
+    db.prepare("UPDATE listings SET blurb_hu = ?, blurb_en = ? WHERE id = ?").run(
+      threeSentences,
+      threeSentences,
+      id,
+    );
+    addListingPhoto(id, `/uploads/listings/${id}/1.webp`);
+    addListingPhoto(id, `/uploads/listings/${id}/2.webp`);
+    const profileLoc = `<loc>https://${HU_HOST}/suppliers/${vendorPublicId(id, "Quality Photo Studio")}</loc>`;
+
+    expect(lookupVendorPageMeta(`/suppliers/${id}`)?.indexable).toBe(false);
+    expect(renderSitemapXml(null)).not.toContain(profileLoc);
+
+    addListingPhoto(id, `/uploads/listings/${id}/3.webp`);
+    expect(lookupVendorPageMeta(`/suppliers/${id}`)?.indexable).toBe(true);
+
+    db.prepare("UPDATE listings SET blurb_hu = ?, blurb_en = ? WHERE id = ?").run(
+      "Természetes hangulatú esküvői fotókat készítünk Budapesten és környékén. A teljes galériát gondosan szerkesztve adjuk át.",
+      "Természetes hangulatú esküvői fotókat készítünk Budapesten és környékén. A teljes galériát gondosan szerkesztve adjuk át.",
+      id,
+    );
+    expect(lookupVendorPageMeta(`/suppliers/${id}`)?.indexable).toBe(false);
   });
 });
 

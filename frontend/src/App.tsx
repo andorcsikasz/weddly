@@ -114,6 +114,7 @@ const SupplierDetailPage = lazyWithReload(() => import("./pages/SupplierDetailPa
 const PlannerDetailPage = lazyWithReload(() => import("./pages/PlannerDetailPage"));
 const PublicVendorPage = lazyWithReload(() => import("./pages/PublicVendorPage"));
 const VendorBrowsePage = lazyWithReload(() => import("./pages/VendorBrowsePage"));
+const CategoryCityLandingPage = lazyWithReload(() => import("./pages/CategoryCityLandingPage"));
 const TimelinePage = lazyWithReload(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazyWithReload(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazyWithReload(() => import("./pages/VendorClaimVerifyPage"));
@@ -428,6 +429,28 @@ export default function App() {
           element={
             <Page>
               <VendorBrowsePage />
+            </Page>
+          }
+        />
+        {/* Category × city SEO landing pages — /eskuvoi-szolgaltatok/:cat/:city
+         *  (HU) and /wedding-vendors/:cat/:city (EN). Both mount the same
+         *  component; the slugs are resolved server-side (see
+         *  GET /api/public/vendor-locations/:cat/:city). Declared before the
+         *  `:supplier_id` param route below for the same reason /suppliers/browse
+         *  is: a static-shaped path must win over a param route. */}
+        <Route
+          path="/eskuvoi-szolgaltatok/:categorySlug/:citySlug"
+          element={
+            <Page>
+              <CategoryCityLandingPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/wedding-vendors/:categorySlug/:citySlug"
+          element={
+            <Page>
+              <CategoryCityLandingPage />
             </Page>
           }
         />

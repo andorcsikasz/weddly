@@ -546,7 +546,7 @@ function PlannerInviteModule({ t, vendors }: { t: T; vendors: PublicShowcaseVend
  *  shareable, the back button undoes a pick, and the URL a visitor lands on
  *  from search is the view they expected. Contact details are absent from every
  *  card by construction — the public payload carries none. */
-function CatalogueGrid({
+export function CatalogueGrid({
   category,
   city,
   country,
@@ -723,9 +723,18 @@ export default function VendorBrowsePage() {
   const [showPill, setShowPill] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const closingRef = useRef<HTMLElement>(null);
+  // Fires the IP-detected country into the filter at most once, and only on
+  // the page's own initial load — never fights a visitor who has since typed
+  // a town or picked "Mind" back out. A deep link to a specific town is left
+  // alone too: the shared venue's country may not be the visitor's own.
+  const geoAppliedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
+    // Captured at request time, not resolve time: a fresh "everything" load
+    // is one with no country or town picked yet, and one the geo check has
+    // not already spent (see the ref's own comment above).
+    const isFreshLoad = country === null && city === null && !geoAppliedRef.current;
     setCategories(null);
     supplierApi
       .publicShowcase(country, city)
@@ -735,6 +744,12 @@ export default function VendorBrowsePage() {
         setNearby(r.nearby ?? []);
         setNearbyOrigin(r.nearby_origin ?? null);
         if (r.countries.length > 0) setCountries(r.countries);
+        if (isFreshLoad) {
+          geoAppliedRef.current = true;
+          if (r.viewer_country && r.countries.some((c) => c.code === r.viewer_country)) {
+            setCountry(r.viewer_country);
+          }
+        }
       })
       .catch(() => {
         if (!cancelled) {

@@ -34,6 +34,16 @@ import {
 import { toolFaqForPath } from "../../../shared/tool_faq";
 import { supplierCategoryLabel } from "../../../shared/suppliers";
 import { vendorPublicId } from "../../../shared/vendor_slug";
+import {
+  type CategoryCityCombo,
+  locationPagePath,
+  matchLocationPath,
+} from "../../../shared/vendor_locations";
+import {
+  listComboListings,
+  listIndexableCategoryCityCombos,
+  resolveCategoryCityCombo,
+} from "../domain/vendor_locations";
 import { db } from "../db";
 import { curatedOverrideMap } from "../domain/curated_overrides";
 import { listListingPhotos } from "../domain/listings";
@@ -92,7 +102,57 @@ const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/imprint", priority: "0.3", changefreq: "yearly" },
 ];
 
-/** Every public vendor page, as the pretty URL the product links to.
+const MIN_INDEXABLE_VENDOR_SENTENCES = 3;
+const MIN_INDEXABLE_VENDOR_PHOTOS = 3;
+
+/** Count sentence-sized prose units, ignoring short abbreviation fragments such
+ *  as `Kft.` or `Dr.`. A character floor alone lets boilerplate and one-line
+ *  profiles into the index; three actual sentences are a much better proxy for
+ *  a page that helps a couple compare suppliers. */
+function meaningfulSentenceCount(description: string): number {
+  return description
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/[.!?]+["'»”’)]*(?:\s+|$)/u)
+    .filter((sentence) => sentence.trim().length >= 20).length;
+}
+
+/** All distinct portfolio images a public profile can render. The hero is
+ *  commonly also gallery item zero, so counting raw fields would let one image
+ *  masquerade as two. */
+function vendorProfilePhotoUrls(
+  base: { hero_image_url: string | null; gallery_urls: string[] | null },
+  listingHeroImageUrl: string | null | undefined,
+  uploadedPhotoUrls: readonly string[],
+): string[] {
+  return [
+    listingHeroImageUrl,
+    base.hero_image_url,
+    ...(base.gallery_urls ?? []),
+    ...uploadedPhotoUrls,
+  ]
+    .filter((url): url is string => typeof url === "string" && url.trim().length > 0)
+    .map((url) => url.trim())
+    .filter((url, index, urls) => urls.indexOf(url) === index);
+}
+
+function isSubstantialVendorProfile(input: {
+  description: string;
+  category: string;
+  city: string;
+  photoUrls: readonly string[];
+  unclaimedImport: boolean;
+}): boolean {
+  return Boolean(
+    !input.unclaimedImport &&
+      input.category.trim() &&
+      input.city.trim() &&
+      meaningfulSentenceCount(input.description) >= MIN_INDEXABLE_VENDOR_SENTENCES &&
+      input.photoUrls.length >= MIN_INDEXABLE_VENDOR_PHOTOS,
+  );
+}
+
+/** Every substantial public vendor page, as the pretty URL the product links to.
  *
  *  A thousand-odd profile pages with per-vendor titles, descriptions, photos and
  *  reviews were reachable only by clicking through the app, so nothing but the
@@ -101,43 +161,70 @@ const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
  *
  *  Assembled from the same places the directory itself is: the static curated
  *  catalogue minus admin-hidden entries, plus every active DB-backed listing.
- *  An unclaimed IMPORTED profile is included on purpose — its page renders a
- *  teaser (name, town, one photo, no bio), which is a thin but honest page, and
- *  leaving it out of the sitemap would not stop it being crawled anyway. */
+ *  Browseable profiles that do not yet have at least three meaningful sentences
+ *  and three distinct photos stay out of the sitemap and receive `noindex` on
+ *  their detail page. This keeps catalogue breadth from becoming an index full
+ *  of thin profiles. */
 function publicVendorSitemapPaths(): string[] {
   const hidden = new Set(curatedOverrideMap().keys());
   const paths: string[] = [];
   const seen = new Set<string>();
+  const listingRows = db
+    .prepare(
+      "SELECT id, name, status, hero_image_url, vendor_account_id, profile_imported FROM listings",
+    )
+    .all() as Array<{
+    id: string;
+    name: string;
+    status: string;
+    hero_image_url: string | null;
+    vendor_account_id: number | null;
+    profile_imported: number;
+  }>;
+  const listingsById = new Map(listingRows.map((row) => [row.id, row]));
+  const uploadedPhotosByListing = new Map<string, string[]>();
+  const photoRows = db
+    .prepare("SELECT listing_id, url FROM listing_photos ORDER BY id ASC")
+    .all() as Array<{
+    listing_id: string;
+    url: string;
+  }>;
+  for (const photo of photoRows) {
+    const urls = uploadedPhotosByListing.get(photo.listing_id) ?? [];
+    urls.push(photo.url);
+    uploadedPhotosByListing.set(photo.listing_id, urls);
+  }
   const push = (id: string, name: string) => {
     if (hidden.has(id) || seen.has(id)) return;
     const base = resolveSupplierBase(id);
     if (!base) return;
-    const listing = db
-      .prepare("SELECT vendor_account_id, profile_imported FROM listings WHERE id = ?")
-      .get(base.id) as { vendor_account_id: number | null; profile_imported: number } | undefined;
+    const listing = listingsById.get(base.id);
     // Imported, unclaimed listings expose only a teaser and deliberately hide
-    // their bio. They are useful browse results, but not substantial enough to
-    // be sitemap candidates. Require a real public description plus category,
-    // location and an image before actively asking search engines to index it.
+    // their bio. They are useful browse results, but never sitemap candidates.
     const unclaimedImport = listing?.profile_imported === 1 && listing.vendor_account_id == null;
-    const hasDescription = base.blurb_hu.trim().length >= 80;
-    const hasImage = Boolean(
-      firstNonBlank(
-        base.hero_image_url,
-        base.gallery_urls?.[0],
-        listListingPhotos(base.id)[0]?.url,
-      ),
+    const photoUrls = vendorProfilePhotoUrls(
+      base,
+      listing?.hero_image_url,
+      uploadedPhotosByListing.get(base.id) ?? [],
     );
-    if (unclaimedImport || !hasDescription || !base.category || !base.city || !hasImage) return;
+    if (
+      !isSubstantialVendorProfile({
+        description: base.blurb_hu,
+        category: base.category,
+        city: base.city,
+        photoUrls,
+        unclaimedImport,
+      })
+    ) {
+      return;
+    }
     seen.add(id);
     paths.push(`/suppliers/${vendorPublicId(id, name)}`);
   };
   for (const entry of DIRECTORY) push(entry.id, entry.name);
-  const rows = db.prepare("SELECT id, name FROM listings WHERE status = 'active'").all() as {
-    id: string;
-    name: string;
-  }[];
-  for (const row of rows) push(row.id, row.name);
+  for (const row of listingRows) {
+    if (row.status === "active") push(row.id, row.name);
+  }
   return paths;
 }
 
@@ -272,7 +359,8 @@ export function hasPublicSeoPage(pathname: string): boolean {
   return (
     resolveRouteSeo(pathname) !== null ||
     lookupWeddingSiteMeta(pathname) !== null ||
-    lookupVendorPageMeta(pathname) !== null
+    lookupVendorPageMeta(pathname) !== null ||
+    resolveLocationCombo(pathname) !== null
   );
 }
 
@@ -654,7 +742,7 @@ function localeForPath(
   if (marketingPageForPath(pathname)) return "hu";
   if (hostIsEnCanonical(host)) return "en";
   if (acceptLanguage != null) return prefersHungarian(acceptLanguage) ? "hu" : "en";
-  return localeForToolSlug(pathname) ?? "en";
+  return localeForToolSlug(pathname) ?? matchLocationPath(pathname)?.locale ?? "en";
 }
 
 /** Canonical hostname for SEO link rels. When `EN_CANONICAL_HOST` is set
@@ -1034,11 +1122,12 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
       }
     | undefined;
   const unclaimedImport = listing?.profile_imported === 1 && listing.vendor_account_id == null;
+  const uploadedPhotos = unclaimedImport ? [] : listListingPhotos(base.id);
   let heroImageUrl = unclaimedImport
     ? null
     : firstNonBlank(listing?.hero_image_url, base.hero_image_url);
   if (!unclaimedImport && !heroImageUrl) {
-    heroImageUrl = firstNonBlank(listListingPhotos(base.id)[0]?.url);
+    heroImageUrl = firstNonBlank(uploadedPhotos[0]?.url);
   }
   // The share card and the SSR <meta description> are public HTML, so an
   // imported profile that nobody has claimed must not put its bio there
@@ -1055,10 +1144,56 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
     blurbEn: redacted ? "" : base.blurb_en,
     heroImageUrl,
     publicId: vendorPublicId(base.id, base.name),
-    indexable: Boolean(
-      publicDescription.length >= 80 && base.category && base.city && heroImageUrl,
-    ),
+    indexable: isSubstantialVendorProfile({
+      description: publicDescription,
+      category: base.category,
+      city: base.city,
+      photoUrls: vendorProfilePhotoUrls(
+        base,
+        listing?.hero_image_url,
+        uploadedPhotos.map((photo) => photo.url),
+      ),
+      unclaimedImport,
+    }),
   };
+}
+
+/** Resolve a request path to its category × city combo, or null when the
+ *  path isn't location-shaped or doesn't clear the listing-count floor (see
+ *  `MIN_LISTINGS_FOR_LOCATION_PAGE`). A combo below the floor deliberately
+ *  resolves to null rather than to a thin page marked `noindex` — a
+ *  combination too small to be worth a page doesn't get a route at all, so
+ *  it 404s through the ordinary SPA fallback instead of existing as a
+ *  near-empty URL search engines could still find. */
+function resolveLocationCombo(pathname: string): CategoryCityCombo | null {
+  const match = matchLocationPath(pathname);
+  if (!match) return null;
+  return resolveCategoryCityCombo(match.categorySlug, match.citySlug);
+}
+
+function lowerFirst(s: string): string {
+  return s.length > 0 ? s[0]!.toLowerCase() + s.slice(1) : s;
+}
+
+/** SSR title/intro/description for a category × city page. No brand suffix
+ *  on the title, matching the vendor-page and wedding-site branches below —
+ *  those are the other two "identity built from live data, not a static
+ *  dictionary" cases in this file. */
+function locationPageCopy(
+  combo: CategoryCityCombo,
+  locale: SeoLocale,
+): { title: string; description: string; h1: string; intro: string } {
+  const categoryLabel = supplierCategoryLabel(combo.category, locale);
+  const categoryLower = lowerFirst(categoryLabel);
+  const title =
+    locale === "hu"
+      ? `Esküvői ${categoryLower} · ${combo.cityDisplay}`
+      : `Wedding ${categoryLower} · ${combo.cityDisplay}`;
+  const description =
+    locale === "hu"
+      ? `${combo.count} esküvői szolgáltató a(z) ${categoryLabel} kategóriában, ${combo.cityDisplay} térségében. Fotók, árfekvés és elérhetőség egy helyen, regisztráció nélkül böngészhető.`
+      : `${combo.count} wedding ${categoryLower} listings in ${combo.cityDisplay}. Photos, price bands and contact details in one place, no signup needed to browse.`;
+  return { title, description, h1: title, intro: description };
 }
 
 /** First argument that is a non-empty, non-whitespace string, else null. Guards
@@ -1111,6 +1246,10 @@ function isIndexableHtmlPath(
     return true;
   }
   if (opts.vendorMeta?.indexable || opts.weddingMeta) return true;
+  // A location page only resolves (see `resolveLocationCombo`) when the
+  // combo clears the listing-count floor, so reaching this branch at all
+  // already means it's worth indexing — no separate thin-content check.
+  if (resolveLocationCombo(path) !== null) return true;
   return false;
 }
 
@@ -1139,6 +1278,7 @@ function buildHeadBlock(opts: {
   const canonicalHost = canonicalHostFor(locale);
   const path = opts.pathname || "/";
   const robots = isIndexableHtmlPath(path, opts) ? "index,follow" : "noindex,follow";
+  const locationCombo = resolveLocationCombo(path);
   // Slug-pair lookup so the HU canonical always points to the HU slug and
   // the EN canonical always points to the EN slug, even if the visitor
   // landed on the "wrong" half of the pair (e.g. `weddly.com/eszkozok/X`
@@ -1178,6 +1318,13 @@ function buildHeadBlock(opts: {
     finalEnUrl = blogPair.enSlug
       ? `https://${enHostConfigured || CANONICAL_HOST}/blog/${blogPair.enSlug}`
       : null;
+  } else if (locationCombo) {
+    // Same bidirectional-pair shape as the tool slugs, but the pair is
+    // resolved from the combo rather than looked up in a static map — see
+    // `LOCATION_PAGE_HU_PREFIX`/`LOCATION_PAGE_EN_PREFIX` in
+    // shared/vendor_locations.ts.
+    finalHuUrl = `https://${CANONICAL_HOST}${locationPagePath(locationCombo, "hu")}`;
+    finalEnUrl = `https://${enHostConfigured || CANONICAL_HOST}${locationPagePath(locationCombo, "en")}`;
   }
   // Canonical follows the locale of the current render: HU render → HU URL
   // with HU slug; EN render (only meaningful when multi-host is active) →
@@ -1194,9 +1341,11 @@ function buildHeadBlock(opts: {
       ? blogPair.accessedViaEnSlug && finalEnUrl
         ? finalEnUrl
         : finalHuUrl
-      : locale === "en" && enUrl
-        ? enUrl
-        : huUrl;
+      : locationCombo
+        ? ((locale === "en" ? finalEnUrl : finalHuUrl) ?? finalHuUrl)
+        : locale === "en" && enUrl
+          ? enUrl
+          : huUrl;
   // Per-post Open Graph image. Priority: couple cover (/w/:slug) → published
   // blog post cover → /og-rsvp.png on RSVP routes → brand /og.png. Giving each
   // blog post its own share card (instead of nine copies of og.png) is the
@@ -1279,6 +1428,11 @@ function buildHeadBlock(opts: {
         ? `${vm.name} a Weddly esküvői szolgáltató katalógusában.`
         : `${vm.name} on Weddly's wedding vendor directory.`);
     twDescription = description;
+  } else if (locationCombo) {
+    const copy = locationPageCopy(locationCombo, locale);
+    title = copy.title;
+    description = copy.description;
+    twDescription = copy.description;
   } else {
     const routeSeo = resolveRouteSeo(path);
     title = routeSeo ? routeSeo[locale].title : defaultMeta.title;
@@ -1405,6 +1559,32 @@ function renderRouteBody(pathname: string, locale: SeoLocale): string | null {
       `<p><a href="/suppliers/browse">${directoryLabel}</a></p>`,
     ].join("\n");
   }
+
+  const locationCombo = resolveLocationCombo(pathname);
+  if (locationCombo) {
+    const copy = locationPageCopy(locationCombo, locale);
+    const directoryLabel = locale === "hu" ? "Esküvői szolgáltatók" : "Wedding suppliers";
+    // Name-only links, same "text index, not a second card" policy as
+    // `renderVendorIndexHtml` — no photo, price or contact detail belongs
+    // in the crawlable HTML for a list the visible page already renders
+    // with real cards via the existing `/api/public/vendors` catalogue.
+    const listings = listComboListings(locationCombo, 60);
+    const listItems = listings
+      .map(
+        (v) =>
+          `<li><a href="${escapeAttr(`/suppliers/${vendorPublicId(v.id, v.name)}`)}">${escapeText(v.name)}</a></li>`,
+      )
+      .join("\n          ");
+    return [
+      `<nav aria-label="${locale === "hu" ? "Morzsanavigáció" : "Breadcrumb"}"><a href="/">${locale === "hu" ? "Főoldal" : "Home"}</a> › <a href="/suppliers/browse">${directoryLabel}</a> › <span aria-current="page">${escapeText(copy.h1)}</span></nav>`,
+      `<header><h1>${escapeText(copy.h1)}</h1><p>${escapeText(copy.intro)}</p></header>`,
+      ...(listings.length > 0
+        ? [`<article><ul>\n          ${listItems}\n        </ul></article>`]
+        : []),
+      `<p><a href="/suppliers/browse">${directoryLabel}</a></p>`,
+    ].join("\n      ");
+  }
+
   const routeSeo = resolveRouteSeo(pathname);
   if (!routeSeo) return null;
   const entry = routeSeo[locale];
@@ -1705,12 +1885,11 @@ export function renderSitemapXml(_host: string | null): string {
     }
   }
 
-  // Every public vendor profile. One <loc> each, no hreflang pair: a vendor
+  // Every substantial public vendor profile. One <loc> each, no hreflang pair: a vendor
   // page is one URL that renders in the visitor's language, not two slugs.
-  // These are the bulk of the file (a thousand-odd URLs against a dozen static
-  // paths), and they are the reason the file exists at this size: without them
-  // the product's largest body of unique, photographed, reviewed content was
-  // reachable only by crawling links from inside the app.
+  // Thin catalogue entries remain reachable in the browser but are intentionally
+  // absent here; only profiles with 3+ meaningful sentences and 3+ distinct
+  // photos are worth asking a search engine to index.
   for (const path of publicVendorSitemapPaths()) {
     const here = `https://${CANONICAL_HOST}${path}`;
     blocks.push(
@@ -1723,6 +1902,18 @@ export function renderSitemapXml(_host: string | null): string {
         "  </url>",
       ].join("\n"),
     );
+  }
+
+  // Category × city location pages: HU canonical + EN alternate, one <url>
+  // block per side, same bidirectional pair the tool pages get. Every combo
+  // here already cleared `MIN_LISTINGS_FOR_LOCATION_PAGE` (see
+  // `listIndexableCategoryCityCombos`), so there is no thin variant to skip —
+  // everything this loop touches is meant to be indexed.
+  for (const combo of listIndexableCategoryCityCombos()) {
+    const huHere = `https://${CANONICAL_HOST}${locationPagePath(combo, "hu")}`;
+    const enHere = `https://${enHostConfigured || CANONICAL_HOST}${locationPagePath(combo, "en")}`;
+    blocks.push(buildUrlBlock(huHere, huHere, enHere, "0.5", "monthly"));
+    blocks.push(buildUrlBlock(enHere, huHere, enHere, "0.5", "monthly"));
   }
 
   // Blog posts: HU canonical + EN alternate via per-post en_slug.

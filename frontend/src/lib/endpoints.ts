@@ -2091,6 +2091,17 @@ export const supplierApi = {
       "GET",
       `/api/public/vendor-search?q=${encodeURIComponent(q)}`,
     ),
+  /** Resolve a category × city location-page URL's slugs (as parsed from
+   *  `/eskuvoi-szolgaltatok/:cat/:city` or `/wedding-vendors/:cat/:city`)
+   *  into the real category, exact city string and country the page needs
+   *  to hand to `publicDirectory`. 404s (thrown by `apiFetch`) when the
+   *  combo doesn't exist or never cleared the listing-count floor — the
+   *  page treats that as "not found", it never invents a fallback. */
+  vendorLocation: (categorySlug: string, citySlug: string) =>
+    apiFetch<{ category: SupplierCategory; city: string; country: string; count: number }>(
+      "GET",
+      `/api/public/vendor-locations/${encodeURIComponent(categorySlug)}/${encodeURIComponent(citySlug)}`,
+    ),
 };
 
 /** Reviews are keyed by SUBJECT, not by supplier: `/api/suppliers/:id/reviews`

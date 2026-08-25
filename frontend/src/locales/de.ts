@@ -572,7 +572,8 @@ const de: LocaleMessages = {
     label_blurb_lang: "Beschreibung ({lang})",
     blurb_lang_aria: "Sprache der Beschreibung",
     blurb_lang_filled: "bereits ausgefüllt",
-    label_blurb_hint: "Bis zu 2000 Zeichen. Paare sehen das auf Ihrer Eintragskarte.",
+    label_blurb_hint:
+      "Schreiben Sie 3–5 hilfreiche Sätze über Ihr Angebot und Ihre Besonderheiten. Bis zu 2000 Zeichen.",
     label_city: "Stadt",
     label_address: "Straße und Hausnummer",
     label_website: "Website",
@@ -679,7 +680,7 @@ const de: LocaleMessages = {
       "Empfohlene Größe: 1200×800 px (Verhältnis 3:2), genau der Ausschnitt Ihrer Katalogkarte",
     section_gallery: "Galerie",
     gallery_intro:
-      "Zeigen Sie Ihre Arbeit mit weiteren Fotos. Paare sehen sie auf Ihrem öffentlichen Profil, nach dem Titelbild.",
+      "Fügen Sie 3–7 Ihrer besten Portfoliofotos hinzu. Paare sehen sie auf Ihrem öffentlichen Profil, nach dem Titelbild.",
     gallery_add: "Foto hinzufügen",
     gallery_count: "{n} / {max} Fotos",
     gallery_delete: "Foto löschen",
@@ -1324,7 +1325,7 @@ const de: LocaleMessages = {
       company_listing_link: "Öffentlichen Eintrag bearbeiten (Foto, Preise, Kapazität)",
       bio_title: "Über Ihren Betrieb",
       bio_body:
-        "Dieser Text erscheint auf Ihrem öffentlichen Eintrag für Paare. Schreiben Sie ihn in beiden Sprachen, wenn Sie auch internationale Paare betreuen.",
+        "Dieser Text erscheint auf Ihrem öffentlichen Eintrag. Schreiben Sie 3–5 hilfreiche Sätze in beiden Sprachen, wenn Sie auch internationale Paare betreuen.",
       bio_hu: "Beschreibung auf Ungarisch",
       bio_en: "Beschreibung auf Englisch",
       data_delete_heading: "Konto löschen",
@@ -2689,7 +2690,7 @@ const de: LocaleMessages = {
     save_error: "Speichern hat nicht geklappt. Bitte erneut versuchen.",
     listing_title: "Ihr Eintrag",
     listing_body: "So werden Paare Sie sehen. Sie können das jederzeit ändern.",
-    blurb_placeholder: "Ein, zwei Sätze dazu, was Sie machen und warum Sie gut passen.",
+    blurb_placeholder: "3–5 Sätze dazu, was Sie machen und warum Sie gut passen.",
     price_band_label: "Preisspanne",
     hero_cta: "Titelbild hochladen",
     hero_replace: "Foto ersetzen",
@@ -10108,6 +10109,10 @@ const de: LocaleMessages = {
     ownerNoticeClaim: "Dieses Profil übernehmen",
     ownerNoticeContact: "Korrektur oder Entfernung anfordern",
     ownerNoticePrivacy: "Warum steht das hier?",
+  },
+  vendorLocation: {
+    notFoundTitle: "Diese Kombination wurde nicht gefunden",
+    notFoundBody: "Für diese Kategorie und Stadt gibt es im Katalog noch nicht genug Anbieter.",
   },
   vendorBrowse: {
     title: "Hochzeitsdienstleister entdecken",

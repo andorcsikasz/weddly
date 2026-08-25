@@ -110,7 +110,7 @@ describe("GET /api/public/vendors — the whole catalogue, for anybody", () => {
   });
 });
 
-describe("the sitemap offers every vendor page", () => {
+describe("the sitemap offers substantial vendor pages", () => {
   test("a substantial curated vendor's pretty URL is in the file", () => {
     const xml = renderSitemapXml(null);
     const entry = DIRECTORY.find((candidate) => {
