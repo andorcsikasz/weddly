@@ -911,6 +911,25 @@ export default function VendorBrowsePage() {
     };
   }, [activeCategory, country]);
 
+  // A `city` filter implies a country too, but only `selectCity` (picking a
+  // town from THIS page's own dropdown/map) ever set one — a deep link like
+  // `?city=Budapest` (the landing-page typeahead, a shared URL) left `country`
+  // at null forever, since the geo-IP sync above only runs on a load with NO
+  // city. The visible symptom: the country picker still read "Mind" and the
+  // town map opened on every country in Europe instead of jumping into
+  // Hungary, despite the grid already being scoped to one town. Runs once per
+  // distinct city (via the ref) so it doesn't fight a visitor who deliberately
+  // clears the country back to "Mind" while keeping the same town filtered.
+  const citySyncedForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!city || country || citySyncedForRef.current === city) return;
+    const facet = cityFacets.find((c) => c.city === city);
+    if (facet) {
+      citySyncedForRef.current = city;
+      setCountry(facet.country);
+    }
+  }, [city, country, cityFacets]);
+
   // Pull planners out of the vendor rails — they get their own reframed module.
   const gridCategories = categories?.filter((c) => c.category !== "wedding_planner") ?? [];
   const nearbyCategories = nearby.filter((c) => c.category !== "wedding_planner");
