@@ -1,0 +1,3228 @@
+{
+  "generated_at": "2026-08-19T00:34:20.841Z",
+  "rules": {
+    "required": ["name", "complete address", "phone", "email", "vendor website", "3 images"],
+    "austria_email_source": "vendor website/contact/imprint",
+    "slovakia_source": "public vendor profile"
+  },
+  "counts": {
+    "SK:venue": 128,
+    "SK:other": 2,
+    "SK:catering": 8,
+    "SK:suit_formal": 1,
+    "SK:wedding_decor": 1,
+    "SK:bridal_boutique": 4,
+    "SK:photography": 4,
+    "SK:photo_booth": 2,
+    "SK:live_music": 1,
+    "SK:wedding_planner": 2,
+    "SK:videography": 1,
+    "SK:florist": 2,
+    "SK:cake_dessert": 2,
+    "SK:invitation_graphics": 1,
+    "SK:hair_makeup": 1
+  },
+  "total": 160,
+  "candidates": [
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-hubert-ruzindol/",
+      "country": "SK",
+      "name": "Agropenzión Hubert Ružindol",
+      "category": "venue",
+      "street": "Zvončín 690",
+      "postal_code": "91901",
+      "city": "Zvončín",
+      "address": "Zvončín 690, 919 01 Zvončín, Slovensko",
+      "phone": "+421 911 177 179",
+      "email": "catering@lareunion.sk",
+      "website": "http://lareunion.sk/priestor-ruzindol/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/agropenzion-hubert-ruzindol_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/agropenzion-hubert-ruzindol_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/agropenzion-hubert-ruzindol_4.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/alexia-clinic/",
+      "country": "SK",
+      "name": "Alexia Clinic",
+      "category": "other",
+      "street": "Cintorínska 980/11",
+      "postal_code": "91101",
+      "city": "Trenčín",
+      "address": "Cintorínska 980/11, 911 01 Trenčín, Slovensko",
+      "phone": "+421 902 227 339",
+      "email": "trencin@alexia.sk",
+      "website": "http://alexia.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/alexia-beauty-studio_06.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/alexia-beauty-studio_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/alexia-beauty-studio_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/apolka-restaurant/",
+      "country": "SK",
+      "name": "APOLKA Restaurant",
+      "category": "venue",
+      "street": "Súkennícka 1388/4",
+      "postal_code": "82109",
+      "city": "Bratislava",
+      "address": "Súkennícka 1388/4, 821 09 Bratislava, Slovensko",
+      "phone": "+421 948 303 130",
+      "email": "apolka@apolka.sk",
+      "website": "http://www.apolka.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/04/apolka-bratislava-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/04/apolka-bratislava-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/04/apolka-bratislava-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/arietes-marmont-resort-svadba/",
+      "country": "SK",
+      "name": "ARIETES MARMONT Resort**** - svadba v Tatrách",
+      "category": "venue",
+      "street": "Lúčna 3/1173",
+      "postal_code": "05941",
+      "city": "Tatranská Štrba",
+      "address": "Lúčna 3/1173, 059 41 Tatranská Štrba, Slovensko",
+      "phone": "+421 911 854 304",
+      "email": "recepcia@amresort.sk",
+      "website": "http://amresort.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/arietes-marmont-resort-svadba-v-tatrach_01-scaled.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/arietes-marmont-resort-svadba-v-tatrach_03-scaled.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/arietes-marmont-resort-svadba-v-tatrach_02-scaled.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/azul-svadba-v-partizanskom/",
+      "country": "SK",
+      "name": "AZUL Hotel & Restaurant – svadba v Partizánskom",
+      "category": "venue",
+      "street": "Nádražná 2204/8",
+      "postal_code": "95801",
+      "city": "Partizánske",
+      "address": "Nádražná 2204/8, 958 01 Partizánske, Slovensko",
+      "phone": "+421 38/ 762 7020",
+      "email": "recepcia@azul.sk",
+      "website": "http://azul.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/svadba-azul-restaurant-obrad-v-bataku-partizanske_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/svadba-azul-restaurant-obrad-v-bataku-partizanske_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/svadba-azul-restaurant-obrad-v-bataku-partizanske_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/basta-pajstun/",
+      "country": "SK",
+      "name": "Bašta Pajštún",
+      "category": "venue",
+      "street": "Borinka 257",
+      "postal_code": "90032",
+      "city": "Borinka",
+      "address": "Borinka 257, 900 32 Borinka, Slovensko",
+      "phone": "+421 905 830 966",
+      "email": "info@bastapajstun.sk",
+      "website": "http://www.bastapajstun.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/07/basta-pajstun_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/07/basta-pajstun_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/07/basta-pajstun_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/beniczky-restaurant/",
+      "country": "SK",
+      "name": "Beniczky restaurant – svadba v Banskej Bystrici",
+      "category": "venue",
+      "street": "Námestie SNP 16",
+      "postal_code": "97401",
+      "city": "Banská Bystrica",
+      "address": "Námestie SNP 16, 974 01 Banská Bystrica, Slovensko",
+      "phone": "+421 908 999 643",
+      "email": "catering@cateringbb.sk",
+      "website": "http://beniczky.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/beniczky-restaurant_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/01/beniczky-svadba-banska-bystrica_14.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/01/beniczky-svadba-banska-bystrica_11.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/bitter-house/",
+      "country": "SK",
+      "name": "Bitter House",
+      "category": "venue",
+      "street": "Tomášovská 542",
+      "postal_code": "90046",
+      "city": "Most pri Bratislave",
+      "address": "Tomášovská 542, 900 46 Most pri Bratislave, Slovensko",
+      "phone": "+421 917 262 594",
+      "email": "hello@bitterhouse.sk",
+      "website": "http://bitterhouse.sk/svadby/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2020/01/bitter-house-kastiel-studene_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2020/01/bitter-house-kastiel-studene_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2020/01/bitter-house-kastiel-studene_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/bon-appetit-catering/",
+      "country": "SK",
+      "name": "Bon Appetit catering",
+      "category": "catering",
+      "street": "Hlavná 128",
+      "postal_code": "01313",
+      "city": "Konská",
+      "address": "Hlavná 128, 013 13 Konská, Slovensko",
+      "phone": "+421 949 309 606",
+      "email": "info@bonappetitzilina.sk",
+      "website": "http://www.bonappetitzilina.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/07/bonappetit-catering-zilina_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/07/bonappetit-catering-zilina_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/07/bonappetit-catering-zilina_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/boutique-hotel-hviezdoslav/",
+      "country": "SK",
+      "name": "Boutique Hotel Hviezdoslav ****",
+      "category": "venue",
+      "street": "Hlavné námestie 95/49",
+      "postal_code": "06001",
+      "city": "Kežmarok",
+      "address": "Hlavné námestie 95/49, 060 01 Kežmarok, Slovensko",
+      "phone": "+421 52 788 75 75",
+      "email": "info@hotelhviezdoslav.sk",
+      "website": "http://www.hotelhviezdoslav.sk/svadba",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/hotel-hviezdoslav_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/hotel-hviezdoslav_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/hotel-hviezdoslav_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadobna-sala-missen-hotel/",
+      "country": "SK",
+      "name": "Boutique Hotel MISSEN****",
+      "category": "venue",
+      "street": "Omšenie 628",
+      "postal_code": "91443",
+      "city": "Omšenie",
+      "address": "Omšenie 628, 914 43 Omšenie, Slovensko",
+      "phone": "+421 904 649 403",
+      "email": "rezervacie@missen.sk",
+      "website": "http://www.missen.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/01/svadobna-sala-hotel-missen-omsenie.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/missen-obrad.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/missen-svadobna-sala.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/bowling-pri-trati-svadba-presov/",
+      "country": "SK",
+      "name": "Bowling pri trati - malá svadba v Prešove",
+      "category": "venue",
+      "street": "Jazdecká 1/A",
+      "postal_code": "08001",
+      "city": "Prešov",
+      "address": "Jazdecká 1/A, 080 01 Prešov, Slovensko",
+      "phone": "+421 918 606 230",
+      "email": "restauracia@bowlingpritrati.sk",
+      "website": "http://www.bowlingpritrati.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/bowling-pri-trati-svadba-presov_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/bowling-pri-trati-svadba-presov_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/bowling-pri-trati-svadba-presov_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/ceremony-spolocenske-oblecenie-pre-deti/",
+      "country": "SK",
+      "name": "CEREMONY Spoločenské oblečenie pre deti",
+      "category": "suit_formal",
+      "street": "Piaristická 31",
+      "postal_code": "94901",
+      "city": "Nitra",
+      "address": "Piaristická 31, 949 01 Nitra, Slovensko",
+      "phone": "+421 907 772 771",
+      "email": "info@ceremonyshop.sk",
+      "website": "http://ceremonyshop.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/ceremony_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/ceremony_2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/ceremony_3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/chata-hradok/",
+      "country": "SK",
+      "name": "Chata Hrádok – svadba v prírode pod Vtáčnikom",
+      "category": "venue",
+      "street": "Chata Hrádok",
+      "postal_code": "97244",
+      "city": "Kamenec pod Vtáčnikom",
+      "address": "Chata Hrádok, 972 44 Kamenec pod Vtáčnikom, Slovensko",
+      "phone": "0907 55 22 95",
+      "email": "info@hradok.sk",
+      "website": "http://www.hradokchata.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/08/chata-hradok-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/08/chata-hradok-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/08/chata-hradok-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/chata-lubetha/",
+      "country": "SK",
+      "name": "Chata Lubetha",
+      "category": "venue",
+      "street": "Chata Lubetha",
+      "postal_code": "97655",
+      "city": "Ľubietová",
+      "address": "Chata Lubetha, 976 55 Ľubietová, Slovensko",
+      "phone": "+421 48 419 52 27",
+      "email": "chatalubetha@agromepa.sk",
+      "website": "http://www.chatalubetha.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/chata-lubetha_06.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/chata-lubetha_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/chata-lubetha_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/chata-pod-ostrym-vrchom/",
+      "country": "SK",
+      "name": "Chata pod Ostrým vrchom",
+      "category": "venue",
+      "street": "Chata pod Ostrým vrchom, Soblahov 921",
+      "postal_code": "91338",
+      "city": "Soblahov",
+      "address": "Chata pod Ostrým vrchom, Soblahov 921, 913 38 Soblahov, Slovensko",
+      "phone": "+421 917 564 633",
+      "email": "info@chatapodostrymvrchom.sk",
+      "website": "http://www.chatapodostrymvrchom.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/10/chata-pod-ostrym-vrchom-soblahov-trencin_06.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/10/chata-pod-ostrym-vrchom-soblahov-trencin_09.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/10/chata-pod-ostrym-vrchom-soblahov-trencin_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/chata-pod-sokolim/",
+      "country": "SK",
+      "name": "Chata pod Sokolím",
+      "category": "venue",
+      "street": "Vrátna Dolina 1",
+      "postal_code": "01306",
+      "city": "Terchová",
+      "address": "Vrátna Dolina 1, 013 06 Terchová, Slovensko",
+      "phone": "+421 911 886 666",
+      "email": "manager@tourtravel.sk",
+      "website": "http://www.chatapodsokolim.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/chata-pod-sokolim_2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/chata-pod-sokolim_5.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/chata-pod-sokolim_1.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/chateau-revay-svadba-pri-martine/",
+      "country": "SK",
+      "name": "Château Révay - svadba pri Martine",
+      "category": "venue",
+      "street": "SNP 1/16",
+      "postal_code": "03851",
+      "city": "Turčianska Štiavnička",
+      "address": "SNP 1/16, 038 51 Turčianska Štiavnička, Slovensko",
+      "phone": "+421 911 419 750",
+      "email": "sedlakova@ismont.sk",
+      "website": "http://chateaurevay.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/Chateau-Revay-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/Chateau-Revay-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/Chateau-Revay-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/chateau-ruban-svadba-vo-vinarstve/",
+      "country": "SK",
+      "name": "Château Rúbaň – svadba vo vinárstve",
+      "category": "venue",
+      "street": "Rúbaň 1",
+      "postal_code": "94136",
+      "city": "Rúbaň",
+      "address": "Rúbaň 1, 941 36 Rúbaň, Slovensko",
+      "phone": "+421 915 432 001",
+      "email": "sluzby@vinoruban.sk",
+      "website": "http://chateauruban.sk/svadby/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/chateau-ruban-svadba-vo-vinarstve_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/chateau-ruban-svadba-vo-vinarstve_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/chateau-ruban-svadba-vo-vinarstve_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/de-lux-restaurant/",
+      "country": "SK",
+      "name": "De Lux Restaurant",
+      "category": "venue",
+      "street": "Námestie Slobody 397/2",
+      "postal_code": "97401",
+      "city": "Banská Bystrica",
+      "address": "Námestie Slobody 397/2, 974 01 Banská Bystrica, Slovensko",
+      "phone": "+421 903 503 333",
+      "email": "deluxrestaurant.bb@gmail.com",
+      "website": "http://www.deluxrestaurant.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/hotel-lux-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/hotel-lux-svadba_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/hotel-lux-svadba_05.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/dixon-resort/",
+      "country": "SK",
+      "name": "DIXON Resort ****",
+      "category": "venue",
+      "street": "Švermova 32",
+      "postal_code": "97404",
+      "city": "Banská Bystrica",
+      "address": "Švermova 32, 974 04 Banská Bystrica, Slovensko",
+      "phone": "+421 48 471 78 05",
+      "email": "banket@dixon.sk",
+      "website": "http://dixonresort.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/05/dixon-resort-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/05/dixon-resort-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/05/dixon-resort-svadba_05.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/dom-michalska-brana/",
+      "country": "SK",
+      "name": "Dom Michalská brána",
+      "category": "venue",
+      "street": "Michalská 388/18",
+      "postal_code": "81101",
+      "city": "Bratislava",
+      "address": "Michalská 388/18, 811 01 Bratislava, Slovensko",
+      "phone": "+421 948 763 832",
+      "email": "info@dommichalskabrana.sk",
+      "website": "http://www.dommichalskabrana.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/11/svadba-dom_michalska_brana_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/11/svadba-dom_michalska_brana_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/11/svadba-dom_michalska_brana_01.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/easywedding/",
+      "country": "SK",
+      "name": "easywedding.sk",
+      "category": "wedding_decor",
+      "street": "Kazanská 56",
+      "postal_code": "82106",
+      "city": "Bratislava",
+      "address": "Kazanská 56, 821 06 Bratislava, Slovensko",
+      "phone": "+421 910 933 818",
+      "email": "info@easywedding.sk",
+      "website": "http://www.easywedding.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/easywedding_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/easywedding_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/easywedding_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/ekoma-rezort-svadba-pri-zvolene/",
+      "country": "SK",
+      "name": "Ekoma rezort - svadba pri Zvolene",
+      "category": "venue",
+      "street": "Osada Sekier 8746",
+      "postal_code": "96001",
+      "city": "Zvolen",
+      "address": "Osada Sekier 8746, 960 01 Zvolen, Slovensko",
+      "phone": "+421 45 536 4031",
+      "email": "info@ekomarezort.sk",
+      "website": "http://ekomarezort.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/10/ekoma-rezort-svadba-zvolen_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/10/ekoma-rezort-svadba-zvolen_4.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/10/ekoma-rezort-svadba-zvolen_5.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/ekorezort-vendelin/",
+      "country": "SK",
+      "name": "Ekorezort Vendelín",
+      "category": "venue",
+      "street": "Podskalie 107",
+      "postal_code": "01822",
+      "city": "Podskalie",
+      "address": "Podskalie 107, 018 22 Podskalie, Slovensko",
+      "phone": "+421 908 679 877",
+      "email": "manager@ekorezort.sk",
+      "website": "http://ekorezort.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/07/ekorezort-vendelin_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/07/ekorezort-vendelin_2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/07/ekorezort-vendelin_4.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/empresa-catering/",
+      "country": "SK",
+      "name": "Empresa catering",
+      "category": "catering",
+      "street": "A. Hlinku 2446/7",
+      "postal_code": "96001",
+      "city": "Zvolen",
+      "address": "A. Hlinku 2446/7, 960 01 Zvolen, Slovensko",
+      "phone": "+421 903 831 286",
+      "email": "empresa@empresacatering.sk",
+      "website": "http://www.empresacatering.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/Empresa-catering_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/Empresa-catering_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/Empresa-catering_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/event-house-zilina/",
+      "country": "SK",
+      "name": "Event House Žilina",
+      "category": "venue",
+      "street": "Bytčická 16",
+      "postal_code": "01001",
+      "city": "Žilina",
+      "address": "Bytčická 16, 010 01 Žilina, Slovensko",
+      "phone": "+421 918 572 309",
+      "email": "kontakt@eventhouse.sk",
+      "website": "http://www.eventhouse.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/11/event-house-zilina_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/11/event-house-zilina_2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/11/event-house-zilina_3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/event-spot-u-kemov/",
+      "country": "SK",
+      "name": "Event Spot U Kemov – svadba Banská Bystrica",
+      "category": "venue",
+      "street": "Námestie SNP 20",
+      "postal_code": "97401",
+      "city": "Banská Bystrica",
+      "address": "Námestie SNP 20, 974 01 Banská Bystrica, Slovensko",
+      "phone": "+421 908 695 926",
+      "email": "events@ukemov.sk",
+      "website": "http://eventspot.ukemov.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/event-spot-u-kemov-svadba-banska-bystrica_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/event-spot-u-kemov-svadba-banska-bystrica_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/event-spot-u-kemov-svadba-banska-bystrica_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/folkova/",
+      "country": "SK",
+      "name": "FOLKOVÁ",
+      "category": "bridal_boutique",
+      "street": "Hronská 2",
+      "postal_code": "97652",
+      "city": "Čierny Balog",
+      "address": "Hronská 2, 976 52 Čierny Balog, Slovensko",
+      "phone": "+421 902 481 310",
+      "email": "folkova.objednavky@gmail.com",
+      "website": "http://www.folkova.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/folkova-svadobne-saty_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/folkova-svadobne-saty_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/folkova-svadobne-saty_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/fotoalbumy-tradag/",
+      "country": "SK",
+      "name": "Fotoalbumy Tradag",
+      "category": "photography",
+      "street": "Kopčianska 2641/63 Petržalka",
+      "postal_code": "85101",
+      "city": "Bratislava",
+      "address": "Kopčianska 2641/63 Petržalka, 851 01 Bratislava, Slovensko",
+      "phone": "+421 905 404 166",
+      "email": "vk@tradag.sk",
+      "website": "http://www.photoalbumshop.eu/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/foto-albumy-tradag_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/foto-albumy-tradag_08.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/foto-albumy-tradag_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/frtus-winery-svadba-vo-vinarstve/",
+      "country": "SK",
+      "name": "Frtus Winery – svadba vo vinárstve",
+      "category": "venue",
+      "street": "Rybník 998",
+      "postal_code": "93523",
+      "city": "Rybník",
+      "address": "Rybník 998, 935 23 Rybník, Slovensko",
+      "phone": "+421 944 069 710",
+      "email": "event@frtuswinery.sk",
+      "website": "http://www.frtuswinery.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/frtus-winery-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/frtus-winery-svadba_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/frtus-winery-svadba_05.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/funface-fotobox/",
+      "country": "SK",
+      "name": "FunFace fotobox",
+      "category": "photo_booth",
+      "street": "Drobného 1960/27",
+      "postal_code": "84102",
+      "city": "Dúbravka",
+      "address": "Drobného 1960/27, 841 02 Dúbravka, Slovensko",
+      "phone": "+421 905 770 805",
+      "email": "funface@funface.sk",
+      "website": "http://funface.sk/fotokutik-na-svadbu",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/foto1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/foto5.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/foto6.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/galeria-thermal-besenova/",
+      "country": "SK",
+      "name": "Galeria Thermal Bešeňová",
+      "category": "venue",
+      "street": "Bešeňová 136",
+      "postal_code": "03483",
+      "city": "Bešeňová",
+      "address": "Bešeňová 136, 034 83 Bešeňová, Slovensko",
+      "phone": "+421 44 4307 700",
+      "email": "info@galeriathermal.sk",
+      "website": "http://www.tmrhotels.com/galeria-thermal-besenova/sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/galeria-thermal-besesova_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/galeria-thermal-besesova_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/galeria-thermal-besesova_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/galicia-nueva/",
+      "country": "SK",
+      "name": "Galicia Nueva, zámocký hotel****",
+      "category": "venue",
+      "street": "Zámocká 7",
+      "postal_code": "98511",
+      "city": "Halič",
+      "address": "Zámocká 7, 985 11 Halič, Slovensko",
+      "phone": "+421 47 28 52 236",
+      "email": "wedding@hotelgalicianueva.sk",
+      "website": "http://zamockyhotelgalicianueva.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/Galicia-Nueva_18.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/Galicia-Nueva_11.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/Galicia-Nueva_12.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/gazdovska-stodola-kapusany/",
+      "country": "SK",
+      "name": "Gazdovská stodola Kapušany",
+      "category": "venue",
+      "street": "Hlavná 366",
+      "postal_code": "08212",
+      "city": "Kapušany",
+      "address": "Hlavná 366, 082 12 Kapušany, Slovensko",
+      "phone": "+421 905 647 952",
+      "email": "gazdovskastodolakapusany@gmail.com",
+      "website": "http://gazdovskastodolakapusany.eatbu.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/Gazdovska-stodola-Kapusany.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/Gazdovska-stodola-Kapusany-3.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/Gazdovska-stodola-Kapusany-2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/ginka-svadobna-vyzdoba-kytica/",
+      "country": "SK",
+      "name": "Ginka svadobná výzdoba Košice",
+      "category": "photography",
+      "street": "Južná trieda 82",
+      "postal_code": "04017",
+      "city": "Košice",
+      "address": "Južná trieda 82, 040 17 Košice, Slovensko",
+      "phone": "0421 55 729 48 90",
+      "email": "ginka@ginka.sk",
+      "website": "http://www.ginka.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/ginka-kvety_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/ginka-kvety_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/ginka-kvety_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kastiel-vo-voderadoch-goya/",
+      "country": "SK",
+      "name": "GOYA Vitality Hotel – Kaštieľ vo Voderadoch",
+      "category": "venue",
+      "street": "Zichyho nám. 250/2",
+      "postal_code": "91942",
+      "city": "Voderady",
+      "address": "Zichyho nám. 250/2, 919 42 Voderady, Slovensko",
+      "phone": "+421 33 281 3555",
+      "email": "reception@goyavitality.sk",
+      "website": "http://goyavitality.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/kastiel-voderady-goya-vitality-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/kastiel-voderady-goya-vitality-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/kastiel-voderady-goya-vitality-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/grand-hotel-residence/",
+      "country": "SK",
+      "name": "Grand Hotel Sergijo Residence ****",
+      "category": "venue",
+      "street": "Odborárska 4113/7",
+      "postal_code": "92101",
+      "city": "Banka-Ratnovská cesta",
+      "address": "Odborárska 4113/7, 921 01 Banka-Ratnovská cesta, Slovensko",
+      "phone": "+421 33 772 66 46",
+      "email": "hotel@sergijo.sk",
+      "website": "http://www.hotelresidence.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/11/GRAND-HOTEL-RESIDENCE_08.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/11/GRAND-HOTEL-RESIDENCE_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/11/GRAND-HOTEL-RESIDENCE_06.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/grandhotel-stary-smokovec/",
+      "country": "SK",
+      "name": "Grandhotel Starý Smokovec",
+      "category": "venue",
+      "street": "Starý Smokovec 38",
+      "postal_code": "06201",
+      "city": "Vysoké Tatry-Starý Smokovec",
+      "address": "Starý Smokovec 38, 062 01 Vysoké Tatry-Starý Smokovec, Slovensko",
+      "phone": "+421 52 47 80 000",
+      "email": "info@grandhotel.sk",
+      "website": "http://www.tmrhotels.com/grandhotel-stary-smokovec/sk/mitingy-a-podujatia/svadby/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/grandhotel-stary-smokovec_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/grandhotel-stary-smokovec_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/grandhotel-stary-smokovec_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/greta-resort-svadba-na-liptove/",
+      "country": "SK",
+      "name": "Gréta Resort – svadba v stodole pri Liptovskej Mare",
+      "category": "venue",
+      "street": "Liptovská Sielnica 270",
+      "postal_code": "03223",
+      "city": "Liptovská Sielnica",
+      "address": "Liptovská Sielnica 270, 032 23 Liptovská Sielnica, Slovensko",
+      "phone": "+421 911 897 079",
+      "email": "prevadzkar@gretaresort.sk",
+      "website": "http://gretaresort.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/koliba-greta-resort-svadba-na-liptove.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/koliba-greta_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/koliba-greta_08.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/gril-restauracia-suchy-vrch/",
+      "country": "SK",
+      "name": "Gril reštaurácia Suchý vrch",
+      "category": "venue",
+      "street": "Radvaň 2751",
+      "postal_code": "97405",
+      "city": "Banská Bystrica",
+      "address": "Radvaň 2751, 974 05 Banská Bystrica, Slovensko",
+      "phone": "+421 918 855 125",
+      "email": "grilrestauracia@gmail.com",
+      "website": "http://grilrestauracia.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/01/Gril-restauracia-Suchy-vrch-1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/01/Gril-restauracia-Suchy-vrch-2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/01/Gril-restauracia-Suchy-vrch-3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/happy-day-catering-bratislava/",
+      "country": "SK",
+      "name": "Happy Day catering Bratislava",
+      "category": "catering",
+      "street": "Vlčie hrdlo 1",
+      "postal_code": "82412",
+      "city": "Bratislava",
+      "address": "Vlčie hrdlo 1, 824 12 Bratislava, Slovensko",
+      "phone": "+421 948 080 180",
+      "email": "info@happy-day.sk",
+      "website": "http://www.happydaycatering.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/happy-day-catering-na-svadbu_05.jpeg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/happy-day-catering-na-svadbu_02.jpeg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/happy-day-catering-na-svadbu_01.jpeg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/barca-kosice/",
+      "country": "SK",
+      "name": "Hotel & Restaurant Barca Košice",
+      "category": "venue",
+      "street": "Červený rak 21",
+      "postal_code": "04017",
+      "city": "Košice",
+      "address": "Červený rak 21, 040 17 Košice, Slovensko",
+      "phone": "+421 918 622 227",
+      "email": "recepcia@hotelbarca.sk",
+      "website": "http://www.barcakosice.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/01/barca-1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/01/barca-2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/01/barca-3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-21-na-trnavke/",
+      "country": "SK",
+      "name": "Hotel 21 na Trnávke – svadba Ružinov Bratislava",
+      "category": "venue",
+      "street": "Nerudova 8",
+      "postal_code": "82104",
+      "city": "Bratislava",
+      "address": "Nerudova 8, 821 04 Bratislava, Slovensko",
+      "phone": "+421 911 393 898",
+      "email": "office@hotel21trnavka.sk",
+      "website": "http://www.hotel21trnavka.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/02/hotel-21-na-trnavke-svadba-bratislava_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/02/hotel-21-na-trnavke-svadba-bratislava_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/02/hotel-21-na-trnavke-svadba-bratislava_06.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-doubletree-by-hilton-kosice/",
+      "country": "SK",
+      "name": "Hotel DoubleTree by Hilton Košice",
+      "category": "venue",
+      "street": "Hlavná 1",
+      "postal_code": "04001",
+      "city": "Košice",
+      "address": "Hlavná 1, 040 01 Košice, Slovensko",
+      "phone": "+421 55 3251 100",
+      "email": "sales@hiltonkosice.sk",
+      "website": "http://www.doubletree-kosice.com/eventy/svadby/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/Double-Tree-by-Hilton-Kosice-svadba_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/Double-Tree-by-Hilton-Kosice-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/Double-Tree-by-Hilton-Kosice-svadba_01.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-elizabeth/",
+      "country": "SK",
+      "name": "Hotel Elizabeth ****",
+      "category": "venue",
+      "street": "Gen. M. R. Štefánika 2",
+      "postal_code": "91101",
+      "city": "Trenčín",
+      "address": "Gen. M. R. Štefánika 2, 911 01 Trenčín, Slovensko",
+      "phone": "+421 903 987 937",
+      "email": "event@hotelelizabeth.sk",
+      "website": "http://www.hotelelizabeth.sk/svadby-snov/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/hotel_elizabeth_trencin_13.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/11/hotel-elizabeth-trencin-svadba_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/11/hotel-elizabeth-trencin-svadba_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-eurobus-primorska-svadba/",
+      "country": "SK",
+      "name": "Hotel Eurobus **** Vaša prímorská svadba",
+      "category": "venue",
+      "street": "Zemplínska šírava",
+      "postal_code": "07236",
+      "city": "Kaluža",
+      "address": "Zemplínska šírava, 072 36 Kaluža, Slovensko",
+      "phone": "+421 908 783 632",
+      "email": "svadba@hoteleurobus.sk",
+      "website": "http://www.hoteleurobus.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/hotel-eurobus-sirava-svadba_18.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/hotel-eurobus-sirava-svadba_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/hotel-eurobus-sirava-svadba_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-gader-svadba-pri-martine/",
+      "country": "SK",
+      "name": "Hotel Gader – svadba pri Martine",
+      "category": "venue",
+      "street": "Blatnica 421",
+      "postal_code": "03815",
+      "city": "Blatnica",
+      "address": "Blatnica 421, 038 15 Blatnica, Slovensko",
+      "phone": "+421 918 810 474",
+      "email": "event@hotelgader.sk",
+      "website": "http://hotelgader.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/hotel-gader-svadba-pri-martine_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/hotel-gader-svadba-pri-martine_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/hotel-gader-svadba-pri-martine_06.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/gino-park-palace-kastiel-orlove/",
+      "country": "SK",
+      "name": "Hotel Gino Park Palace**** Kaštieľ Orlové",
+      "category": "venue",
+      "street": "Orlové 116",
+      "postal_code": "01701",
+      "city": "Považská Bystrica-Orlové",
+      "address": "Orlové 116, 017 01 Považská Bystrica-Orlové, Slovensko",
+      "phone": "+421 948 72 82 85",
+      "email": "wedding@parkpalace.sk",
+      "website": "http://parkpalace.sk/svadby/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/gino-park-palace-kastiel-orlove_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/gino-park-palace-kastiel-orlove_25.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/gino-park-palace-kastiel-orlove_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-kochau/",
+      "country": "SK",
+      "name": "Hotel KOCHAU",
+      "category": "venue",
+      "street": "Kováčová 406",
+      "postal_code": "96237",
+      "city": "Kováčová",
+      "address": "Kováčová 406, 962 37 Kováčová, Slovensko",
+      "phone": "+421 911 643 107",
+      "email": "kochau@kochau.sk",
+      "website": "http://kochau.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/kochau4.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/kochau2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/kochau3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-kormoran/",
+      "country": "SK",
+      "name": "Hotel Kormorán****",
+      "category": "venue",
+      "street": "Pri hrádzi 33",
+      "postal_code": "93101",
+      "city": "Šamorín – Čilistov",
+      "address": "Pri hrádzi 33, 931 01 Šamorín – Čilistov, Slovensko",
+      "phone": "+421 903 446 195",
+      "email": "info@hotelkormoran.sk",
+      "website": "http://www.hotelkormoran.sk/svadby-a-oslavy/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/07/hotel_kormoran_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/07/hotel_kormoran_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/07/hotel_kormoran_10.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-most-slavy/",
+      "country": "SK",
+      "name": "Hotel MOST SLÁVY ***",
+      "category": "venue",
+      "street": "17. novembra 11",
+      "postal_code": "91451",
+      "city": "Trenčianske Teplice",
+      "address": "17. novembra 11, 914 51 Trenčianske Teplice, Slovensko",
+      "phone": "+421 32 651 36 11",
+      "email": "recepcia@hotelmostslavy.sk",
+      "website": "http://www.hotelmostslavy.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/hotel-most-slavy_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/hotel-most-slavy_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/hotel-most-slavy_03-1.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-podjavornik/",
+      "country": "SK",
+      "name": "Hotel Podjavorník",
+      "category": "venue",
+      "street": "Podjavorník 1422",
+      "postal_code": "01813",
+      "city": "Papradno",
+      "address": "Podjavorník 1422, 018 13 Papradno, Slovensko",
+      "phone": "+421 911 660 551",
+      "email": "recepcia@hotelpodjavornik.sk",
+      "website": "http://www.hotelpodjavornik.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/hotel-podjavornik_3.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/hotel-podjavornik_5.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/hotel-podjavornik_2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-pri-mlyne-svadba-lozorno/",
+      "country": "SK",
+      "name": "Hotel pri Mlyne Lozorno",
+      "category": "venue",
+      "street": "Zvončínska 1183/77A",
+      "postal_code": "90055",
+      "city": "Lozorno",
+      "address": "Zvončínska 1183/77A, 900 55 Lozorno, Slovensko",
+      "phone": "+421 2 526 235 93",
+      "email": "rezervacie@primlyne.sk",
+      "website": "http://www.primlyne.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/06/hotel-pri-mlyne-svadba-lozorno_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/06/hotel-pri-mlyne-svadba-lozorno_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/06/hotel-pri-mlyne-svadba-lozorno_05.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/royal-palace-turcianske-teplice/",
+      "country": "SK",
+      "name": "Hotel Royal Palace ***** Turčianske Teplice – kráľovská svadba",
+      "category": "venue",
+      "street": "SNP 519",
+      "postal_code": "03912",
+      "city": "Turčianske Teplice",
+      "address": "SNP 519, 039 12 Turčianske Teplice, Slovensko",
+      "phone": "+421 43 4918 010",
+      "email": "royalreservations@therme.sk",
+      "website": "http://royalpalace.therme.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/07/hotel-royal-palace-turcianske-teplice_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/07/hotel-royal-palace-turcianske-teplice_12.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/07/hotel-royal-palace-turcianske-teplice_11.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-rozalka/",
+      "country": "SK",
+      "name": "Hotel Rozálka ***",
+      "category": "venue",
+      "street": "Rozálka 9",
+      "postal_code": "90201",
+      "city": "Pezinok",
+      "address": "Rozálka 9, 902 01 Pezinok, Slovensko",
+      "phone": "+421 947 933 623",
+      "email": "hotel@rozalka.sk",
+      "website": "http://www.rozalka.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/06/rozalka-pezinok_7.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/06/rozalka-pezinok_2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/06/rozalka-pezinok_3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-sebastian-u-hoffera/",
+      "country": "SK",
+      "name": "Hotel Sebastian u Hoffera",
+      "category": "venue",
+      "street": "Dukelská 4",
+      "postal_code": "90001",
+      "city": "Modra",
+      "address": "Dukelská 4, 900 01 Modra, Slovensko",
+      "phone": "+421 908 105 122",
+      "email": "info@hotelsebastian.sk",
+      "website": "http://www.hotelsebastian.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/hotel-sebastian-u-hoffera_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/hotel-sebastian-u-hoffera_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/hotel-sebastian-u-hoffera_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-hotel-senec/",
+      "country": "SK",
+      "name": "Hotel Senec – svadba na brehu Slnečných jazier",
+      "category": "venue",
+      "street": "Hotel SENEC, Slnečné jazerá – Sever",
+      "postal_code": "90301",
+      "city": "Senec",
+      "address": "Hotel SENEC, Slnečné jazerá – Sever, 90301 Senec, Slovensko",
+      "phone": "+421 902 919 698",
+      "email": "restaurant@hotelsenec.sk",
+      "website": "http://www.hotelsenec.sk/oslavy-a-svadby-1692008761",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/hotel-senec-svadba_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/hotel-senec-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/hotel-senec-svadba_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-solisko/",
+      "country": "SK",
+      "name": "Hotel Solisko****",
+      "category": "venue",
+      "street": "Pri jazere 4046/1",
+      "postal_code": "05985",
+      "city": "Štrba – Štrbské Pleso",
+      "address": "Pri jazere 4046/1, 059 85 Štrba – Štrbské Pleso, Slovensko",
+      "phone": "+421 52 4262 800",
+      "email": "info@hotelsolisko.sk",
+      "website": "http://hotelsolisko.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/11/hotel_solisko_11.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/11/hotel_solisko_10.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/11/hotel_solisko_09.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-hotel-veverica-trencin/",
+      "country": "SK",
+      "name": "Hotel Veverica ***",
+      "category": "venue",
+      "street": "Kukučínova 76/42, Lesopark Brezina",
+      "postal_code": "91101",
+      "city": "Trenčín",
+      "address": "Kukučínova 76/42, Lesopark Brezina, 911 01 Trenčín, Slovensko",
+      "phone": "+421 32 642 08 81",
+      "email": "info@hotelveverica.sk",
+      "website": "http://www.hotelveverica.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/hotel-veverica_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/hotel-veverica_2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/hotel-veverica_3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-zamok-topolcianky/",
+      "country": "SK",
+      "name": "Hotel Zámok Topoľčianky",
+      "category": "venue",
+      "street": "Parková 1",
+      "postal_code": "95193",
+      "city": "Topolčianky",
+      "address": "Parková 1, 951 93 Topolčianky, Slovensko",
+      "phone": "+421 37 7777 555",
+      "email": "zamok@zamoktopolcianky.sk",
+      "website": "http://www.zamok-topolcianky.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/zamok-topolcianky-svadba_25.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/zamok-topolcianky_06.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/zamok-topolcianky_01.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-zerrenpach-latky/",
+      "country": "SK",
+      "name": "Hotel Zerrenpach Látky",
+      "category": "venue",
+      "street": "Prašivá 4",
+      "postal_code": "98545",
+      "city": "Látky",
+      "address": "Prašivá 4, 985 45 Látky, Slovensko",
+      "phone": "+421 45 532 01 70",
+      "email": "event@zerrenpachlatky.sk",
+      "website": "http://www.zerrenpachlatky.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2020/01/zerrenpach-svadba-latky_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2020/01/zerrenpach-svadba-latky_09.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2020/01/zerrenpach-svadba-latky_10.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-zlaty-klucik-nitra/",
+      "country": "SK",
+      "name": "Hotel Zlatý Kľúčik ****Superior",
+      "category": "venue",
+      "street": "Svätourbanská 103/29",
+      "postal_code": "94901",
+      "city": "Nitra",
+      "address": "Svätourbanská 103/29, 949 01 Nitra, Slovensko",
+      "phone": "+421 911 589 700",
+      "email": "svadby@zlatyklucik.sk",
+      "website": "http://zlatyklucik.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/svadba-hotel-zlaty-klucik-nitra_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/svadba-hotel-zlaty-klucik-nitra_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/svadba-hotel-zlaty-klucik-nitra_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-plauter-kuria/",
+      "country": "SK",
+      "name": "Hotel*** Plauter Kúria Veľký Meder",
+      "category": "venue",
+      "street": "Kurtaserská 3369",
+      "postal_code": "93201",
+      "city": "Veľký Meder",
+      "address": "Kurtaserská 3369, 932 01 Veľký Meder, Slovensko",
+      "phone": "+421 917 232 545",
+      "email": "info@plauterkuria.sk",
+      "website": "http://www.plauterkuria.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/plauter-kuria_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/plauter-kuria_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/plauter-kuria_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/jozef-sadecky-photography/",
+      "country": "SK",
+      "name": "Jozef Sádecký Photography",
+      "category": "photography",
+      "street": "Hliny 1421/23",
+      "postal_code": "01707",
+      "city": "Považská Bystrica",
+      "address": "Hliny 1421/23, 017 07 Považská Bystrica, Slovensko",
+      "phone": "+421 915 288 793",
+      "email": "jozefsadecky@jozefsadecky.sk",
+      "website": "http://www.jozefsadecky.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/Fotograf_Sadecky_15.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/Fotograf_Sadecky_17.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/Fotograf_Sadecky_14.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/kapela-what-else/",
+      "country": "SK",
+      "name": "Kapela What else?!",
+      "category": "live_music",
+      "street": "Športová 1",
+      "postal_code": "83104",
+      "city": "Bratislava",
+      "address": "Športová 1, 831 04 Bratislava, Slovensko",
+      "phone": "+421 903 028 609",
+      "email": "kapela@whatelse.sk",
+      "website": "http://www.whatelse.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/kapela-na-svadbu-what-else_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/kapela-na-svadbu-what-else_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/10/kapela-na-svadbu-what-else_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/karavan-na-svadobnu-cestu/",
+      "country": "SK",
+      "name": "Karavan na svadobnú cestu",
+      "category": "wedding_planner",
+      "street": "Krajná 724/76",
+      "postal_code": "93101",
+      "city": "Šamorín",
+      "address": "Krajná 724/76, 931 01 Šamorín, Slovensko",
+      "phone": "+421 903 417 311",
+      "email": "info@pozicajsikaravan.sk",
+      "website": "http://www.pozicajsikaravan.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/karavan-svadobna-cesta-1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/karavan-svadobna-cesta1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/karavan-rozlucka-so-slobodou.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kastiel-burg-svadba/",
+      "country": "SK",
+      "name": "Kaštieľ Burg",
+      "category": "venue",
+      "street": "Považské Podhradie 6",
+      "postal_code": "01704",
+      "city": "Považská Bystrica",
+      "address": "Považské Podhradie 6, 017 04 Považská Bystrica, Slovensko",
+      "phone": "+421 950 709 504",
+      "email": "info@kastielburg.sk",
+      "website": "http://kastielburg.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/11/kastiel-burg-povazska-bystrica_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/11/kastiel-burg-povazska-bystrica_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/11/kastiel-burg-povazska-bystrica_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kastiel-klobusice/",
+      "country": "SK",
+      "name": "Kaštieľ Klobušice",
+      "category": "venue",
+      "street": "Zámocká",
+      "postal_code": "01901",
+      "city": "Ilava-Klobušice",
+      "address": "Zámocká, 019 01 Ilava-Klobušice, Slovensko",
+      "phone": "+421 905 175 599",
+      "email": "kastielklobusice1840@gmail.com",
+      "website": "http://www.kastiel-klobusice.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/kastiel-klobusice_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/kastiel-klobusice_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/kastiel-klobusice_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kastiel-kostany-nad-turcom/",
+      "country": "SK",
+      "name": "Kaštieľ Košťany nad Turcom – svadobný stan",
+      "category": "venue",
+      "street": "Košťany nad Turcom 214",
+      "postal_code": "03841",
+      "city": "Košťany nad Turcom",
+      "address": "Košťany nad Turcom 214, 038 41 Košťany nad Turcom, Slovensko",
+      "phone": "+421 911 679 000",
+      "email": "info.kastielkostany@gmail.com",
+      "website": "http://www.kastielkostany.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/03/kastiel-kostany-svadobny-stan_23.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/03/kastiel-kostany-svadobny-stan_20.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/03/kastiel-kostany-svadobny-stan_21.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kastiel-krasnany/",
+      "country": "SK",
+      "name": "Kaštieľ Krasňany",
+      "category": "venue",
+      "street": "Krasňany 21",
+      "postal_code": "01303",
+      "city": "Krasňany",
+      "address": "Krasňany 21, 013 03 Krasňany, Slovensko",
+      "phone": "+421 911 310 658",
+      "email": "kastielkrasnany@gmail.com",
+      "website": "http://kastielkrasnany.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/kastiel-krasnany_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/kastiel-krasnany_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/kastiel-krasnany_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-kastiel-palffy/",
+      "country": "SK",
+      "name": "Kaštieľ Pálffy",
+      "category": "venue",
+      "street": "Prostredná 13/49",
+      "postal_code": "90021",
+      "city": "Svätý Jur",
+      "address": "Prostredná 13/49, 900 21 Svätý Jur, Slovensko",
+      "phone": "+421 915 826 821",
+      "email": "event@kastielpalffy.sk",
+      "website": "http://www.kastielpalffy.sk/svadba-v-kastieli-palffy/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/kastiel-pallfy_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/kastiel-pallfy_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/kastiel-pallfy_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kastiel-park-hotel-tartuf-beladice/",
+      "country": "SK",
+      "name": "Kaštieľ Park Hotel Tartuf Beladice",
+      "category": "venue",
+      "street": "Pustý Chotár 495",
+      "postal_code": "95175",
+      "city": "Beladice",
+      "address": "Pustý Chotár 495, 951 75 Beladice, Slovensko",
+      "phone": "+421 37 633 02 35",
+      "email": "rezervacie@tartuf.sk",
+      "website": "http://www.tartuf.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/05/kastiel-park-hotel-tartuf-beladice_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/05/kastiel-park-hotel-tartuf-beladice_14.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/05/kastiel-park-hotel-tartuf-beladice_15.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kastiel-patrovec/",
+      "country": "SK",
+      "name": "Kaštieľ Patrovec",
+      "category": "venue",
+      "street": "Veľká Hradná 249",
+      "postal_code": "91324",
+      "city": "Veľká Hradná",
+      "address": "Veľká Hradná 249, 913 24 Veľká Hradná, Slovensko",
+      "phone": "+421 944 305 514",
+      "email": "info@kastielpatrovec.sk",
+      "website": "http://www.kastielpatrovec.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/08/kastiel-patrovec_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/08/svadba-kastiel-patrovec-velka-hradna_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/08/kastiel-patrovec_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-muzeum-vo-svatom-antone/",
+      "country": "SK",
+      "name": "Kaštieľ vo Svätom Antone",
+      "category": "venue",
+      "street": "Svätý Anton 291",
+      "postal_code": "96972",
+      "city": "Svätý Anton",
+      "address": "Svätý Anton 291, 969 72 Svätý Anton, Slovensko",
+      "phone": "+421 918 877 061",
+      "email": "info@msa.sk",
+      "website": "http://msa.sk/svadby",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/muzeum-vo-svatom-antone_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/muzeum-vo-svatom-antone_10.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/muzeum-vo-svatom-antone_09.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kaviaren-slavia-kosice/",
+      "country": "SK",
+      "name": "Kaviareň Slávia – svadba v srdci Košíc",
+      "category": "venue",
+      "street": "Hlavná 92/63",
+      "postal_code": "04001",
+      "city": "Košice",
+      "address": "Hlavná 92/63, 040 01 Košice, Slovensko",
+      "phone": "+421 910 106 029",
+      "email": "eventy@kaviarenslavia.sk",
+      "website": "http://www.kaviarenslavia.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/09/kaviaren-slavia-svadba-kosice_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/09/kaviaren-slavia-svadba-kosice_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/09/kaviaren-slavia-svadba-kosice_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/klost-svadba-v-stane/",
+      "country": "SK",
+      "name": "Klost - svadba v stane",
+      "category": "venue",
+      "street": "Devätinova 54",
+      "postal_code": "82106",
+      "city": "Bratislava",
+      "address": "Devätinova 54, 821 06 Bratislava, Slovensko",
+      "phone": "+421 902 916 190",
+      "email": "klost@klost.sk",
+      "website": "http://klost.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/klost-svadobny-stan-na-prenajom_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/klost_party_stan_17.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/klost_party_stan_19.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/koliba-papradno/",
+      "country": "SK",
+      "name": "Koliba Papradno",
+      "category": "venue",
+      "street": "Papradno 1507",
+      "postal_code": "01813",
+      "city": "Papradno",
+      "address": "Papradno 1507, 01813 Papradno, Slovensko",
+      "phone": "+421 42 439 33 38",
+      "email": "agro@penziongrunt.sk",
+      "website": "http://penziongrunt.sk/koliba",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/koliba-papradno_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/koliba-papradno_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/koliba-papradno_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/korimanka-svadobne-oznamenia/",
+      "country": "SK",
+      "name": "Korimanka svadobné oznámenia",
+      "category": "catering",
+      "street": "Kvačany 105",
+      "postal_code": "08241",
+      "city": "Bajerov",
+      "address": "Kvačany 105, 08241 Bajerov, Slovensko",
+      "phone": "+421 907 375 076",
+      "email": "korimanka@gmail.com",
+      "website": "http://www.korimanka.com/graficke-sluzby",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/Korimanka-oznamenia-02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/Korimanka-oznamenia-01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/Korimanka-oznamenia-04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kosice-hotel/",
+      "country": "SK",
+      "name": "KOŠICE HOTEL ****",
+      "category": "venue",
+      "street": "Moldavská cesta 51",
+      "postal_code": "04011",
+      "city": "Košice",
+      "address": "Moldavská cesta 51, 040 11 Košice, Slovensko",
+      "phone": "+421 55 2810 281",
+      "email": "obchod@kosicehotel.sk",
+      "website": "http://www.kosicehotel.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/kosice-hotel_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/kosice-hotel_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/kosice-hotel_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kulturny-dom-hontianske-tesare/",
+      "country": "SK",
+      "name": "Kultúrny dom Hontianske Tesáre",
+      "category": "venue",
+      "street": "Hontianske Tesáre 66",
+      "postal_code": "96268",
+      "city": "Hontianske Tesáre",
+      "address": "Hontianske Tesáre 66, 962 68 Hontianske Tesáre, Slovensko",
+      "phone": "+421 45 5596 015",
+      "email": "sabova@hontiansketesare.sk",
+      "website": "http://www.hontiansketesare.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/03/kulturny-dom-hontianske-tesare_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/03/kulturny-dom-hontianske-tesare_3.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/03/kulturny-dom-hontianske-tesare_2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kuria-beckov-penzion/",
+      "country": "SK",
+      "name": "Kúria Beckov Penzión ***",
+      "category": "venue",
+      "street": "Beckov 20",
+      "postal_code": "91638",
+      "city": "Beckov",
+      "address": "Beckov 20, 916 38 Beckov, Slovensko",
+      "phone": "+421 948 105 106",
+      "email": "eventy@kuriabeckov.sk",
+      "website": "http://kuriabeckov.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/kuria-beckov_17.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/03/kuria-beckov_10.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/kuria-beckov_15.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/kursalon-piestany/",
+      "country": "SK",
+      "name": "Kursalon Piešťany",
+      "category": "venue",
+      "street": "Beethovenova 5",
+      "postal_code": "92101",
+      "city": "Piešťany",
+      "address": "Beethovenova 5, 921 01 Piešťany, Slovensko",
+      "phone": "0948 191 750",
+      "email": "ziwell@ziwell.sk",
+      "website": "http://ziwell.sk/restauracia-kursalon/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/ziwell-kursalon-piestany-svadba_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/ziwell-kursalon-piestany-svadba_2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/ziwell-kursalon-piestany-svadba_3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/la-reunion-catering-trnava/",
+      "country": "SK",
+      "name": "La Reunion catering Trnava",
+      "category": "catering",
+      "street": "Zvončín 690",
+      "postal_code": "91901",
+      "city": "Trnava",
+      "address": "Zvončín 690, 919 01 Trnava, Slovensko",
+      "phone": "+421 911 177 179",
+      "email": "catering@lareunion.sk",
+      "website": "http://lareunion.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/la-reunion-catering_3.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/08/LaReunion-catering-trnava_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/08/LaReunion-catering-trnava_06.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/lod-harmonia/",
+      "country": "SK",
+      "name": "Loď Harmónia",
+      "category": "venue",
+      "street": "Fajnorovo nábrežie 2",
+      "postal_code": "81102",
+      "city": "Bratislava",
+      "address": "Fajnorovo nábrežie 2, 811 02 Bratislava, Slovensko",
+      "phone": "+421 903 463 957",
+      "email": "charter@lod.sk",
+      "website": "http://www.lod.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/lod-harmonia_4.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/lod-harmonia_5.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/lod-harmonia_10.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/lodenica-sintava/",
+      "country": "SK",
+      "name": "Lodenica Šintava",
+      "category": "venue",
+      "street": "Šintava 441",
+      "postal_code": "92551",
+      "city": "Šintava",
+      "address": "Šintava 441, 925 51 Šintava, Slovensko",
+      "phone": "+421 908 739 929",
+      "email": "lodenica.sintava@gmail.com",
+      "website": "http://www.lodenicasintava.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/06/lodenica_sintava_3.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/06/lodenica_sintava_1.webp",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/06/lodenica_sintava_2.webp"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/luminara-svadobna-sala/",
+      "country": "SK",
+      "name": "LUMINARA – svadobná sála v Kysuckom Novom Meste",
+      "category": "venue",
+      "street": "Hviezdoslavova 1118/4",
+      "postal_code": "02401",
+      "city": "Kysucké Nové Mesto",
+      "address": "Hviezdoslavova 1118/4, 024 01 Kysucké Nové Mesto, Slovensko",
+      "phone": "+421 902 321 302",
+      "email": "porta@portaknm.sk",
+      "website": "http://www.luminaraknm.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/sala-luminara-svadba-kysucke-nove-mesto_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/sala-luminara-svadba-kysucke-nove-mesto_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/05/sala-luminara-svadba-kysucke-nove-mesto_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/madonna-mia-trencin/",
+      "country": "SK",
+      "name": "Madonna Mia Trenčín",
+      "category": "venue",
+      "street": "Pred Poľom 1600",
+      "postal_code": "91101",
+      "city": "Trenčín",
+      "address": "Pred Poľom 1600, 911 01 Trenčín, Slovensko",
+      "phone": "+421 948 226 922",
+      "email": "info@madonnamia.sk",
+      "website": "http://madonnamia.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/madonna-mia-svadba-trencin_10.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/madonna-mia-svadba-trencin_08.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/madonna-mia-svadba-trencin_19.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-v-maranello-ristorante/",
+      "country": "SK",
+      "name": "Maranello Ristorante – svadba v Bratislave",
+      "category": "venue",
+      "street": "Vlčie hrdlo 1/A",
+      "postal_code": "82107",
+      "city": "Bratislava",
+      "address": "Vlčie hrdlo 1/A, 821 07 Bratislava, Slovensko",
+      "phone": "+421 911 50 40 40",
+      "email": "maranello@maranello-ristorante.sk",
+      "website": "http://www.maranello-ristorante.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/maranello-ristorante-svadba-v-bratislave_04.jpeg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/maranello-ristorante-svadba-v-bratislave_05.jpeg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/maranello-ristorante-svadba-v-bratislave_01.jpeg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/masarykov-dvor/",
+      "country": "SK",
+      "name": "Masarykov dvor",
+      "category": "venue",
+      "street": "Masarykov dvor",
+      "postal_code": "96202",
+      "city": "Vígľaš-Pstruša",
+      "address": "Masarykov dvor, 962 02 Vígľaš-Pstruša, Slovensko",
+      "phone": "+421 45 524 46 00",
+      "email": "svadby@masarykov-dvor.sk",
+      "website": "http://www.masarykov-dvor.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/masarykov_dvor_13.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/masarykov_dvor_12.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/masarykov_dvor_16.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/medvedi-brloh-strachan/",
+      "country": "SK",
+      "name": "Medvedí brloh Strachan",
+      "category": "venue",
+      "street": "Medvedí brloh Strachan, Ždiar 777",
+      "postal_code": "05955",
+      "city": "Ždiar",
+      "address": "Medvedí brloh Strachan, Ždiar 777, 059 55 Ždiar, Slovensko",
+      "phone": "+421 918 693 000",
+      "email": "svadby@medvedibrloh.sk",
+      "website": "http://medvedibrloh.sk/svadby/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/04/medvedi-brloh-strachan-svadba_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/04/medvedi-brloh-strachan-svadba_10.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/04/medvedi-brloh-strachan-svadba_07.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/momoland-ruzina-svadba/",
+      "country": "SK",
+      "name": "Momoland Ružiná – svadba pri vode",
+      "category": "venue",
+      "street": "Tábor 110",
+      "postal_code": "98552",
+      "city": "Ružiná",
+      "address": "Tábor 110, 985 52 Ružiná, Slovensko",
+      "phone": "+421 902 977 036",
+      "email": "momoland@momoland.sk",
+      "website": "http://www.momoland.sk/svadby/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/04/momoland-ruzina-svadba_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/04/momoland-ruzina-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/04/momoland-ruzina-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-v-hoteli-lomnica/",
+      "country": "SK",
+      "name": "Noblesná svadba v Hoteli Lomnica",
+      "category": "venue",
+      "street": "Tatranská Lomnica 92",
+      "postal_code": "05960",
+      "city": "Vysoké Tatry",
+      "address": "Tatranská Lomnica 92, 059 60 Vysoké Tatry, Slovensko",
+      "phone": "+421 905 325 114",
+      "email": "event@hotellomnica.sk",
+      "website": "http://hotellomnica.sk/svadby-a-oslavy",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/hotel-lomnica_06.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/hotel-lomnica_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/hotel-lomnica_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/osemdesiatka-partizanske/",
+      "country": "SK",
+      "name": "Osemdesiatka Partizánske",
+      "category": "venue",
+      "street": "Nitrianska 1140/70",
+      "postal_code": "95801",
+      "city": "Partizánske",
+      "address": "Nitrianska 1140/70, 958 01 Partizánske, Slovensko",
+      "phone": "+421 917 397 370",
+      "email": "osemdesiatka@osemdesiatka.sk",
+      "website": "http://www.osemdesiatka.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/osemdesiatka-partizanske-svadba_12.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/osemdesiatka-partizanske-svadba_14.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/osemdesiatka-partizanske-svadba_13.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/palenica-jelsovce/",
+      "country": "SK",
+      "name": "Pálenica Jelšovce",
+      "category": "venue",
+      "street": "Jelšovce 240",
+      "postal_code": "95143",
+      "city": "Jelšovce",
+      "address": "Jelšovce 240, 951 43 Jelšovce, Slovensko",
+      "phone": "+421 917 564 227",
+      "email": "restauracia@palenicajelsovce.sk",
+      "website": "http://palenicajelsovce.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/palenica-jelsovce-svadba_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/palenica-jelsovce-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/palenica-jelsovce-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/pekny-les-svadba/",
+      "country": "SK",
+      "name": "Pekný les – svadba v prírode pri Žarnovici",
+      "category": "venue",
+      "street": "Horné Hámre 385",
+      "postal_code": "96671",
+      "city": "Žarnovica",
+      "address": "Horné Hámre 385, 96671 Žarnovica, Slovensko",
+      "phone": "+421 951 869 942",
+      "email": "info@peknyles.sk",
+      "website": "http://peknyles.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/11/humno-pekny-les-svadba_17.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/11/humno-pekny-les-svadba_18.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/11/humno-pekny-les-svadba_19.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/penzion-restauracia-kremnicka/",
+      "country": "SK",
+      "name": "Penzión a reštaurácia Kremnička",
+      "category": "venue",
+      "street": "Zvolenská cesta 191",
+      "postal_code": "97405",
+      "city": "Banská Bystrica",
+      "address": "Zvolenská cesta 191, 974 05 Banská Bystrica, Slovensko",
+      "phone": "+421 902 929 309",
+      "email": "skkremnicka@gmail.com",
+      "website": "http://skkremnicka.sk/penzion/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/09/kremnicka-svadba-2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/09/kremnicka-svadba-4.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/09/kremnicka-svadba-1.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/penzion-vinarstvo-st-peter-vini/",
+      "country": "SK",
+      "name": "Penzión a vinárstvo St. Peter Vini",
+      "category": "venue",
+      "street": "Svätý Peter 1822",
+      "postal_code": "94657",
+      "city": "Svätý Peter",
+      "address": "Svätý Peter 1822, 946 57 Svätý Peter, Slovensko",
+      "phone": "+421 949 152 811",
+      "email": "info@stpetervini.sk",
+      "website": "http://stpetervini.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/st-peter-vini_8.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/st-peter-vini_17.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/st-peter-vini_2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/penzion-aqua-maria-velaty/",
+      "country": "SK",
+      "name": "Penzión Aqua Maria Veľaty",
+      "category": "venue",
+      "street": "Hlavná 252/36",
+      "postal_code": "07615",
+      "city": "Veľaty",
+      "address": "Hlavná 252/36, 076 15 Veľaty, Slovensko",
+      "phone": "+421 948 027 212",
+      "email": "info@penzionaquamaria.sk",
+      "website": "http://www.penzionaquamaria.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/svadobna-sala-penzion-aqua-maria-velaty.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/penzion-aqua-maria-svadba.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/aqua-maria-svadba.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/penzion-kamence/",
+      "country": "SK",
+      "name": "Penzión Kamence",
+      "category": "venue",
+      "street": "Škorupovo 848",
+      "postal_code": "03221",
+      "city": "Bobrovec",
+      "address": "Škorupovo 848, 032 21 Bobrovec, Slovensko",
+      "phone": "+421 944 173 338",
+      "email": "viera.hajducikova@gmail.com",
+      "website": "http://www.penzionkamence.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/09/penzion-kamence-svadba-liptov_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/09/penzion-kamence-svadba-liptov_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/09/penzion-kamence-svadba-liptov_05.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/pod-na-dovolenku/",
+      "country": "SK",
+      "name": "Poď na dovolenku",
+      "category": "other",
+      "street": "Krajná 724/76",
+      "postal_code": "93101",
+      "city": "Šamorín",
+      "address": "Krajná 724/76, 931 01 Šamorín, Slovensko",
+      "phone": "+421 911 754 726",
+      "email": "info@podnadovolenku.sk",
+      "website": "http://www.podnadovolenku.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/pod-na-dovolenku_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/pod-na-dovolenku_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/05/pod-na-dovolenku_05.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/r-vin-winebar-svadba/",
+      "country": "SK",
+      "name": "R-VIN Winebar – svadba pri Dunajskej Strede",
+      "category": "venue",
+      "street": "Veľká Lúč 431",
+      "postal_code": "93003",
+      "city": "Lúč na Ostrove",
+      "address": "Veľká Lúč 431, 930 03 Lúč na Ostrove, Slovensko",
+      "phone": "+421 904 871 900",
+      "email": "info@rvinwinebar.sk",
+      "website": "http://rvinwinebar.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/r-vin-winebar-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/r-vin-winebar-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/r-vin-winebar-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/rekreacne-stredisko-pust/",
+      "country": "SK",
+      "name": "Rekreačné stredisko Púšť",
+      "category": "venue",
+      "street": "Chatová oblasť 704/13",
+      "postal_code": "97101",
+      "city": "Prievidza",
+      "address": "Chatová oblasť 704/13, 971 01 Prievidza, Slovensko",
+      "phone": "+421 46 542 41 44",
+      "email": "pust@hbp.sk",
+      "website": "http://pust.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/rekreacne-stredisko-pust-svadba-pri-prievidzi_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/rekreacne-stredisko-pust-svadba-pri-prievidzi_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/rekreacne-stredisko-pust-svadba-pri-prievidzi_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/residence-hotel-donovaly/",
+      "country": "SK",
+      "name": "RESIDENCE HOTEL Donovaly",
+      "category": "venue",
+      "street": "Donovaly 198",
+      "postal_code": "97639",
+      "city": "Donovaly",
+      "address": "Donovaly 198, 976 39 Donovaly, Slovensko",
+      "phone": "+421 917 432 504",
+      "email": "fbmanager@residencehotel.eu",
+      "website": "http://www.residencehotel.eu/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/residence-hotel-donovaly-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/residence-hotel-donovaly-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/residence-hotel-donovaly-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/afrodita-kastiel-cerenany/",
+      "country": "SK",
+      "name": "Reštaurácia Afrodita - Kaštieľ Čereňany",
+      "category": "venue",
+      "street": "Prievidzská 406/30",
+      "postal_code": "97246",
+      "city": "Čereňany",
+      "address": "Prievidzská 406/30, 972 46 Čereňany, Slovensko",
+      "phone": "+421 905 354 538",
+      "email": "afroditape@gmail.com",
+      "website": "http://www.restauraciaafrodita.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/Cerenany.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/Kastiel_Cerenany-stan_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/Kastiel_Cerenany-stan_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/restauracia-marina-zilina/",
+      "country": "SK",
+      "name": "Reštaurácia Marína Žilina",
+      "category": "venue",
+      "street": "Pri Celulózke 109",
+      "postal_code": "01001",
+      "city": "Žilina",
+      "address": "Pri Celulózke 109, 010 01 Žilina, Slovensko",
+      "phone": "+421 903 646 929",
+      "email": "info@restaurantmarina.sk",
+      "website": "http://restaurantmarina.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/08/restauracia-marina-svadba-zilina_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/08/restauracia-marina-svadba-zilina_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/08/restauracia-marina-svadba-zilina_05.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/stodola-bardejov-svadba/",
+      "country": "SK",
+      "name": "Reštaurácia Stodola Bardejov",
+      "category": "venue",
+      "street": "Duklianska 38",
+      "postal_code": "08501",
+      "city": "Bardejov",
+      "address": "Duklianska 38, 085 01 Bardejov, Slovensko",
+      "phone": "+421 911 389 771",
+      "email": "info.stodola@gmail.com",
+      "website": "http://stodolabj.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/restauracia-stodola-bardejov-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/restauracia-stodola-bardejov-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/restauracia-stodola-bardejov-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/retro-fotokaravan/",
+      "country": "SK",
+      "name": "Retro Fotokaravan",
+      "category": "photo_booth",
+      "street": "Krajná 724/76",
+      "postal_code": "93101",
+      "city": "Šamorín",
+      "address": "Krajná 724/76, 931 01 Šamorín, Slovensko",
+      "phone": "+421 911 754 726",
+      "email": "info@fotokaravan.sk",
+      "website": "http://fotokaravan.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/12/fotokaravan-11-scaled.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/12/fotokaravan-14.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/12/fotokaravan-5.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/rezort-pri-jazere-podbanske/",
+      "country": "SK",
+      "name": "Rezort pri jazere Podbanské",
+      "category": "venue",
+      "street": "Podbanské 1312",
+      "postal_code": "03242",
+      "city": "Pribylina",
+      "address": "Podbanské 1312, 032 42 Pribylina, Slovensko",
+      "phone": "+421 947 901 202",
+      "email": "info@rezortprijazere.sk",
+      "website": "http://rezortprijazere.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/06/rezort-pri-jazere-svadba.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/07/rezort-pri-jazere-obrad.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/05/rezort-pri-jazere-svadba-podbanske_20.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/rozlucka-so-slobodou-vox-travel/",
+      "country": "SK",
+      "name": "Rozlúčka so slobodou Vox Travel",
+      "category": "wedding_planner",
+      "street": "Hattalova 12/A",
+      "postal_code": "83103",
+      "city": "Bratislava",
+      "address": "Hattalova 12/A, 831 03 Bratislava, Slovensko",
+      "phone": "+421 948 905 945",
+      "email": "booking@voxtravel.com",
+      "website": "http://www.voxtravel.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/03/vox-travel-rozlucka-so-slobodou_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/03/vox-travel-rozlucka-so-slobodou_06.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/03/vox-travel-rozlucka-so-slobodou_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/sepiatlac-svadobne-oznamenia/",
+      "country": "SK",
+      "name": "Sepiatlač svadobné oznámenia, tlač, grafika, stužky",
+      "category": "catering",
+      "street": "Magurská 2C",
+      "postal_code": "83101",
+      "city": "Bratislava",
+      "address": "Magurská 2C, 831 01 Bratislava, Slovensko",
+      "phone": "+421 901 701 704",
+      "email": "info@sepiatlac.sk",
+      "website": "http://www.sepiatlac.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/sepiatlac-svadobne-tlacoviny-oznamenia_06.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/sepiatlac-svadobne-tlacoviny-oznamenia_08.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/sepiatlac-svadobne-tlacoviny-oznamenia_09.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/sessler-svadba-trnava/",
+      "country": "SK",
+      "name": "Sessler - svadba Trnava",
+      "category": "venue",
+      "street": "Pri kalvárii 17",
+      "postal_code": "91701",
+      "city": "Trnava",
+      "address": "Pri kalvárii 17, 917 01 Trnava, Slovensko",
+      "phone": "+421 903 994 854",
+      "email": "manager@sessler.sk",
+      "website": "http://sessler.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/01/sessler-svadba-trnava_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2020/01/sessler-svadba-trnava_06.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/01/sessler-restauracia.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/simak-zamok-pezinok-svadba/",
+      "country": "SK",
+      "name": "Šimák Zámok Pezinok – svadba na zámku",
+      "category": "venue",
+      "street": "Mladoboleslavská 5",
+      "postal_code": "90201",
+      "city": "Pezinok",
+      "address": "Mladoboleslavská 5, 902 01 Pezinok, Slovensko",
+      "phone": "+421 904 720 017",
+      "email": "svadba@zamokpezinok.sk",
+      "website": "http://www.zamokpezinok.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/04/simak-zamok-pezinok_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/04/simak-zamok-pezinok_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/04/simak-zamok-pezinok_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/skytina-restaurant/",
+      "country": "SK",
+      "name": "Skytina Restaurant",
+      "category": "venue",
+      "street": "Sky Park Bratislava, Jurkovičova Tepláreň",
+      "postal_code": "81109",
+      "city": "Bratislava-Staré Mesto",
+      "address": "Sky Park Bratislava, Jurkovičova Tepláreň, 811 09 Bratislava-Staré Mesto, Slovensko",
+      "phone": "+421 905 560 269",
+      "email": "manager@skytina.sk",
+      "website": "http://skytina.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/skytina_svadba_bratislava_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/skytina_svadba_bratislava_4.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/skytina_svadba_bratislava_3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/smolenicky-zamok/",
+      "country": "SK",
+      "name": "Smolenický zámok – svadba na zámku Smolenice",
+      "category": "venue",
+      "street": "Zámocká 18",
+      "postal_code": "91904",
+      "city": "Smolenice",
+      "address": "Zámocká 18, 919 04 Smolenice, Slovensko",
+      "phone": "+421 911 805 094",
+      "email": "fbmanazer-zamok@savba.sk",
+      "website": "http://smolenickyzamok.sav.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/07/smolenicky-zamok_10.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/foto-editorial-miroslav-konfal-zamok-smolenice_09.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/foto-editorial-miroslav-konfal-zamok-smolenice_26.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/sobasny-palac-v-bytci/",
+      "country": "SK",
+      "name": "Sobášny palác v Bytči",
+      "category": "venue",
+      "street": "Zámok 108/9",
+      "postal_code": "01401",
+      "city": "Bytča",
+      "address": "Zámok 108/9, 014 01 Bytča, Slovensko",
+      "phone": "+421 41 5523 027",
+      "email": "sobasnypalac@pmza.sk",
+      "website": "http://pmza.sk/sobasny-palac/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/sobasny-palac-v-bytci-_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/sobasny-palac-v-bytci-_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/sobasny-palac-v-bytci-_06.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/spathova-vila/",
+      "country": "SK",
+      "name": "Späthova vila",
+      "category": "venue",
+      "street": "Skuteckého 22",
+      "postal_code": "97401",
+      "city": "Banská Bystrica",
+      "address": "Skuteckého 22, 974 01 Banská Bystrica, Slovensko",
+      "phone": "+421902 712 756",
+      "email": "info@lehudec.org",
+      "website": "http://lehudec.org/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/spathova-vila-banska-bystrica_3.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/spathova-vila-banska-bystrica_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/spathova-vila-banska-bystrica_5.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/spolocenska-sala-konaren-presov/",
+      "country": "SK",
+      "name": "Spoločenská sála Koňareň Prešov",
+      "category": "venue",
+      "street": "Jazdecká 1/B",
+      "postal_code": "08001",
+      "city": "Prešov",
+      "address": "Jazdecká 1/B, 080 01 Prešov, Slovensko",
+      "phone": "+421 918 606 230",
+      "email": "eventy@4sport.sk",
+      "website": "http://konaren.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/07/Sala-Konaren-presov_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/07/Sala-Konaren-presov_09.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/07/Sala-Konaren-presov_01.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/stodola-kesta/",
+      "country": "SK",
+      "name": "Stodola Kesta - svadba Martin",
+      "category": "venue",
+      "street": "Ul. 29. augusta 647/17",
+      "postal_code": "03601",
+      "city": "Martin",
+      "address": "Ul. 29. augusta 647/17, 036 01 Martin, Slovensko",
+      "phone": "+421 910 776 672",
+      "email": "stodola@kesta.sk",
+      "website": "http://stodolakesta.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/04/stodola-kesta_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/04/stodola-kesta_2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/04/stodola-kesta_3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/stodola-stare-casy/",
+      "country": "SK",
+      "name": "Stodola Staré časy",
+      "category": "venue",
+      "street": "JRD 77/A",
+      "postal_code": "04411",
+      "city": "Trstené pri Hornáde",
+      "address": "JRD 77/A, 044 11 Trstené pri Hornáde, Slovensko",
+      "phone": "+421 904 942 936",
+      "email": "stodolastarecasy@gmail.com",
+      "website": "http://stodolastarecasy.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/stodola-stare-casy_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/stodola-stare-casy_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/stodola-stare-casy_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/stodolienka-u-hricka/",
+      "country": "SK",
+      "name": "Stodolienka u Hricka",
+      "category": "venue",
+      "street": "Mierová 670",
+      "postal_code": "09431",
+      "city": "Hanušovce nad Topľou",
+      "address": "Mierová 670, 094 31 Hanušovce nad Topľou, Slovensko",
+      "phone": "+421 952 176 400",
+      "email": "svadby@stodolienka.sk",
+      "website": "http://stodolienka.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/05/stodolienka-u-hricka-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/05/stodolienka-u-hricka-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/05/stodolienka-u-hricka-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/video-foto-studio-skerak/",
+      "country": "SK",
+      "name": "Štúdio Škerák Video Foto",
+      "category": "videography",
+      "street": "Krajná 724/76",
+      "postal_code": "93101",
+      "city": "Šamorín",
+      "address": "Krajná 724/76, 931 01 Šamorín, Slovensko",
+      "phone": "+421 911 754 726",
+      "email": "studio@skerak.sk",
+      "website": "http://skerak.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/12/5.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/12/25.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/12/9.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-hradok-novaky/",
+      "country": "SK",
+      "name": "Svadba Hrádok Nováky",
+      "category": "venue",
+      "street": "Námestie SNP 196",
+      "postal_code": "97271",
+      "city": "Nováky",
+      "address": "Námestie SNP 196, 972 71 Nováky, Slovensko",
+      "phone": "+421 911 55 22 95",
+      "email": "novaky@hradok.sk",
+      "website": "http://www.hradoknovaky.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/hradok-novaky_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/hradok-novaky_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/hradok-novaky_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/hotel-lev/",
+      "country": "SK",
+      "name": "Svadba Levice - HOTEL LEV ***",
+      "category": "venue",
+      "street": "Ul. Čsl. armády 2",
+      "postal_code": "93401",
+      "city": "Levice",
+      "address": "Ul. Čsl. armády 2, 934 01 Levice, Slovensko",
+      "phone": "036/ 370 03 00",
+      "email": "recepcia@hotellev.sk",
+      "website": "http://www.hotellev.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/hotel-lev_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/hotel-lev_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/10/hotel-lev_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-na-haciende/",
+      "country": "SK",
+      "name": "Svadba na Haciende",
+      "category": "venue",
+      "street": "Šišov 65",
+      "postal_code": "95638",
+      "city": "Šišov",
+      "address": "Šišov 65, 956 38 Šišov, Slovensko",
+      "phone": "+421 917 548 276",
+      "email": "svadbanahaciende@gmail.com",
+      "website": "http://svadbanahaciende.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/svadba-na-haciende_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/svadba-na-haciende_06.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/svadba-na-haciende_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-hrad-cerveny-kamen/",
+      "country": "SK",
+      "name": "Svadba na Hrade Červený Kameň",
+      "category": "venue",
+      "street": "Hrad Červený Kameň",
+      "postal_code": "90089",
+      "city": "Častá",
+      "address": "Hrad Červený Kameň, 900 89 Častá, Slovensko",
+      "phone": "+421 33 245 51 28",
+      "email": "adela.safarikova@snm.sk",
+      "website": "http://hradcervenykamen.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/cerveny-kamen-hrad_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/cerveny-kamen-hrad_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/12/cerveny-kamen-hrad_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-pri-topolcanoch-hotel-david/",
+      "country": "SK",
+      "name": "Svadba pri Topoľčanoch v Hoteli DAVID Bošany",
+      "category": "venue",
+      "street": "Slovenského národného povstania 136",
+      "postal_code": "95618",
+      "city": "Bošany",
+      "address": "Slovenského národného povstania 136, 956 18 Bošany, Slovensko",
+      "phone": "+421 940 450 500",
+      "email": "info@hoteldavid.sk",
+      "website": "http://www.hoteldavid.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/02/hotel-david-bosany-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/02/hotel-david-bosany-svadba_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/02/hotel-david-bosany-svadba_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/svadba-snov/",
+      "country": "SK",
+      "name": "Svadba snov",
+      "category": "florist",
+      "street": "Podolie 647",
+      "postal_code": "91622",
+      "city": "Podolie",
+      "address": "Podolie 647, 916 22 Podolie, Slovensko",
+      "phone": "+421 948 554 478",
+      "email": "lucka@svadba-snov.sk",
+      "website": "http://www.svadba-snov.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/svadba-snov_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/svadba-snov_5.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/svadba-snov_4.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-v-castel-mierovo/",
+      "country": "SK",
+      "name": "Svadba v Castel Mierovo",
+      "category": "venue",
+      "street": "Mierovo 20",
+      "postal_code": "93041",
+      "city": "Mierovo",
+      "address": "Mierovo 20, 930 41 Mierovo, Slovensko",
+      "phone": "+421 31 56 93 750",
+      "email": "info@castel.sk",
+      "website": "http://castelmierovo.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/Castel-Mierovo-4.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/Castel-Mierovo-2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/Castel-Mierovo-1.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-demanova-rezort/",
+      "country": "SK",
+      "name": "Svadba v Demänová Rezort",
+      "category": "venue",
+      "street": "Demänová 584",
+      "postal_code": "03101",
+      "city": "Liptovský Mikuláš",
+      "address": "Demänová 584, 031 01 Liptovský Mikuláš, Slovensko",
+      "phone": "+421 44/324 15 11",
+      "email": "event@demanovarezort.sk",
+      "website": "http://demanovarezort.sk/svadby-a-oslavy/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/demanova-rezort-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/03/demanova-rezort-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/09/demanova-rezort-svadba_08.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-v-hoteli-devin-bratislava/",
+      "country": "SK",
+      "name": "Svadba v Hoteli Devín Bratislava",
+      "category": "venue",
+      "street": "Riečna 4",
+      "postal_code": "81102",
+      "city": "Bratislava",
+      "address": "Riečna 4, 811 02 Bratislava, Slovensko",
+      "phone": "+421 910 799 789",
+      "email": "events@hoteldevin.sk",
+      "website": "http://www.hoteldevin.sk/eventy/svadba/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/06/svadba-hotel-devin-bratislava_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/06/svadba-hotel-devin-bratislava_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/06/svadba-hotel-devin-bratislava_06.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-v-klondajku/",
+      "country": "SK",
+      "name": "Svadba v Klondajku",
+      "category": "venue",
+      "street": "Slobody 38",
+      "postal_code": "01851",
+      "city": "Nová Dubnica",
+      "address": "Slobody 38, 018 51 Nová Dubnica, Slovensko",
+      "phone": "+421 908 777 999",
+      "email": "klondajk.kolacin@gmail.com",
+      "website": "http://klondajk.sk/svadby-oslavy/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/klondajk-svadba-dubnica_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/klondajk-svadba-dubnica_2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/klondajk-svadba-dubnica_3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/oliwa-resort-trencianska-tepla/",
+      "country": "SK",
+      "name": "Svadba v Oliwa resort",
+      "category": "venue",
+      "street": "Teplická ul. 864/102",
+      "postal_code": "91401",
+      "city": "Trenčianska Teplá",
+      "address": "Teplická ul. 864/102, 914 01 Trenčianska Teplá, Slovensko",
+      "phone": "+421 911 103 487",
+      "email": "oliwa@oliwa.sk",
+      "website": "http://www.oliwa.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/01/oliwa-resort-svadba-trencin.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/01/oliwa-4.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/01/oliwa-5.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-v-tatrach-kupele-novy-smokovec/",
+      "country": "SK",
+      "name": "Svadba v Tatrách – Kúpele Nový Smokovec",
+      "category": "venue",
+      "street": "Nový Smokovec 30",
+      "postal_code": "06201",
+      "city": "Vysoké Tatry-Starý Smokovec",
+      "address": "Nový Smokovec 30, 062 01 Vysoké Tatry-Starý Smokovec, Slovensko",
+      "phone": "+421 52 442 24 54",
+      "email": "marketing@kupelens.sk",
+      "website": "http://www.kupelens.sk/svadba-v-kupeloch-novy-smokovec/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/kupele-novy-smokovec_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/kupele-novy-smokovec_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/kupele-novy-smokovec_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-v-terra-wylak-winery/",
+      "country": "SK",
+      "name": "Svadba v Terra Wylak Winery",
+      "category": "venue",
+      "street": "Hlavná 1245/132",
+      "postal_code": "95135",
+      "city": "Veľké Zálužie",
+      "address": "Hlavná 1245/132, 951 35 Veľké Zálužie, Slovensko",
+      "phone": "+421 911 781 787",
+      "email": "vinarstvo@terrawylak.sk",
+      "website": "http://terrawylak.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/04/terra-wylak-winery-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/04/terra-wylak-winery-svadobny-stan_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/04/terra-wylak-winery-svadobny-stan_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-vo-ville-necas/",
+      "country": "SK",
+      "name": "Svadba vo Ville Nečas",
+      "category": "venue",
+      "street": "Pri celulózke 3494",
+      "postal_code": "01161",
+      "city": "Žilina",
+      "address": "Pri celulózke 3494, 011 61 Žilina, Slovensko",
+      "phone": "+421 918 980 084",
+      "email": "marketing@villanecas.sk",
+      "website": "http://www.villanecas.sk/svadby",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/villa-necas-1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/villa-necas-2.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/villa-necas-3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadba-vo-vinarstve-vinidi/",
+      "country": "SK",
+      "name": "Svadba vo vinárstve Vinidi",
+      "category": "venue",
+      "street": "Alexandrov dvor 444",
+      "postal_code": "95134",
+      "city": "Báb",
+      "address": "Alexandrov dvor 444, 951 34 Báb, Slovensko",
+      "phone": "+421 903 776 639",
+      "email": "obchod@vinidi.sk",
+      "website": "http://www.vinidi.sk/svadby-oslavy/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/08/svadba-vo-vinarstve-vinidi-bab-nitra_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/08/svadba-vo-vinarstve-vinidi-bab-nitra_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/08/svadba-vo-vinarstve-vinidi-bab-nitra_08.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/svadby-saxana-vyzdoba/",
+      "country": "SK",
+      "name": "Svadby Saxana - svadobná výzdoba",
+      "category": "catering",
+      "street": "Východná 321/2",
+      "postal_code": "95803",
+      "city": "Malé Uherce",
+      "address": "Východná 321/2, 958 03 Malé Uherce, Slovensko",
+      "phone": "+421 907 072 327",
+      "email": "zdenkakopernicka@gmail.com",
+      "website": "http://www.svadbysaxana.eu/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/svadobna-vyzdoba-saxana_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/svadobna-vyzdoba-saxana_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/svadobna-vyzdoba-saxana_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/svadby-saxana-catering/",
+      "country": "SK",
+      "name": "Svadby Saxana - svadobný catering",
+      "category": "catering",
+      "street": "Východná 321/2",
+      "postal_code": "95803",
+      "city": "Malé Uherce",
+      "address": "Východná 321/2, 958 03 Malé Uherce, Slovensko",
+      "phone": "+421 907 072 327",
+      "email": "zdenkakopernicka@gmail.com",
+      "website": "http://www.svadbysaxana.eu/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/svadby-saxana-catering_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/svadby-saxana-catering_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/02/svadby-saxana-catering_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadobna-sala-mamut-poprad/",
+      "country": "SK",
+      "name": "Svadobná sála Mamut Poprad – svadba s výhľadom na Tatry",
+      "category": "venue",
+      "street": "Moyzesova 5400/28",
+      "postal_code": "05801",
+      "city": "Poprad",
+      "address": "Moyzesova 5400/28, 058 01 Poprad, Slovensko",
+      "phone": "+421 919 300 300",
+      "email": "pub@mamutpoprad.sk",
+      "website": "http://mamutpoprad.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/mamut-poprad-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/mamut-poprad-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/mamut-poprad-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadobna-sala-teplicka/",
+      "country": "SK",
+      "name": "Svadobná sála Teplička",
+      "category": "venue",
+      "street": "Teplička 83",
+      "postal_code": "05201",
+      "city": "Teplička",
+      "address": "Teplička 83, 052 01 Teplička, Slovensko",
+      "phone": "+421 911 179 680",
+      "email": "svadba@teplicka.sk",
+      "website": "http://www.teplicka.sk/oslavy",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/09/teplicka-kulturny-dom-svadobna-sala_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/09/teplicka-kulturny-dom-svadobna-sala_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/09/teplicka-kulturny-dom-svadobna-sala_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/svadobne-darceky-z-dreva/",
+      "country": "SK",
+      "name": "Svadobné darčeky z dreva",
+      "category": "cake_dessert",
+      "street": "Spišské Podhradie",
+      "postal_code": "05304",
+      "city": "Spišské Podhradie",
+      "address": "Spišské Podhradie, 053 04 Spišské Podhradie, Slovensko",
+      "phone": "+421 917 182 362",
+      "email": "info@darcekyzdreva.sk",
+      "website": "http://www.darcekyzdreva.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/07/svadobne-darceky-z-dreva_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/07/svadobne-darceky-z-dreva_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/07/svadobne-darceky-z-dreva_06.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/svadobne-oznamenia-pamas/",
+      "country": "SK",
+      "name": "Svadobné oznámenia Pamas",
+      "category": "invitation_graphics",
+      "street": "Legionárska 6419",
+      "postal_code": "91101",
+      "city": "Trenčín",
+      "address": "Legionárska 6419, 911 01 Trenčín, Slovensko",
+      "phone": "+421 32 64 02 660",
+      "email": "pamas@pamas.sk",
+      "website": "http://www.pamas.sk/svadba/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/09/pamas_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/09/pamas_12.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2022/09/pamas_14.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadobne-priestory-farna/",
+      "country": "SK",
+      "name": "Svadobné priestory Farná",
+      "category": "venue",
+      "street": "Farná",
+      "postal_code": "93566",
+      "city": "Farná",
+      "address": "Farná, 935 66 Farná, Slovensko",
+      "phone": "+421 915 826 821",
+      "email": "event@kastielpalffy.sk",
+      "website": "http://viajur.sk/farna",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/usadlost-farna_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/usadlost-farna_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/02/usadlost-farna_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/svadobne-stuhy-masle-doplnky-evka-kvety/",
+      "country": "SK",
+      "name": "Svadobné stuhy, mašle a doplnky - Evka kvety",
+      "category": "florist",
+      "street": "Banícka 132/25",
+      "postal_code": "99122",
+      "city": "Bušince",
+      "address": "Banícka 132/25, 991 22 Bušince, Slovensko",
+      "phone": "+421 910 907 419",
+      "email": "evkakvety@gmail.com",
+      "website": "http://evkakvety-eshop.eu/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/01/sifon-broskynovy-peach-svadobne-doplnky.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/01/Saten-Broskynova-Peach-svadobne-doplnky.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/01/Saten-Ruzove_zlato-Rose_Gold-svadobne-doplnky.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/svadobny-fotograf-erik-svec/",
+      "country": "SK",
+      "name": "Svadobný fotograf Erik Švec",
+      "category": "photography",
+      "street": "Svornosti 3283/49",
+      "postal_code": "94002",
+      "city": "Nové Zámky",
+      "address": "Svornosti 3283/49, 940 02 Nové Zámky, Slovensko",
+      "phone": "+421 948 105 441",
+      "email": "es@eriksvec.com",
+      "website": "http://eriksvec.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/svadobny-fotograf-erik-svec_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/svadobny-fotograf-erik-svec_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/03/svadobny-fotograf-erik-svec_12.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/svadobny-salon-valery/",
+      "country": "SK",
+      "name": "Svadobný salón Valery",
+      "category": "hair_makeup",
+      "street": "Kláry Jarunkovej 1",
+      "postal_code": "97401",
+      "city": "Banská Bystrica",
+      "address": "Kláry Jarunkovej 1, 974 01 Banská Bystrica, Slovensko",
+      "phone": "+421 907 814 049",
+      "email": "salonvalery@salonvalery.sk",
+      "website": "http://salonvalery.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/svadobny-salon-valery-pansky-oblek_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/svadobny-salon-valery-pansky-oblek_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/svadobny-salon-valery-pansky-oblek_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svadobny-stan-pavlus/",
+      "country": "SK",
+      "name": "Svadobný stan PAVLUS",
+      "category": "venue",
+      "street": "SNP 444/197",
+      "postal_code": "93541",
+      "city": "Tekovské Lužany",
+      "address": "SNP 444/197, 935 41 Tekovské Lužany, Slovensko",
+      "phone": "+421 915 734 260",
+      "email": "info@svadba-pavlus.sk",
+      "website": "http://svadba-pavlus.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/pavlus-stan-svadba-tekovske-luzany_7.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/pavlus-stan-svadba-tekovske-luzany_10.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/10/pavlus-stan-svadba-tekovske-luzany_11.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/svatojurska-viecha-svadba/",
+      "country": "SK",
+      "name": "Svätojurská Viecha – svadba vo Svätom Jure",
+      "category": "venue",
+      "street": "Bratislavská 2",
+      "postal_code": "90021",
+      "city": "Svätý Jur",
+      "address": "Bratislavská 2, 900 21 Svätý Jur, Slovensko",
+      "phone": "+421 903 444 066",
+      "email": "svatojurskaviecha@gmail.com",
+      "website": "http://svatojurskaviecha.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/svatojurska-viecha-svadba_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/svatojurska-viecha-svadba_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/07/svatojurska-viecha-svadba_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/talianska-restauracia-la-secchia/",
+      "country": "SK",
+      "name": "Talianska reštaurácia La Secchia",
+      "category": "venue",
+      "street": "Terézie Vansovej 429/21",
+      "postal_code": "97401",
+      "city": "Banská Bystrica",
+      "address": "Terézie Vansovej 429/21, 974 01 Banská Bystrica, Slovensko",
+      "phone": "+421 905 269 227",
+      "email": "lasecchiaristorante@gmail.com",
+      "website": "http://www.ristorantelasecchia.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/LaSecchia-svadba_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/LaSecchia-svadba_3.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/LaSecchia-svadba_5.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/veganana/",
+      "country": "SK",
+      "name": "VegaNana",
+      "category": "cake_dessert",
+      "street": "Plynárenská 3",
+      "postal_code": "82109",
+      "city": "Bratislava",
+      "address": "Plynárenská 3, 821 09 Bratislava, Slovensko",
+      "phone": "+421 903 749 972",
+      "email": "info@veganana.sk",
+      "website": "http://veganana.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/veganana_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/veganana_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/01/veganana_02.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/vila-sokolka-svadba-trencin/",
+      "country": "SK",
+      "name": "Vila Sokolka",
+      "category": "venue",
+      "street": "Chocholná – Velčice, časť Kykula 714",
+      "postal_code": "91304",
+      "city": "Trenčín",
+      "address": "Chocholná – Velčice, časť Kykula 714, 913 04 Trenčín, Slovensko",
+      "phone": "+421 904 488 996",
+      "email": "info@svadbanasokolke.sk",
+      "website": "http://www.svadbanasokolke.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/vila-sokolka_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/vila-sokolka_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/11/vila-sokolka_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/villa-cubach/",
+      "country": "SK",
+      "name": "Villa Cubach",
+      "category": "venue",
+      "street": "Michalská 395",
+      "postal_code": "05918",
+      "city": "Spišské Bystré",
+      "address": "Michalská 395, 059 18 Spišské Bystré, Slovensko",
+      "phone": "+421 903 566 828",
+      "email": "rezervacia@villacubach.sk",
+      "website": "http://www.villacubach.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/villa-cubach_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/villa-cubach_05.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/Villa-Cubach.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/wellness-hotel-jason/",
+      "country": "SK",
+      "name": "Wellness Hotel Jason****",
+      "category": "venue",
+      "street": "Vršatské Podhradie 86",
+      "postal_code": "01852",
+      "city": "Vršatské Podhradie",
+      "address": "Vršatské Podhradie 86, 018 52 Vršatské Podhradie, Slovensko",
+      "phone": "+421 424 465 077",
+      "email": "wedding@hoteljason.sk",
+      "website": "http://www.hoteljason.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2025/10/svadba-hotel-jason-vrsatecke-podhradie_07.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/hotel_jason_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2023/08/hotel_jason_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/zamocek-mraznica-svadba/",
+      "country": "SK",
+      "name": "Zámoček Mraznica – noblesná svadba v srdci lesa",
+      "category": "venue",
+      "street": "Mrazničná 674/13, Veľká Lehôtka",
+      "postal_code": "97101",
+      "city": "Prievidza",
+      "address": "Mrazničná 674/13, Veľká Lehôtka, 971 01 Prievidza, Slovensko",
+      "phone": "+421 902 518 165",
+      "email": "zamocekmraznica@gmail.com",
+      "website": "http://zamocekmraznica.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/04/zamocek-mraznica-svadba_1.jpeg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/04/zamocek-mraznica-svadba_2.jpeg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/04/zamocek-mraznica-svadba_4.jpeg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/zemiansky-dvor-surovce/",
+      "country": "SK",
+      "name": "Zemiansky dvor Šúrovce",
+      "category": "venue",
+      "street": "Krakovská 330/67",
+      "postal_code": "91925",
+      "city": "Šúrovce",
+      "address": "Krakovská 330/67, 919 25 Šúrovce, Slovensko",
+      "phone": "+421 911 177 179",
+      "email": "catering@lareunion.sk",
+      "website": "http://lareunion.sk/penzion-zemiansky-dvor-surovce/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/zemiansky-dvor-surovce_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/zemiansky-dvor-surovce_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/01/zemiansky-dvor-surovce_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/miesta/ziwell-pivovar-piestany/",
+      "country": "SK",
+      "name": "ŽiWELL Pivovar Piešťany",
+      "category": "venue",
+      "street": "Rekreačná 3",
+      "postal_code": "92101",
+      "city": "Piešťany",
+      "address": "Rekreačná 3, 921 01 Piešťany, Slovensko",
+      "phone": "+421 949 409 900",
+      "email": "ziwell@ziwell.sk",
+      "website": "http://ziwell.sk/restauracia-pivovar/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/pivovar-ziwell-svadba-piestany_1.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/pivovar-ziwell-svadba-piestany_3.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2026/08/pivovar-ziwell-svadba-piestany_2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/zoya-wedding-center-trencin/",
+      "country": "SK",
+      "name": "Zoya Wedding Center Trenčín",
+      "category": "bridal_boutique",
+      "street": "Martina Rázusa 1471/28",
+      "postal_code": "91101",
+      "city": "Trenčín",
+      "address": "Martina Rázusa 1471/28, 911 01 Trenčín, Slovensko",
+      "phone": "+421 911 209 308",
+      "email": "zoyaweddingcenter@gmail.com",
+      "website": "http://www.zoyaweddingcenter.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/zoya-wedding-center_01.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/zoya-wedding-center_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/zoya-wedding-center_03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/zoya-wedding-center-trnava/",
+      "country": "SK",
+      "name": "Zoya Wedding Center Trnava",
+      "category": "bridal_boutique",
+      "street": "Rybníková 586/7",
+      "postal_code": "91701",
+      "city": "Trnava",
+      "address": "Rybníková 586/7, 917 01 Trnava, Slovensko",
+      "phone": "+421 948 127 000",
+      "email": "zoyaweddingcenter@gmail.com",
+      "website": "http://www.zoyaweddingcenter.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/zoya-wedding-center_02.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/zoya-wedding-center_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/zoya-wedding-center_04.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.svadobnyvyhladavac.sk/sluzby/zoya-wedding-center-zilina/",
+      "country": "SK",
+      "name": "Zoya Wedding Center Žilina",
+      "category": "bridal_boutique",
+      "street": "Vojtecha Spanyola 2126/12",
+      "postal_code": "01001",
+      "city": "Žilina",
+      "address": "Vojtecha Spanyola 2126/12, 010 01 Žilina, Slovensko",
+      "phone": "+421 948 692 151",
+      "email": "zoyaweddingcenter@gmail.com",
+      "website": "http://www.zoyaweddingcenter.sk/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/zoya-wedding-center_03.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/zoya-wedding-center_04.jpg",
+        "https://www.svadobnyvyhladavac.sk/wp-content/uploads/2024/09/zoya-wedding-center_05.jpg"
+      ]
+    }
+  ]
+}

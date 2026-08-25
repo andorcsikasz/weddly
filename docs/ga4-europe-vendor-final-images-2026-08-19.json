@@ -1,0 +1,4641 @@
+[
+ {
+  "osm_type": "way",
+  "osm_id": 8106838,
+  "name": "Royal Dublin Society (RDS)",
+  "category": "venue",
+  "city": "Dublin, IE",
+  "address": "Merrion Road, D04 AK83 Dublin, Ireland",
+  "website": "https://www.rds.ie/",
+  "contact_email": "info@rds.ie",
+  "contact_phone": "+353 1 668 0866",
+  "image_hint": "Category:RDS Dublin",
+  "source_url": "https://www.openstreetmap.org/way/8106838",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 53.3266383,
+  "lng": -6.2285682,
+  "gallery_urls": [
+   "https://www.rds.ie/images/uploads/banner/plan-your-visit.jpg",
+   "https://www.rds.ie/images/uploads/general/front_updated.jpg",
+   "https://www.rds.ie/images/uploads/slider/_resize/SON5145-054_resize_0137b316744cd6ed55e1761b61ab1de4.jpg",
+   "https://www.rds.ie/images/uploads/slider/_resize/SON5145-062_resize_0137b316744cd6ed55e1761b61ab1de4.jpg",
+   "https://www.rds.ie/images/iso-certificate.png",
+   "https://www.rds.ie/images/uploads/general/_resize/directions_resize_fbb2f467d2af20d085671fa8f497139e.png"
+  ],
+  "pages_checked": [
+   "https://www.rds.ie/",
+   "https://www.rds.ie/contact",
+   "https://www.rds.ie/about-rds"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 8106837,
+  "name": "RDS Simmonscourt",
+  "category": "venue",
+  "city": "Dublin, IE",
+  "address": "Simmonscourt Road, Dublin, Ireland",
+  "website": "https://www.rds.ie/",
+  "contact_email": "info@rds.ie",
+  "contact_phone": "+353 1 668 0866",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/8106837",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 53.3239656,
+  "lng": -6.225213,
+  "gallery_urls": [
+   "https://www.rds.ie/images/uploads/banner/plan-your-visit.jpg",
+   "https://www.rds.ie/images/uploads/slider/_resize/MS_02_1056_559_95_c1-min_resize_0137b316744cd6ed55e1761b61ab1de4.jpg",
+   "https://www.rds.ie/images/uploads/slider/_resize/SON5145-062_resize_0137b316744cd6ed55e1761b61ab1de4.jpg",
+   "https://www.rds.ie/images/iso-certificate.png",
+   "https://www.rds.ie/images/uploads/general/_resize/directions_resize_fbb2f467d2af20d085671fa8f497139e.png",
+   "https://www.rds.ie/images/uploads/general/_resize/offer_resize_fbb2f467d2af20d085671fa8f497139e.png"
+  ],
+  "pages_checked": [
+   "https://www.rds.ie/",
+   "https://www.rds.ie/contact",
+   "https://www.rds.ie/about-rds"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 764257065,
+  "name": "SETU Arena",
+  "category": "venue",
+  "city": "Carriganore, Waterford, IE",
+  "address": "Western Link Road, X91 XD96 Carriganore, Waterford, Ireland",
+  "website": "https://setuarena.ie/",
+  "contact_email": "setuarena.wd@setu.ie",
+  "contact_phone": "+353 51 834 444",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/764257065",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 52.2514054,
+  "lng": -7.1795481,
+  "gallery_urls": [
+   "https://setuarena.ie/wp-content/uploads/2023/03/sports-hub-facilities-header-1024x683.jpg"
+  ],
+  "pages_checked": [
+   "https://setuarena.ie/",
+   "https://setuarena.ie/contact-us/",
+   "https://setuarena.ie/about/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "relation",
+  "osm_id": 16843567,
+  "name": "Hilton Park",
+  "category": "venue",
+  "city": "Clones, IE",
+  "address": "Hilton Demesne, Clones, Ireland",
+  "website": "https://hiltonpark.ie/",
+  "contact_email": "mail@hiltonpark.ie",
+  "contact_phone": "+353 47 56007",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/relation/16843567",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 54.13412,
+  "lng": -7.2533513,
+  "gallery_urls": [
+   "https://hiltonpark.ie/wp-content/uploads/2025/01/ld-319_websize-768x511.jpg",
+   "https://hiltonpark.ie/wp-content/uploads/2025/01/ld-302_websize-768x511.jpg",
+   "https://hiltonpark.ie/wp-content/uploads/2025/01/ld-591_websize-768x511.jpg",
+   "https://hiltonpark.ie/wp-content/uploads/2025/01/ld-537_websize-768x511.jpg",
+   "https://hiltonpark.ie/wp-content/uploads/2025/01/ld-909_websize-768x511.jpg",
+   "https://hiltonpark.ie/wp-content/uploads/2025/01/20220827_Ashley_Clay_print_0467_websize-768x512.jpg"
+  ],
+  "pages_checked": [
+   "https://hiltonpark.ie/",
+   "https://hiltonpark.ie/contact-us/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 14008705457,
+  "name": "10 Bridge Street",
+  "category": "venue",
+  "city": "Killorglin, IE",
+  "address": "Lower Bridge Street, V93 K858 Killorglin, Ireland",
+  "website": "https://www.10bridgestreet.ie/",
+  "contact_email": "info@10bridgestreet.ie",
+  "contact_phone": "+353669762347",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/14008705457",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 52.1058915,
+  "lng": -9.7851003,
+  "gallery_urls": [
+   "https://www.10bridgestreet.ie/wp-content/uploads/2022/01/10-Bridge-Street-social-card.png",
+   "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/ORC-066-min-rriwubf000duvqe5wyfb5roaha1z4bzpx44i7zf78e.jpg",
+   "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/ORC-042-min-rriwubf000duvqe5wyfb5roaha1z4bzpx44i7zf78e.jpg",
+   "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/5D3_9384-1-scaled-rriwuhzvbumv504luj9p580imz5jm7pua0owkx5g0u.jpg",
+   "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/272JessicaH-copy-min-rriwuah5t6ckk4fj2g0ol9wtvw6lwmvzkzh0qpglem.jpg",
+   "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/wedding-email-header-rriwubf000duvqe5wyfb5roaha1z4bzpx44i7zf78e.jpg"
+  ],
+  "pages_checked": [
+   "https://www.10bridgestreet.ie/",
+   "https://www.10bridgestreet.ie/contact-us/",
+   "https://www.10bridgestreet.ie/about-us/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 11923165697,
+  "name": "Crown Live",
+  "category": "venue",
+  "city": "Wexford, IE",
+  "address": "Wellington Place, Wexford, Ireland",
+  "website": "https://www.crownquarter.com/crown-live-entertainment/",
+  "contact_email": "marketing@crownquarter.com",
+  "contact_phone": "+353539121480",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/11923165697",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 52.3416094,
+  "lng": -6.462401,
+  "gallery_urls": [
+   "https://www.crownquarter.com/wp-content/uploads/2021/12/Crown-Live-Main.jpg",
+   "https://www.crownquarter.com/wp-content/uploads/2026/07/Purple-And-Blue-Neon-Vibrant-Night-Club-Party-Instagram-Post-2-1120x630-fp_mm-fpoff_0_0.png",
+   "https://www.crownquarter.com/wp-content/uploads/2026/07/Extreme-Rhythm-Tribal-House-Live-1120x630-fp_mm-fpoff_0_0.png",
+   "https://www.crownquarter.com/wp-content/uploads/2026/04/These-Charming-Men-Crown-Live-Assets.png",
+   "https://www.crownquarter.com/wp-content/uploads/2026/04/These-Charming-Men-Crown-Live-Assets-1120x630-fp_mm-fpoff_0_0.png",
+   "https://www.crownquarter.com/wp-content/uploads/2026/07/Luke-Combs-Trib-Crown-Live-2.png"
+  ],
+  "pages_checked": [
+   "https://www.crownquarter.com/crown-live-entertainment/",
+   "https://www.crownquarter.com/location/contact-us/",
+   "https://www.crownquarter.com/location/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 358966514,
+  "name": "Poulaphouca House & Falls",
+  "category": "venue",
+  "city": "Hollywood, IE",
+  "address": "Blakestown Lower, W91 DN30 Hollywood, Ireland",
+  "website": "https://www.poulaphouca.ie/",
+  "contact_email": "info@poulaphouca.ie",
+  "contact_phone": "0035345864118",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/358966514",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 53.1187659,
+  "lng": -6.5902682,
+  "gallery_urls": [
+   "http://static1.squarespace.com/static/6072f305d84bdb7747a3b051/t/68fe9748a6ef260db12f8bba/1761515336692/Main+House+%2817%29.jpg?format=1500w",
+   "https://images.squarespace-cdn.com/content/v1/6072f305d84bdb7747a3b051/359e29fa-c7dd-492f-8e2a-c3c6d8c5eb21/Main+House+%281%29.jpg",
+   "https://images.squarespace-cdn.com/content/v1/6072f305d84bdb7747a3b051/4522f9ce-20d8-43e7-b718-0caa3a9c155b/Wedding+Accommodation++%288%29.jpg",
+   "https://images.squarespace-cdn.com/content/v1/6072f305d84bdb7747a3b051/c74df236-a387-43a6-b3ba-0efc59d3e223/Accommodation+%2828%29.jpg",
+   "https://images.squarespace-cdn.com/content/v1/6072f305d84bdb7747a3b051/b8edcbed-b0f7-4043-8251-6a434e2c321e/Accommodation+%2829%29.jpg",
+   "https://images.squarespace-cdn.com/content/v1/6072f305d84bdb7747a3b051/c7c56b67-6af5-4e51-b587-ad9975fe4c9b/1+%2863%29.jpg"
+  ],
+  "pages_checked": [
+   "https://www.poulaphouca.ie/",
+   "https://www.poulaphouca.ie/contact-us"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12957251070,
+  "name": "The Heritage Room",
+  "category": "venue",
+  "city": "Wexford, IE",
+  "address": "Rosslare Road, Wexford, Ireland",
+  "website": "https://www.farmerskitchen.com/occasions/heritage-meeting-room",
+  "contact_email": "reservations@farmerskitchen.com",
+  "contact_phone": "0539145816",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/12957251070",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 52.3073132,
+  "lng": -6.4563681,
+  "gallery_urls": [
+   "https://cdn.myguestdiary.com/uploads/1608/__page__farmersheader3.jpg?width=1920&height=670&mode=crop",
+   "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_01.jpg?width=600&height=450&mode=crop",
+   "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_02.jpg?width=600&height=450&mode=crop",
+   "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_03.jpg?width=600&height=450&mode=crop",
+   "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_04.jpg?width=600&height=450&mode=crop",
+   "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_05.jpg?width=600&height=450&mode=crop"
+  ],
+  "pages_checked": [
+   "https://www.farmerskitchen.com/occasions/heritage-meeting-room",
+   "https://www.farmerskitchen.com/contact-us/location?lang=en"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 275474137,
+  "name": "The Mansion House - Round Room",
+  "category": "venue",
+  "city": "Dublin, IE",
+  "address": "Dawson Street, D02 XK40 Dublin, Ireland",
+  "website": "https://www.theroundroom.ie/",
+  "contact_email": "sales@mansionhouse.ie",
+  "contact_phone": "+35316344 628",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/275474137",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 53.3402719,
+  "lng": -6.2574735,
+  "gallery_urls": [
+   "https://www.theroundroom.ie/wp-content/uploads/2025/11/RR-Today-1200x801.jpg",
+   "https://www.theroundroom.ie/wp-content/uploads/2026/01/9778696890.jpg_exif1-3-1200x800.jpg",
+   "https://www.theroundroom.ie/wp-content/uploads/2025/11/ARMedia-0403-1200x800.jpg",
+   "https://www.theroundroom.ie/wp-content/uploads/2025/11/ARMedia-0546-800x1200.jpg",
+   "https://www.theroundroom.ie/wp-content/uploads/2025/11/54829669925_04d436f719_k-1200x801.jpg",
+   "https://www.theroundroom.ie/wp-content/uploads/2025/12/Prawn-taco-with-avocado-cream-lime-infused-salsa_-1200x675.jpg"
+  ],
+  "pages_checked": [
+   "https://www.theroundroom.ie/",
+   "https://www.theroundroom.ie/about/",
+   "https://www.theroundroom.ie/about/venue-today/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 762805061,
+  "name": "The Margaret Aylward Centre for Faith and Dialogue",
+  "category": "venue",
+  "city": "Dublin, IE",
+  "address": "Old Finglas Road, D11TC21 Dublin, Ireland",
+  "website": "https://www.margaretaylwardcentre.ie/",
+  "contact_email": "info@macfd.ie",
+  "contact_phone": "01.05.24 2024",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/762805061",
+  "country": "IE",
+  "ga4_active_users": 120,
+  "lat": 53.3752752,
+  "lng": -6.272071,
+  "gallery_urls": [
+   "https://eksgsd4khbm.exactdn.com/wp-content/uploads/2026/07/2026.08.01-Invitation.jpg"
+  ],
+  "pages_checked": [
+   "https://www.margaretaylwardcentre.ie/",
+   "https://www.margaretaylwardcentre.ie/contact/",
+   "https://www.margaretaylwardcentre.ie/about-us/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 399499522,
+  "name": "Christchurch Methodist Hall",
+  "category": "venue",
+  "city": "Bexhill-on-Sea, GB",
+  "address": "Springfield Road, TN40 2BX Bexhill-on-Sea, United Kingdom",
+  "website": "https://www.christchurchmethodist.org/roomhire.html",
+  "contact_email": "barryjoan@turnwell.plus.com",
+  "contact_phone": "+44 1424 216456",
+  "image_hint": "File:Christchurch Methodist Church Hall, Bexhill.jpg",
+  "source_url": "https://www.openstreetmap.org/way/399499522",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 50.8516302,
+  "lng": 0.4752142,
+  "gallery_urls": [
+   "https://www.christchurchmethodist.org/images/mainhall1.jpg",
+   "https://www.christchurchmethodist.org/images/mainhall2.jpg",
+   "https://www.christchurchmethodist.org/images/primaryrmj.jpg",
+   "https://www.christchurchmethodist.org/images/primary2j.jpg"
+  ],
+  "pages_checked": [
+   "https://www.christchurchmethodist.org/roomhire.html",
+   "https://www.christchurchmethodist.org/contacts.html",
+   "https://www.christchurchmethodist.org/aboutus.html"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 103085522,
+  "name": "Cutlers' Hall",
+  "category": "venue",
+  "city": "Sheffield, GB",
+  "address": "Church Street 7-15, S1 1HG Sheffield, United Kingdom",
+  "website": "https://cutlershall.co.uk/",
+  "contact_email": "sales@cutlershall.co.uk",
+  "contact_phone": "+44 1142 768 149",
+  "image_hint": "File:Cutlers' Hall 20 July 2018 2.jpg",
+  "source_url": "https://www.openstreetmap.org/way/103085522",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 53.3820879,
+  "lng": -1.4696963,
+  "gallery_urls": [
+   "http://cutlershall.co.uk/wp-content/uploads/2020/05/Installation-A002.jpg",
+   "https://cutlershall.co.uk/wp-content/uploads/2026/03/60s-Night-promo.png",
+   "https://cutlershall.co.uk/wp-content/uploads/2025/05/D314-scaled-e1748615642501.jpg",
+   "https://cutlershall.co.uk/wp-content/uploads/2024/09/CP_-382-scaled-e1748615601485.jpg",
+   "https://cutlershall.co.uk/wp-content/uploads/2024/10/Masters-2-scaled-e1748615736630.jpg",
+   "https://cutlershall.co.uk/wp-content/uploads/2025/01/Wedding-JoeHorner-2023-388-scaled.jpg"
+  ],
+  "pages_checked": [
+   "https://cutlershall.co.uk/",
+   "https://cutlershall.co.uk/about/",
+   "https://cutlershall.co.uk/about/history/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12981895835,
+  "name": "Green and Away",
+  "category": "venue",
+  "city": "Bransford, GB",
+  "address": "The Fold, WR6 5JB Bransford, United Kingdom",
+  "website": "https://www.greenandaway.org/",
+  "contact_email": "info@greenandaway.org",
+  "contact_phone": "+441886357089",
+  "image_hint": "https://climatejustice.global/system/accounts/headers/113/254/896/716/605/550/original/03465012fb2e6e6f.jpg",
+  "source_url": "https://www.openstreetmap.org/node/12981895835",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 52.1745666,
+  "lng": -2.2980929,
+  "gallery_urls": [
+   "https://www.greenandaway.org/wp-content/uploads/2015/11/Guests-in-camp-fire-circle-during-day-1080x720.jpg",
+   "https://www.greenandaway.org/wp-content/uploads/2015/11/Guests-in-camp-fire-circle-during-day-2048x1365.jpg",
+   "https://www.greenandaway.org/wp-content/uploads/2015/11/Inside-bell-tent1-1084x720.jpg",
+   "https://www.greenandaway.org/wp-content/uploads/2015/11/Inside-bell-tent1.jpg",
+   "https://www.greenandaway.org/wp-content/uploads/2023/02/Volunteers-with-pee-bales-1080x720.jpg",
+   "https://www.greenandaway.org/wp-content/uploads/2023/02/Volunteers-with-pee-bales-2048x1365.jpg"
+  ],
+  "pages_checked": [
+   "https://www.greenandaway.org/",
+   "https://www.greenandaway.org/about/",
+   "https://www.greenandaway.org/about/the-team/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 290182365,
+  "name": "Manor Barn",
+  "category": "venue",
+  "city": "Bexhill-on-Sea, GB",
+  "address": "De La Warr Road 4, TN40 2JA Bexhill-on-Sea, United Kingdom",
+  "website": "https://www.themanorbarnbexhill.co.uk/",
+  "contact_email": "oldtownoccasions@themanorbarnbexhill.co.uk",
+  "contact_phone": "+44 1424 220231",
+  "image_hint": "File:Bexhill Manor DSC00114.png",
+  "source_url": "https://www.openstreetmap.org/way/290182365",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 50.8448875,
+  "lng": 0.4795635,
+  "gallery_urls": [
+   "http://static1.squarespace.com/static/66c85afb864f6620b276935c/t/66c85b8f02e3d02208bc9500/1724406671571/Manor+Barn+header.jpg?format=1500w",
+   "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/1fc72437-6706-4f0d-aba9-cd5bc634afec/wedding+couple.jpg",
+   "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/e78653b0-bf8c-4f65-90d4-bcd895a3299b/CRPhotography_C%2BW-50.jpg",
+   "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/e35e1802-44bb-43f1-9598-59f9fa9aa62a/wedding+ceremony+set+up1.jpg",
+   "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/fede5ad7-26fe-4e8f-865c-f8cecde0a7ed/mb2.jpg",
+   "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/f488b21e-9a25-4afc-8ba6-525c648ab6f2/headshot3.jpg"
+  ],
+  "pages_checked": [
+   "https://www.themanorbarnbexhill.co.uk/",
+   "https://www.themanorbarnbexhill.co.uk/contact",
+   "https://www.themanorbarnbexhill.co.uk/about"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 410911999,
+  "name": "St. Michael's Church Hall (large)",
+  "category": "venue",
+  "city": "Bexhill-on-Sea, GB",
+  "address": "Glassenbury Drive, TN40 2NY Bexhill-on-Sea, United Kingdom",
+  "website": "https://www.stmichaelsbexhill.org/",
+  "contact_email": "communityhalls@stmichaelsbexhill.org",
+  "contact_phone": "+44 1424 730082",
+  "image_hint": "File:St. Michael's Church Hall (large) Bexhill.jpg",
+  "source_url": "https://www.openstreetmap.org/way/410911999",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 50.847139,
+  "lng": 0.4966639,
+  "gallery_urls": [
+   "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/P1010706-1920w.JPG?Expires=1789733223&Signature=J1wj2iWovaiWxPGeRps1Clf0loLGoyuuTj~xuawiI6aMM7ICzIzCcL8hH3gPbDdi0L4NjYVmQ0nGF0wRHJbfnipBZ1SnWzqeIRmLxmgAwhzYni~QvNsLvp~6yPCEe~3sMxQfuQPRPADVXmCGrAHeIlM6g3r5Z3ZRbTgi73umJThpf1~yaGb8cHBIXgf4rPlFFPGc8nKXEw5~Px3P3fsPPGXYrG5IrRWQZAzxTWUflUNafN4RiCGdcGrM5BJg84xBxlsK4YNMb5ta6CT8plgS6JPqUMpli183VWku8DKynkGmoP43PMMX5PUFBFm2niq4A4taLbFkZj57a-U8WmnQlA__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/StPeters2-31108e0e-1920w.jpg?Expires=1789733223&Signature=FYuSiBgoedOJ67PacYq8ihDLZ-BgFNq9nfvrgZn3cbOWhLiyUglpThirRFndCdbJpVrUaX5UBHaldZnAhoBKoklom~CPNky3MFNTryBehE3EUh-o2ItylMGnI2ceLKC5ZC8f1iLymP64TsXA~NGWcKsSIU4lCgrn1oS2PbMFi2MePDco8do9I6wOc9XyNOa~pCdnZIa1enXAN2mi8j98wBsuXR-Qun~FrTVs4vzR12myzAizMH-S23~FVrogFd6oh5-AagQiwdpWOP5KrD1vQ9OwVUkrgI02iRDDEvJgdbkVFaSbSXzZoOj-uhqrGTDtk2bGWO~nDsfa2XiIcS1psw__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/ChurchColourLandscape-8b864e76-1920w.jpg?Expires=1789733223&Signature=hYBbVa8BNJo3rxrksHWPVjqNa4JAf-4Q6WS7ZBH8APzTE6o6HMRGMZDQ~jaTQYBe9tiz1VWNtwZuMg6YNrgdk2hnnePrhrEssxteqVk2Y~NbvMEYog17xPuB8bu~9yGbxcMKCjJXYBN4WQ5w2CeS6y4hJuLj9tSR3MjdCxQADX~lu5xVhe~BFtQ~j7RnuEQqDq6tP0h1rh0JfCpKLWLBxNl7B9jx1GLYqX7NUt2l4kAOJ2Q8Ye1NA~gfL6u6xWx1TTrhVBO8EpL8AXy7FK41qiWWbhao3f8G38gORjFhxXBTCYMEY9OAPVhCd3T7yZoNFcCtqOuyoYp~-XtavHnUeA__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/P1020588-1920w.JPG?Expires=1789733223&Signature=kBluXJ4Aac7hOATFwZFN2C-Wuw~jkp-aodwe4JmPLC5aW5SadCHcNR9U7md0WhYd8jOqv362Xh3pCSTy4A5II~ibloKIF37371M-tSbyYGhUWhgv4NnhoEn4nFr3BnYqKLYiBegxLF5eZRhjAw1tdcuGSPak5O4dT7FHs3-lA~Te4QLUTEdV22WH0pTp9yJV8nNH-2bC-2levp41Mx1cHq7zeuUPsCvnE2XJxbW03NdeFKu2kPudxyD7ISX6ax7K1mbAB1eirwuCitbdujBur8hEKoqdkh4WI9nTiIM9ppp4dob1AwKqguWe0J5ObDXkviaqzR1TKwB9f1GAJ0KR5w__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/P1020579+%282%29-1920w.JPG?Expires=1789733223&Signature=eWfvMtKQXp1W5-0rPuZIrWYvHdQahgq7mArUHFnG~stUb3rV5HXgkj1tAni8dJ0wbTsC0zW34UoiDcEmUMyLaQy8sKaEuOvNx9e4cSItDJwQ~OkOSdU0-s1EBxEkOhCsnzmRdBKqueA8FWnBob~3hgkiSVjzJJvjVdky6Z~HXTC8Xp-dx47qXay1JAn7ibleKQYE6i8Gvq-jybxvWqva~2SwJuWLm~9Hzv3g8ylT7Hf1hyCt8WqNh9TYoiWxv4AdJzubMOw6HEUdaUCQsnbbWGp22~RTSOqqWD-CZ2pw-kFhQUK0bJELqg0Y0OjlOLPPLY1nLBW7zFONBEEDOhC2Lw__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/CarolCockcroft-1920w.jpg?Expires=1789733223&Signature=UliF1W1ibKVoGJt3WUE0fi-kq58vd4pnolMEuGgUf7esLC16ftKUM4M~bHFDJyxSt~XX-JB3SrdICKAoNeGnGqVRyGRy9ShXGKM046avdMafxxbR1i~Fx6a5-MpJLUav7ykLVOqUcSJcJZVUIq2DvrtcuT4szgLoF-IDi7SWf2hbRY2PWKIJ3y3wzCRFMKlbfHqgg6gXhm4oiEX1yxG4fzgpYDLibvM~wIggBfjyL82Bmz-d5K8J3zeQk60U50QNb0bfE0KsYg6O1EmMJF90VlFtC~Q9VHuEXGKhTHnwdizhT2Ssd1pqPY7MbqIxaSg~2YlLvpiaa5UWzOlqSWh2Pg__&Key-Pair-Id=K2NXBXLF010TJW"
+  ],
+  "pages_checked": [
+   "https://www.stmichaelsbexhill.org/",
+   "https://www.stmichaelsbexhill.org/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 448055434,
+  "name": "St. Stephen's Hall",
+  "category": "venue",
+  "city": "Bexhill-on-Sea, GB",
+  "address": "Down Road, TN39 4DL Bexhill-on-Sea, United Kingdom",
+  "website": "https://www.ststephensbexhill.co.uk/hall-hire",
+  "contact_email": "mjrobinson@live.co.uk",
+  "contact_phone": "+44 1424 584543",
+  "image_hint": "File:St Stephen's Hall, Bexhill.jpg",
+  "source_url": "https://www.openstreetmap.org/way/448055434",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 50.8498783,
+  "lng": 0.4622002,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/38d249_389fd56ad78047be8c264a82c103130e~mv2.jpg/v1/fill/w_576,h_767,al_c,lg_1,q_85,enc_avif,quality_auto/poster%202_edited.jpg",
+   "https://static.wixstatic.com/media/38d249_8dca2aa43a184ba89c69565ab2959d72~mv2.jpg/v1/fill/w_638,h_851,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/poster%203_edited.jpg",
+   "https://static.wixstatic.com/media/38d249_28a0ff4c4a9f46c3a0c456da9dedae9a~mv2.jpg/v1/fill/w_638,h_851,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_1646.jpg",
+   "https://static.wixstatic.com/media/38d249_3e1b3d51fe4949b9ad34d5ba0214c10d~mv2.jpg/v1/fill/w_640,h_851,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/poster%201.jpg",
+   "https://static.wixstatic.com/media/38d249_1bb6cc38ebbe45f5a7990909140516b4~mv2.jpg/v1/fill/w_638,h_851,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_1644.jpg",
+   "https://static.wixstatic.com/media/38d249_bef274dd36bc4eae995a01e5912c747b~mv2.jpg/v1/fill/w_639,h_901,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/yoga%20tuesdays%201.jpg"
+  ],
+  "pages_checked": [
+   "https://www.ststephensbexhill.co.uk/hall-hire",
+   "https://www.ststephensbexhill.co.uk/contact-us",
+   "https://www.ststephensbexhill.co.uk/about-us"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 30834560,
+  "name": "Abney Public Hall",
+  "category": "venue",
+  "city": "London, GB",
+  "address": "Stoke Newington Church Street 73a, N16 0AS London, United Kingdom",
+  "website": "https://www.abneypublichall.com/",
+  "contact_email": "abneypublichall@hotmail.co.uk",
+  "contact_phone": "+44 20 7923 9332",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/30834560",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.5617367,
+  "lng": -0.0776378,
+  "gallery_urls": [
+   "https://static.parastorage.com/services/editor-elements-library/dist/thunderbolt/media/sloppyframe.3214ce8e.png"
+  ],
+  "pages_checked": [
+   "https://www.abneypublichall.com/",
+   "https://www.abneypublichall.com/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 128359392,
+  "name": "Ashfield House",
+  "category": "venue",
+  "city": "Wigan, GB",
+  "address": "Wigan Road, WN6 0BQ Wigan, United Kingdom",
+  "website": "https://www.ashfieldhouseweddings.co.uk/",
+  "contact_email": "info@ashfieldhouseweddings.co.uk",
+  "contact_phone": "+44 1257 473 500",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/128359392",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 53.5803688,
+  "lng": -2.6525291,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/f6bd37_aada4ef00889429a9810578ce705dd59%7Emv2.png/v1/fit/w_2500,h_1330,al_c/f6bd37_aada4ef00889429a9810578ce705dd59%7Emv2.png",
+   "https://static.wixstatic.com/media/f6bd37_138cdc418c614f2caba05f9436d38910~mv2.jpg/v1/fill/w_485,h_685,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Ground%20Floor%20Plan%20of%20Ashfield%20House%20wedding%20venue.jpg",
+   "https://static.wixstatic.com/media/f6bd37_4bed172db23c48b49a60791dcc08852c~mv2.jpg/v1/crop/x_252,y_1487,w_5077,h_6320/fill/w_412,h_513,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/photo_1-62.jpg",
+   "https://static.wixstatic.com/media/f6bd37_0de829e6e2b34d139418d41f1c8b1355~mv2.jpg/v1/crop/x_826,y_0,w_4248,h_3997/fill/w_533,h_501,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Harris%20Wedding%20-513.jpg",
+   "https://static.wixstatic.com/media/f6bd37_6ad05a30689e47b08e39b92e2b373412~mv2.jpg/v1/crop/x_1688,y_0,w_3631,h_4672/fill/w_443,h_570,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/A%20newlywed%20couple%20sharing%20a%20kiss%20while%20guests%20throw%20confetti%20outside%20the%20front%20door%20of%20Ash.jpg"
+  ],
+  "pages_checked": [
+   "https://www.ashfieldhouseweddings.co.uk/",
+   "https://www.ashfieldhouseweddings.co.uk/contact-us"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 109560989,
+  "name": "Beaconside Conference Centre",
+  "category": "venue",
+  "city": "Stafford, GB",
+  "address": "Weston Road, ST18 0BF Stafford, United Kingdom",
+  "website": "https://beaconsideconference.co.uk/",
+  "contact_email": "bookings@beaconsideconference.co.uk",
+  "contact_phone": "+44 1785 550121",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/109560989",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 52.8123136,
+  "lng": -2.0817286,
+  "gallery_urls": [
+   "https://beaconsideconference.co.uk/wp-content/uploads/2026/07/Untitled-design-49.png",
+   "https://beaconsideconference.co.uk/wp-content/uploads/2023/01/website-1080x1020px-mobile-layout-2.png",
+   "https://beaconsideconference.co.uk/wp-content/uploads/2026/01/image00002-scaled-e1767882109295-800x800.jpeg",
+   "https://beaconsideconference.co.uk/wp-content/uploads/2025/04/1-4-800x800.jpg",
+   "https://beaconsideconference.co.uk/wp-content/uploads/2024/06/IMG_7998-800x800.jpg",
+   "https://beaconsideconference.co.uk/wp-content/uploads/2025/01/IMG_2772-800x800.jpeg"
+  ],
+  "pages_checked": [
+   "https://beaconsideconference.co.uk/",
+   "https://beaconsideconference.co.uk/contact-us/",
+   "https://beaconsideconference.co.uk/home/about-us/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 227130817,
+  "name": "Brookfield Barn",
+  "category": "venue",
+  "city": "Horsham, GB",
+  "address": "Winterpit Lane, RH13 6LY Horsham, United Kingdom",
+  "website": "https://brookfieldbarn.co.uk/",
+  "contact_email": "weddings@brookfieldbarn.co.uk",
+  "contact_phone": "+44 1403 900606",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/227130817",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.0423236,
+  "lng": -0.2668099,
+  "gallery_urls": [
+   "https://brookfieldbarn.co.uk/static/uploads/sites/2/2022/11/Brookfield-Barn-wedding-venue-Kit-Myers-Photography-4.webp",
+   "https://brookfieldbarn.co.uk/static/uploads/sites/2/2024/11/Brookfield-Barn-bride-and-groom-just-married-spring-wedding-Jordan-Mansfield-Weddings-1536x1024.webp",
+   "https://brookfieldbarn.co.uk/static/uploads/sites/2/2023/10/brookfield-barn-bar-area-mark-nicholson-photography-1536x1024.webp",
+   "https://brookfieldbarn.co.uk/static/uploads/sites/2/2025/10/brookfield-barn-the-lodge-outside-simon-butler-photography.webp",
+   "https://brookfieldbarn.co.uk/static/uploads/sites/2/2025/10/brookfield-barn-the-lodge-seating-area-simon-butler-photography.webp",
+   "https://brookfieldbarn.co.uk/static/uploads/sites/2/2025/10/brookfield-barn-the-lodge-kitchen-area-simon-butler-photography.webp"
+  ],
+  "pages_checked": [
+   "https://brookfieldbarn.co.uk/",
+   "https://brookfieldbarn.co.uk/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 3498730349,
+  "name": "CCTvenues South Quay",
+  "category": "venue",
+  "city": "London, GB",
+  "address": "Marsh Wall 193, E14 9SG London, United Kingdom",
+  "website": "https://cctvenues.co.uk/venues/smithfield/",
+  "contact_email": "enquire@cctvenues.co.uk",
+  "contact_phone": "+44 20 7537 6545",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/3498730349",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.5006821,
+  "lng": -0.0148188,
+  "gallery_urls": [
+   "https://cctvenues.co.uk/wp-content/uploads/2021/06/Venue_page.jpeg"
+  ],
+  "pages_checked": [
+   "https://cctvenues.co.uk/venues/smithfield/",
+   "https://cctvenues.co.uk/contact-us/our-vacancies/",
+   "https://cctvenues.co.uk/about-us/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 9573564821,
+  "name": "Clarence Hall",
+  "category": "venue",
+  "city": "Crickhowell, GB",
+  "address": "Beaufort Street, NP8 1BN Crickhowell, United Kingdom",
+  "website": "https://www.clarencehallcrickhowell.org.uk/",
+  "contact_email": "clarencehall@btinternet.com",
+  "contact_phone": "+44 1873 810 024",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/9573564821",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.8583682,
+  "lng": -3.136228,
+  "gallery_urls": [
+   "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2021/11/Bingo1.png",
+   "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2025/01/Brown-Yellow-Rug-Sale-WhatsApp-Status-in-Decorative-Style-Document-A4-e1737635297356.png",
+   "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2025/02/F0E58735-63B1-498A-9C49-ABFEB920F1C9-1024x768.jpeg",
+   "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2018/12/main-hall-small-6-1024x683.jpg",
+   "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2025/02/IMG_0999-scaled-e1738752821466-1024x650.jpeg",
+   "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2025/02/0B65DC86-A4A8-4977-8086-F01E8181FF99-2-scaled-e1738664059529-1024x890.jpeg"
+  ],
+  "pages_checked": [
+   "https://www.clarencehallcrickhowell.org.uk/",
+   "https://www.clarencehallcrickhowell.org.uk/contact/",
+   "https://www.clarencehallcrickhowell.org.uk/the-venue/about-the-hall/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 4275151866,
+  "name": "Claverton Country House Hotel",
+  "category": "venue",
+  "city": "Battle, GB",
+  "address": "Bluemans Lane, TN33 0SE Battle, United Kingdom",
+  "website": "https://clavertonhotel.co.uk/",
+  "contact_email": "reservations@clavertonhotel.co.uk",
+  "contact_phone": "+44 1424 751128",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/4275151866",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 50.9102024,
+  "lng": 0.5468782,
+  "gallery_urls": [
+   "https://clavertonhotel.co.uk/wp-content/uploads/2018/06/preview-card-CLAV.png"
+  ],
+  "pages_checked": [
+   "https://clavertonhotel.co.uk/",
+   "https://clavertonhotel.co.uk/contact-us/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 11150904143,
+  "name": "CodeNode",
+  "category": "venue",
+  "city": "London, GB",
+  "address": "South Place 10, EC2M 7EB London, United Kingdom",
+  "website": "https://www.codenode.live/",
+  "contact_email": "spaces@codenode.live",
+  "contact_phone": "+44 20 3621 2707",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/11150904143",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.5185778,
+  "lng": -0.0858102,
+  "gallery_urls": [
+   "https://www.codenode.live/frontend/cached_images/3771c7b784e9d29bfdd8a143a83cdbdc-1328w.png"
+  ],
+  "pages_checked": [
+   "https://www.codenode.live/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 911523338,
+  "name": "Corn Exchange Hertford",
+  "category": "venue",
+  "city": "Hertford, GB",
+  "address": "Fore Street 39, SG14 1AL Hertford, United Kingdom",
+  "website": "https://www.cornexchangehertford.co.uk/",
+  "contact_email": "info@cornexchangehertford.co.uk",
+  "contact_phone": "+44 1727 844627",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/911523338",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.796541,
+  "lng": -0.0764042,
+  "gallery_urls": [
+   "http://static1.squarespace.com/static/60ca0bf7d83014164e5648b6/t/60d5cb2ef828b75a354f2d5e/1624623922440/LogoIdeas2+copy.png?format=1500w",
+   "https://images.squarespace-cdn.com/content/v1/60ca0bf7d83014164e5648b6/f14a1884-a57a-4b4d-93dd-f209548fec79/Background1HCE.jpg"
+  ],
+  "pages_checked": [
+   "https://www.cornexchangehertford.co.uk/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 18839044,
+  "name": "Crumlin Road Gaol",
+  "category": "venue",
+  "city": "Belfast, GB",
+  "address": "Crumlin Road 53-55, BT14 6ST Belfast, United Kingdom",
+  "website": "https://www.crumlinroadgaol.com/",
+  "contact_email": "info@crumlinroadgaol.com",
+  "contact_phone": "+44 28 90741500",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/18839044",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 54.6095375,
+  "lng": -5.9421885,
+  "gallery_urls": [
+   "https://www.crumlinroadgaol.com/wp-content/uploads/2026/08/Ceilidh-at-the-Crum-Large-Slider-1600x600.png",
+   "https://www.crumlinroadgaol.com/wp-content/uploads/2026/08/Jail-of-Horror-Large-1600x600.png",
+   "https://www.crumlinroadgaol.com/wp-content/uploads/2021/06/CRG-Experience-News-1600x600.jpg",
+   "https://www.crumlinroadgaol.com/wp-content/uploads/2026/02/Large-Meta-Slider-scaled-1600x600.jpg",
+   "https://www.crumlinroadgaol.com/wp-content/uploads/2026/03/Social-Media-Images-CRG-scaled-1600x600.jpg",
+   "https://www.crumlinroadgaol.com/wp-content/uploads/2025/11/Insta-scaled.jpg"
+  ],
+  "pages_checked": [
+   "https://www.crumlinroadgaol.com/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 60917541,
+  "name": "Doncaster Racecourse",
+  "category": "venue",
+  "city": "Doncaster, GB",
+  "address": "Ledger Way, DN2 6BB Doncaster, United Kingdom",
+  "website": "https://www.doncaster-racecourse.co.uk/",
+  "contact_email": "info@doncaster-racecourse.co.uk",
+  "contact_phone": "+44 1302 304200",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/60917541",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 53.5206888,
+  "lng": -1.1059227,
+  "gallery_urls": [
+   "https://www.doncaster-racecourse.co.uk/DoncasterRacecourse/images/upload/455d6eff-22b0-4ede-971f-a28f3ba6c67f.png",
+   "https://www.doncaster-racecourse.co.uk/DoncasterRacecourse/images/global/mega-menu/generic-thumbnail.jpg",
+   "https://www.doncaster-racecourse.co.uk/DoncasterRacecourse/images/upload/08b46e22-8eb3-4825-b708-80e17dc44293.webp",
+   "https://www.doncaster-racecourse.co.uk/DoncasterRacecourse/images/upload/9a4a06d0-9fd8-4fd0-91f0-471b204f8937.webp",
+   "https://www.doncaster-racecourse.co.uk/DoncasterRacecourse/images/upload/daf2862c-7b2f-40af-8d79-15e6fb05f5d2.jpg",
+   "https://www.doncaster-racecourse.co.uk/DoncasterRacecourse/images/upload/a5ca74f5-3be9-45ee-ac4d-9f6eea0907f6.png"
+  ],
+  "pages_checked": [
+   "https://www.doncaster-racecourse.co.uk/",
+   "https://www.doncaster-racecourse.co.uk/contact-us",
+   "https://www.doncaster-racecourse.co.uk/contact-us"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 11078563648,
+  "name": "etc.venues",
+  "category": "venue",
+  "city": "London, GB",
+  "address": "Bishopsgate 155, London, United Kingdom",
+  "website": "https://convene.com/about-us/etc-venues/",
+  "contact_email": "155bishopsgate@etcvenues.com",
+  "contact_phone": "+44 20 3735 4400",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/11078563648",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.5188119,
+  "lng": -0.0801477,
+  "gallery_urls": [
+   "https://convene.com/wp-content/uploads/2025/09/Adobe-Express-file-5-2048x1152.png",
+   "https://convene.com/wp-content/uploads/2024/12/etc-venues-chancery-lane-in-london-1-2048x1152.webp",
+   "https://convene.com/wp-content/uploads/2024/12/etc-venues-county-hall-in-london-2-2048x1535.webp",
+   "https://convene.com/wp-content/uploads/2024/12/etc-venues-prospero-house-in-london-2048x1409.webp",
+   "https://convene.com/wp-content/uploads/2022/03/Home_08_Cities_NYC_314x314-1.jpg",
+   "https://convene.com/wp-content/uploads/2022/03/Home_09_Cities_Chi_314x314.jpg"
+  ],
+  "pages_checked": [
+   "https://convene.com/about-us/etc-venues/",
+   "https://convene.com/contact/",
+   "https://convene.com/about-us/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 1346274015,
+  "name": "Glyn Clydach Hotel",
+  "category": "venue",
+  "city": "Neath, GB",
+  "address": "Longford Road, SA10 7AJ Neath, United Kingdom",
+  "website": "https://www.glynclydach.co.uk/",
+  "contact_email": "enquiries@glynclydach.co.uk",
+  "contact_phone": "+441792 818411",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/1346274015",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.6769446,
+  "lng": -3.8284838,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/169cd0_5d640be3dc8843429a03815da09b4236~mv2.png/v1/fill/w_206,h_108,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/DdUXcqDW4AI6MtG-removebg-preview_edited_.png"
+  ],
+  "pages_checked": [
+   "https://www.glynclydach.co.uk/",
+   "https://www.glynclydach.co.uk/copy-of-contact-us",
+   "https://www.glynclydach.co.uk/contact-us"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12758212368,
+  "name": "Grove of Narberth",
+  "category": "venue",
+  "city": "Haverfordwest, GB",
+  "address": "Molleston, SA67 8BX Haverfordwest, United Kingdom",
+  "website": "https://grovenarberth.co.uk/",
+  "contact_email": "reservations@grovenarberth.co.uk",
+  "contact_phone": "+44 1834 860 915",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/12758212368",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.7825829,
+  "lng": -4.7653055,
+  "gallery_urls": [
+   "https://grovenarberth.co.uk/wp-content/uploads/2024/01/AW109881.jpg",
+   "https://grovenarberth.co.uk/wp-content/uploads/2024/05/GroveSpring-012.jpg",
+   "https://grovenarberth.co.uk/wp-content/uploads/2022/04/Meadowloft2-1367x911.jpg",
+   "https://grovenarberth.co.uk/wp-content/uploads/2024/05/GroveSpring-012-1367x912.jpg",
+   "https://grovenarberth.co.uk/wp-content/uploads/2023/07/Fernery-dining-2-1367x911.jpg",
+   "https://grovenarberth.co.uk/wp-content/uploads/2022/04/140422_002-1367x911.jpg"
+  ],
+  "pages_checked": [
+   "https://grovenarberth.co.uk/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 8526410695,
+  "name": "Halliwell Centre",
+  "category": "venue",
+  "city": "Carmarthen, GB",
+  "address": "Job's Well Road, SA31 3EP Carmarthen, United Kingdom",
+  "website": "https://venuewales.co.uk/",
+  "contact_email": "halliwell@uwtsd.ac.uk",
+  "contact_phone": "+44 1267 222 252",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/8526410695",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.8576771,
+  "lng": -4.328026,
+  "gallery_urls": [
+   "https://venuewales.co.uk/wp-content/uploads/2019/03/Webp.net-resizeimage-29.jpg",
+   "https://venuewales.co.uk/wp-content/uploads/2019/03/Webp.net-resizeimage-30.jpg",
+   "https://venuewales.co.uk/wp-content/uploads/2018/04/meeting-lampeter1.jpg",
+   "https://venuewales.co.uk/wp-content/uploads/2019/03/sunday-carvery.jpg"
+  ],
+  "pages_checked": [
+   "https://venuewales.co.uk/",
+   "https://venuewales.co.uk/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 519963644,
+  "name": "High Elms Manor",
+  "category": "venue",
+  "city": "Watford, GB",
+  "address": "High Elms Lane, WD25 0JX Watford, United Kingdom",
+  "website": "https://www.highelmsmanor.com/",
+  "contact_email": "enquiries@highelmsmanor.com",
+  "contact_phone": "+44 1923 663875;+44 1923 675272",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/519963644",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.7019687,
+  "lng": -0.3935557,
+  "gallery_urls": [
+   "https://www.highelmsmanor.com/images/slider-1.jpg",
+   "https://www.highelmsmanor.com/images/slider-2.jpg",
+   "https://www.highelmsmanor.com/images/slider-4.jpg",
+   "https://s3.amazonaws.com/images.theweddingsecret.co.uk/posts/partnered-with-the-wedding-secret.png"
+  ],
+  "pages_checked": [
+   "https://www.highelmsmanor.com/",
+   "https://www.highelmsmanor.com/contact.html"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 1060587957,
+  "name": "Irish World Heritage Centre",
+  "category": "venue",
+  "city": "Manchester, GB",
+  "address": "Irish Town Way 1, M8 0AE Manchester, United Kingdom",
+  "website": "https://iwhc.com/",
+  "contact_email": "bookings@iwhc.com",
+  "contact_phone": "+44 16 1 697 4105",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/1060587957",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 53.5004346,
+  "lng": -2.2297438,
+  "gallery_urls": [
+   "https://iwhc.com/wp-content/uploads/2022/07/iwhc-google.jpg",
+   "https://iwhc.com/wp-content/uploads/2022/07/iwhc-front-1024x846.jpg",
+   "https://iwhc.com/wp-content/uploads/2022/06/st-patrick-s-day-parade-2021-08-31-00-04-32-utc-scaled.jpg",
+   "https://iwhc.com/wp-content/uploads/2022/06/edding-champagne-glasses-on-white-tablecloth-with-2021-08-26-15-28-57-utc-1.jpg"
+  ],
+  "pages_checked": [
+   "https://iwhc.com/",
+   "https://iwhc.com/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 1001731738,
+  "name": "Kachette",
+  "category": "venue",
+  "city": "London, GB",
+  "address": "Old Street 347, EC1V 9LP London, United Kingdom",
+  "website": "https://shoreditch.com/studio/kachette/",
+  "contact_email": "link@shoreditch.com",
+  "contact_phone": "+44 20 7033 9006",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/1001731738",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 51.5274214,
+  "lng": -0.0785688,
+  "gallery_urls": [
+   "https://shoreditch.com/wp-content/uploads/2025/07/OpenGraph.png",
+   "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-1.png",
+   "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-2.png",
+   "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-3.png",
+   "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-4.png",
+   "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-5.png"
+  ],
+  "pages_checked": [
+   "https://shoreditch.com/studio/kachette/",
+   "https://shoreditch.com/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 1526062853,
+  "name": "King Street Studios",
+  "category": "venue",
+  "city": "Newcastle-under-Lyme, GB",
+  "address": "King Street 14a, ST5 1EJ Newcastle-under-Lyme, United Kingdom",
+  "website": "https://www.kingstreetstudios.co.uk/",
+  "contact_email": "info@kingstreetstudios.co.uk",
+  "contact_phone": "+44 1782 971014",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/1526062853",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 53.0131698,
+  "lng": -2.221542,
+  "gallery_urls": [
+   "https://www.kingstreetstudios.co.uk/wp-content/uploads/2016/09/King-Street-Studios-Social-media-Content-copy-05.png"
+  ],
+  "pages_checked": [
+   "https://www.kingstreetstudios.co.uk/",
+   "https://www.kingstreetstudios.co.uk/contact-us/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13272012763,
+  "name": "King's House Conference Centre",
+  "category": "venue",
+  "city": "Manchester, GB",
+  "address": "Sidney Street, M1 7HB Manchester, United Kingdom",
+  "website": "https://www.kingshouse.co.uk/",
+  "contact_email": "enquiries@kingshouse.co.uk",
+  "contact_phone": "+44 161 276 8194",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13272012763",
+  "country": "GB",
+  "ga4_active_users": 58,
+  "lat": 53.4709908,
+  "lng": -2.236737,
+  "gallery_urls": [
+   "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/a64c8f7b-30f3-4582-a365-a93f20006568/Aud+7.jpg",
+   "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/9f52a056-e24a-41bf-8233-14a124e8c59f/Building.png",
+   "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/32900e82-64e8-46d6-b44c-f77cf1004675/Computer.png",
+   "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/b51f72af-d358-43c1-9063-ce825d449912/Friendlu.png",
+   "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/a46dbc60-fa18-480d-b6f4-6a47e4e6b120/People.png",
+   "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/a9de7998-7d8a-400c-b988-4bd37214a093/Catering.png"
+  ],
+  "pages_checked": [
+   "https://www.kingshouse.co.uk/",
+   "https://www.kingshouse.co.uk/contact",
+   "https://www.kingshouse.co.uk/about"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 146070336,
+  "name": "SwissTech Convention Center",
+  "category": "venue",
+  "city": "Lausanne, CH",
+  "address": "Route Louis-Favre 2, 1015 Lausanne, Switzerland",
+  "website": "https://www.stcc.ch/fr/",
+  "contact_email": "tstcc@epfl.ch",
+  "contact_phone": "+41216934242",
+  "image_hint": "File:Swiss Tech Convention Centre-L1001866.JPG",
+  "source_url": "https://www.openstreetmap.org/way/146070336",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 46.5232016,
+  "lng": 6.5646472,
+  "gallery_urls": [
+   "https://www.stcc.ch/wp-content/uploads/2017/12/STCC_Site_ShareTwitter-1.jpg",
+   "https://www.stcc.ch/wp-content/uploads/2021/10/virtual-visit.jpg",
+   "https://www.stcc.ch/wp-content/uploads/2022/07/5-Rolex-Learning-Center-scaled-1-1200x0-c-default.jpeg",
+   "https://www.stcc.ch/wp-content/uploads/2022/07/5-Rolex-Learning-Center-scaled-1-2048x0-c-default.jpeg",
+   "https://www.stcc.ch/wp-content/uploads/2022/07/6-scaled-1-1200x0-c-default.jpeg",
+   "https://www.stcc.ch/wp-content/uploads/2022/07/6-scaled-1-2048x0-c-default.jpeg"
+  ],
+  "pages_checked": [
+   "https://www.stcc.ch/fr/",
+   "https://www.stcc.ch/fr/contactez-nous-2/",
+   "https://www.stcc.ch/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 9464160406,
+  "name": "Altes Kraftwerk",
+  "category": "venue",
+  "city": "Basel, CH",
+  "address": "Lehenmattstrasse 353, 4052 Basel, Switzerland",
+  "website": "https://www.alteskraftwerk.ch/",
+  "contact_email": "info@alteskraftwerk.ch",
+  "contact_phone": "+41 79 129 52 52",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/9464160406",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.54346,
+  "lng": 7.6217006,
+  "gallery_urls": [
+   "https://www.alteskraftwerk.ch/wp-content/uploads/2020/08/logo_alteskraftwerk_white.png",
+   "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03569-Verbessert-RR-HQ_Easy-Resize.com_.jpg",
+   "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03567-Verbessert-RR-HQ_Easy-Resize.com_.jpg",
+   "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03554-Verbessert-RR-HQ_Easy-Resize.com_.jpg",
+   "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03528-Verbessert-RR-HQ_Easy-Resize.com_.jpg",
+   "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03555-Verbessert-RR-HQ_Easy-Resize.com_.jpg"
+  ],
+  "pages_checked": [
+   "https://www.alteskraftwerk.ch/",
+   "https://www.alteskraftwerk.ch/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13446319419,
+  "name": "bee-flat",
+  "category": "venue",
+  "city": "Bern, CH",
+  "address": "Waisenhausplatz 30, 3011 Bern, Switzerland",
+  "website": "https://www.bee-flat.ch/",
+  "contact_email": "kontakt@bee-flat.ch",
+  "contact_phone": "+41 31 305 20 35",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13446319419",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 46.9503956,
+  "lng": 7.443746,
+  "gallery_urls": [
+   "https://www.bee-flat.ch/files/data/theme/2026/04/BEE-FLAT-MAI-2026-WEB-QUER.png",
+   "https://www.bee-flat.ch/files/data/theme/2026/04/BEE-FLAT-MAI-2026-WEB-HOCH.png"
+  ],
+  "pages_checked": [
+   "https://www.bee-flat.ch/",
+   "https://www.bee-flat.ch/kontakt/",
+   "https://www.bee-flat.ch/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 7637819091,
+  "name": "Bildungspark Dagmersellen",
+  "category": "venue",
+  "city": "Dagmersellen, CH",
+  "address": "Keramikweg 3, 6252 Dagmersellen, Switzerland",
+  "website": "https://bildungspark.ch/",
+  "contact_email": "reservation@bildungspark.ch",
+  "contact_phone": "+41 62 748 10 90",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/7637819091",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.2093463,
+  "lng": 7.982619,
+  "gallery_urls": [
+   "https://bildungspark.ch/wp-content/uploads/2023/12/bildungspark-dagmarsellen_bz_2016_sizi5_web_mega-menu.jpg",
+   "https://bildungspark.ch/wp-content/uploads/2023/07/Muster-Bild-1367819964-bearb-web.jpg",
+   "https://bildungspark.ch/wp-content/uploads/2023/08/bildungspark_Hallen_Kurs_web_mega-menu.jpg",
+   "https://bildungspark.ch/wp-content/uploads/2023/08/bildungspark_doppelzimmer_wc_dusche_web_mega.menu_.jpg",
+   "https://bildungspark.ch/wp-content/uploads/2023/08/bildungspark_schluesselbrett_web_mega-menu.jpg",
+   "https://bildungspark.ch/wp-content/uploads/2023/08/bildungspark-gastronomie-02_2000x1089px.jpg"
+  ],
+  "pages_checked": [
+   "https://bildungspark.ch/",
+   "https://bildungspark.ch/kontakt/",
+   "https://bildungspark.ch/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 251076181,
+  "name": "Böschhof",
+  "category": "venue",
+  "city": "Hünenberg, CH",
+  "address": "Böschhof 3, 6331 Hünenberg, Switzerland",
+  "website": "https://www.boeschhof.ch/",
+  "contact_email": "mail@boeschhof.ch",
+  "contact_phone": "+41 41 780 33 37",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/251076181",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.1644308,
+  "lng": 8.4343938,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/963982_be5e3291763c4121965df7f07d7a8eab~mv2.png"
+  ],
+  "pages_checked": [
+   "https://www.boeschhof.ch/",
+   "https://www.boeschhof.ch/kontakt"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12480413974,
+  "name": "Carribean Pearl",
+  "category": "venue",
+  "city": "Winterthur, CH",
+  "address": "Zürichstrasse 3, 8400 Winterthur, Switzerland",
+  "website": "https://pearlevent.ch/",
+  "contact_email": "info@pearlevent.ch",
+  "contact_phone": "+41 78 799 18 89",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/12480413974",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.4984353,
+  "lng": 8.7208243,
+  "gallery_urls": [
+   "https://pearlevent.ch/assets/images/hero.webp?v=1774828143",
+   "https://pearlevent.ch/assets/images/gallery/DSC01687-scaled.webp?v=1774828142",
+   "https://pearlevent.ch/assets/images/food/dsc07819.webp?v=1778164217",
+   "https://pearlevent.ch/assets/images/gallery/DSC09787-scaled.webp?v=1774828142",
+   "https://pearlevent.ch/assets/images/gallery/DSC00115-scaled.webp?v=1774828141",
+   "https://pearlevent.ch/assets/images/gallery/DSC01342-scaled.webp?v=1774828141"
+  ],
+  "pages_checked": [
+   "https://pearlevent.ch/",
+   "https://pearlevent.ch/kontakt",
+   "https://pearlevent.ch/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 5978278694,
+  "name": "Congressi Stefano Franscini",
+  "category": "venue",
+  "city": "Ascona, CH",
+  "address": "Strada Collina 84, 6612 Ascona, Switzerland",
+  "website": "https://csf.ethz.ch/",
+  "contact_email": "info@csf.ethz.ch",
+  "contact_phone": "+41 91 7854056",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/5978278694",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 46.1585787,
+  "lng": 8.7625284,
+  "gallery_urls": [
+   "https://ethz.ch/etc/designs/ethz/img/header/eth_default_og.jpg"
+  ],
+  "pages_checked": [
+   "https://csf.ethz.ch/",
+   "https://csf.ethz.ch/footer/imprint.html"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 145470764,
+  "name": "Einstein Congress",
+  "category": "venue",
+  "city": "St. Gallen, CH",
+  "address": "Wassergasse 1, 9000 St. Gallen, Switzerland",
+  "website": "https://www.einstein.ch/de/",
+  "contact_email": "congress@einstein.ch",
+  "contact_phone": "+41 71 227 55 00",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/145470764",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.4215359,
+  "lng": 9.3749166,
+  "gallery_urls": [
+   "https://www.einstein.ch/assets/images/c/textilland_juniorsuite_1024x730-6rqtqs6qnt9a033.jpg",
+   "https://www.einstein.ch/assets/images/j/essen_trinken_1024x730-ssfb2msp6p06kqz.jpg",
+   "https://www.einstein.ch/assets/images/1/bankette_im_einstein_1024x730-hcd7vvgg11edd7j.jpg",
+   "https://www.einstein.ch/assets/images/4/einstein_saal_1024x730-9fnpbe65ds9hcb1.jpg",
+   "https://www.einstein.ch/assets/images/e/1024x730maud_paquis-x88ym97be8pj5rz.jpg",
+   "https://www.einstein.ch/assets/images/h/1024x730vanesa-harbek-8cw6agqm6847b98.png"
+  ],
+  "pages_checked": [
+   "https://www.einstein.ch/de/",
+   "https://www.einstein.ch/de/kontakt-standort",
+   "https://www.einstein.ch/de/kontakt-standort/anreise-parking"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 11654581443,
+  "name": "eiszueis - eventRaum",
+  "category": "venue",
+  "city": "Weinfelden, CH",
+  "address": "Sonnenstrasse 2, 8570 Weinfelden, Switzerland",
+  "website": "https://www.eiszueis.ch/",
+  "contact_email": "eiszueis@kradolfer.ch",
+  "contact_phone": "+41 79 459 28 15",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/11654581443",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.5626913,
+  "lng": 9.1072824,
+  "gallery_urls": [
+   "https://www.eiszueis.ch/customer/files/17/170904_HarderSpreyermann_Kradolfer_A3-6898-1.jpg"
+  ],
+  "pages_checked": [
+   "https://www.eiszueis.ch/",
+   "https://www.eiszueis.ch/kontakt",
+   "https://www.eiszueis.ch/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 381942620,
+  "name": "Eventalm",
+  "category": "venue",
+  "city": "Rümlang, CH",
+  "address": "Meienbreitenstrasse 9, 8153 Rümlang, Switzerland",
+  "website": "https://www.eventalm.ch/",
+  "contact_email": "info@eventalm.ch",
+  "contact_phone": "+41 44 545 63 63",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/381942620",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.4582666,
+  "lng": 8.5261527,
+  "gallery_urls": [
+   "https://www.eventalm.ch/images/eventalm-event-almhuette-zuerich.jpg",
+   "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-001.jpg",
+   "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-002.jpg",
+   "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-003.jpg",
+   "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-004.jpg",
+   "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-005.jpg"
+  ],
+  "pages_checked": [
+   "https://www.eventalm.ch/",
+   "https://www.eventalm.ch/kontakt",
+   "https://www.eventalm.ch/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 14019651978,
+  "name": "Eventforum Bern",
+  "category": "venue",
+  "city": "Bern, CH",
+  "address": "Fabrikstrasse 12, 3012 Bern, Switzerland",
+  "website": "https://eventforumbern.ch/",
+  "contact_email": "info@eventforumbern.ch",
+  "contact_phone": "+41 79 461 84 05",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/14019651978",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 46.9528545,
+  "lng": 7.4232043,
+  "gallery_urls": [
+   "https://eventforumbern.ch/wp-content/uploads/2026/02/DSC01322-1920x1280.jpg"
+  ],
+  "pages_checked": [
+   "https://eventforumbern.ch/",
+   "https://eventforumbern.ch/kontakt/",
+   "https://eventforumbern.ch/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13265148943,
+  "name": "Festküche - by focacceria",
+  "category": "venue",
+  "city": "St. Gallen, CH",
+  "address": "Haggenstrasse 6, 9014 St. Gallen, Switzerland",
+  "website": "https://focacceria.ch/festkueche/",
+  "contact_email": "info@festküche.ch",
+  "contact_phone": "+41 71 220 16 15",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13265148943",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.4110005,
+  "lng": 9.3352839,
+  "gallery_urls": [
+   "https://focacceria.ch/festkueche/wp-content/uploads/sites/15/2022/04/festkueche_1.jpg",
+   "https://focacceria.ch/festkueche/wp-content/uploads/sites/15/2025/09/Gewinner-Batch-de-Kopie-2048x2048.png",
+   "https://focacceria.ch/festkueche/wp-content/uploads/sites/15/2022/04/festkueche_14.jpg",
+   "https://focacceria.ch/festkueche/wp-content/uploads/sites/15/2024/05/Festkueche_DSC3409_web.jpg",
+   "https://focacceria.ch/festkueche/wp-content/uploads/sites/15/2024/05/Festkueche_GZ70931_web-1.jpg",
+   "https://focacceria.ch/festkueche/wp-content/uploads/sites/15/2024/05/Festkueche_GZ70963_web.jpg"
+  ],
+  "pages_checked": [
+   "https://focacceria.ch/festkueche/",
+   "https://focacceria.ch/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 308388008,
+  "name": "Grabenhalle",
+  "category": "venue",
+  "city": "St. Gallen, CH",
+  "address": "Unterer Graben 17, 9000 St. Gallen, Switzerland",
+  "website": "https://www.grabenhalle.ch/",
+  "contact_email": "info@grabenhalle.ch",
+  "contact_phone": "+41 71 222 82 11",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/308388008",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.4273285,
+  "lng": 9.3741449,
+  "gallery_urls": [
+   "https://www.grabenhalle.ch/wp-content/uploads/2025/08/Background_Grabenpark02.jpg",
+   "https://www.grabenhalle.ch/wp-content/uploads/2026/04/2026_06_13_FemStreik_Paulinko_header.jpg",
+   "https://www.grabenhalle.ch/wp-content/uploads/2026/06/2026_06_20_Parkplatzfest_header.jpg",
+   "https://www.grabenhalle.ch/wp-content/uploads/2026/06/Sommerpause.jpg"
+  ],
+  "pages_checked": [
+   "https://www.grabenhalle.ch/",
+   "https://www.grabenhalle.ch/impressum-datenschutz/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 42757939,
+  "name": "Halle 550",
+  "category": "venue",
+  "city": "Zürich, CH",
+  "address": "Birchstrasse 150, 8050 Zürich, Switzerland",
+  "website": "https://halle550.ch/",
+  "contact_email": "info@halle550.ch",
+  "contact_phone": "+41 58 543 95 50",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/42757939",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.4116881,
+  "lng": 8.5389775,
+  "gallery_urls": [
+   "https://halle550.ch/wp-content/uploads/2020/04/Halle550-Aussen-Visualisierung_v1-scaled.jpg",
+   "https://halle550.ch/wp-content/uploads/2023/06/Halle550_Aussenfassade-1920x1196.jpg",
+   "https://halle550.ch/wp-content/uploads/2025/02/SX25_KV_1080x1080px-640x640.jpg",
+   "https://halle550.ch/wp-content/uploads/2023/07/Chicago1928_schwarz_transparent_v2.png",
+   "https://halle550.ch/wp-content/themes/halle550/images/footer_img.png"
+  ],
+  "pages_checked": [
+   "https://halle550.ch/",
+   "https://halle550.ch/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 8151832544,
+  "name": "Inforama",
+  "category": "venue",
+  "city": "Hondrich, CH",
+  "address": "Hofstatt 12, 3702 Hondrich, Switzerland",
+  "website": "https://www.inforama.ch/inforama/standorte/berner-oberland",
+  "contact_email": "inforama.oberland@be.ch",
+  "contact_phone": "+41 31 636 04 00",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/8151832544",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 46.6738383,
+  "lng": 7.6810158,
+  "gallery_urls": [
+   "https://www.inforama.ch/images/global/INFORAMA/Standorte/Berner-Oberland/_sixteenNine/INFORAMA-Berner-Oberland-Schulhaus-mit-Brunnen-15-04-2020-zoue.jpg",
+   "https://www.inforama.ch/images/global/INFORAMA/Standorte/Berner-Oberland/_sixteenNine/Berner-Oberland-mit-Garten.jpg",
+   "https://www.inforama.ch/images/global/INFORAMA/Standorte/Berner-Oberland/_sixteenNine/Berner-Oberland-mit-Bergen-See.jpg",
+   "https://www.inforama.ch/images/global/INFORAMA/Standorte/Berner-Oberland/_sixteenNine/Berner-Oberland-mit-Baum-und-Schild.jpg",
+   "https://www.inforama.ch/images/global/INFORAMA/Standorte/Berner-Oberland/_sixteenNine/Berner-Oberland-mit-Aussicht.jpg",
+   "https://www.inforama.ch/images/global/INFORAMA/Standorte/Berner-Oberland/_sixteenNine/INFORAMA-Berner-Oberland-Aussicht-auf-See.JPG"
+  ],
+  "pages_checked": [
+   "https://www.inforama.ch/inforama/standorte/berner-oberland",
+   "https://www.inforama.ch/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 8736134330,
+  "name": "Knies Zauberhut",
+  "category": "venue",
+  "city": "Rapperswil SG, CH",
+  "address": "Oberseestrasse 42, 8640 Rapperswil SG, Switzerland",
+  "website": "https://www.knieszauberhut.ch/",
+  "contact_email": "info@knieszauberhut.ch",
+  "contact_phone": "+41 55 220 67 55",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/8736134330",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.2234402,
+  "lng": 8.8217544,
+  "gallery_urls": [
+   "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1740985638925-8J4IVF1Y5EQFC59DSZ4B/ZAUBERHUT_13.jpg",
+   "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1739953258611-UYAOG5MW5IDVT1JCF75Y/Bild2.jpg",
+   "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1740985553440-B6L7AZO4YLC0VTOW7K7K/Zauberhut_Aussen.jpg",
+   "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1739953260373-CQNICOEX8CTJ07DZZHHD/Bild4.jpg",
+   "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1739953261381-JPHGZHEPGW9TF4Q5RLL5/Bild5.jpg",
+   "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1739953261550-3C1C6RYB5542C9U7UQ3U/Bild6.jpg"
+  ],
+  "pages_checked": [
+   "https://www.knieszauberhut.ch/",
+   "https://www.knieszauberhut.ch/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 33051491,
+  "name": "Quartiertreff Zehntenhaus",
+  "category": "venue",
+  "city": "Zürich, CH",
+  "address": "Zehntenhausstrasse 8, 8046 Zürich, Switzerland",
+  "website": "https://www.portal.zh-affoltern.ch/zehntenhaus.html",
+  "contact_email": "zehntenhaus@zh-affoltern.ch",
+  "contact_phone": "+41 44 371 71 31",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/33051491",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.4197234,
+  "lng": 8.5067143,
+  "gallery_urls": [
+   "https://www.portal.zh-affoltern.ch/files/zh-affoltern/zehntenhaus/Nordfassade%20mit%20Strasse.JPG",
+   "https://www.portal.zh-affoltern.ch/files/zh-affoltern/zehntenhaus/DSCN0009.jpg",
+   "https://www.portal.zh-affoltern.ch/files/zh-affoltern/zehntenhaus/20260429IMG_3018.jpeg",
+   "https://www.portal.zh-affoltern.ch/files/zh-affoltern/zehntenhaus/20260429IMG_3020.jpeg"
+  ],
+  "pages_checked": [
+   "https://www.portal.zh-affoltern.ch/zehntenhaus.html",
+   "https://www.portal.zh-affoltern.ch/kontakt.html",
+   "https://www.portal.zh-affoltern.ch/event/about-us-in-affoltern.html?day=20230618&times=1687093200,1687111200"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 11775252389,
+  "name": "the bird's eye jazz club",
+  "category": "venue",
+  "city": "Basel, CH",
+  "address": "Kohlenberg 20, 4051 Basel, Switzerland",
+  "website": "https://www.birdseye.ch/",
+  "contact_email": "office@birdseye.ch",
+  "contact_phone": "+41 61 263 33 41",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/11775252389",
+  "country": "CH",
+  "ga4_active_users": 6,
+  "lat": 47.55472,
+  "lng": 7.5877428,
+  "gallery_urls": [
+   "https://www.birdseye.ch/img/HeaderPics/2026_8.jpg",
+   "https://www.birdseye.ch/img/Artists/AlessioCazzetta202608.jpg",
+   "https://www.birdseye.ch/img/Artists/BJO2025.jpg",
+   "https://www.birdseye.ch/img/Artists/JonasSorgenfrei5tet.jpg",
+   "https://www.birdseye.ch/img/Artists/RobinFassie.jpg",
+   "https://www.birdseye.ch/img/Artists/SpheleloMazibuko.jpg"
+  ],
+  "pages_checked": [
+   "https://www.birdseye.ch/",
+   "https://www.birdseye.ch/index.php?p=contact&l=de&ptc=w",
+   "https://www.birdseye.ch/pages/imprint.php?l=de"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "relation",
+  "osm_id": 5345504,
+  "name": "Borgerhof",
+  "category": "venue",
+  "city": "Alt-Hoeselt, BE",
+  "address": "Winningenstraat 10, 3730 Alt-Hoeselt, Belgium",
+  "website": "https://www.devrijevalk.be/",
+  "contact_email": "info@devrijevalk.be",
+  "contact_phone": "+32 12 39 33 96",
+  "image_hint": "File:Hoeselt Sint-Lambertusstraat 10 - 175115 - onroerenderfgoed.jpg",
+  "source_url": "https://www.openstreetmap.org/relation/5345504",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.8280596,
+  "lng": 5.4933136,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/fdf8c5_a404eaef9ad541b08810a4df53b42b9f%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/fdf8c5_a404eaef9ad541b08810a4df53b42b9f%7Emv2.jpg",
+   "https://static.wixstatic.com/media/fdf8c5_e1039a37a4694deaa945446664156252~mv2.jpg/v1/fill/w_426,h_363,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_e1039a37a4694deaa945446664156252~mv2.jpg",
+   "https://static.wixstatic.com/media/fdf8c5_50c088675b604bf9a145f05261f5c972~mv2.jpg/v1/fill/w_482,h_358,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_50c088675b604bf9a145f05261f5c972~mv2.jpg",
+   "https://static.wixstatic.com/media/fdf8c5_db2da70944574bbbbf20926b3cf93b86~mv2.jpg/v1/fill/w_443,h_358,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_db2da70944574bbbbf20926b3cf93b86~mv2.jpg",
+   "https://static.wixstatic.com/media/fdf8c5_5f355bcf67fa4fb5987b8e11f1bdbe8b~mv2.jpg/v1/fill/w_482,h_363,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_5f355bcf67fa4fb5987b8e11f1bdbe8b~mv2.jpg",
+   "https://static.wixstatic.com/media/fdf8c5_1a797d565ac6498dab0efa4df500d959~mv2.jpg/v1/fill/w_463,h_345,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_1a797d565ac6498dab0efa4df500d959~mv2.jpg"
+  ],
+  "pages_checked": [
+   "https://www.devrijevalk.be/",
+   "https://www.devrijevalk.be/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 521936800,
+  "name": "Kasteel van Hoen",
+  "category": "venue",
+  "city": "Geetbets, BE",
+  "address": "Kasteellaan 17, 3450 Geetbets, Belgium",
+  "website": "https://www.kasteelvanhoen.be/",
+  "contact_email": "info@kasteelvanhoen.be",
+  "contact_phone": "+32 495 38 00 19",
+  "image_hint": "File:Kasteelhoeve Rummen.jpg",
+  "source_url": "https://www.openstreetmap.org/way/521936800",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.8988559,
+  "lng": 5.1415277,
+  "gallery_urls": [
+   "http://www.kasteelvanhoen.be/wp-content/uploads/2017/04/hg15.jpg",
+   "https://www.kasteelvanhoen.be/wp-content/uploads/2017/03/bg_home-2000x1000_c.jpg",
+   "https://www.kasteelvanhoen.be/wp-content/uploads/2017/03/bg_home.jpg",
+   "https://www.kasteelvanhoen.be/wp-content/uploads/2017/03/intro1.jpg",
+   "https://www.kasteelvanhoen.be/wp-content/uploads/2017/03/Huwelijksfotograaf-Ronny-Wertelaers_0064.jpg",
+   "https://www.kasteelvanhoen.be/wp-content/uploads/2017/03/bedrijfsfeesten.jpg"
+  ],
+  "pages_checked": [
+   "https://www.kasteelvanhoen.be/",
+   "https://www.kasteelvanhoen.be/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 335297622,
+  "name": "Sint-Jansbergklooster",
+  "category": "venue",
+  "city": "Halen, BE",
+  "address": "Sint-Jansbergstraat 9, 3545 Halen, Belgium",
+  "website": "https://www.sint-jansbergklooster.be/",
+  "contact_email": "info@sint-jansbergklooster.be",
+  "contact_phone": "+32 479 96 92 95",
+  "image_hint": "Category:Klooster Sint-Jansberg",
+  "source_url": "https://www.openstreetmap.org/way/335297622",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.9697834,
+  "lng": 5.0928442,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/5d5478_59d7b734c96747f7be6975b810754bd2%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/5d5478_59d7b734c96747f7be6975b810754bd2%7Emv2.jpg",
+   "https://static.wixstatic.com/media/5d5478_59d7b734c96747f7be6975b810754bd2~mv2.jpg/v1/fill/w_1627,h_827,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Het%20Sint-Jansbergklooster_edited.jpg",
+   "https://static.wixstatic.com/media/5d5478_248bb85ec21c44ce89b7ee2b260cbea9~mv2.png/v1/fill/w_463,h_312,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Routekaart-Klooster-Zelem_edited_edited_.png"
+  ],
+  "pages_checked": [
+   "https://www.sint-jansbergklooster.be/",
+   "https://www.sint-jansbergklooster.be/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 103982296,
+  "name": "Watt 17",
+  "category": "venue",
+  "city": "Heusden-Zolder, BE",
+  "address": "Koeltorenlaan 9, 3550 Heusden-Zolder, Belgium",
+  "website": "https://www.watt17.be/",
+  "contact_email": "hello@witti.be",
+  "contact_phone": "+32 476 01 68 86",
+  "image_hint": "File:Steenkoolmijnzolderelektriciteitscentrale 4-04-2009 13-08-29.JPG",
+  "source_url": "https://www.openstreetmap.org/way/103982296",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.0385917,
+  "lng": 5.3284319,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/478740_6d07c2bed5ba4d1f86a7cb58001f4a4f%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/478740_6d07c2bed5ba4d1f86a7cb58001f4a4f%7Emv2.jpg",
+   "https://static.wixstatic.com/media/478740_37e5cebf2103436cb42ff8c5f2c91ee9~mv2.png",
+   "https://static.wixstatic.com/media/478740_13d1a8efb1834c2c887c7754496c3bc1~mv2.png",
+   "https://static.wixstatic.com/media/42bb1c_96e9cba7df6a44e0b1557a2e6b89cade~mv2.jpg/v1/fit/w_480,h_360,q_90,enc_avif,quality_auto/42bb1c_96e9cba7df6a44e0b1557a2e6b89cade~mv2.jpg",
+   "https://static.wixstatic.com/media/478740_b61d1cbb2ccf4482bc85c377a2a5cfde~mv2.jpg/v1/fit/w_480,h_362,q_90,enc_avif,quality_auto/478740_b61d1cbb2ccf4482bc85c377a2a5cfde~mv2.jpg",
+   "https://static.wixstatic.com/media/42bb1c_f12a25798c27440980b8f77f0d8e239a~mv2.jpeg/v1/fit/w_480,h_360,q_90,enc_avif,quality_auto/42bb1c_f12a25798c27440980b8f77f0d8e239a~mv2.jpeg"
+  ],
+  "pages_checked": [
+   "https://www.watt17.be/",
+   "https://www.watt17.be/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 834254870,
+  "name": "'t Muiken",
+  "category": "venue",
+  "city": "Halen, BE",
+  "address": "Velpenstraat 47, 3545 Halen, Belgium",
+  "website": "https://www.hetmuiken.be/",
+  "contact_email": "info@hetmuiken.be",
+  "contact_phone": "+32 13 29 02 87",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/834254870",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.929276,
+  "lng": 5.1025704,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/ac6e4e_21a509f57abc410886cf6c4667e52ab0~mv2.jpg/v1/fill/w_349,h_233,q_90,enc_avif,quality_auto/ac6e4e_21a509f57abc410886cf6c4667e52ab0~mv2.jpg"
+  ],
+  "pages_checked": [
+   "https://www.hetmuiken.be/",
+   "https://www.hetmuiken.be/contact-en-reservatie"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 313528267,
+  "name": "Alyans Feestzalen",
+  "category": "venue",
+  "city": "Beringen, BE",
+  "address": "Koolmijnlaan 307, 3580 Beringen, Belgium",
+  "website": "https://alyans.be/",
+  "contact_email": "info@alyans.be",
+  "contact_phone": "+32 487 36 93 60",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/313528267",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.0765229,
+  "lng": 5.2220923,
+  "gallery_urls": [
+   "https://alyans.be/wp-content/uploads/2014/01/15534877_1869834759919555_5314817704320827392_n.jpg",
+   "https://alyans.be/wp-content/uploads/2015/06/eten.jpg",
+   "https://alyans.be/wp-content/uploads/2015/06/parking.jpg",
+   "https://alyans.be/wp-content/uploads/2017/12/DSC_5890.jpg",
+   "https://alyans.be/wp-content/uploads/2017/09/DSC_8179.jpg",
+   "https://alyans.be/wp-content/uploads/2014/01/1.jpg"
+  ],
+  "pages_checked": [
+   "https://alyans.be/",
+   "https://alyans.be/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 10914006945,
+  "name": "Begonia",
+  "category": "venue",
+  "city": "De Pinte, BE",
+  "address": "Pintestraat 29, 9840 De Pinte, Belgium",
+  "website": "https://domeinbegonia.be/",
+  "contact_email": "info@domeinbegonia.be",
+  "contact_phone": "+32 9 282 39 52",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/10914006945",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.9910417,
+  "lng": 3.6473778,
+  "gallery_urls": [
+   "https://domeinbegonia.be/images/slideshow%20contact/pano06.jpg",
+   "https://domeinbegonia.be/images/slideshow%20contact/vandemoorteleSDG_2032-copy.jpg",
+   "https://domeinbegonia.be/images/slideshow%20contact/vandemoorteleSDG_2036-copy.jpg",
+   "https://domeinbegonia.be/images/slideshow%20contact/vandemoorteleSDG_2074-copy.jpg",
+   "https://domeinbegonia.be/images/slideshow%20contact/www.footoo.be-1571.jpg",
+   "https://domeinbegonia.be/images/slideshow%20contact/www.footoo.be-1578.jpg"
+  ],
+  "pages_checked": [
+   "https://domeinbegonia.be/",
+   "https://domeinbegonia.be/index.php/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12840427068,
+  "name": "Bouffete Orangerie",
+  "category": "venue",
+  "city": "Avelgem, BE",
+  "address": "Kaaistraat 6, 8581 Avelgem, Belgium",
+  "website": "https://www.bouffete.be/",
+  "contact_email": "info@bouffete.be",
+  "contact_phone": "+32 499 82 33 53",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/12840427068",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.7962092,
+  "lng": 3.4992975,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/a79b4f_0e7a9e991e054c4d83c9d5c8a990a4b9%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/a79b4f_0e7a9e991e054c4d83c9d5c8a990a4b9%7Emv2.jpg",
+   "https://static.wixstatic.com/media/a79b4f_c06aa25a0f70496a875b49be29ac48f6~mv2.jpg/v1/fit/w_650,h_433,q_90,enc_avif,quality_auto/a79b4f_c06aa25a0f70496a875b49be29ac48f6~mv2.jpg",
+   "https://static.wixstatic.com/media/a79b4f_1a8d5ab74c4c47f4b107d141e7c022ea~mv2.jpg/v1/fit/w_650,h_433,q_90,enc_avif,quality_auto/a79b4f_1a8d5ab74c4c47f4b107d141e7c022ea~mv2.jpg",
+   "https://static.wixstatic.com/media/a79b4f_b292cbd595714eb2ae26e53fce56e9ce~mv2.jpg/v1/fit/w_650,h_433,q_90,enc_avif,quality_auto/a79b4f_b292cbd595714eb2ae26e53fce56e9ce~mv2.jpg",
+   "https://static.wixstatic.com/media/a79b4f_85b23b7144e04b6ea073e2a48a2e0955~mv2.jpg/v1/fit/w_650,h_433,q_90,enc_avif,quality_auto/a79b4f_85b23b7144e04b6ea073e2a48a2e0955~mv2.jpg",
+   "https://static.wixstatic.com/media/a79b4f_bacfb6bf404046af9293906a291a9a24~mv2.jpg/v1/fit/w_301,h_452,q_90,enc_avif,quality_auto/a79b4f_bacfb6bf404046af9293906a291a9a24~mv2.jpg"
+  ],
+  "pages_checked": [
+   "https://www.bouffete.be/",
+   "https://www.bouffete.be/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 173285189,
+  "name": "CFR Bouge",
+  "category": "venue",
+  "city": "Bouge, BE",
+  "address": "Chaussée de Louvain 510, 5004 Bouge, Belgium",
+  "website": "https://www.cfrbouge.be/",
+  "contact_email": "cfr.bouge@acv-csc.be",
+  "contact_phone": "+32 81 57 99 00",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/173285189",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.4864291,
+  "lng": 4.8918739,
+  "gallery_urls": [
+   "https://www.cfrbouge.be/sites/www.cfrbouge.be/files/styles/hd/public/uploads/page%20d%27accueil.jpg.webp?itok=QIFXHMKR",
+   "https://www.cfrbouge.be/sites/www.cfrbouge.be/files/styles/hd/public/uploads/slider%20accueil.jpg.webp?itok=m82LVidW",
+   "https://www.cfrbouge.be/sites/www.cfrbouge.be/files/styles/hd/public/uploads/slider%202.jpg.webp?itok=vg-K5fRi",
+   "https://www.cfrbouge.be/sites/www.cfrbouge.be/files/styles/news/public/uploads/news/IMG_7960.jpeg.webp?itok=2U7SWUmW",
+   "https://www.cfrbouge.be/sites/www.cfrbouge.be/files/styles/news/public/uploads/news/iStock-1633281467.jpg.webp?itok=6PzJ4kHD",
+   "https://www.cfrbouge.be/sites/www.cfrbouge.be/files/styles/large/public/uploads/auditoire_0.jpg.webp?itok=5tO7YOeC"
+  ],
+  "pages_checked": [
+   "https://www.cfrbouge.be/",
+   "https://www.cfrbouge.be/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 136065377,
+  "name": "Domein De Vesten",
+  "category": "venue",
+  "city": "Laakdal, BE",
+  "address": "Kanaalweg 6, 2430 Laakdal, Belgium",
+  "website": "https://devesten.be/",
+  "contact_email": "info@devesten.be",
+  "contact_phone": "+32 14 86 78 49",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/136065377",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.1133701,
+  "lng": 5.0242239,
+  "gallery_urls": [
+   "https://devesten.be/wp-content/uploads/2025/11/Ontwerp-zonder-titel-7.png",
+   "https://devesten.be/wp-content/uploads/2025/02/DeVesten-ExpoDeKempen-768x513.jpg",
+   "https://devesten.be/wp-content/uploads/2025/02/DeVesten-ExpoDeKempen.jpg",
+   "https://devesten.be/wp-content/uploads/2025/02/De-Vesten-Tiw-Thai-768x513.jpg",
+   "https://devesten.be/wp-content/uploads/2025/02/De-Vesten-Tiw-Thai.jpg"
+  ],
+  "pages_checked": [
+   "https://devesten.be/",
+   "https://devesten.be/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 683406907,
+  "name": "Dorfsaal Oudler VoG",
+  "category": "venue",
+  "city": "Burg-Reuland, BE",
+  "address": "Auf der Ley 60, 4790 Burg-Reuland, Belgium",
+  "website": "https://dorfsaal.oudler.be/",
+  "contact_email": "info@oudler.be",
+  "contact_phone": "+32 472 68 30 68",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/683406907",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.20604,
+  "lng": 6.0907446,
+  "gallery_urls": [
+   "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/2021-Fier-et-Levve-web-6.jpg",
+   "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/2020-Kappensirtzung-Oudler-020-1-1-1-1.jpg",
+   "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/gr_head-768x512.jpg",
+   "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/gr_head.jpg",
+   "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/kl_head.jpg",
+   "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/ko_head.jpg"
+  ],
+  "pages_checked": [
+   "https://dorfsaal.oudler.be/",
+   "https://dorfsaal.oudler.be/kontakt/",
+   "https://dorfsaal.oudler.be/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 186108192,
+  "name": "Feestzaal 't Molenhof",
+  "category": "venue",
+  "city": "Zwijnaarde, BE",
+  "address": "Heerweg-Noord 33, 9052 Zwijnaarde, Belgium",
+  "website": "https://www.feestzaalmolenhof.be/",
+  "contact_email": "info@feestzaalmolenhof.be",
+  "contact_phone": "+32 9 222 80 60",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/186108192",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.0045199,
+  "lng": 3.7151094,
+  "gallery_urls": [
+   "https://cdn.prod.website-files.com/66ed6b796456d9b08aba4ff2/66ed6c71a02477e1e03abed1_EDMMolenhof005.jpg",
+   "https://cdn.prod.website-files.com/66ed6b796456d9b08aba4ff2/66ed76b06d47c74712e41f71_EDM_Molenhof_028.jpg",
+   "https://cdn.prod.website-files.com/66ed6b796456d9b08aba4ff2/66ed76b0d0956117fcf93688_EDM_Molenhof_035.jpg",
+   "https://cdn.prod.website-files.com/66ed6b796456d9b08aba4ff2/66f1096765553fb7b95faf7f_WhatsApp%20Image%202024-09-21%20at%2016.39.46.jpeg",
+   "https://cdn.prod.website-files.com/66ed6b796456d9b08aba4ff2/66ed76b043e991cfe8ee266a_EDM_Molenhof_034.jpg",
+   "https://cdn.prod.website-files.com/66ed6b796456d9b08aba4ff2/66f1094f69d66e542ce06747_WhatsApp%20Image%202024-09-21%20at%2016.39.46%20(6).jpeg"
+  ],
+  "pages_checked": [
+   "https://www.feestzaalmolenhof.be/",
+   "https://www.feestzaalmolenhof.be/contact",
+   "https://www.feestzaalmolenhof.be/about"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 264281373,
+  "name": "Feestzaal Concordia",
+  "category": "venue",
+  "city": "Peer, BE",
+  "address": "Wittesteenstraat 27, 3990 Peer, Belgium",
+  "website": "https://www.feestzaalconcordia.be/",
+  "contact_email": "davy@feestzaalconcordia.be",
+  "contact_phone": "+32 11 63 18 70;+32 495 42 71 01",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/264281373",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.1282445,
+  "lng": 5.4561731,
+  "gallery_urls": [
+   "https://www.feestzaalconcordia.be/wp-content/uploads/ElDa0357.jpg",
+   "https://www.feestzaalconcordia.be/wp-content/uploads/2017/04/OBOODB0.jpg",
+   "https://www.feestzaalconcordia.be/wp-content/uploads/2017/04/224.jpg",
+   "https://www.feestzaalconcordia.be/wp-content/uploads/2017/04/OIZTEX0-1024x678.jpg",
+   "https://www.feestzaalconcordia.be/wp-content/uploads/2017/04/OBFMHR0-1024x683.jpg",
+   "https://www.feestzaalconcordia.be/wp-content/uploads/springkasteel-circus-met-clown.jpg"
+  ],
+  "pages_checked": [
+   "https://www.feestzaalconcordia.be/",
+   "https://www.feestzaalconcordia.be/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 197082196,
+  "name": "HANGAR58",
+  "category": "venue",
+  "city": "Genk, BE",
+  "address": "Herkenrodeplein 5, 3600 Genk, Belgium",
+  "website": "https://www.hangar58.be/",
+  "contact_email": "info@hangar58.be",
+  "contact_phone": "+32 471 51 29 68",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/197082196",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.9584421,
+  "lng": 5.3991239,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/270bd7_71a5c0269455463eae453c14649c9fd9~mv2.png"
+  ],
+  "pages_checked": [
+   "https://www.hangar58.be/",
+   "https://www.hangar58.be/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13817625036,
+  "name": "Herpelgem",
+  "category": "venue",
+  "city": "Kluisbergen, BE",
+  "address": "Avelgemstraat 6, 9690 Kluisbergen, Belgium",
+  "website": "https://herpelgem.com/",
+  "contact_email": "info@herpelgem.com",
+  "contact_phone": "+32 498 04 20 45",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13817625036",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.7755027,
+  "lng": 3.479084,
+  "gallery_urls": [
+   "https://images.squarespace-cdn.com/content/v1/66daf0be27894d281d96fe9b/a96be340-ebda-4988-8d4d-b989b3f32995/Herpelgem+-+Landing+-+1-16.png",
+   "https://images.squarespace-cdn.com/content/v1/66daf0be27894d281d96fe9b/ee6f27a2-52f9-4d71-b36a-d84bda8c6d27/Herpelgem+-+Landing+-+1-18.png",
+   "https://images.squarespace-cdn.com/content/v1/66daf0be27894d281d96fe9b/bbf2cd45-251a-4513-8065-ed7eb38a814f/Herpelgem+-+Kaart+-+v3-15.png"
+  ],
+  "pages_checked": [
+   "https://herpelgem.com/",
+   "https://herpelgem.com/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 363022637,
+  "name": "Het XPand",
+  "category": "venue",
+  "city": "Beringen, BE",
+  "address": "Tervantstraat 2,2A, 3583 Beringen, Belgium",
+  "website": "https://hetxpand.com/",
+  "contact_email": "amanda@hetxpand.com",
+  "contact_phone": "+32 475 36 73 98",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/363022637",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.0477535,
+  "lng": 5.1800308,
+  "gallery_urls": [
+   "https://hetxpand.com/images/Manekispin.png",
+   "https://hetxpand.com/images/rockyspin.png"
+  ],
+  "pages_checked": [
+   "https://hetxpand.com/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 543734040,
+  "name": "Hof te Rhode",
+  "category": "venue",
+  "city": "Diest, BE",
+  "address": "Rodestraat 7, 3290 Diest, Belgium",
+  "website": "https://hofterhode.be/",
+  "contact_email": "info@hofterhode.be",
+  "contact_phone": "+32 13 33 36 09",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/543734040",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.0080835,
+  "lng": 5.0565442,
+  "gallery_urls": [
+   "https://hofterhode.be/wp-content/uploads/2025/09/huwelijk-250726-ronnywertelaers-07.jpg",
+   "https://hofterhode.be/wp-content/uploads/2025/09/tuin-39-scaled.jpg",
+   "https://hofterhode.be/wp-content/uploads/2022/11/noordzeevis_visual.jpg",
+   "https://hofterhode.be/wp-content/uploads/2022/11/Google-reviews.png",
+   "https://hofterhode.be/wp-content/uploads/2022/11/huwelijksfeesten_homepagina.png",
+   "https://hofterhode.be/wp-content/uploads/2022/11/familiefeestenhomepagina-1.png"
+  ],
+  "pages_checked": [
+   "https://hofterhode.be/",
+   "https://hofterhode.be/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 1191568849,
+  "name": "Hostellerie De Witte Meren",
+  "category": "venue",
+  "city": "Keerbergen, BE",
+  "address": "Mereldreef 23, 3140 Keerbergen, Belgium",
+  "website": "https://www.dewittemeren.be/",
+  "contact_email": "valeriebosmans@icloud.com",
+  "contact_phone": "+32 475 52 58 52",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/1191568849",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.0055619,
+  "lng": 4.6678761,
+  "gallery_urls": [
+   "https://www.dewittemeren.be/slider/image1.jpg",
+   "https://www.dewittemeren.be/decor/evenementen.jpg",
+   "https://www.dewittemeren.be/gallery/image10.jpg",
+   "https://www.dewittemeren.be/gallery/image4.jpg",
+   "https://www.dewittemeren.be/gallery/image3.jpg"
+  ],
+  "pages_checked": [
+   "https://www.dewittemeren.be/",
+   "https://www.dewittemeren.be/contact.php"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 832597926,
+  "name": "Huis van Mem",
+  "category": "venue",
+  "city": "Halen, BE",
+  "address": "Zepbrugstraat 34, 3545 Halen, Belgium",
+  "website": "https://www.huisvanmem.be/",
+  "contact_email": "info@huisvanmem.be",
+  "contact_phone": "+32 489 85 63 10",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/832597926",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.9403983,
+  "lng": 5.1054401,
+  "gallery_urls": [
+   "https://www.huisvanmem.be/wp-content/uploads/2023/10/097-scaled.jpg",
+   "https://www.huisvanmem.be/wp-content/uploads/2023/10/097-1024x681.jpg",
+   "https://www.huisvanmem.be/wp-content/uploads/2023/10/197jpg-scaled.jpg",
+   "https://www.huisvanmem.be/wp-content/uploads/2023/10/197jpg-1024x341.jpg",
+   "https://www.huisvanmem.be/wp-content/uploads/2023/11/Schermafbeelding-2021-08-31-om-15.52.43-400x284.png",
+   "https://www.huisvanmem.be/wp-content/uploads/2023/11/Schermafbeelding-2021-08-31-om-15.53.11-400x284.png"
+  ],
+  "pages_checked": [
+   "https://www.huisvanmem.be/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 7855548172,
+  "name": "La ferme d'Haveligeoule",
+  "category": "venue",
+  "city": "Havelange, BE",
+  "address": "Haveligeoule 1, 5370 Havelange, Belgium",
+  "website": "https://haveligeoule.be/",
+  "contact_email": "info@haveligeoule.be",
+  "contact_phone": "+32 479 33 73 61",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/7855548172",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.3908224,
+  "lng": 5.2801233,
+  "gallery_urls": [
+   "https://haveligeoule.be/wp-content/uploads/2019/10/IMG_7601_DxO.jpg",
+   "https://haveligeoule.be/wp-content/uploads/2019/10/IMG_7589_DxO.jpg",
+   "https://haveligeoule.be/wp-content/uploads/2019/10/IMG_7660_DxO.jpg",
+   "https://haveligeoule.be/wp-content/uploads/72912653_533659357438389_7674963415281958912_n.jpg",
+   "https://haveligeoule.be/wp-content/uploads/2019/10/IMG_7647_DxO.jpg",
+   "https://haveligeoule.be/wp-content/uploads/2019/11/IMG_20170624_141336-768x576.jpg"
+  ],
+  "pages_checked": [
+   "https://haveligeoule.be/",
+   "https://haveligeoule.be/contact/",
+   "https://haveligeoule.be/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 344739636,
+  "name": "Le Normandie",
+  "category": "venue",
+  "city": "Dolembreux, BE",
+  "address": "Haie des Chênes, 4140 Dolembreux, Belgium",
+  "website": "https://www.malherbes-normandie.be/",
+  "contact_email": "info@malherbes-normandie.be",
+  "contact_phone": "+32 4 368 72 35",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/344739636",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 50.5370479,
+  "lng": 5.6532077,
+  "gallery_urls": [
+   "http://www.malherbes-normandie.be/wp-content/uploads/2015/03/SL1.jpg",
+   "http://www.malherbes-normandie.be/wp-content/uploads/2015/03/SL3.jpg",
+   "http://www.malherbes-normandie.be/wp-content/themes/kitchener/images/slides/2.jpg",
+   "http://www.malherbes-normandie.be/wp-content/themes/kitchener/images/slides/4.jpg",
+   "http://www.malherbes-normandie.be/wp-content/uploads/2015/03/tableSl.jpg",
+   "http://www.malherbes-normandie.be/wp-content/uploads/2015/03/tablemariageSL.jpg"
+  ],
+  "pages_checked": [
+   "https://www.malherbes-normandie.be/",
+   "https://www.malherbes-normandie.be/?page_id=95"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 359088061,
+  "name": "Maekelhoeve Feestzalen",
+  "category": "venue",
+  "city": "Veerle-Laakdal, BE",
+  "address": "Makelhoeve 3, 2431 Veerle-Laakdal, Belgium",
+  "website": "https://www.maekelhoeve.be/",
+  "contact_email": "info@maekelhoeve.be",
+  "contact_phone": "+32 14 84 06 63",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/359088061",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.0681829,
+  "lng": 5.0056617,
+  "gallery_urls": [
+   "https://www.maekelhoeve.be/content/img/1/3506-45660-maekelhoeve-f21795b813395844.jpg",
+   "https://www.maekelhoeve.be/content/img/1/3479-44830-intermedia-maekelhoeve-20231021-web-033-720ab18f755c969f.jpg",
+   "https://www.maekelhoeve.be/content/img/1/3479-44831-intermedia-maekelhoeve-20231021-web-044-cb8f5a6a646850c2.jpg",
+   "https://www.maekelhoeve.be/content/img/1/3479-44538-intermedia-maekelhoeve-20231021-web-168-29d414f0b8cbc4af.jpg",
+   "https://www.maekelhoeve.be/content/img/1/3479-44829-intermedia-maekelhoeve-20231021-web-245-42c4edf1f84c0f2a.jpg",
+   "https://www.maekelhoeve.be/content/img/1/3548-44542-intermedia-maekelhoeve-20231021-web-234-1c31551904722af8.jpg"
+  ],
+  "pages_checked": [
+   "https://www.maekelhoeve.be/",
+   "https://www.maekelhoeve.be/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 117082040,
+  "name": "One+",
+  "category": "venue",
+  "city": "Middelkerke, BE",
+  "address": "Legeweg 1A, 8432 Middelkerke, Belgium",
+  "website": "http://www.oneplus.be/",
+  "contact_email": "event@oneplus.be",
+  "contact_phone": "+32 475 23 23 27",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/117082040",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.183606,
+  "lng": 2.8804444,
+  "gallery_urls": [
+   "http://www.oneplus.be/wp-content/uploads/2021/01/641_0_454.05623901582_606_IMG_5793-scaled.jpg",
+   "http://www.oneplus.be/wp-content/uploads/2021/01/bar_voor_1920.jpg",
+   "http://www.oneplus.be/wp-content/uploads/2021/01/communie_1920x618.jpg",
+   "http://www.oneplus.be/wp-content/uploads/2021/01/ONE-PLUS-eventplace.png"
+  ],
+  "pages_checked": [
+   "http://www.oneplus.be/",
+   "http://www.oneplus.be/contact-us/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 514462535,
+  "name": "Peter Daniëls",
+  "category": "venue",
+  "city": "Beringen, BE",
+  "address": "Petermansstraat 8, 3583 Beringen, Belgium",
+  "website": "https://www.peterdaniels.be/",
+  "contact_email": "info@peterdaniels.be",
+  "contact_phone": "+32 11 42 27 13",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/514462535",
+  "country": "BE",
+  "ga4_active_users": 5,
+  "lat": 51.0513665,
+  "lng": 5.1929404,
+  "gallery_urls": [
+   "https://www.peterdaniels.be/images/peterdaniels/themas/tulpen.jpg",
+   "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/ece5d8e3bea501c168d6f0dbd3880a7b.jpg",
+   "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/83ce7cf99197381eed83cf84d4f870e8.jpg",
+   "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/2e9dea5d9357e13efc16b21b81a800a4.jpg",
+   "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/9ab2349cd0136f9450c8b2fe5bf2bff9.jpg",
+   "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/77f097e21d87a83659246d45dfae1a79.jpg"
+  ],
+  "pages_checked": [
+   "https://www.peterdaniels.be/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12852557059,
+  "name": "Motorkářský Doupě",
+  "category": "venue",
+  "city": "Humpolec, CZ",
+  "address": "5. května 525, 39601 Humpolec, Czechia",
+  "website": "https://motorkarskydoupe.cz/",
+  "contact_email": "motorkarskydoupe@gmail.com",
+  "contact_phone": "+420 602 316 878",
+  "image_hint": "https://motorkarskydoupe.cz/wp-content/uploads/2025/04/IMG_20240609_124248.jpg",
+  "source_url": "https://www.openstreetmap.org/node/12852557059",
+  "country": "CZ",
+  "ga4_active_users": 4,
+  "lat": 49.539063,
+  "lng": 15.3667118,
+  "gallery_urls": [
+   "https://motorkarskydoupe.cz/wp-content/uploads/2024/08/cropped-17807681_1405988996129076_3739619103451382176_o.jpg",
+   "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-8.png",
+   "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-7.png",
+   "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-6.png",
+   "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-5.png",
+   "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-4.png"
+  ],
+  "pages_checked": [
+   "https://motorkarskydoupe.cz/",
+   "https://motorkarskydoupe.cz/adresa/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 61857293,
+  "name": "Kulturní centrum Labuť",
+  "category": "venue",
+  "city": "Říčany, CZ",
+  "address": "17. listopadu 214, Říčany, Czechia",
+  "website": "https://www.kclabut.cz/",
+  "contact_email": "info@kclabut.cz",
+  "contact_phone": "323602456",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/61857293",
+  "country": "CZ",
+  "ga4_active_users": 4,
+  "lat": 49.9931114,
+  "lng": 14.6581033,
+  "gallery_urls": [
+   "https://www.kclabut.cz/foto/clanky/prazdninovy-provoz.png",
+   "https://www.kclabut.cz/foto/clanky/letni-kino-ricany-2026-instagr-1200x1200-v1.jpg",
+   "https://www.kclabut.cz/foto/clanky/jazzm26.jpg",
+   "https://www.kclabut.cz/foto/clanky/steamboat-stompers-uvod.jpg",
+   "https://www.kclabut.cz/foto/clanky/petr-brait2.jpg",
+   "https://www.kclabut.cz/styles/img/gift.png"
+  ],
+  "pages_checked": [
+   "https://www.kclabut.cz/",
+   "https://www.kclabut.cz/kontakt"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 10240501216,
+  "name": "Prostor Elementů",
+  "category": "venue",
+  "city": "Praha, CZ",
+  "address": "Nádražní 39/76, 15000 Praha, Czechia",
+  "website": "https://prostorelementu.cz/",
+  "contact_email": "prostorelementu@gmail.com",
+  "contact_phone": "+420 777 747 067",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/10240501216",
+  "country": "CZ",
+  "ga4_active_users": 4,
+  "lat": 50.0668376,
+  "lng": 14.4075655,
+  "gallery_urls": [
+   "https://prostorelementu.cz/images/bg-static2.jpg",
+   "https://prostorelementu.cz/images/menu/vecirky.jpg",
+   "https://prostorelementu.cz/images/thumb/prostor-elementu-1-s.jpg",
+   "https://prostorelementu.cz/images/thumb/prostor-elementu-2-s.jpg",
+   "https://prostorelementu.cz/images/thumb/prostor-elementu-3-s.jpg",
+   "https://prostorelementu.cz/images/thumb/prostor-elementu-4-s.jpg"
+  ],
+  "pages_checked": [
+   "https://prostorelementu.cz/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 29121876,
+  "name": "Second Culture",
+  "category": "venue",
+  "city": "Praha, CZ",
+  "address": "Dělnická 475/43, 17000 Praha, Czechia",
+  "website": "https://secondculture.cz/",
+  "contact_email": "info@secondculture.cz",
+  "contact_phone": "+420 604 365 433",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/29121876",
+  "country": "CZ",
+  "ga4_active_users": 4,
+  "lat": 50.1033986,
+  "lng": 14.4504995,
+  "gallery_urls": [
+   "https://secondculture.cz/wp-content/uploads/2025/12/Untitled-24.png"
+  ],
+  "pages_checked": [
+   "https://secondculture.cz/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 14058728992,
+  "name": "Salonky U Barcuchů",
+  "category": "venue",
+  "city": "Zlín, CZ",
+  "address": "Mokrá 5215, 76001 Zlín, Czechia",
+  "website": "https://ubarcuchu.cz/salonky/",
+  "contact_email": "ubarcuchu@seznam.cz",
+  "contact_phone": "+420 732 733 173",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/14058728992",
+  "country": "CZ",
+  "ga4_active_users": 4,
+  "lat": 49.2379437,
+  "lng": 17.6568254,
+  "gallery_urls": [
+   "http://ubarcuchu.cz/wp-content/uploads/2020/07/2-uvodni-stranka-salonky-uvodni-1024x683.png",
+   "https://ubarcuchu.cz/wp-content/uploads/2020/07/2-uvodni-stranka-salonky-uvodni-2048x1366.png",
+   "https://ubarcuchu.cz/wp-content/uploads/2020/08/10-pedkrmy-a-polevky-2048x1366.png",
+   "https://ubarcuchu.cz/wp-content/uploads/2020/08/13-hlavni-jidla-a-pilohy-2048x1366.png",
+   "https://ubarcuchu.cz/wp-content/uploads/2020/08/7-rauty-2048x1366.png"
+  ],
+  "pages_checked": [
+   "https://ubarcuchu.cz/salonky/",
+   "https://ubarcuchu.cz/kontakt/",
+   "http://ubarcuchu.cz/2025/04/nejlepsi-online-casino-s-vkladem-pres-gopay-2026-top-5-legalnich-casin/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 8776374558,
+  "name": "INDUSTRA SPACE",
+  "category": "venue",
+  "city": "Brno-Židenice, CZ",
+  "address": "Lazaretní 925/9, 61500 Brno-Židenice, Czechia",
+  "website": "https://industra.space/",
+  "contact_email": "hello@industra.space",
+  "contact_phone": "+420776706254",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/8776374558",
+  "country": "CZ",
+  "ga4_active_users": 4,
+  "lat": 49.2082682,
+  "lng": 16.6338625,
+  "gallery_urls": [
+   "https://industra.space/assets/images/og.png",
+   "https://industra.space/assets/images/industrauvodni.webp"
+  ],
+  "pages_checked": [
+   "https://industra.space/",
+   "https://industra.space/about/",
+   "https://industra.space/about/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12206443794,
+  "name": "De Weidehoeve",
+  "category": "venue",
+  "city": "Moergestel, NL",
+  "address": "Heizenschedijk 1, 5066PL Moergestel, Netherlands",
+  "website": "https://www.deweidehoeve.nl/",
+  "contact_email": "info@deweidehoeve.nl",
+  "contact_phone": "+31 13 210 5006",
+  "image_hint": "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/576/weidehoeve-goed-formaat-2-scaled-1200x678.jpeg",
+  "source_url": "https://www.openstreetmap.org/node/12206443794",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 51.5196074,
+  "lng": 5.183956,
+  "gallery_urls": [
+   "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/231/Moergestel-Reuselhoeve-72-dpi-6-900x900-f50_50.jpg",
+   "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/1904/riethuys-1200x678.jpeg",
+   "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/1911/Riethuys-buiten-1-1200x678.jpeg",
+   "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/1912/Riethuys-zij-aanzicht-1200x678.jpeg",
+   "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/1800/Luchtfoto-1KB-1-900x900-f50_50.jpg",
+   "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/142/Moergestel-Reuselhoeve-72-dpi-21-900x900-f50_50.jpg"
+  ],
+  "pages_checked": [
+   "https://www.deweidehoeve.nl/",
+   "https://www.deweidehoeve.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2772234600,
+  "name": "'t Misverstant (event lokatie)",
+  "category": "venue",
+  "city": "Vught, NL",
+  "address": "Kampdijklaan 80, 5263CK Vught, Netherlands",
+  "website": "https://misverstant.nl/",
+  "contact_email": "info@misverstant.nl",
+  "contact_phone": "+31 73 610 3355",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2772234600",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 51.670999,
+  "lng": 5.284959,
+  "gallery_urls": [
+   "https://misverstant.nl/wp-content/uploads/2025/12/Group-1000005821-1-1.png"
+  ],
+  "pages_checked": [
+   "https://misverstant.nl/",
+   "https://misverstant.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2672776958,
+  "name": "'t Singelhuys",
+  "category": "venue",
+  "city": "Amersfoort, NL",
+  "address": "Zuidsingel 67, 3811HD Amersfoort, Netherlands",
+  "website": "https://singelhuis.nl/",
+  "contact_email": "info@singelhuis.nl",
+  "contact_phone": "+31 6 22 504 459",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2672776958",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.1567018,
+  "lng": 5.3935608,
+  "gallery_urls": [
+   "https://singelhuis.nl/wp-content/uploads/2022/10/279887701_165937259136217_626844878020761856_n.jpg?id=1108",
+   "https://singelhuis.nl/wp-content/uploads/2022/12/Singelhuis_workshop-1.png?id=1209",
+   "https://singelhuis.nl/wp-content/uploads/2022/12/Singelhuis_workshop-2.png?id=1210",
+   "https://singelhuis.nl/wp-content/uploads/2022/10/281388184_169750462088230_4916939645874562440_n.jpg?id=1106",
+   "https://singelhuis.nl/wp-content/uploads/2022/11/Singelhuis-1a.png?id=1161"
+  ],
+  "pages_checked": [
+   "https://singelhuis.nl/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13435369715,
+  "name": "033 Vergaderen",
+  "category": "venue",
+  "city": "Leusden, NL",
+  "address": "Plantageweg 11m, 3833AZ Leusden, Netherlands",
+  "website": "https://mattenco.nl/033-vergaderen/",
+  "contact_email": "info@mattenco.nl",
+  "contact_phone": "+31 6 22 41 19 82",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13435369715",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.13898,
+  "lng": 5.4173963,
+  "gallery_urls": [
+   "https://mattenco.nl/wp-content/uploads/2023/01/DSC09164.jpg"
+  ],
+  "pages_checked": [
+   "https://mattenco.nl/033-vergaderen/",
+   "https://mattenco.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 3220027460,
+  "name": "1931",
+  "category": "venue",
+  "city": "'s-Hertogenbosch, NL",
+  "address": "Oude Engelenseweg 1, 5222AA 's-Hertogenbosch, Netherlands",
+  "website": "https://www.1931.nl/",
+  "contact_email": "info@1931.nl",
+  "contact_phone": "+31 88 900 0333",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/3220027460",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 51.698849,
+  "lng": 5.2927863,
+  "gallery_urls": [
+   "https://www.1931.nl/wp-content/uploads/2019/07/pand1931-1024x707.jpg",
+   "https://www.1931.nl/wp-content/uploads/2017/03/Foyer-1931-5-1024x683.jpg",
+   "https://www.1931.nl/wp-content/uploads/2016/11/congrescentrum-1931-s-hertogenbosch-1024x683.jpg"
+  ],
+  "pages_checked": [
+   "https://www.1931.nl/",
+   "https://www.1931.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2828898831,
+  "name": "Aan de Overkant",
+  "category": "venue",
+  "city": "Westerhoven, NL",
+  "address": "Provincialeweg 21, 5563AG Westerhoven, Netherlands",
+  "website": "https://aandeoverkant-bijdeneut.nl/",
+  "contact_email": "aandeoverkant@bijdeneut.nl",
+  "contact_phone": "+31 40 202 8004",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2828898831",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 51.3316529,
+  "lng": 5.4017223,
+  "gallery_urls": [
+   "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2023/01/AanDeOverkant-BijDeNeut-23-2500x1500px.jpg",
+   "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2025/02/aandeoverkant-s1.jpg",
+   "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2022/12/Aan-De-Overkant-Bij-De-Neut-4-1000x1000px.jpg",
+   "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2022/12/AanDeOverkant-BijDeNeut-14-1000x1000px.jpg",
+   "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2025/02/aandeoverkant-s2.jpg"
+  ],
+  "pages_checked": [
+   "https://aandeoverkant-bijdeneut.nl/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2721771804,
+  "name": "Akhnaton",
+  "category": "venue",
+  "city": "Amsterdam, NL",
+  "address": "Nieuwezijds Kolk 25, 1012PV Amsterdam, Netherlands",
+  "website": "https://akhnaton.nl/",
+  "contact_email": "jeroen@akhnaton.nl",
+  "contact_phone": "+31 20 624 3396",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2721771804",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.3761436,
+  "lng": 4.8941704,
+  "gallery_urls": [
+   "https://akhnaton.nl/wp-content/uploads/2026/02/DSC07547.jpg",
+   "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2026/02/DSC07547-copy.jpg",
+   "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2025/10/driehoek-blauw-1.webp",
+   "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2026/02/DSC07335-copy.jpg",
+   "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2025/10/driehoek-paars.webp",
+   "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2026/02/Untitled-051-scaled.jpg"
+  ],
+  "pages_checked": [
+   "https://akhnaton.nl/",
+   "https://akhnaton.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2839694987,
+  "name": "Almere Underground",
+  "category": "venue",
+  "city": "Almere, NL",
+  "address": "Traverse 11, 1315TJ Almere, Netherlands",
+  "website": "https://almereunderground.nl/",
+  "contact_email": "info@almereunderground.nl",
+  "contact_phone": "+31 36 303 0971",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2839694987",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.3681846,
+  "lng": 5.2182764,
+  "gallery_urls": [
+   "https://almereunderground.nl/wp-content/uploads/2024/08/UND-BAR-VERTICAL-web-scaled.jpg"
+  ],
+  "pages_checked": [
+   "https://almereunderground.nl/",
+   "https://almereunderground.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 3166853141,
+  "name": "Amersfoortvergaderen.nl",
+  "category": "venue",
+  "city": "Amersfoort, NL",
+  "address": "Oude Fabriekstraat 15, 3812NR Amersfoort, Netherlands",
+  "website": "https://www.amersfoortvergaderen.nl/",
+  "contact_email": "info@amersfoortvergaderen.nl",
+  "contact_phone": "+31 6 5574 8942",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/3166853141",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.1609494,
+  "lng": 5.3793176,
+  "gallery_urls": [
+   "http://www.amersfoortvergaderen.nl/wp-content/uploads/elementor/thumbs/IMG_3213-scaled-rhqw0m2a8t97819pb3f4dudvbmr1iuj4ojlixr8pb0.jpg",
+   "https://www.amersfoortvergaderen.nl/wp-content/uploads/2026/01/Ontwerp-zonder-titel-5.png",
+   "https://www.amersfoortvergaderen.nl/wp-content/uploads/2026/01/IMG_3213-scaled.jpg"
+  ],
+  "pages_checked": [
+   "https://www.amersfoortvergaderen.nl/",
+   "https://www.amersfoortvergaderen.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2630534191,
+  "name": "Aristo",
+  "category": "venue",
+  "city": "Utrecht, NL",
+  "address": "Brennerbaan 150, 3524BN Utrecht, Netherlands",
+  "website": "https://aristo.nl/",
+  "contact_email": "boeking@aristo.nl",
+  "contact_phone": "+31 88 230 1000",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2630534191",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.0660197,
+  "lng": 5.14192,
+  "gallery_urls": [
+   "https://aristo.nl/hubfs/Featured%20image%20Utrecht%20Lunetten-3.png"
+  ],
+  "pages_checked": [
+   "https://aristo.nl/",
+   "https://aristo.nl/contact",
+   "https://aristo.nl/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2876366047,
+  "name": "Bij Aaltje aan de Linie",
+  "category": "venue",
+  "city": "Woudenberg, NL",
+  "address": "Zegheweg 49, 3931MR Woudenberg, Netherlands",
+  "website": "https://bijaaltje.nl/",
+  "contact_email": "info@bijaaltje.nl",
+  "contact_phone": "+31 33 2861801",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2876366047",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.0897332,
+  "lng": 5.4476983,
+  "gallery_urls": [
+   "https://bijaaltje.nl/new/wp-content/uploads/2023/01/IMG_20180502_114727-scaled.jpg",
+   "https://bijaaltje.nl/wp-content/uploads/2026/02/15januariAaltjeaandeLinie-Ijsvogel-7-1.jpg",
+   "https://bijaaltje.nl/wp-content/uploads/2026/03/20240417_Aaltje_aan_de_Linie_Lunch_SMALL-8508-2048x1365.jpg",
+   "https://bijaaltje.nl/wp-content/uploads/2026/03/Archery-2048x1365.jpg",
+   "https://bijaaltje.nl/wp-content/uploads/2026/03/15januariAaltjeaandeLinie-Ijsvogel-29.jpg",
+   "https://bijaaltje.nl/wp-content/uploads/2023/02/koe-4.jpg"
+  ],
+  "pages_checked": [
+   "https://bijaaltje.nl/",
+   "https://bijaaltje.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2787824789,
+  "name": "Boerengoed",
+  "category": "venue",
+  "city": "Enspijk, NL",
+  "address": "Hoevenseweg 5, 4157JB Enspijk, Netherlands",
+  "website": "https://www.boerengoed.nl/",
+  "contact_email": "info@boerengoed.nl",
+  "contact_phone": "+31 345 725002",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2787824789",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 51.8586959,
+  "lng": 5.2194236,
+  "gallery_urls": [
+   "https://www.boerengoed.nl/wp-content/uploads/2022/04/2062_fg29_detailpagina_20191204120841-1.jpeg",
+   "https://www.boerengoed.nl/wp-content/uploads/2026/07/WhatsApp-Image-2026-06-27-at-08.25.16.webp",
+   "https://www.boerengoed.nl/wp-content/uploads/2022/05/2437_hooischuur_image-xxl_20210316211756.jpeg",
+   "https://www.boerengoed.nl/wp-content/uploads/2025/09/Boerengoed-Feest-2025-Rotor-2-1024x683.jpg",
+   "https://www.boerengoed.nl/wp-content/uploads/2025/09/Boerengoed-Feest-2025-Rotor-2-2048x1365.jpg",
+   "https://www.boerengoed.nl/wp-content/uploads/2024/02/trouwfeest-trouwlocatie-landelijk-1024x682.jpg"
+  ],
+  "pages_checked": [
+   "https://www.boerengoed.nl/",
+   "https://www.boerengoed.nl/contact/",
+   "https://www.boerengoed.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2783473911,
+  "name": "Bollee Events",
+  "category": "venue",
+  "city": "Rhenen, NL",
+  "address": "Grebbeweg 69, 3911AT Rhenen, Netherlands",
+  "website": "https://www.bollee.nl/",
+  "contact_email": "info@bollee.nl",
+  "contact_phone": "+31 317 612 529",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2783473911",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 51.9567457,
+  "lng": 5.5837513,
+  "gallery_urls": [
+   "https://www.bollee.nl/wp-content/uploads/cropped-cropped-cropped-Banner_Bollee_Events_210X65-scaled-1.jpg"
+  ],
+  "pages_checked": [
+   "https://www.bollee.nl/",
+   "https://www.bollee.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2706624876,
+  "name": "Buitenplaats de Burgwal",
+  "category": "venue",
+  "city": "Leusden, NL",
+  "address": "Arnhemseweg 78, 3832GN Leusden, Netherlands",
+  "website": "https://www.buitenplaatsdeburgwal.nl/",
+  "contact_email": "welkom@buitenplaatsdeburgwal.nl",
+  "contact_phone": "+31 6 5352 7047",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2706624876",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.109817,
+  "lng": 5.4092605,
+  "gallery_urls": [
+   "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2024/12/WhatsApp-Image-2024-12-05-at-12.45.30.jpeg",
+   "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/Lucht-vierkant.jpg",
+   "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/IMG-20250522-WA0012.jpg",
+   "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/IMG-20250522-WA0025-1.jpg",
+   "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/vooraanzicht-vierkant-400x284.jpg",
+   "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/IMG-20250522-WA0025-1-400x284.jpg"
+  ],
+  "pages_checked": [
+   "https://www.buitenplaatsdeburgwal.nl/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2877308371,
+  "name": "Buitenplaats Sparrendaal",
+  "category": "venue",
+  "city": "Driebergen-Rijsenburg, NL",
+  "address": "Hoofdstraat 89, 3971KE Driebergen-Rijsenburg, Netherlands",
+  "website": "https://sparrendaal.nl/",
+  "contact_email": "info@sparrendaal.nl",
+  "contact_phone": "+31 343 206 006",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2877308371",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.0542508,
+  "lng": 5.2800228,
+  "gallery_urls": [
+   "https://sparrendaal.nl/wp-content/uploads/2023/02/jeroen_savelkouls_fotografie-01-e1676978044127-1920x950.jpg",
+   "https://sparrendaal.nl/wp-content/uploads/2023/02/Bruiloft_HonSam_Siro-196-1920x1280-1-480x650.jpg",
+   "https://sparrendaal.nl/wp-content/uploads/2026/03/BEDRIJ3-480x650.jpg",
+   "https://sparrendaal.nl/wp-content/uploads/2026/03/Netwerk_Notarissen_063-480x650.jpg",
+   "https://sparrendaal.nl/wp-content/uploads/2023/02/562A9101-480x650.jpg",
+   "https://sparrendaal.nl/wp-content/uploads/2023/02/Koetshuis-Kasteel-Amerongen-lage-resolutie-24-850x850.jpg"
+  ],
+  "pages_checked": [
+   "https://sparrendaal.nl/",
+   "https://sparrendaal.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2847830172,
+  "name": "Conferentiecentrum Samaya",
+  "category": "venue",
+  "city": "Werkhoven, NL",
+  "address": "Hollendewagenweg 20, 3985SG Werkhoven, Netherlands",
+  "website": "https://www.samaya.nl/",
+  "contact_email": "info@samaya.nl",
+  "contact_phone": "+31 343 552 332",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2847830172",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.0028322,
+  "lng": 5.2553359,
+  "gallery_urls": [
+   "https://www.samaya.nl/wp-content/uploads/2025/05/20210125_170518-scaled-e1747142000203.jpg",
+   "https://www.samaya.nl/wp-content/uploads/2025/05/IGP3168-welkomthuisklokje-scaled-e1747142179839.jpg",
+   "https://www.samaya.nl/wp-content/uploads/2025/05/DJI_0040-scaled-e1747141775627.jpg",
+   "https://www.samaya.nl/wp-content/uploads/2025/05/zuidhof-scaled.png",
+   "https://www.samaya.nl/wp-content/uploads/2025/05/terras-met-laarzen-en-haardhout-scaled.png",
+   "https://www.samaya.nl/wp-content/uploads/2025/05/eten-uw-verblijf.png"
+  ],
+  "pages_checked": [
+   "https://www.samaya.nl/",
+   "https://www.samaya.nl/contact/",
+   "https://www.samaya.nl/contact/route/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 6010791359,
+  "name": "Cultureel centrum t Manneke",
+  "category": "venue",
+  "city": "Berkel en Rodenrijs, NL",
+  "address": "Leeweg 33, 2651CL Berkel en Rodenrijs, Netherlands",
+  "website": "https://tmanneke.nl/",
+  "contact_email": "info@tmanneke.nl",
+  "contact_phone": "+31 10 511 4976",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/6010791359",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 51.995,
+  "lng": 4.4551188,
+  "gallery_urls": [
+   "https://tmanneke.nl/wp-content/uploads/2024/07/2023-04-07-Manneke-Event-25.jpg",
+   "https://tmanneke.nl/wp-content/uploads/2024/07/t-Manneke-Dorsvloer.jpg",
+   "https://tmanneke.nl/wp-content/uploads/2025/12/1-e1764759467295.png",
+   "https://tmanneke.nl/wp-content/uploads/2024/07/t-Manneke-Koestal.jpg",
+   "https://tmanneke.nl/wp-content/uploads/2024/07/T-manneke-Terras-1.jpg",
+   "https://tmanneke.nl/wp-content/uploads/2024/06/1992c8a55289b790c763dbecd22a2b1b-e1718199941149.png"
+  ],
+  "pages_checked": [
+   "https://tmanneke.nl/",
+   "https://tmanneke.nl/contact/",
+   "https://tmanneke.nl/contact/gastenboek/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2896697470,
+  "name": "De Aker, zalen- en congrescentrum",
+  "category": "venue",
+  "city": "Putten, NL",
+  "address": "Fontanusplein 2, 3881BZ Putten, Netherlands",
+  "website": "https://deaker.nl/",
+  "contact_email": "info@deaker.nl",
+  "contact_phone": "+31 341 351 887",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2896697470",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.2616581,
+  "lng": 5.6063778,
+  "gallery_urls": [
+   "https://deaker.nl/wp-content/uploads/2025/10/De-Aker_logo_compleet-1024x642.png",
+   "https://deaker.nl/wp-content/uploads/2026/03/De-Aker_Zalen-63-1024x683.jpg",
+   "https://deaker.nl/wp-content/uploads/2026/03/De-Aker_Zalen-63-2048x1365.jpg",
+   "https://deaker.nl/wp-content/uploads/2026/03/De-Aker-12-scaled.jpg",
+   "https://deaker.nl/wp-content/uploads/2026/03/De-Aker_Zalen-03-1-scaled.jpg",
+   "https://deaker.nl/wp-content/uploads/2026/03/De-Aker_Zalen-15-1-scaled.jpg"
+  ],
+  "pages_checked": [
+   "https://deaker.nl/",
+   "https://deaker.nl/contact/",
+   "https://deaker.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2788788460,
+  "name": "De Betuwepoort",
+  "category": "venue",
+  "city": "Rhenoy, NL",
+  "address": "Kornelis van Wijnenstraat 1, 4152EG Rhenoy, Netherlands",
+  "website": "https://debetuwepoort.nl/",
+  "contact_email": "info@debetuwepoort.nl",
+  "contact_phone": "+31 345 683 565",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2788788460",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 51.8811386,
+  "lng": 5.1507889,
+  "gallery_urls": [
+   "https://debetuwepoort.nl/wp-content/uploads/2021/05/2020-09-11-15.31.11-3.jpg",
+   "https://debetuwepoort.nl/wp-content/uploads/2019/03/20180126_192913.jpg",
+   "https://debetuwepoort.nl/wp-content/uploads/2018/02/bp-slide3.jpg",
+   "https://debetuwepoort.nl/wp-content/uploads/2025/01/hertog_jan_-_uit_liefde_voor_bier.jpg",
+   "https://debetuwepoort.nl/wp-content/uploads/2018/02/bp-paralax.jpg",
+   "https://debetuwepoort.nl/wp-content/uploads/2018/02/bp-paralax2-1.jpg"
+  ],
+  "pages_checked": [
+   "https://debetuwepoort.nl/",
+   "https://debetuwepoort.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 8883060819,
+  "name": "De Brink Pub",
+  "category": "venue",
+  "city": "Ruinen, NL",
+  "address": "Brink 19E, 7963AA Ruinen, Netherlands",
+  "website": "https://www.debrinkpub.nl/",
+  "contact_email": "info@debrinkpub.nl",
+  "contact_phone": "+31 6 20772419",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/8883060819",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.7632319,
+  "lng": 6.3606107,
+  "gallery_urls": [
+   "https://www.brinkpub.nl/wp-content/uploads/2020/12/brinkpub_black_250x250.png"
+  ],
+  "pages_checked": [
+   "https://www.debrinkpub.nl/",
+   "https://www.debrinkpub.nl/contact/",
+   "https://www.debrinkpub.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2818030505,
+  "name": "De Distel",
+  "category": "venue",
+  "city": "Roosendaal, NL",
+  "address": "Kade 46, 4703GH Roosendaal, Netherlands",
+  "website": "https://www.biljartcentrumdedistel.nl/",
+  "contact_email": "info@dedistel.nl",
+  "contact_phone": "+31 165 563 800",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2818030505",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 51.5337359,
+  "lng": 4.4485015,
+  "gallery_urls": [
+   "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2026/07/Ontwerp-zonder-titel.jpg",
+   "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/06/contact-distel.jpg",
+   "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/06/ckf-vvv-roosendaal-biljartcentrum-de-distel-0139_3309784623.jpeg",
+   "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/09/Wwerkplaats-2-scaled.jpg",
+   "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/06/biljartcentrum-de-distel-1_2641852729.jpeg",
+   "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/07/Recensie-1-De-distel-scaled.jpg"
+  ],
+  "pages_checked": [
+   "https://www.biljartcentrumdedistel.nl/",
+   "https://www.biljartcentrumdedistel.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2830306501,
+  "name": "De Engel",
+  "category": "venue",
+  "city": "Houten, NL",
+  "address": "Burgemeester Wallerweg 2, 3991DM Houten, Netherlands",
+  "website": "https://deengel.nl/",
+  "contact_email": "info@deengel.nl",
+  "contact_phone": "+31 30 637 1554",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2830306501",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.0274963,
+  "lng": 5.1607063,
+  "gallery_urls": [
+   "https://deengel.nl/wp-content/uploads/2025/11/TRS-Promofoto2025-002-e1762334586194-899x449.jpg",
+   "https://deengel.nl/wp-content/uploads/2025/10/Miltenburg-Uitvaartverzorging-scaled-1152x576.jpg",
+   "https://deengel.nl/wp-content/uploads/2025/11/TRS-Promofoto2025-002-e1762334586194-768x384.jpg",
+   "https://deengel.nl/wp-content/uploads/2025/10/Miltenburg-Uitvaartverzorging-scaled-768x384.jpg",
+   "https://deengel.nl/wp-content/uploads/2024/11/website-red-strats.jpg",
+   "https://deengel.nl/wp-content/uploads/2024/02/FB_IMG_1707825158007-002-720x360.jpg"
+  ],
+  "pages_checked": [
+   "https://deengel.nl/",
+   "https://deengel.nl/contact"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 9394159884,
+  "name": "De GAS!Fabriek",
+  "category": "venue",
+  "city": "Alkmaar, NL",
+  "address": "Helderseweg 28, 1817BA Alkmaar, Netherlands",
+  "website": "https://tenwesten.nl/contact/",
+  "contact_email": "info@tenwesten.nl",
+  "contact_phone": "+31 72 2201097",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/9394159884",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.6424193,
+  "lng": 4.742489,
+  "gallery_urls": [
+   "https://tenwesten.nl/wp-content/uploads/2023/02/Bruiloft-Jacco-Jolanda-Grote-Kerk-Alkmaar-34.jpg",
+   "https://tenwesten.nl/wp-content/uploads/2023/02/Logo_Tenwesten.png"
+  ],
+  "pages_checked": [
+   "https://tenwesten.nl/contact/",
+   "https://tenwesten.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 9360797304,
+  "name": "De Gasfabriek",
+  "category": "venue",
+  "city": "Deventer, NL",
+  "address": "Zutphenseweg 6B, 7418AJ Deventer, Netherlands",
+  "website": "https://degasfabriek.com/",
+  "contact_email": "info@degasfabriek.com",
+  "contact_phone": "+31 6 38 65 76 53",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/9360797304",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.2431295,
+  "lng": 6.1690702,
+  "gallery_urls": [
+   "https://degasfabriek.com/wp-content/uploads/2023/10/Sportenergie_compact_wit@4x16387.png",
+   "https://degasfabriek.com/wp-content/uploads/2019/03/backgroundgasfabriek.jpg",
+   "https://degasfabriek.com/wp-content/uploads/2026/04/20230117-DSC09618-edit-400x250.png",
+   "https://degasfabriek.com/wp-content/uploads/2026/04/Scherm%C2%ADafbeelding-2026-04-14-om-12.18.49-400x250.png",
+   "https://degasfabriek.com/wp-content/uploads/2026/02/Gasfabriek-47-2-400x250.jpg",
+   "https://degasfabriek.com/wp-content/uploads/2021/09/Inversable.png"
+  ],
+  "pages_checked": [
+   "https://degasfabriek.com/",
+   "https://degasfabriek.com/contact/",
+   "https://degasfabriek.com/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 3066726024,
+  "name": "De Kanselarij",
+  "category": "venue",
+  "city": "Leeuwarden, NL",
+  "address": "Turfmarkt 11, 8911KS Leeuwarden, Netherlands",
+  "website": "https://www.dekanselarij.nl/",
+  "contact_email": "receptie@dekanselarij.nl",
+  "contact_phone": "+31 58 201 1980",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/3066726024",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 53.2028418,
+  "lng": 5.8014756,
+  "gallery_urls": [
+   "https://www.dekanselarij.nl/wp-content/uploads/2025/11/ef3a3a52-5e22-45f9-a07b-185605d59682.jpg",
+   "https://www.dekanselarij.nl/wp-content/uploads/2025/11/Flexruimte-5.jpeg",
+   "https://www.dekanselarij.nl/wp-content/uploads/2025/11/Willem-IV-2.jpeg",
+   "https://www.dekanselarij.nl/wp-content/uploads/2025/11/Marijke-Meu-3.jpeg",
+   "https://www.dekanselarij.nl/wp-content/uploads/2016/08/Oude-Hof-Zaal-de-Kanselarij_Podium.jpg",
+   "https://www.dekanselarij.nl/wp-content/uploads/2016/08/Grote-Kelder-Achter-Vooraanzicht-de-Kanselarij-Leeuwarden.jpg"
+  ],
+  "pages_checked": [
+   "https://www.dekanselarij.nl/",
+   "https://www.dekanselarij.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 5003438795,
+  "name": "De Kookfabriek",
+  "category": "venue",
+  "city": "Utrecht, NL",
+  "address": "2e Daalsedijk 4A, 3551EJ Utrecht, Netherlands",
+  "website": "https://kookfabriek.nl/",
+  "contact_email": "info@kookfabriek.nl",
+  "contact_phone": "+31 85 744 10 07",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/5003438795",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 52.0974966,
+  "lng": 5.1026076,
+  "gallery_urls": [
+   "https://kookfabriek.nl/wp-content/uploads/2026/07/Zonder-titel-800-x-800-px-8.png",
+   "https://kookfabriek.nl/wp-content/uploads/2026/07/Geel-en-Creme-Fotografisch-Stijl-Interieur-Detailhandel-Website-1200-x-800-px-31.png",
+   "https://kookfabriek.nl/wp-content/uploads/2026/06/Ontwerp-zonder-titel-31.png",
+   "https://kookfabriek.nl/wp-content/uploads/2026/07/Ontwerp-zonder-titel-21.png",
+   "https://kookfabriek.nl/wp-content/uploads/2026/07/2.png",
+   "https://kookfabriek.nl/wp-content/uploads/2026/07/1.png"
+  ],
+  "pages_checked": [
+   "https://kookfabriek.nl/",
+   "https://kookfabriek.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 2798157289,
+  "name": "De Lantearne",
+  "category": "venue",
+  "city": "Surhuisterveen, NL",
+  "address": "Jan Binneslaan 49, 9231CA Surhuisterveen, Netherlands",
+  "website": "https://delantearne.nl/",
+  "contact_email": "info@delantearne.nl",
+  "contact_phone": "+31 512 361 303;+31 6 53852344",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/2798157289",
+  "country": "NL",
+  "ga4_active_users": 105,
+  "lat": 53.1801716,
+  "lng": 6.1685022,
+  "gallery_urls": [
+   "https://delantearne.nl/wp-content/uploads/2025/02/bruifloft_lantearne-640x480.jpg"
+  ],
+  "pages_checked": [
+   "https://delantearne.nl/",
+   "https://delantearne.nl/contact/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 248802947,
+  "name": "Alhambra",
+  "category": "venue",
+  "city": "Oldenburg, DE",
+  "address": "Hermannstraße 83, 26135 Oldenburg, Germany",
+  "website": "https://alhambra.de/",
+  "contact_email": "kontakt@alhambra.de",
+  "contact_phone": "+49 441 14402",
+  "image_hint": "https://alhambra.de/wp-content/uploads/2021/08/cropped-Alhambra_Ansicht_1._klein_farbe.jpg",
+  "source_url": "https://www.openstreetmap.org/way/248802947",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 53.1359526,
+  "lng": 8.2277361,
+  "gallery_urls": [
+   "https://alhambra.de/wp-content/uploads/2024/02/cropped-Spendenziel-50-000E-final-1080-x-1350-px-Website.jpg"
+  ],
+  "pages_checked": [
+   "https://alhambra.de/",
+   "https://alhambra.de/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 39857658,
+  "name": "Alte Dreherei",
+  "category": "venue",
+  "city": "Mülheim an der Ruhr, DE",
+  "address": "Zur Alten Dreherei 13, 45479 Mülheim an der Ruhr, Germany",
+  "website": "https://alte-dreherei.de/",
+  "contact_email": "info@alte-dreherei.de",
+  "contact_phone": "+49 208 44469360",
+  "image_hint": "Category:Alte Dreherei",
+  "source_url": "https://www.openstreetmap.org/way/39857658",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 51.4282475,
+  "lng": 6.8650501,
+  "gallery_urls": [
+   "https://alte-dreherei.de/wp-content/uploads/2026/01/cropped-cropped-cropped-cropped-cropped-Alte-Dreherei-Header-kompl-scaled-e1769004468127-1.jpg",
+   "https://alte-dreherei.de/wp-content/uploads/2026/03/Huehner.jpg",
+   "https://alte-dreherei.de/wp-content/uploads/2026/07/Flohmarkt-800x350-2.jpg",
+   "https://alte-dreherei.de/wp-content/uploads/2026/08/Huehner-800x350-1.jpg",
+   "https://alte-dreherei.de/wp-content/uploads/2026/07/Stammtisch-2-800x350-1.jpg",
+   "https://alte-dreherei.de/wp-content/uploads/2026/08/Modellspielzeugmarkt-800x350-1.jpg"
+  ],
+  "pages_checked": [
+   "https://alte-dreherei.de/",
+   "https://alte-dreherei.de/kontakt/spende/",
+   "https://alte-dreherei.de/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 11086061532,
+  "name": "Alte Lohnhalle Wattenscheid by Knepper Management",
+  "category": "venue",
+  "city": "Bochum, DE",
+  "address": "Lyrenstraße 13, 44866 Bochum, Germany",
+  "website": "https://www.knepper-management.de/",
+  "contact_email": "info@knepper-management.de",
+  "contact_phone": "+4923432488815",
+  "image_hint": "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/11/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_impr-9-1.jpg?fit=710%2C435&ssl=1",
+  "source_url": "https://www.openstreetmap.org/node/11086061532",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 51.4840923,
+  "lng": 7.1290884,
+  "gallery_urls": [
+   "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_gri-2-e1540939513809.jpg?fit=1000%2C562&ssl=1",
+   "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_Alte-Lohnhalle_erl-3-e1540918555553.jpg?fit=1000%2C563&ssl=1",
+   "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_Lohnhalle_erlsm-e1540918537153.jpg?fit=1000%2C563&ssl=1",
+   "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_gri-e1540939537130.jpg?fit=1000%2C562&ssl=1",
+   "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_Alte-Lohnhalle_erl-1-e1540918565572.jpg?fit=1000%2C563&ssl=1",
+   "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_Lohnhalle_erl-e1540918530149.jpg?fit=1000%2C563&ssl=1"
+  ],
+  "pages_checked": [
+   "https://www.knepper-management.de/",
+   "https://www.knepper-management.de/kontakt/",
+   "https://www.knepper-management.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 6646448249,
+  "name": "Ballhaus Wedding",
+  "category": "venue",
+  "city": "Berlin, DE",
+  "address": "Wriezener Straße 6, 13359 Berlin, Germany",
+  "website": "https://www.ballhauswedding.de/",
+  "contact_email": "events@ballhauswedding.de",
+  "contact_phone": "+49 17657742894",
+  "image_hint": "Category:Ballhaus Wedding",
+  "source_url": "https://www.openstreetmap.org/node/6646448249",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 52.5565355,
+  "lng": 13.3889798,
+  "gallery_urls": [
+   "https://static.wixstatic.com/media/d8ba51_ba83c21cca324ab6a302433c0c9a1c7f~mv2.jpg/v1/fill/w_2500,h_1250,al_c/d8ba51_ba83c21cca324ab6a302433c0c9a1c7f~mv2.jpg"
+  ],
+  "pages_checked": [
+   "https://www.ballhauswedding.de/",
+   "https://www.ballhauswedding.de/kontakt",
+   "https://www.ballhauswedding.de/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 11993564074,
+  "name": "Eventhalle - Landgut Steng",
+  "category": "venue",
+  "city": "Lauffen am Neckar, DE",
+  "address": "Rotenberg 1, 74348 Lauffen am Neckar, Germany",
+  "website": "https://steng-lauffen.de/eventhalle/",
+  "contact_email": "info@steng-lauffen.de",
+  "contact_phone": "+49 7133 14206",
+  "image_hint": "https://steng-lauffen.de/eventhalle/",
+  "source_url": "https://www.openstreetmap.org/node/11993564074",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 49.095063,
+  "lng": 9.1385899,
+  "gallery_urls": [
+   "https://steng-lauffen.de/wp-content/uploads/2026/03/IMG_3555.jpeg"
+  ],
+  "pages_checked": [
+   "https://steng-lauffen.de/eventhalle/",
+   "https://steng-lauffen.de/kontakt/",
+   "https://steng-lauffen.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 303828469,
+  "name": "Franky's Bar",
+  "category": "venue",
+  "city": "Mülheim an der Ruhr, DE",
+  "address": "Ruhrufer 5, 45479 Mülheim an der Ruhr, Germany",
+  "website": "https://frankys-bar.de/",
+  "contact_email": "info@frankys-bar.de",
+  "contact_phone": "+49 208 4374870",
+  "image_hint": "https://frankys-bar.de/projects/251/images/logo_big.png",
+  "source_url": "https://www.openstreetmap.org/node/303828469",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 51.4259084,
+  "lng": 6.8739268,
+  "gallery_urls": [
+   "http://frankys-bar.de/projects/297/images/opener.png"
+  ],
+  "pages_checked": [
+   "https://frankys-bar.de/",
+   "http://frankys-bar.de/de/kontakt",
+   "http://frankys-bar.de/de/content/impressum.html"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 551714825,
+  "name": "Friederike von Papenburg",
+  "category": "venue",
+  "city": "Papenburg, DE",
+  "address": "Hauptkanal rechts 68, 26871 Papenburg, Germany",
+  "website": "https://www.brigg-friederike.de/",
+  "contact_email": "info@brigg-friederike.de",
+  "contact_phone": "+49 4961 839618",
+  "image_hint": "Category:Friederike von Papenburg (ship, 1989)",
+  "source_url": "https://www.openstreetmap.org/way/551714825",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 53.0785115,
+  "lng": 7.3943423,
+  "gallery_urls": [
+   "https://www.brigg-friederike.de/wp-content/uploads/2023/07/kiss_cropped.jpg",
+   "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide6-uai-1066x800.jpg",
+   "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide1-uai-1066x800.jpg",
+   "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide3-uai-1066x800.jpg",
+   "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide4-uai-1066x800.jpg",
+   "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide5-uai-1066x800.jpg"
+  ],
+  "pages_checked": [
+   "https://www.brigg-friederike.de/",
+   "https://www.brigg-friederike.de/kontakt/",
+   "https://www.brigg-friederike.de/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13592379541,
+  "name": "Future Lab",
+  "category": "venue",
+  "city": "Weiherhammer, DE",
+  "address": "Paul-Engel-Straße 1, 92729 Weiherhammer, Germany",
+  "website": "https://www.luce-stiftung.de/future-lab/",
+  "contact_email": "info@luce-stiftung.de",
+  "contact_phone": "+4996059199299",
+  "image_hint": "https://www.luce-stiftung.de/future-lab/",
+  "source_url": "https://www.openstreetmap.org/node/13592379541",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 49.6342259,
+  "lng": 12.0624937,
+  "gallery_urls": [
+   "https://www.luce-stiftung.de/wp-content/uploads/future_lab_impression3-1536x864.jpg"
+  ],
+  "pages_checked": [
+   "https://www.luce-stiftung.de/future-lab/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 3491408437,
+  "name": "Gravity Venue - Black Sheep Club",
+  "category": "venue",
+  "city": "Karlsruhe, DE",
+  "address": "Herrenstraße 7, 76133 Karlsruhe, Germany",
+  "website": "http://n1-bsc.de/",
+  "contact_email": "info@n1-bsc.de",
+  "contact_phone": "+49 721 90989750",
+  "image_hint": "http://n1-bsc.de/wp-content/uploads/2025/05/Group-1321315351.webp",
+  "source_url": "https://www.openstreetmap.org/node/3491408437",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 49.0107292,
+  "lng": 8.4007469,
+  "gallery_urls": [
+   "http://n1-bsc.de/wp-content/uploads/2025/05/Group-1321315351.webp",
+   "http://n1-bsc.de/wp-content/uploads/2025/05/all.webp",
+   "http://n1-bsc.de/wp-content/uploads/2025/05/A5_Flyer_PDF_HalloWelt-1.jpg"
+  ],
+  "pages_checked": [
+   "http://n1-bsc.de/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 961115966,
+  "name": "Haus der Religionen - Zentrum für interreligiöse und interkulturelle Bildung",
+  "category": "venue",
+  "city": "Hannover, DE",
+  "address": "Böhmerstraße 8, 30173 Hannover, Germany",
+  "website": "https://haus-der-religionen.de/de",
+  "contact_email": "info@haus-der-religionen.de",
+  "contact_phone": "+49 511 882511",
+  "image_hint": "Category:Haus der Religionen (Hannover)",
+  "source_url": "https://www.openstreetmap.org/way/961115966",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 52.3576803,
+  "lng": 9.7536939,
+  "gallery_urls": [
+   "https://haus-der-religionen.de/sites/default/files/Slider%202025%20neu%201.jpg",
+   "https://haus-der-religionen.de/sites/default/files/Slider%202025%20neu%202.jpg",
+   "https://haus-der-religionen.de/sites/default/files/Slider%202025%20neu%203.jpg",
+   "https://haus-der-religionen.de/sites/default/files/Slider%202025%20neu%204.jpg",
+   "https://haus-der-religionen.de/sites/default/files/Cover%20Antisemitismus.png"
+  ],
+  "pages_checked": [
+   "https://haus-der-religionen.de/de",
+   "https://haus-der-religionen.de/de/kontakt/raummiete",
+   "https://haus-der-religionen.de/de/haus-der-religionen/das-team-im-haus-der-religionen"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 268645841,
+  "name": "Hotel Seeschloss am Bötzsee",
+  "category": "venue",
+  "city": "Petershagen-Eggersdorf, DE",
+  "address": "Altlandsberger Chaussee 102, 15345 Petershagen-Eggersdorf, Germany",
+  "website": "https://www.hotel-seeschloss.de/",
+  "contact_email": "info@hotel-seeschloss.de",
+  "contact_phone": "+49 3341 48425",
+  "image_hint": "File:20260526 xl 0741-Hotel Seeschloss am Bötzsee.jpg",
+  "source_url": "https://www.openstreetmap.org/node/268645841",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 52.557396,
+  "lng": 13.8304276,
+  "gallery_urls": [
+   "https://www.hotel-seeschloss.de/wp-content/uploads/2026/06/IMG_7336-scaled.jpeg",
+   "https://www.hotel-seeschloss.de/wp-content/uploads/2026/06/IMG_0243.jpeg"
+  ],
+  "pages_checked": [
+   "https://www.hotel-seeschloss.de/",
+   "https://www.hotel-seeschloss.de/kontakt/",
+   "https://www.hotel-seeschloss.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 54601492,
+  "name": "Inselhalle",
+  "category": "venue",
+  "city": "Lindau (Bodensee), DE",
+  "address": "Zwanzigerstraße 12, 88131 Lindau (Bodensee), Germany",
+  "website": "https://www.inselhalle-lindau.de/",
+  "contact_email": "info@inselhalle-lindau.de",
+  "contact_phone": "+49 8382 8899600",
+  "image_hint": "File:Inselhalle Lindau (IMG 20220429 143216).jpg",
+  "source_url": "https://www.openstreetmap.org/way/54601492",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 47.548425,
+  "lng": 9.6853778,
+  "gallery_urls": [
+   "https://www.inselhalle-lindau.de/content/uploads/sites/5/2021/07/IHL_Aussenaufnahmen_49_Aldo-Amoretti_1920x1080.jpg",
+   "https://www.inselhalle-lindau.de/content/uploads/sites/5/2023/11/Luftaufnahme-Inselhalle_WESUM-GmbH_1920x1080.jpg",
+   "https://www.inselhalle-lindau.de/content/uploads/sites/5/2021/09/IHL_Aussenaufnahmen_52.jpg",
+   "https://www.inselhalle-lindau.de/content/uploads/sites/5/2023/11/Luftbild-Lindau-Insel_WESUM_1920x1080-1050x591.jpg",
+   "https://www.inselhalle-lindau.de/content/uploads/sites/5/2023/11/Luftbild-Lindau-Insel_WESUM_1920x1080.jpg",
+   "https://www.inselhalle-lindau.de/content/uploads/sites/5/2021/07/IHL_Innenaufnahmen_13_Aldo-Amoretti_1920x1080-1050x591.jpg"
+  ],
+  "pages_checked": [
+   "https://www.inselhalle-lindau.de/",
+   "https://www.inselhalle-lindau.de/kontakt/",
+   "https://www.inselhalle-lindau.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 183417172,
+  "name": "Landgasthaus Kreuz",
+  "category": "venue",
+  "city": "Gaggenau, DE",
+  "address": "Moosbronner Straße 9, 76571 Gaggenau, Germany",
+  "website": "https://www.engel-kreuz.de/",
+  "contact_email": "info@kreuz-michelbach.de",
+  "contact_phone": "+49 7225 1839424",
+  "image_hint": "File:Landgasthaus Kreuz Michelbach.jpg",
+  "source_url": "https://www.openstreetmap.org/node/183417172",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 48.8186545,
+  "lng": 8.350032,
+  "gallery_urls": [
+   "https://www.engel-kreuz.de/wp-content/uploads/go-x/u/fdeb732f-58dc-4a5c-805a-2bd73eb47adf/l41,t0,w1559,h2000/image-1366x1752.png",
+   "https://www.engel-kreuz.de/wp-content/uploads/go-x/u/dcb7cd42-669d-465c-b4f1-127f1a150014/image-455x256.png"
+  ],
+  "pages_checked": [
+   "https://www.engel-kreuz.de/",
+   "https://www.engel-kreuz.de/kontakt/",
+   "https://www.engel-kreuz.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 8600644,
+  "name": "Neues Kurhaus",
+  "category": "venue",
+  "city": "Aachen, DE",
+  "address": "Monheimsallee 44, 52062 Aachen, Germany",
+  "website": "https://www.aachen-event.com/kurhaus",
+  "contact_email": "info@aachen-event.com",
+  "contact_phone": "+49 241 9131 0",
+  "image_hint": "Category:Neues Kurhaus (Aachen)",
+  "source_url": "https://www.openstreetmap.org/way/8600644",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 50.7816459,
+  "lng": 6.0930129,
+  "gallery_urls": [
+   "https://www.aachen-event.com/fileadmin/_processed_/4/7/csm_csm_Kurhaus_4c05421972_6d978287c4.jpg"
+  ],
+  "pages_checked": [
+   "https://www.aachen-event.com/kurhaus",
+   "https://www.aachen-event.com/kontakt",
+   "https://www.aachen-event.com/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 925059580,
+  "name": "Pan Am Lounge Berlin",
+  "category": "venue",
+  "city": "Berlin, DE",
+  "address": "Budapester Straße 43, 10787 Berlin, Germany",
+  "website": "https://panam-hotel.de/",
+  "contact_email": "booking@panam-lounge.de",
+  "contact_phone": "+49 30 47 37 52 80 0",
+  "image_hint": "https://stuckattheairport.com/wp-content/uploads/2014/08/Pan-Am-Lounge_Seating-Area2_Blue_photo-by-Ross-Reynolds_edited.jpg",
+  "source_url": "https://www.openstreetmap.org/node/925059580",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 52.5049884,
+  "lng": 13.3395456,
+  "gallery_urls": [
+   "https://panam-hotel.de/wp-content/uploads/2022/02/Design-ohne-Titel-54.png",
+   "https://panam-hotel.de/wp-content/uploads/2022/02/menu-weiss.png"
+  ],
+  "pages_checked": [
+   "https://panam-hotel.de/",
+   "https://panam-hotel.de/kontakt/",
+   "https://panam-hotel.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 80308970,
+  "name": "Stift Urach",
+  "category": "venue",
+  "city": "Bad Urach, DE",
+  "address": "Bismarckstraße 12, 72574 Bad Urach, Germany",
+  "website": "https://stifturach.de/",
+  "contact_email": "info@stifturach.de",
+  "contact_phone": "+49 7125 94990",
+  "image_hint": "File:Landappbw 164245 1817 Hof Mönchshof Bad Urach.jpg",
+  "source_url": "https://www.openstreetmap.org/way/80308970",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 48.4931751,
+  "lng": 9.3971417,
+  "gallery_urls": [
+   "https://stifturach.de/wp-content/uploads/Vorderseite1_bearb-800x591.jpg"
+  ],
+  "pages_checked": [
+   "https://stifturach.de/",
+   "https://stifturach.de/kontakt/",
+   "https://stifturach.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 1255194623,
+  "name": "Tagungszentrum Martinshaus",
+  "category": "venue",
+  "city": "Rendsburg, DE",
+  "address": "Kanalufer 48, 24768 Rendsburg, Germany",
+  "website": "https://tagungszentrum-martinshaus.de/",
+  "contact_email": "martinshaus@diakonie-sh.de",
+  "contact_phone": "+49 4331 593300",
+  "image_hint": "Category:Kanalufer 48 (Rendsburg)",
+  "source_url": "https://www.openstreetmap.org/way/1255194623",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 54.2899895,
+  "lng": 9.6545264,
+  "gallery_urls": [
+   "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/c/2/csm_IMG_6649_9af5cc755d.jpg",
+   "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/f/2/csm_csm_IMG_8623_d8a073f435_37bb743677.jpg",
+   "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/6/7/csm_IMG_8464_b8e479cab9.jpg",
+   "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/4/b/csm_IMG_8609_7397291fa6.jpg",
+   "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/d/a/csm_20230831_112610_b396ac02e0.jpg",
+   "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/f/3/csm_diakingklein--303_a1fb4ead60.jpg"
+  ],
+  "pages_checked": [
+   "https://tagungszentrum-martinshaus.de/",
+   "https://tagungszentrum-martinshaus.de/kontakt"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 338297470,
+  "name": "Villa Sturm",
+  "category": "venue",
+  "city": "Rüdesheim am Rhein, DE",
+  "address": "Rheinstraße 5, 65385 Rüdesheim am Rhein, Germany",
+  "website": "https://villa-sturm-ferienwohnung.de/",
+  "contact_email": "info@villa-sturm.de",
+  "contact_phone": "+49 15146101304",
+  "image_hint": "File:Villa_Sturm_Rüdesheim_am_Rhein.jpg",
+  "source_url": "https://www.openstreetmap.org/way/338297470",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 49.977785,
+  "lng": 7.9197662,
+  "gallery_urls": [
+   "https://villa-sturm-ferienwohnung.de/wp-content/uploads/2025/07/97-300x211.png"
+  ],
+  "pages_checked": [
+   "https://villa-sturm-ferienwohnung.de/",
+   "https://villa-sturm-ferienwohnung.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 573449908,
+  "name": "Wolfsgrunder Festhof",
+  "category": "venue",
+  "city": "Dorfchemnitz, DE",
+  "address": "Wolfsgrund 20, 09619 Dorfchemnitz, Germany",
+  "website": "https://www.wolfsgrund.de/",
+  "contact_email": "info@wolfsgrund.de",
+  "contact_phone": "+49 37320 809297",
+  "image_hint": "http://commons.wikimedia.org/wiki/File:Landgasthof_Wolfsgrund.jpg",
+  "source_url": "https://www.openstreetmap.org/node/573449908",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 50.7717273,
+  "lng": 13.4119173,
+  "gallery_urls": [
+   "https://www.wolfsgrund.de/images/M%C3%A4nnertag.JPG#joomlaImage://local-images/M%C3%A4nnertag.JPG",
+   "https://www.wolfsgrund.de/images/www.wolfsgrund.de.png#joomlaImage://local-images/www.wolfsgrund.de.png",
+   "https://www.wolfsgrund.de/images/bilder/artikel/Silvester2024.jpg"
+  ],
+  "pages_checked": [
+   "https://www.wolfsgrund.de/",
+   "https://www.wolfsgrund.de/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 8310742767,
+  "name": "ZEEEM Experience",
+  "category": "venue",
+  "city": "Aschaffenburg, DE",
+  "address": "Magnolienweg 7, 63741 Aschaffenburg, Germany",
+  "website": "https://zeeem.racing/",
+  "contact_email": "info@zeeem.de",
+  "contact_phone": "+49 6062 11304520",
+  "image_hint": "https://lh5.googleusercontent.com/p/AF1QipPpp9KRISqH2Us8ua6HT6m44H5MV60qzHBk7Ao8=s516-k-no",
+  "source_url": "https://www.openstreetmap.org/node/8310742767",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 49.9653053,
+  "lng": 9.1308327,
+  "gallery_urls": [
+   "https://zeeem.racing/wp-content/uploads/2024/11/VERANSTALTUNG-Header-e1733302454651.jpg",
+   "https://zeeem.racing/wp-content/uploads/2024/10/event-img1.jpg",
+   "https://zeeem.racing/wp-content/uploads/2024/10/event-img2.jpg",
+   "https://zeeem.racing/wp-content/uploads/2024/10/DSC9368-scaled.jpg",
+   "https://zeeem.racing/wp-content/uploads/2024/10/DSC9388-scaled.jpg",
+   "https://zeeem.racing/wp-content/uploads/2024/10/DSC9401-scaled.jpg"
+  ],
+  "pages_checked": [
+   "https://zeeem.racing/",
+   "https://zeeem.racing/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 386246629,
+  "name": "\"Zur Eiche\"",
+  "category": "venue",
+  "city": "Böhlen, DE",
+  "address": "Bahnhofstraße 1, 04564 Böhlen, Germany",
+  "website": "https://zur-eiche-boehlen.de/",
+  "contact_email": "info@zur-eiche-boehlen.de",
+  "contact_phone": "+4934206 51148",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/386246629",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 51.202324,
+  "lng": 12.3861795,
+  "gallery_urls": [
+   "https://zur-eiche-boehlen.de/wp-content/uploads/2025/05/20250328_133437-1500x430.jpg"
+  ],
+  "pages_checked": [
+   "https://zur-eiche-boehlen.de/",
+   "https://zur-eiche-boehlen.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13585635785,
+  "name": "102 Rietberg",
+  "category": "venue",
+  "city": "Rietberg, DE",
+  "address": "Wiedenbrücker Straße 102, 33397 Rietberg, Germany",
+  "website": "https://102rietberg.de/",
+  "contact_email": "hallo@102rietberg.de",
+  "contact_phone": "+49 5244 8777",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13585635785",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 51.8158689,
+  "lng": 8.4148781,
+  "gallery_urls": [
+   "https://102rietberg.de/cdn/shop/files/Sprung_Kopie_3d70446a-1fa8-4f57-a3c7-fad74bbe2701.jpg?v=1694875111"
+  ],
+  "pages_checked": [
+   "https://102rietberg.de/",
+   "https://102rietberg.de/pages/contact",
+   "https://102rietberg.de/policies/contact-information"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12264356800,
+  "name": "Adolf-Schmidt-Tagungszentrum",
+  "category": "venue",
+  "city": "Haltern am See, DE",
+  "address": "Hullerner Straße 100, 45721 Haltern am See, Germany",
+  "website": "https://www.tagungszentrum-haltern-am-see.de/",
+  "contact_email": "bz.haltern@igbce.de",
+  "contact_phone": "+49 2364 9660",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/12264356800",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 51.7393759,
+  "lng": 7.2212597,
+  "gallery_urls": [
+   "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6831/image-thumb__6831__gk-content-stage-small/Adolf-Schmidt-Tagungszentrum_Haltern_am_See.5eef3030.jpg",
+   "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6831/image-thumb__6831__gk-content-stage-small/Adolf-Schmidt-Tagungszentrum_Haltern_am_See@2x.5eef3030.jpg",
+   "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Bad%20M%C3%BCnder/Startseite/7515/image-thumb__7515__page-teaser-large/20260313_Veranstaltungen@2x.05d4d04f.jpg",
+   "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6832/image-thumb__6832__page-teaser-large/Titelbild-Raumvielfalt_THS@2x.3d654b73.jpg",
+   "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6834/image-thumb__6834__page-teaser-medium/Titelbild-Ausstattung_THS@2x.03068f2a.jpg",
+   "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6833/image-thumb__6833__page-teaser-medium/Titelbild-Abendveranstaltungen_THS@2x.2389404c.jpg"
+  ],
+  "pages_checked": [
+   "https://www.tagungszentrum-haltern-am-see.de/",
+   "https://www.tagungszentrum-haltern-am-see.de/kontakt",
+   "https://www.tagungszentrum-haltern-am-see.de/impressum"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 388430149,
+  "name": "Alperie",
+  "category": "venue",
+  "city": "Schliersee, DE",
+  "address": "Neuhauser Straße 45, 83727 Schliersee, Germany",
+  "website": "https://diealperie.com/",
+  "contact_email": "servus@diealperie.de",
+  "contact_phone": "+49 8026 7809950",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/388430149",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 47.7040539,
+  "lng": 11.878276,
+  "gallery_urls": [
+   "https://diealperie.com/wp-content/uploads/Alperie-1-001-klein-aspect-ratio-1-1.1-600x666.jpg",
+   "https://diealperie.com/wp-content/uploads/web_alperie_0521-8946-aspect-ratio-1-1.1-600x666.jpg",
+   "https://diealperie.com/wp-content/uploads/Z624285-aspect-ratio-1-1.1-600x666.jpg"
+  ],
+  "pages_checked": [
+   "https://diealperie.com/",
+   "https://diealperie.com/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 10618773706,
+  "name": "Alt-Linzenshäuschen",
+  "category": "venue",
+  "city": "Aachen, DE",
+  "address": "Eupener Straße, 52076 Aachen, Germany",
+  "website": "https://eventmanufaktur.eu/locations-hochzeiten-eventmanufaktur/locations-alt-linzenshaeuschen-aachen-hochzeitslocation/",
+  "contact_email": "event@altlinzenshaeuschen.de",
+  "contact_phone": "+49 241 51007166",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/10618773706",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 50.7380787,
+  "lng": 6.0905485,
+  "gallery_urls": [
+   "https://eventmanufaktur.eu/wp-content/uploads/2025/04/joybeck-styledshoot-05012025_95.jpg",
+   "https://eventmanufaktur.eu/wp-content/uploads/2025/07/Alt_Linzenshaeuschen_RoomTour1/preview.jpg",
+   "https://eventmanufaktur.eu/wp-content/plugins/garden-gnome-package/include/play.png"
+  ],
+  "pages_checked": [
+   "https://eventmanufaktur.eu/locations-hochzeiten-eventmanufaktur/locations-alt-linzenshaeuschen-aachen-hochzeitslocation/",
+   "https://eventmanufaktur.eu/kontakt/",
+   "https://eventmanufaktur.eu/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 1226411927,
+  "name": "Alte Sägerei",
+  "category": "venue",
+  "city": "Hohnstorf (Elbe), DE",
+  "address": "Triftweg 14, 21522 Hohnstorf (Elbe), Germany",
+  "website": "https://www.alte-saegerei.com/",
+  "contact_email": "architektur@alte-sägerei.de",
+  "contact_phone": "+49 171 483 48 44",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/1226411927",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 53.3590903,
+  "lng": 10.5594539,
+  "gallery_urls": [
+   "https://le-cdn.website-editor.net/s/9c58d48782a94b92b90a115749df90aa/dms3rep/multi/opt/IMG_1029+-Titelbild-1920w.jpg?Expires=1789662433&Signature=rgQBvXNQdZUEDV3TP8z37FB5np5cPfYzKPaQb6NwBtwVYS3lPmRz~IBor1fq1veISuEC3CIr62Wx-FjZUkO3S3tdaxCM237R~k5FmP9IF4AtRFp~I470Pm6L9NtRLY22KeHdDCcTPKFcRU3FjG2-uLzjMSrbNwC-H0mqzPoUgcMg4NJSFW21DHPDmJmyZSLO~LVzwxXcwxP91W7MNKq~QzW0cVduhmg-9E2v7KALtgY6GtooAmvo612msyAzxCAxdrswLuZelLkxJt6teZ2OOvNU04mr8gBKqhpoA6WW20CFjl4zLZ~hdjlPqka-hr7p8cm1WlzeebnZld78lQK-0Q__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/9c58d48782a94b92b90a115749df90aa/dms3rep/multi/opt/0261-20200616-a485ae92-1920w.jpg?Expires=1789662433&Signature=Ypnaw8k~T5El9fWuKpFsuNHMsxCe0EMj8NFUnGoz-yd~Z5YrOAHztjAhxNYyguTfOccG9MYcpeQcCofvNSXbtQ6fPNgdIfSzxzwQyrn9gV00apkrtKc4~Ol3mZBRWrwat3bgXyEaeENQTCjarzsQUxc8iDakyfP8YNkZaP-~ijE5m6onAwvvNW3d2hADQZ1qnk1txFyd58mysZvYliqsUtTc6FVzJke0O-25q0ZHbhkixhg7ZY-w-uOlV3F4UdD9wz3CLLhL8UjjRlLP4piSojb12WPk5V5pl9WYxet0rMxIHNyBNPTdqa1oE1jdekmJ8sHSZSiV-BxhqEoWSuvvsA__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/9c58d48782a94b92b90a115749df90aa/dms3rep/multi/opt/IMG_2462-1920w.jpg?Expires=1789662433&Signature=CqnWDtR5Dw4Ytd~7dGPqVW4LudlOigmx93gBQbqVI6JgopQJBQpm7v4wxLIFpQ0iH6Nb~L3KZebJDuUT1cHeAxChwwwABrAd1eH3uVhQy4Yjp~wLpwKGqjZG-f7GIdN-3FFG-uW0OkhkjQsxxpbjTNrMRzjaa~Mxp6nfb9QaJv2dWQKsu6-ugCXOQGwE0X7pZ-2zbcEN6cKSfYo1FSnPGAUwmv06yQhLs8ZUSqOxhJTFoWl-32kQQ0K6P41tbUtODlrYdpjz8afHTV7FfGqTTKAAz-KJSdHi2I2-gO3cDLBaqvZUgVoXLRX47cvb1DHZCEzBqiUhjHqRVtWf5h0tBQ__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/9c58d48782a94b92b90a115749df90aa/dms3rep/multi/opt/0123-20200616--1920w.jpg?Expires=1789662433&Signature=KTCUA7oNyn86bnWVIy~8jB92ecQVgpNzkPCYI~zxsik2T8ESefjPQI78OmLTa5ygLDwhmwAhd3le4CzDtdwh-p2AqGhBjuu2r7Ok09PwpDR-hLsSshSqww7PFRZdhMU8IZZPRiy9dN-wSqOwqLhWh3EfeUjE2FL-01hVcq0V9xw9-v1lfVBNgsABnh8ZSO9Ud6~XNMTYrR8rTIFnlfgT3aYzRst6EN0ACM2XZDkmgJUObGVdUwPS~HLF6RnUrKpsDcVMeBWbtADgVAFXRX0ztuUG0RcpKtJjyvS~cIc964ryY4XA6gjaQQS5wDCQFZ4u-YFCKimJKwmotNfLm9b8-A__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/9c58d48782a94b92b90a115749df90aa/dms3rep/multi/opt/IMG_1192+Kopie+4-1920w.jpg?Expires=1789662433&Signature=WnZs8hd6dC93eETk6mOqk51KF-51a1CRbnI6ymqrx5lq6hP4SuDP2sLuA8pIesFEGiOj-Thjq9qZq0zekNiIFx~gDBKTO0rilWhSA8rUJSQwBi~XHs-LMrixlgwkoTfszcUEVMq~7rfn9fEIcEsmt-SzOPBNwLUVuDHQbgNFENGEbCh61U05zufqH9ZgfIU01tSzP3PanAcg869Uy7~BNYoL0n1LLdIY6xFSXDYTZ55kA6NzZM6FJI~jgPjRI~HJL0HyqKp~X47pk7wUmOREKXhu4vhQfNNOvckVC-Dsi-ALCfMsi4ntaijVZ84WVBGhGeixPnIe~fnJ9n5JNsfyiw__&Key-Pair-Id=K2NXBXLF010TJW",
+   "https://le-cdn.website-editor.net/s/9c58d48782a94b92b90a115749df90aa/dms3rep/multi/opt/0315-20200616-+haus+final_2+Kopie-1920w.jpg?Expires=1789662433&Signature=U5AlkT45uSaVJPNR0Kk3wYy4zExqXsg7pmSUX01ip-PTDtCXWzxGGfT-wwcFp3jzzeVax7CuVbAk~2MzcLcdHsSrycE9~ADlvfBxdLOrDyRMOqsZLXvlzptwrlpGp7ZD9rKIdhYqUB8f8G6TbMf-c9WkGFAr8JacwCJze00AojKoytthsO97d2OR3P23X-iHr1u5yssnHxW7m8KI7uazplIgFOWO8~dfULTdg-lI2u-xg0jUPHcwvflYvGb~UMDb9Pi~yBM74x43HqrVp6lyif9x~qDLnoD7DQLvKNMFZjJ8o9N4LbqxnFdVXo18ZGDFLO55sje5ZjUyK76fdZNEdg__&Key-Pair-Id=K2NXBXLF010TJW"
+  ],
+  "pages_checked": [
+   "https://www.alte-saegerei.com/",
+   "https://www.alte-saegerei.com/kontakt"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 538083551,
+  "name": "Alte Utting",
+  "category": "venue",
+  "city": "München, DE",
+  "address": "Lagerhausstraße 15, 81371 München, Germany",
+  "website": "https://alte-utting.de/",
+  "contact_email": "info@alte-utting.de",
+  "contact_phone": "+49 89 707 770",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/538083551",
+  "country": "DE",
+  "ga4_active_users": 43,
+  "lat": 48.1199476,
+  "lng": 11.5562883,
+  "gallery_urls": [
+   "http://alte-utting.de/wp-content/uploads/2026/05/164A5163-scaled-e1780141669134-1024x700.jpg",
+   "https://alte-utting.de/wp-content/uploads/2026/05/164A5163-scaled-e1780141669134-2048x1400.jpg"
+  ],
+  "pages_checked": [
+   "https://alte-utting.de/",
+   "https://alte-utting.de/impressum/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13904637318,
+  "name": "Ale Loge",
+  "category": "venue",
+  "city": "Nol, SE",
+  "address": "SNÄCKEBÄCKEN 105, 449 90 Nol, Sweden",
+  "website": "https://aleloge.se/",
+  "contact_email": "ammi@aleloge.se",
+  "contact_phone": "+46 70 271 82 27",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13904637318",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 57.8917453,
+  "lng": 12.1161615,
+  "gallery_urls": [
+   "https://aleloge.se/wp-content/uploads/2025/02/A-i-koket-fyrkant.jpg"
+  ],
+  "pages_checked": [
+   "https://aleloge.se/",
+   "https://aleloge.se/kontakta-oss/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 87936431,
+  "name": "Brewhouse",
+  "category": "venue",
+  "city": "Göteborg, SE",
+  "address": "Åvägen 24, 412 51 Göteborg, Sweden",
+  "website": "https://brewhouseinkubator.se/",
+  "contact_email": "info@brewhouse.se",
+  "contact_phone": "+46 31 83 41 00",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/87936431",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 57.7003539,
+  "lng": 11.992515,
+  "gallery_urls": [
+   "https://brewhouseinkubator.se/wp-content/uploads/2023/06/charlesdeluvio-rrwivqzlm7k-unsplash-mindre_adjusted.jpg",
+   "https://brewhouseinkubator.se/wp-content/uploads/2023/06/pexels-karolina-grabowska-6328804_adjusted.jpg"
+  ],
+  "pages_checked": [
+   "https://brewhouseinkubator.se/",
+   "https://brewhouseinkubator.se/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 1445956245,
+  "name": "Camp Ånn",
+  "category": "venue",
+  "city": "Duved, SE",
+  "address": "Ånn Haråvägen 2, 830 15 Duved, Sweden",
+  "website": "https://campann.se/",
+  "contact_email": "info@campann.se",
+  "contact_phone": "+46 702945044",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/1445956245",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 63.3172974,
+  "lng": 12.5145938,
+  "gallery_urls": [
+   "https://campann.se/wp-content/themes/campann/images/social-media-instagram-white.png"
+  ],
+  "pages_checked": [
+   "https://campann.se/",
+   "https://campann.se/kontakt/",
+   "https://campann.se/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "relation",
+  "osm_id": 15658941,
+  "name": "EFS-gården Åsljunga",
+  "category": "venue",
+  "city": "Åsljunga, SE",
+  "address": "Ånhultsvägen 31, 286 72 Åsljunga, Sweden",
+  "website": "http://efsgarden.com/kontakt-forfragan/",
+  "contact_email": "info@efsgarden.com",
+  "contact_phone": "+46 435 46 00 54",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/relation/15658941",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 56.3004895,
+  "lng": 13.3747044,
+  "gallery_urls": [
+   "http://efsgarden.com/wp-content/uploads/2020/02/karta.jpg"
+  ],
+  "pages_checked": [
+   "http://efsgarden.com/kontakt-forfragan/",
+   "http://efsgarden.com/kontakt-forfragan/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 10720768637,
+  "name": "Ekeby Loge",
+  "category": "venue",
+  "city": "Tungelsta, SE",
+  "address": "Ekeby 11, 137 92 Tungelsta, Sweden",
+  "website": "https://www.ekebyloge.se/kontakta-oss",
+  "contact_email": "info@ekebyloge.se",
+  "contact_phone": "+46 736-575 41",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/10720768637",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 59.0747561,
+  "lng": 18.0427794,
+  "gallery_urls": [
+   "https://www.ekebyloge.se/upl/images/578443/contact-topimage.jpg",
+   "https://www.ekebyloge.se/images/map-new2.png"
+  ],
+  "pages_checked": [
+   "https://www.ekebyloge.se/kontakta-oss",
+   "https://www.ekebyloge.se/kontakta-oss"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12883979500,
+  "name": "Havsörnen",
+  "category": "venue",
+  "city": "Mjörn, SE",
+  "address": "Skåpesund 70, 47173 Mjörn, Sweden",
+  "website": "https://www.havsornen.com/",
+  "contact_email": "info@havsornen.com",
+  "contact_phone": "+46737047766",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/12883979500",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 58.0932009,
+  "lng": 11.6952598,
+  "gallery_urls": [
+   "https://images.squarespace-cdn.com/content/v1/5b27d5fd365f02efb1812a2e/1529344256647-DXP1IFTWOVFI0T8NRKD3/Havs%C3%AErnenTryouts+%28364+of+387%29.jpg"
+  ],
+  "pages_checked": [
+   "https://www.havsornen.com/",
+   "https://www.havsornen.com/kontakt",
+   "https://www.havsornen.com/boka"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 12507153689,
+  "name": "Sjöhuset",
+  "category": "venue",
+  "city": "Lidingö, SE",
+  "address": "Saltsjövägen 50, 18162 Lidingö, Sweden",
+  "website": "https://sjohusetfest.se/",
+  "contact_email": "info@nackacatering.se",
+  "contact_phone": "+46 739 200408",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/12507153689",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 59.3420827,
+  "lng": 18.2088969,
+  "gallery_urls": [
+   "https://sjohusetfest.se/wp-content/uploads/sites/42/2024/03/sjohuset-festvaning-lagereld-1920x1280-1.jpg",
+   "https://sjohusetfest.se/wp-content/uploads/sites/42/2024/03/sjohuset-fest-hero-2.jpg"
+  ],
+  "pages_checked": [
+   "https://sjohusetfest.se/",
+   "https://sjohusetfest.se/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13330099326,
+  "name": "Teamfabriken Malmö",
+  "category": "venue",
+  "city": "Limhamn, SE",
+  "address": "Geijersgatan 8, 216 18 Limhamn, Sweden",
+  "website": "https://malmo.teamfabriken.se/",
+  "contact_email": "malmo@teamfabriken.se",
+  "contact_phone": "+46 40 51 01 75",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13330099326",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 55.590654,
+  "lng": 12.9412303,
+  "gallery_urls": [
+   "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/1f374133-9f24-4dfb-ae4b-e6751e0d57cc/teamfabriken-Logga-Malm%C3%B6-04.png?format=1500w",
+   "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/e59ebbbe-197e-47fc-b218-011f706518ad/Teamfabriken_Playground.jpg",
+   "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/a3c4881b-2d4f-4f21-9a5c-0f5e70346211/Teamfabriken_Malm%C3%B6_TempleofDoom.jpg",
+   "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/1777296964304-4XD6NXJXIEHSED3DVSZU/WalkAndTalk_1.JPG",
+   "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/1776938226025-M17CY8EQ2M3XYUQYFLU5/Cluedo_1.jpg",
+   "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/35e88f00-052a-46d8-b604-fba835469380/Teamfabriken+Malm%C3%B6-77.jpg"
+  ],
+  "pages_checked": [
+   "https://malmo.teamfabriken.se/",
+   "https://malmo.teamfabriken.se/kontakt-och-bokning"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 341909963,
+  "name": "Wikparken",
+  "category": "venue",
+  "city": "Upplands Väsby, SE",
+  "address": "Almungevägen 1, 194 51 Upplands Väsby, Sweden",
+  "website": "http://www.wikevent.se/",
+  "contact_email": "info@wikevent.se",
+  "contact_phone": "+468590 925 00",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/341909963",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 59.5401401,
+  "lng": 17.9328967,
+  "gallery_urls": [
+   "http://wikevent.run.se/wp-content/uploads/2017/12/Tom.png"
+  ],
+  "pages_checked": [
+   "http://www.wikevent.se/",
+   "http://www.wikevent.se/kontakta-oss/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 1716367271,
+  "name": "Österlenkryddor",
+  "category": "venue",
+  "city": "Köpingebro, SE",
+  "address": "Karlsfältsvägen 363, 27022 Köpingebro, Sweden",
+  "website": "https://www.osterlenkryddor.se/",
+  "contact_email": "info@osterlenkryddor.se",
+  "contact_phone": "+46 411 55 06 06",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/1716367271",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 55.467112,
+  "lng": 13.9283805,
+  "gallery_urls": [
+   "https://www-static.osterlenkryddor.se/wp-content/uploads/2022/01/20200418_111503-1024x768.jpg?media=1758257104",
+   "https://www-static.osterlenkryddor.se/wp-content/uploads/2022/01/20200418_111503-2048x1536.jpg?media=1758257104",
+   "https://www-static.osterlenkryddor.se/wp-content/uploads/2021/11/lavendel-glass-1024x1024.jpg?media=1758257104",
+   "https://www-static.osterlenkryddor.se/wp-content/uploads/2021/11/lavendel-glass.jpg?media=1758257104",
+   "https://www-static.osterlenkryddor.se/wp-content/uploads/2022/02/ga%CC%8Ardsbutik-hero-500x500.jpg?media=1758257104",
+   "https://www-static.osterlenkryddor.se/wp-content/uploads/2022/02/O%CC%88sterlenkryddor-events-500x500.jpg?media=1758257104"
+  ],
+  "pages_checked": [
+   "https://www.osterlenkryddor.se/",
+   "https://www.osterlenkryddor.se/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 1164894809,
+  "name": "World of Volvo",
+  "category": "venue",
+  "city": "Göteborg, SE",
+  "address": "Lyckholms Torg 1, 412 63 Göteborg, Sweden",
+  "website": "https://www.worldofvolvo.com/",
+  "contact_email": "hello@worldofvolvo.com",
+  "contact_phone": "+46 (0) 10 265 27 10",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/1164894809",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 57.6895138,
+  "lng": 11.9979453,
+  "gallery_urls": [
+   "https://www.worldofvolvo.com/globalassets/visual/wov-exterior--interior/world-of-volvo---2.jpg?maxwidth=1920&quality=80",
+   "https://www.worldofvolvo.com/globalassets/visual/exhibitions/world-of-volvo-exhibition/wov_05-12-24_mg_6637.jpg?maxwidth=1920&quality=80",
+   "https://www.worldofvolvo.com/globalassets/visual/exhibitions/traffic-school/worldofvolvo-utstallning-traffic-school-bla-eldriven-bil-barnstorlek-barn-goteborg-se.jpg?maxwidth=1920&quality=80",
+   "https://www.worldofvolvo.com/globalassets/visual/live/wovthursdayjazz2026nl1200x800.jpg?maxwidth=1920&quality=80",
+   "https://www.worldofvolvo.com/globalassets/visual/campaigns/wovthursdayjazzpaket2026web1920x1080.jpg?maxwidth=1920&quality=80",
+   "https://www.worldofvolvo.com/globalassets/visual/campaigns/summer_senior_deal-1.jpg?maxwidth=1920&quality=80"
+  ],
+  "pages_checked": [
+   "https://www.worldofvolvo.com/",
+   "https://www.worldofvolvo.com/sv/besok/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13067667086,
+  "name": "Huddinge Konferenscenter",
+  "category": "venue",
+  "city": "Huddinge, SE",
+  "address": "Patron Pehrs väg 3, 141 35 Huddinge, Sweden",
+  "website": "https://www.vaxthus1.se/",
+  "contact_email": "info@vaxthus1.se",
+  "contact_phone": "+46 8 588 918 80",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13067667086",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 59.2363102,
+  "lng": 17.9764301,
+  "gallery_urls": [
+   "https://images.squarespace-cdn.com/content/v1/67fa311fafa53d090dd24b8f/0fb98368-18c4-4dad-8302-5abe626fa4ae/Vaxthus1-logga-transparent-svart.png"
+  ],
+  "pages_checked": [
+   "https://www.vaxthus1.se/",
+   "https://www.vaxthus1.se/kontakt"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13009477776,
+  "name": "Sätra Bruks Herrgård",
+  "category": "venue",
+  "city": "Undenäs, SE",
+  "address": "Sätra, 54694 Undenäs, Sweden",
+  "website": "https://satrabruk.se/",
+  "contact_email": "bokning@satrabruk.se",
+  "contact_phone": "+4650510595",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13009477776",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 58.6904614,
+  "lng": 14.3489445,
+  "gallery_urls": [
+   "https://satrabruk.se/wp-content/uploads/2026/05/satrabruk-exteriormiljo-43-2048x1367.jpg",
+   "https://satrabruk.se/wp-content/uploads/2026/05/satrabruk-exteriormiljo-53-1024x684.jpg",
+   "https://satrabruk.se/wp-content/uploads/2026/05/satrabruk-exteriormiljo-53-2048x1367.jpg",
+   "https://satrabruk.se/wp-content/uploads/2026/07/satrabrukherrgard-brollop-45-768x513.jpg",
+   "https://satrabruk.se/wp-content/uploads/2026/07/satrabrukherrgard-brollop-45.jpg",
+   "https://satrabruk.se/wp-content/uploads/2025/04/rectangle-33.jpg"
+  ],
+  "pages_checked": [
+   "https://satrabruk.se/",
+   "https://satrabruk.se/kontakta-oss/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 377645174,
+  "name": "Villa Soludden Hotel & Konferens AB",
+  "category": "venue",
+  "city": "Värmdö, SE",
+  "address": "Ekviks gårdsväg 60, 139 40 Värmdö, Sweden",
+  "website": "https://www.villasoludden.se/",
+  "contact_email": "info@villasoludden.se",
+  "contact_phone": "+46 8 570 202 80",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/377645174",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 59.300985,
+  "lng": 18.4558896,
+  "gallery_urls": [
+   "https://www.villasoludden.se/wp-content/uploads/2024/02/vs-hero-01.jpg",
+   "https://www.villasoludden.se/wp-content/uploads/2024/05/villa-soludden-konferens-port.jpg",
+   "https://www.villasoludden.se/wp-content/uploads/2024/05/villa-soludden-foretagsfest-port-03.jpg",
+   "https://www.villasoludden.se/wp-content/uploads/2024/05/villa-soludden-mat-dryck-05.jpg",
+   "https://www.villasoludden.se/wp-content/uploads/2024/02/news-lab-post-img-02.jpg",
+   "https://www.villasoludden.se/wp-content/uploads/2024/05/villa-soludden-exklusiv-fest-port-04.jpg"
+  ],
+  "pages_checked": [
+   "https://www.villasoludden.se/",
+   "https://www.villasoludden.se/kontakt-forfragan"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 13995945181,
+  "name": "Al Dente",
+  "category": "venue",
+  "city": "Stockholm, SE",
+  "address": "Alfhild Tamms Gata 4, 11367 Stockholm, Sweden",
+  "website": "https://aldentestockholm.com/",
+  "contact_email": "bokning@aldentestockholm.com",
+  "contact_phone": "0812146465",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/13995945181",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 59.3493784,
+  "lng": 18.0372276,
+  "gallery_urls": [
+   "https://aldentestockholm.com/wp-content/uploads/2021/05/Facebook-SEO.jpg",
+   "https://aldentestockholm.com/wp-content/uploads/matlagningsevent-stockholm.webp",
+   "https://aldentestockholm.com/wp-content/uploads/laga-mat-tillsammans-foretag.webp",
+   "https://aldentestockholm.com/wp-content/uploads/laga-mat-tillsammans-med-kock.webp",
+   "https://aldentestockholm.com/wp-content/uploads/matlagning-aktivitet.webp",
+   "https://aldentestockholm.com/wp-content/uploads/matlagningsaktivitet-stockholm-1.webp"
+  ],
+  "pages_checked": [
+   "https://aldentestockholm.com/",
+   "https://aldentestockholm.com/kontakta-oss/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 10597060462,
+  "name": "Diggiloo - Båstad",
+  "category": "venue",
+  "city": "Båstad, SE",
+  "address": "Kyrkogatan 3, 26933 Båstad, Sweden",
+  "website": "https://diggiloo.com/",
+  "contact_email": "info@diggiloo.se",
+  "contact_phone": "0771-47 70 70",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/10597060462",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 56.434812,
+  "lng": 12.8380648,
+  "gallery_urls": [
+   "https://diggiloo.com/wp-content/uploads/2024/02/diggiloo_header.jpg",
+   "https://diggiloo.com/wp-content/uploads/2026/07/PRESS_DIGGILOO-2026_PATRIK_KRALL_FLYGBILD-2_PREMIAR_KOSTA-800x450.jpg",
+   "https://diggiloo.com/wp-content/uploads/2026/06/Mix_Sommar_Diggiloo_1920x1080_2-800x450.png",
+   "https://diggiloo.com/wp-content/uploads/2026/06/Mix_Sommar_Diggiloo_1920x1080_2.png"
+  ],
+  "pages_checked": [
+   "https://diggiloo.com/",
+   "https://diggiloo.com/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 10579794886,
+  "name": "Diggiloo - Göteborg",
+  "category": "venue",
+  "city": "Göteborg, SE",
+  "address": "Skatåsvägen 25, 41655 Göteborg, Sweden",
+  "website": "https://diggiloo.com/",
+  "contact_email": "info@diggiloo.se",
+  "contact_phone": "0771-47 70 70",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/10579794886",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 57.7038341,
+  "lng": 12.0401885,
+  "gallery_urls": [
+   "https://diggiloo.com/wp-content/uploads/2024/02/diggiloo_header.jpg",
+   "https://diggiloo.com/wp-content/uploads/2026/07/PRESS_DIGGILOO-2026_PATRIK_KRALL_FLYGBILD-2_PREMIAR_KOSTA-800x450.jpg",
+   "https://diggiloo.com/wp-content/uploads/2026/06/Mix_Sommar_Diggiloo_1920x1080_2-800x450.png",
+   "https://diggiloo.com/wp-content/uploads/2026/06/Mix_Sommar_Diggiloo_1920x1080_2.png"
+  ],
+  "pages_checked": [
+   "https://diggiloo.com/",
+   "https://diggiloo.com/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "node",
+  "osm_id": 6742648494,
+  "name": "Grevieparken",
+  "category": "venue",
+  "city": "Grevie, SE",
+  "address": "Hålarpsvägen 14, 269 62 Grevie, Sweden",
+  "website": "https://www.grevieparken.se/",
+  "contact_email": "info@grevieparken.se",
+  "contact_phone": "0431 - 36 11 51",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/node/6742648494",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 56.3915159,
+  "lng": 12.7679912,
+  "gallery_urls": [
+   "https://impro.usercontent.one/appid/oneComWsb/domain/grevieparken.se/media/grevieparken.se/onewebmedia/GP%20Logga.jpg?etag=%224f9e0-62057e28%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=526%2B274&extract=0%2B70%2B526%2B127&quality=85"
+  ],
+  "pages_checked": [
+   "https://www.grevieparken.se/",
+   "https://www.grevieparken.se/contact.html"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 387371652,
+  "name": "Herresta lada",
+  "category": "venue",
+  "city": "Märsta, SE",
+  "address": "Odensala Herresta 236, 19592 Märsta, Sweden",
+  "website": "https://herrestalada.com/",
+  "contact_email": "info@herrestalada.com",
+  "contact_phone": "0735465610",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/387371652",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 59.6514582,
+  "lng": 17.8458509,
+  "gallery_urls": [
+   "https://herrestalada.com/wp-content/uploads/2015/11/Logga_Text_Faglar_Journal3.png"
+  ],
+  "pages_checked": [
+   "https://herrestalada.com/",
+   "https://herrestalada.com/kontakt/"
+  ],
+  "accepted": true,
+  "missing": []
+ },
+ {
+  "osm_type": "way",
+  "osm_id": 1429728321,
+  "name": "Ramsele Konferens & Forskarcentrum",
+  "category": "venue",
+  "city": "Ramsele, SE",
+  "address": "Kägelbacken 6, 883 70 Ramsele, Sweden",
+  "website": "https://slaktforskarcentrum.se/",
+  "contact_email": "info@slaktforskarcentrum.se",
+  "contact_phone": "0104763650",
+  "image_hint": null,
+  "source_url": "https://www.openstreetmap.org/way/1429728321",
+  "country": "SE",
+  "ga4_active_users": 21,
+  "lat": 63.5368208,
+  "lng": 16.4610696,
+  "gallery_urls": [
+   "https://slaktforskarcentrum.se/wp-content/uploads/2022/02/translogga.png"
+  ],
+  "pages_checked": [
+   "https://slaktforskarcentrum.se/"
+  ],
+  "accepted": true,
+  "missing": []
+ }
+]

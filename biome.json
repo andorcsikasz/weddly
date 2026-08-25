@@ -8,6 +8,7 @@
       "**/*.lock",
       "**/*.lockb",
       "**/*.css",
+      "docs/*.json",
       "**/vite.config.*.timestamp-*",
       ".claude"
     ]

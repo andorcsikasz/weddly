@@ -1,0 +1,1270 @@
+{
+  "generated_at": "2026-08-19T00:52:51.669Z",
+  "source": "WKO Firmen A-Z search for Hochzeit plus vendor-owned websites",
+  "rules": {
+    "required": [
+      "name",
+      "complete address",
+      "phone",
+      "email",
+      "vendor website",
+      "1+ own-site image(s)"
+    ]
+  },
+  "total": 62,
+  "counts": {
+    "other": 16,
+    "live_music": 6,
+    "photography": 11,
+    "cake_dessert": 8,
+    "florist": 11,
+    "photo_booth": 1,
+    "entertainment": 1,
+    "celebrant": 3,
+    "videography": 2,
+    "wedding_decor": 1,
+    "venue": 1,
+    "dj": 1
+  },
+  "candidates": [
+    {
+      "source_profile": "https://www.white-lady.at/directory/ac-pictures/",
+      "country": "AT",
+      "name": "ac-pictures",
+      "category": "other",
+      "street": "Attergaustraße 26",
+      "postal_code": "4880",
+      "city": "St. Georgen im Attergau",
+      "address": "Attergaustraße 26, 4880 St. Georgen im Attergau, Österreich",
+      "phone": "0676846236531",
+      "email": "info@ac-pictures.net",
+      "website": "https://www.ac-pictures.net/kontakt/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.ac-pictures.net/wp-content/uploads/2021/03/passfoto-guetesiegel.png",
+        "https://www.ac-pictures.net/wp-content/uploads/2021/03/berufsfotografen-oesterreich-neu.jpg",
+        "https://www.ac-pictures.net/wp-content/uploads/2022/07/6Y8B1073-scaled.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/anna-may-saengerin-fuer-hochzeiten-events/",
+      "country": "AT",
+      "name": "Anna May – Sängerin für Hochzeiten & Events",
+      "category": "live_music",
+      "street": "Moserstraße 25",
+      "postal_code": "5020",
+      "city": "Salzburg",
+      "address": "Moserstraße 25, 5020 Salzburg, Österreich",
+      "phone": "06507210650",
+      "email": "kontakt@anna-may.at",
+      "website": "http://www.anna-may.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://le-cdn.website-editor.net/s/b34ec9c8538342b8868783c9011dfca6/dms3rep/multi/opt/fb-bild200x200-1920w.jpg?Expires=1789685019&Signature=jgZyDliOb~6UvROEoCl7J3iFhYcbl5MUjlnnjMXCX~nHCbQ943mUuhBftw6LE3vlfgEP4pJAjJEeLdvtQ4rtg0vaHVLJPTIm5amBDH9FpX6yBXkdsD4I2RHJeaZq2vjJz9AvLi~sgWoNNpfnGuZMbAB3MAfdHBGnFe~7OKjFzRuFv1WRQITt-L7~cebLRJkacqmIIO3F8ZVyPtTXtoqWKhEF3WSqDekbAdPARWyABpPW8FgoSMTuIC0wDitrdJ0u3gtvmbs-draOD935OdfrgfhJdoqi9LJhCui2w4nVEyt0pMDaSrq7L3iWIJmw72kANeDJBs2IZ6A~8tsqwaM7~g__&Key-Pair-Id=K2NXBXLF010TJW",
+        "https://le-cdn.website-editor.net/s/b34ec9c8538342b8868783c9011dfca6/dms3rep/multi/opt/Anna+May+Streb-1920w.jpg?Expires=1789685019&Signature=IsFPUD0p6lAga~cZTV0KQPGjt5Tj-pG~WN6oi3exyoK6p-mx-rIWVZL-xHw8F9VfSOkSKD5le3FCggZELI6TMqaA5fa6nDE2Bo15JPVsEmlLPFsmX-eFkXtygsIW3F8iPOLMLpEBD1f-fMOsW8IPtnrQTRWZxDE8k~w1r5iCV-S1lIS5Eha~eEabk1N4ubdcYCgd732exPNhFa-TLHwNHFCzaUEBfNeYKCFKu9RYCgDcuDozKeXJ-Qh04wyIm4IH5h94JwNR2aGdAkTNVp6mI3dgwN-pkLnQ456ZMVZfvpKgFgjUfx1xpJJwKjKpxb6Qxfq79OgZLNPj12ba~ZjHfw__&Key-Pair-Id=K2NXBXLF010TJW",
+        "https://le-cdn.website-editor.net/s/b34ec9c8538342b8868783c9011dfca6/dms3rep/multi/opt/-Maderegger-95--1920w.jpg?Expires=1789685019&Signature=HdbFa8vbY3eQ7snFAoBeH5jrhnt7KJ49nBhdulOBT3X364GiTvEEYUEoes6qKTtTG71FYepvmGniJCnpjrPeU61Y4lp5C7IXzYVUuUX4bV0Ov3zITXx-OFo9hvc53xf8tLWp2i3gkHLSSJ0PpFlAr7Oh3H~dTv017baeoAJV5uEy~0s-8deOPaM2orIKI-Ig1hjfXTBFA3rbQPyrGqTSHdsSTaB5cBJvnHptcp6C1EpJwtQo29ccCKlyx4Nib3oLrNYykYi~2G7HrvFRnhTPTuvSMa5k3I50OqxLMs3zrP5j8~FT~Du5t87LJzweWJ~MlXF86AWiSSLHIZ6zt7OywQ__&Key-Pair-Id=K2NXBXLF010TJW"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/art-of-moments-fotografie/",
+      "country": "AT",
+      "name": "Art of Moments Fotografie",
+      "category": "photography",
+      "street": "Industriestraße 7",
+      "postal_code": "4400",
+      "city": "Steyr",
+      "address": "Industriestraße 7, 4400 Steyr, Österreich",
+      "phone": "06764747177",
+      "email": "schlemmer@artofmoments.at",
+      "website": "https://www.artofmoments.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/07c099_d12f0a0165a640fc9cdc70cda77ccc36%7Emv2.png/v1/fit/w_2500,h_1330,al_c/07c099_d12f0a0165a640fc9cdc70cda77ccc36%7Emv2.png",
+        "https://static.wixstatic.com/media/07c099_1e4eb0648b884ace99e92a3add8a74ed~mv2_d_3000_1688_s_2.jpg/v1/fill/w_147,h_83,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/07c099_1e4eb0648b884ace99e92a3add8a74ed~mv2_d_3000_1688_s_2.jpg",
+        "https://static.wixstatic.com/media/07c099_7f06aa1783144527887dda6ef8a6cc16~mv2.jpg/v1/fill/w_147,h_83,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/07c099_7f06aa1783144527887dda6ef8a6cc16~mv2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/auge-music-hochzeitsband-oberoesterreich/",
+      "country": "AT",
+      "name": "Auge Music – Hochzeitsband Oberösterreich",
+      "category": "live_music",
+      "street": "Linzer Str. 58",
+      "postal_code": "4100",
+      "city": "Ottensheim",
+      "address": "Linzer Str. 58, 4100 Ottensheim, Österreich",
+      "phone": "069914000691",
+      "email": "kontakt@naturtrueb.at; christian.augustyn@gmail.com",
+      "website": "https://augemusic.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://augemusic.at/wp-content/uploads/2025/09/welcome-auge-music.jpg",
+        "https://augemusic.at/wp-content/uploads/2025/11/augeelsa_02.jpg",
+        "https://augemusic.at/wp-content/uploads/2025/10/Auge-Music-Brautpaar-im-Vordergrund-e1769617840870-1030x771.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/baeckerei-konditorei-necker/",
+      "country": "AT",
+      "name": "Bäckerei & Konditorei Necker",
+      "category": "cake_dessert",
+      "street": "Bahnstraße 93",
+      "postal_code": "5350",
+      "city": "Strobl",
+      "address": "Bahnstraße 93, 5350 Strobl, Österreich",
+      "phone": "0613720232",
+      "email": "info@baeckerei-necker.at",
+      "website": "https://www.baeckerei-necker.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.baeckerei-necker.at/wp-content/uploads/2024/08/Job-Konditorei-Wolfgangsee-1024x715.webp",
+        "http://www.baeckerei-necker.at/wp-content/uploads/2024/10/baeckerei-necker-holzofenbrot-scaled.webp",
+        "http://www.baeckerei-necker.at/wp-content/uploads/2024/10/Hochzeit-cake-pops_Necker-scaled.webp"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/band-sho/",
+      "country": "AT",
+      "name": "Band SHO",
+      "category": "live_music",
+      "street": "Sonnenweg",
+      "postal_code": "4164",
+      "city": "Schwarzenberg am Böhmerwald",
+      "address": "Sonnenweg, 4164 Schwarzenberg am Böhmerwald, Österreich",
+      "phone": "0676821253",
+      "email": "band.sho@gmx.at",
+      "website": "http://www.sho.co.at/category/kontakt/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "http://www.sho.co.at/wp-content/uploads/2018/06/IMG_4691.jpg",
+        "http://www.tobs.at/sho/wp/wp-content/uploads/2018/06/FotoSandra_klein.png",
+        "http://www.sho.co.at/wp-content/uploads/2018/06/heinz_klein.png"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/bindestelle-meisterfloristik/",
+      "country": "AT",
+      "name": "Bindestelle Meisterfloristik",
+      "category": "florist",
+      "street": "Franz-Josef-Straße 19",
+      "postal_code": "5020",
+      "city": "Salzburg",
+      "address": "Franz-Josef-Straße 19, 5020 Salzburg, Österreich",
+      "phone": "0662832012",
+      "email": "info@bindestelle.com",
+      "website": "http://www.bindestelle.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://bindestelle.at/wp-content/uploads/2026/08/SOMMER-PAUSE-.-bis-31.07.2-819x1024.jpg",
+        "https://bindestelle.at/wp-content/uploads/2020/05/wei%C3%9Fer-kranz-bindestelle_lisa-jungmann-fotografie_12-684x1024.jpg",
+        "https://bindestelle.at/wp-content/uploads/2020/03/wei%C3%9Fer-kranz-bindestelle_lisa-jungmann-fotografie_17-1024x684.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/blaetterwerk-lisi-prelog-massgeschneiderte-blumenarrangements/",
+      "country": "AT",
+      "name": "Blätterwerk Lisi Prelog – Maßgeschneiderte Blumenarrangements",
+      "category": "florist",
+      "street": "Wiesenweg 10",
+      "postal_code": "5350",
+      "city": "Abersee",
+      "address": "Wiesenweg 10, 5350 Abersee, Österreich",
+      "phone": "06605688999",
+      "email": "dsb@dsb.gv.at; info@blaetterwerk.at",
+      "website": "https://www.blaetterwerk.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.blaetterwerk.at/wp-content/uploads/Blaetterwerk-QU2.png",
+        "https://www.blaetterwerk.at/wp-content/uploads/Blaetterwerk-white.png",
+        "https://www.blaetterwerk.at/wp-content/uploads/Blaetterwerk-WEB800.png"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/blumen-buchegger/",
+      "country": "AT",
+      "name": "Blumen Buchegger",
+      "category": "florist",
+      "street": "Friedhofgasse 1a",
+      "postal_code": "4522",
+      "city": "Sierning",
+      "address": "Friedhofgasse 1a, 4522 Sierning, Österreich",
+      "phone": "0725923850",
+      "email": "office@blumenbuchegger.com",
+      "website": "https://blumenbuchegger.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://blumenbuchegger.com/wp-content/uploads/2021/01/blumenbuchegger_7O0A0595_1200x630.jpg",
+        "https://blumenbuchegger.com/wp-content/uploads/2021/01/Arrangements_800x600.jpg",
+        "https://blumenbuchegger.com/wp-content/uploads/2021/01/taeglich_800x1066.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/blumen-gebetsroither/",
+      "country": "AT",
+      "name": "Blumen Gebetsroither",
+      "category": "florist",
+      "street": "Lerchenfeldstraße 9",
+      "postal_code": "4850",
+      "city": "Timelkam",
+      "address": "Lerchenfeldstraße 9, 4850 Timelkam, Österreich",
+      "phone": "0767292082",
+      "email": "office@blumengebetsroither.at",
+      "website": "https://www.blumengebetsroither.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.blumengebetsroither.at/wp-content/uploads/2022/02/Blumen_1.jpg",
+        "https://www.blumengebetsroither.at/wp-content/uploads/2022/02/Blumen_2.jpg",
+        "https://www.blumengebetsroither.at/wp-content/uploads/2022/02/Blumen_3.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/blumen-muscari/",
+      "country": "AT",
+      "name": "Blumen Muscari",
+      "category": "florist",
+      "street": "Glöckelstraße 8",
+      "postal_code": "4663",
+      "city": "Laakirchen",
+      "address": "Glöckelstraße 8, 4663 Laakirchen, Österreich",
+      "phone": "06604032500",
+      "email": "office@muscari.at",
+      "website": "https://www.muscari.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.muscari.at/img/front/team-md.jpg",
+        "https://www.muscari.at/img/front/laakirchen-md.jpg",
+        "https://www.muscari.at/img/front/team-xs.webp"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/blumen-und-deko-elke-kneidinger/",
+      "country": "AT",
+      "name": "Blumen und Deko Elke Kneidinger",
+      "category": "florist",
+      "street": "Am Binderhügel 1",
+      "postal_code": "4150",
+      "city": "Rohrbach in OÖ",
+      "address": "Am Binderhügel 1, 4150 Rohrbach in OÖ, Österreich",
+      "phone": "072898611",
+      "email": "info@blumenunddeko.com",
+      "website": "https://www.blumenunddeko.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.blumenunddeko.com/wp-content/uploads/2023/11/blumen_blumen-und-deko_2.jpg",
+        "https://www.blumenunddeko.com/wp-content/uploads/2023/11/deko_blumen-und-deko_3.jpg",
+        "https://www.blumenunddeko.com/wp-content/uploads/2023/11/schmuck_blumen-und-deko_1.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/blumen-yousseff/",
+      "country": "AT",
+      "name": "Blumen Yousseff",
+      "category": "florist",
+      "street": "Feldgasse 4",
+      "postal_code": "4840",
+      "city": "Vöcklabruck",
+      "address": "Feldgasse 4, 4840 Vöcklabruck, Österreich",
+      "phone": "069911936984",
+      "email": "info@blumen-yousseff.at",
+      "website": "https://www.blumen-yousseff.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.blumen-yousseff.at/uploads/grMgi1dj/727x727_2507x2507/2018-04-111.jpg",
+        "https://www.blumen-yousseff.at/uploads/9OxA4McY/727x727_2507x2507/2021-02-121.jpg",
+        "https://www.blumen-yousseff.at/uploads/YFMYtYyA/727x727_2507x2507/2018-04-11.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/blumengeschaeft-flora-brons-gaertnerei/",
+      "country": "AT",
+      "name": "Blumengeschäft Flora Brons Gärtnerei",
+      "category": "florist",
+      "street": "Linzer Str. 50",
+      "postal_code": "4840",
+      "city": "Vöcklabruck",
+      "address": "Linzer Str. 50, 4840 Vöcklabruck, Österreich",
+      "phone": "06649489626",
+      "email": "office@brons.at; varena@brons.at",
+      "website": "https://www.brons.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.brons.at/uploads/FkosIs7t/727x727_640x640/HG-garten__msi___jpg.webp",
+        "https://www.brons.at/uploads/HyBoLrfs/727x727_640x640/Gartenarbeit__msi___jpg.webp",
+        "https://www.brons.at/uploads/9TIfPRlb/727x727_640x640/HG_Floristik__msi___jpg.webp"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/blumenwiese/",
+      "country": "AT",
+      "name": "Blumenwiese",
+      "category": "florist",
+      "street": "Klosterstraße 6",
+      "postal_code": "4020",
+      "city": "Linz",
+      "address": "Klosterstraße 6, 4020 Linz, Österreich",
+      "phone": "06606030488",
+      "email": "unsinstagramfacebookkontaktblumenwiese.linz@gmail.com",
+      "website": "https://www.die-blumenwiese.florist/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://cdn.prod.website-files.com/65416ada6f2dc6bef2910591/6548cd8be6448ac7a67baf81_Open_Graph_Blumenwiese.webp",
+        "https://cdn.prod.website-files.com/65416ada6f2dc6bef2910591/65ab8a4298b1254dc1b1dfda_Blumenwiese-10.jpg",
+        "https://cdn.prod.website-files.com/65416ada6f2dc6bef2910591/65b1ee6d2605aa74273ab868_Blumenwiese_Homepage-2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/cafe-konditorei-braun/",
+      "country": "AT",
+      "name": "Cafe Konditorei Braun",
+      "category": "cake_dessert",
+      "street": "Marbach a.D. 20",
+      "postal_code": "3671",
+      "city": "Marbach an der Donau",
+      "address": "Marbach a.D. 20, 3671 Marbach an der Donau, Österreich",
+      "phone": "07413203",
+      "email": "office@cafe-braun.at",
+      "website": "http://www.cafe-braun.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://cdn.shopify.com/s/files/1/0514/6797/6887/files/Kopie_von_Braun_36b73619-d91c-4953-bc80-f205cbf38a8a.png?v=1656000848",
+        "https://www.cafe-braun.at/cdn/shop/files/20190105_Barbara_Marbach_1496_1000x1000.jpg?v=1614331859",
+        "https://www.cafe-braun.at/cdn/shop/files/20190105_Barbara_Marbach_1496_150x.jpg?v=1614331859"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/cafe-konditorei-lebzelterei-wallner/",
+      "country": "AT",
+      "name": "Café, Konditorei & Lebzelterei Wallner",
+      "category": "cake_dessert",
+      "street": "Markt 29",
+      "postal_code": "5360",
+      "city": "St. Wolfgang im Salzkammergut",
+      "address": "Markt 29, 5360 St. Wolfgang im Salzkammergut, Österreich",
+      "phone": "061382272",
+      "email": "wolfganginfo@wallner24.at",
+      "website": "https://www.cafe-wallner.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://cdn.prod.website-files.com/5fbe61b3f30dca3e0344f82c/5fce6538957edb311310c7b9_cafe-wallner-stwolfgang.jpg",
+        "https://cdn.prod.website-files.com/5fbe61b3f30dca3e0344f82c/66ab247893340e7b1279ec40_english-flag.png",
+        "https://cdn.prod.website-files.com/5fbe61b3f30dca3e0344f82c/66ab2478284485b2fc61e827_german-flag.png"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/christina-kirsch-photography/",
+      "country": "AT",
+      "name": "CHRISTINA KIRSCH PHOTOGRAPHY",
+      "category": "photography",
+      "street": "Ulmenweg 5",
+      "postal_code": "4052",
+      "city": "Ansfelden",
+      "address": "Ulmenweg 5, 4052 Ansfelden, Österreich",
+      "phone": "06606017131",
+      "email": "info@christinakirsch.com",
+      "website": "https://www.christinakirsch.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.christinakirsch.com/wp-content/uploads/2023/04/Hochzeit_20220527_0161.jpg",
+        "https://www.christinakirsch.com/wp-content/uploads/2026/03/DSC3335.jpg",
+        "https://www.christinakirsch.com/wp-content/uploads/2026/03/DSC2995.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/christinas-fotografie/",
+      "country": "AT",
+      "name": "Christinas Fotografie",
+      "category": "photography",
+      "street": "Waldweg 2",
+      "postal_code": "4892",
+      "city": "Fornach",
+      "address": "Waldweg 2, 4892 Fornach, Österreich",
+      "phone": "06763175880",
+      "email": "christinas.fotografie@gmail.com",
+      "website": "https://www.christinasfotografie.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/7e69d8_43346e8e05a748709d3e394abbeb5a29~mv2.png/v1/fill/w_420,h_182,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Unbenanntes_Projekt%208.png",
+        "https://static.wixstatic.com/media/7e69d8_b4ad371cefd840a48a14349456aca0e6~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/7e69d8_b4ad371cefd840a48a14349456aca0e6~mv2.jpg",
+        "https://static.wixstatic.com/media/3d8d80_e8e5fa89d16d4eb79e191413c15195d4~mv2.jpg/v1/crop/x_2,y_0,w_2047,h_3071/fill/w_300,h_449,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/laurice-manaligod-q1uiITCnFfY-unsplash.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/claudia-waschkau-i-glory-days-weddings/",
+      "country": "AT",
+      "name": "Claudia Waschkau I glory days WEDDINGS",
+      "category": "other",
+      "street": "Wiespachstraße 7",
+      "postal_code": "5400",
+      "city": "Hallein",
+      "address": "Wiespachstraße 7, 5400 Hallein, Österreich",
+      "phone": "06602831161",
+      "email": "weddings@glorydays.at",
+      "website": "http://www.glorydays.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://glorydays.at/wp-content/uploads/2023/07/glorydays-wedding-planer.jpg",
+        "https://glorydays.at/wp-content/uploads/2023/06/geschmueckter-tisch.jpg",
+        "https://glorydays.at/wp-content/uploads/2023/06/hochzeitstisch.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/cluesine-wedding-events-fine-dining/",
+      "country": "AT",
+      "name": "Cluesine wedding. events. fine dining.",
+      "category": "other",
+      "street": "Herzog Odilo-Straße 21",
+      "postal_code": "5310",
+      "city": "Mondsee",
+      "address": "Herzog Odilo-Straße 21, 5310 Mondsee, Österreich",
+      "phone": "066488657309",
+      "email": "wedding-events@cluesine.com",
+      "website": "https://www.cluesine.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.cluesine.com/wp-content/uploads/2024/11/hochzeitsdekoration-luxus-hochzeit-weisse-blumen-gold-saal.jpg",
+        "https://www.cluesine.com/wp-content/plugins/revslider/sr6/assets/assets/dummy.png",
+        "https://www.cluesine.com/wp-content/uploads/2025/04/Tina_Professional_WeddingPlanner_CluesineWeddingEventsFineDining.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/coverage-hochzeitsband-akustik-duo-partyband/",
+      "country": "AT",
+      "name": "Coverage – Hochzeitsband, Akustik-Duo, Partyband",
+      "category": "live_music",
+      "street": "Birnenweg 24",
+      "postal_code": "4061",
+      "city": "Pasching",
+      "address": "Birnenweg 24, 4061 Pasching, Österreich",
+      "phone": "069911110334",
+      "email": "office@coverage.co.at",
+      "website": "https://www.coverage.co.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.coverage.co.at/wp-content/uploads/Unplugged-Duo-fuer-Hochzeit.jpg",
+        "https://www.coverage.co.at/wp-content/uploads/Coverage-Live-Musik-fuer-Events-1.jpg",
+        "https://www.coverage.co.at/wp-content/uploads/Hochzeitspaar-300x200.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/dana-denk-photography/",
+      "country": "AT",
+      "name": "DANA DENK PHOTOGRAPHY",
+      "category": "photography",
+      "street": "Kramerstraße 24",
+      "postal_code": "4655",
+      "city": "Vorchdorf",
+      "address": "Kramerstraße 24, 4655 Vorchdorf, Österreich",
+      "phone": "06641201916",
+      "email": "dana.denk@icloud.com",
+      "website": "http://www.danadenk.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/0a7ba9_6c83129d9f2248aea54d0c2c8a58fc2e%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/0a7ba9_6c83129d9f2248aea54d0c2c8a58fc2e%7Emv2.jpg",
+        "https://static.wixstatic.com/media/0a7ba9_8a72fa1bc4d64731881c1c7015bd5795~mv2.jpg/v1/fill/w_147,h_83,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/0a7ba9_8a72fa1bc4d64731881c1c7015bd5795~mv2.jpg",
+        "https://static.wixstatic.com/media/0a7ba9_caebb84e67f74f458cd8b2b7e0b45b91%7Emv2.jpg/v1/fill/w_192%2Ch_192%2Clg_1%2Cusm_0.66_1.00_0.01/0a7ba9_caebb84e67f74f458cd8b2b7e0b45b91%7Emv2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/der-fotomacher-by-thomas-lamplmair/",
+      "country": "AT",
+      "name": "Der Fotomacher by Thomas Lamplmair",
+      "category": "other",
+      "street": "Wiesenweg 14",
+      "postal_code": "4452",
+      "city": "Ternberg",
+      "address": "Wiesenweg 14, 4452 Ternberg, Österreich",
+      "phone": "06648304423",
+      "email": "office@derfotomacher.at",
+      "website": "http://www.derfotomacher.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://derfotomacher.at/wp-content/uploads/2024/04/Charismatische-anologe-Portraitfotografie-1024x1024.jpg",
+        "https://derfotomacher.at/wp-content/uploads/2026/02/DSC6789-768x1024.jpg",
+        "https://derfotomacher.at/wp-content/uploads/2026/06/110359-lg-QEP-RGB-300x293.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/die-wohlfuehlfotografin-margit-sommergruber/",
+      "country": "AT",
+      "name": "Die Wohlfühlfotografin – Margit Sommergruber",
+      "category": "photography",
+      "street": "Gerhardingerstraße 7",
+      "postal_code": "4240",
+      "city": "Freistadt",
+      "address": "Gerhardingerstraße 7, 4240 Freistadt, Österreich",
+      "phone": "069911276177",
+      "email": "margit@sommergruber.at",
+      "website": "http://www.sommergruber.at/kontakt/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.sommergruber.at/wp-content/uploads/2022/03/MS_Wohlfu%CC%88hlfotografin_Blume_Zeichenfla%CC%88che-1-180x180.png",
+        "https://www.sommergruber.at/wp-content/uploads/2024/08/hochzeit-margit-sommergruber-057-470x705.jpg",
+        "https://www.sommergruber.at/wp-content/uploads/2024/08/hochzeit-margit-sommergruber-051-530x705.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/entertainer-king-grace/",
+      "country": "AT",
+      "name": "Entertainer King-Grace",
+      "category": "other",
+      "street": "Bauerstraße 10",
+      "postal_code": "4820",
+      "city": "Bad Ischl",
+      "address": "Bauerstraße 10, 4820 Bad Ischl, Österreich",
+      "phone": "06503340224",
+      "email": "management@king-grace.at",
+      "website": "https://www.king-grace.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.king-grace.at/s/img/emotionheader5624033.jpg",
+        "https://www.king-grace.at/s/cc_images/cache_40463711.png?t=1773851332",
+        "https://www.king-grace.at/s/img/emotionheader5707960.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/fotoboxvermietung/",
+      "country": "AT",
+      "name": "Fotoboxvermietung",
+      "category": "photo_booth",
+      "street": "Linzer Str. 58",
+      "postal_code": "4614",
+      "city": "Marchtrenk",
+      "address": "Linzer Str. 58, 4614 Marchtrenk, Österreich",
+      "phone": "06606741802",
+      "email": "office@fotoboxvermietung.com",
+      "website": "https://www.fotoboxvermietung.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.fotoboxvermietung.com/images/team/team.avif",
+        "https://www.fotoboxvermietung.com/images/sofortbild.avif",
+        "https://www.fotoboxvermietung.com/images/boxen.avif"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/freie-rednerin-viktoria-kluwe/",
+      "country": "AT",
+      "name": "Freie Rednerin – Viktoria Kluwe",
+      "category": "other",
+      "street": "Hofmark 3",
+      "postal_code": "4961",
+      "city": "Mühlheim am Inn",
+      "address": "Hofmark 3, 4961 Mühlheim am Inn, Österreich",
+      "phone": "069912123883",
+      "email": "viktoria.kluwe@zeremonien-rede.at",
+      "website": "http://www.zeremonien-rede.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://zeremonien-rede.at/wp-content/uploads/2022/07/20220527-Viktoria-Kluwe-0170.jpg",
+        "https://zeremonien-rede.at/wp-content/uploads/2025/03/liebverenafotografie-224-scaled.jpg",
+        "https://zeremonien-rede.at/wp-content/uploads/2025/03/Kosia-45.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/freie-rednerin-manuela-scheier/",
+      "country": "AT",
+      "name": "Freie Rednerin Manuela Scheier",
+      "category": "other",
+      "street": "Kühweid 90",
+      "postal_code": "4362",
+      "city": "Bad Kreuzen",
+      "address": "Kühweid 90, 4362 Bad Kreuzen, Österreich",
+      "phone": "06644417960",
+      "email": "manu.scheier@gmx.at",
+      "website": "https://www.freierednerinmanuela.at/?utm_source=google&utm_medium=wix_google_business_profile&utm_campaign=12712330401779290205",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/a72359_a00cf21081b64957ac7aaac6e95cab97~mv2.jpg/v1/fill/w_773,h_514,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/pic%20(261%20von%20599).jpg",
+        "https://static.wixstatic.com/media/a72359_c2965fce6d424c2f8e2e96d1e1c17c51~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/a72359_c2965fce6d424c2f8e2e96d1e1c17c51~mv2.jpg",
+        "https://www.freierednerinmanuela.at/quality_auto/pic%20(261%20von%20599).jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/gaertnerei-blumen-floristik-max-weber/",
+      "country": "AT",
+      "name": "Gärtnerei – Blumen & Floristik Max Weber",
+      "category": "florist",
+      "street": "Rupert Gugg-Straße 2a",
+      "postal_code": "5280",
+      "city": "Braunau am Inn",
+      "address": "Rupert Gugg-Straße 2a, 5280 Braunau am Inn, Österreich",
+      "phone": "07722844600",
+      "email": "info@gartengestaltung-weber.at",
+      "website": "https://www.gartengestaltung-weber.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://primary.jwwb.nl/unsplash/4CQ3sEkV-TE.jpg?enable-io=true&enable=upscale&fit=bounds&width=1200",
+        "https://primary.jwwb.nl/unsplash/jin4W1HqgL4.jpg?enable-io=true&enable=upscale&crop=0.8333%3A1&width=800",
+        "https://primary.jwwb.nl/unsplash/xBxnC9TfPOk.jpg?enable-io=true&enable=upscale&crop=0.8333%3A1&width=800"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/gaertnerei-bachleitner/",
+      "country": "AT",
+      "name": "Gärtnerei Bachleitner",
+      "category": "other",
+      "street": "Stadtpl. 30",
+      "postal_code": "5230",
+      "city": "Mattighofen",
+      "address": "Stadtpl. 30, 5230 Mattighofen, Österreich",
+      "phone": "077423100",
+      "email": "mattighofen+43-7742-2275-0+43-7742-2275-17blumen.bachleitner@aon.at; blumen.bachleitner@aon.at",
+      "website": "https://www.gaertnerei-bachleitner.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.gaertnerei-bachleitner.at/fileadmin/_processed_/3/f/csm__VDA9527_2e7b91bad7.jpg",
+        "https://www.gaertnerei-bachleitner.at/fileadmin/_processed_/3/f/csm__VDA9527_a909610aa0.jpg",
+        "https://www.gaertnerei-bachleitner.at/fileadmin/_processed_/5/2/csm_orchide2_ec5dd5b842.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/gegenhuber-gmbh-baeckerei-cafe-konditorei/",
+      "country": "AT",
+      "name": "Gegenhuber GmbH Bäckerei-Cafe-Konditorei",
+      "category": "cake_dessert",
+      "street": "Vestenthal 18",
+      "postal_code": "4431",
+      "city": "Haidershofen",
+      "address": "Vestenthal 18, 4431 Haidershofen, Österreich",
+      "phone": "0743442815",
+      "email": "office@gegenhuber.co.at",
+      "website": "http://www.gegenhuber.co.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.gegenhuber.co.at/uploads/BoPRx0qX/602x0_602x0/nah_frisch__msi___jpg.webp",
+        "https://www.gegenhuber.co.at/uploads/dBgN8JaD/697x697_640x640/buffet_firmen01__msi___jpg.webp",
+        "https://www.gegenhuber.co.at/uploads/x9HfVazG/697x697_640x640/buffet_firmen02__msi___jpg.webp"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/handgezaubert/",
+      "country": "AT",
+      "name": "Handgezaubert",
+      "category": "entertainment",
+      "street": "Au 42",
+      "postal_code": "4822",
+      "city": "Bad Goisern am Hallstättersee",
+      "address": "Au 42, 4822 Bad Goisern am Hallstättersee, Österreich",
+      "phone": "06643764205",
+      "email": "anfragen@handgezaubert.at",
+      "website": "http://www.handgezaubert.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://handgezaubert.at/wp-content/uploads/2024/11/ich2.jpg",
+        "https://handgezaubert.at/wp-content/uploads/2021/07/handgezaubert.png",
+        "https://handgezaubert.at/wp-content/uploads/2024/11/ich3-scaled.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/hochzeitsfotograf-paarfotograf-fotofellow/",
+      "country": "AT",
+      "name": "Hochzeitsfotograf; Paarfotograf FotoFellow",
+      "category": "photography",
+      "street": "Linz AT, Plesching 23",
+      "postal_code": "4040",
+      "city": "Plesching",
+      "address": "Linz AT, Plesching 23, 4040 Plesching, Österreich",
+      "phone": "06767242856",
+      "email": "fotofellowlinz@gmail.com",
+      "website": "https://www.fotofellow.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/0fdef751204647a3bbd7eaa2827ed4f9.png/v1/fill/w_95,h_95,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/0fdef751204647a3bbd7eaa2827ed4f9.png",
+        "https://static.wixstatic.com/media/01c3aff52f2a4dffa526d7a9843d46ea.png/v1/fill/w_95,h_95,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/01c3aff52f2a4dffa526d7a9843d46ea.png",
+        "https://static.wixstatic.com/media/8c1bca_9ae4ac1f469d4d6e977638934ebf2965~mv2.jpg/v1/fill/w_147,h_66,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/8c1bca_9ae4ac1f469d4d6e977638934ebf2965~mv2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/hochzeitssegen-theologe-immanuel-fiausch-ma-mba-beste-freie-trauung-oesterreichs-award-in-gold-2020-2022/",
+      "country": "AT",
+      "name": "Hochzeitssegen – Theologe Immanuel Fiausch MA MBA – Beste Freie Trauung Österreichs Award in Gold 2020 & 2022",
+      "category": "celebrant",
+      "street": "Salzburger Str. 6",
+      "postal_code": "5163",
+      "city": "Mattsee",
+      "address": "Salzburger Str. 6, 5163 Mattsee, Österreich",
+      "phone": "06645111404",
+      "email": "info@hochzeitssegen.at",
+      "website": "http://www.hochzeitssegen.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://image.jimcdn.com/app/cms/image/transf/none/path/s22d4b1ec0b8d9c44/image/if3573af1562cf22e/version/1665959015/image.jpg",
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=266x10000:format=jpg/path/s22d4b1ec0b8d9c44/image/ic02c2ce3282b4833/version/1768154646/image.jpg",
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=830x10000:format=jpg/path/s22d4b1ec0b8d9c44/image/if3573af1562cf22e/version/1665959015/image.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/kb-photography/",
+      "country": "AT",
+      "name": "KB Photography",
+      "category": "photography",
+      "street": "Franz Stelzhamer-Straße 26",
+      "postal_code": "4710",
+      "city": "Grieskirchen",
+      "address": "Franz Stelzhamer-Straße 26, 4710 Grieskirchen, Österreich",
+      "phone": "06645380808",
+      "email": "office@nullkb-photography.at; office@kb-photography.at",
+      "website": "http://www.kb-photography.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "http://www.kb-photography.at/wp/wp-content/themes/rundr-parallax/images/socfb.png",
+        "https://www.kb-photography.at/wp/wp-content/uploads/B78A4260_sw-1801x525.jpg",
+        "https://www.kb-photography.at/wp/wp-content/uploads/SlideHochzeit.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/m-passione-patisserie-confiserie/",
+      "country": "AT",
+      "name": "M Passione – Patisserie & Confiserie",
+      "category": "cake_dessert",
+      "street": "Wolf-Dietrich-Straße 17",
+      "postal_code": "5020",
+      "city": "Salzburg",
+      "address": "Wolf-Dietrich-Straße 17, 5020 Salzburg, Österreich",
+      "phone": "06604017947",
+      "email": "office@mpassione.com",
+      "website": "http://mpassione.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://mpassione.com/wp-content/uploads/2026/05/180730_mPassione-174-200x300.jpg",
+        "https://mpassione.com/wp-content/uploads/2026/05/cropped-IMG_3044-scaled-1.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/music-foundation-fritz-hoefer/",
+      "country": "AT",
+      "name": "Music foundation | Fritz Höfer",
+      "category": "other",
+      "street": "Grazer Bundesstraße",
+      "postal_code": "5023",
+      "city": "Salzburg",
+      "address": "Grazer Bundesstraße, 5023 Salzburg, Österreich",
+      "phone": "06641355100",
+      "email": "info@musicfoundation.at",
+      "website": "http://www.musicfoundation.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.mothercare.co.id/media/catalog/product/1/1/119669web1_1.jpg?optimize=low&bg-color=255,255,255&fit=bounds&height=270&width=270&canvas=270:270",
+        "https://www.mothercare.co.id/static/version1741963345/frontend/Codilar/mothercare/id_ID/images/app.png",
+        "https://www.mothercare.co.id/static/version1741963345/frontend/Codilar/mothercare/id_ID/images/apple-en.png"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/myflowers-gmbh-4/",
+      "country": "AT",
+      "name": "myFlowers GmbH",
+      "category": "other",
+      "street": "Wegscheider Str. 3",
+      "postal_code": "4020",
+      "city": "Linz",
+      "address": "Wegscheider Str. 3, 4020 Linz, Österreich",
+      "phone": "0732375028",
+      "email": "office@myflowers.at",
+      "website": "http://www.myflowers.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.myflowers.at/wp-content/uploads/2026/07/Hochzeitfloristik_myFlowers_3.jpg",
+        "https://www.myflowers.at/wp-content/uploads/2026/07/myFlowers_Fruehling.jpg",
+        "https://www.myflowers.at/wp-content/uploads/2026/07/myflowers_Header.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/naturtrueb-partyband-hochzeitsband/",
+      "country": "AT",
+      "name": "Naturtrüb Partyband Hochzeitsband",
+      "category": "live_music",
+      "street": "Linzer Str. 60",
+      "postal_code": "4100",
+      "city": "Ottensheim",
+      "address": "Linzer Str. 60, 4100 Ottensheim, Österreich",
+      "phone": "069914000691",
+      "email": "kontakt@naturtrueb.at; christian.augustyn@gmail.com",
+      "website": "https://naturtrueb.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://naturtrueb.at/wp-content/uploads/2026/01/Naturtrueb-Nacht-in-Tracht-2026-01-1-773x1030.jpg",
+        "https://naturtrueb.at/wp-content/uploads/2025/02/20240907_192241-1500x430.jpg",
+        "https://naturtrueb.at/wp-content/uploads/2025/09/Naturtrueb-Start-1-1500x430.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/nina-wenzel-die-fotograefin-i-hochzeitsfotografin-aus-oberoesterreich/",
+      "country": "AT",
+      "name": "Nina Wenzel – die Fotogräfin I Hochzeitsfotografin aus Oberösterreich",
+      "category": "photography",
+      "street": "Schlosspark 11",
+      "postal_code": "4101",
+      "city": "Feldkirchen an der Donau",
+      "address": "Schlosspark 11, 4101 Feldkirchen an der Donau, Österreich",
+      "phone": "06506607760",
+      "email": "ninawenzel@foto-graefin.net",
+      "website": "https://www.foto-graefin.net/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://images.squarespace-cdn.com/content/v1/5ea6a118daeea761ef4a640b/1727957869338-OPERFZ4Q6HLC5M5UJK14/Nicole+und+Benjamin_0117.jpg",
+        "https://images.squarespace-cdn.com/content/v1/5ea6a118daeea761ef4a640b/1624366293029-AQISGVJ4EATIEOLA5DUR/Nina+Wenzel+-+Hochzeitsfotografin+f%C3%BCr+Linz%2C+Linz-Land+und+ganz+Ober%C3%B6sterreich.jpg",
+        "https://images.squarespace-cdn.com/content/v1/5ea6a118daeea761ef4a640b/8ed32366-87c1-4758-993f-27837b25bb76/Hochzeitsfotograf+Linz%2C+Ober%C3%B6sterreich-1.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/orla-konditorei-linz/",
+      "country": "AT",
+      "name": "ORLA Konditorei Linz",
+      "category": "cake_dessert",
+      "street": "Magazingasse 10",
+      "postal_code": "4020",
+      "city": "Linz",
+      "address": "Magazingasse 10, 4020 Linz, Österreich",
+      "phone": "06608408842",
+      "email": "o.mammadov@yahoo.com; o.mammedov@yahoo.com; info.orlakonditorei@gmail.com",
+      "website": "https://orla-konditorei.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "http://orla-konditorei.at/wp-content/uploads/2025/01/cropped-cropped-pngtree-purple-birthday-cake-png-image_9957532.png",
+        "http://orla-konditorei.at/wp-content/uploads/2025/01/cropped-cropped-pngtree-pink-cake-png-image_12825370.png",
+        "http://orla-konditorei.at/wp-content/uploads/2025/01/cropped-pngtree-fruit-cake-png-image_13846532.png"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/pani-baecker/",
+      "country": "AT",
+      "name": "Pani-Bäcker",
+      "category": "other",
+      "street": "Herrenstraße 7",
+      "postal_code": "4320",
+      "city": "Perg",
+      "address": "Herrenstraße 7, 4320 Perg, Österreich",
+      "phone": "07262525340",
+      "email": "pani@baecker.at",
+      "website": "http://www.pani.baecker.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "http://www.pani.baecker.at/de/img.php?src=upload/content/49/Plakat_Pani.webp",
+        "http://www.pani.baecker.at/de/template/img/content/pani-baecker-01.jpg",
+        "http://www.pani.baecker.at/de/template/img/content/kornspitz.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/patricia-koppenberger-philipp-lion-foto-filmwerk-og/",
+      "country": "AT",
+      "name": "Patricia Koppenberger & Philipp Lion – FOTO & FILMWERK OG",
+      "category": "videography",
+      "street": "Walchshof 3",
+      "postal_code": "4291",
+      "city": "Lasberg",
+      "address": "Walchshof 3, 4291 Lasberg, Österreich",
+      "phone": "06602579943",
+      "email": "info@fotofilmwerk.at",
+      "website": "http://www.fotofilmwerk.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://images.squarespace-cdn.com/content/v1/5ee72d382f1141316eeb7d9e/22ea05ba-b5d0-4e9c-bd27-20584eafddb1/SCHRIFTZUG.png?format=1500w",
+        "https://images.squarespace-cdn.com/content/v1/5ee72d382f1141316eeb7d9e/f8597b7d-bf76-4faf-bff6-569ac063000b/SCHRIFTZUG.png?format=1500w",
+        "https://images.squarespace-cdn.com/content/v1/5ee72d382f1141316eeb7d9e/1698861095714-GKJ3IFGQQLK6QDS3BJN0/image-asset.jpeg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/perfektheiraten/",
+      "country": "AT",
+      "name": "perfektheiraten",
+      "category": "other",
+      "street": "Abt-Bessel-Straße 587",
+      "postal_code": "3511",
+      "city": "Furth bei Göttweig",
+      "address": "Abt-Bessel-Straße 587, 3511 Furth bei Göttweig, Österreich",
+      "phone": "067761232131",
+      "email": "info@perfektheiraten.at",
+      "website": "https://www.perfektheiraten.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://perfektheiraten.at/wp-content/uploads/2026/01/harald-winkler-weddingplanner-niederoesterreich.webp",
+        "https://perfektheiraten.at/wp-content/uploads/2023/09/hochzeitsplanung-perfektheiraten-harald-winkler-2.webp",
+        "https://perfektheiraten.at/wp-content/uploads/2023/10/Wedding-Bible.webp"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/phototheker-wolfgang-kuehn/",
+      "country": "AT",
+      "name": "Phototheker Wolfgang Kühn",
+      "category": "photography",
+      "street": "Hauptstraße 9",
+      "postal_code": "4863",
+      "city": "Seewalchen am Attersee",
+      "address": "Hauptstraße 9, 4863 Seewalchen am Attersee, Österreich",
+      "phone": "06769461918",
+      "email": "office@phototheker.at",
+      "website": "http://www.phototheker.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://phototheker.at/wp-content/uploads/2019/01/Phototheker_004-1024x683.jpg",
+        "https://phototheker.at/wp-content/uploads/2019/02/baby_thumbnail.jpg",
+        "https://phototheker.at/wp-content/uploads/2019/02/business_thumb.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/rene-resch-fotografie/",
+      "country": "AT",
+      "name": "René Resch Fotografie",
+      "category": "photography",
+      "street": "Waaggasse 23",
+      "postal_code": "4240",
+      "city": "Freistadt",
+      "address": "Waaggasse 23, 4240 Freistadt, Österreich",
+      "phone": "06763575880",
+      "email": "office@reneresch.at",
+      "website": "https://www.reneresch.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://images-pw.pixieset.com/elementfield/yWq6Xp1/EvaFlo-16-9d69d347-1500.jpg",
+        "https://images-pw.pixieset.com/elementfield/J3w1WGX/FHMSonntag_Resch-33bd14ec-2500.jpg",
+        "https://images-pw.pixieset.com/elementfield/e4vGR8y/StyledShoot_Grafing_260308-1111-7be08e31-2500.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/sandra-holzer-dipl-freie-rednerin-fuer-freie-trauungen-kinderwillkommensfeste-aus-steyr-land/",
+      "country": "AT",
+      "name": "Sandra Holzer, Dipl. Freie Rednerin für Freie Trauungen, Kinderwillkommensfeste aus Steyr-Land",
+      "category": "celebrant",
+      "street": "Dietach 1",
+      "postal_code": "4407",
+      "city": "Dietach",
+      "address": "Dietach 1, 4407 Dietach, Österreich",
+      "phone": "0676814281259",
+      "email": "office@sandraholzer.at",
+      "website": "https://www.sandraholzer.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.sandraholzer.at/gallery_gen/d52394fbfc22debebc9a000120bde37d_960x276_fit.png?ts=1756411589",
+        "https://www.sandraholzer.at/gallery_gen/8c1e2938ddc06b33a56eb44a2b9afa88_fit.png?ts=1756411589",
+        "https://www.sandraholzer.at/gallery_gen/2495ee68970faea8f2f7a93989da5eb6_272x272_fit.png?ts=1756411589"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/sandra-huber-freie-rednerin-aus-oesterreich/",
+      "country": "AT",
+      "name": "Sandra Huber: Freie Rednerin aus Österreich",
+      "category": "other",
+      "street": "Naarntalstraße 38a",
+      "postal_code": "4320",
+      "city": "Perg",
+      "address": "Naarntalstraße 38a, 4320 Perg, Österreich",
+      "phone": "069917126198",
+      "email": "verbindungsein@gmail.com",
+      "website": "http://www.sandrahuber.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/098cdb_cebb43653b5746188921d8887587aab5~mv2.jpg/v1/fill/w_147,h_83,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/098cdb_cebb43653b5746188921d8887587aab5~mv2.jpg",
+        "https://static.wixstatic.com/media/098cdb_e6756a73fa804cf6880f0477286be42f~mv2.png/v1/fill/w_557,h_120,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Sandra_Huber_Name_Schriftzug_03_2022.png",
+        "https://static.wixstatic.com/media/098cdb_d8d1c2223dd74017b7adafa6552c3c71~mv2.png/v1/fill/w_350,h_174,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/098cdb_d8d1c2223dd74017b7adafa6552c3c71~mv2.png"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/schoenes-und-mehr-hochzeitsdekorationen-und-mehr/",
+      "country": "AT",
+      "name": "Schönes und Mehr Hochzeitsdekorationen und mehr",
+      "category": "wedding_decor",
+      "street": "Gänsenau 31",
+      "postal_code": "4654",
+      "city": "Bad Wimsbach-Neydharting",
+      "address": "Gänsenau 31, 4654 Bad Wimsbach-Neydharting, Österreich",
+      "phone": "07245250150",
+      "email": "hochzeit@schoenesundmehr.at",
+      "website": "https://www.schoenesundmehr.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://web2021.schoenesundmehr.at/wp-content/uploads/Nikola-Schobesberger.jpg",
+        "https://web2021.schoenesundmehr.at/wp-content/uploads/Hochzeitstisch.jpg",
+        "https://www.schoenesundmehr.at/wp-content/uploads/1710585060341-1-400x284.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/soulhome-freie-trauung/",
+      "country": "AT",
+      "name": "soulhome – freie Trauung",
+      "category": "celebrant",
+      "street": "Stechergasse 7a/9",
+      "postal_code": "4020",
+      "city": "Linz",
+      "address": "Stechergasse 7a/9, 4020 Linz, Österreich",
+      "phone": "06503128711",
+      "email": "steffi@soulhome.at",
+      "website": "http://www.soulhome.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://cdn.prod.website-files.com/638997fd444706d81e80b0c3/63ac2513d31a0e68f01e7ce2_profilbild_2.jpg",
+        "https://cdn.prod.website-files.com/638997fd444706d81e80b0c3/63ac25055f0e5977e0f268e9_profilbild_3.jpg",
+        "https://cdn.prod.website-files.com/638997fd444706d81e80b0c3/63a00ce2de939461ff426ee1__DSC_7247.jpeg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/the-art-of-weddings-parties-by-cp/",
+      "country": "AT",
+      "name": "The Art of Weddings & Parties by CP",
+      "category": "other",
+      "street": "Am Traunrain 9d",
+      "postal_code": "4664",
+      "city": "Oberweis",
+      "address": "Am Traunrain 9d, 4664 Oberweis, Österreich",
+      "phone": "069917222326",
+      "email": "office@cp-weddings.com",
+      "website": "https://www.cp-weddings.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://solene.qodeinteractive.com/elementor/wp-content/themes/solene/assets/img/open_graph.jpg",
+        "https://cp-weddings.com/wp-content/uploads/2023/11/20231017-Styleshooting-AlexandraPeter202.jpg",
+        "https://cp-weddings.com/wp-content/uploads/2023/09/THE-ART-OF-WEDDINGS-PARTIES.png"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/top-dj-salzburg/",
+      "country": "AT",
+      "name": "Top DJ Salzburg",
+      "category": "venue",
+      "street": "Staufenweg 1",
+      "postal_code": "5400",
+      "city": "Hallein",
+      "address": "Staufenweg 1, 5400 Hallein, Österreich",
+      "phone": "015150187838",
+      "email": "info@top-dj-muenchen.de",
+      "website": "https://top-dj-salzburg.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.top-dj-salzburg.at/wp-content/uploads/2024/10/american-express-150x150.webp",
+        "https://www.top-dj-salzburg.at/wp-content/uploads/2024/10/hogast-150x150.webp",
+        "https://www.top-dj-salzburg.at/wp-content/uploads/2024/10/daimler-150x150.webp"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/torten-kunst-julia-asen/",
+      "country": "AT",
+      "name": "Torten Kunst Julia Asen",
+      "category": "cake_dessert",
+      "street": "Neualmerstraße 37",
+      "postal_code": "5400",
+      "city": "Hallein",
+      "address": "Neualmerstraße 37, 5400 Hallein, Österreich",
+      "phone": "06648984980",
+      "email": "julia.asen@torten-kunst.at",
+      "website": "http://www.torten-kunst.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=4096x4096:format=png/path/sc1f9053b2e4f2a30/image/i824ab368a141d849/version/1704473441/image.png",
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=545x10000:format=png/path/sc1f9053b2e4f2a30/image/i9d0350f52bb6ead1/version/1579517687/image.png",
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=335x10000:format=png/path/sc1f9053b2e4f2a30/image/i049d7d91b34b991a/version/1582010881/image.png"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/tortenstube/",
+      "country": "AT",
+      "name": "Tortenstube",
+      "category": "cake_dessert",
+      "street": "Eichenweg 14",
+      "postal_code": "4932",
+      "city": "Kirchheim im Innkreis",
+      "address": "Eichenweg 14, 4932 Kirchheim im Innkreis, Österreich",
+      "phone": "06641327991",
+      "email": "birgit@tortenstube.at",
+      "website": "http://www.tortenstube.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.tortenstube.at/wp-content/uploads/TortenUeberraschungsService.png",
+        "https://www.tortenstube.at/wp-content/uploads/florian_torte-scaled.jpg",
+        "https://www.tortenstube.at/wp-content/uploads/feier_576-scaled.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/trauworte-michelle-stadlhuber/",
+      "country": "AT",
+      "name": "Trauworte – Michelle Stadlhuber",
+      "category": "other",
+      "street": "Feldweg 5",
+      "postal_code": "4812",
+      "city": "Pinsdorf",
+      "address": "Feldweg 5, 4812 Pinsdorf, Österreich",
+      "phone": "06509904463",
+      "email": "instagram@trauworte.at; michelle@trauworte.at",
+      "website": "https://www.trauworte.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/88db6d_2aa36a079424486b9a409cb01f3c0b51~mv2.jpg/v1/fill/w_900,h_1200,al_c,q_85/17868273249354033.jpg",
+        "https://static.wixstatic.com/media/88db6d_11291c0dcea34d9f818092e07a098df1~mv2.jpg/v1/fill/w_1200,h_1600,al_c,q_85/88db6d_11291c0dcea34d9f818092e07a098df1~mv2.jpg",
+        "https://static.wixstatic.com/media/88db6d_82f167ef571a42519a0eafa08eb2e53d~mv2.jpg/v1/fill/w_900,h_900,al_c,q_85/foto%2031_10_24%2C%2009%2058%2054.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/ulrikes-fotostudio/",
+      "country": "AT",
+      "name": "Ulrike’s Fotostudio",
+      "category": "other",
+      "street": "Bahnhofstraße 9",
+      "postal_code": "4320",
+      "city": "Perg",
+      "address": "Bahnhofstraße 9, 4320 Perg, Österreich",
+      "phone": "06764881294",
+      "email": "fotostudio.ulrike@gmail.com",
+      "website": "http://www.fotostudio-ulrike.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/d51ee9_35efa8b45cda4239bcb1de543f770fe8~mv2.png/v1/fill/w_144,h_98,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/d51ee9_35efa8b45cda4239bcb1de543f770fe8~mv2.png",
+        "https://static.wixstatic.com/media/d51ee9_d9052b698c5840069842ea0642a234b7f000.jpg/v1/fill/w_147,h_83,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/d51ee9_d9052b698c5840069842ea0642a234b7f000.jpg",
+        "https://static.wixstatic.com/media/d51ee9_acaa69528c574d75b9dd72c15a78d191~mv2.jpg/v1/fill/w_61,h_92,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/d51ee9_acaa69528c574d75b9dd72c15a78d191~mv2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/voices-and-music-liveband-hochzeitsband-baelle-oberoesterreich/",
+      "country": "AT",
+      "name": "VOICES AND MUSIC Liveband – Hochzeitsband | Bälle – Oberösterreich",
+      "category": "live_music",
+      "street": "Veilchenweg 9",
+      "postal_code": "4225",
+      "city": "Luftenberg an der Donau",
+      "address": "Veilchenweg 9, 4225 Luftenberg an der Donau, Österreich",
+      "phone": "06641342613",
+      "email": "c.fuerst@eduhi.at",
+      "website": "http://www.voicesandmusic.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.voicesandmusic.at/wp-content/uploads/2025/09/Tanzband-Voices-And-Music-5er-Besetzung-FB.jpg",
+        "https://www.voicesandmusic.at/wp-content/uploads/2023/03/Hochzeitsband-OOe-fuer-Traumhochzeit-Brautpaar-bei-Eroeffnungstanz.jpg",
+        "https://www.voicesandmusic.at/wp-content/uploads/2020/02/Tanzmusik-Ball-Tanzband-Maturaball.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/vonerlach-reloaded-dj-livemusic/",
+      "country": "AT",
+      "name": "vonErlach reloaded – DJ & Livemusic",
+      "category": "dj",
+      "street": "Friedensstraße 4",
+      "postal_code": "5020",
+      "city": "Salzburg",
+      "address": "Friedensstraße 4, 5020 Salzburg, Österreich",
+      "phone": "06645020655",
+      "email": "info@vonerlach.at",
+      "website": "https://www.vonerlach.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://le-cdn.website-editor.net/s/e403c5172aa946f4b213f51bbbf56791/dms3rep/multi/opt/Simon+Erlach-ebbcb934-1920w.jpg?Expires=1789692686&Signature=A3P~vfJN6emL7ayOsA7miQCjL3-stGILzw4gBYmZJT1XIznfldvGF7bifXo12qmeI2-5xrFXxDTYAX16Y-IuFwZFNZ3WTG~-c2sS8yq3VTPFfBFJBqS5w3fwli9sQr3BgKczEUgMSAJxTSSmlWE9bCtwbt6Dw65t3-ObZ9DS45mBG7PDWYXX8RpPOsNoI9NdKUKiCip~w~lUtf78pBO8EcmSMyuoMX1Rv0Lk5SJ30aYEvrMsczCEeEcTA3wYlt6MExluoL8FmCRYVHT1aaFk~VkFep8PCgOFPWvNHBJgatDfAaAXB~36jn04eHjOnAvGhNQ136oXJwapU7VCpM-oVQ__&Key-Pair-Id=K2NXBXLF010TJW",
+        "https://le-cdn.website-editor.net/s/e403c5172aa946f4b213f51bbbf56791/dms3rep/multi/opt/121509-0ee98c0f-2ae325a3-1920w.jpeg?Expires=1789692686&Signature=p~T19O~6SW9KtZaOC~os7S27mBOQpCwQBXweZsR0iTlgYQN8k3gdRi75p1O5urSSCTZv-nM0M~LYc~VNnOC6UdMHMS2tGxWKJR9GA~miq-5nV2RMMXUL0OExBFtdEfM2YJUd1K9uA2T83XgWlSrFbe2F9FwoDPkv7pcEkab1YMrPae9QkH7OGdxlxh~9dDR01gsla10Ta881SIYt9BlP7VkWPGp6myQ7cvKHQEGKu8S-RnwAPBAkrawyK6K7V4LjNyWUtaJ83CCrx1EloLTYlf5LD~iGj3A5c~b8lhza0NHth9hJ5fAE6pUJ7Kimi6f7AQSI~zKd4pfipTtx1lnA8A__&Key-Pair-Id=K2NXBXLF010TJW",
+        "https://le-cdn.website-editor.net/s/e403c5172aa946f4b213f51bbbf56791/dms3rep/multi/opt/117245-cda85240-94e4b9ec-1920w.jpeg?Expires=1789692686&Signature=NhF~sC8suam-WTxAGXcNCxOMB4kJUKR7-ueuc3hIm3y8UlmkbWyscrv~7gSGE90eo5hUEkoWDWLVc6FtW9cuIDgTzzRxxKzdlt4hjYtFlhLainkJSKgxuU7vKWvAg0pFrqaF40Xv45YE53N6cVl8A66zhL8a3tHiX2kqbLOgattojQd7jonzeyVvlNhT3M3CBKkVfdjFmPksdqV831sfksbqi40exw~pXtcGx4uwrgwhI2T~wKaehzmMc5zakgxe-YJrHD~5W5h6EicWZyQSwwm-eu0dqsRJV2aq-gzIYZf7gv0NHitwS6fMyqMMbHUEvqDWcuQD18sv2SlPyEvvjQ__&Key-Pair-Id=K2NXBXLF010TJW"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/wellfilm/",
+      "country": "AT",
+      "name": "WELLFILM",
+      "category": "videography",
+      "street": "Industriestraße 18",
+      "postal_code": "4800",
+      "city": "Attnang-Puchheim",
+      "address": "Industriestraße 18, 4800 Attnang-Puchheim, Österreich",
+      "phone": "06642261534",
+      "email": "office@fotozimmer.at; office@wellfilm.at",
+      "website": "http://www.wellfilm.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/060ff5_cfff9fda02aa49b3aec98bb62e0d1b3e%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/060ff5_cfff9fda02aa49b3aec98bb62e0d1b3e%7Emv2.jpg",
+        "https://static.wixstatic.com/media/9f9c321c774844b793180620472aa4f1.png/v1/fill/w_28,h_28,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/9f9c321c774844b793180620472aa4f1.png",
+        "https://static.wixstatic.com/media/e316f544f9094143b9eac01f1f19e697.png/v1/fill/w_28,h_28,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e316f544f9094143b9eac01f1f19e697.png"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/wildbluete-stefanie-mauracher/",
+      "country": "AT",
+      "name": "Wildblüte Stefanie Mauracher",
+      "category": "florist",
+      "street": "Bahnweg 1",
+      "postal_code": "4623",
+      "city": "Gunskirchen",
+      "address": "Bahnweg 1, 4623 Gunskirchen, Österreich",
+      "phone": "06641027045",
+      "email": "office@wildbluete.at",
+      "website": "http://www.wildbluete.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://wildbluete.at/wp-content/uploads/2025/05/1000025946.jpg",
+        "https://wildbluete.at/wp-content/uploads/2025/05/1000025265.jpg",
+        "https://wildbluete.at/wp-content/uploads/2025/05/1000024873.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://www.white-lady.at/directory/zeitreise-fotografie-bianca-eder/",
+      "country": "AT",
+      "name": "Zeitreise Fotografie Bianca Eder",
+      "category": "photography",
+      "street": "Morchelweg 2",
+      "postal_code": "4800",
+      "city": "Regau",
+      "address": "Morchelweg 2, 4800 Regau, Österreich",
+      "phone": "069916130001",
+      "email": "info@zeitreise-fotografie.at",
+      "website": "http://www.zeitreise-fotografie.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.zeitreise-fotografie.at/wp-content/uploads/2025/01/Zeitreise_Fotografie_Imagebild-1-Kopie-2-scaled.jpeg",
+        "https://www.zeitreise-fotografie.at/wp-content/uploads/2025/01/ewig_jetzt_schriftzug-1024x379.png",
+        "https://www.zeitreise-fotografie.at/wp-content/uploads/2025/01/Kamerasymbol-819x1024.png"
+      ]
+    }
+  ]
+}

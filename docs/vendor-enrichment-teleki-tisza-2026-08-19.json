@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-08-19",
+  "vendor_id": "teleki-tisza-kastely-nagykovacsi",
+  "name": "Teleki–Tisza-kastély Nagykovácsi",
+  "sources": {
+    "official_property": "https://teleki-tisza-kastely.hu/",
+    "official_wedding_profile": "https://scoutevent.hu/teleki-tisza-kastely/teleki-tisza-kastely-alomeskuvo/",
+    "address_confirmation": "https://cserkeszhu-data.cserkesz.net/s3fs-public/2023-05/OKGY_JGYK_2023-05-13%20%28TTK%29.pdf"
+  },
+  "verified_facts": {
+    "address": "2094 Nagykovácsi, Kossuth Lajos utca 2.",
+    "wedding_email": "eskuvo@scoutevent.hu",
+    "wedding_phone": "+36 20 290 4021",
+    "events_phone": "+36 20 380 0806",
+    "ground_floor_ballroom_sqm": 170,
+    "ground_floor_capacity": [40, 140],
+    "panoramic_hall_sqm": 145,
+    "panoramic_hall_capacity": [30, 110],
+    "park_hectares_approx": 10,
+    "parking_cars_more_than": 100,
+    "accessible": true,
+    "on_site_accommodation": true,
+    "outdoor_ceremony": true,
+    "ornamental_lake": true
+  },
+  "selected_images": [
+    "https://scoutevent.hu/wp-content/uploads/2021/08/BlankaCsabi_1009-scaled.jpg",
+    "https://scoutevent.hu/wp-content/uploads/2021/08/luca_fred_ammonitestories-317-1-scaled.jpg",
+    "https://scoutevent.hu/wp-content/uploads/2021/08/BlankaCsabi_1002-scaled.jpg",
+    "https://scoutevent.hu/wp-content/uploads/2021/08/BlankaCsabi_145-scaled.jpg",
+    "https://scoutevent.hu/wp-content/uploads/DSC_7560-scaled.jpg",
+    "https://scoutevent.hu/wp-content/uploads/2021/08/Rita_Balazs_498.jpg",
+    "https://scoutevent.hu/wp-content/uploads/2021/08/WFY_styled_shoot_2020_06_19-236-scaled.jpg",
+    "https://scoutevent.hu/wp-content/uploads/DSC_7565-scaled.jpg",
+    "https://scoutevent.hu/wp-content/uploads/2021/09/IMG_20190510_152455.jpg",
+    "https://scoutevent.hu/wp-content/uploads/2021/09/IMG_20180504_204040.jpg"
+  ],
+  "local_image_validation": {
+    "hero_and_gallery_count": 10,
+    "minimum_width_px": 2048,
+    "minimum_height_px": 1367,
+    "mime": "image/jpeg"
+  }
+}

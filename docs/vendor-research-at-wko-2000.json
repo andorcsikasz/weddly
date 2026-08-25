@@ -1,0 +1,1255 @@
+{
+  "generated_at": "2026-08-19T00:49:32.731Z",
+  "source": "WKO Firmen A-Z search for Hochzeit plus vendor-owned websites",
+  "rules": {
+    "required": [
+      "name",
+      "complete address",
+      "phone",
+      "email",
+      "vendor website",
+      "3 own-site images"
+    ]
+  },
+  "total": 61,
+  "counts": {
+    "other": 20,
+    "bridal_boutique": 2,
+    "videography": 3,
+    "wedding_planner": 3,
+    "florist": 4,
+    "photography": 15,
+    "photo_booth": 1,
+    "wedding_jewelry": 1,
+    "catering": 1,
+    "sound_tech": 3,
+    "mc_celebrant": 1,
+    "live_music": 2,
+    "dj": 1,
+    "invitation_graphics": 1,
+    "hair_makeup": 1,
+    "entertainment": 2
+  },
+  "candidates": [
+    {
+      "source_profile": "https://firmen.wko.at/abdullah-tatlilioglu-kg/wien/?firmaid=2f80715c-b48c-4a0c-a69b-1cef5181ac18&suchbegriff=hochzeitsfloristik",
+      "country": "AT",
+      "name": "Abdullah Tatlilioglu KG",
+      "category": "other",
+      "street": "Speisinger Straße 195",
+      "postal_code": "1230",
+      "city": "Wien",
+      "address": "Speisinger Straße 195, 1230 Wien, Österreich",
+      "phone": "(01)%20887%2049%2070%20(1230,%20Geßlgasse%201B)",
+      "email": "bestellung@blumentatli.at",
+      "website": "http://www.blumentatli.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://blumentatli.at/wp-content/uploads/2025/04/6-150x150.png",
+        "https://blumentatli.at/wp-content/uploads/2025/07/IMG_9457-1024x768.jpeg",
+        "https://blumentatli.at/wp-content/uploads/2025/04/20240927_150415-768x1024.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/dm-balogh-portrait-hochzeit-familien/wien/?firmaid=1c4afc2b-236f-4587-8e52-eca7aec38de2&suchbegriff=hochzeit",
+      "country": "AT",
+      "name": "Ádám Balogh",
+      "category": "other",
+      "street": "Ebner-Rofenstein-Gasse 2-14/6/6",
+      "postal_code": "1130",
+      "city": "Wien",
+      "address": "Ebner-Rofenstein-Gasse 2-14/6/6, 1130 Wien, Österreich",
+      "phone": "+436608237398",
+      "email": "info@adambaloghphoto.com",
+      "website": "http://www.adambaloghphoto.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://adambaloghphoto.com/wp-content/uploads/2026/07/stephsam-264260610-scaled.jpg",
+        "https://adambaloghphoto.com/wp-content/uploads/2026/07/525A0548-scaled.jpg",
+        "https://adambaloghphoto.com/wp-content/uploads/2026/04/evaroman-157-scaled.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/ajs-dream-og-si-brautmode-by-aj/vorarlberg/?firmaid=d8b63fb4-8aef-4226-b45e-25893387e728&suchbegriff=brautmode",
+      "country": "AT",
+      "name": "AJ´s Dream OG",
+      "category": "bridal_boutique",
+      "street": "Hauptstraße 21a",
+      "postal_code": "6840",
+      "city": "Götzis",
+      "address": "Hauptstraße 21a, 6840 Götzis, Österreich",
+      "phone": "0552355088",
+      "email": "office@si-brautmode.at",
+      "website": "https://www.si-brautmode.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.si-brautmode.at/wp-content/uploads/2026/06/brautkleid-a-linie-clean-schlitz-karee-ausschnitt-satin-sibrautmodebyaj.jpeg",
+        "https://www.si-brautmode.at/wp-content/uploads/2026/06/brautkleid-boho-blaetterspitze-aermel-sibrautmodebyaj.jpeg",
+        "https://www.si-brautmode.at/wp-content/uploads/2026/06/brautkleid-a-linie-hochgeschlossen-glitzer-tuell-sibrautmodebyaj.jpeg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/ali-sari-fotograf-und-videograf/wien/?firmaid=c06d842c-d15d-4a7a-b17f-17f12e512436&suchbegriff=hochzeitsfilmer",
+      "country": "AT",
+      "name": "Ali Sari",
+      "category": "videography",
+      "street": "Unter-Meidlinger Straße 10/11, Tür 9",
+      "postal_code": "1100",
+      "city": "Wien",
+      "address": "Unter-Meidlinger Straße 10/11, Tür 9, 1100 Wien, Österreich",
+      "phone": "+43%20660%203541705",
+      "email": "info@almesmedia.at",
+      "website": "https://www.almesmedia.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/54eced_d8730b84602e4a0faff292c00f90f858~mv2.avif",
+        "https://static.wixstatic.com/media/11062b_8c1a1d3bf5b847ab9ba65fa800b72f95f000.jpg/v1/fill/w_160,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/11062b_8c1a1d3bf5b847ab9ba65fa800b72f95f000.jpg",
+        "https://static.wixstatic.com/media/0e1b51_0560e0784e2f4ed38d5535262b4e06da~mv2.png/v1/fill/w_49,h_74,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/DSC04103-retouched.png"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/andreas-mayr-trachten-mayr/salzburg/?firmaid=b50fccbf-653c-40f1-9790-8486a10fed8e&suchbegriff=brautkleid",
+      "country": "AT",
+      "name": "Andreas Mayr",
+      "category": "other",
+      "street": "Garnei 7",
+      "postal_code": "5431",
+      "city": "Kuchl",
+      "address": "Garnei 7, 5431 Kuchl, Österreich",
+      "phone": "+43%20(0)%206245%2073651",
+      "email": "office@trachten-mayr.com",
+      "website": "http://www.trachten-mayr.eu/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://cdn03.plentymarkets.com/fl0nshzmon8p/frontend/Herrenbekleidung_1200_x_1258.jpg",
+        "https://cdn03.plentymarkets.com/fl0nshzmon8p/frontend/Dirndl_1200_x_600.jpg",
+        "https://cdn03.plentymarkets.com/fl0nshzmon8p/frontend/Jagd-Accessoires_1200_x_600.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/angela-hangleitner-top-hair-angela/wien/?firmaid=a7ff864b-795d-4e6d-a38b-15591b564bf7&suchbegriff=hochzeitsfrisur",
+      "country": "AT",
+      "name": "Angela Hangleitner",
+      "category": "other",
+      "street": "Fröhlichgasse 6/EG/GL/Top 4",
+      "postal_code": "1230",
+      "city": "Wien",
+      "address": "Fröhlichgasse 6/EG/GL/Top 4, 1230 Wien, Österreich",
+      "phone": "01%20/%20869%2051%2005",
+      "email": "office@tophair-angela.at",
+      "website": "http://www.tophair-angela.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://tophair-angela.at/assets/images/online-casinos-oesterreich-james-wilson-author.webp",
+        "https://tophair-angela.at/assets/images/reviewers/online-casinos-oesterreich-sarah-mitchell-reviewer.webp",
+        "https://tophair-angela.at/assets/images/reviewers/online-casinos-oesterreich-david-chen-reviewer.webp"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/artwerk-medienproduktions-og-artwerk-medienproduktions-og/nieder%c3%b6sterreich/?firmaid=134df2c6-5b6f-4eda-b5df-102f24020ce7&suchbegriff=hochzeitsvideo",
+      "country": "AT",
+      "name": "art.werk Medienproduktions OG",
+      "category": "other",
+      "street": "Hüffelstraße 43",
+      "postal_code": "3170",
+      "city": "Hainfeld",
+      "address": "Hüffelstraße 43, 3170 Hainfeld, Österreich",
+      "phone": "06644665100",
+      "email": "kontakt@art-werk.at",
+      "website": "https://www.art-werk.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.art-werk.at/wp-content/uploads/2023/09/DSC04141.jpg",
+        "https://www.art-werk.at/wp-content/uploads/2025/04/DSC09005-2.jpg",
+        "https://www.art-werk.at/wp-content/uploads/2025/10/artwerk_Freinberger_BTS_small.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/barbara-manzenreiter-praxis-f%c3%bcr-k%c3%b6rperenergiebewusstsein-humanenergetik/ober%c3%b6sterreich/?firmaid=9c4a632c-ed58-431d-97ad-f7ade3983b80&suchbegriff=freie%20trauung",
+      "country": "AT",
+      "name": "Barbara Manzenreiter",
+      "category": "other",
+      "street": "Staffelberg 32/1",
+      "postal_code": "4222",
+      "city": "Sankt Georgen an der Gusen",
+      "address": "Staffelberg 32/1, 4222 Sankt Georgen an der Gusen, Österreich",
+      "phone": "+43%20(650)%206355905",
+      "email": "barbara@manzenreiter.com",
+      "website": "https://manzenreiter.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://manzenreiter.com/new/wp-content/uploads/2025/09/Foto.jpg",
+        "https://manzenreiter.com/new/wp-content/uploads/2023/07/barbara33-1.jpg",
+        "https://manzenreiter.com/new/wp-content/uploads/2023/07/divider-30.png"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/blie-events-eu-nachhaltige-hochzeitsplanung-in-%c3%96sterreich/wien/?firmaid=fd3948ce-1293-4aad-af95-aad81d9aee22&suchbegriff=hochzeit",
+      "country": "AT",
+      "name": "BÉLIE Events e.U.",
+      "category": "wedding_planner",
+      "street": "Schottenring 33",
+      "postal_code": "1010",
+      "city": "Wien",
+      "address": "Schottenring 33, 1010 Wien, Österreich",
+      "phone": "068181253732",
+      "email": "office@belie-events.at",
+      "website": "https://belie-events.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://belie-weddings.com/wp-content/uploads/2026/03/Hochzeitsplanung-Wien_Credit_linefotografie-768x1152.jpg",
+        "https://belie-weddings.com/wp-content/uploads/2026/03/Hochzeitsplanung-Wien-Wedding-Planner-Belie-by-Michael-Kobler_001-768x1152.jpg",
+        "https://belie-weddings.com/wp-content/uploads/2025/12/WPC-Belinda-by-Michael-Kobler_001-768x1152.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/bernhard-hofer-latin-dance-center/tirol/?firmaid=ff744867-295d-41ba-b8e7-6205a158fc86&suchbegriff=tanzschule%20hochzeit",
+      "country": "AT",
+      "name": "Bernhard Hofer",
+      "category": "other",
+      "street": "Ahornweg 7",
+      "postal_code": "6092",
+      "city": "Birgitz",
+      "address": "Ahornweg 7, 6092 Birgitz, Österreich",
+      "phone": "+43%20664%204216691",
+      "email": "kurselatindancecenter@gmail.com",
+      "website": "https://www.latindancecenter.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/feaf37_eb0b4d2b9d374f57883da3feea8f2a30~mv2.jpg/v1/fill/w_487,h_264,al_c/feaf37_eb0b4d2b9d374f57883da3feea8f2a30~mv2.jpg",
+        "https://static.wixstatic.com/media/e316f544f9094143b9eac01f1f19e697.png/v1/fill/w_22,h_22,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e316f544f9094143b9eac01f1f19e697.png",
+        "https://static.wixstatic.com/media/9f9c321c774844b793180620472aa4f1.png/v1/fill/w_22,h_22,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/9f9c321c774844b793180620472aa4f1.png"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/bernhard-horst-studiohorst/k%c3%a4rnten/?firmaid=eb11ff8e-89b0-427a-afa0-0b62ce253d99&suchbegriff=wedding%20film",
+      "country": "AT",
+      "name": "Bernhard Horst",
+      "category": "other",
+      "street": "8. Mai Straße 28",
+      "postal_code": "9020",
+      "city": "Klagenfurt am Wörthersee",
+      "address": "8. Mai Straße 28, 9020 Klagenfurt am Wörthersee, Österreich",
+      "phone": "+43%20463%2050%2081%2081",
+      "email": "office@studiohorst.at",
+      "website": "http://www.studiohorst.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.studiohorst.at/files/CONTENT/01%20Start/fotostudio/IWC_3345.jpg",
+        "https://www.studiohorst.at/files/CONTENT/01%20Start/fotostudio/_BMK2350.jpg",
+        "https://www.studiohorst.at/files/CONTENT/01%20Start/fotostudio/Studiohorst_Pichler.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/charlotte-egger-blumen-egger-meisterfloristik/salzburg/?firmaid=c7f965b0-2b1c-4261-b902-f499ca4fcdd4&suchbegriff=hochzeitsfloristik",
+      "country": "AT",
+      "name": "Charlotte Egger",
+      "category": "florist",
+      "street": "Hauptstraße 93",
+      "postal_code": "5600",
+      "city": "Sankt Johann im Pongau",
+      "address": "Hauptstraße 93, 5600 Sankt Johann im Pongau, Österreich",
+      "phone": "+43%206412%208490",
+      "email": "office@blumen-egger.at",
+      "website": "http://www.blumen-egger.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.blumen-egger.at/s/img/emotionheader5819401954.JPG?1737087252.940px.1px",
+        "https://www.blumen-egger.at/s/cc_images/cache_2494275099.jpg?t=1780529864",
+        "https://www.blumen-egger.at/s/cc_images/cache_2494600060.jpg?t=1780529838"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/christian-mari-hochzeitsfotograf-christian-mari/wien/?firmaid=12ddc57e-053d-4e11-9b6c-66c71c1fcefb&suchbegriff=hochzeitsfotograf",
+      "country": "AT",
+      "name": "Christian Mari",
+      "category": "photography",
+      "street": "Eßlinger Hauptstraße 39",
+      "postal_code": "1220",
+      "city": "Wien",
+      "address": "Eßlinger Hauptstraße 39, 1220 Wien, Österreich",
+      "phone": "+43%201%206643936146",
+      "email": "foto@christianmari.at",
+      "website": "https://www.christianmari.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://image.jimcdn.com/app/cms/image/transf/none/path/s71b9bd827bafe761/backgroundarea/ie889b870c7de9cb5/version/1698396007/image.jpg",
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=209x10000:format=jpg/path/s71b9bd827bafe761/image/if6825f46110d0acb/version/1521735104/image.jpg",
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=294x10000:format=jpg/path/s71b9bd827bafe761/image/if04558e3cf72ab36/version/1732708314/hochzeitspaar-in-wien.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/christoph-graus-traumlicht-hochzeitsfotografie-in-tirol/tirol/?firmaid=e6959585-4c24-4e2f-a801-aaa083b5aa0b&suchbegriff=hochzeitsfotografie",
+      "country": "AT",
+      "name": "Christoph Graus",
+      "category": "photography",
+      "street": "Winkelweg 21",
+      "postal_code": "6070",
+      "city": "Ampass",
+      "address": "Winkelweg 21, 6070 Ampass, Österreich",
+      "phone": "+43(0)6505000909",
+      "email": "traumlichtfoto@gmail.com",
+      "website": "https://www.traumlichtfoto.tirol/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.traumlichtfoto.tirol/wp-content/uploads/2018/04/Traumlicht-Hochzeitsfotograf-Tirol-Burghausen-Deutschland-Bayern.jpg",
+        "https://www.traumlichtfoto.tirol/wp-content/uploads/2017/12/Traumlicht-Hochzeitsfotograf-Tirol-Zirl.jpg",
+        "https://www.traumlichtfoto.tirol/wp-content/uploads/2018/04/Traumlicht-Hochzeitsfotografie-Tirol-Absam-Hall-Gartenhotel-Maria-Theresia-Tresl-Thresl-03.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/christopher-anker-hochzeitsfotograf-fotobox/nieder%c3%b6sterreich/?firmaid=a636ee60-4b00-4730-b5d4-7515373fbde0&suchbegriff=hochzeit",
+      "country": "AT",
+      "name": "Christopher Anker",
+      "category": "photo_booth",
+      "street": "Unterdürnbach 116",
+      "postal_code": "3721",
+      "city": "Maissau",
+      "address": "Unterdürnbach 116, 3721 Maissau, Österreich",
+      "phone": "06645400220",
+      "email": "canker@gmx.at",
+      "website": "https://www.foto-anker.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/559c48_256e75fa45b545adaa1814119ce76b15%7Emv2.png/v1/fit/w_2500,h_1330,al_c/559c48_256e75fa45b545adaa1814119ce76b15%7Emv2.png",
+        "https://static.wixstatic.com/media/559c48_11112cc3b7804a6f8cf9aa66b9f5a1fa~mv2.jpg/v1/fill/w_195,h_130,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/559c48_11112cc3b7804a6f8cf9aa66b9f5a1fa~mv2.jpg",
+        "https://static.wixstatic.com/media/559c48_ff42d84a4dd741b484348c4311638701~mv2.jpg/v1/fill/w_70,h_78,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/559c48_ff42d84a4dd741b484348c4311638701~mv2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/claudia-schubert-reinold-claudia%27s-blumenzauber/tirol/?firmaid=11b8454b-882a-44ed-8c2f-fcc60938c5a6&suchbegriff=hochzeitsschmuck",
+      "country": "AT",
+      "name": "Claudia Schubert-Reinold",
+      "category": "florist",
+      "street": "An der Leiten 11",
+      "postal_code": "6134",
+      "city": "Vomp",
+      "address": "An der Leiten 11, 6134 Vomp, Österreich",
+      "phone": "+43%20676%20341%2042%2008",
+      "email": "claudia@blumenzauber.info",
+      "website": "https://www.blumenzauber.info/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.blumenzauber.info/wp-content/plugins/revslider/sr6/assets/assets/dummy.png",
+        "https://www.blumenzauber.info/wp-content/uploads/2023/12/blume-halb-uai-258x304.png",
+        "https://www.blumenzauber.info/wp-content/uploads/2023/12/blumenzauber-geschaeft-uai-258x193.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/daniel-christian-nagler-hochzeitsfotografie-und-film/steiermark/?firmaid=6d8851c6-b539-4d84-9ba0-cb3dc1122043&suchbegriff=hochzeitsfotografie",
+      "country": "AT",
+      "name": "Daniel Christian Nagler",
+      "category": "videography",
+      "street": "Reintalstraße 52c",
+      "postal_code": "8075",
+      "city": "Hart b.Graz",
+      "address": "Reintalstraße 52c, 8075 Hart b.Graz, Österreich",
+      "phone": "+43%20(0)664%20971%2077%2011",
+      "email": "office@danielnagler.com",
+      "website": "http://www.danielnagler.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.danielnaglerphotography.com/wp-content/uploads/2025/10/Unbenannt-1-5.png",
+        "https://www.danielnaglerphotography.com/wp-content/uploads/2025/10/Unbenannt-2.png",
+        "https://www.danielnaglerphotography.com/wp-content/uploads/2025/10/Unbenannt-3.png"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/daniela-eitler-candela-wiener-neustadt/nieder%c3%b6sterreich/?firmaid=189fc119-0f09-4967-9ac4-9f0086d3f559&suchbegriff=hochzeitskerzen",
+      "country": "AT",
+      "name": "Daniela Eitler",
+      "category": "other",
+      "street": "Baumkirchnerring 9, Tür 14",
+      "postal_code": "2700",
+      "city": "Wiener Neustadt",
+      "address": "Baumkirchnerring 9, Tür 14, 2700 Wiener Neustadt, Österreich",
+      "phone": "+43%20(0)%20664%2073616764",
+      "email": "shop@candela.at",
+      "website": "http://www.candela.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "http://www.candela.at/images/candela-button.png",
+        "http://www.candela.at/images/shopping.png",
+        "http://www.candela.at/images/gift.png"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/ella-juwelen-gmbh/wien/?firmaid=1f569d19-d625-4590-81d1-30fc17b16e97&suchbegriff=trauringe",
+      "country": "AT",
+      "name": "Ella Juwelen GmbH",
+      "category": "wedding_jewelry",
+      "street": "Ignaz-Köck-Straße 1(SHOPPING-CENTER-NORD)",
+      "postal_code": "1210",
+      "city": "Wien",
+      "address": "Ignaz-Köck-Straße 1(SHOPPING-CENTER-NORD), 1210 Wien, Österreich",
+      "phone": "+43%20(1)%20273%2013%2013",
+      "email": "mail@ella-juwelen.at",
+      "website": "http://www.ella-juwelen.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.ella-juwelen.at/media/Banner/FS2025/Peanuts_General_600x338px.jpg",
+        "https://media.ella-juwelen.at/Banner/Sommersale2026/sommersale-pool-1600x1200.jpg",
+        "https://media.ella-juwelen.at/Banner/FS2026/Slider/Schmuck/Pandora_916.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/fancy-artists-management-eu-k%c3%bcnstlervermittlung-booking-und-management/nieder%c3%b6sterreich/?firmaid=5dfd4351-6be1-42ba-8886-844f6a4c7ede&suchbegriff=live%20musik%20hochzeit",
+      "country": "AT",
+      "name": "fancy artists management e.U.",
+      "category": "other",
+      "street": "Koglgasse 3",
+      "postal_code": "2111",
+      "city": "Rückersdorf",
+      "address": "Koglgasse 3, 2111 Rückersdorf, Österreich",
+      "phone": "+436502802175",
+      "email": "booking@fancyartists.at",
+      "website": "https://www.fancyartists.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.fancyartists.at/files/int/img/kuenstlervermittlung_wien_fancy_artists.png",
+        "https://www.fancyartists.at/files/images/The%20Bad%20Powells/Imagefoto%20THE%20BAD%20POWELLS%20Disco%20Soul%20Partyband%201_23%20400px.jpeg",
+        "https://www.fancyartists.at/files/images/Bernd%20Froehlich%20Orchester/Imagefoto%20BFO%20neu.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/foto-irvalda-eu-brautmode-hochzeitsfotografie-fotografin/wien/?firmaid=779c8a50-6394-4c4b-a786-2e7d36fc6345&suchbegriff=hochzeitsfotografie",
+      "country": "AT",
+      "name": "FOTO-Irvalda e.U.",
+      "category": "photography",
+      "street": "Viriotgasse 6/1/6",
+      "postal_code": "1090",
+      "city": "Wien",
+      "address": "Viriotgasse 6/1/6, 1090 Wien, Österreich",
+      "phone": "+43%20(0)%20650%20821%2059%2002",
+      "email": "kontakt@foto-irvalda.at",
+      "website": "http://foto-irvalda.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://foto-irvalda.at/wp-content/uploads/2018/10/Irvalda-Fotos-Irina-Buchegger-Photo.jpg",
+        "https://foto-irvalda.at/wp-content/uploads/2018/10/irvalda-little-slider-main-page-6.jpg",
+        "https://foto-irvalda.at/wp-content/uploads/2018/10/Irvalda-Slider-Photos-First-Page-portraet-1.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/fotobureau-og-christoph-haslinger-galipeau-hochzeitsfotografie/salzburg/?firmaid=982c8ce6-49e3-41c9-abb9-5317ceca664d&suchbegriff=hochzeitsfotografie",
+      "country": "AT",
+      "name": "Fotobureau OG",
+      "category": "photography",
+      "street": "Bachstraße 11",
+      "postal_code": "5023",
+      "city": "Salzburg",
+      "address": "Bachstraße 11, 5023 Salzburg, Österreich",
+      "phone": "004368184532900",
+      "email": "mail@christophhaslinger.com",
+      "website": "https://www.christophhaslinger.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://images-pw.pixieset.com/social/page/74169221/f41d08cdfa8e261ca59c660388ea7807137594c594d6f25b027528017763bd20.jpg",
+        "https://images-pw.pixieset.com/elementfield/7EDLrX9/RS-20250712-0203-ca81b4e1-1500.jpg",
+        "https://images-pw.pixieset.com/elementfield/ZQGWRbq/KamillaAdrian-20240828-0194-4900d249-1500.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/fotografie-alexandra-reichl-eu-hochzeitsfotograf/ober%c3%b6sterreich/?firmaid=a60ab619-cb65-4c3b-a864-80e001fa6769&suchbegriff=hochzeitsfotograf",
+      "country": "AT",
+      "name": "Fotografie Alexandra Reichl e.U.",
+      "category": "photography",
+      "street": "Kleines Rodltal 18",
+      "postal_code": "4112",
+      "city": "St. Gotthard im Mühlkreis",
+      "address": "Kleines Rodltal 18, 4112 St. Gotthard im Mühlkreis, Österreich",
+      "phone": "+4369918031801",
+      "email": "alexandra@fotografie-reichl.at",
+      "website": "https://www.fotografie-reichl.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.fotografie-reichl.at/wp-content/uploads/2023/10/brautpaar_deantnerin_maria_alm_hochzkoenig-1-scaled.jpg",
+        "https://www.fotografie-reichl.at/wp-content/uploads/2023/10/hochzeitsfilmerin-6.jpg",
+        "https://www.fotografie-reichl.at/wp-content/uploads/2026/07/Drohne_Wedding_Toskana.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/g%c3%a4rtnerei-andel-eu-g%c3%a4rtnerei-und-floristik/nieder%c3%b6sterreich/?firmaid=be3ffda3-1e9e-4f52-aa8c-f2f58b6a5e07&suchbegriff=brautstrauss",
+      "country": "AT",
+      "name": "Gärtnerei Andel e.U.",
+      "category": "florist",
+      "street": "Wiener Str. 42",
+      "postal_code": "2433",
+      "city": "Margarethen/Moos",
+      "address": "Wiener Str. 42, 2433 Margarethen/Moos, Österreich",
+      "phone": "022302677",
+      "email": "office@gaertnerei-andel.at",
+      "website": "http://www.gaertnerei-andel.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://gaertnerei-andel.at/wp-content/uploads/2022/02/Hochzeit.jpg",
+        "https://gaertnerei-andel.at/wp-content/uploads/2022/02/Trauer.jpg",
+        "https://gaertnerei-andel.at/wp-content/uploads/2022/02/Garten.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/gli-quattri-eventcatering-gmbh-und-co-kg-die-quadratur-des-genusses/salzburg/?firmaid=04496a60-5949-47f2-816a-a13e72b87020&suchbegriff=hochzeitscatering",
+      "country": "AT",
+      "name": "Gli Quattri Eventcatering GmbH & Co KG",
+      "category": "catering",
+      "street": "Glockengasse 4d",
+      "postal_code": "5020",
+      "city": "Salzburg",
+      "address": "Glockengasse 4d, 5020 Salzburg, Österreich",
+      "phone": "+43%20662%20651224",
+      "email": "office@gliquattri.at",
+      "website": "https://www.gliquattri.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://gliquattri.at/wp-content/uploads/2026/04/gliquattri_claim_team.webp",
+        "https://gliquattri.at/wp-content/uploads/2026/04/gliquattri_claim_kulinarik_004.webp",
+        "https://gliquattri.at/wp-content/uploads/2026/04/gliquattri_claim_trinkgenuss_001.webp"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/inshot-gmbh-fotostudio-f%c3%bcr-werbefotografie/nieder%c3%b6sterreich/?firmaid=35fecada-9f6d-482f-b145-9079502ff14e&suchbegriff=photobooth%20hochzeit",
+      "country": "AT",
+      "name": "inShot GmbH",
+      "category": "photography",
+      "street": "Hauptplatz 26",
+      "postal_code": "3250",
+      "city": "Wieselburg",
+      "address": "Hauptplatz 26, 3250 Wieselburg, Österreich",
+      "phone": "+43%207472%2025533",
+      "email": "office@inshot.at",
+      "website": "https://www.inshot.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.inshot.at/wp-content/uploads/2023/10/MEDIUM_inShot_horizontal_Schwarz-1-e16267975644721.png",
+        "https://www.inshot.at/wp-content/uploads/2024/01/Fotograf_Amstetten_Niederoesterreich_Fotostudio_Loft_Kreativagentur-1024x683.webp",
+        "https://www.inshot.at/wp-content/uploads/2024/06/Schalhas-Daniel-inShot-Teamfotos-web-1.webp"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/joanna-kuttner-stilsicher-floristik-lifestyle-ambiente/ober%c3%b6sterreich/?firmaid=24c5d758-6507-43fc-a5f2-66a2376ffa8a&suchbegriff=eventdekoration%20hochzeit",
+      "country": "AT",
+      "name": "Joanna Kuttner",
+      "category": "florist",
+      "street": "Grünmarkt 14",
+      "postal_code": "4400",
+      "city": "Steyr",
+      "address": "Grünmarkt 14, 4400 Steyr, Österreich",
+      "phone": "+43%20676%209587037",
+      "email": "office@stilsicher-floristik.at",
+      "website": "http://www.stilsicher-floristik.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=1920x10000:format=jpg/path/sb7de6147d6334498/image/i7f6352123b97df38/version/1772087833/image.jpg",
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=280x10000:format=png/path/sb7de6147d6334498/image/id60beee7d50a4ebd/version/1772092731/image.png",
+        "https://image.jimcdn.com/app/cms/image/transf/dimension=940x10000:format=jpg/path/sb7de6147d6334498/image/i7f6352123b97df38/version/1772087833/image.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/joshua-b%c3%b6cker-moviefaktur/k%c3%a4rnten/?firmaid=4af1cd8e-1c87-429c-86c2-09ec835d1d4f&suchbegriff=hochzeitsvideo",
+      "country": "AT",
+      "name": "Joshua Böcker",
+      "category": "other",
+      "street": "Linsengasse 57",
+      "postal_code": "9020",
+      "city": "Klagenfurt am Wörthersee",
+      "address": "Linsengasse 57, 9020 Klagenfurt am Wörthersee, Österreich",
+      "phone": "+4368110474993",
+      "email": "joshua@moviefaktur.com",
+      "website": "https://moviefaktur.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://cdn.prod.website-files.com/656dff78706724f3d94db516/668cfc4ce9430fdd78b19f68_Untitled_1.3.1.jpg",
+        "https://cdn.prod.website-files.com/656dff78706724f3d94db516/66eec4565ace47283a7a3b5c_DSC03679.jpg",
+        "https://cdn.prod.website-files.com/656dff78706724f3d94db516/6581ca9a4faad09df6fd8aa7_Joshua%20Bo%CC%88cker-2%202.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/karla-babi-ruttinger-msc-wedding-planner-hochzeitsplanerin/steiermark/?firmaid=592f0c9c-558f-42db-8c81-a487ae269eb1&suchbegriff=hochzeit",
+      "country": "AT",
+      "name": "Karla Babić-Ruttinger, MSc",
+      "category": "wedding_planner",
+      "street": "Waltendorfer Hauptstraße 125c",
+      "postal_code": "8042",
+      "city": "Graz",
+      "address": "Waltendorfer Hauptstraße 125c, 8042 Graz, Österreich",
+      "phone": "0664%208923120",
+      "email": "hi@eternalcelebration.com",
+      "website": "https://eternalcelebration.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://eternalcelebration.com/wp-content/uploads/2024/12/Hochzeit-in-Italien_Schlosshochzeit-1200x800.jpg",
+        "https://eternalcelebration.com/wp-content/uploads/2024/12/Hochzeit-in-Kroatien_Villa-1200x800.jpg",
+        "https://eternalcelebration.com/wp-content/uploads/2024/12/Hochzeit-in-Italien_Elopement-am-Comer-See-1200x800.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/linda-bernadette-gl%c3%a4tzle-ba-lindas-pasion-wedding-planner/tirol/?firmaid=3712a1d2-1a61-47d9-b71f-383ed2c08ce7&suchbegriff=wedding%20planner",
+      "country": "AT",
+      "name": "Linda Bernadette Glätzle, B.A.",
+      "category": "wedding_planner",
+      "street": "Alte Schwelle 3",
+      "postal_code": "6600",
+      "city": "Breitenwang",
+      "address": "Alte Schwelle 3, 6600 Breitenwang, Österreich",
+      "phone": "+43%20677%2062860534%20",
+      "email": "info@lindapasion.com",
+      "website": "https://lindapasion.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://lindapasion.com/wp-content/uploads/2025/05/hochzeitsplanung_allgaeu-1024x768.png",
+        "https://lindapasion.com/wp-content/uploads/2025/05/heiraten-in-den-bergen_reutte-650x1080.png",
+        "https://lindapasion.com/wp-content/uploads/2025/06/hochzeitsplanerin_linda_glaetzle_stuhl-768x1024.png"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/livetech-eu-veranstaltungstechnik/nieder%c3%b6sterreich/?firmaid=865cd0e1-493e-45d9-b0e4-c4fbcee1ea45&suchbegriff=veranstaltungstechnik%20hochzeit",
+      "country": "AT",
+      "name": "livetech e.U.",
+      "category": "sound_tech",
+      "street": "Kremser Straße 20",
+      "postal_code": "3910",
+      "city": "Zwettl-NÖ",
+      "address": "Kremser Straße 20, 3910 Zwettl-NÖ, Österreich",
+      "phone": "+43%20676%208809%208809%208",
+      "email": "office@livetech.at",
+      "website": "http://www.livetech.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://livetech.at/wp-content/uploads/2026/06/Galli-Galli-Party-2026-1-1024x538.jpg",
+        "https://livetech.at/wp-content/uploads/2023/04/weiss.png",
+        "https://livetech.at/wp-content/uploads/2026/06/Roland-590x1024.jpeg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/ljubomir-luki-hochzeitsfotograf-in-wien/wien/?firmaid=359e8ca2-faf9-4df2-965b-12ee0bb3fefc&suchbegriff=hochzeitsfotograf",
+      "country": "AT",
+      "name": "Ljubomir Lukić",
+      "category": "photography",
+      "street": "Saileräckergasse 45/2/10",
+      "postal_code": "1190",
+      "city": "Wien",
+      "address": "Saileräckergasse 45/2/10, 1190 Wien, Österreich",
+      "phone": "06604737200",
+      "email": "info@ljubophoto.com",
+      "website": "https://www.ljubophoto.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://images-pw.pixieset.com/social/page/4917211/daa0d3c0c984e1957d0c6bf83f6cf555687e436416762593c11e2919444fee85.jpg",
+        "https://images-pw.pixieset.com/profile/601941/3c69f93ca4c8c912c2d2a4d907f0482a363968cc2b0ffe4155ed10e419345777.png",
+        "https://images-pw.pixieset.com/elementfield/4yjZ4l1/LJUBO_220903_ITA_9719-Edit-464e04d5-1500.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/loveglow-bridal-concept-og-loveglow-bridal-concept/nieder%c3%b6sterreich/?firmaid=b53a833b-9d9b-4e3b-80bc-cfb3067525b3&suchbegriff=brautkleid",
+      "country": "AT",
+      "name": "LOVEGLOW bridal concept OG",
+      "category": "bridal_boutique",
+      "street": "Stadtplatz 10-11",
+      "postal_code": "3400",
+      "city": "Klosterneuburg",
+      "address": "Stadtplatz 10-11, 3400 Klosterneuburg, Österreich",
+      "phone": "+43%20660%206706890",
+      "email": "hi@loveglow.at",
+      "website": "http://loveglow.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://static.wixstatic.com/media/ad3def_87c5e2ead5bc42708b923d70c126644a~mv2.jpg/v1/fill/w_2500,h_1666,al_c/ad3def_87c5e2ead5bc42708b923d70c126644a~mv2.jpg",
+        "https://static.wixstatic.com/media/11062b_1f7ed8bc7b004201970df69f9eeda689~mv2.png/v1/fill/w_28,h_28,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_1f7ed8bc7b004201970df69f9eeda689~mv2.png",
+        "https://static.wixstatic.com/media/11062b_084cbbff6ae446c1b03dc3637193e77a~mv2.png/v1/fill/w_28,h_28,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/11062b_084cbbff6ae446c1b03dc3637193e77a~mv2.png"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/mag-fh-michael-kobler-hochzeitsfotograf/wien/?firmaid=37a0730b-dfe3-45e5-ae9f-81c5304962e5&suchbegriff=hochzeitsfotograf",
+      "country": "AT",
+      "name": "Mag. (FH) Michael Kobler",
+      "category": "photography",
+      "street": "Tuchlauben 7A",
+      "postal_code": "1010",
+      "city": "Wien",
+      "address": "Tuchlauben 7A, 1010 Wien, Österreich",
+      "phone": "+43%207200%2080794",
+      "email": "office@michaelkobler.com",
+      "website": "https://www.michaelkobler.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.michaelkobler.com/assets/img/hochzeitsfotograf-wien-antonov-hero-1600.webp",
+        "https://www.michaelkobler.com/assets/img/presse-hochzeit-um-drei.webp",
+        "https://www.michaelkobler.com/assets/img/presse-austria-wedding-schwarz.webp"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/mag-johanna-elisabeth-adlaoui-mayerl-jam-atelier-f%c3%bcr-kost%c3%bcm-und-modedesign/wien/?firmaid=233eae0b-f1a5-4bcf-ae8b-b5f849be9375&suchbegriff=brautmode",
+      "country": "AT",
+      "name": "Mag. Johanna Elisabeth Adlaoui-Mayerl",
+      "category": "other",
+      "street": "Obere Amtshausgasse 21",
+      "postal_code": "1050",
+      "city": "Wien",
+      "address": "Obere Amtshausgasse 21, 1050 Wien, Österreich",
+      "phone": "004315449255",
+      "email": "info@matrosenanzug.com",
+      "website": "http://costume-design.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi0uv_wgU6VZ_LLmAawaIt-OqA0ahro-bGZvV16p6sIljeQctqVqZs1VaJynJbq1smRVOlpnrnNiTFKk8BysmAK8Cm7X7eu4GtjtWx_st2rnf2iHK1En6EkKVvfNxBWccknY65Py_s9tH0j-mBz1m95H3XNnvTa6LKmI9AxxSaBSR_QMD5HDeyLMY-UTAg/s16000/bbeppu-film-01.jpg",
+        "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9QyTgekVrOS_xvohbJbfb2Z_JLQD8h8sVBh5CdR8ehD-zSFxUFJ0TbFdr4poSoB22mg01UWviQRq2Yj379hxoEHhtZdo0NpD00Unsk1sQOpLF5OMFW8R_bHKjrjfZ9AtMcvdi687P-HyOzG3g7o0_8rTHM7RZSAHfGuA5ZDTOY_C0qR9qc32sho7QxsQ/s1600/bbeppu-film-06.jpg",
+        "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh_Cy7x7d8aS_KEqBrRafWlDgCZRIjY1x6gJ_Mezevk7DFVoW-nsve8Rg7SYeCkUPg9NV8MhIAtc_ocfgMsS22CvQbYJUmwUYMaO-9qTQ-uGckE9eZinaK5_WHjYnGMbkl6BD5E-Cq1IWxKd1IgigbFca2YUHwcy7n3orV_AKnVVMY3CgE55R2vjk3xYuE/s1600/bbeppu-film-07.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/mag-marina-margarethe-lassnig-brautatelier-velden/k%c3%a4rnten/?firmaid=c3510118-9c7e-4b4d-8b39-d2e14f0122d9&suchbegriff=brautkleid",
+      "country": "AT",
+      "name": "Mag. Marina Margarethe Lassnig",
+      "category": "other",
+      "street": "Am Corso 2",
+      "postal_code": "9220",
+      "city": "Velden/Wörther See",
+      "address": "Am Corso 2, 9220 Velden/Wörther See, Österreich",
+      "phone": "+436506067474",
+      "email": "marina@cherryblossom-brautatelier.at",
+      "website": "https://www.cherryblossom-brautatelier.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www-static.cherryblossom-brautatelier.at/wp-content/uploads/2025/06/CB_Home_Teaser_Brautmode_500x500_2025.jpg.jpg?media=1784292440",
+        "https://www-static.cherryblossom-brautatelier.at/wp-content/uploads/2025/06/CB_Home_Teaser_Anprobe_500x500_2025.jpg.jpg?media=1784292440",
+        "https://www-static.cherryblossom-brautatelier.at/wp-content/uploads/2025/06/CB_Home_Teaser_About_500x500_2025.jpg?media=1784292440"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/mag-susanne-parth-hochzeitsredner-tirol/tirol/?firmaid=6eb5bb5e-4cfd-47c4-a009-b8ac7309069b&suchbegriff=hochzeitsredner",
+      "country": "AT",
+      "name": "Mag. Susanne Parth",
+      "category": "mc_celebrant",
+      "street": "Klosterangerstraße 12",
+      "postal_code": "6020",
+      "city": "Innsbruck",
+      "address": "Klosterangerstraße 12, 6020 Innsbruck, Österreich",
+      "phone": "+43%20676%207676801",
+      "email": "info@hochzeitsredner-tirol.com",
+      "website": "http://www.hochzeitsredner-tirol.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://hochzeitsredner-tirol.com/wp-content/uploads/2019/08/2O4A4250_web.jpg",
+        "https://hochzeitsredner-tirol.com/wp-content/uploads/2024/12/2O4A7219-683x1024.jpg",
+        "https://hochzeitsredner-tirol.com/wp-content/uploads/2022/02/Rectangle-7.png"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/manfred-eibl-hochzeitsfotograf/steiermark/?firmaid=9e2af5ce-f632-441f-a54a-b48dd5464266&suchbegriff=hochzeitsfotograf",
+      "country": "AT",
+      "name": "Manfred Eibl",
+      "category": "photography",
+      "street": "Ferdinand-Prirsch-Straße 46",
+      "postal_code": "8054",
+      "city": "Graz",
+      "address": "Ferdinand-Prirsch-Straße 46, 8054 Graz, Österreich",
+      "phone": "+43%20316%202257250",
+      "email": "manfred.eibl@innovation-marketing.at",
+      "website": "http://www.hochzeits-fotograf-graz.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.hochzeits-fotograf-graz.at/img/hochzeitsfotos-graz-fb-preview.jpg",
+        "https://www.hochzeits-fotograf-graz.at/img/hochzeits-fotos-in-graz.jpg",
+        "https://www.hochzeits-fotograf-graz.at/img/hochzeitsfotograf-graz-hochzeit.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/marcus-stephan-buchberger-hochzeitsfotograf/steiermark/?firmaid=4ee7a9d3-be80-403d-a709-117924a225c3&suchbegriff=hochzeitsfotograf",
+      "country": "AT",
+      "name": "Marcus Stephan Buchberger",
+      "category": "photography",
+      "street": "Stenggstraße 59, Tür 11",
+      "postal_code": "8043",
+      "city": "Graz",
+      "address": "Stenggstraße 59, Tür 11, 8043 Graz, Österreich",
+      "phone": "06644824399",
+      "email": "contact@marcusbuchberger.com",
+      "website": "https://marcusbuchberger.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://marcusbuchberger.com/wp-content/uploads/Hochzeitsfotograf-Graz-19.avif",
+        "https://marcusbuchberger.com/wp-content/uploads/Marcus_Hochzeitsfotograf-Graz-12-1024x683.avif",
+        "https://marcusbuchberger.com/wp-content/uploads/20251025_Hochzeitsfotograf_042-768x1152.avif"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/maria-beatrice-cantelli-musikervermittlung/steiermark/?firmaid=7a63fb86-82b7-499b-91cf-7cae7516b9e9&suchbegriff=hochzeitsmusik",
+      "country": "AT",
+      "name": "Maria Beatrice Cantelli",
+      "category": "live_music",
+      "street": "Ägydigasse 20b",
+      "postal_code": "8020",
+      "city": "Graz",
+      "address": "Ägydigasse 20b, 8020 Graz, Österreich",
+      "phone": "06604066815",
+      "email": "cantelli@klassikwunsch.at",
+      "website": "http://www.klassikwunsch.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.klassikwunsch.at/wp-content/uploads/2022/11/Richtig-200x200.jpg",
+        "https://www.klassikwunsch.at/wp-content/uploads/2020/09/P9190466-200x200.jpg",
+        "https://www.klassikwunsch.at/wp-content/uploads/2017/11/Musik-4-e1613987836450-200x200.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/martin-asb%c3%b6ck-eventtechnik-martin-asb%c3%b6ck/ober%c3%b6sterreich/?firmaid=3fb63214-bad4-4c18-b3a2-1c8e1029a3b4&suchbegriff=dj%20hochzeit",
+      "country": "AT",
+      "name": "Martin Asböck",
+      "category": "sound_tech",
+      "street": "Pürstingerweg 8",
+      "postal_code": "4553",
+      "city": "Schlierbach",
+      "address": "Pürstingerweg 8, 4553 Schlierbach, Österreich",
+      "phone": "+43%20664%2073718028",
+      "email": "martin@eventtechnik-asboeck.at",
+      "website": "https://www.eventtechnik-asboeck.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.eventtechnik-asboeck.at/.cm4all/uproc.php/0/160130%20Feuerwehrball%20Frauenstein%202016%20-%20Technik%20(5).JPG",
+        "https://www.eventtechnik-asboeck.at/.cm4all/iproc.php/Sonnwendfeuer%20RK%20Molln%202015%20%2869%29.JPG/downsize_1280_0/Sonnwendfeuer%20RK%20Molln%202015%20%2869%29.JPG",
+        "https://www.eventtechnik-asboeck.at/.cm4all/iproc.php/160130%20Feuerwehrball%20Frauenstein%202016%20-%20Technik%20%285%29.JPG/downsize_1280_0/160130%20Feuerwehrball%20Frauenstein%202016%20-%20Technik%20%285%29.JPG"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/martin-buttini-livemusikkaraoke-limuka-e-u/nieder%c3%b6sterreich/?firmaid=2134bed6-1262-480b-9666-241f96e37f77&suchbegriff=dj%20hochzeit",
+      "country": "AT",
+      "name": "Martin Buttini",
+      "category": "live_music",
+      "street": "Roseggerstraße 7",
+      "postal_code": "3100",
+      "city": "St. Pölten",
+      "address": "Roseggerstraße 7, 3100 St. Pölten, Österreich",
+      "phone": "+43%2069911213693",
+      "email": "info@limuka.at",
+      "website": "https://www.limuka.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.limuka.at/wp-content/themes/limuka/images/share2.jpg",
+        "https://www.limuka.at/media/limuka-live-karaoke-wien-1920x1080.jpg",
+        "https://www.limuka.at/media/singalong1.png"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/martina-maria-baireder-kerzenspiel-martina-baireder/nieder%c3%b6sterreich/?firmaid=721a9366-3f3d-4d35-8478-e22fa3f54519&suchbegriff=hochzeitskerzen",
+      "country": "AT",
+      "name": "Martina Maria Baireder",
+      "category": "other",
+      "street": "Hartl Haus-Straße 9",
+      "postal_code": "3903",
+      "city": "Echsenbach",
+      "address": "Hartl Haus-Straße 9, 3903 Echsenbach, Österreich",
+      "phone": "+43%20677%2063770010",
+      "email": "info@kerzenspiel.at",
+      "website": "https://www.kerzenspiel.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.kerzenspiel.at/wp-content/uploads/2019/12/ueber_mich.jpg",
+        "https://www.kerzenspiel.at/wp-content/uploads/2020/09/fk_baum-300x300.jpg",
+        "https://www.kerzenspiel.at/wp-content/uploads/2020/02/hk_brautpaar-300x300.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/nico-leonardo-szolderits-dj-nico-soldii-hochzeits-dj-k%c3%a4rnten/k%c3%a4rnten/?firmaid=73c6909b-253f-4bec-9ea0-43da9fea03e7&suchbegriff=hochzeits%20dj",
+      "country": "AT",
+      "name": "Nico Leonardo Szolderits",
+      "category": "dj",
+      "street": "Schulweg 30",
+      "postal_code": "9081",
+      "city": "Maria Wörth",
+      "address": "Schulweg 30, 9081 Maria Wörth, Österreich",
+      "phone": "+43%20650%204977022",
+      "email": "dj@nicosoldii.at",
+      "website": "https://nicosoldii.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://nicosoldii.at/wp-content/uploads/2026/04/google.webp",
+        "https://nicosoldii.at/wp-content/uploads/2026/05/dj_nico_soldii-1-781x1024.webp",
+        "https://nicosoldii.at/wp-content/uploads/2026/04/Top_DJ_Service_Siegel_ausgestellt_von_DJ_Mike_Hoffmann_-_DJ___Business_Trainings-737x1024.webp"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/niklas-thomas-fortner-fortner-fotos-hochzeits-und-eventfotograf-linz/ober%c3%b6sterreich/?firmaid=2b467259-88db-4c8c-bddf-86b4def973ce&suchbegriff=wedding%20fotograf",
+      "country": "AT",
+      "name": "Niklas Thomas Fortner",
+      "category": "photography",
+      "street": "Im Schloßfeld 1a",
+      "postal_code": "4060",
+      "city": "Leonding",
+      "address": "Im Schloßfeld 1a, 4060 Leonding, Österreich",
+      "phone": "+4367762189763",
+      "email": "info@fortnerfotos.com",
+      "website": "https://www.fortnerfotos.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://cdn.durable.co/blocks/35GIpUqgRicgMOgDxLkMR0qLpxgIYqvkMiuNKMlY4cyaTinYOXExztqrCX8PGZFE.jpg",
+        "https://cdn.durable.co/blocks/an1NbWL6xtwTuH3xqVxMOqEv5pKu49ZZbayGh3ACUehkMoaw1v4DQvGYiH39ZDqB.png",
+        "https://cdn.durable.co/blocks/17njWmPHtS0nZsQYSKoSzNyWeBPWTw2FrRjNNvjJr6EnmTVGu1m5UVnpErSd4qeP.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/nina-stefanie-kainhofer-love-and-paper-grafikdesign-hochzeitspapeterie-accessoires/salzburg/?firmaid=3f77692a-21c1-40f1-86f8-7ec2f4e469ac&suchbegriff=hochzeitspapeterie",
+      "country": "AT",
+      "name": "Nina Stefanie Kainhofer",
+      "category": "invitation_graphics",
+      "street": "Edtsiedlung 206",
+      "postal_code": "5531",
+      "city": "Eben im Pongau",
+      "address": "Edtsiedlung 206, 5531 Eben im Pongau, Österreich",
+      "phone": "+436644065668",
+      "email": "hello@loveandpaper.at",
+      "website": "https://www.loveandpaper.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.loveandpaper.at/fileadmin/_processed_/0/4/csm_over-img-folder_b11f6c98f8.jpg",
+        "https://www.loveandpaper.at/fileadmin/templates/public/img/slide-1.jpg",
+        "https://www.loveandpaper.at/fileadmin/templates/public/img/slide-2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/peter-gstettner-balancelife-studio/nieder%c3%b6sterreich/?firmaid=3c8fb37f-b831-4fd6-8352-3a86eca22b88&suchbegriff=dj%20hochzeit",
+      "country": "AT",
+      "name": "Peter Gstettner",
+      "category": "other",
+      "street": "Höhengasse 52/1",
+      "postal_code": "2391",
+      "city": "Kaltenleutgeben",
+      "address": "Höhengasse 52/1, 2391 Kaltenleutgeben, Österreich",
+      "phone": "+43%20676%203018233",
+      "email": "studio@balancelife.at",
+      "website": "http://www.balancelife.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://balancelife.at/wp-content/uploads/2020/12/BalanceLife-AromaStudio.jpg",
+        "https://balancelife.at/wp-content/uploads/2020/10/BalanceLife-Plane-2020-FHD.jpg",
+        "https://balancelife.at/wp-content/uploads/2026/05/BalanceLife-Kategorie-Sternzeichen-Sprays.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/peter-gstettner-magixx-teambuildings-und-events-zum-wohlf%c3%bchlen/nieder%c3%b6sterreich/?firmaid=f522431e-8725-4898-9919-0db725fc4059&suchbegriff=dj%20hochzeit",
+      "country": "AT",
+      "name": "Peter Gstettner",
+      "category": "other",
+      "street": "Höhengasse 52/1",
+      "postal_code": "2391",
+      "city": "Kaltenleutgeben",
+      "address": "Höhengasse 52/1, 2391 Kaltenleutgeben, Österreich",
+      "phone": "+43%20676%203018233",
+      "email": "event@magixx.at",
+      "website": "http://www.magixx.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.magixx.at/wp-content/themes/flatsome/assets/img/missing.jpg",
+        "https://i0.wp.com/www.magixx.at/wp-content/uploads/2024/04/DSC1430-Edit-scaled.jpg?fit=1020%2C678&ssl=1",
+        "https://i0.wp.com/www.magixx.at/wp-content/uploads/2017/04/Team-A.jpg?fit=1020%2C434&ssl=1"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/renty-dip-gmbh-und-co-kg-renty-veranstaltungstechnik-mieten/steiermark/?firmaid=1ea0a9be-7564-4065-8f61-78bcc4cd6cc8&suchbegriff=eventtechnik%20hochzeit",
+      "country": "AT",
+      "name": "Renty DIP GmbH & Co KG",
+      "category": "sound_tech",
+      "street": "Klosterwiesgasse 7",
+      "postal_code": "8010",
+      "city": "Graz",
+      "address": "Klosterwiesgasse 7, 8010 Graz, Österreich",
+      "phone": "+43%20316%20231064",
+      "email": "office@renty-event.com",
+      "website": "https://renty-event.com/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://cdn.prod.website-files.com/691d900676a7737823503789/6a2d0d765182a5b586ad4396_veranstaltungstechnik_mieten_renty-event.com_eventverleih.webp",
+        "https://cdn.prod.website-files.com/691d900676a7737823503789/698e018a6bd75c46c133eeea_menu.png",
+        "https://cdn.prod.website-files.com/691d900676a7737823503789/698f0f0977fd2909dde9a469_Soundpaket%20Small.webp"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/rotknopf-kg-rotknopf-anz%c3%bcge-nach-ma%c3%9f/wien/?firmaid=1d83671e-d27b-4058-9a95-d46f2b59d228&suchbegriff=hochzeitsanzug",
+      "country": "AT",
+      "name": "ROTKNOPF KG",
+      "category": "other",
+      "street": "Lindengasse 32/4",
+      "postal_code": "1070",
+      "city": "Wien",
+      "address": "Lindengasse 32/4, 1070 Wien, Österreich",
+      "phone": "+4319420472",
+      "email": "info@rotknopf.at",
+      "website": "https://www.rotknopf.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.rotknopf.at/wp-content/uploads/2026/03/suit.png",
+        "https://www.rotknopf.at/wp-content/uploads/2026/03/suit.png.webp",
+        "https://www.rotknopf.at/wp-content/uploads/2026/03/groom-suit.png.webp"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/sabine-pleyer-binder-make-up-artist-und-hairstylist/nieder%c3%b6sterreich/?firmaid=e33b0096-c884-4fc5-921b-2e9445cbb736&suchbegriff=hochzeitsfrisur",
+      "country": "AT",
+      "name": "Sabine Pleyer-Binder",
+      "category": "hair_makeup",
+      "street": "Neue Gasse 62",
+      "postal_code": "2212",
+      "city": "Groß-Engersdorf",
+      "address": "Neue Gasse 62, 2212 Groß-Engersdorf, Österreich",
+      "phone": "+43%20(0)664%20481%2027%2050",
+      "email": "s.pleyer-binder@makeupartist.co.at",
+      "website": "http://www.makeupartist.co.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.makeupartist.co.at/images/phocagallery/hochzeit/claudia//hochzeit-garten-tulln-23.jpg",
+        "https://www.makeupartist.co.at/images/phocagallery/hochzeit/claudia//hochzeit-garten-tulln-21.jpg",
+        "https://www.makeupartist.co.at/images/phocagallery/business/thumbs/phoca_thumb_m_p1015222.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/sabrina-kaltenb%c3%b6ck-sabrina-kaltenb%c3%b6ck/wien/?firmaid=1b5b538b-2104-4422-815b-163454d73013&suchbegriff=brautkleid",
+      "country": "AT",
+      "name": "Sabrina Kaltenböck",
+      "category": "other",
+      "street": "Mautner-Markhof-Gasse 58/4/12",
+      "postal_code": "1110",
+      "city": "Wien",
+      "address": "Mautner-Markhof-Gasse 58/4/12, 1110 Wien, Österreich",
+      "phone": "+43%20(0)676%205580411",
+      "email": "office@skdesign.at",
+      "website": "http://www.skdesign.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.skdesign.at/wp-content/uploads/2021/01/skd_dress_black_flowery_02.jpg",
+        "https://www.skdesign.at/wp-content/uploads/2021/01/pexels-cottonbro-4622423-scaled-e1610279094216.jpg",
+        "https://www.skdesign.at/wp-content/uploads/2021/01/IMG_4199-scaled.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/sarah-braun-ma-sarah-braun-hochzeitsfotografie/burgenland/?firmaid=fe4f70f4-7b61-4c82-a055-2ba5f1e3d911&suchbegriff=hochzeitsfotografie",
+      "country": "AT",
+      "name": "Sarah Braun, MA",
+      "category": "photography",
+      "street": "Mitterweg 5",
+      "postal_code": "7571",
+      "city": "Rudersdorf",
+      "address": "Mitterweg 5, 7571 Rudersdorf, Österreich",
+      "phone": "+436649100784",
+      "email": "mail@sarahbraun.at",
+      "website": "https://www.sarahbraun.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.sarahbraun.at/wp2025live/wp-content/uploads/2025/09/SB-0684-scaled.jpg",
+        "https://www.sarahbraun.at/wp2025live/wp-content/uploads/2025/09/SB-0684-768x512.jpg",
+        "https://www.sarahbraun.at/wp2025live/wp-content/uploads/2026/03/DG-251108_034_19278.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/seth-moses-ellermann-ecru-media-seth-moses-ellermann-eu/wien/?firmaid=ed552f50-14fa-498f-b5a4-bb2e4cc82d07&suchbegriff=live%20musik%20hochzeit",
+      "country": "AT",
+      "name": "Seth-Moses Ellermann",
+      "category": "other",
+      "street": "Pfauengasse 8/22",
+      "postal_code": "1060",
+      "city": "Wien",
+      "address": "Pfauengasse 8/22, 1060 Wien, Österreich",
+      "phone": "067761685632",
+      "email": "servus@ecrumedia.at",
+      "website": "https://www.ecrumedia.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.ecrumedia.at/wp-content/uploads/2025/11/ecru-media-builder.jpg",
+        "https://www.ecrumedia.at/wp-content/uploads/2025/11/website-presentation-1-1.jpg",
+        "https://www.ecrumedia.at/wp-content/uploads/2025/11/example_artboard_23.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/sonja-tatar-kinderbetreuung-sonja-tatar/nieder%c3%b6sterreich/?firmaid=df0cbb90-b0e0-4252-ae6f-fb3f948b040f&suchbegriff=kinderbetreuung%20hochzeit",
+      "country": "AT",
+      "name": "Sonja Tatar",
+      "category": "entertainment",
+      "street": "Andreas Radlinger-Straße 1a",
+      "postal_code": "2326",
+      "city": "Lanzendorf",
+      "address": "Andreas Radlinger-Straße 1a, 2326 Lanzendorf, Österreich",
+      "phone": "+43%20699%20107%20139%2017",
+      "email": "office@kinderbetreuung-sonja.at",
+      "website": "http://www.kinderbetreuung-sonja.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://www.kinderbetreuung-sonja.at/wp-content/uploads/2023/07/WhatsApp-Image-2022-06-23-at-08.38.52_kleiner-min.jpg",
+        "https://www.kinderbetreuung-sonja.at/wp-content/uploads/2022/03/byNikkiHarris-137.jpg",
+        "https://www.kinderbetreuung-sonja.at/wp-content/uploads/2023/07/Hochzeit2021_Tanz2.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/susanne-dorothea-b%c3%b6hm-seidenzauberei/nieder%c3%b6sterreich/?firmaid=6895f47d-9423-466f-bcbd-7e9e6caeb886&suchbegriff=brautstrauss",
+      "country": "AT",
+      "name": "Susanne Dorothea Böhm",
+      "category": "entertainment",
+      "street": "Wiener Straße (Langenlebarn) 71",
+      "postal_code": "3425",
+      "city": "Langenlebarn",
+      "address": "Wiener Straße (Langenlebarn) 71, 3425 Langenlebarn, Österreich",
+      "phone": "+%2043%20660%204673568%20",
+      "email": "susanne@seidenzauberei.at",
+      "website": "https://seidenzauberei.at/webshop.html",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://impro.usercontent.one/appid/oneComWsb/domain/seidenzauberei.at/media/seidenzauberei.at/onewebmedia/FB_Profilbild_1.jpg?etag=W%2F%22ae9d-604bb8ca%22&sourceContentType=image%2Fjpeg&quality=85",
+        "https://impro.usercontent.one/appid/oneComWsb/domain/seidenzauberei.at/media/seidenzauberei.at/onewebmedia/email.png?etag=%222e09-5ab2b4c4%22&sourceContentType=image%2Fpng&ignoreAspectRatio&resize=20%2B20",
+        "https://impro.usercontent.one/appid/oneComWsb/domain/seidenzauberei.at/media/seidenzauberei.at/onewebmedia/Produktfotos/Hochzeit/DSC_9395.JPG?etag=%2247800-60a948f3%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=800%2B533&quality=85"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/susanne-foisner-susita-fotografie-hochzeitsfotograf-linz-und-o%c3%96/ober%c3%b6sterreich/?firmaid=1f55bc0e-a548-40b3-92cc-e70aec4804bc&suchbegriff=hochzeitsfotograf",
+      "country": "AT",
+      "name": "Susanne Foisner",
+      "category": "photography",
+      "street": "Sandgrube 23",
+      "postal_code": "4181",
+      "city": "Oberneukirchen",
+      "address": "Sandgrube 23, 4181 Oberneukirchen, Österreich",
+      "phone": "+43%20680%201307898",
+      "email": "info@susita-fotografie.at",
+      "website": "https://www.susita-fotografie.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=crop,format=auto,width=867,height=455.175/image/509670187/59737003-dbeb-47ab-b6ba-ca0753b4272a.jpg",
+        "https://www.susita-fotografie.at/height=522/image/86213873/6da3025b-6674-4602-b7fd-6d97598299a8.jpg",
+        "https://www.susita-fotografie.at/height=435/image/86213873/6da3025b-6674-4602-b7fd-6d97598299a8.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/theresa-erdmann-miau-design/tirol/?firmaid=45481730-7045-4153-b33a-aac8fea160e3&suchbegriff=hochzeitspapeterie",
+      "country": "AT",
+      "name": "Theresa Erdmann",
+      "category": "other",
+      "street": "Anna-Dengel-Straße 19",
+      "postal_code": "6020",
+      "city": "Innsbruck",
+      "address": "Anna-Dengel-Straße 19, 6020 Innsbruck, Österreich",
+      "phone": "+43%20678%201262240",
+      "email": "miau.design1@gmail.com",
+      "website": "https://miau.design/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://miau727766718.wordpress.com/wp-content/uploads/2026/06/img_2996.jpg?w=1024",
+        "https://miau.design/wp-content/uploads/2026/05/img_2653.jpg",
+        "https://miau.design/wp-content/uploads/2025/06/img_7404.jpeg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/thomas-kaserer-portrait-und-sport-und-hochzeitsfotograf/salzburg/?firmaid=92dac8a2-317f-4348-8ce0-7d71ffe5ab1f&suchbegriff=hochzeitsfotograf",
+      "country": "AT",
+      "name": "Thomas Kaserer",
+      "category": "photography",
+      "street": "Pannzaunweg 10",
+      "postal_code": "5071",
+      "city": "Wals-Siezenheim",
+      "address": "Pannzaunweg 10, 5071 Wals-Siezenheim, Österreich",
+      "phone": "+436648639437",
+      "email": "thomas@fotografie-kaserer.at",
+      "website": "http://www.fotografie-kaserer.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "http://fotografie-kaserer.at/wp-content/uploads/2018/11/thomas_kaserer_fotografie-1024x551.jpg",
+        "http://fotografie-kaserer.at/wp-content/uploads/2026/07/2W5A6728.jpg",
+        "http://fotografie-kaserer.at/wp-content/uploads/2026/07/DJI_20260530110440_0174_D.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/tomas-anderson-hochzeit-familien-und-event-fotograf-in-wien/wien/?firmaid=e6a64050-fc5f-4d5e-a0c5-14385d2d8421&suchbegriff=hochzeit",
+      "country": "AT",
+      "name": "Tomas Anderson",
+      "category": "photography",
+      "street": "Döblerhofstraße 10/122",
+      "postal_code": "1030",
+      "city": "Wien",
+      "address": "Döblerhofstraße 10/122, 1030 Wien, Österreich",
+      "phone": "+4366565293655",
+      "email": "info@tomasanderson.at",
+      "website": "https://tomasanderson.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "https://tomasanderson.at/wp-content/uploads/2023/09/MG_1245-2160px-min.jpg",
+        "https://tomasanderson.at/wp-content/uploads/2023/01/TomasAnderson-1.png",
+        "https://tomasanderson.at/wp-content/uploads/2025/01/1-15.jpg"
+      ]
+    },
+    {
+      "source_profile": "https://firmen.wko.at/wilhelm-haslinger-willidigital-multimedia-agentur-fotografie-und-videografie/ober%c3%b6sterreich/?firmaid=97c8f1c9-0500-4719-91db-549c454d0d24&suchbegriff=wedding%20film",
+      "country": "AT",
+      "name": "Wilhelm Haslinger",
+      "category": "videography",
+      "street": "Allee 24/6",
+      "postal_code": "4912",
+      "city": "Neuhofen im Innkreis",
+      "address": "Allee 24/6, 4912 Neuhofen im Innkreis, Österreich",
+      "phone": "+43%20(660)%2049%2046%20050",
+      "email": "office@willidigital.at",
+      "website": "http://www.willidigital.at/",
+      "lat": null,
+      "lng": null,
+      "gallery_urls": [
+        "http://www.willidigital.at/wp-content/uploads/2021/02/WD_Fotografie2.jpg",
+        "http://www.willidigital.at/wp-content/uploads/2021/02/WD-About_1-853x1024.jpg",
+        "http://www.willidigital.at/wp-content/uploads/2021/02/WD_Drohne-1-144x144.jpg"
+      ]
+    }
+  ]
+}

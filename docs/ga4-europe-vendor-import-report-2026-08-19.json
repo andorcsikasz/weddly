@@ -1,0 +1,2599 @@
+{
+  "researched_at": "2026-08-19T19:28:21.019Z",
+  "ga4_period": {
+    "start": "2025-01-01",
+    "end": "2026-08-19",
+    "metric": "activeUsers"
+  },
+  "discovery_source": "OpenStreetMap / Overpass API",
+  "contact_and_image_source": "each vendor's official website",
+  "imported": 104,
+  "by_country": {
+    "IE": 5,
+    "GB": 13,
+    "CH": 12,
+    "BE": 18,
+    "CZ": 5,
+    "NL": 20,
+    "DE": 18,
+    "SE": 13
+  },
+  "rejected_count": 54,
+  "rejected": [
+    {
+      "name": "Royal Dublin Society (RDS)",
+      "country": "IE",
+      "source_url": "https://www.openstreetmap.org/way/8106838",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "RDS Simmonscourt",
+      "country": "IE",
+      "source_url": "https://www.openstreetmap.org/way/8106837",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Hilton Park",
+      "country": "IE",
+      "source_url": "https://www.openstreetmap.org/relation/16843567",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Poulaphouca House & Falls",
+      "country": "IE",
+      "source_url": "https://www.openstreetmap.org/way/358966514",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "The Margaret Aylward Centre for Faith and Dialogue",
+      "country": "IE",
+      "source_url": "https://www.openstreetmap.org/way/762805061",
+      "reasons": [
+        "photo_quality_failed",
+        "phone_invalid"
+      ]
+    },
+    {
+      "name": "Christchurch Methodist Hall",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/way/399499522",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Cutlers' Hall",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/way/103085522",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Green and Away",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/node/12981895835",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Abney Public Hall",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/way/30834560",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Beaconside Conference Centre",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/way/109560989",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Brookfield Barn",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/way/227130817",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "CCTvenues South Quay",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/node/3498730349",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "CodeNode",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/node/11150904143",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Crumlin Road Gaol",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/way/18839044",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Doncaster Racecourse",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/way/60917541",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Glyn Clydach Hotel",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/node/1346274015",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Grove of Narberth",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/node/12758212368",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "High Elms Manor",
+      "country": "GB",
+      "source_url": "https://www.openstreetmap.org/way/519963644",
+      "reasons": [
+        "phone_invalid"
+      ]
+    },
+    {
+      "name": "eiszueis - eventRaum",
+      "country": "CH",
+      "source_url": "https://www.openstreetmap.org/node/11654581443",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Eventforum Bern",
+      "country": "CH",
+      "source_url": "https://www.openstreetmap.org/node/14019651978",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Festküche - by focacceria",
+      "country": "CH",
+      "source_url": "https://www.openstreetmap.org/node/13265148943",
+      "reasons": [
+        "email_invalid"
+      ]
+    },
+    {
+      "name": "Grabenhalle",
+      "country": "CH",
+      "source_url": "https://www.openstreetmap.org/way/308388008",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Inforama",
+      "country": "CH",
+      "source_url": "https://www.openstreetmap.org/node/8151832544",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Quartiertreff Zehntenhaus",
+      "country": "CH",
+      "source_url": "https://www.openstreetmap.org/way/33051491",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Kasteel van Hoen",
+      "country": "BE",
+      "source_url": "https://www.openstreetmap.org/way/521936800",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "'t Muiken",
+      "country": "BE",
+      "source_url": "https://www.openstreetmap.org/way/834254870",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "CFR Bouge",
+      "country": "BE",
+      "source_url": "https://www.openstreetmap.org/way/173285189",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Domein De Vesten",
+      "country": "BE",
+      "source_url": "https://www.openstreetmap.org/way/136065377",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Feestzaal 't Molenhof",
+      "country": "BE",
+      "source_url": "https://www.openstreetmap.org/way/186108192",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Feestzaal Concordia",
+      "country": "BE",
+      "source_url": "https://www.openstreetmap.org/way/264281373",
+      "reasons": [
+        "photo_quality_failed",
+        "phone_invalid"
+      ]
+    },
+    {
+      "name": "Kulturní centrum Labuť",
+      "country": "CZ",
+      "source_url": "https://www.openstreetmap.org/way/61857293",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "'t Misverstant (event lokatie)",
+      "country": "NL",
+      "source_url": "https://www.openstreetmap.org/node/2772234600",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "033 Vergaderen",
+      "country": "NL",
+      "source_url": "https://www.openstreetmap.org/node/13435369715",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "1931",
+      "country": "NL",
+      "source_url": "https://www.openstreetmap.org/node/3220027460",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Bollee Events",
+      "country": "NL",
+      "source_url": "https://www.openstreetmap.org/node/2783473911",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Conferentiecentrum Samaya",
+      "country": "NL",
+      "source_url": "https://www.openstreetmap.org/node/2847830172",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "De Brink Pub",
+      "country": "NL",
+      "source_url": "https://www.openstreetmap.org/node/8883060819",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "De Lantearne",
+      "country": "NL",
+      "source_url": "https://www.openstreetmap.org/node/2798157289",
+      "reasons": [
+        "phone_invalid"
+      ]
+    },
+    {
+      "name": "Alte Dreherei",
+      "country": "DE",
+      "source_url": "https://www.openstreetmap.org/way/39857658",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Eventhalle - Landgut Steng",
+      "country": "DE",
+      "source_url": "https://www.openstreetmap.org/node/11993564074",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Franky's Bar",
+      "country": "DE",
+      "source_url": "https://www.openstreetmap.org/node/303828469",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Inselhalle",
+      "country": "DE",
+      "source_url": "https://www.openstreetmap.org/way/54601492",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Pan Am Lounge Berlin",
+      "country": "DE",
+      "source_url": "https://www.openstreetmap.org/node/925059580",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Stift Urach",
+      "country": "DE",
+      "source_url": "https://www.openstreetmap.org/way/80308970",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Villa Sturm",
+      "country": "DE",
+      "source_url": "https://www.openstreetmap.org/way/338297470",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Alt-Linzenshäuschen",
+      "country": "DE",
+      "source_url": "https://www.openstreetmap.org/node/10618773706",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Alte Sägerei",
+      "country": "DE",
+      "source_url": "https://www.openstreetmap.org/way/1226411927",
+      "reasons": [
+        "email_invalid"
+      ]
+    },
+    {
+      "name": "Camp Ånn",
+      "country": "SE",
+      "source_url": "https://www.openstreetmap.org/way/1445956245",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "EFS-gården Åsljunga",
+      "country": "SE",
+      "source_url": "https://www.openstreetmap.org/relation/15658941",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Österlenkryddor",
+      "country": "SE",
+      "source_url": "https://www.openstreetmap.org/node/1716367271",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Huddinge Konferenscenter",
+      "country": "SE",
+      "source_url": "https://www.openstreetmap.org/node/13067667086",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Diggiloo - Båstad",
+      "country": "SE",
+      "source_url": "https://www.openstreetmap.org/node/10597060462",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Grevieparken",
+      "country": "SE",
+      "source_url": "https://www.openstreetmap.org/node/6742648494",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    },
+    {
+      "name": "Herresta lada",
+      "country": "SE",
+      "source_url": "https://www.openstreetmap.org/way/387371652",
+      "reasons": [
+        "photo_quality_failed"
+      ]
+    }
+  ],
+  "provenance": [
+    {
+      "name": "SETU Arena",
+      "country": "IE",
+      "osm_source_url": "https://www.openstreetmap.org/way/764257065",
+      "website": "https://setuarena.ie/",
+      "pages_checked": [
+        "https://setuarena.ie/",
+        "https://setuarena.ie/contact-us/",
+        "https://setuarena.ie/about/"
+      ],
+      "image_urls": [
+        "https://setuarena.ie/wp-content/uploads/2023/03/sports-hub-facilities-header-1024x683.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1024,
+        "height": 683
+      }
+    },
+    {
+      "name": "10 Bridge Street",
+      "country": "IE",
+      "osm_source_url": "https://www.openstreetmap.org/node/14008705457",
+      "website": "https://www.10bridgestreet.ie/",
+      "pages_checked": [
+        "https://www.10bridgestreet.ie/",
+        "https://www.10bridgestreet.ie/contact-us/",
+        "https://www.10bridgestreet.ie/about-us/"
+      ],
+      "image_urls": [
+        "https://www.10bridgestreet.ie/wp-content/uploads/2022/01/10-Bridge-Street-social-card.png",
+        "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/ORC-066-min-rriwubf000duvqe5wyfb5roaha1z4bzpx44i7zf78e.jpg",
+        "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/ORC-042-min-rriwubf000duvqe5wyfb5roaha1z4bzpx44i7zf78e.jpg",
+        "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/5D3_9384-1-scaled-rriwuhzvbumv504luj9p580imz5jm7pua0owkx5g0u.jpg",
+        "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/272JessicaH-copy-min-rriwuah5t6ckk4fj2g0ol9wtvw6lwmvzkzh0qpglem.jpg",
+        "https://www.10bridgestreet.ie/wp-content/uploads/elementor/thumbs/wedding-email-header-rriwubf000duvqe5wyfb5roaha1z4bzpx44i7zf78e.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 630
+      }
+    },
+    {
+      "name": "Crown Live",
+      "country": "IE",
+      "osm_source_url": "https://www.openstreetmap.org/node/11923165697",
+      "website": "https://www.crownquarter.com/crown-live-entertainment/",
+      "pages_checked": [
+        "https://www.crownquarter.com/crown-live-entertainment/",
+        "https://www.crownquarter.com/location/contact-us/",
+        "https://www.crownquarter.com/location/"
+      ],
+      "image_urls": [
+        "https://www.crownquarter.com/wp-content/uploads/2021/12/Crown-Live-Main.jpg",
+        "https://www.crownquarter.com/wp-content/uploads/2026/07/Purple-And-Blue-Neon-Vibrant-Night-Club-Party-Instagram-Post-2-1120x630-fp_mm-fpoff_0_0.png",
+        "https://www.crownquarter.com/wp-content/uploads/2026/07/Extreme-Rhythm-Tribal-House-Live-1120x630-fp_mm-fpoff_0_0.png",
+        "https://www.crownquarter.com/wp-content/uploads/2026/04/These-Charming-Men-Crown-Live-Assets.png",
+        "https://www.crownquarter.com/wp-content/uploads/2026/04/These-Charming-Men-Crown-Live-Assets-1120x630-fp_mm-fpoff_0_0.png",
+        "https://www.crownquarter.com/wp-content/uploads/2026/07/Luke-Combs-Trib-Crown-Live-2.png"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "name": "The Heritage Room",
+      "country": "IE",
+      "osm_source_url": "https://www.openstreetmap.org/node/12957251070",
+      "website": "https://www.farmerskitchen.com/occasions/heritage-meeting-room",
+      "pages_checked": [
+        "https://www.farmerskitchen.com/occasions/heritage-meeting-room",
+        "https://www.farmerskitchen.com/contact-us/location?lang=en"
+      ],
+      "image_urls": [
+        "https://cdn.myguestdiary.com/uploads/1608/__page__farmersheader3.jpg?width=1920&height=670&mode=crop",
+        "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_01.jpg?width=600&height=450&mode=crop",
+        "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_02.jpg?width=600&height=450&mode=crop",
+        "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_03.jpg?width=600&height=450&mode=crop",
+        "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_04.jpg?width=600&height=450&mode=crop",
+        "https://cdn.myguestdiary.com/uploads/1608/_gallery_farmers_05.jpg?width=600&height=450&mode=crop"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 670
+      }
+    },
+    {
+      "name": "The Mansion House - Round Room",
+      "country": "IE",
+      "osm_source_url": "https://www.openstreetmap.org/way/275474137",
+      "website": "https://www.theroundroom.ie/",
+      "pages_checked": [
+        "https://www.theroundroom.ie/",
+        "https://www.theroundroom.ie/about/",
+        "https://www.theroundroom.ie/about/venue-today/"
+      ],
+      "image_urls": [
+        "https://www.theroundroom.ie/wp-content/uploads/2025/11/RR-Today-1200x801.jpg",
+        "https://www.theroundroom.ie/wp-content/uploads/2026/01/9778696890.jpg_exif1-3-1200x800.jpg",
+        "https://www.theroundroom.ie/wp-content/uploads/2025/11/ARMedia-0403-1200x800.jpg",
+        "https://www.theroundroom.ie/wp-content/uploads/2025/11/ARMedia-0546-800x1200.jpg",
+        "https://www.theroundroom.ie/wp-content/uploads/2025/11/54829669925_04d436f719_k-1200x801.jpg",
+        "https://www.theroundroom.ie/wp-content/uploads/2025/12/Prawn-taco-with-avocado-cream-lime-infused-salsa_-1200x675.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 801
+      }
+    },
+    {
+      "name": "Manor Barn",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/way/290182365",
+      "website": "https://www.themanorbarnbexhill.co.uk/",
+      "pages_checked": [
+        "https://www.themanorbarnbexhill.co.uk/",
+        "https://www.themanorbarnbexhill.co.uk/contact",
+        "https://www.themanorbarnbexhill.co.uk/about"
+      ],
+      "image_urls": [
+        "http://static1.squarespace.com/static/66c85afb864f6620b276935c/t/66c85b8f02e3d02208bc9500/1724406671571/Manor+Barn+header.jpg?format=1500w",
+        "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/1fc72437-6706-4f0d-aba9-cd5bc634afec/wedding+couple.jpg",
+        "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/e78653b0-bf8c-4f65-90d4-bcd895a3299b/CRPhotography_C%2BW-50.jpg",
+        "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/e35e1802-44bb-43f1-9598-59f9fa9aa62a/wedding+ceremony+set+up1.jpg",
+        "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/fede5ad7-26fe-4e8f-865c-f8cecde0a7ed/mb2.jpg",
+        "https://images.squarespace-cdn.com/content/v1/66c85afb864f6620b276935c/f488b21e-9a25-4afc-8ba6-525c648ab6f2/headshot3.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1309,
+        "height": 1042
+      }
+    },
+    {
+      "name": "St. Michael's Church Hall (large)",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/way/410911999",
+      "website": "https://www.stmichaelsbexhill.org/",
+      "pages_checked": [
+        "https://www.stmichaelsbexhill.org/",
+        "https://www.stmichaelsbexhill.org/contact"
+      ],
+      "image_urls": [
+        "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/P1010706-1920w.JPG?Expires=1789733223&Signature=J1wj2iWovaiWxPGeRps1Clf0loLGoyuuTj~xuawiI6aMM7ICzIzCcL8hH3gPbDdi0L4NjYVmQ0nGF0wRHJbfnipBZ1SnWzqeIRmLxmgAwhzYni~QvNsLvp~6yPCEe~3sMxQfuQPRPADVXmCGrAHeIlM6g3r5Z3ZRbTgi73umJThpf1~yaGb8cHBIXgf4rPlFFPGc8nKXEw5~Px3P3fsPPGXYrG5IrRWQZAzxTWUflUNafN4RiCGdcGrM5BJg84xBxlsK4YNMb5ta6CT8plgS6JPqUMpli183VWku8DKynkGmoP43PMMX5PUFBFm2niq4A4taLbFkZj57a-U8WmnQlA__&Key-Pair-Id=K2NXBXLF010TJW",
+        "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/StPeters2-31108e0e-1920w.jpg?Expires=1789733223&Signature=FYuSiBgoedOJ67PacYq8ihDLZ-BgFNq9nfvrgZn3cbOWhLiyUglpThirRFndCdbJpVrUaX5UBHaldZnAhoBKoklom~CPNky3MFNTryBehE3EUh-o2ItylMGnI2ceLKC5ZC8f1iLymP64TsXA~NGWcKsSIU4lCgrn1oS2PbMFi2MePDco8do9I6wOc9XyNOa~pCdnZIa1enXAN2mi8j98wBsuXR-Qun~FrTVs4vzR12myzAizMH-S23~FVrogFd6oh5-AagQiwdpWOP5KrD1vQ9OwVUkrgI02iRDDEvJgdbkVFaSbSXzZoOj-uhqrGTDtk2bGWO~nDsfa2XiIcS1psw__&Key-Pair-Id=K2NXBXLF010TJW",
+        "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/ChurchColourLandscape-8b864e76-1920w.jpg?Expires=1789733223&Signature=hYBbVa8BNJo3rxrksHWPVjqNa4JAf-4Q6WS7ZBH8APzTE6o6HMRGMZDQ~jaTQYBe9tiz1VWNtwZuMg6YNrgdk2hnnePrhrEssxteqVk2Y~NbvMEYog17xPuB8bu~9yGbxcMKCjJXYBN4WQ5w2CeS6y4hJuLj9tSR3MjdCxQADX~lu5xVhe~BFtQ~j7RnuEQqDq6tP0h1rh0JfCpKLWLBxNl7B9jx1GLYqX7NUt2l4kAOJ2Q8Ye1NA~gfL6u6xWx1TTrhVBO8EpL8AXy7FK41qiWWbhao3f8G38gORjFhxXBTCYMEY9OAPVhCd3T7yZoNFcCtqOuyoYp~-XtavHnUeA__&Key-Pair-Id=K2NXBXLF010TJW",
+        "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/P1020588-1920w.JPG?Expires=1789733223&Signature=kBluXJ4Aac7hOATFwZFN2C-Wuw~jkp-aodwe4JmPLC5aW5SadCHcNR9U7md0WhYd8jOqv362Xh3pCSTy4A5II~ibloKIF37371M-tSbyYGhUWhgv4NnhoEn4nFr3BnYqKLYiBegxLF5eZRhjAw1tdcuGSPak5O4dT7FHs3-lA~Te4QLUTEdV22WH0pTp9yJV8nNH-2bC-2levp41Mx1cHq7zeuUPsCvnE2XJxbW03NdeFKu2kPudxyD7ISX6ax7K1mbAB1eirwuCitbdujBur8hEKoqdkh4WI9nTiIM9ppp4dob1AwKqguWe0J5ObDXkviaqzR1TKwB9f1GAJ0KR5w__&Key-Pair-Id=K2NXBXLF010TJW",
+        "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/P1020579+%282%29-1920w.JPG?Expires=1789733223&Signature=eWfvMtKQXp1W5-0rPuZIrWYvHdQahgq7mArUHFnG~stUb3rV5HXgkj1tAni8dJ0wbTsC0zW34UoiDcEmUMyLaQy8sKaEuOvNx9e4cSItDJwQ~OkOSdU0-s1EBxEkOhCsnzmRdBKqueA8FWnBob~3hgkiSVjzJJvjVdky6Z~HXTC8Xp-dx47qXay1JAn7ibleKQYE6i8Gvq-jybxvWqva~2SwJuWLm~9Hzv3g8ylT7Hf1hyCt8WqNh9TYoiWxv4AdJzubMOw6HEUdaUCQsnbbWGp22~RTSOqqWD-CZ2pw-kFhQUK0bJELqg0Y0OjlOLPPLY1nLBW7zFONBEEDOhC2Lw__&Key-Pair-Id=K2NXBXLF010TJW",
+        "https://le-cdn.website-editor.net/s/d0e19b05d5d94c6c99de2d3509b4fbf0/dms3rep/multi/opt/CarolCockcroft-1920w.jpg?Expires=1789733223&Signature=UliF1W1ibKVoGJt3WUE0fi-kq58vd4pnolMEuGgUf7esLC16ftKUM4M~bHFDJyxSt~XX-JB3SrdICKAoNeGnGqVRyGRy9ShXGKM046avdMafxxbR1i~Fx6a5-MpJLUav7ykLVOqUcSJcJZVUIq2DvrtcuT4szgLoF-IDi7SWf2hbRY2PWKIJ3y3wzCRFMKlbfHqgg6gXhm4oiEX1yxG4fzgpYDLibvM~wIggBfjyL82Bmz-d5K8J3zeQk60U50QNb0bfE0KsYg6O1EmMJF90VlFtC~Q9VHuEXGKhTHnwdizhT2Ssd1pqPY7MbqIxaSg~2YlLvpiaa5UWzOlqSWh2Pg__&Key-Pair-Id=K2NXBXLF010TJW"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 1440
+      }
+    },
+    {
+      "name": "St. Stephen's Hall",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/way/448055434",
+      "website": "https://www.ststephensbexhill.co.uk/hall-hire",
+      "pages_checked": [
+        "https://www.ststephensbexhill.co.uk/hall-hire",
+        "https://www.ststephensbexhill.co.uk/contact-us",
+        "https://www.ststephensbexhill.co.uk/about-us"
+      ],
+      "image_urls": [
+        "https://static.wixstatic.com/media/38d249_389fd56ad78047be8c264a82c103130e~mv2.jpg/v1/fill/w_576,h_767,al_c,lg_1,q_85,enc_avif,quality_auto/poster%202_edited.jpg",
+        "https://static.wixstatic.com/media/38d249_8dca2aa43a184ba89c69565ab2959d72~mv2.jpg/v1/fill/w_638,h_851,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/poster%203_edited.jpg",
+        "https://static.wixstatic.com/media/38d249_28a0ff4c4a9f46c3a0c456da9dedae9a~mv2.jpg/v1/fill/w_638,h_851,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_1646.jpg",
+        "https://static.wixstatic.com/media/38d249_3e1b3d51fe4949b9ad34d5ba0214c10d~mv2.jpg/v1/fill/w_640,h_851,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/poster%201.jpg",
+        "https://static.wixstatic.com/media/38d249_1bb6cc38ebbe45f5a7990909140516b4~mv2.jpg/v1/fill/w_638,h_851,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_1644.jpg",
+        "https://static.wixstatic.com/media/38d249_bef274dd36bc4eae995a01e5912c747b~mv2.jpg/v1/fill/w_639,h_901,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/yoga%20tuesdays%201.jpg"
+      ],
+      "image_dimensions": {
+        "width": 576,
+        "height": 767
+      }
+    },
+    {
+      "name": "Ashfield House",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/way/128359392",
+      "website": "https://www.ashfieldhouseweddings.co.uk/",
+      "pages_checked": [
+        "https://www.ashfieldhouseweddings.co.uk/",
+        "https://www.ashfieldhouseweddings.co.uk/contact-us"
+      ],
+      "image_urls": [
+        "https://static.wixstatic.com/media/f6bd37_aada4ef00889429a9810578ce705dd59%7Emv2.png/v1/fit/w_2500,h_1330,al_c/f6bd37_aada4ef00889429a9810578ce705dd59%7Emv2.png",
+        "https://static.wixstatic.com/media/f6bd37_138cdc418c614f2caba05f9436d38910~mv2.jpg/v1/fill/w_485,h_685,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Ground%20Floor%20Plan%20of%20Ashfield%20House%20wedding%20venue.jpg",
+        "https://static.wixstatic.com/media/f6bd37_4bed172db23c48b49a60791dcc08852c~mv2.jpg/v1/crop/x_252,y_1487,w_5077,h_6320/fill/w_412,h_513,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/photo_1-62.jpg",
+        "https://static.wixstatic.com/media/f6bd37_0de829e6e2b34d139418d41f1c8b1355~mv2.jpg/v1/crop/x_826,y_0,w_4248,h_3997/fill/w_533,h_501,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Harris%20Wedding%20-513.jpg",
+        "https://static.wixstatic.com/media/f6bd37_6ad05a30689e47b08e39b92e2b373412~mv2.jpg/v1/crop/x_1688,y_0,w_3631,h_4672/fill/w_443,h_570,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/A%20newlywed%20couple%20sharing%20a%20kiss%20while%20guests%20throw%20confetti%20outside%20the%20front%20door%20of%20Ash.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2213,
+        "height": 1330
+      }
+    },
+    {
+      "name": "Clarence Hall",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/node/9573564821",
+      "website": "https://www.clarencehallcrickhowell.org.uk/",
+      "pages_checked": [
+        "https://www.clarencehallcrickhowell.org.uk/",
+        "https://www.clarencehallcrickhowell.org.uk/contact/",
+        "https://www.clarencehallcrickhowell.org.uk/the-venue/about-the-hall/"
+      ],
+      "image_urls": [
+        "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2021/11/Bingo1.png",
+        "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2025/01/Brown-Yellow-Rug-Sale-WhatsApp-Status-in-Decorative-Style-Document-A4-e1737635297356.png",
+        "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2025/02/F0E58735-63B1-498A-9C49-ABFEB920F1C9-1024x768.jpeg",
+        "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2018/12/main-hall-small-6-1024x683.jpg",
+        "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2025/02/IMG_0999-scaled-e1738752821466-1024x650.jpeg",
+        "https://www.clarencehallcrickhowell.org.uk/wp-content/uploads/2025/02/0B65DC86-A4A8-4977-8086-F01E8181FF99-2-scaled-e1738664059529-1024x890.jpeg"
+      ],
+      "image_dimensions": {
+        "width": 1088,
+        "height": 725
+      }
+    },
+    {
+      "name": "Claverton Country House Hotel",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/node/4275151866",
+      "website": "https://clavertonhotel.co.uk/",
+      "pages_checked": [
+        "https://clavertonhotel.co.uk/",
+        "https://clavertonhotel.co.uk/contact-us/"
+      ],
+      "image_urls": [
+        "https://clavertonhotel.co.uk/wp-content/uploads/2018/06/preview-card-CLAV.png"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 675
+      }
+    },
+    {
+      "name": "Corn Exchange Hertford",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/way/911523338",
+      "website": "https://www.cornexchangehertford.co.uk/",
+      "pages_checked": [
+        "https://www.cornexchangehertford.co.uk/"
+      ],
+      "image_urls": [
+        "http://static1.squarespace.com/static/60ca0bf7d83014164e5648b6/t/60d5cb2ef828b75a354f2d5e/1624623922440/LogoIdeas2+copy.png?format=1500w",
+        "https://images.squarespace-cdn.com/content/v1/60ca0bf7d83014164e5648b6/f14a1884-a57a-4b4d-93dd-f209548fec79/Background1HCE.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1500,
+        "height": 476
+      }
+    },
+    {
+      "name": "etc.venues",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/node/11078563648",
+      "website": "https://convene.com/about-us/etc-venues/",
+      "pages_checked": [
+        "https://convene.com/about-us/etc-venues/",
+        "https://convene.com/contact/",
+        "https://convene.com/about-us/"
+      ],
+      "image_urls": [
+        "https://convene.com/wp-content/uploads/2025/09/Adobe-Express-file-5-2048x1152.png",
+        "https://convene.com/wp-content/uploads/2024/12/etc-venues-chancery-lane-in-london-1-2048x1152.webp",
+        "https://convene.com/wp-content/uploads/2024/12/etc-venues-county-hall-in-london-2-2048x1535.webp",
+        "https://convene.com/wp-content/uploads/2024/12/etc-venues-prospero-house-in-london-2048x1409.webp",
+        "https://convene.com/wp-content/uploads/2022/03/Home_08_Cities_NYC_314x314-1.jpg",
+        "https://convene.com/wp-content/uploads/2022/03/Home_09_Cities_Chi_314x314.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2048,
+        "height": 1152
+      }
+    },
+    {
+      "name": "Halliwell Centre",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/node/8526410695",
+      "website": "https://venuewales.co.uk/",
+      "pages_checked": [
+        "https://venuewales.co.uk/",
+        "https://venuewales.co.uk/contact/"
+      ],
+      "image_urls": [
+        "https://venuewales.co.uk/wp-content/uploads/2019/03/Webp.net-resizeimage-29.jpg",
+        "https://venuewales.co.uk/wp-content/uploads/2019/03/Webp.net-resizeimage-30.jpg",
+        "https://venuewales.co.uk/wp-content/uploads/2018/04/meeting-lampeter1.jpg",
+        "https://venuewales.co.uk/wp-content/uploads/2019/03/sunday-carvery.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1000,
+        "height": 664
+      }
+    },
+    {
+      "name": "Irish World Heritage Centre",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/way/1060587957",
+      "website": "https://iwhc.com/",
+      "pages_checked": [
+        "https://iwhc.com/",
+        "https://iwhc.com/contact/"
+      ],
+      "image_urls": [
+        "https://iwhc.com/wp-content/uploads/2022/07/iwhc-google.jpg",
+        "https://iwhc.com/wp-content/uploads/2022/07/iwhc-front-1024x846.jpg",
+        "https://iwhc.com/wp-content/uploads/2022/06/st-patrick-s-day-parade-2021-08-31-00-04-32-utc-scaled.jpg",
+        "https://iwhc.com/wp-content/uploads/2022/06/edding-champagne-glasses-on-white-tablecloth-with-2021-08-26-15-28-57-utc-1.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 600
+      }
+    },
+    {
+      "name": "Kachette",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/way/1001731738",
+      "website": "https://shoreditch.com/studio/kachette/",
+      "pages_checked": [
+        "https://shoreditch.com/studio/kachette/",
+        "https://shoreditch.com/contact/"
+      ],
+      "image_urls": [
+        "https://shoreditch.com/wp-content/uploads/2025/07/OpenGraph.png",
+        "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-1.png",
+        "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-2.png",
+        "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-3.png",
+        "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-4.png",
+        "https://shoreditch.com/wp-content/uploads/2025/05/kachette-gallery-5.png"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 630
+      }
+    },
+    {
+      "name": "King Street Studios",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/way/1526062853",
+      "website": "https://www.kingstreetstudios.co.uk/",
+      "pages_checked": [
+        "https://www.kingstreetstudios.co.uk/",
+        "https://www.kingstreetstudios.co.uk/contact-us/"
+      ],
+      "image_urls": [
+        "https://www.kingstreetstudios.co.uk/wp-content/uploads/2016/09/King-Street-Studios-Social-media-Content-copy-05.png"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "name": "King's House Conference Centre",
+      "country": "GB",
+      "osm_source_url": "https://www.openstreetmap.org/node/13272012763",
+      "website": "https://www.kingshouse.co.uk/",
+      "pages_checked": [
+        "https://www.kingshouse.co.uk/",
+        "https://www.kingshouse.co.uk/contact",
+        "https://www.kingshouse.co.uk/about"
+      ],
+      "image_urls": [
+        "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/a64c8f7b-30f3-4582-a365-a93f20006568/Aud+7.jpg",
+        "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/9f52a056-e24a-41bf-8233-14a124e8c59f/Building.png",
+        "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/32900e82-64e8-46d6-b44c-f77cf1004675/Computer.png",
+        "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/b51f72af-d358-43c1-9063-ce825d449912/Friendlu.png",
+        "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/a46dbc60-fa18-480d-b6f4-6a47e4e6b120/People.png",
+        "https://images.squarespace-cdn.com/content/v1/61113db842e2e073ca19e9ff/a9de7998-7d8a-400c-b988-4bd37214a093/Catering.png"
+      ],
+      "image_dimensions": {
+        "width": 2500,
+        "height": 1580
+      }
+    },
+    {
+      "name": "SwissTech Convention Center",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/way/146070336",
+      "website": "https://www.stcc.ch/fr/",
+      "pages_checked": [
+        "https://www.stcc.ch/fr/",
+        "https://www.stcc.ch/fr/contactez-nous-2/",
+        "https://www.stcc.ch/kontakt/"
+      ],
+      "image_urls": [
+        "https://www.stcc.ch/wp-content/uploads/2017/12/STCC_Site_ShareTwitter-1.jpg",
+        "https://www.stcc.ch/wp-content/uploads/2021/10/virtual-visit.jpg",
+        "https://www.stcc.ch/wp-content/uploads/2022/07/5-Rolex-Learning-Center-scaled-1-1200x0-c-default.jpeg",
+        "https://www.stcc.ch/wp-content/uploads/2022/07/5-Rolex-Learning-Center-scaled-1-2048x0-c-default.jpeg",
+        "https://www.stcc.ch/wp-content/uploads/2022/07/6-scaled-1-1200x0-c-default.jpeg",
+        "https://www.stcc.ch/wp-content/uploads/2022/07/6-scaled-1-2048x0-c-default.jpeg"
+      ],
+      "image_dimensions": {
+        "width": 1024,
+        "height": 512
+      }
+    },
+    {
+      "name": "Altes Kraftwerk",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/node/9464160406",
+      "website": "https://www.alteskraftwerk.ch/",
+      "pages_checked": [
+        "https://www.alteskraftwerk.ch/",
+        "https://www.alteskraftwerk.ch/impressum/"
+      ],
+      "image_urls": [
+        "https://www.alteskraftwerk.ch/wp-content/uploads/2020/08/logo_alteskraftwerk_white.png",
+        "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03569-Verbessert-RR-HQ_Easy-Resize.com_.jpg",
+        "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03567-Verbessert-RR-HQ_Easy-Resize.com_.jpg",
+        "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03554-Verbessert-RR-HQ_Easy-Resize.com_.jpg",
+        "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03528-Verbessert-RR-HQ_Easy-Resize.com_.jpg",
+        "https://www.alteskraftwerk.ch/wp-content/uploads/2024/02/HEC03555-Verbessert-RR-HQ_Easy-Resize.com_.jpg"
+      ],
+      "image_dimensions": {
+        "width": 628,
+        "height": 498
+      }
+    },
+    {
+      "name": "bee-flat",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/node/13446319419",
+      "website": "https://www.bee-flat.ch/",
+      "pages_checked": [
+        "https://www.bee-flat.ch/",
+        "https://www.bee-flat.ch/kontakt/",
+        "https://www.bee-flat.ch/impressum/"
+      ],
+      "image_urls": [
+        "https://www.bee-flat.ch/files/data/theme/2026/04/BEE-FLAT-MAI-2026-WEB-QUER.png",
+        "https://www.bee-flat.ch/files/data/theme/2026/04/BEE-FLAT-MAI-2026-WEB-HOCH.png"
+      ],
+      "image_dimensions": {
+        "width": 2880,
+        "height": 1800
+      }
+    },
+    {
+      "name": "Bildungspark Dagmersellen",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/node/7637819091",
+      "website": "https://bildungspark.ch/",
+      "pages_checked": [
+        "https://bildungspark.ch/",
+        "https://bildungspark.ch/kontakt/",
+        "https://bildungspark.ch/impressum/"
+      ],
+      "image_urls": [
+        "https://bildungspark.ch/wp-content/uploads/2023/12/bildungspark-dagmarsellen_bz_2016_sizi5_web_mega-menu.jpg",
+        "https://bildungspark.ch/wp-content/uploads/2023/07/Muster-Bild-1367819964-bearb-web.jpg",
+        "https://bildungspark.ch/wp-content/uploads/2023/08/bildungspark_Hallen_Kurs_web_mega-menu.jpg",
+        "https://bildungspark.ch/wp-content/uploads/2023/08/bildungspark_doppelzimmer_wc_dusche_web_mega.menu_.jpg",
+        "https://bildungspark.ch/wp-content/uploads/2023/08/bildungspark_schluesselbrett_web_mega-menu.jpg",
+        "https://bildungspark.ch/wp-content/uploads/2023/08/bildungspark-gastronomie-02_2000x1089px.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2000,
+        "height": 1089
+      }
+    },
+    {
+      "name": "Böschhof",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/way/251076181",
+      "website": "https://www.boeschhof.ch/",
+      "pages_checked": [
+        "https://www.boeschhof.ch/",
+        "https://www.boeschhof.ch/kontakt"
+      ],
+      "image_urls": [
+        "https://static.wixstatic.com/media/963982_be5e3291763c4121965df7f07d7a8eab~mv2.png"
+      ],
+      "image_dimensions": {
+        "width": 1772,
+        "height": 1772
+      }
+    },
+    {
+      "name": "Carribean Pearl",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/node/12480413974",
+      "website": "https://pearlevent.ch/",
+      "pages_checked": [
+        "https://pearlevent.ch/",
+        "https://pearlevent.ch/kontakt",
+        "https://pearlevent.ch/impressum"
+      ],
+      "image_urls": [
+        "https://pearlevent.ch/assets/images/hero.webp?v=1774828143",
+        "https://pearlevent.ch/assets/images/gallery/DSC01687-scaled.webp?v=1774828142",
+        "https://pearlevent.ch/assets/images/food/dsc07819.webp?v=1778164217",
+        "https://pearlevent.ch/assets/images/gallery/DSC09787-scaled.webp?v=1774828142",
+        "https://pearlevent.ch/assets/images/gallery/DSC00115-scaled.webp?v=1774828141",
+        "https://pearlevent.ch/assets/images/gallery/DSC01342-scaled.webp?v=1774828141"
+      ],
+      "image_dimensions": {
+        "width": 2560,
+        "height": 1707
+      }
+    },
+    {
+      "name": "Congressi Stefano Franscini",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/node/5978278694",
+      "website": "https://csf.ethz.ch/",
+      "pages_checked": [
+        "https://csf.ethz.ch/",
+        "https://csf.ethz.ch/footer/imprint.html"
+      ],
+      "image_urls": [
+        "https://ethz.ch/etc/designs/ethz/img/header/eth_default_og.jpg"
+      ],
+      "image_dimensions": {
+        "width": 3000,
+        "height": 1687
+      }
+    },
+    {
+      "name": "Einstein Congress",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/way/145470764",
+      "website": "https://www.einstein.ch/de/",
+      "pages_checked": [
+        "https://www.einstein.ch/de/",
+        "https://www.einstein.ch/de/kontakt-standort",
+        "https://www.einstein.ch/de/kontakt-standort/anreise-parking"
+      ],
+      "image_urls": [
+        "https://www.einstein.ch/assets/images/c/textilland_juniorsuite_1024x730-6rqtqs6qnt9a033.jpg",
+        "https://www.einstein.ch/assets/images/j/essen_trinken_1024x730-ssfb2msp6p06kqz.jpg",
+        "https://www.einstein.ch/assets/images/1/bankette_im_einstein_1024x730-hcd7vvgg11edd7j.jpg",
+        "https://www.einstein.ch/assets/images/4/einstein_saal_1024x730-9fnpbe65ds9hcb1.jpg",
+        "https://www.einstein.ch/assets/images/e/1024x730maud_paquis-x88ym97be8pj5rz.jpg",
+        "https://www.einstein.ch/assets/images/h/1024x730vanesa-harbek-8cw6agqm6847b98.png"
+      ],
+      "image_dimensions": {
+        "width": 1024,
+        "height": 666
+      }
+    },
+    {
+      "name": "Eventalm",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/way/381942620",
+      "website": "https://www.eventalm.ch/",
+      "pages_checked": [
+        "https://www.eventalm.ch/",
+        "https://www.eventalm.ch/kontakt",
+        "https://www.eventalm.ch/impressum"
+      ],
+      "image_urls": [
+        "https://www.eventalm.ch/images/eventalm-event-almhuette-zuerich.jpg",
+        "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-001.jpg",
+        "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-002.jpg",
+        "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-003.jpg",
+        "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-004.jpg",
+        "https://www.eventalm.ch/images/gallery/eventalm-eventlocation-thumb-005.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2050,
+        "height": 1300
+      }
+    },
+    {
+      "name": "Halle 550",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/way/42757939",
+      "website": "https://halle550.ch/",
+      "pages_checked": [
+        "https://halle550.ch/",
+        "https://halle550.ch/impressum"
+      ],
+      "image_urls": [
+        "https://halle550.ch/wp-content/uploads/2020/04/Halle550-Aussen-Visualisierung_v1-scaled.jpg",
+        "https://halle550.ch/wp-content/uploads/2023/06/Halle550_Aussenfassade-1920x1196.jpg",
+        "https://halle550.ch/wp-content/uploads/2025/02/SX25_KV_1080x1080px-640x640.jpg",
+        "https://halle550.ch/wp-content/uploads/2023/07/Chicago1928_schwarz_transparent_v2.png",
+        "https://halle550.ch/wp-content/themes/halle550/images/footer_img.png"
+      ],
+      "image_dimensions": {
+        "width": 2560,
+        "height": 1707
+      }
+    },
+    {
+      "name": "Knies Zauberhut",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/node/8736134330",
+      "website": "https://www.knieszauberhut.ch/",
+      "pages_checked": [
+        "https://www.knieszauberhut.ch/",
+        "https://www.knieszauberhut.ch/impressum"
+      ],
+      "image_urls": [
+        "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1740985638925-8J4IVF1Y5EQFC59DSZ4B/ZAUBERHUT_13.jpg",
+        "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1739953258611-UYAOG5MW5IDVT1JCF75Y/Bild2.jpg",
+        "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1740985553440-B6L7AZO4YLC0VTOW7K7K/Zauberhut_Aussen.jpg",
+        "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1739953260373-CQNICOEX8CTJ07DZZHHD/Bild4.jpg",
+        "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1739953261381-JPHGZHEPGW9TF4Q5RLL5/Bild5.jpg",
+        "https://images.squarespace-cdn.com/content/v1/6229d442b25ad955e410c806/1739953261550-3C1C6RYB5542C9U7UQ3U/Bild6.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2500,
+        "height": 1667
+      }
+    },
+    {
+      "name": "the bird's eye jazz club",
+      "country": "CH",
+      "osm_source_url": "https://www.openstreetmap.org/node/11775252389",
+      "website": "https://www.birdseye.ch/",
+      "pages_checked": [
+        "https://www.birdseye.ch/",
+        "https://www.birdseye.ch/index.php?p=contact&l=de&ptc=w",
+        "https://www.birdseye.ch/pages/imprint.php?l=de"
+      ],
+      "image_urls": [
+        "https://www.birdseye.ch/img/HeaderPics/2026_8.jpg",
+        "https://www.birdseye.ch/img/Artists/AlessioCazzetta202608.jpg",
+        "https://www.birdseye.ch/img/Artists/BJO2025.jpg",
+        "https://www.birdseye.ch/img/Artists/JonasSorgenfrei5tet.jpg",
+        "https://www.birdseye.ch/img/Artists/RobinFassie.jpg",
+        "https://www.birdseye.ch/img/Artists/SpheleloMazibuko.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2000,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Borgerhof",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/relation/5345504",
+      "website": "https://www.devrijevalk.be/",
+      "pages_checked": [
+        "https://www.devrijevalk.be/",
+        "https://www.devrijevalk.be/"
+      ],
+      "image_urls": [
+        "https://static.wixstatic.com/media/fdf8c5_a404eaef9ad541b08810a4df53b42b9f%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/fdf8c5_a404eaef9ad541b08810a4df53b42b9f%7Emv2.jpg",
+        "https://static.wixstatic.com/media/fdf8c5_e1039a37a4694deaa945446664156252~mv2.jpg/v1/fill/w_426,h_363,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_e1039a37a4694deaa945446664156252~mv2.jpg",
+        "https://static.wixstatic.com/media/fdf8c5_50c088675b604bf9a145f05261f5c972~mv2.jpg/v1/fill/w_482,h_358,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_50c088675b604bf9a145f05261f5c972~mv2.jpg",
+        "https://static.wixstatic.com/media/fdf8c5_db2da70944574bbbbf20926b3cf93b86~mv2.jpg/v1/fill/w_443,h_358,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_db2da70944574bbbbf20926b3cf93b86~mv2.jpg",
+        "https://static.wixstatic.com/media/fdf8c5_5f355bcf67fa4fb5987b8e11f1bdbe8b~mv2.jpg/v1/fill/w_482,h_363,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_5f355bcf67fa4fb5987b8e11f1bdbe8b~mv2.jpg",
+        "https://static.wixstatic.com/media/fdf8c5_1a797d565ac6498dab0efa4df500d959~mv2.jpg/v1/fill/w_463,h_345,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/fdf8c5_1a797d565ac6498dab0efa4df500d959~mv2.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1773,
+        "height": 1330
+      }
+    },
+    {
+      "name": "Sint-Jansbergklooster",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/335297622",
+      "website": "https://www.sint-jansbergklooster.be/",
+      "pages_checked": [
+        "https://www.sint-jansbergklooster.be/",
+        "https://www.sint-jansbergklooster.be/contact"
+      ],
+      "image_urls": [
+        "https://static.wixstatic.com/media/5d5478_59d7b734c96747f7be6975b810754bd2%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/5d5478_59d7b734c96747f7be6975b810754bd2%7Emv2.jpg",
+        "https://static.wixstatic.com/media/5d5478_59d7b734c96747f7be6975b810754bd2~mv2.jpg/v1/fill/w_1627,h_827,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Het%20Sint-Jansbergklooster_edited.jpg",
+        "https://static.wixstatic.com/media/5d5478_248bb85ec21c44ce89b7ee2b260cbea9~mv2.png/v1/fill/w_463,h_312,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Routekaart-Klooster-Zelem_edited_edited_.png"
+      ],
+      "image_dimensions": {
+        "width": 2048,
+        "height": 1152
+      }
+    },
+    {
+      "name": "Watt 17",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/103982296",
+      "website": "https://www.watt17.be/",
+      "pages_checked": [
+        "https://www.watt17.be/",
+        "https://www.watt17.be/contact"
+      ],
+      "image_urls": [
+        "https://static.wixstatic.com/media/478740_6d07c2bed5ba4d1f86a7cb58001f4a4f%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/478740_6d07c2bed5ba4d1f86a7cb58001f4a4f%7Emv2.jpg",
+        "https://static.wixstatic.com/media/478740_37e5cebf2103436cb42ff8c5f2c91ee9~mv2.png",
+        "https://static.wixstatic.com/media/478740_13d1a8efb1834c2c887c7754496c3bc1~mv2.png",
+        "https://static.wixstatic.com/media/42bb1c_96e9cba7df6a44e0b1557a2e6b89cade~mv2.jpg/v1/fit/w_480,h_360,q_90,enc_avif,quality_auto/42bb1c_96e9cba7df6a44e0b1557a2e6b89cade~mv2.jpg",
+        "https://static.wixstatic.com/media/478740_b61d1cbb2ccf4482bc85c377a2a5cfde~mv2.jpg/v1/fit/w_480,h_362,q_90,enc_avif,quality_auto/478740_b61d1cbb2ccf4482bc85c377a2a5cfde~mv2.jpg",
+        "https://static.wixstatic.com/media/42bb1c_f12a25798c27440980b8f77f0d8e239a~mv2.jpeg/v1/fit/w_480,h_360,q_90,enc_avif,quality_auto/42bb1c_f12a25798c27440980b8f77f0d8e239a~mv2.jpeg"
+      ],
+      "image_dimensions": {
+        "width": 2400,
+        "height": 1256
+      }
+    },
+    {
+      "name": "Alyans Feestzalen",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/313528267",
+      "website": "https://alyans.be/",
+      "pages_checked": [
+        "https://alyans.be/",
+        "https://alyans.be/contact/"
+      ],
+      "image_urls": [
+        "https://alyans.be/wp-content/uploads/2014/01/15534877_1869834759919555_5314817704320827392_n.jpg",
+        "https://alyans.be/wp-content/uploads/2015/06/eten.jpg",
+        "https://alyans.be/wp-content/uploads/2015/06/parking.jpg",
+        "https://alyans.be/wp-content/uploads/2017/12/DSC_5890.jpg",
+        "https://alyans.be/wp-content/uploads/2017/09/DSC_8179.jpg",
+        "https://alyans.be/wp-content/uploads/2014/01/1.jpg"
+      ],
+      "image_dimensions": {
+        "width": 750,
+        "height": 750
+      }
+    },
+    {
+      "name": "Begonia",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/node/10914006945",
+      "website": "https://domeinbegonia.be/",
+      "pages_checked": [
+        "https://domeinbegonia.be/",
+        "https://domeinbegonia.be/index.php/contact"
+      ],
+      "image_urls": [
+        "https://domeinbegonia.be/images/slideshow%20contact/pano06.jpg",
+        "https://domeinbegonia.be/images/slideshow%20contact/vandemoorteleSDG_2032-copy.jpg",
+        "https://domeinbegonia.be/images/slideshow%20contact/vandemoorteleSDG_2036-copy.jpg",
+        "https://domeinbegonia.be/images/slideshow%20contact/vandemoorteleSDG_2074-copy.jpg",
+        "https://domeinbegonia.be/images/slideshow%20contact/www.footoo.be-1571.jpg",
+        "https://domeinbegonia.be/images/slideshow%20contact/www.footoo.be-1578.jpg"
+      ],
+      "image_dimensions": {
+        "width": 750,
+        "height": 500
+      }
+    },
+    {
+      "name": "Bouffete Orangerie",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/node/12840427068",
+      "website": "https://www.bouffete.be/",
+      "pages_checked": [
+        "https://www.bouffete.be/",
+        "https://www.bouffete.be/contact"
+      ],
+      "image_urls": [
+        "https://static.wixstatic.com/media/a79b4f_0e7a9e991e054c4d83c9d5c8a990a4b9%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/a79b4f_0e7a9e991e054c4d83c9d5c8a990a4b9%7Emv2.jpg",
+        "https://static.wixstatic.com/media/a79b4f_c06aa25a0f70496a875b49be29ac48f6~mv2.jpg/v1/fit/w_650,h_433,q_90,enc_avif,quality_auto/a79b4f_c06aa25a0f70496a875b49be29ac48f6~mv2.jpg",
+        "https://static.wixstatic.com/media/a79b4f_1a8d5ab74c4c47f4b107d141e7c022ea~mv2.jpg/v1/fit/w_650,h_433,q_90,enc_avif,quality_auto/a79b4f_1a8d5ab74c4c47f4b107d141e7c022ea~mv2.jpg",
+        "https://static.wixstatic.com/media/a79b4f_b292cbd595714eb2ae26e53fce56e9ce~mv2.jpg/v1/fit/w_650,h_433,q_90,enc_avif,quality_auto/a79b4f_b292cbd595714eb2ae26e53fce56e9ce~mv2.jpg",
+        "https://static.wixstatic.com/media/a79b4f_85b23b7144e04b6ea073e2a48a2e0955~mv2.jpg/v1/fit/w_650,h_433,q_90,enc_avif,quality_auto/a79b4f_85b23b7144e04b6ea073e2a48a2e0955~mv2.jpg",
+        "https://static.wixstatic.com/media/a79b4f_bacfb6bf404046af9293906a291a9a24~mv2.jpg/v1/fit/w_301,h_452,q_90,enc_avif,quality_auto/a79b4f_bacfb6bf404046af9293906a291a9a24~mv2.jpg"
+      ],
+      "image_dimensions": {
+        "width": 929,
+        "height": 647
+      }
+    },
+    {
+      "name": "Dorfsaal Oudler VoG",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/683406907",
+      "website": "https://dorfsaal.oudler.be/",
+      "pages_checked": [
+        "https://dorfsaal.oudler.be/",
+        "https://dorfsaal.oudler.be/kontakt/",
+        "https://dorfsaal.oudler.be/impressum/"
+      ],
+      "image_urls": [
+        "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/2021-Fier-et-Levve-web-6.jpg",
+        "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/2020-Kappensirtzung-Oudler-020-1-1-1-1.jpg",
+        "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/gr_head-768x512.jpg",
+        "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/gr_head.jpg",
+        "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/kl_head.jpg",
+        "https://dorfsaal.oudler.be/wp-content/uploads/sites/3/2022/01/ko_head.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1000,
+        "height": 562
+      }
+    },
+    {
+      "name": "HANGAR58",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/197082196",
+      "website": "https://www.hangar58.be/",
+      "pages_checked": [
+        "https://www.hangar58.be/",
+        "https://www.hangar58.be/contact"
+      ],
+      "image_urls": [
+        "https://static.wixstatic.com/media/270bd7_71a5c0269455463eae453c14649c9fd9~mv2.png"
+      ],
+      "image_dimensions": {
+        "width": 1142,
+        "height": 1141
+      }
+    },
+    {
+      "name": "Herpelgem",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/node/13817625036",
+      "website": "https://herpelgem.com/",
+      "pages_checked": [
+        "https://herpelgem.com/",
+        "https://herpelgem.com/contact"
+      ],
+      "image_urls": [
+        "https://images.squarespace-cdn.com/content/v1/66daf0be27894d281d96fe9b/a96be340-ebda-4988-8d4d-b989b3f32995/Herpelgem+-+Landing+-+1-16.png",
+        "https://images.squarespace-cdn.com/content/v1/66daf0be27894d281d96fe9b/ee6f27a2-52f9-4d71-b36a-d84bda8c6d27/Herpelgem+-+Landing+-+1-18.png",
+        "https://images.squarespace-cdn.com/content/v1/66daf0be27894d281d96fe9b/bbf2cd45-251a-4513-8065-ed7eb38a814f/Herpelgem+-+Kaart+-+v3-15.png"
+      ],
+      "image_dimensions": {
+        "width": 2500,
+        "height": 1725
+      }
+    },
+    {
+      "name": "Het XPand",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/363022637",
+      "website": "https://hetxpand.com/",
+      "pages_checked": [
+        "https://hetxpand.com/"
+      ],
+      "image_urls": [
+        "https://hetxpand.com/images/Manekispin.png",
+        "https://hetxpand.com/images/rockyspin.png"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 630
+      }
+    },
+    {
+      "name": "Hof te Rhode",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/543734040",
+      "website": "https://hofterhode.be/",
+      "pages_checked": [
+        "https://hofterhode.be/",
+        "https://hofterhode.be/contact/"
+      ],
+      "image_urls": [
+        "https://hofterhode.be/wp-content/uploads/2025/09/huwelijk-250726-ronnywertelaers-07.jpg",
+        "https://hofterhode.be/wp-content/uploads/2025/09/tuin-39-scaled.jpg",
+        "https://hofterhode.be/wp-content/uploads/2022/11/noordzeevis_visual.jpg",
+        "https://hofterhode.be/wp-content/uploads/2022/11/Google-reviews.png",
+        "https://hofterhode.be/wp-content/uploads/2022/11/huwelijksfeesten_homepagina.png",
+        "https://hofterhode.be/wp-content/uploads/2022/11/familiefeestenhomepagina-1.png"
+      ],
+      "image_dimensions": {
+        "width": 2048,
+        "height": 1366
+      }
+    },
+    {
+      "name": "Hostellerie De Witte Meren",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/1191568849",
+      "website": "https://www.dewittemeren.be/",
+      "pages_checked": [
+        "https://www.dewittemeren.be/",
+        "https://www.dewittemeren.be/contact.php"
+      ],
+      "image_urls": [
+        "https://www.dewittemeren.be/slider/image1.jpg",
+        "https://www.dewittemeren.be/decor/evenementen.jpg",
+        "https://www.dewittemeren.be/gallery/image10.jpg",
+        "https://www.dewittemeren.be/gallery/image4.jpg",
+        "https://www.dewittemeren.be/gallery/image3.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1600,
+        "height": 840
+      }
+    },
+    {
+      "name": "Huis van Mem",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/832597926",
+      "website": "https://www.huisvanmem.be/",
+      "pages_checked": [
+        "https://www.huisvanmem.be/"
+      ],
+      "image_urls": [
+        "https://www.huisvanmem.be/wp-content/uploads/2023/10/097-scaled.jpg",
+        "https://www.huisvanmem.be/wp-content/uploads/2023/10/097-1024x681.jpg",
+        "https://www.huisvanmem.be/wp-content/uploads/2023/10/197jpg-scaled.jpg",
+        "https://www.huisvanmem.be/wp-content/uploads/2023/10/197jpg-1024x341.jpg",
+        "https://www.huisvanmem.be/wp-content/uploads/2023/11/Schermafbeelding-2021-08-31-om-15.52.43-400x284.png",
+        "https://www.huisvanmem.be/wp-content/uploads/2023/11/Schermafbeelding-2021-08-31-om-15.53.11-400x284.png"
+      ],
+      "image_dimensions": {
+        "width": 1024,
+        "height": 681
+      }
+    },
+    {
+      "name": "La ferme d'Haveligeoule",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/node/7855548172",
+      "website": "https://haveligeoule.be/",
+      "pages_checked": [
+        "https://haveligeoule.be/",
+        "https://haveligeoule.be/contact/",
+        "https://haveligeoule.be/contact/"
+      ],
+      "image_urls": [
+        "https://haveligeoule.be/wp-content/uploads/2019/10/IMG_7601_DxO.jpg",
+        "https://haveligeoule.be/wp-content/uploads/2019/10/IMG_7589_DxO.jpg",
+        "https://haveligeoule.be/wp-content/uploads/2019/10/IMG_7660_DxO.jpg",
+        "https://haveligeoule.be/wp-content/uploads/72912653_533659357438389_7674963415281958912_n.jpg",
+        "https://haveligeoule.be/wp-content/uploads/2019/10/IMG_7647_DxO.jpg",
+        "https://haveligeoule.be/wp-content/uploads/2019/11/IMG_20170624_141336-768x576.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2048,
+        "height": 1365
+      }
+    },
+    {
+      "name": "Le Normandie",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/344739636",
+      "website": "https://www.malherbes-normandie.be/",
+      "pages_checked": [
+        "https://www.malherbes-normandie.be/",
+        "https://www.malherbes-normandie.be/?page_id=95"
+      ],
+      "image_urls": [
+        "http://www.malherbes-normandie.be/wp-content/uploads/2015/03/SL1.jpg",
+        "http://www.malherbes-normandie.be/wp-content/uploads/2015/03/SL3.jpg",
+        "http://www.malherbes-normandie.be/wp-content/themes/kitchener/images/slides/2.jpg",
+        "http://www.malherbes-normandie.be/wp-content/themes/kitchener/images/slides/4.jpg",
+        "http://www.malherbes-normandie.be/wp-content/uploads/2015/03/tableSl.jpg",
+        "http://www.malherbes-normandie.be/wp-content/uploads/2015/03/tablemariageSL.jpg"
+      ],
+      "image_dimensions": {
+        "width": 990,
+        "height": 409
+      }
+    },
+    {
+      "name": "Maekelhoeve Feestzalen",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/359088061",
+      "website": "https://www.maekelhoeve.be/",
+      "pages_checked": [
+        "https://www.maekelhoeve.be/",
+        "https://www.maekelhoeve.be/contact"
+      ],
+      "image_urls": [
+        "https://www.maekelhoeve.be/content/img/1/3506-45660-maekelhoeve-f21795b813395844.jpg",
+        "https://www.maekelhoeve.be/content/img/1/3479-44830-intermedia-maekelhoeve-20231021-web-033-720ab18f755c969f.jpg",
+        "https://www.maekelhoeve.be/content/img/1/3479-44831-intermedia-maekelhoeve-20231021-web-044-cb8f5a6a646850c2.jpg",
+        "https://www.maekelhoeve.be/content/img/1/3479-44538-intermedia-maekelhoeve-20231021-web-168-29d414f0b8cbc4af.jpg",
+        "https://www.maekelhoeve.be/content/img/1/3479-44829-intermedia-maekelhoeve-20231021-web-245-42c4edf1f84c0f2a.jpg",
+        "https://www.maekelhoeve.be/content/img/1/3548-44542-intermedia-maekelhoeve-20231021-web-234-1c31551904722af8.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1620,
+        "height": 1080
+      }
+    },
+    {
+      "name": "One+",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/117082040",
+      "website": "http://www.oneplus.be/",
+      "pages_checked": [
+        "http://www.oneplus.be/",
+        "http://www.oneplus.be/contact-us/"
+      ],
+      "image_urls": [
+        "http://www.oneplus.be/wp-content/uploads/2021/01/641_0_454.05623901582_606_IMG_5793-scaled.jpg",
+        "http://www.oneplus.be/wp-content/uploads/2021/01/bar_voor_1920.jpg",
+        "http://www.oneplus.be/wp-content/uploads/2021/01/communie_1920x618.jpg",
+        "http://www.oneplus.be/wp-content/uploads/2021/01/ONE-PLUS-eventplace.png"
+      ],
+      "image_dimensions": {
+        "width": 454,
+        "height": 606
+      }
+    },
+    {
+      "name": "Peter Daniëls",
+      "country": "BE",
+      "osm_source_url": "https://www.openstreetmap.org/way/514462535",
+      "website": "https://www.peterdaniels.be/",
+      "pages_checked": [
+        "https://www.peterdaniels.be/"
+      ],
+      "image_urls": [
+        "https://www.peterdaniels.be/images/peterdaniels/themas/tulpen.jpg",
+        "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/ece5d8e3bea501c168d6f0dbd3880a7b.jpg",
+        "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/83ce7cf99197381eed83cf84d4f870e8.jpg",
+        "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/2e9dea5d9357e13efc16b21b81a800a4.jpg",
+        "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/9ab2349cd0136f9450c8b2fe5bf2bff9.jpg",
+        "https://www.peterdaniels.be/modules/mod_bt_backgroundslideshow/images/original/77f097e21d87a83659246d45dfae1a79.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2000,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Motorkářský Doupě",
+      "country": "CZ",
+      "osm_source_url": "https://www.openstreetmap.org/node/12852557059",
+      "website": "https://motorkarskydoupe.cz/",
+      "pages_checked": [
+        "https://motorkarskydoupe.cz/",
+        "https://motorkarskydoupe.cz/adresa/"
+      ],
+      "image_urls": [
+        "https://motorkarskydoupe.cz/wp-content/uploads/2024/08/cropped-17807681_1405988996129076_3739619103451382176_o.jpg",
+        "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-8.png",
+        "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-7.png",
+        "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-6.png",
+        "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-5.png",
+        "https://motorkarskydoupe.cz/wp-content/uploads/2026/06/ChatGPT-Image-1.-6.-2026-15_05_23-4.png"
+      ],
+      "image_dimensions": {
+        "width": 1417,
+        "height": 630
+      }
+    },
+    {
+      "name": "Prostor Elementů",
+      "country": "CZ",
+      "osm_source_url": "https://www.openstreetmap.org/node/10240501216",
+      "website": "https://prostorelementu.cz/",
+      "pages_checked": [
+        "https://prostorelementu.cz/"
+      ],
+      "image_urls": [
+        "https://prostorelementu.cz/images/bg-static2.jpg",
+        "https://prostorelementu.cz/images/menu/vecirky.jpg",
+        "https://prostorelementu.cz/images/thumb/prostor-elementu-1-s.jpg",
+        "https://prostorelementu.cz/images/thumb/prostor-elementu-2-s.jpg",
+        "https://prostorelementu.cz/images/thumb/prostor-elementu-3-s.jpg",
+        "https://prostorelementu.cz/images/thumb/prostor-elementu-4-s.jpg"
+      ],
+      "image_dimensions": {
+        "width": 3000,
+        "height": 2000
+      }
+    },
+    {
+      "name": "Second Culture",
+      "country": "CZ",
+      "osm_source_url": "https://www.openstreetmap.org/way/29121876",
+      "website": "https://secondculture.cz/",
+      "pages_checked": [
+        "https://secondculture.cz/"
+      ],
+      "image_urls": [
+        "https://secondculture.cz/wp-content/uploads/2025/12/Untitled-24.png"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 796
+      }
+    },
+    {
+      "name": "Salonky U Barcuchů",
+      "country": "CZ",
+      "osm_source_url": "https://www.openstreetmap.org/node/14058728992",
+      "website": "https://ubarcuchu.cz/salonky/",
+      "pages_checked": [
+        "https://ubarcuchu.cz/salonky/",
+        "https://ubarcuchu.cz/kontakt/",
+        "http://ubarcuchu.cz/2025/04/nejlepsi-online-casino-s-vkladem-pres-gopay-2026-top-5-legalnich-casin/"
+      ],
+      "image_urls": [
+        "http://ubarcuchu.cz/wp-content/uploads/2020/07/2-uvodni-stranka-salonky-uvodni-1024x683.png",
+        "https://ubarcuchu.cz/wp-content/uploads/2020/07/2-uvodni-stranka-salonky-uvodni-2048x1366.png",
+        "https://ubarcuchu.cz/wp-content/uploads/2020/08/10-pedkrmy-a-polevky-2048x1366.png",
+        "https://ubarcuchu.cz/wp-content/uploads/2020/08/13-hlavni-jidla-a-pilohy-2048x1366.png",
+        "https://ubarcuchu.cz/wp-content/uploads/2020/08/7-rauty-2048x1366.png"
+      ],
+      "image_dimensions": {
+        "width": 1024,
+        "height": 683
+      }
+    },
+    {
+      "name": "INDUSTRA SPACE",
+      "country": "CZ",
+      "osm_source_url": "https://www.openstreetmap.org/node/8776374558",
+      "website": "https://industra.space/",
+      "pages_checked": [
+        "https://industra.space/",
+        "https://industra.space/about/",
+        "https://industra.space/about/"
+      ],
+      "image_urls": [
+        "https://industra.space/assets/images/og.png",
+        "https://industra.space/assets/images/industrauvodni.webp"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 630
+      }
+    },
+    {
+      "name": "De Weidehoeve",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/12206443794",
+      "website": "https://www.deweidehoeve.nl/",
+      "pages_checked": [
+        "https://www.deweidehoeve.nl/",
+        "https://www.deweidehoeve.nl/contact/"
+      ],
+      "image_urls": [
+        "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/231/Moergestel-Reuselhoeve-72-dpi-6-900x900-f50_50.jpg",
+        "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/1904/riethuys-1200x678.jpeg",
+        "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/1911/Riethuys-buiten-1-1200x678.jpeg",
+        "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/1912/Riethuys-zij-aanzicht-1200x678.jpeg",
+        "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/1800/Luchtfoto-1KB-1-900x900-f50_50.jpg",
+        "https://www.deweidehoeve.nl/wp-content/uploads/bis-images/142/Moergestel-Reuselhoeve-72-dpi-21-900x900-f50_50.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1024,
+        "height": 682
+      }
+    },
+    {
+      "name": "'t Singelhuys",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2672776958",
+      "website": "https://singelhuis.nl/",
+      "pages_checked": [
+        "https://singelhuis.nl/"
+      ],
+      "image_urls": [
+        "https://singelhuis.nl/wp-content/uploads/2022/10/279887701_165937259136217_626844878020761856_n.jpg?id=1108",
+        "https://singelhuis.nl/wp-content/uploads/2022/12/Singelhuis_workshop-1.png?id=1209",
+        "https://singelhuis.nl/wp-content/uploads/2022/12/Singelhuis_workshop-2.png?id=1210",
+        "https://singelhuis.nl/wp-content/uploads/2022/10/281388184_169750462088230_4916939645874562440_n.jpg?id=1106",
+        "https://singelhuis.nl/wp-content/uploads/2022/11/Singelhuis-1a.png?id=1161"
+      ],
+      "image_dimensions": {
+        "width": 1638,
+        "height": 2048
+      }
+    },
+    {
+      "name": "Aan de Overkant",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2828898831",
+      "website": "https://aandeoverkant-bijdeneut.nl/",
+      "pages_checked": [
+        "https://aandeoverkant-bijdeneut.nl/"
+      ],
+      "image_urls": [
+        "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2023/01/AanDeOverkant-BijDeNeut-23-2500x1500px.jpg",
+        "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2025/02/aandeoverkant-s1.jpg",
+        "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2022/12/Aan-De-Overkant-Bij-De-Neut-4-1000x1000px.jpg",
+        "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2022/12/AanDeOverkant-BijDeNeut-14-1000x1000px.jpg",
+        "https://aandeoverkant-bijdeneut.nl/wp-content/uploads/2025/02/aandeoverkant-s2.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2500,
+        "height": 1500
+      }
+    },
+    {
+      "name": "Akhnaton",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2721771804",
+      "website": "https://akhnaton.nl/",
+      "pages_checked": [
+        "https://akhnaton.nl/",
+        "https://akhnaton.nl/contact/"
+      ],
+      "image_urls": [
+        "https://akhnaton.nl/wp-content/uploads/2026/02/DSC07547.jpg",
+        "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2026/02/DSC07547-copy.jpg",
+        "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2025/10/driehoek-blauw-1.webp",
+        "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2026/02/DSC07335-copy.jpg",
+        "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2025/10/driehoek-paars.webp",
+        "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_auto,s_webp:avif/akhnaton.nl/wp-content/uploads/2026/02/Untitled-051-scaled.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2304,
+        "height": 1536
+      }
+    },
+    {
+      "name": "Almere Underground",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2839694987",
+      "website": "https://almereunderground.nl/",
+      "pages_checked": [
+        "https://almereunderground.nl/",
+        "https://almereunderground.nl/contact/"
+      ],
+      "image_urls": [
+        "https://almereunderground.nl/wp-content/uploads/2024/08/UND-BAR-VERTICAL-web-scaled.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1708,
+        "height": 2560
+      }
+    },
+    {
+      "name": "Amersfoortvergaderen.nl",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/3166853141",
+      "website": "https://www.amersfoortvergaderen.nl/",
+      "pages_checked": [
+        "https://www.amersfoortvergaderen.nl/",
+        "https://www.amersfoortvergaderen.nl/contact/"
+      ],
+      "image_urls": [
+        "http://www.amersfoortvergaderen.nl/wp-content/uploads/elementor/thumbs/IMG_3213-scaled-rhqw0m2a8t97819pb3f4dudvbmr1iuj4ojlixr8pb0.jpg",
+        "https://www.amersfoortvergaderen.nl/wp-content/uploads/2026/01/Ontwerp-zonder-titel-5.png",
+        "https://www.amersfoortvergaderen.nl/wp-content/uploads/2026/01/IMG_3213-scaled.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 950
+      }
+    },
+    {
+      "name": "Aristo",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2630534191",
+      "website": "https://aristo.nl/",
+      "pages_checked": [
+        "https://aristo.nl/",
+        "https://aristo.nl/contact",
+        "https://aristo.nl/contact"
+      ],
+      "image_urls": [
+        "https://aristo.nl/hubfs/Featured%20image%20Utrecht%20Lunetten-3.png"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 1280
+      }
+    },
+    {
+      "name": "Bij Aaltje aan de Linie",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2876366047",
+      "website": "https://bijaaltje.nl/",
+      "pages_checked": [
+        "https://bijaaltje.nl/",
+        "https://bijaaltje.nl/contact/"
+      ],
+      "image_urls": [
+        "https://bijaaltje.nl/new/wp-content/uploads/2023/01/IMG_20180502_114727-scaled.jpg",
+        "https://bijaaltje.nl/wp-content/uploads/2026/02/15januariAaltjeaandeLinie-Ijsvogel-7-1.jpg",
+        "https://bijaaltje.nl/wp-content/uploads/2026/03/20240417_Aaltje_aan_de_Linie_Lunch_SMALL-8508-2048x1365.jpg",
+        "https://bijaaltje.nl/wp-content/uploads/2026/03/Archery-2048x1365.jpg",
+        "https://bijaaltje.nl/wp-content/uploads/2026/03/15januariAaltjeaandeLinie-Ijsvogel-29.jpg",
+        "https://bijaaltje.nl/wp-content/uploads/2023/02/koe-4.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2560,
+        "height": 1185
+      }
+    },
+    {
+      "name": "Boerengoed",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2787824789",
+      "website": "https://www.boerengoed.nl/",
+      "pages_checked": [
+        "https://www.boerengoed.nl/",
+        "https://www.boerengoed.nl/contact/",
+        "https://www.boerengoed.nl/contact/"
+      ],
+      "image_urls": [
+        "https://www.boerengoed.nl/wp-content/uploads/2022/04/2062_fg29_detailpagina_20191204120841-1.jpeg",
+        "https://www.boerengoed.nl/wp-content/uploads/2026/07/WhatsApp-Image-2026-06-27-at-08.25.16.webp",
+        "https://www.boerengoed.nl/wp-content/uploads/2022/05/2437_hooischuur_image-xxl_20210316211756.jpeg",
+        "https://www.boerengoed.nl/wp-content/uploads/2025/09/Boerengoed-Feest-2025-Rotor-2-1024x683.jpg",
+        "https://www.boerengoed.nl/wp-content/uploads/2025/09/Boerengoed-Feest-2025-Rotor-2-2048x1365.jpg",
+        "https://www.boerengoed.nl/wp-content/uploads/2024/02/trouwfeest-trouwlocatie-landelijk-1024x682.jpg"
+      ],
+      "image_dimensions": {
+        "width": 640,
+        "height": 477
+      }
+    },
+    {
+      "name": "Buitenplaats de Burgwal",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2706624876",
+      "website": "https://www.buitenplaatsdeburgwal.nl/",
+      "pages_checked": [
+        "https://www.buitenplaatsdeburgwal.nl/"
+      ],
+      "image_urls": [
+        "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2024/12/WhatsApp-Image-2024-12-05-at-12.45.30.jpeg",
+        "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/Lucht-vierkant.jpg",
+        "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/IMG-20250522-WA0012.jpg",
+        "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/IMG-20250522-WA0025-1.jpg",
+        "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/vooraanzicht-vierkant-400x284.jpg",
+        "https://www.buitenplaatsdeburgwal.nl/wp-content/uploads/2025/05/IMG-20250522-WA0025-1-400x284.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1092,
+        "height": 1456
+      }
+    },
+    {
+      "name": "Buitenplaats Sparrendaal",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2877308371",
+      "website": "https://sparrendaal.nl/",
+      "pages_checked": [
+        "https://sparrendaal.nl/",
+        "https://sparrendaal.nl/contact/"
+      ],
+      "image_urls": [
+        "https://sparrendaal.nl/wp-content/uploads/2023/02/jeroen_savelkouls_fotografie-01-e1676978044127-1920x950.jpg",
+        "https://sparrendaal.nl/wp-content/uploads/2023/02/Bruiloft_HonSam_Siro-196-1920x1280-1-480x650.jpg",
+        "https://sparrendaal.nl/wp-content/uploads/2026/03/BEDRIJ3-480x650.jpg",
+        "https://sparrendaal.nl/wp-content/uploads/2026/03/Netwerk_Notarissen_063-480x650.jpg",
+        "https://sparrendaal.nl/wp-content/uploads/2023/02/562A9101-480x650.jpg",
+        "https://sparrendaal.nl/wp-content/uploads/2023/02/Koetshuis-Kasteel-Amerongen-lage-resolutie-24-850x850.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 950
+      }
+    },
+    {
+      "name": "Cultureel centrum t Manneke",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/6010791359",
+      "website": "https://tmanneke.nl/",
+      "pages_checked": [
+        "https://tmanneke.nl/",
+        "https://tmanneke.nl/contact/",
+        "https://tmanneke.nl/contact/gastenboek/"
+      ],
+      "image_urls": [
+        "https://tmanneke.nl/wp-content/uploads/2024/07/2023-04-07-Manneke-Event-25.jpg",
+        "https://tmanneke.nl/wp-content/uploads/2024/07/t-Manneke-Dorsvloer.jpg",
+        "https://tmanneke.nl/wp-content/uploads/2025/12/1-e1764759467295.png",
+        "https://tmanneke.nl/wp-content/uploads/2024/07/t-Manneke-Koestal.jpg",
+        "https://tmanneke.nl/wp-content/uploads/2024/07/T-manneke-Terras-1.jpg",
+        "https://tmanneke.nl/wp-content/uploads/2024/06/1992c8a55289b790c763dbecd22a2b1b-e1718199941149.png"
+      ],
+      "image_dimensions": {
+        "width": 2024,
+        "height": 1350
+      }
+    },
+    {
+      "name": "De Aker, zalen- en congrescentrum",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2896697470",
+      "website": "https://deaker.nl/",
+      "pages_checked": [
+        "https://deaker.nl/",
+        "https://deaker.nl/contact/",
+        "https://deaker.nl/contact/"
+      ],
+      "image_urls": [
+        "https://deaker.nl/wp-content/uploads/2025/10/De-Aker_logo_compleet-1024x642.png",
+        "https://deaker.nl/wp-content/uploads/2026/03/De-Aker_Zalen-63-1024x683.jpg",
+        "https://deaker.nl/wp-content/uploads/2026/03/De-Aker_Zalen-63-2048x1365.jpg",
+        "https://deaker.nl/wp-content/uploads/2026/03/De-Aker-12-scaled.jpg",
+        "https://deaker.nl/wp-content/uploads/2026/03/De-Aker_Zalen-03-1-scaled.jpg",
+        "https://deaker.nl/wp-content/uploads/2026/03/De-Aker_Zalen-15-1-scaled.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1024,
+        "height": 642
+      }
+    },
+    {
+      "name": "De Betuwepoort",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2788788460",
+      "website": "https://debetuwepoort.nl/",
+      "pages_checked": [
+        "https://debetuwepoort.nl/",
+        "https://debetuwepoort.nl/contact/"
+      ],
+      "image_urls": [
+        "https://debetuwepoort.nl/wp-content/uploads/2021/05/2020-09-11-15.31.11-3.jpg",
+        "https://debetuwepoort.nl/wp-content/uploads/2019/03/20180126_192913.jpg",
+        "https://debetuwepoort.nl/wp-content/uploads/2018/02/bp-slide3.jpg",
+        "https://debetuwepoort.nl/wp-content/uploads/2025/01/hertog_jan_-_uit_liefde_voor_bier.jpg",
+        "https://debetuwepoort.nl/wp-content/uploads/2018/02/bp-paralax.jpg",
+        "https://debetuwepoort.nl/wp-content/uploads/2018/02/bp-paralax2-1.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2450,
+        "height": 1632
+      }
+    },
+    {
+      "name": "De Distel",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2818030505",
+      "website": "https://www.biljartcentrumdedistel.nl/",
+      "pages_checked": [
+        "https://www.biljartcentrumdedistel.nl/",
+        "https://www.biljartcentrumdedistel.nl/contact/"
+      ],
+      "image_urls": [
+        "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2026/07/Ontwerp-zonder-titel.jpg",
+        "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/06/contact-distel.jpg",
+        "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/06/ckf-vvv-roosendaal-biljartcentrum-de-distel-0139_3309784623.jpeg",
+        "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/09/Wwerkplaats-2-scaled.jpg",
+        "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/06/biljartcentrum-de-distel-1_2641852729.jpeg",
+        "https://www.biljartcentrumdedistel.nl/wp-content/uploads/2021/07/Recensie-1-De-distel-scaled.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1000,
+        "height": 1000
+      }
+    },
+    {
+      "name": "De Engel",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/2830306501",
+      "website": "https://deengel.nl/",
+      "pages_checked": [
+        "https://deengel.nl/",
+        "https://deengel.nl/contact"
+      ],
+      "image_urls": [
+        "https://deengel.nl/wp-content/uploads/2025/11/TRS-Promofoto2025-002-e1762334586194-899x449.jpg",
+        "https://deengel.nl/wp-content/uploads/2025/10/Miltenburg-Uitvaartverzorging-scaled-1152x576.jpg",
+        "https://deengel.nl/wp-content/uploads/2025/11/TRS-Promofoto2025-002-e1762334586194-768x384.jpg",
+        "https://deengel.nl/wp-content/uploads/2025/10/Miltenburg-Uitvaartverzorging-scaled-768x384.jpg",
+        "https://deengel.nl/wp-content/uploads/2024/11/website-red-strats.jpg",
+        "https://deengel.nl/wp-content/uploads/2024/02/FB_IMG_1707825158007-002-720x360.jpg"
+      ],
+      "image_dimensions": {
+        "width": 899,
+        "height": 449
+      }
+    },
+    {
+      "name": "De GAS!Fabriek",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/9394159884",
+      "website": "https://tenwesten.nl/contact/",
+      "pages_checked": [
+        "https://tenwesten.nl/contact/",
+        "https://tenwesten.nl/contact/"
+      ],
+      "image_urls": [
+        "https://tenwesten.nl/wp-content/uploads/2023/02/Bruiloft-Jacco-Jolanda-Grote-Kerk-Alkmaar-34.jpg",
+        "https://tenwesten.nl/wp-content/uploads/2023/02/Logo_Tenwesten.png"
+      ],
+      "image_dimensions": {
+        "width": 1600,
+        "height": 1200
+      }
+    },
+    {
+      "name": "De Gasfabriek",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/9360797304",
+      "website": "https://degasfabriek.com/",
+      "pages_checked": [
+        "https://degasfabriek.com/",
+        "https://degasfabriek.com/contact/",
+        "https://degasfabriek.com/contact/"
+      ],
+      "image_urls": [
+        "https://degasfabriek.com/wp-content/uploads/2023/10/Sportenergie_compact_wit@4x16387.png",
+        "https://degasfabriek.com/wp-content/uploads/2019/03/backgroundgasfabriek.jpg",
+        "https://degasfabriek.com/wp-content/uploads/2026/04/20230117-DSC09618-edit-400x250.png",
+        "https://degasfabriek.com/wp-content/uploads/2026/04/Scherm%C2%ADafbeelding-2026-04-14-om-12.18.49-400x250.png",
+        "https://degasfabriek.com/wp-content/uploads/2026/02/Gasfabriek-47-2-400x250.jpg",
+        "https://degasfabriek.com/wp-content/uploads/2021/09/Inversable.png"
+      ],
+      "image_dimensions": {
+        "width": 1416,
+        "height": 510
+      }
+    },
+    {
+      "name": "De Kanselarij",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/3066726024",
+      "website": "https://www.dekanselarij.nl/",
+      "pages_checked": [
+        "https://www.dekanselarij.nl/",
+        "https://www.dekanselarij.nl/contact/"
+      ],
+      "image_urls": [
+        "https://www.dekanselarij.nl/wp-content/uploads/2025/11/ef3a3a52-5e22-45f9-a07b-185605d59682.jpg",
+        "https://www.dekanselarij.nl/wp-content/uploads/2025/11/Flexruimte-5.jpeg",
+        "https://www.dekanselarij.nl/wp-content/uploads/2025/11/Willem-IV-2.jpeg",
+        "https://www.dekanselarij.nl/wp-content/uploads/2025/11/Marijke-Meu-3.jpeg",
+        "https://www.dekanselarij.nl/wp-content/uploads/2016/08/Oude-Hof-Zaal-de-Kanselarij_Podium.jpg",
+        "https://www.dekanselarij.nl/wp-content/uploads/2016/08/Grote-Kelder-Achter-Vooraanzicht-de-Kanselarij-Leeuwarden.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2048,
+        "height": 1366
+      }
+    },
+    {
+      "name": "De Kookfabriek",
+      "country": "NL",
+      "osm_source_url": "https://www.openstreetmap.org/node/5003438795",
+      "website": "https://kookfabriek.nl/",
+      "pages_checked": [
+        "https://kookfabriek.nl/",
+        "https://kookfabriek.nl/contact/"
+      ],
+      "image_urls": [
+        "https://kookfabriek.nl/wp-content/uploads/2026/07/Zonder-titel-800-x-800-px-8.png",
+        "https://kookfabriek.nl/wp-content/uploads/2026/07/Geel-en-Creme-Fotografisch-Stijl-Interieur-Detailhandel-Website-1200-x-800-px-31.png",
+        "https://kookfabriek.nl/wp-content/uploads/2026/06/Ontwerp-zonder-titel-31.png",
+        "https://kookfabriek.nl/wp-content/uploads/2026/07/Ontwerp-zonder-titel-21.png",
+        "https://kookfabriek.nl/wp-content/uploads/2026/07/2.png",
+        "https://kookfabriek.nl/wp-content/uploads/2026/07/1.png"
+      ],
+      "image_dimensions": {
+        "width": 800,
+        "height": 800
+      }
+    },
+    {
+      "name": "Alhambra",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/way/248802947",
+      "website": "https://alhambra.de/",
+      "pages_checked": [
+        "https://alhambra.de/",
+        "https://alhambra.de/kontakt/"
+      ],
+      "image_urls": [
+        "https://alhambra.de/wp-content/uploads/2024/02/cropped-Spendenziel-50-000E-final-1080-x-1350-px-Website.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 678
+      }
+    },
+    {
+      "name": "Alte Lohnhalle Wattenscheid by Knepper Management",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/11086061532",
+      "website": "https://www.knepper-management.de/",
+      "pages_checked": [
+        "https://www.knepper-management.de/",
+        "https://www.knepper-management.de/kontakt/",
+        "https://www.knepper-management.de/impressum/"
+      ],
+      "image_urls": [
+        "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_gri-2-e1540939513809.jpg?fit=1000%2C562&ssl=1",
+        "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_Alte-Lohnhalle_erl-3-e1540918555553.jpg?fit=1000%2C563&ssl=1",
+        "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_Lohnhalle_erlsm-e1540918537153.jpg?fit=1000%2C563&ssl=1",
+        "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_gri-e1540939537130.jpg?fit=1000%2C562&ssl=1",
+        "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_Alte-Lohnhalle_erl-1-e1540918565572.jpg?fit=1000%2C563&ssl=1",
+        "https://i0.wp.com/www.knepper-management.de/wp-content/uploads/2018/10/Knepper-Management_Mobile-Cocktailbar_Cocktails_Grillservice_Catering_Events_Fotobox_Smoothies_Mathieu-Knepper_Lohnhalle_erl-e1540918530149.jpg?fit=1000%2C563&ssl=1"
+      ],
+      "image_dimensions": {
+        "width": 1000,
+        "height": 562
+      }
+    },
+    {
+      "name": "Ballhaus Wedding",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/6646448249",
+      "website": "https://www.ballhauswedding.de/",
+      "pages_checked": [
+        "https://www.ballhauswedding.de/",
+        "https://www.ballhauswedding.de/kontakt",
+        "https://www.ballhauswedding.de/impressum"
+      ],
+      "image_urls": [
+        "https://static.wixstatic.com/media/d8ba51_ba83c21cca324ab6a302433c0c9a1c7f~mv2.jpg/v1/fill/w_2500,h_1250,al_c/d8ba51_ba83c21cca324ab6a302433c0c9a1c7f~mv2.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2500,
+        "height": 1250
+      }
+    },
+    {
+      "name": "Friederike von Papenburg",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/way/551714825",
+      "website": "https://www.brigg-friederike.de/",
+      "pages_checked": [
+        "https://www.brigg-friederike.de/",
+        "https://www.brigg-friederike.de/kontakt/",
+        "https://www.brigg-friederike.de/kontakt/"
+      ],
+      "image_urls": [
+        "https://www.brigg-friederike.de/wp-content/uploads/2023/07/kiss_cropped.jpg",
+        "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide6-uai-1066x800.jpg",
+        "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide1-uai-1066x800.jpg",
+        "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide3-uai-1066x800.jpg",
+        "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide4-uai-1066x800.jpg",
+        "https://www.brigg-friederike.de/wp-content/uploads/2023/07/slide5-uai-1066x800.jpg"
+      ],
+      "image_dimensions": {
+        "width": 800,
+        "height": 800
+      }
+    },
+    {
+      "name": "Future Lab",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/13592379541",
+      "website": "https://www.luce-stiftung.de/future-lab/",
+      "pages_checked": [
+        "https://www.luce-stiftung.de/future-lab/"
+      ],
+      "image_urls": [
+        "https://www.luce-stiftung.de/wp-content/uploads/future_lab_impression3-1536x864.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1536,
+        "height": 864
+      }
+    },
+    {
+      "name": "Gravity Venue - Black Sheep Club",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/3491408437",
+      "website": "http://n1-bsc.de/",
+      "pages_checked": [
+        "http://n1-bsc.de/"
+      ],
+      "image_urls": [
+        "http://n1-bsc.de/wp-content/uploads/2025/05/Group-1321315351.webp",
+        "http://n1-bsc.de/wp-content/uploads/2025/05/all.webp",
+        "http://n1-bsc.de/wp-content/uploads/2025/05/A5_Flyer_PDF_HalloWelt-1.jpg"
+      ],
+      "image_dimensions": {
+        "width": 708,
+        "height": 698
+      }
+    },
+    {
+      "name": "Haus der Religionen - Zentrum für interreligiöse und interkulturelle Bildung",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/way/961115966",
+      "website": "https://haus-der-religionen.de/de",
+      "pages_checked": [
+        "https://haus-der-religionen.de/de",
+        "https://haus-der-religionen.de/de/kontakt/raummiete",
+        "https://haus-der-religionen.de/de/haus-der-religionen/das-team-im-haus-der-religionen"
+      ],
+      "image_urls": [
+        "https://haus-der-religionen.de/sites/default/files/Slider%202025%20neu%201.jpg",
+        "https://haus-der-religionen.de/sites/default/files/Slider%202025%20neu%202.jpg",
+        "https://haus-der-religionen.de/sites/default/files/Slider%202025%20neu%203.jpg",
+        "https://haus-der-religionen.de/sites/default/files/Slider%202025%20neu%204.jpg",
+        "https://haus-der-religionen.de/sites/default/files/Cover%20Antisemitismus.png"
+      ],
+      "image_dimensions": {
+        "width": 2600,
+        "height": 847
+      }
+    },
+    {
+      "name": "Hotel Seeschloss am Bötzsee",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/268645841",
+      "website": "https://www.hotel-seeschloss.de/",
+      "pages_checked": [
+        "https://www.hotel-seeschloss.de/",
+        "https://www.hotel-seeschloss.de/kontakt/",
+        "https://www.hotel-seeschloss.de/impressum/"
+      ],
+      "image_urls": [
+        "https://www.hotel-seeschloss.de/wp-content/uploads/2026/06/IMG_7336-scaled.jpeg",
+        "https://www.hotel-seeschloss.de/wp-content/uploads/2026/06/IMG_0243.jpeg"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 2560
+      }
+    },
+    {
+      "name": "Landgasthaus Kreuz",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/183417172",
+      "website": "https://www.engel-kreuz.de/",
+      "pages_checked": [
+        "https://www.engel-kreuz.de/",
+        "https://www.engel-kreuz.de/kontakt/",
+        "https://www.engel-kreuz.de/impressum/"
+      ],
+      "image_urls": [
+        "https://www.engel-kreuz.de/wp-content/uploads/go-x/u/fdeb732f-58dc-4a5c-805a-2bd73eb47adf/l41,t0,w1559,h2000/image-1366x1752.png",
+        "https://www.engel-kreuz.de/wp-content/uploads/go-x/u/dcb7cd42-669d-465c-b4f1-127f1a150014/image-455x256.png"
+      ],
+      "image_dimensions": {
+        "width": 1366,
+        "height": 1752
+      }
+    },
+    {
+      "name": "Neues Kurhaus",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/way/8600644",
+      "website": "https://www.aachen-event.com/kurhaus",
+      "pages_checked": [
+        "https://www.aachen-event.com/kurhaus",
+        "https://www.aachen-event.com/kontakt",
+        "https://www.aachen-event.com/impressum"
+      ],
+      "image_urls": [
+        "https://www.aachen-event.com/fileadmin/_processed_/4/7/csm_csm_Kurhaus_4c05421972_6d978287c4.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "name": "Tagungszentrum Martinshaus",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/way/1255194623",
+      "website": "https://tagungszentrum-martinshaus.de/",
+      "pages_checked": [
+        "https://tagungszentrum-martinshaus.de/",
+        "https://tagungszentrum-martinshaus.de/kontakt"
+      ],
+      "image_urls": [
+        "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/c/2/csm_IMG_6649_9af5cc755d.jpg",
+        "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/f/2/csm_csm_IMG_8623_d8a073f435_37bb743677.jpg",
+        "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/6/7/csm_IMG_8464_b8e479cab9.jpg",
+        "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/4/b/csm_IMG_8609_7397291fa6.jpg",
+        "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/d/a/csm_20230831_112610_b396ac02e0.jpg",
+        "https://tagungszentrum-martinshaus.de/fileadmin/_processed_/f/3/csm_diakingklein--303_a1fb4ead60.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 674
+      }
+    },
+    {
+      "name": "Wolfsgrunder Festhof",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/573449908",
+      "website": "https://www.wolfsgrund.de/",
+      "pages_checked": [
+        "https://www.wolfsgrund.de/",
+        "https://www.wolfsgrund.de/impressum"
+      ],
+      "image_urls": [
+        "https://www.wolfsgrund.de/images/M%C3%A4nnertag.JPG#joomlaImage://local-images/M%C3%A4nnertag.JPG",
+        "https://www.wolfsgrund.de/images/www.wolfsgrund.de.png#joomlaImage://local-images/www.wolfsgrund.de.png",
+        "https://www.wolfsgrund.de/images/bilder/artikel/Silvester2024.jpg"
+      ],
+      "image_dimensions": {
+        "width": 692,
+        "height": 971
+      }
+    },
+    {
+      "name": "ZEEEM Experience",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/8310742767",
+      "website": "https://zeeem.racing/",
+      "pages_checked": [
+        "https://zeeem.racing/",
+        "https://zeeem.racing/impressum/"
+      ],
+      "image_urls": [
+        "https://zeeem.racing/wp-content/uploads/2024/11/VERANSTALTUNG-Header-e1733302454651.jpg",
+        "https://zeeem.racing/wp-content/uploads/2024/10/event-img1.jpg",
+        "https://zeeem.racing/wp-content/uploads/2024/10/event-img2.jpg",
+        "https://zeeem.racing/wp-content/uploads/2024/10/DSC9368-scaled.jpg",
+        "https://zeeem.racing/wp-content/uploads/2024/10/DSC9388-scaled.jpg",
+        "https://zeeem.racing/wp-content/uploads/2024/10/DSC9401-scaled.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1300,
+        "height": 615
+      }
+    },
+    {
+      "name": "\"Zur Eiche\"",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/386246629",
+      "website": "https://zur-eiche-boehlen.de/",
+      "pages_checked": [
+        "https://zur-eiche-boehlen.de/",
+        "https://zur-eiche-boehlen.de/impressum/"
+      ],
+      "image_urls": [
+        "https://zur-eiche-boehlen.de/wp-content/uploads/2025/05/20250328_133437-1500x430.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1500,
+        "height": 430
+      }
+    },
+    {
+      "name": "102 Rietberg",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/13585635785",
+      "website": "https://102rietberg.de/",
+      "pages_checked": [
+        "https://102rietberg.de/",
+        "https://102rietberg.de/pages/contact",
+        "https://102rietberg.de/policies/contact-information"
+      ],
+      "image_urls": [
+        "https://102rietberg.de/cdn/shop/files/Sprung_Kopie_3d70446a-1fa8-4f57-a3c7-fad74bbe2701.jpg?v=1694875111"
+      ],
+      "image_dimensions": {
+        "width": 4303,
+        "height": 2691
+      }
+    },
+    {
+      "name": "Adolf-Schmidt-Tagungszentrum",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/12264356800",
+      "website": "https://www.tagungszentrum-haltern-am-see.de/",
+      "pages_checked": [
+        "https://www.tagungszentrum-haltern-am-see.de/",
+        "https://www.tagungszentrum-haltern-am-see.de/kontakt",
+        "https://www.tagungszentrum-haltern-am-see.de/impressum"
+      ],
+      "image_urls": [
+        "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6831/image-thumb__6831__gk-content-stage-small/Adolf-Schmidt-Tagungszentrum_Haltern_am_See.5eef3030.jpg",
+        "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6831/image-thumb__6831__gk-content-stage-small/Adolf-Schmidt-Tagungszentrum_Haltern_am_See@2x.5eef3030.jpg",
+        "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Bad%20M%C3%BCnder/Startseite/7515/image-thumb__7515__page-teaser-large/20260313_Veranstaltungen@2x.05d4d04f.jpg",
+        "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6832/image-thumb__6832__page-teaser-large/Titelbild-Raumvielfalt_THS@2x.3d654b73.jpg",
+        "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6834/image-thumb__6834__page-teaser-medium/Titelbild-Ausstattung_THS@2x.03068f2a.jpg",
+        "https://www.tagungszentrum-haltern-am-see.de/Tagungszentrum%20Haltern%20am%20See/Dokumente/Tagungszentrum%20Haltern%20am%20See/6833/image-thumb__6833__page-teaser-medium/Titelbild-Abendveranstaltungen_THS@2x.2389404c.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 823
+      }
+    },
+    {
+      "name": "Alperie",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/node/388430149",
+      "website": "https://diealperie.com/",
+      "pages_checked": [
+        "https://diealperie.com/",
+        "https://diealperie.com/impressum/"
+      ],
+      "image_urls": [
+        "https://diealperie.com/wp-content/uploads/Alperie-1-001-klein-aspect-ratio-1-1.1-600x666.jpg",
+        "https://diealperie.com/wp-content/uploads/web_alperie_0521-8946-aspect-ratio-1-1.1-600x666.jpg",
+        "https://diealperie.com/wp-content/uploads/Z624285-aspect-ratio-1-1.1-600x666.jpg"
+      ],
+      "image_dimensions": {
+        "width": 600,
+        "height": 666
+      }
+    },
+    {
+      "name": "Alte Utting",
+      "country": "DE",
+      "osm_source_url": "https://www.openstreetmap.org/way/538083551",
+      "website": "https://alte-utting.de/",
+      "pages_checked": [
+        "https://alte-utting.de/",
+        "https://alte-utting.de/impressum/"
+      ],
+      "image_urls": [
+        "http://alte-utting.de/wp-content/uploads/2026/05/164A5163-scaled-e1780141669134-1024x700.jpg",
+        "https://alte-utting.de/wp-content/uploads/2026/05/164A5163-scaled-e1780141669134-2048x1400.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1024,
+        "height": 700
+      }
+    },
+    {
+      "name": "Ale Loge",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/node/13904637318",
+      "website": "https://aleloge.se/",
+      "pages_checked": [
+        "https://aleloge.se/",
+        "https://aleloge.se/kontakta-oss/"
+      ],
+      "image_urls": [
+        "https://aleloge.se/wp-content/uploads/2025/02/A-i-koket-fyrkant.jpg"
+      ],
+      "image_dimensions": {
+        "width": 935,
+        "height": 944
+      }
+    },
+    {
+      "name": "Brewhouse",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/way/87936431",
+      "website": "https://brewhouseinkubator.se/",
+      "pages_checked": [
+        "https://brewhouseinkubator.se/",
+        "https://brewhouseinkubator.se/kontakt/"
+      ],
+      "image_urls": [
+        "https://brewhouseinkubator.se/wp-content/uploads/2023/06/charlesdeluvio-rrwivqzlm7k-unsplash-mindre_adjusted.jpg",
+        "https://brewhouseinkubator.se/wp-content/uploads/2023/06/pexels-karolina-grabowska-6328804_adjusted.jpg"
+      ],
+      "image_dimensions": {
+        "width": 732,
+        "height": 1014
+      }
+    },
+    {
+      "name": "Ekeby Loge",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/node/10720768637",
+      "website": "https://www.ekebyloge.se/kontakta-oss",
+      "pages_checked": [
+        "https://www.ekebyloge.se/kontakta-oss",
+        "https://www.ekebyloge.se/kontakta-oss"
+      ],
+      "image_urls": [
+        "https://www.ekebyloge.se/upl/images/578443/contact-topimage.jpg",
+        "https://www.ekebyloge.se/images/map-new2.png"
+      ],
+      "image_dimensions": {
+        "width": 1880,
+        "height": 1057
+      }
+    },
+    {
+      "name": "Havsörnen",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/node/12883979500",
+      "website": "https://www.havsornen.com/",
+      "pages_checked": [
+        "https://www.havsornen.com/",
+        "https://www.havsornen.com/kontakt",
+        "https://www.havsornen.com/boka"
+      ],
+      "image_urls": [
+        "https://images.squarespace-cdn.com/content/v1/5b27d5fd365f02efb1812a2e/1529344256647-DXP1IFTWOVFI0T8NRKD3/Havs%C3%AErnenTryouts+%28364+of+387%29.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1600,
+        "height": 1067
+      }
+    },
+    {
+      "name": "Sjöhuset",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/node/12507153689",
+      "website": "https://sjohusetfest.se/",
+      "pages_checked": [
+        "https://sjohusetfest.se/",
+        "https://sjohusetfest.se/kontakt/"
+      ],
+      "image_urls": [
+        "https://sjohusetfest.se/wp-content/uploads/sites/42/2024/03/sjohuset-festvaning-lagereld-1920x1280-1.jpg",
+        "https://sjohusetfest.se/wp-content/uploads/sites/42/2024/03/sjohuset-fest-hero-2.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 1280
+      }
+    },
+    {
+      "name": "Teamfabriken Malmö",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/node/13330099326",
+      "website": "https://malmo.teamfabriken.se/",
+      "pages_checked": [
+        "https://malmo.teamfabriken.se/",
+        "https://malmo.teamfabriken.se/kontakt-och-bokning"
+      ],
+      "image_urls": [
+        "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/1f374133-9f24-4dfb-ae4b-e6751e0d57cc/teamfabriken-Logga-Malm%C3%B6-04.png?format=1500w",
+        "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/e59ebbbe-197e-47fc-b218-011f706518ad/Teamfabriken_Playground.jpg",
+        "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/a3c4881b-2d4f-4f21-9a5c-0f5e70346211/Teamfabriken_Malm%C3%B6_TempleofDoom.jpg",
+        "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/1777296964304-4XD6NXJXIEHSED3DVSZU/WalkAndTalk_1.JPG",
+        "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/1776938226025-M17CY8EQ2M3XYUQYFLU5/Cluedo_1.jpg",
+        "https://images.squarespace-cdn.com/content/v1/67bef6ff880a720d651c8188/35e88f00-052a-46d8-b604-fba835469380/Teamfabriken+Malm%C3%B6-77.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1500,
+        "height": 474
+      }
+    },
+    {
+      "name": "Wikparken",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/way/341909963",
+      "website": "http://www.wikevent.se/",
+      "pages_checked": [
+        "http://www.wikevent.se/",
+        "http://www.wikevent.se/kontakta-oss/"
+      ],
+      "image_urls": [
+        "http://wikevent.run.se/wp-content/uploads/2017/12/Tom.png"
+      ],
+      "image_dimensions": {
+        "width": 600,
+        "height": 600
+      }
+    },
+    {
+      "name": "World of Volvo",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/way/1164894809",
+      "website": "https://www.worldofvolvo.com/",
+      "pages_checked": [
+        "https://www.worldofvolvo.com/",
+        "https://www.worldofvolvo.com/sv/besok/kontakt/"
+      ],
+      "image_urls": [
+        "https://www.worldofvolvo.com/globalassets/visual/wov-exterior--interior/world-of-volvo---2.jpg?maxwidth=1920&quality=80",
+        "https://www.worldofvolvo.com/globalassets/visual/exhibitions/world-of-volvo-exhibition/wov_05-12-24_mg_6637.jpg?maxwidth=1920&quality=80",
+        "https://www.worldofvolvo.com/globalassets/visual/exhibitions/traffic-school/worldofvolvo-utstallning-traffic-school-bla-eldriven-bil-barnstorlek-barn-goteborg-se.jpg?maxwidth=1920&quality=80",
+        "https://www.worldofvolvo.com/globalassets/visual/live/wovthursdayjazz2026nl1200x800.jpg?maxwidth=1920&quality=80",
+        "https://www.worldofvolvo.com/globalassets/visual/campaigns/wovthursdayjazzpaket2026web1920x1080.jpg?maxwidth=1920&quality=80",
+        "https://www.worldofvolvo.com/globalassets/visual/campaigns/summer_senior_deal-1.jpg?maxwidth=1920&quality=80"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 1280
+      }
+    },
+    {
+      "name": "Sätra Bruks Herrgård",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/node/13009477776",
+      "website": "https://satrabruk.se/",
+      "pages_checked": [
+        "https://satrabruk.se/",
+        "https://satrabruk.se/kontakta-oss/"
+      ],
+      "image_urls": [
+        "https://satrabruk.se/wp-content/uploads/2026/05/satrabruk-exteriormiljo-43-2048x1367.jpg",
+        "https://satrabruk.se/wp-content/uploads/2026/05/satrabruk-exteriormiljo-53-1024x684.jpg",
+        "https://satrabruk.se/wp-content/uploads/2026/05/satrabruk-exteriormiljo-53-2048x1367.jpg",
+        "https://satrabruk.se/wp-content/uploads/2026/07/satrabrukherrgard-brollop-45-768x513.jpg",
+        "https://satrabruk.se/wp-content/uploads/2026/07/satrabrukherrgard-brollop-45.jpg",
+        "https://satrabruk.se/wp-content/uploads/2025/04/rectangle-33.jpg"
+      ],
+      "image_dimensions": {
+        "width": 2048,
+        "height": 1367
+      }
+    },
+    {
+      "name": "Villa Soludden Hotel & Konferens AB",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/way/377645174",
+      "website": "https://www.villasoludden.se/",
+      "pages_checked": [
+        "https://www.villasoludden.se/",
+        "https://www.villasoludden.se/kontakt-forfragan"
+      ],
+      "image_urls": [
+        "https://www.villasoludden.se/wp-content/uploads/2024/02/vs-hero-01.jpg",
+        "https://www.villasoludden.se/wp-content/uploads/2024/05/villa-soludden-konferens-port.jpg",
+        "https://www.villasoludden.se/wp-content/uploads/2024/05/villa-soludden-foretagsfest-port-03.jpg",
+        "https://www.villasoludden.se/wp-content/uploads/2024/05/villa-soludden-mat-dryck-05.jpg",
+        "https://www.villasoludden.se/wp-content/uploads/2024/02/news-lab-post-img-02.jpg",
+        "https://www.villasoludden.se/wp-content/uploads/2024/05/villa-soludden-exklusiv-fest-port-04.jpg"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 1200
+      }
+    },
+    {
+      "name": "Al Dente",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/node/13995945181",
+      "website": "https://aldentestockholm.com/",
+      "pages_checked": [
+        "https://aldentestockholm.com/",
+        "https://aldentestockholm.com/kontakta-oss/"
+      ],
+      "image_urls": [
+        "https://aldentestockholm.com/wp-content/uploads/2021/05/Facebook-SEO.jpg",
+        "https://aldentestockholm.com/wp-content/uploads/matlagningsevent-stockholm.webp",
+        "https://aldentestockholm.com/wp-content/uploads/laga-mat-tillsammans-foretag.webp",
+        "https://aldentestockholm.com/wp-content/uploads/laga-mat-tillsammans-med-kock.webp",
+        "https://aldentestockholm.com/wp-content/uploads/matlagning-aktivitet.webp",
+        "https://aldentestockholm.com/wp-content/uploads/matlagningsaktivitet-stockholm-1.webp"
+      ],
+      "image_dimensions": {
+        "width": 1200,
+        "height": 630
+      }
+    },
+    {
+      "name": "Diggiloo - Göteborg",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/node/10579794886",
+      "website": "https://diggiloo.com/",
+      "pages_checked": [
+        "https://diggiloo.com/",
+        "https://diggiloo.com/kontakt/"
+      ],
+      "image_urls": [
+        "https://diggiloo.com/wp-content/uploads/2024/02/diggiloo_header.jpg",
+        "https://diggiloo.com/wp-content/uploads/2026/07/PRESS_DIGGILOO-2026_PATRIK_KRALL_FLYGBILD-2_PREMIAR_KOSTA-800x450.jpg",
+        "https://diggiloo.com/wp-content/uploads/2026/06/Mix_Sommar_Diggiloo_1920x1080_2-800x450.png",
+        "https://diggiloo.com/wp-content/uploads/2026/06/Mix_Sommar_Diggiloo_1920x1080_2.png"
+      ],
+      "image_dimensions": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "name": "Ramsele Konferens & Forskarcentrum",
+      "country": "SE",
+      "osm_source_url": "https://www.openstreetmap.org/way/1429728321",
+      "website": "https://slaktforskarcentrum.se/",
+      "pages_checked": [
+        "https://slaktforskarcentrum.se/"
+      ],
+      "image_urls": [
+        "https://slaktforskarcentrum.se/wp-content/uploads/2022/02/translogga.png"
+      ],
+      "image_dimensions": {
+        "width": 1058,
+        "height": 465
+      }
+    }
+  ]
+}

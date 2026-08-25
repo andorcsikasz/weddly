@@ -1,0 +1,53 @@
+{
+  "run_date": "2026-08-19",
+  "scope": "active curated supplier listings",
+  "source_policy": {
+    "allowed": "images published on the supplier's own website or already mirrored from its curated official gallery",
+    "excluded": [
+      "social-network profile pages",
+      "third-party business directories and booking aggregators",
+      "images below the hero quality threshold",
+      "extreme-aspect-ratio banners and tracking pixels"
+    ]
+  },
+  "before": {
+    "total_listings": 3978,
+    "listings_with_hero": 2729,
+    "listings_without_hero": 1249,
+    "coverage_percent": 68.6
+  },
+  "changes": {
+    "existing_local_gallery_images_promoted_to_hero": 586,
+    "new_official_website_images_downloaded": 178,
+    "incorrect_third_party_category_images_removed_during_validation": 16,
+    "net_new_working_heroes": 764
+  },
+  "after": {
+    "total_listings": 3978,
+    "listings_with_hero": 3493,
+    "listings_without_hero": 485,
+    "coverage_percent": 87.8,
+    "local_hero_urls": 3493,
+    "external_hotlinked_hero_urls": 0,
+    "missing_local_hero_files": 0
+  },
+  "remaining_without_hero": {
+    "no_website": 69,
+    "third_party_directory_only": 237,
+    "social_profile_only": 21,
+    "direct_website_without_a_usable_quality_image": 158
+  },
+  "crawler_improvements": [
+    "promote the first validated local gallery photo when the hero is missing",
+    "discover same-domain wedding, gallery and portfolio subpages in multiple languages",
+    "normalise legacy website URLs that omit the scheme",
+    "select the largest srcset candidate instead of the smallest thumbnail",
+    "reject known social and third-party directory hosts",
+    "retain SSRF, image-signature, byte-size, pixel-size and aspect-ratio checks"
+  ],
+  "verification": {
+    "focused_tests_passed": 45,
+    "typecheck": "passed",
+    "all_database_hero_files_exist": true
+  }
+}

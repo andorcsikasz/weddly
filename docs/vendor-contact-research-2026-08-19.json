@@ -1,0 +1,4851 @@
+{
+  "researched_at": "2026-08-19T00:13:40.175Z",
+  "target_count": 343,
+  "found_email_count": 122,
+  "found_phone_count": 84,
+  "found_address_count": 17,
+  "results": [
+    {
+      "id": "the-wedding-city",
+      "name": "The Wedding City",
+      "website": "https://theweddingcity.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "kiscelli-muzeum",
+      "name": "Kiscelli Múzeum",
+      "website": "https://kiscellimuzeum.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "ERR_TLS_CERT_ALTNAME_INVALID fetching \"https://kiscellimuzeum.hu/\". For more information, pass `verbose: true` in the second argument to fetch()"
+    },
+    {
+      "id": "kispesti-halasztanya",
+      "name": "Kispesti Halásztanya Étterem",
+      "website": "https://www.eskuvoihelyszinkereso.hu/helyszin/kispesti-halasztanya-etterem-budapest",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "losi-major",
+      "name": "Lósi Major",
+      "website": "https://www.losimajor.hu/",
+      "contact_email": {
+        "value": "info@losimajor.hu",
+        "source_url": "https://www.losimajor.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.losimajor.hu/",
+        "https://www.losimajor.hu/eskuvo/",
+        "http://www.losimajor.hu/eskuvo/",
+        "https://www.losimajor.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "schloss-leopoldskron",
+      "name": "Schloss Leopoldskron",
+      "website": "https://www.schloss-leopoldskron.com/",
+      "contact_email": {
+        "value": "events@schlossleopoldskron.com",
+        "source_url": "https://www.schloss-leopoldskron.com/erlebnisse/hochzeiten",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.schloss-leopoldskron.com/",
+        "https://www.schloss-leopoldskron.com/entdecken/events-ausstellungen",
+        "https://www.schloss-leopoldskron.com/entdecken/events-ausstellungen/unsere-geschichte",
+        "https://www.schloss-leopoldskron.com/erlebnisse/hochzeiten"
+      ],
+      "error": null
+    },
+    {
+      "id": "krumpello",
+      "name": "Krumpello",
+      "website": "https://krumpellotruck.com/",
+      "contact_email": {
+        "value": "hello@krumpello.hu",
+        "source_url": "https://krumpellotruck.com/impresszum",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://krumpellotruck.com/", "https://krumpellotruck.com/impresszum"],
+      "error": null
+    },
+    {
+      "id": "eszter-anna-photography",
+      "name": "Eszter Anna Photography",
+      "website": "https://www.eszterannaphotography.hu/wedding/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.eszterannaphotography.hu/wedding/",
+        "https://www.eszterannaphotography.hu/wedding/",
+        "https://www.eszterannaphotography.hu/contact/"
+      ],
+      "error": null
+    },
+    {
+      "id": "the-budapest-photographer",
+      "name": "The Budapest Photographer",
+      "website": "https://www.thebudapestphotographer.com/weddingphotography",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 404"
+    },
+    {
+      "id": "alomklip",
+      "name": "Álomklip",
+      "website": "https://www.bridestory.com/hungary",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "gig-heaven-bands",
+      "name": "Gig Heaven Wedding Bands Budapest",
+      "website": "https://www.gigheaven.com/search/wedding-bands/hungary/budapest.html",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "sebok-dorina",
+      "name": "Sebők Dorina",
+      "website": "https://www.sebokdorina.hu/en/home/",
+      "contact_email": {
+        "value": "sebok.ddornia@gmail.com",
+        "source_url": "https://www.sebokdorina.hu/en/contact/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36704135710",
+        "source_url": "https://www.sebokdorina.hu/en/contact/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.sebokdorina.hu/en/home/",
+        "https://www.sebokdorina.hu/en/contact/",
+        "https://www.sebokdorina.hu/impresszum/"
+      ],
+      "error": null
+    },
+    {
+      "id": "instant-selfie",
+      "name": "InstantSelfie",
+      "website": "https://instantselfie.hu/en/photobox-hungary/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://instantselfie.hu/en/photobox-hungary/",
+        "https://instantselfie.hu/fotobox-berles/fotoautomata-eskuvore/"
+      ],
+      "error": null
+    },
+    {
+      "id": "wezoree-budapest-content",
+      "name": "Wezoree Content Creator marketplace",
+      "website": "https://wezoree.com/vendors/budapest/content-creator/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://wezoree.com/vendors/budapest/content-creator/",
+        "https://wezoree.com/vendors/all/wedding-officiants/",
+        "https://wezoree.com/vendors/all/wedding-bands/",
+        "https://wezoree.com/real-weddings/"
+      ],
+      "error": null
+    },
+    {
+      "id": "luxwedd-athens-budapest",
+      "name": "Luxwedd Athens (Budapest via Wezoree)",
+      "website": "https://wezoree.com/vendors/budapest/content-creator/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://wezoree.com/vendors/budapest/content-creator/",
+        "https://wezoree.com/vendors/all/wedding-officiants/",
+        "https://wezoree.com/vendors/all/wedding-bands/",
+        "https://wezoree.com/real-weddings/"
+      ],
+      "error": null
+    },
+    {
+      "id": "upwork-content-creators-budapest",
+      "name": "Upwork Content Creators, Budapest",
+      "website": "https://www.upwork.com/hire/content-creators/hu/budapest/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 403"
+    },
+    {
+      "id": "gig-heaven-celebrants",
+      "name": "Gig Heaven Celebrants Budapest",
+      "website": "https://www.gigheaven.com/search/wedding-officiants-wedding-celebrants/hungary/budapest.html",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "eskuvonknapja",
+      "name": "Esküvőnknapja.hu",
+      "website": "https://eskuvonknapja.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://eskuvonknapja.hu/", "https://eskuvonknapja.hu/"],
+      "error": null
+    },
+    {
+      "id": "achilles-park-gyor",
+      "name": "Achilles Park Győr",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/achilles-park/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "eden-lounge-veresegyhaz",
+      "name": "Éden Lounge Étterem és Panzió Veresegyház",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/eden-lounge-etterem-veresegyhaz-pest-megyei-eskuvoi-helyszin/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "style-event-lounge-kophaza",
+      "name": "Style Event Lounge Kópháza",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/style-event-lounge-kophaza/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "batthyany-kastelyszallo-zalacsany",
+      "name": "Batthyány Kastélyszálló Zalacsány",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/batthyany-kastelyszallo/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "zsindelyes-vendeglo-dobogoko",
+      "name": "Zsindelyes Vendéglő Dobogókő",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/zsindelyes-vendeglo-dobogoko-eskuvoi-helyszin/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "orchidea-etterem-szigetbecse",
+      "name": "Orchidea Étterem Szigetbecse",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/orchidea-etterem-szigetbecse/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "vadvirag-rendezvenyterem-cegled",
+      "name": "Vadvirág Rendezvényterem Cegléd",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/vadvirag-rendezvenyterem-cegled/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "vankos-es-eszcajg-ujhartyan",
+      "name": "Vánkos és Eszcájg Újhartyán",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/vankos-es-eszcajg/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "nyerges-hotel-monor",
+      "name": "Nyerges Hotel Termál Monor",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/nyerges-hotel-eskuvo-helyszin/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "matra-kemping-sasto",
+      "name": "Mátra Kemping Sástó és Sástó Hotel",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/matra-kemping-sasto/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "airport-hotel-stacio-vecses",
+      "name": "Airport Hotel Stáció Vecsés",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/airport-hotel-stacio-eskuvo-romantikus-eskuvoi-helyszin/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "teleki-tisza-kastely-nagykovacsi",
+      "name": "Teleki-Tisza-kastély Nagykovácsi",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/teleki-tisza-kastely/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "forster-vadaszkastely-bugyi",
+      "name": "Forster Vadászkastély és Szálloda Bugyi",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/forster-vadaszkastely/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "fatornyos-kuria-szokolya",
+      "name": "Fatornyos Kúria Szokolya",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/fatornyos-fogado-erdei-eskuvo-helyszin/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "bodor-major-tahitotfalu",
+      "name": "Bodor Major Tahitótfalu",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/bodor-major-tahitotfalu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "tahy-kastely-galgagyork",
+      "name": "Tahy Kastély Galgagyörk",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/tahy-kastely/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "camelot-club-hotel-vac",
+      "name": "Camelot Club Hotel és Étterem Vác",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/camelot-club-hotel-es-etterem-vac/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "verdi-budapest-aquincum",
+      "name": "Verdi Budapest Aquincum",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/verdi-budapest-aquincum/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "hajos-eskuvo-kozpont-budapest",
+      "name": "Hajós Esküvő Központ Budapest",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/hajos-eskuvo-budapest/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "europa-hajo-budapest",
+      "name": "Európa Hajó Budapest",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/europa-hajo/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "sari-csarda-szigetkoz",
+      "name": "Sári Csárda Szigetköz",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/sari-csarda-szigetkoz/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "hetkuti-wellness-hotel-mor",
+      "name": "Hétkúti Wellness Hotel Mór",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/hetkuti-wellness-hotel-eskuvo-helyszin-mor/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "fur-elise-bisztro-martonvasar",
+      "name": "Für Elise Bisztró Martonvásár",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/fur-elise-bisztro-martonvasar/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "movenpick-balaland-szantod",
+      "name": "Mövenpick Balaland Resort Lake Szántód",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/movenpick-balaland/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "zselicvolgy-szabadidofarm-hajmas",
+      "name": "Zselicvölgy Szabadidőfarm Hajmás",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/zselicvolgy-szabadidofarm-hajmas-eskuvohelyszin/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "bano-birtok-felsomocsolad",
+      "name": "Bánó Birtok Felsőmocsolád",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/bano-birtok/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "villabogart-alsobogat",
+      "name": "VILLABOGArT Alsóbogát",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/villa-bogart-alsobogat-vintage-eskuvoi-helyszin/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "dalma-panzio-balatonvilagos",
+      "name": "Dalma Panzió Balatonvilágos",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/dalma-panzio-balatonvilagos/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "echo-etterem-tihany",
+      "name": "Echo Étterem Tihany",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/tihany-echo-etterem/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "idranyi-puszta-nemesvita",
+      "name": "Idrányi Puszta Nemesvita",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/idranyi-puszta-nemesvita/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "hubertus-fogado-csesznek",
+      "name": "Hubertus Fogadó Csesznek",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/hubertus-fogado-eskuvo/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "hotel-kristaly-ajka",
+      "name": "Hotel Kristály Ajka",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/kristaly-hotel-ajka-eskuvoi-helyszin/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "wedding-beach-tat",
+      "name": "Wedding Beach Tát",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/wedding-beach-tat/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "madi-kuria-hotel",
+      "name": "Mádi Kúria Hotel és Rendezvényközpont",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/madi-kuria/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "cuvee-rendezvenyhaz-sarospatak",
+      "name": "Cuvée Rendezvényház Sárospatak",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/cuvee-rendezvenyhaz-sarospatak/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "rozsa-etterem-mezokovesd",
+      "name": "Rózsa Étterem Mezőkövesd",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/rozsa-etterem-mezokovesd/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "le-til-kuria-biri",
+      "name": "Le Til Kúria Biri",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/le-til-kuria/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "csodaszarvas-tajpark-rabahidveg",
+      "name": "Csodaszarvas Tájpark Rábahídvég",
+      "website": "https://topeskuvohelyszinek.hu/eskuvoi-helyszinek/csodaszarvas-tajpark-rabahidveg/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "chateau-de-vaux-le-vicomte",
+      "name": "Château de Vaux-le-Vicomte",
+      "website": "https://vaux-le-vicomte.com",
+      "contact_email": {
+        "value": "commercial@vaux-le-vicomte.fr",
+        "source_url": "https://vaux-le-vicomte.com/event/les-soirees-aux-chandelles/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://vaux-le-vicomte.com/",
+        "https://vaux-le-vicomte.com/contacts/",
+        "https://vaux-le-vicomte.com/event/les-soirees-aux-chandelles/",
+        "https://vaux-le-vicomte.com/event/jeux-deau-un-spectacle-magique/"
+      ],
+      "error": null
+    },
+    {
+      "id": "chateau-de-chantilly",
+      "name": "Château de Chantilly",
+      "website": "https://chateaudechantilly.fr",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "unable to verify the first certificate"
+    },
+    {
+      "id": "chateau-de-villette",
+      "name": "Château de Villette",
+      "website": "https://www.chateau-de-villette.com",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "les-sources-de-caudalie",
+      "name": "Les Sources de Caudalie",
+      "website": "https://www.sources-caudalie.com",
+      "contact_email": {
+        "value": "reservations@sources-caudalie.com",
+        "source_url": "https://www.sources-hotels.com/bordeaux/acces-et-contact/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": {
+        "value": "+33557838383",
+        "source_url": "https://www.sources-hotels.com/bordeaux/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Chemin de Smith Haut Lafitte, 33650, Bordeaux-Martillac, Aquitaine, FR",
+        "source_url": "https://www.sources-hotels.com/bordeaux/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://www.sources-hotels.com/bordeaux/",
+        "https://www.sources-hotels.com/bordeaux/acces-et-contact/"
+      ],
+      "error": null
+    },
+    {
+      "id": "chateau-lafaurie-peyraguey",
+      "name": "Château Lafaurie-Peyraguey",
+      "website": "https://www.lafauriepeyraguey.com",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "ERR_TLS_CERT_ALTNAME_INVALID fetching \"https://www.lafauriepeyraguey.com/\". For more information, pass `verbose: true` in the second argument to fetch()"
+    },
+    {
+      "id": "chateau-de-berne",
+      "name": "Château de Berne",
+      "website": "https://www.chateauberne.com",
+      "contact_email": {
+        "value": "reservation@chateauberne.com",
+        "source_url": "https://www.chateauberne.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+33494604881",
+        "source_url": "https://www.chateauberne.com/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Chemin des Imberts, 83780, Flayosc, FR",
+        "source_url": "https://www.chateauberne.com/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://www.chateauberne.com/",
+        "https://www.chateauberne.com/contact/",
+        "https://www.chateauberne.com/reservation-visites/"
+      ],
+      "error": null
+    },
+    {
+      "id": "domaine-de-manville",
+      "name": "Domaine de Manville",
+      "website": "https://www.domainedemanville.fr",
+      "contact_email": {
+        "value": "contact@domainedemanville.fr",
+        "source_url": "https://www.domainedemanville.fr/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+ 33 (0)4 90 54 40 20",
+        "source_url": "https://www.domainedemanville.fr/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "13520 Les Baux-de-Provence, France, 13520, Les Baux-de-Provence, Provence-Alpes-Côte d'Azur, FR",
+        "source_url": "https://www.domainedemanville.fr/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://www.domainedemanville.fr/",
+        "https://www.domainedemanville.fr/localisation-contact"
+      ],
+      "error": null
+    },
+    {
+      "id": "chateau-de-fonscolombe",
+      "name": "Château de Fonscolombe",
+      "website": "https://www.fonscolombe.fr",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 403"
+    },
+    {
+      "id": "chateau-de-la-gaude",
+      "name": "Château de la Gaude",
+      "website": "https://www.chateaudelagaude.com",
+      "contact_email": {
+        "value": "contact@chateaudelagaude.com",
+        "source_url": "https://chateaudelagaude.com/fr/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "04 84 930 930",
+        "source_url": "https://chateaudelagaude.com/fr/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://chateaudelagaude.com/fr/",
+        "https://chateaudelagaude.com/fr/reservation",
+        "https://chateaudelagaude.com/fr/reservation-restaurant-le-art",
+        "https://chateaudelagaude.com/fr/reservation-restaurant-la-source"
+      ],
+      "error": null
+    },
+    {
+      "id": "chateau-de-tourreau",
+      "name": "Château de Tourreau",
+      "website": "https://www.chateaudetourreau.com",
+      "contact_email": {
+        "value": "info@chateaudetourreau.com",
+        "source_url": "https://www.chateaudetourreau.com/en/seminar-wedding-chateau-provence/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+33 (0)4 13 97 00 49",
+        "source_url": "https://www.chateaudetourreau.com/en/chateau-rental-provence/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.chateaudetourreau.com/en/chateau-rental-provence/",
+        "https://www.chateaudetourreau.com/en/seminar-wedding-chateau-provence/",
+        "https://www.chateaudetourreau.com/en/contact-chateau-in-provence/"
+      ],
+      "error": null
+    },
+    {
+      "id": "chateau-de-sannes",
+      "name": "Château de Sannes",
+      "website": "https://www.chateaudesannes.com",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "chateau-saint-georges",
+      "name": "Château Saint Georges",
+      "website": "https://chateausaintgeorges-grasse.com",
+      "contact_email": {
+        "value": "contact@chateausaintgeorges-grasse.com",
+        "source_url": "https://chateausaintgeorges-grasse.com/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+33783771442",
+        "source_url": "https://chateausaintgeorges-grasse.com/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://chateausaintgeorges-grasse.com/",
+        "https://chateausaintgeorges-grasse.com/contact-chateau-saint-georges-grasse/",
+        "https://chateausaintgeorges-grasse.com/wedding-venue-hire-grasse-cote-dazur/",
+        "https://chateausaintgeorges-grasse.com/chateau-weddings-receptions-cote-dazur/"
+      ],
+      "error": null
+    },
+    {
+      "id": "hotel-du-cap-eden-roc",
+      "name": "Hôtel du Cap-Eden-Roc",
+      "website": "https://www.oetkercollection.com/hotels/hotel-du-cap-eden-roc/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 429"
+    },
+    {
+      "id": "grand-hotel-du-cap-ferrat-a-four-seasons-hotel",
+      "name": "Grand-Hôtel du Cap-Ferrat, A Four Seasons Hotel",
+      "website": "https://www.fourseasons.com/capferrat/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 403"
+    },
+    {
+      "id": "chateau-les-carrasses",
+      "name": "Château Les Carrasses",
+      "website": "https://www.lescarrasses.com",
+      "contact_email": {
+        "value": "resa@lescarrasses.com",
+        "source_url": "https://www.lescarrasses.com/en/hotel-holiday-homes-narbonne-languedoc",
+        "evidence": "visible_text"
+      },
+      "contact_phone": {
+        "value": "+33467000067",
+        "source_url": "https://www.lescarrasses.com/en/hotel-holiday-homes-narbonne-languedoc",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.lescarrasses.com/en/hotel-holiday-homes-narbonne-languedoc",
+        "https://www.lescarrasses.com/en/events-seminar-wedding-chateau-south-of-france",
+        "https://www.lescarrasses.com/en/contact-and-access-boutique-hotel-narbonne"
+      ],
+      "error": null
+    },
+    {
+      "id": "domaine-de-verchant",
+      "name": "Domaine de Verchant",
+      "website": "https://www.domainedeverchant.com",
+      "contact_email": {
+        "value": "reservation@verchant.com",
+        "source_url": "https://www.domainedeverchant.com/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+33-4-67-07-26-00",
+        "source_url": "https://www.domainedeverchant.com/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.domainedeverchant.com/",
+        "https://www.domainedeverchant.com/fr/contact"
+      ],
+      "error": null
+    },
+    {
+      "id": "chateau-de-bagnols",
+      "name": "Château de Bagnols",
+      "website": "https://www.chateaudebagnols.com",
+      "contact_email": {
+        "value": "events@chateaudebagnols.fr",
+        "source_url": "https://www.chateaudebagnols.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "0033474714000",
+        "source_url": "https://www.chateaudebagnols.com/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.chateaudebagnols.com/",
+        "https://www.chateaudebagnols.com/contact/"
+      ],
+      "error": null
+    },
+    {
+      "id": "cortijo-los-agustinos",
+      "name": "Cortijo Los Agustinos",
+      "website": "https://www.cortijolosagustinos.com/",
+      "contact_email": {
+        "value": "la@cortijolosagustinos.com",
+        "source_url": "https://cortijolosagustinos.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+34685521592",
+        "source_url": "https://cortijolosagustinos.com/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://cortijolosagustinos.com/",
+        "https://cortijolosagustinos.com/contacto/",
+        "https://cortijolosagustinos.com/eventos/"
+      ],
+      "error": null
+    },
+    {
+      "id": "finca-son-mir",
+      "name": "Finca Son Mir",
+      "website": "https://www.fincasonmir.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "castell-de-peralada",
+      "name": "Castell de Peralada",
+      "website": "https://www.castilloperalada.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "The operation was aborted."
+    },
+    {
+      "id": "pine-cliffs-resort",
+      "name": "Pine Cliffs Resort",
+      "website": "https://www.pinecliffs.com/en/events/weddings/",
+      "contact_email": {
+        "value": "info@pinecliffs.com",
+        "source_url": "https://www.pinecliffs.com/en/events/weddings/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+351289500100",
+        "source_url": "https://www.pinecliffs.com/en/events/weddings/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.pinecliffs.com/en/events/weddings/",
+        "https://www.pinecliffs.com/en/events/weddings/",
+        "https://www.pinecliffs.com/pt-pt/eventos/casamentos/",
+        "https://www.pinecliffs.com/en/contacts/"
+      ],
+      "error": null
+    },
+    {
+      "id": "valverde-palacio-de-seteais",
+      "name": "Valverde Sintra Palácio de Seteais",
+      "website": "https://www.valverdepalacioseteais.com/en/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+351219233200",
+        "source_url": "https://www.valverdepalacioseteais.com/en/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.valverdepalacioseteais.com/en/",
+        "https://www.valverdepalacioseteais.com/en/private-events/weddings/57/",
+        "https://www.valverdepalacioseteais.com/en/private-events/",
+        "https://www.valverdepalacioseteais.com/en/private-events/private-parties/128/"
+      ],
+      "error": null
+    },
+    {
+      "id": "quinta-da-pacheca",
+      "name": "Quinta da Pacheca",
+      "website": "https://pacheca.com/pages/quintadapacheca",
+      "contact_email": {
+        "value": "reservas@quintadapacheca.com",
+        "source_url": "https://pacheca.com/pages/quintadapacheca",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://pacheca.com/pages/quintadapacheca",
+        "https://pacheca.com/pages/weddings-and-events"
+      ],
+      "error": null
+    },
+    {
+      "id": "fortaleza-do-guincho",
+      "name": "Hotel Fortaleza do Guincho",
+      "website": "https://www.fortalezadoguincho.com/",
+      "contact_email": {
+        "value": "reservations@guinchotel.pt",
+        "source_url": "https://www.fortalezadoguincho.com/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+351214870491",
+        "source_url": "https://www.fortalezadoguincho.com/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.fortalezadoguincho.com/",
+        "https://www.fortalezadoguincho.com/contacts/"
+      ],
+      "error": null
+    },
+    {
+      "id": "san-domenico-palace-taormina-a-four-seasons-hotel",
+      "name": "San Domenico Palace, Taormina, A Four Seasons Hotel",
+      "website": "https://www.fourseasons.com/taormina/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 403"
+    },
+    {
+      "id": "hilton-garden-inn-tirana",
+      "name": "Hilton Garden Inn Tirana",
+      "website": "https://www.hilton.com/en/hotels/tiagigi-hilton-garden-inn-tirana/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 403"
+    },
+    {
+      "id": "diamma-resort",
+      "name": "Diamma Resort Conference & SPA",
+      "website": "https://diammaresort.al/",
+      "contact_email": {
+        "value": "info@diammaresort.al",
+        "source_url": "https://diammaresort.al/contact/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": {
+        "value": "Rruga Kompleksit, 2504, Golem, Albania",
+        "source_url": "https://diammaresort.al/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://diammaresort.al/",
+        "https://diammaresort.al/contact/",
+        "https://diammaresort.al/top-things-to-do-near-durres-for-a-memorable-stay/"
+      ],
+      "error": null
+    },
+    {
+      "id": "grand-vm-conference-spa",
+      "name": "Grand VM Conference & SPA",
+      "website": "https://grandvm.al/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+355 69 207 6740",
+        "source_url": "https://grandvm.al/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://grandvm.al/", "https://grandvm.al/contacts.html"],
+      "error": null
+    },
+    {
+      "id": "arameras-beach-resort",
+      "name": "Arameras Beach Resort",
+      "website": "https://aramerasresort.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "green-coast-hotel-mgallery",
+      "name": "Green Coast Hotel – MGallery Collection",
+      "website": "https://all.accor.com/hotel/C1V9/index.en.shtml",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 404"
+    },
+    {
+      "id": "kep-merli",
+      "name": "Kep Merli",
+      "website": "https://kepmerli.com/",
+      "contact_email": {
+        "value": "info@kepmerli.com",
+        "source_url": "https://kepmerli.com/contact",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+355697075779",
+        "source_url": "https://kepmerli.com/contact",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Ksamil, AL",
+        "source_url": "https://kepmerli.com/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://kepmerli.com/",
+        "https://kepmerli.com/reservations",
+        "https://kepmerli.com/contact"
+      ],
+      "error": null
+    },
+    {
+      "id": "royal-hill-hotel-resort",
+      "name": "Royal Hill Hotel & Resort",
+      "website": "https://royalhill.al/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "el-viento-santorini",
+      "name": "El Viento Santorini",
+      "website": "https://elviento.gr",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "one-and-only-aesthesis",
+      "name": "One&Only Aesthesis",
+      "website": "https://www.oneandonlyresorts.com/aesthesis",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "The operation was aborted."
+    },
+    {
+      "id": "grace-hotel-santorini",
+      "name": "Grace Hotel, Auberge Resorts Collection",
+      "website": "https://aubergeresorts.com/gracehotel/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "302286021300",
+        "source_url": "https://auberge.com/grace-hotel/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "84700, Imerovigli, Santorini, GR",
+        "source_url": "https://auberge.com/grace-hotel/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://auberge.com/grace-hotel/",
+        "https://auberge.com/grace-hotel/events/",
+        "https://auberge.com/grace-hotel/contact-us/"
+      ],
+      "error": null
+    },
+    {
+      "id": "pyrgos-petreza",
+      "name": "Pyrgos Petreza",
+      "website": "https://www.pyrgospetreza.gr",
+      "contact_email": {
+        "value": "info@pyrgospetreza.gr",
+        "source_url": "https://pyrgospetreza.gr/el/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://pyrgospetreza.gr/el/",
+        "https://pyrgospetreza.gr/el/pages/events/wedding-venue/",
+        "https://pyrgospetreza.gr/el/pages/events/what-we-do/",
+        "https://pyrgospetreza.gr/el/pages/events/corporate-events/"
+      ],
+      "error": null
+    },
+    {
+      "id": "cavo-ventus",
+      "name": "Cavo Ventus",
+      "website": "https://cavoventus.com",
+      "contact_email": {
+        "value": "info@cavoventus.com",
+        "source_url": "https://www.cavoventus.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "00306974348417",
+        "source_url": "https://www.cavoventus.com/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://www.cavoventus.com/", "https://www.cavoventus.com/contact-us/"],
+      "error": null
+    },
+    {
+      "id": "hatzi-mansion",
+      "name": "Hatzi Mansion",
+      "website": "https://hatzimansion.gr",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "villabogart-eskuvo-es-rendezvenykozpont",
+      "name": "VILLABOGArT Esküvő-és Rendezvényközpont",
+      "website": "https://www.villabogart.hu/",
+      "contact_email": {
+        "value": "info@villabogart.hu",
+        "source_url": "https://villabogart.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36306138399",
+        "source_url": "https://villabogart.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://villabogart.hu/",
+        "https://villabogart.hu/rendezvenyek/",
+        "https://villabogart.hu/rendezvenyhelyszinek/",
+        "https://villabogart.hu/rendezvenyek/eskuvok/"
+      ],
+      "error": null
+    },
+    {
+      "id": "culinart-eskuvo-es-rendezvenypark",
+      "name": "CulinArt Esküvő és Rendezvénypark",
+      "website": "http://www.culinart.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://vimeo.com/238086040"],
+      "error": null
+    },
+    {
+      "id": "mocz-es-tarsa-eskuvo-rendezveny-terem",
+      "name": "Mocz és Társa Esküvő & Rendezvény Terem",
+      "website": "http://www.moczerdeszet.hu/rendezvenyek/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.moczerdeszet.hu/rendezvenyek/",
+        "https://www.moczerdeszet.hu/rendezvenyek/kapcsolat/",
+        "https://www.moczerdeszet.hu/rendezvenyek/eskuvok/",
+        "https://www.moczerdeszet.hu/rendezvenyek/hirek/"
+      ],
+      "error": null
+    },
+    {
+      "id": "demeny-eskuvoi-fenyfuzer-berles",
+      "name": "DEMENY Esküvői Fényfüzér Bérlés",
+      "website": "https://fenyeskuvo.hu/",
+      "contact_email": {
+        "value": "zoltan.demeny@fenyeskuvo.hu",
+        "source_url": "https://fenyeskuvo.hu/nadas-pihenopark-eskuvo/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": {
+        "value": "+36208862347",
+        "source_url": "https://fenyeskuvo.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://fenyeskuvo.hu/",
+        "https://fenyeskuvo.hu/nadas-pihenopark-eskuvo/",
+        "https://fenyeskuvo.hu/bodrogi-kuria-eskuvo/",
+        "https://fenyeskuvo.hu/palma-rendezvenyhaz-tata-palmahaz/"
+      ],
+      "error": null
+    },
+    {
+      "id": "bano-birtok",
+      "name": "Bánó Birtok",
+      "website": "http://banobirtok.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://banobirtok.hu/",
+        "https://banobirtok.hu/eskuvoi-csomag/",
+        "https://banobirtok.hu/eskuvok/",
+        "https://banobirtok.hu/ahol-otthon-erezheti-magat/eskuvot-rendezne-/"
+      ],
+      "error": null
+    },
+    {
+      "id": "monaco-eskuvoi-szalon",
+      "name": "MONACO Esküvői Szalon",
+      "website": "http://monacoszalon.hu/",
+      "contact_email": {
+        "value": "monacoszalon.hu@gmail.com",
+        "source_url": "http://monacoszalon.hu/",
+        "evidence": "json_ld"
+      },
+      "contact_phone": null,
+      "address": {
+        "value": "8360 KESZTHELY,RÁKÓCZI ÚT 13., 8360, KESZTHELY, Magyarország",
+        "source_url": "http://monacoszalon.hu/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "http://monacoszalon.hu/",
+        "https://monacoszalon.hu/elerhetoseg/",
+        "https://monacoszalon.hu/kategoria/eskuvoi-ruha/",
+        "https://monacoszalon.hu/termekcsoport/kismama-eskuvoi-ruha/"
+      ],
+      "error": null
+    },
+    {
+      "id": "deluxe-dekor",
+      "name": "DeLuxe-Dekor",
+      "website": "http://www.deluxe-dekor.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36305473135",
+        "source_url": "https://www.deluxe-dekor.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.deluxe-dekor.hu/",
+        "https://www.deluxe-dekor.hu/",
+        "https://www.deluxe-dekor.hu/ceges-rendezvenyek/"
+      ],
+      "error": null
+    },
+    {
+      "id": "toth-laszlo",
+      "name": "Tóth László",
+      "website": "http://djazeskuvore.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 500"
+    },
+    {
+      "id": "bem-peter",
+      "name": "Bem Péter",
+      "website": "http://www.bpeefoto.hu/",
+      "contact_email": {
+        "value": "bempeterfoto@gmail.com",
+        "source_url": "https://www.bpeefoto.hu/kapcsolat/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://www.bpeefoto.hu/", "https://www.bpeefoto.hu/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "bertok-krisztian",
+      "name": "Bertók Krisztián",
+      "website": "https://bertokeskuvoidj.hu/",
+      "contact_email": {
+        "value": "hello@bertokeskuvoidj.hu",
+        "source_url": "https://bertokeskuvoidj.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "0036309502293",
+        "source_url": "https://bertokeskuvoidj.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://bertokeskuvoidj.hu/",
+        "https://bertokeskuvoidj.hu/galeria-videok/",
+        "https://bertokeskuvoidj.hu/blog/",
+        "https://bertokeskuvoidj.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "andy-wedding",
+      "name": "Andy Wedding",
+      "website": "https://www.andywedding.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://andywedding.hu/"],
+      "error": null
+    },
+    {
+      "id": "eskuvo-es",
+      "name": "Esküvő- és",
+      "website": "http://kell1dj.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.eskuvo.online/cegprofil/8623-eskuvo-es-rendezveny-dj",
+        "https://www.eskuvo.online/eskuvoi-feladatok-listaja",
+        "https://www.eskuvo.online/eskuvoi-szolgaltatok-keresese",
+        "https://www.eskuvo.online/eskuvoi-weboldal-tervezese"
+      ],
+      "error": null
+    },
+    {
+      "id": "tornai-pinceszet",
+      "name": "Tornai Pincészet",
+      "website": "http://www.tornaipince.hu/",
+      "contact_email": {
+        "value": "vinoteka@tornaipince.hu",
+        "source_url": "https://www.tornaipince.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.tornaipince.hu/",
+        "https://www.tornaipince.hu/index.php?route=information/contact",
+        "https://www.tornaipince.hu/"
+      ],
+      "error": null
+    },
+    {
+      "id": "koczor-pinceszet",
+      "name": "Koczor Pincészet",
+      "website": "http://www.koczorpince.hu/",
+      "contact_email": {
+        "value": "info@koczorpince.hu",
+        "source_url": "https://www.koczorpince.hu/kontakt/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.koczorpince.hu/",
+        "https://www.koczorpince.hu/eskuvo/",
+        "https://www.koczorpince.hu/eskuvo/",
+        "https://www.koczorpince.hu/kontakt/"
+      ],
+      "error": null
+    },
+    {
+      "id": "vass-pinceszet-es-vendeghaz",
+      "name": "Vass Pincészet és Vendégház",
+      "website": "http://www.vasspinceszet.hu/",
+      "contact_email": {
+        "value": "eskuvo@vasspinceszet.hu",
+        "source_url": "https://www.vasspinceszet.hu/eskuvo/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.vasspinceszet.hu/",
+        "https://www.vasspinceszet.hu/eskuvo/",
+        "https://www.vasspinceszet.hu/minialom-eskuvo/",
+        "https://www.vasspinceszet.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "piknik-a-hegyen",
+      "name": "Piknik a hegyen",
+      "website": "http://www.piknikahegyen.hu/",
+      "contact_email": {
+        "value": "piknikahegyen@gmail.com",
+        "source_url": "http://www.piknikahegyen.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://www.piknikahegyen.hu/",
+        "http://www.piknikahegyen.hu/eskuvoi-helyszin/",
+        "http://www.piknikahegyen.hu/eskuvoi-helyszin/"
+      ],
+      "error": null
+    },
+    {
+      "id": "markoi-csarda",
+      "name": "Márkói Csárda",
+      "website": "http://markogasztro.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "0688210606",
+        "source_url": "http://markogasztro.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["http://markogasztro.hu/", "http://markogasztro.hu/kapcsolat"],
+      "error": null
+    },
+    {
+      "id": "csodafotos",
+      "name": "Csodafotós",
+      "website": "http://www.csodafotos.hu/",
+      "contact_email": {
+        "value": "kapcsolat@csodafotos.hu",
+        "source_url": "https://www.csodafotos.hu/kapcsolat",
+        "evidence": "visible_text"
+      },
+      "contact_phone": {
+        "value": "+36203813440",
+        "source_url": "https://www.csodafotos.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.csodafotos.hu/",
+        "https://www.csodafotos.hu/eskuvoi-iranytu",
+        "https://www.csodafotos.hu/kapcsolat",
+        "https://www.csodafotos.hu/impresszum"
+      ],
+      "error": null
+    },
+    {
+      "id": "mate-bea",
+      "name": "Máté Bea",
+      "website": "http://matebeafoto.hu/",
+      "contact_email": {
+        "value": "matebeafoto@matebeafoto.hu",
+        "source_url": "http://matebeafoto.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36305202321",
+        "source_url": "http://matebeafoto.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "http://matebeafoto.hu/",
+        "https://matebeafoto.hu/szolgaltatasok/eskuvoi-fotozas/",
+        "https://matebeafoto.hu/galeriak/eskuvoi-fotok/",
+        "https://matebeafoto.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "bardi-birtok-vendeghaz-szallas",
+      "name": "Bárdi Birtok Vendégház - Szállás",
+      "website": "http://www.bardibirtok.com/",
+      "contact_email": {
+        "value": "booking@bardibirtok.com",
+        "source_url": "https://bardibirtok.com/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://bardibirtok.com/", "https://bardibirtok.com/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "burattino-isk-jasdi-malom-kulcsos-haz",
+      "name": "BURATTINO Isk. Jásdi Malom Kulcsos Ház",
+      "website": "http://www.jasdimalom.atw.hu/",
+      "contact_email": {
+        "value": "info@burattino.hu",
+        "source_url": "http://users.atw.hu/jasdimalom/kapcs/kapcs.html",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://users.atw.hu/jasdimalom/",
+        "http://users.atw.hu/jasdimalom/kapcs/kapcs.html"
+      ],
+      "error": null
+    },
+    {
+      "id": "konya-attila",
+      "name": "Kónya Attila",
+      "website": "http://www.konyaattila.hu/",
+      "contact_email": {
+        "value": "info@konyaattila.hu",
+        "source_url": "https://konyaattila.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36305722420",
+        "source_url": "https://konyaattila.hu/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Zalaegerszeg, Zala, HU",
+        "source_url": "https://konyaattila.hu/kapcsolat/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://konyaattila.hu/",
+        "https://konyaattila.hu/kapcsolat/",
+        "https://konyaattila.hu/eskuvo_dj/dunantul/",
+        "https://konyaattila.hu/eskuvo_dj/zala-megye/zalaegerszeg/"
+      ],
+      "error": null
+    },
+    {
+      "id": "dj-herendi-zsolt",
+      "name": "Dj Herendi Zsolt",
+      "website": "http://dj-herendi-zsolt7.webnode.hu/",
+      "contact_email": {
+        "value": "zsolti.herendi@gmail.com",
+        "source_url": "https://www.djherendi.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "06-30-377-6151",
+        "source_url": "https://www.djherendi.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://www.djherendi.hu/", "https://www.djherendi.hu/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "provence-wedding-eskuvo-es-rendezvenyhelyszin",
+      "name": "Provence Wedding Esküvő és Rendezvényhelyszín",
+      "website": "http://www.provencewedding.hu/",
+      "contact_email": {
+        "value": "info@provencewedding.hu",
+        "source_url": "https://provencewedding.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://provencewedding.hu/"],
+      "error": null
+    },
+    {
+      "id": "finta-rendezvenyhaz",
+      "name": "Finta Rendezvényház",
+      "website": "http://fintarendezvenyhaz.hu/",
+      "contact_email": {
+        "value": "fintarendezvenyhaz@gmail.com",
+        "source_url": "https://fintarendezvenyhaz.hu/eskuvohelyszin/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://fintarendezvenyhaz.hu/",
+        "https://fintarendezvenyhaz.hu/eskuvohelyszin/",
+        "https://fintarendezvenyhaz.hu/rendezvenyhelyszin/",
+        "https://fintarendezvenyhaz.hu/eskuvohelyszin/"
+      ],
+      "error": null
+    },
+    {
+      "id": "uj-tunderkert-etterem",
+      "name": "Új Tündérkert Étterem",
+      "website": "https://www.ujtunderkert.hu/",
+      "contact_email": {
+        "value": "info@ujtunderkert.hu",
+        "source_url": "https://ujtunderkert.hu/elerhetosegeink/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "06706045541",
+        "source_url": "https://ujtunderkert.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://ujtunderkert.hu/",
+        "https://ujtunderkert.hu/eskuvo-rendezveny/",
+        "https://ujtunderkert.hu/elerhetosegeink/",
+        "https://ujtunderkert.hu/eskovoi-ajanlataink/"
+      ],
+      "error": null
+    },
+    {
+      "id": "lazi-to-liget",
+      "name": "Lazi-tó liget",
+      "website": "http://www.lazito.hu/",
+      "contact_email": {
+        "value": "lazitoliget@gmail.com",
+        "source_url": "https://www.lazito.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36209866445",
+        "source_url": "https://www.lazito.hu/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Halász Mihály u. 24., 2373, Dabas, HU",
+        "source_url": "https://www.lazito.hu/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://www.lazito.hu/",
+        "https://www.lazito.hu/eskuvo",
+        "https://www.lazito.hu/rendezvenyek",
+        "https://www.lazito.hu/kapcsolat"
+      ],
+      "error": null
+    },
+    {
+      "id": "forster-vadaszkastely",
+      "name": "Forster Vadászkastély",
+      "website": "https://www.forstereskuvo.hu/",
+      "contact_email": {
+        "value": "marketing@forstereskuvo.hu",
+        "source_url": "https://forstereskuvo.hu/",
+        "evidence": "json_ld"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://forstereskuvo.hu/"],
+      "error": null
+    },
+    {
+      "id": "deak-udvarhaz-the-secret-place",
+      "name": "Deák Udvarház- The secret place",
+      "website": "http://deakudvarhaz.com/",
+      "contact_email": {
+        "value": "info@deakudvarhaz.com",
+        "source_url": "https://deakudvarhaz.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://deakudvarhaz.com/",
+        "https://deakudvarhaz.com/eskuvoi-ajanlat/",
+        "https://deakudvarhaz.com/eskuvoi-galeria/",
+        "https://deakudvarhaz.com/eskuvok-2026/"
+      ],
+      "error": null
+    },
+    {
+      "id": "viktoria-fogado",
+      "name": "Viktória Fogadó",
+      "website": "http://www.viktoriafogado.hu/",
+      "contact_email": {
+        "value": "victoryzonekft@gmail.com",
+        "source_url": "https://www.viktoriafogado.hu/elerhetoseg/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.viktoriafogado.hu/",
+        "https://www.viktoriafogado.hu/eskuvoi-ajanlat-2026/",
+        "https://www.viktoriafogado.hu/elerhetoseg/",
+        "https://www.viktoriafogado.hu/1869-2/"
+      ],
+      "error": null
+    },
+    {
+      "id": "tomayer-birtok",
+      "name": "Tomayer Birtok",
+      "website": "http://www.tomayerbirtok.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36304133213",
+        "source_url": "https://tomayerbirtok.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://tomayerbirtok.hu/",
+        "https://tomayerbirtok.hu/eskuvo/",
+        "https://tomayerbirtok.hu/exkluziv-mini-eskuvo/",
+        "https://tomayerbirtok.hu/rendezvenyek/"
+      ],
+      "error": null
+    },
+    {
+      "id": "aranyhalas-tanya",
+      "name": "Aranyhalas Tanya",
+      "website": "http://www.aranyhalas.hu/",
+      "contact_email": {
+        "value": "aranyhalastanya@gmail.com",
+        "source_url": "https://aranyhalas.hu/elerhetosegek/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://aranyhalas.hu/",
+        "https://aranyhalas.hu/eskuvo-helyszin/",
+        "https://aranyhalas.hu/ceges-rendezvenyek/",
+        "https://aranyhalas.hu/elerhetosegek/"
+      ],
+      "error": null
+    },
+    {
+      "id": "beautiful-wedding-eskuvoszervezes",
+      "name": "Beautiful Wedding Esküvőszervezés",
+      "website": "https://www.eskuvoszervezot.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://eskuvoszervezot.hu/",
+        "https://eskuvoszervezot.hu/hungarian-wedding-award-az-ev-eskuvoszervezoje-2017",
+        "https://eskuvoszervezot.hu/miert-lettem-eskuvoszervezo",
+        "https://eskuvoszervezot.hu/"
+      ],
+      "error": null
+    },
+    {
+      "id": "dunaharaszti-rendezvenyhaz",
+      "name": "Dunaharaszti Rendezvényház",
+      "website": "http://www.drh.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "0036202345044",
+        "source_url": "https://www.drh.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.drh.hu/",
+        "https://www.drh.hu/eskuvo/eskuvo-helyszin",
+        "https://www.drh.hu/eskuvo/eskuvoszervezo-csapatunk",
+        "https://www.drh.hu/eskuvo/eskuvoi-menu-etlap"
+      ],
+      "error": null
+    },
+    {
+      "id": "rozsa-diana-eskuvo-es-rendezvenyszervezo",
+      "name": "Rózsa Diána esküvő és -rendezvényszervező",
+      "website": "https://www.boldogsagod.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36 30 644 0439",
+        "source_url": "https://www.boldogsagod.hu/kapcsolat",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.boldogsagod.hu/",
+        "https://www.boldogsagod.hu/eskuvoszervezes",
+        "https://www.boldogsagod.hu/kapcsolat"
+      ],
+      "error": null
+    },
+    {
+      "id": "satras",
+      "name": "Sátras",
+      "website": "http://www.satraseskuvo.com/",
+      "contact_email": {
+        "value": "hello@satraseskuvo.com",
+        "source_url": "https://satraseskuvo.com/kapcsolat",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://satraseskuvo.com/",
+        "https://satraseskuvo.com/",
+        "https://satraseskuvo.com/kapcsolat"
+      ],
+      "error": null
+    },
+    {
+      "id": "vintage",
+      "name": "Vintage",
+      "website": "https://vintage-eskuvo.hu/",
+      "contact_email": {
+        "value": "szilvia@vintage-eskuvo.hu",
+        "source_url": "https://vintage-eskuvo.hu/elerhetoseg/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": {
+        "value": "+3620/527 4133",
+        "source_url": "https://vintage-eskuvo.hu/elerhetoseg/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://vintage-eskuvo.hu/",
+        "https://vintage-eskuvo.hu/elerhetoseg/",
+        "https://vintage-eskuvo.hu/gyakori-eskuvoi-kerdesek-2024-ben/",
+        "https://vintage-eskuvo.hu/"
+      ],
+      "error": null
+    },
+    {
+      "id": "nicol-eskuvoi-bolt",
+      "name": "Nicol Esküvői Bolt",
+      "website": "https://www.eskuvoibolt.hu/",
+      "contact_email": {
+        "value": "info@nicolpartybolt.hu",
+        "source_url": "https://nicolpartybolt.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36302680049",
+        "source_url": "https://nicolpartybolt.hu/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Nyugati tér 4. fszt. 8. Kapucsengő: 4, 1132, Budapest, HU",
+        "source_url": "https://nicolpartybolt.hu/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://nicolpartybolt.hu/",
+        "https://nicolpartybolt.hu/csillagszoro-eskuvore",
+        "https://nicolpartybolt.hu/shop_contact.php",
+        "https://nicolpartybolt.hu/shop_contact.php?tab=payment"
+      ],
+      "error": null
+    },
+    {
+      "id": "eskuvo-specialista",
+      "name": "Esküvő Specialista",
+      "website": "http://eskuvospecialista.hu/",
+      "contact_email": {
+        "value": "info@eskuvospecialista.hu",
+        "source_url": "https://eskuvospecialista.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36305318721",
+        "source_url": "https://eskuvospecialista.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://eskuvospecialista.hu/",
+        "https://eskuvospecialista.hu/mikor-erdemes-lefoglalni-a-dj-t-rendezveny-es-eskuvoszervezesi-kisokos/",
+        "https://eskuvospecialista.hu/extra-szolgaltatasok-eskuvokre-es-rendezvenyekre-fustgep-konfettiagyu-kulonleges-fenyek/",
+        "https://eskuvospecialista.hu/eskuvoi-dj-elerhetosege/"
+      ],
+      "error": null
+    },
+    {
+      "id": "key-wedding-eskuvoszervezes",
+      "name": "Key Wedding Esküvőszervezés",
+      "website": "https://www.keyweddingplanner.hu/",
+      "contact_email": {
+        "value": "info@keyweddinplanner.hu",
+        "source_url": "https://www.keyweddingplanner.hu/elerhetosegek/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.keyweddingplanner.hu/",
+        "https://www.keyweddingplanner.hu/elerhetosegek/",
+        "https://www.keyweddingplanner.hu/",
+        "https://www.keyweddingplanner.hu/eskuvoszervezes-arak/"
+      ],
+      "error": null
+    },
+    {
+      "id": "eskuvo-rendezveny-wellness",
+      "name": "Esküvő Rendezvény Wellness",
+      "website": "http://bagoly.hu/",
+      "contact_email": {
+        "value": "bagoly@bagoly.hu",
+        "source_url": "https://bagoly-fogado.hu/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+36703301086",
+        "source_url": "https://bagoly-fogado.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://bagoly-fogado.hu/",
+        "https://bagolyeskuvo.hu/",
+        "https://bagoly-fogado.hu/impresszum/",
+        "https://bagoly-fogado.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "cintia-events-in",
+      "name": "Cintia Events in",
+      "website": "https://www.cintiaevents.com/",
+      "contact_email": {
+        "value": "cintia@cintiaevents.com",
+        "source_url": "https://cintiaevents.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://cintiaevents.com/",
+        "https://cintiaevents.com/cintia-events-blog/",
+        "https://cintiaevents.com/2026/02/multicultural-magic-in-25-months-a-wedding-at-aranybastya/",
+        "https://cintiaevents.com/category/weddings/"
+      ],
+      "error": null
+    },
+    {
+      "id": "eskuvo-fotografus",
+      "name": "Esküvő Fotográfus",
+      "website": "https://www.weddingphotography.hu/",
+      "contact_email": {
+        "value": "csaba.lutsch@gmail.com",
+        "source_url": "https://www.weddingphotography.hu/kapcsolat/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.weddingphotography.hu/",
+        "https://www.weddingphotography.hu/eskuvok/",
+        "https://www.weddingphotography.hu/kapcsolat/",
+        "https://www.weddingphotography.hu/partnerek/"
+      ],
+      "error": null
+    },
+    {
+      "id": "eva-eskuvoi-ruhaszalon",
+      "name": "Éva Esküvői Ruhaszalon",
+      "website": "http://evaeskuvo.hu/",
+      "contact_email": {
+        "value": "csekme.eva@gmail.com",
+        "source_url": "http://evaeskuvo.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://evaeskuvo.hu/", "http://evaeskuvo.hu/kapcsolat"],
+      "error": null
+    },
+    {
+      "id": "nyitrai-sandor-ceremoniamester",
+      "name": "Nyitrai Sándor ceremóniamester",
+      "website": "https://nyitraisandor.hu/",
+      "contact_email": {
+        "value": "nyitrai.sandor1986@gmail.com",
+        "source_url": "https://nyitraisandor.hu/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+36205960953",
+        "source_url": "https://nyitraisandor.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://nyitraisandor.hu/",
+        "https://nyitraisandor.hu/eskuvo-paroknak",
+        "https://nyitraisandor.hu/ceges-rendezvenyek",
+        "https://nyitraisandor.hu/eskuvoi-tippek"
+      ],
+      "error": null
+    },
+    {
+      "id": "elisa-eskuvoi-ruhaszalon",
+      "name": "Elisa Esküvői Ruhaszalon",
+      "website": "https://elisa-eskuvoiruhaszalon.uzleti.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36704663245",
+        "source_url": "https://elisa-eskuvoiruhaszalon.uzleti.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://elisa-eskuvoiruhaszalon.uzleti.hu/"],
+      "error": null
+    },
+    {
+      "id": "barus-eskuvo-es-rendezveny-kozpont",
+      "name": "Barus esküvő és rendezvény központ",
+      "website": "http://weddingbarus.com/",
+      "contact_email": {
+        "value": "info@weddingbarus.com",
+        "source_url": "https://weddingbarus.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+421908117881",
+        "source_url": "https://weddingbarus.com/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://weddingbarus.com/",
+        "https://weddingbarus.com/eskuvoi-helyszin.php",
+        "https://weddingbarus.com/kontakt.php"
+      ],
+      "error": null
+    },
+    {
+      "id": "wonder-memories",
+      "name": "Wonder Memories",
+      "website": "http://www.wondermemories.hu/",
+      "contact_email": {
+        "value": "info@wondermemories.hu",
+        "source_url": "https://wondermemories.hu/?fbclid=IwY2xjawTm9uFwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMGhvSEtvVUVqMk1CN0hTYW9zcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEexqV8KkpWjmi8Emb0epGTjVJSVfCT24Y9BDWHHm4BEgzp0VvOMdE08lERvtY_aem_QI9zbh8w7RUmatZx3NXjEQ",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36305696474",
+        "source_url": "https://wondermemories.hu/?fbclid=IwY2xjawTm9uFwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMGhvSEtvVUVqMk1CN0hTYW9zcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEexqV8KkpWjmi8Emb0epGTjVJSVfCT24Y9BDWHHm4BEgzp0VvOMdE08lERvtY_aem_QI9zbh8w7RUmatZx3NXjEQ",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://wondermemories.hu/?fbclid=IwY2xjawTm9uFwZG9mBWV4dG4DYWVtAjEwAGJyaWQRMGhvSEtvVUVqMk1CN0hTYW9zcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEexqV8KkpWjmi8Emb0epGTjVJSVfCT24Y9BDWHHm4BEgzp0VvOMdE08lERvtY_aem_QI9zbh8w7RUmatZx3NXjEQ",
+        "https://wondermemories.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "doszpod-monika",
+      "name": "Doszpod Mónika",
+      "website": "http://dominostudio.hu/",
+      "contact_email": {
+        "value": "info@dominostudio.hu",
+        "source_url": "https://dominostudio.hu/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://dominostudio.hu/",
+        "https://dominostudio.hu/eskuvoi_video/",
+        "https://dominostudio.hu/eskuvoi-fotozas/",
+        "https://dominostudio.hu/eskuvoszervezes-tippek/"
+      ],
+      "error": null
+    },
+    {
+      "id": "csonakhaz-mulato",
+      "name": "Csónakház Mulató",
+      "website": "https://www.romaigourmand.hu/copy-of-about",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.romaigourmand.hu/copy-of-about",
+        "https://www.romaigourmand.hu/about-2",
+        "https://www.romaigourmand.hu/copy-of-about"
+      ],
+      "error": null
+    },
+    {
+      "id": "eskuvo-es-rendezveny-dj-mobildj-hu",
+      "name": "Esküvő és Rendezvény DJ - MOBILDJ.HU",
+      "website": "https://www.mobildj.hu/",
+      "contact_email": {
+        "value": "rendezveny@mobildj.hu",
+        "source_url": "https://www.mobildj.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.mobildj.hu/",
+        "https://www.mobildj.hu/index.html",
+        "https://www.mobildj.hu/index-7.html"
+      ],
+      "error": null
+    },
+    {
+      "id": "minya-weddings",
+      "name": "Minya weddings",
+      "website": "http://www.minyagergo.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.minyagergo.hu/",
+        "https://www.minyagergo.hu/eskuvoi-film/",
+        "https://www.minyagergo.hu/kontakt/",
+        "https://www.minyagergo.hu/portfolio/"
+      ],
+      "error": null
+    },
+    {
+      "id": "doroghouse",
+      "name": "Doroghouse",
+      "website": "https://doroghouse.com/",
+      "contact_email": {
+        "value": "szucsi@doroghouse.com",
+        "source_url": "https://doroghouse.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": {
+        "value": "Hamzsabégi út 60, 1113, Budapest, Pest, Magyarország",
+        "source_url": "https://doroghouse.com/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://doroghouse.com/",
+        "https://doroghouse.com/eskuvoi-dj-budapest/",
+        "https://doroghouse.com/eskuvoi-dj-arak-2024-ben-mennyibe-kerul-egy-eskuvoi-dj/",
+        "https://doroghouse.com/eskuvoi-bevonulo-zene/"
+      ],
+      "error": null
+    },
+    {
+      "id": "fotostudio-koves-szilvia",
+      "name": "FOTÓSTÚDIÓ Köves Szilvia",
+      "website": "https://www.kovesszilviafoto.com/",
+      "contact_email": {
+        "value": "sylviakoves@gmail.com",
+        "source_url": "https://kovesszilviafoto.com/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": {
+        "value": "+36304296046",
+        "source_url": "https://kovesszilviafoto.com/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://kovesszilviafoto.com/",
+        "https://kovesszilviafoto.com/eskuvoi-fotozas/",
+        "https://kovesszilviafoto.com/rendezveny-fotozas/"
+      ],
+      "error": null
+    },
+    {
+      "id": "kapitany-peter-eskuvo-party-zenesz",
+      "name": "Kapitány Péter Esküvő-Party Zenész",
+      "website": "https://www.zene-foto.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "ERR_TLS_CERT_ALTNAME_INVALID fetching \"https://www.zene-foto.hu/\". For more information, pass `verbose: true` in the second argument to fetch()"
+    },
+    {
+      "id": "edjk-eskuvo-djk",
+      "name": "EDJK Esküvő DJK",
+      "website": "http://www.eskuvodjk.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://eskuvodjk.hu/",
+        "http://eskuvodjk.hu/kapcsolat/",
+        "https://eskuvodjk.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "peterdi-photo",
+      "name": "Peterdi Photo",
+      "website": "https://www.peterdiphoto.com/",
+      "contact_email": {
+        "value": "info@peterdiphoto.com",
+        "source_url": "https://peterdiphoto.com/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://peterdiphoto.com/",
+        "https://peterdiphoto.com/eskuvo-fotozas/",
+        "https://peterdiphoto.com/eszter-es-marton-90-fos-kulonleges-eskuvoje/",
+        "https://peterdiphoto.com/veronika-es-akos-meghitt-130-fos-eskuvoje/"
+      ],
+      "error": null
+    },
+    {
+      "id": "flow-in-love",
+      "name": "\"Flow in Love\"",
+      "website": "http://www.barthaandrea.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://barthaandrea.com/", "http://barthaandrea.com/eskuvo-eskuvoi-foto/"],
+      "error": null
+    },
+    {
+      "id": "djszolgaltatas",
+      "name": "djszolgáltatás",
+      "website": "https://www.djabonyi.hu/",
+      "contact_email": {
+        "value": "info@djszolgaltatas.hu",
+        "source_url": "https://www.djabonyi.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.djabonyi.hu/",
+        "https://www.djabonyi.hu/eskuvoi_dj_contact",
+        "https://www.djabonyi.hu/eskuvoi_dj_rendezveny",
+        "https://www.djabonyi.hu/eskuvoi-dj"
+      ],
+      "error": null
+    },
+    {
+      "id": "fordos-bence",
+      "name": "Fördős Bence",
+      "website": "http://design-jegygyuru.hu/",
+      "contact_email": {
+        "value": "benford1@gmail.com",
+        "source_url": "https://design-jegygyuru.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36205939104",
+        "source_url": "https://design-jegygyuru.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://design-jegygyuru.hu/"],
+      "error": null
+    },
+    {
+      "id": "becsei-ekszer-webshop-es-ekszerbolt-budapest",
+      "name": "Becsei Ékszer Webshop és Ékszerbolt Budapest",
+      "website": "https://becsei-ekszer.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36209864601",
+        "source_url": "https://becsei-ekszer.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://becsei-ekszer.hu/", "https://becsei-ekszer.hu/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "feil-ekszer-arany-es-gyemant-ekszerek-tervezese-es-gyartasa",
+      "name": "FEIL Ékszer | Arany és Gyémánt Ékszerek Tervezése és Gyártása",
+      "website": "https://feil.hu/",
+      "contact_email": {
+        "value": "info@feil.hu",
+        "source_url": "https://feil.hu/",
+        "evidence": "json_ld"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://feil.hu/",
+        "https://feil.hu/blog/menyasszonyi-ekszerek-teli-eskuvohoz/",
+        "https://feil.hu/kapcsolat/",
+        "https://feil.hu/uzenetkuldes-alap-adatok/"
+      ],
+      "error": null
+    },
+    {
+      "id": "ekszergyar-kft",
+      "name": "Ékszergyár Kft.",
+      "website": "http://www.ekszergyar.hu/",
+      "contact_email": {
+        "value": "levelek@ekszergyar.hu",
+        "source_url": "https://ekszergyar.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36203262504",
+        "source_url": "https://ekszergyar.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://ekszergyar.hu/",
+        "https://ekszergyar.hu/kapcsolat/elerhetosegeink/",
+        "https://ekszergyar.hu/kapcsolat/impresszum/",
+        "https://ekszergyar.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "white-black-jewellery-gyemant-ekszer",
+      "name": "White & Black Jewellery Gyémánt ékszer",
+      "website": "https://whiteandblack.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36304167365",
+        "source_url": "https://whiteandblack.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://whiteandblack.hu/", "https://whiteandblack.hu/kapcsolat"],
+      "error": null
+    },
+    {
+      "id": "napekszer-egyedi-ekszerek-es-otvosmunkak",
+      "name": "Napékszer-Egyedi ékszerek és ötvösmunkák",
+      "website": "https://napekszer.hu/",
+      "contact_email": {
+        "value": "info@napekszer.hu",
+        "source_url": "https://napekszer.hu/kapcsolat/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://napekszer.hu/",
+        "https://napekszer.hu/kapcsolat/",
+        "https://napekszer.hu/a-sutik-hasznalataval-kapcsolatos-tajekoztatas/"
+      ],
+      "error": null
+    },
+    {
+      "id": "studio-progress-nemesacel-karikagyuru-egyedi-eljegyzesi-gyur",
+      "name": "Studio Progress - Nemesacél Karikagyűrű, Egyedi Eljegyzési Gyűrű, Titán Karikagyűrű, Egyedi Karikagyűrű, Ötvös",
+      "website": "https://studioprogress.hu/",
+      "contact_email": {
+        "value": "menyhartrichard@gmail.com",
+        "source_url": "https://studioprogress.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "06702629229",
+        "source_url": "https://studioprogress.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://studioprogress.hu/", "https://studioprogress.hu/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "uristen-hazasodunk",
+      "name": "Úristen, házasodunk!",
+      "website": "http://uristenhazasodunk.hu/",
+      "contact_email": {
+        "value": "info@uristenhazasodunk.hu",
+        "source_url": "https://uristenhazasodunk.hu/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "06204587727",
+        "source_url": "https://uristenhazasodunk.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://uristenhazasodunk.hu/",
+        "https://uristenhazasodunk.hu/elerhetosegek/"
+      ],
+      "error": null
+    },
+    {
+      "id": "ora-gyor-premium",
+      "name": "ÓRA GYŐR - Prémium",
+      "website": "http://www.oragyor.hu/",
+      "contact_email": {
+        "value": "info@oragyor.hu",
+        "source_url": "https://www.oragyor.hu/kapcsolat",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36304621544",
+        "source_url": "https://www.oragyor.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://www.oragyor.hu/", "https://www.oragyor.hu/kapcsolat"],
+      "error": null
+    },
+    {
+      "id": "ujvilag-ekszer-ora-gyor-arkad",
+      "name": "Újvilág Ékszer Óra - Győr Árkád",
+      "website": "https://ekszer-ora.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://ekszer-ora.hu/", "https://ekszer-ora.hu/rolunk/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "aurum-zaloghaz-es-ekszeruzlet",
+      "name": "Aurum Zálogház és Ékszerüzlet",
+      "website": "https://aurumzaloghaz.hu/",
+      "contact_email": {
+        "value": "info@aurumzaloghaz.hu",
+        "source_url": "https://aurumzaloghaz.hu/elerhetoseg/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+3672312172",
+        "source_url": "https://aurumzaloghaz.hu/elerhetoseg/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://aurumzaloghaz.hu/",
+        "https://aurumzaloghaz.hu/kapcsolat/",
+        "https://aurumzaloghaz.hu/elerhetoseg/",
+        "https://aurumzaloghaz.hu/elerhetoseg/"
+      ],
+      "error": null
+    },
+    {
+      "id": "szapary-ekszerhaz",
+      "name": "Szapáry Ékszerház",
+      "website": "http://www.szaparyekszerhaz.hu/",
+      "contact_email": {
+        "value": "szaparyekszerhaz@gmail.com",
+        "source_url": "https://szaparyekszerhaz.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://szaparyekszerhaz.hu/", "https://szaparyekszerhaz.hu/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "chimera-ekszer",
+      "name": "Chimera Ékszer",
+      "website": "http://www.chimeraekszer.hu/",
+      "contact_email": {
+        "value": "info@chimeraekszer.hu",
+        "source_url": "https://chimeraekszer.hu/elerhetosegeink",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36304829000",
+        "source_url": "https://chimeraekszer.hu/shop_contact.php",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Érsek u. 5, 3300, Eger, HU",
+        "source_url": "https://chimeraekszer.hu/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://chimeraekszer.hu/",
+        "https://chimeraekszer.hu/elerhetosegeink",
+        "https://chimeraekszer.hu/shop_contact.php",
+        "https://chimeraekszer.hu/gyik"
+      ],
+      "error": null
+    },
+    {
+      "id": "palmay-design",
+      "name": "Pálmay Design",
+      "website": "http://www.palmaydesign.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36 30 9361 712 Bankkártyás fizetési lehetőség nincs. Készpénzes vagy utalásos fizetésre van lehetőség",
+        "source_url": "http://www.palmaydesign.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "http://www.palmaydesign.hu/",
+        "http://www.palmaydesign.hu/minden-ami-eskuvo.html",
+        "http://www.palmaydesign.hu/kapcsolat.html"
+      ],
+      "error": null
+    },
+    {
+      "id": "karikagyuru-miskolc",
+      "name": "Karikagyűrű Miskolc",
+      "website": "http://karikagyuru-miskolc.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://karikagyuru-miskolc.hu/",
+        "http://karikagyuru-miskolc.hu/kapcsolat"
+      ],
+      "error": null
+    },
+    {
+      "id": "casa-blanca-ekszer",
+      "name": "Casa Blanca Ékszer",
+      "website": "http://www.casablancaekszer.hu/",
+      "contact_email": {
+        "value": "casablancaekszer@gmail.com",
+        "source_url": "https://www.casablancaekszer.hu/",
+        "evidence": "json_ld"
+      },
+      "contact_phone": {
+        "value": "+3646354294",
+        "source_url": "https://www.casablancaekszer.hu/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Széchenyi István út 83, 3525, Miskolc, Borsod-Abaúj-Zemplén, Hungary",
+        "source_url": "https://www.casablancaekszer.hu/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": ["https://www.casablancaekszer.hu/"],
+      "error": null
+    },
+    {
+      "id": "ekszermuhely",
+      "name": "Ékszerműhely",
+      "website": "http://ekszermuhely.hu/",
+      "contact_email": {
+        "value": "ekszermuhely@gmail.com",
+        "source_url": "https://ekszermuhely.hu/elerhetosegek/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": {
+        "value": "+36207773209",
+        "source_url": "https://ekszermuhely.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://ekszermuhely.hu/",
+        "https://ekszermuhely.hu/elerhetosegek/",
+        "https://ekszermuhely.hu/impresszum/"
+      ],
+      "error": null
+    },
+    {
+      "id": "art-zafir-ekszer-otvos",
+      "name": "ART-ZAFIR ékszer,ÖTVÖS",
+      "website": "http://www.artzafir.hu/",
+      "contact_email": {
+        "value": "artzafir@gmail.com",
+        "source_url": "http://artzafir.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://artzafir.hu/"],
+      "error": null
+    },
+    {
+      "id": "fulop-ekszer",
+      "name": "Fülöp Ékszer",
+      "website": "https://fulopekszer.hu/",
+      "contact_email": {
+        "value": "kapcsolat@fulopekszer.hu",
+        "source_url": "https://fulopekszer.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://fulopekszer.hu/"],
+      "error": null
+    },
+    {
+      "id": "szekeres-cukraszda",
+      "name": "Szekeres Cukrászda",
+      "website": "http://www.szekerescukraszda.com/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36205058077",
+        "source_url": "https://www.szekerescukraszda.com/kapcsolat",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.szekerescukraszda.com/",
+        "https://www.szekerescukraszda.com/kapcsolat"
+      ],
+      "error": null
+    },
+    {
+      "id": "diana-cukraszda",
+      "name": "Diána Cukrászda",
+      "website": "https://dianacukraszda.webnode.hu/",
+      "contact_email": {
+        "value": "dia.pallagi@gmail.com",
+        "source_url": "https://dianacukraszda.webnode.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://dianacukraszda.webnode.hu/",
+        "https://dianacukraszda.webnode.hu/eskuvo/",
+        "https://dianacukraszda.webnode.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "harrer-csokolademuhely-es-cukraszda",
+      "name": "Harrer Csokoládéműhely és Cukrászda",
+      "website": "http://www.harrerchocolat.com/",
+      "contact_email": {
+        "value": "office@harrerchocolat.com",
+        "source_url": "https://harrerchocolat.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://harrerchocolat.com/", "https://harrerchocolat.com/kapcsolat-32"],
+      "error": null
+    },
+    {
+      "id": "truffel-cukraszda",
+      "name": "Trüffel Cukrászda",
+      "website": "http://www.truffel.hu/",
+      "contact_email": {
+        "value": "info@truffel.hu",
+        "source_url": "https://truffel.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36704096661",
+        "source_url": "https://truffel.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://truffel.hu/",
+        "https://truffel.hu/szolgaltatasaink",
+        "https://truffel.hu/kapcsolat"
+      ],
+      "error": null
+    },
+    {
+      "id": "krem-cukraszda-es-kavezo",
+      "name": "Krém Cukrászda és Kávézó",
+      "website": "https://kremcukraszda.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "06205951000",
+        "source_url": "https://kremcukraszda.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://kremcukraszda.hu/", "https://kremcukraszda.hu/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "koko-cukraszda",
+      "name": "Kokó Cukrászda",
+      "website": "http://www.kokocukraszda.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://www.kokocukraszda.hu/"],
+      "error": null
+    },
+    {
+      "id": "leda-cukraszda",
+      "name": "Léda Cukrászda",
+      "website": "https://hu-hu.facebook.com/pages/L%C3%A9da-Cukr%C3%A1szda-%C3%A9s-Fagyiz%C3%B3-Balatonsz%C3%A1rsz%C3%B3/162019993867066",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "meszaros-cukraszda",
+      "name": "Mészáros Cukrászda",
+      "website": "http://cukraszda.eu/",
+      "contact_email": {
+        "value": "info@meszaroscukraszda.hu",
+        "source_url": "https://meszaroscukraszda.hu/hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://meszaroscukraszda.hu/hu/",
+        "https://meszaroscukraszda.hu/hu/blog/eskuvoi-tortak/",
+        "https://meszaroscukraszda.hu/hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "becsi-kavehaz-es-cukraszda-kft-sutemenyek-tortak",
+      "name": "Bécsi Kávéház és Cukrászda Kft - Sütemények, torták.",
+      "website": "http://becsikh.hu/",
+      "contact_email": {
+        "value": "rendeles.becsikavehaz@gmail.com",
+        "source_url": "https://www.becsikh.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.becsikh.hu/",
+        "https://www.becsikh.hu/impresszum/",
+        "https://www.becsikh.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "schonig-cukraszda-es-kavehaz",
+      "name": "Schőnig Cukrászda és Kávéház",
+      "website": "http://www.schonigcukraszda.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36309922321",
+        "source_url": "https://www.schonigcukraszda.hu/impresszum",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.schonigcukraszda.hu/",
+        "https://www.schonigcukraszda.hu/kapcsolat",
+        "https://www.schonigcukraszda.hu/impresszum"
+      ],
+      "error": null
+    },
+    {
+      "id": "viktoria-cukraszda-es-kavehaz",
+      "name": "Viktória Cukrászda és Kávéház",
+      "website": "http://viktoriacukraszda.hu/",
+      "contact_email": {
+        "value": "viktoriacukraszda06@gmail.com",
+        "source_url": "https://viktoriacukraszda.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://viktoriacukraszda.hu/", "https://viktoriacukraszda.hu/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "mandula-cukraszda",
+      "name": "Mandula Cukrászda",
+      "website": "http://www.mandulacukraszda.hu/",
+      "contact_email": {
+        "value": "mandulacuki@gmail.com",
+        "source_url": "http://mandulacukraszda.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://mandulacukraszda.hu/"],
+      "error": null
+    },
+    {
+      "id": "jordanics-cukraszda",
+      "name": "Jordanics Cukrászda",
+      "website": "http://jordanics.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://jordanics.hu/"],
+      "error": null
+    },
+    {
+      "id": "krisztina-cukraszda",
+      "name": "Krisztina Cukrászda",
+      "website": "http://www.krisztinacukraszda.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://www.krisztinacukraszda.hu/"],
+      "error": null
+    },
+    {
+      "id": "aranyalma-cukraszda",
+      "name": "Aranyalma Cukrászda",
+      "website": "https://www.aranyalmacukraszda.hu/",
+      "contact_email": {
+        "value": "aranyalmacukraszda@gmail.com",
+        "source_url": "https://aranyalmacukraszda.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://aranyalmacukraszda.hu/",
+        "https://aranyalmacukraszda.hu/eskuvo/",
+        "https://aranyalmacukraszda.hu/eskuvo/",
+        "https://aranyalmacukraszda.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "kottan-cukraszda",
+      "name": "Kottán Cukrászda",
+      "website": "http://www.kottancukraszda.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "HTTP 530"
+    },
+    {
+      "id": "sug-art-by-juhos-joci",
+      "name": "Sug'art by Juhos Joci",
+      "website": "http://www.juhosjoci.com/",
+      "contact_email": {
+        "value": "hello@juhosjoci.com",
+        "source_url": "https://www.juhosjoci.com/kapcsolat",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36705548989",
+        "source_url": "https://www.juhosjoci.com/kapcsolat",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://www.juhosjoci.com/", "https://www.juhosjoci.com/kapcsolat"],
+      "error": null
+    },
+    {
+      "id": "eniko-91-cukraszipari-kft",
+      "name": "Enikő 91 Cukrászipari Kft.",
+      "website": "http://www.enikocukraszuzem.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://www.enikocukraszuzem.hu/",
+        "http://www.enikocukraszuzem.hu/kapcsolat.html"
+      ],
+      "error": null
+    },
+    {
+      "id": "manyi-cukraszda",
+      "name": "Mányi Cukrászda",
+      "website": "http://www.manyicukraszda.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://manyicukraszda.hu/"],
+      "error": null
+    },
+    {
+      "id": "mini-cukraszda-kormend",
+      "name": "Mini Cukrászda, Körmend",
+      "website": "http://www.minicukraszda.hu/",
+      "contact_email": {
+        "value": "info@minicukraszda.hu",
+        "source_url": "https://minicukraszda.hu/kapcsolat/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": {
+        "value": "06304052118",
+        "source_url": "https://minicukraszda.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://minicukraszda.hu/", "https://minicukraszda.hu/kapcsolat/"],
+      "error": null
+    },
+    {
+      "id": "torta-palota",
+      "name": "Torta Palota",
+      "website": "http://www.tortapalota.hu/",
+      "contact_email": {
+        "value": "tortapalota@gmail.com",
+        "source_url": "https://tortapalota.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36202889891",
+        "source_url": "https://tortapalota.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://tortapalota.hu/",
+        "https://tortapalota.hu/eskuvoi-tortarendeles/",
+        "https://tortapalota.hu/eskuvoi-tortarendeles/"
+      ],
+      "error": null
+    },
+    {
+      "id": "ricsi-cukraszda-kft",
+      "name": "Ricsi-Cukrászda Kft.",
+      "website": "http://www.ricsicukraszda.hu/",
+      "contact_email": {
+        "value": "rendelesricsi@gmail.com",
+        "source_url": "https://ricsicukraszda.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://ricsicukraszda.hu/",
+        "https://ricsicukraszda.hu/termekkategoria/tortak/eskuvoi-tortak/"
+      ],
+      "error": null
+    },
+    {
+      "id": "sweet-mor",
+      "name": "Sweet Mór",
+      "website": "https://sweetmor.hu/",
+      "contact_email": {
+        "value": "sweetmorinfo@gmail.com",
+        "source_url": "https://sweetmor.hu/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://sweetmor.hu/",
+        "https://sweetmor.hu/eskuvo",
+        "https://sweetmor.hu/Kapcsolat"
+      ],
+      "error": null
+    },
+    {
+      "id": "sziro-cukraszda",
+      "name": "Sziro Cukrászda",
+      "website": "http://www.szirocukraszda.hu/",
+      "contact_email": {
+        "value": "cukraszda@sziro.hu",
+        "source_url": "https://szirocukraszda.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36302224197",
+        "source_url": "https://szirocukraszda.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://szirocukraszda.hu/", "https://szirocukraszda.hu/impresszum"],
+      "error": null
+    },
+    {
+      "id": "kisfaludy-cukraszda-es-fagyizo",
+      "name": "Kisfaludy Cukrászda és Fagyizó",
+      "website": "http://www.neuolaszfagyi.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "//003682422168",
+        "source_url": "http://www.neuolaszfagyi.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "http://www.neuolaszfagyi.hu/",
+        "http://www.neuolaszfagyi.hu/eskuvo.html",
+        "http://www.neuolaszfagyi.hu/contact.html"
+      ],
+      "error": null
+    },
+    {
+      "id": "czukorka",
+      "name": "Czukorka",
+      "website": "http://www.czukorka.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://www.czukorka.hu/", "https://www.czukorka.hu/eskuvoitortak.html"],
+      "error": null
+    },
+    {
+      "id": "mignon-kft",
+      "name": "Mignon Kft.",
+      "website": "http://mignonkft.hu/",
+      "contact_email": {
+        "value": "info@mignonkft.hu",
+        "source_url": "http://www.mignonkft.hu/kapcsolat",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://www.mignonkft.hu/",
+        "http://www.mignonkft.hu/szolgaltatas/rendezvenyekre",
+        "http://www.mignonkft.hu/galeria/eskuvoi-tortak",
+        "http://www.mignonkft.hu/kapcsolat"
+      ],
+      "error": null
+    },
+    {
+      "id": "melba-cukraszda",
+      "name": "Melba Cukrászda",
+      "website": "http://www.melbacukraszat.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://www.melbacukraszat.hu/"],
+      "error": null
+    },
+    {
+      "id": "pierre-cukraszat",
+      "name": "Pierre Cukrászat",
+      "website": "http://pierrecukraszat.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://pierrecukraszat.hu/", "https://pierrecukraszat.hu/kapcsolat"],
+      "error": null
+    },
+    {
+      "id": "stoki-cukraszda",
+      "name": "Stoki Cukrászda",
+      "website": "http://stokimanufaktura.hu/",
+      "contact_email": {
+        "value": "stokimanufaktura@gmail.com",
+        "source_url": "https://www.stokimanufaktura.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36305979799",
+        "source_url": "https://www.stokimanufaktura.hu/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "8200 Veszprém, Cholnoky Jenő utca 11/A, HU",
+        "source_url": "https://www.stokimanufaktura.hu/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://www.stokimanufaktura.hu/",
+        "https://www.stokimanufaktura.hu/eskuvok/"
+      ],
+      "error": null
+    },
+    {
+      "id": "edes-alom-cukraszda",
+      "name": "Édes Álom Cukrászda",
+      "website": "https://edesalomcukraszda.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "The operation was aborted."
+    },
+    {
+      "id": "habvero-torta-es-sutimuhely",
+      "name": "Habverő Torta és Sütiműhely",
+      "website": "https://www.habvero.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36202700535",
+        "source_url": "https://www.habvero.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://www.habvero.hu/",
+        "https://www.habvero.hu/kategoria/22_Eskuvoi-tortak",
+        "https://www.habvero.hu/kategoria/31_Eskuvoi-kinalat",
+        "https://www.habvero.hu/kategoria/23_Elerhetosegeim"
+      ],
+      "error": null
+    },
+    {
+      "id": "szanticska-invest-kft",
+      "name": "Szanticska-Invest Kft",
+      "website": "http://szanticska.eu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": {
+        "value": "Abaújlak-Szanticska, HU",
+        "source_url": "https://szanticska.eu/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": ["https://szanticska.eu/"],
+      "error": null
+    },
+    {
+      "id": "katica-vendeghaz-aggtelek",
+      "name": "Katica Vendégház Aggtelek",
+      "website": "http://www.aggtelekivendeghaz.hu/",
+      "contact_email": {
+        "value": "aggtelekivendeghaz.hu@gmail.com",
+        "source_url": "http://www.aggtelekivendeghaz.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://www.aggtelekivendeghaz.hu/",
+        "http://www.aggtelekivendeghaz.hu/rendezvenyhelyszin",
+        "http://www.aggtelekivendeghaz.hu/kapcsolat",
+        "http://www.aggtelekivendeghaz.hu/hirek/rendezvenyhelyszinrendezvenyterem-berles"
+      ],
+      "error": null
+    },
+    {
+      "id": "akasztoi-horgaszpark-es-halascsarda",
+      "name": "Akasztói Horgászpark és Halascsárda",
+      "website": "https://www.halascsarda.hu/",
+      "contact_email": {
+        "value": "info@halascsarda.hu",
+        "source_url": "https://halascsarda.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://halascsarda.hu/",
+        "https://halascsarda.hu/rendezveny",
+        "https://halascsarda.hu/kapcsolat/cookiek",
+        "https://halascsarda.hu/kapcsolat/adatkezeles"
+      ],
+      "error": null
+    },
+    {
+      "id": "suvadas-liget",
+      "name": "Suvadás Liget",
+      "website": "https://suvadas-liget.hu/",
+      "contact_email": {
+        "value": "arlo.turisztika@gmail.com",
+        "source_url": "https://suvadas-liget.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://suvadas-liget.hu/",
+        "https://suvadas-liget.hu/rendezvenyek/",
+        "https://suvadas-liget.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "arany-trofea-vendeghaz",
+      "name": "Arany Trófea Vendégház .",
+      "website": "http://www.aranytrofeavendeghaz.hu/",
+      "contact_email": {
+        "value": "info@aranytrofeavendeghaz.hu",
+        "source_url": "https://aranytrofeavendeghaz.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36704092767",
+        "source_url": "https://aranytrofeavendeghaz.hu/kapcsolat/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://aranytrofeavendeghaz.hu/",
+        "https://aranytrofeavendeghaz.hu/rendezvenyek/",
+        "https://aranytrofeavendeghaz.hu/kapcsolat/",
+        "https://aranytrofeavendeghaz.hu/rendezvenyek/"
+      ],
+      "error": null
+    },
+    {
+      "id": "henye-vendeghaz",
+      "name": "Henye Vendégház",
+      "website": "http://www.dereszla.com/",
+      "contact_email": {
+        "value": "dereszla@dereszla.com",
+        "source_url": "http://dereszla.com/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://dereszla.com/"],
+      "error": null
+    },
+    {
+      "id": "galffy-birtok",
+      "name": "Gálffy Birtok",
+      "website": "http://www.galffybirtok.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36204406381",
+        "source_url": "https://galffybirtok.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://galffybirtok.hu/"],
+      "error": null
+    },
+    {
+      "id": "szent-andras-kastely",
+      "name": "Szent András Kastély",
+      "website": "http://www.szentandraskastely.hu/",
+      "contact_email": {
+        "value": "info@szentandraskastely.hu",
+        "source_url": "http://szentandraskastely.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36 30 9363 390",
+        "source_url": "http://szentandraskastely.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "http://szentandraskastely.hu/",
+        "http://szentandraskastely.hu/rendezvenyek/eskuvo-a-kastelyban/",
+        "http://szentandraskastely.hu/rendezvenyek/",
+        "http://szentandraskastely.hu/elerhetosegek/"
+      ],
+      "error": null
+    },
+    {
+      "id": "feher-birtok",
+      "name": "Fehér Birtok",
+      "website": "http://www.hiuzpanzio.com/",
+      "contact_email": {
+        "value": "info@hiuzpanzio.com",
+        "source_url": "https://hiuzpanzio.wordpress.com/kapcsolat/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36305194671",
+        "source_url": "https://hiuzpanzio.wordpress.com/kapcsolat/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://hiuzpanzio.wordpress.com/",
+        "https://hiuzpanzio.wordpress.com/rendezvenyek/",
+        "https://hiuzpanzio.wordpress.com/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "kertvendeglo",
+      "name": "Kertvendéglő",
+      "website": "http://www.kertvendeglo.eu/",
+      "contact_email": {
+        "value": "info@kertvendeglo.eu",
+        "source_url": "https://kertvendeglo.eu/kapcsolat/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://kertvendeglo.eu/",
+        "https://kertvendeglo.eu/eskuvo/",
+        "https://kertvendeglo.eu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "city-catering-dombovar",
+      "name": "City Catering Dombóvár",
+      "website": "https://citycatering.hu/",
+      "contact_email": {
+        "value": "titkarsag@eatrend.hu",
+        "source_url": "https://eatrend.hu/szolgaltatasok",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36706148484",
+        "source_url": "https://eatrend.hu/szolgaltatasok",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://eatrend.hu/szolgaltatasok", "https://eatrend.hu/kapcsolat"],
+      "error": null
+    },
+    {
+      "id": "dunafoldvari-var-etterem",
+      "name": "Dunaföldvári Vár Étterem",
+      "website": "http://www.varetterem.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.varetterem.hu/",
+        "https://www.varetterem.hu/galeria/eskuvok-rendezvenyek/galeria+-+eskuvok+-+rendezvenyek.html",
+        "https://www.varetterem.hu/rendezvenyek/rendezvenyek.html",
+        "https://www.varetterem.hu/galeria/galeria+-+eskuvok+-+rendezvenyek.html"
+      ],
+      "error": null
+    },
+    {
+      "id": "szelrozsa-birtok",
+      "name": "Szélrózsa Birtok",
+      "website": "http://www.szelrozsabirtok.hu/",
+      "contact_email": {
+        "value": "pyrofokusz@t-online.hu",
+        "source_url": "http://www.szelrozsabirtok.hu/rendezvenyeink/",
+        "evidence": "mailto"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://www.szelrozsabirtok.hu/",
+        "http://www.szelrozsabirtok.hu/rendezvenyeink/",
+        "http://www.szelrozsabirtok.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "felsotarkany-faluhaz",
+      "name": "Felsőtárkány Faluház",
+      "website": "http://www.felsotarkany.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.felsotarkany.hu/",
+        "https://www.felsotarkany.hu/hu/kultura-programok/rendezvenyek",
+        "https://www.felsotarkany.hu/hu/kultura-programok/rendezvenyek/allando",
+        "https://www.felsotarkany.hu/hu/kultura-programok/rendezvenyek/eseti"
+      ],
+      "error": null
+    },
+    {
+      "id": "retreat-factory-a-szeszgyar",
+      "name": "Retreat Factory - a szeszgyár",
+      "website": "http://www.aszeszgyar.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "kulman-tanya",
+      "name": "Kulman tanya",
+      "website": "http://www.kulmantanya.hu/",
+      "contact_email": {
+        "value": "kulmantanya.fulophaza@gmail.com",
+        "source_url": "https://www.kulmantanya.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36 70 372 8402",
+        "source_url": "https://www.kulmantanya.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://www.kulmantanya.hu/"],
+      "error": null
+    },
+    {
+      "id": "zempleni-feher-szikla-turisztikai-kozpont-es-vadaszhaz-maz-f",
+      "name": "Zempléni Fehér Szikla Turisztikai Központ és Vadászház - Maz-Fa Kft.",
+      "website": "http://www.feherszikla.hu/",
+      "contact_email": {
+        "value": "mazfa@t-online.hu",
+        "source_url": "http://feherszikla.hu/kaplcsolat/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36-47/340-202",
+        "source_url": "http://feherszikla.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["http://feherszikla.hu/", "http://feherszikla.hu/kaplcsolat/"],
+      "error": null
+    },
+    {
+      "id": "kastelypark-vendeglo",
+      "name": "Kastélypark Vendéglő",
+      "website": "https://www.castle-park-restoran.eu/",
+      "contact_email": {
+        "value": "kastelypark19@gmail.com",
+        "source_url": "https://www.castle-park-restoran.eu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36-72372227",
+        "source_url": "https://www.castle-park-restoran.eu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://www.castle-park-restoran.eu/"],
+      "error": null
+    },
+    {
+      "id": "kishantos",
+      "name": "Kishantos",
+      "website": "http://www.helyszinrendezvenyhez.hu/",
+      "contact_email": {
+        "value": "kishantosvk@gmail.com",
+        "source_url": "http://helyszinrendezvenyhez.hu/kapcsolat/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://helyszinrendezvenyhez.hu/",
+        "http://helyszinrendezvenyhez.hu/eskuvo/",
+        "http://helyszinrendezvenyhez.hu/",
+        "http://helyszinrendezvenyhez.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "munk-kastely",
+      "name": "Munk-kastély",
+      "website": "https://www.kastelyok.com/adatlap.php?details=242",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "almalomb",
+      "name": "Almalomb",
+      "website": "http://www.almalomb.eu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://almalomb.eu/"],
+      "error": null
+    },
+    {
+      "id": "hotel-kovesteto",
+      "name": "Hotel Kövestető",
+      "website": "http://www.naturhotelkovesteto.hu/",
+      "contact_email": {
+        "value": "info@naturhotelkovesteto.hu",
+        "source_url": "https://naturhotelkovesteto.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+ 06302311632",
+        "source_url": "https://naturhotelkovesteto.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://naturhotelkovesteto.hu/",
+        "https://naturhotelkovesteto.hu/rendezvenyek/",
+        "https://naturhotelkovesteto.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "kentaur-lovaspanzio-es-pihenopark",
+      "name": "Kentaur Lovaspanzió és Pihenőpark",
+      "website": "http://www.kentaurpanzio.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "The operation was aborted."
+    },
+    {
+      "id": "aero-hotel-etterem-sportrepuloter",
+      "name": "Aero Hotel & Étterem & Sportrepülőtér",
+      "website": "http://www.aerohotel.hu/",
+      "contact_email": {
+        "value": "info@aerohotel.hu",
+        "source_url": "https://www.aerohotel.hu/kapcsolat",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.aerohotel.hu/",
+        "https://www.aerohotel.hu/rendezveny",
+        "https://www.aerohotel.hu/kapcsolat",
+        "https://www.aerohotel.hu/"
+      ],
+      "error": null
+    },
+    {
+      "id": "kek-duna-vendeglo-etterem",
+      "name": "Kék Duna Vendéglő Étterem",
+      "website": "http://www.kekdunavendeglo.hu/",
+      "contact_email": {
+        "value": "szavai@kekdunavendeglo.hu",
+        "source_url": "http://www.kekdunavendeglo.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "http://www.kekdunavendeglo.hu/",
+        "http://www.kekdunavendeglo.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "romahegy-rendezvenyhaz",
+      "name": "Rómahegy Rendezvényház",
+      "website": "http://www.romahegyrendezvenyhaz.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://www.romahegyrendezvenyhaz.hu/"],
+      "error": null
+    },
+    {
+      "id": "karancslapujtoi-rendezvenyhaz",
+      "name": "Karancslapujtői Rendezvényház",
+      "website": "http://rendezvenyhaz.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["http://rendezvenyhaz.hu/"],
+      "error": null
+    },
+    {
+      "id": "don-bosco-sports-center",
+      "name": "Don Bosco Sports Center",
+      "website": "http://www.dbsk.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "hbh-bajor-sorhaz-etterem-es-panzio",
+      "name": "HBH Bajor Sörház, Étterem és Panzió",
+      "website": "https://www.bajorsorhaz.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "bajor-etterem-es-vendeghaz",
+      "name": "Bajor Étterem és Vendégház",
+      "website": "https://abajor.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "bukovszki-birtok",
+      "name": "Bukovszki Birtok",
+      "website": "http://www.bukovszkibirtok.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "gokart-hotel-restaurant-ceges-rendezvenyhelyszin-kecskemet",
+      "name": "Gokart Hotel & Restaurant - Céges rendezvényhelyszín - Kecskemét",
+      "website": "http://www.gokarthotel.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "granada-konferencia-wellness-es-sport-hotel",
+      "name": "Granada Konferencia, Wellness és Sport Hotel",
+      "website": "https://www.granadahotel.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "potykato-pihenopark",
+      "name": "Potykató Pihenőpark",
+      "website": "https://potykato.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "szelmalom-csarda-etterem-vendeglo-rendezvenykozpont",
+      "name": "Szélmalom Csárda || Étterem, Vendéglő, Rendezvényközpont",
+      "website": "http://www.malomcsardakecskemet.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "veyron-ebedlo-es-rendezvenyhaz",
+      "name": "Veyron Ebédlő és Rendezvényház",
+      "website": "http://geniuszetterem.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "major-kunsagi",
+      "name": "Major Kunsági",
+      "website": "http://www.kunsagimajor.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "malnas-udvar",
+      "name": "Málnás Udvar",
+      "website": "https://malnasudvar.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "villa-curpad-lakodalmashaz-es-rendezvenyudvar",
+      "name": "Villa Curpad Lakodalmasház és Rendezvényudvar",
+      "website": "http://villacurpad.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "isabella-birtok",
+      "name": "Isabella Birtok",
+      "website": "https://www.isabellabirtok.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "hotel-vinum-wellness-es-konferencia",
+      "name": "Hotel Vinum Wellness és Konferencia",
+      "website": "https://vinumhotel.hu/",
+      "contact_email": {
+        "value": "vinumhotel@vinumhotel.hu",
+        "source_url": "https://vinumhotel.hu/",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36 (78) 511 050",
+        "source_url": "https://vinumhotel.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://vinumhotel.hu/",
+        "https://vinumhotel.hu/eskuvo.html",
+        "https://vinumhotel.hu/kapcsolat.html"
+      ],
+      "error": null
+    },
+    {
+      "id": "csodavolgy-apartmanok",
+      "name": "Csodavölgy Apartmanok",
+      "website": "http://www.csodavolgy.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "voros-kastely",
+      "name": "Vörös Kastély",
+      "website": "http://www.voroskastely.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "julianna-vendeghaz",
+      "name": "Julianna Vendégház",
+      "website": "http://juliannavendeghaz.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "benelux-beach",
+      "name": "BeneLux Beach",
+      "website": "http://www.beneluxbeach.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "liza-aqua-conference-hotel-es-feher-akac-csarda",
+      "name": "Liza Aqua & Conference Hotel és Fehér Akác Csárda",
+      "website": "http://www.lizahotel.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "m7-vendeglo",
+      "name": "M7 Vendéglő",
+      "website": "http://www.letenyemenu.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "radics-panzio-etterem-es-piheno-kozpont",
+      "name": "Radics Panzió Étterem és Pihenő Központ",
+      "website": "http://www.letenyepanzio.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "kanaan-vendeghaz",
+      "name": "Kánaán vendégház",
+      "website": "http://vendeghazkanaan.hu/",
+      "contact_email": {
+        "value": "kanaanvendeghaz@gmail.com",
+        "source_url": "http://vendeghazkanaan.hu/index.php/contact",
+        "evidence": "mailto"
+      },
+      "contact_phone": {
+        "value": "+36203248357",
+        "source_url": "http://vendeghazkanaan.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "http://vendeghazkanaan.hu/",
+        "http://vendeghazkanaan.hu/index.php/rendezvenyek",
+        "http://vendeghazkanaan.hu/index.php/contact"
+      ],
+      "error": null
+    },
+    {
+      "id": "hetenyi-janos-winery",
+      "name": "Hetényi János Winery",
+      "website": "http://www.hetenyipince.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "dulo-etterem",
+      "name": "Dűlő Étterem",
+      "website": "http://www.dulo.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "fridolin-vendeglo",
+      "name": "Fridolin Vendéglő",
+      "website": "http://www.fridolin.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "molnar-csarda-etterem",
+      "name": "Molnár Csárda Étterem",
+      "website": "https://www.molnarcsarda.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "atrium-park",
+      "name": "Átrium Park",
+      "website": "http://www.atriumpark.eu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "soregi-szabadidopark",
+      "name": "Sőregi Szabadidőpark",
+      "website": "https://ikerto.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "lebar-birtok",
+      "name": "Lebár Birtok",
+      "website": "https://www.lebarbirtok.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "krakkopuszta-lakeside-hunter-and-house-tour",
+      "name": "Krakkópuszta, Lakeside Hunter and House Tour",
+      "website": "http://topartivadaszhaz.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "oxigen-hotel-zen-spa",
+      "name": "Oxigen Hotel & Zen Spa",
+      "website": "https://oxigenhotel.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "horizont-idezo-parkmotel-es-verspark",
+      "name": "Horizont- idéző ParkMotel és VersPark",
+      "website": "http://www.parkmotel.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "racz-tanya",
+      "name": "Rácz tanya",
+      "website": "http://www.racztanya.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "auguszt-residence",
+      "name": "Auguszt Residence",
+      "website": "http://fb.com/auguszthazpecs",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://www.facebook.com/auguszthazpecs"],
+      "error": null
+    },
+    {
+      "id": "bagolyvar",
+      "name": "Bagolyvár",
+      "website": "http://www.bagolyvarpecs.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "gilice-panzio-etterem",
+      "name": "Gilice Panzió & Étterem",
+      "website": "http://gilicepanzio.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "ktchn-gasztrostudio",
+      "name": "KTCHN GasztroStúdió",
+      "website": "http://ktchngasztrostudio.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "makar-obester-etterem",
+      "name": "Makár Óbester Étterem",
+      "website": "https://hotelmakar.hu/etterem/restaurant-pecs/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "pezsgohaz-etterem",
+      "name": "Pezsgőház Étterem",
+      "website": "http://www.pezsgohaz.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "pecsbanyai-kozossegi-haz",
+      "name": "Pécsbányai Közösségi Ház",
+      "website": "http://www.pbkozossegihaz.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "umami-cafe-and-restaurant",
+      "name": "UMAMI Cafe and Restaurant",
+      "website": "https://umamipecs.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "arany-kakas-fogado",
+      "name": "Arany Kakas Fogadó",
+      "website": "http://www.aranykakasfogado.hu/hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "lantos-borhaz-es-latvanypince-lantos-boraszat",
+      "name": "Lantos Borház és Látványpince /Lantos Borászat",
+      "website": "http://www.lantosbor.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "nedeczky-griebsch-kastely",
+      "name": "Nedeczky-Griebsch kastély",
+      "website": "http://muvhaz.szabadegyhaza.hu/informaciok/nedeczky-griebsch-kastely",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "pixelcave",
+      "name": "PixelCave",
+      "website": "http://www.pixelcave.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "scarabeus-kft",
+      "name": "Scarabeus Kft.",
+      "website": "http://www.scarabeuskft.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "rolandi-dekor-es-rendezveny",
+      "name": "ROLANDI Dekor és Rendezvény",
+      "website": "http://www.rolandi.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "kristaly-rendezvenyterem",
+      "name": "Kristály Rendezvényterem",
+      "website": "http://kristalyterem.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "becsei-vendeglo-etterem-szigetbecse-eskuvo-helyszin-vendeglo",
+      "name": "Becsei Vendéglő-Étterem Szigetbecse,Esküvő helyszín,Vendéglő,Étterem",
+      "website": "http://www.becseivendeglo.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "margareta-vendeghaz",
+      "name": "Margaréta Vendégház",
+      "website": "http://www.vadviragelmenybirtok.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "halaszcsarda-retimajor",
+      "name": "Halászcsárda - Rétimajor",
+      "website": "https://retimajor.hu/hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "terazza-wedding-s",
+      "name": "Terazza Wedding's",
+      "website": "http://www.terazza.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "varcsarda",
+      "name": "Várcsárda",
+      "website": "http://varcsarda.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "csalogany-eskuvo-es-rendezvenykozpont",
+      "name": "Csalogány Esküvő- és Rendezvényközpont",
+      "website": "http://www.csaloganyeskuvo.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "zathureczky-kuria",
+      "name": "ZATHURECZKY KÚRIA",
+      "website": "https://www.kastelyok.com/adatlap.php?details=720",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "malifer-rendezvenyhaz",
+      "name": "Malifer Rendezvényház",
+      "website": "http://malifer.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "tisia-hotel-spa",
+      "name": "Tisia Hotel & Spa",
+      "website": "https://tisiahotel.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "oroszlanos-borbirtok",
+      "name": "Oroszlános Borbirtok",
+      "website": "https://barkahotel.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "kuria-villany-eskuvo-es-rendezveny-helyszin",
+      "name": "Kúria Villány, esküvő és rendezvény helyszín",
+      "website": "https://kuriavillany.hu/",
+      "contact_email": {
+        "value": "kuriavillany@gmail.com",
+        "source_url": "https://kuriavillany.hu/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": {
+        "value": "+36/30 66-88-608",
+        "source_url": "https://kuriavillany.hu/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://kuriavillany.hu/"],
+      "error": null
+    },
+    {
+      "id": "kanyavary-borbirtok",
+      "name": "Kányaváry Borbirtok",
+      "website": "http://www.kanyavary.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "hazassagkoto-terem",
+      "name": "Házasságkötő Terem",
+      "website": "http://nagyvofely.hu/zalaszentgrot/termek",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "vasarcsarnok",
+      "name": "Vásárcsarnok",
+      "website": "http://www.zalaszentgrot.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "lazar-imre",
+      "name": "Lázár Imre",
+      "website": "https://lazar-imre.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "weigert-images",
+      "name": "Weigert Images (Joseph Weigert)",
+      "website": "https://weigertimages.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "koncsol-tunde",
+      "name": "Koncsol Tünde",
+      "website": "https://www.facebook.com/KoncsolTundeFotografus",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "m-photo-design-and-studio",
+      "name": "M Photo Design and Studio (Barabás Melinda)",
+      "website": "https://mphotod.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "st-art-wedding",
+      "name": "St.Art Wedding Photo and Video (Losonczi József Márk)",
+      "website": "https://www.facebook.com/st.arteskuvoifotovideo",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "lorincz-istvan-photography",
+      "name": "Lőrincz István Photography",
+      "website": "https://www.instagram.com/istvanlorincz_photography",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "marton-tunde-fotoi",
+      "name": "Márton Tünde Fotói",
+      "website": "https://www.facebook.com/MartonTundePhotos",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "sg-photo-suto-gabor",
+      "name": "SG Photo (Sütő Gábor)",
+      "website": "https://sgphoto.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "miami-tanciskola",
+      "name": "Miami Tánciskola",
+      "website": "https://miamitanciskola.hu/",
+      "contact_email": null,
+      "contact_phone": {
+        "value": "+36204941722",
+        "source_url": "https://miamitanciskola.hu/jegyespar-tancoktatas/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://miamitanciskola.hu/",
+        "https://miamitanciskola.hu/eskuvos-tancnap/",
+        "https://miamitanciskola.hu/jegyespar-tancoktatas/",
+        "https://miamitanciskola.hu/kapcsolat/"
+      ],
+      "error": null
+    },
+    {
+      "id": "hamerli-tibor-discofever",
+      "name": "Hamerli Tibor – Discofever",
+      "website": "https://discofever.hu/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "dijana-divow",
+      "name": "Dijana, Di'Vow",
+      "website": "https://www.instagram.com/divow_simbolicni_maticar/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "angelus-catering-zadar",
+      "name": "Angelus Catering Zadar",
+      "website": "https://angelus-catering.hr/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "porta-pranzo",
+      "name": "Porta Pranzo",
+      "website": "https://portapranzo.eatbu.hr/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "garibaldi-aperitivo-design",
+      "name": "Garibaldi Aperitivo Design",
+      "website": "https://visitrijeka.hr/garibaldi-aperitivo-design/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "dolce-mondo-zagreb",
+      "name": "Dolce Mondo",
+      "website": "https://dolcemondo.hr/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "la-delta-split",
+      "name": "La Delta",
+      "website": "https://ladelta.hr/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "vigus-vinkovci",
+      "name": "Vigus",
+      "website": "https://vigus.hr/",
+      "contact_email": {
+        "value": "info@vigus.hr",
+        "source_url": "https://vigus.hr/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+38598427142",
+        "source_url": "https://vigus.hr/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://vigus.hr/", "https://vigus.hr/contact"],
+      "error": null
+    },
+    {
+      "id": "js-atelier-zagreb",
+      "name": "JS Atelier",
+      "website": "http://www.jsatelier.hr",
+      "contact_email": {
+        "value": "info@jsatelier.hr",
+        "source_url": "https://jsatelier.mypixieset.com/contact/",
+        "evidence": "visible_text"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://jsatelier.mypixieset.com/",
+        "https://jsatelier.mypixieset.com/wedding-planning/",
+        "https://jsatelier.mypixieset.com/contact/"
+      ],
+      "error": null
+    },
+    {
+      "id": "florami-studio-pula",
+      "name": "Florami Studio",
+      "website": "https://www.florami-studio.hr/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "cvjetarna-tweety-rijeka",
+      "name": "Cvjetarna Tweety",
+      "website": "https://cvjetarna-tweety.hr/",
+      "contact_email": {
+        "value": "tweety@optinet.hr",
+        "source_url": "https://cvjetarna-tweety.hr/home/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://cvjetarna-tweety.hr/home/"],
+      "error": null
+    },
+    {
+      "id": "calena-rosa",
+      "name": "Calena Rosa",
+      "website": "https://calenarosa.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "indigo-wedding-event-design",
+      "name": "Indigo Wedding & Event Design",
+      "website": "https://www.indigo-design.hr/",
+      "contact_email": {
+        "value": "indigo.design2018@gmail.com",
+        "source_url": "https://www.indigo-design.hr/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+385997681386",
+        "source_url": "https://www.indigo-design.hr/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://www.indigo-design.hr/", "https://www.indigo-design.hr/kontakt"],
+      "error": null
+    },
+    {
+      "id": "cvjetni-salon-queen-osijek",
+      "name": "Cvjetni salon Queen",
+      "website": "https://www.instagram.com/cvjetni_salon_queen/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "cvjecarnica-maja-osijek",
+      "name": "Cvjećarnica Maja Osijek",
+      "website": "https://www.facebook.com/cvjecarnica.majaosijek",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "igor-glavas-weddings",
+      "name": "Igor Glavaš Weddings",
+      "website": "https://weddings.igorglavas.com/",
+      "contact_email": {
+        "value": "igor@igorglavas.com",
+        "source_url": "https://weddings.igorglavas.com/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+385 91 445 2827",
+        "source_url": "https://weddings.igorglavas.com/contact/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://weddings.igorglavas.com/",
+        "https://weddings.igorglavas.com/contact/"
+      ],
+      "error": null
+    },
+    {
+      "id": "petar-jurica-photography",
+      "name": "Petar Jurica Photography",
+      "website": "https://petarjurica.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://petarjurica.com/",
+        "https://petarjurica.com/villa-fabiani-wedding/",
+        "https://petarjurica.com/christina-sean-sintra-wedding/",
+        "https://petarjurica.com/valeria-amaury-mexico-wedding/"
+      ],
+      "error": null
+    },
+    {
+      "id": "kristijan-gradecki-weddings",
+      "name": "Kristijan Gradecki Weddings",
+      "website": "https://gradeckiweddings.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "piccolo-wedding-zagreb",
+      "name": "Piccolo Wedding / Damir Pišćetek",
+      "website": "https://piccolo.wedding/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "boris-tomljanovic-weddings",
+      "name": "Boris Tomljanović Weddings",
+      "website": "https://boristomljanovicweddings.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "marko-car-weddings",
+      "name": "Marko Car / Car Weddings",
+      "website": "https://car-weddings.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "oksana-kirik-photography",
+      "name": "Oksana Kirik",
+      "website": "https://oksanakirik.gallery.photo/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "adriatic-moments",
+      "name": "Adriatic Moments",
+      "website": "https://adriaticmoments.com/",
+      "contact_email": {
+        "value": "hello@adriaticmoments.com",
+        "source_url": "https://adriaticmoments.com/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+385958249880",
+        "source_url": "https://adriaticmoments.com/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Splitska 13, 22202, Primošten, Šibenik-Knin County, HR",
+        "source_url": "https://adriaticmoments.com/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": [
+        "https://adriaticmoments.com/",
+        "https://adriaticmoments.com/contact/",
+        "https://adriaticmoments.com/blog/top-10-wedding-venues-dalmatia/",
+        "https://adriaticmoments.com/blog/planning-destination-wedding-croatia/"
+      ],
+      "error": null
+    },
+    {
+      "id": "vanja-vrkljan",
+      "name": "Vanja Vrkljan",
+      "website": "https://vanjavrkljan.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "davor-strenja-wedding-tree",
+      "name": "Davor Strenja / Wedding Tree",
+      "website": "https://davorstrenja.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "marcijus-studio-osijek",
+      "name": "Marcijuš Studio / Tomislav Marcijuš",
+      "website": "https://www.marcijus-studio.com/",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [
+        "https://www.marcijus-studio.com/",
+        "https://www.marcijus-studio.com/contact/"
+      ],
+      "error": null
+    },
+    {
+      "id": "jutrzenki-76",
+      "name": "Jutrzenki 76",
+      "website": "https://gocook.pl",
+      "contact_email": {
+        "value": "jutrzenki@gocook.pl",
+        "source_url": "https://gocook.pl/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "784653788",
+        "source_url": "https://gocook.pl/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": [
+        "https://gocook.pl/",
+        "https://gocook.pl/eventy-firmowe-oraz-wynajem-przestrzeni/",
+        "https://gocook.pl/kontakt/"
+      ],
+      "error": null
+    },
+    {
+      "id": "dom-weselny-rubikon",
+      "name": "Dom Weselny Rubikon",
+      "website": "https://biznes-top.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "platform/aggregator website skipped"
+    },
+    {
+      "id": "centrum-szkutnik",
+      "name": "Centrum Szkutnik",
+      "website": "https://centrum-szkutnik.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "villatoro",
+      "name": "Villatoro",
+      "website": "https://www.villatoro.pl",
+      "contact_email": {
+        "value": "rezerwacje@villatoro.pl",
+        "source_url": "https://www.villatoro.pl/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "+48 75 306 76 00",
+        "source_url": "https://www.villatoro.pl/",
+        "evidence": "tel"
+      },
+      "address": {
+        "value": "Wolności 9, 59-900, Zgorzelec",
+        "source_url": "https://www.villatoro.pl/",
+        "evidence": "json_ld"
+      },
+      "pages_checked": ["https://www.villatoro.pl/", "https://www.villatoro.pl/kontakt"],
+      "error": null
+    },
+    {
+      "id": "dworek-kleszczewo",
+      "name": "Dworek Kleszczewo",
+      "website": "https://dworekkleszczewo.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": ["https://dworekkleszczewo.pl/", "https://dworekkleszczewo.pl/kontakt"],
+      "error": null
+    },
+    {
+      "id": "event-conference-by-progres",
+      "name": "Event & Conference by Progres",
+      "website": "https://www.progres-event.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "restauracja-dajana",
+      "name": "Restauracja Dajana",
+      "website": "https://www.restauracjadajana.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "hotel-porto",
+      "name": "Hotel Porto",
+      "website": "https://www.hotelporto.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "koralowa",
+      "name": "Koralowa",
+      "website": "https://bistro.koralowa.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "michasiowka",
+      "name": "Michasiówka",
+      "website": "https://www.michasiowka.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "stary-mlyn",
+      "name": "Stary Młyn",
+      "website": "https://www.hotelstarymlyn.rze.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "restauracja-stary-lwow",
+      "name": "Restauracja Stary Lwów",
+      "website": "https://stary-lwow.pl",
+      "contact_email": {
+        "value": "kontakt@stary-lwow.pl",
+        "source_url": "https://stary-lwow.pl/",
+        "evidence": "cloudflare"
+      },
+      "contact_phone": {
+        "value": "134940077",
+        "source_url": "https://stary-lwow.pl/",
+        "evidence": "tel"
+      },
+      "address": null,
+      "pages_checked": ["https://stary-lwow.pl/", "https://stary-lwow.pl/kontakt/"],
+      "error": null
+    },
+    {
+      "id": "karczma-chlopska",
+      "name": "Karczma Chłopska",
+      "website": "https://karczmachlopska.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "laki-i-pola",
+      "name": "Łąki i Pola",
+      "website": "https://www.lakiipola.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "dworek-rutkowskich",
+      "name": "Dworek Rutkowskich",
+      "website": "https://czasnawypoczynek.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    },
+    {
+      "id": "sala-styl",
+      "name": "Sala Styl",
+      "website": "https://www.salastyl.pl",
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null,
+      "pages_checked": [],
+      "error": "Unable to connect. Is the computer able to access the url?"
+    }
+  ]
+}
