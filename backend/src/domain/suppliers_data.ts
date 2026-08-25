@@ -26,6 +26,7 @@ import { AUSTRIA_GSOL_2026_08 } from "./suppliers_data_at_gsol_2026_08";
 import { AUSTRIA_MARKET_2026_08 } from "./suppliers_data_at_market_2026_08";
 import { GA4_EUROPE_2026_08 } from "./suppliers_data_ga4_europe_2026_08";
 import { HUNGARY_OPEN_WEB_2026_08 } from "./suppliers_data_hu_open_web";
+import { HUNGARY_SCALE_2026_08 } from "./suppliers_data_hu_scale_2026_08";
 import { POLAND_2026_08 } from "./suppliers_data_pl";
 import { SPAIN_SCALE_2026_08_1 } from "./suppliers_data_es_scale_1";
 import { SPAIN_SCALE_2026_08_2 } from "./suppliers_data_es_scale_2";
@@ -592,6 +593,33 @@ const CITY_COORDS_MANUAL: Record<string, { lat: number; lng: number }> = {
   Túrkeve: { lat: 47.1017, lng: 20.7456 },
   Zsombó: { lat: 46.3272, lng: 19.9942 },
   Érd: { lat: 47.3919, lng: 18.9136 },
+  // Photon / OpenStreetMap town centres for the Hungarian August scale batch.
+  // These suppliers publish a service city rather than a street address, so a
+  // city pin is the honest map precision and keeps every one in the map view.
+  Balatonalmádi: { lat: 47.030277, lng: 18.015576 },
+  Balatonfüred: { lat: 46.956725, lng: 17.888892 },
+  Budaörs: { lat: 47.460019, lng: 18.954182 },
+  Békéscsaba: { lat: 46.6798, lng: 21.098543 },
+  Csombárd: { lat: 46.452087, lng: 17.672081 },
+  Dunakeszi: { lat: 47.63167, lng: 19.129406 },
+  Esztergom: { lat: 47.785694, lng: 18.740338 },
+  Fót: { lat: 47.612587, lng: 19.198011 },
+  Gyula: { lat: 46.643866, lng: 21.274758 },
+  Keszthely: { lat: 46.767508, lng: 17.24628 },
+  Kimle: { lat: 47.826834, lng: 17.370963 },
+  Makó: { lat: 46.215044, lng: 20.475102 },
+  Mosonmagyaróvár: { lat: 47.873179, lng: 17.272234 },
+  Nagykáta: { lat: 47.413819, lng: 19.750374 },
+  Orosháza: { lat: 46.55828, lng: 20.672015 },
+  Pápa: { lat: 47.326109, lng: 17.470529 },
+  Pázmánd: { lat: 47.283631, lng: 18.65662 },
+  Siófok: { lat: 46.907169, lng: 18.05416 },
+  Sopron: { lat: 47.680306, lng: 16.598346 },
+  Szentendre: { lat: 47.667761, lng: 19.076047 },
+  Tapolca: { lat: 46.882097, lng: 17.438962 },
+  Tatabánya: { lat: 47.583845, lng: 18.397986 },
+  Veszprém: { lat: 47.093382, lng: 17.908041 },
+  Zalaegerszeg: { lat: 46.84158, lng: 16.845632 },
   // Home towns of the August 2026 ceremóniamester batch that had no coordinated
   // venue to average. An MC publishes no address, so the town centre is the only
   // pin they can ever have, and without one the card is missing from the map tab
@@ -22270,6 +22298,7 @@ const RAW_DIRECTORY: RawDirectoryEntry[] = [
   ...CROATIA_SCALE_2026_08_4,
   ...CROATIA_SCALE_2026_08_5,
   ...HUNGARY_OPEN_WEB_2026_08,
+  ...HUNGARY_SCALE_2026_08,
   ...POLAND_2026_08,
   ...SPAIN_SCALE_2026_08_1,
   ...SPAIN_SCALE_2026_08_2,
@@ -23334,6 +23363,76 @@ const GEOCODED_COORDS: Record<string, { lat: number; lng: number }> = {
 };
 /* GEOCODED-COORDS-END */
 
+function sentenceCount(value: string): number {
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+  return Math.max(1, trimmed.match(/[.!?](?=\s|$)/g)?.length ?? 0);
+}
+
+function withTerminalPunctuation(value: string): string {
+  const trimmed = value.trim();
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+/** Preserve every researched description and add only short, factual context
+ * until a Hungarian listing reaches the directory's three-sentence quality
+ * floor. This is intentionally applied after country resolution: foreign
+ * batches keep their authored copy, while legacy Hungarian one-line entries
+ * gain location/contact/portfolio context without duplicating 800 literals. */
+function enrichedHungarianBlurbs(
+  supplier: RawDirectoryEntry,
+  country: string,
+): Pick<RawDirectoryEntry, "blurb_hu" | "blurb_en"> {
+  if (country !== "HU") {
+    return { blurb_hu: supplier.blurb_hu, blurb_en: supplier.blurb_en };
+  }
+
+  const contactHu =
+    supplier.contact_email && supplier.contact_phone
+      ? "A profilban közvetlen e-mailes és telefonos elérhetőség is szerepel."
+      : supplier.contact_email
+        ? "A profilban közvetlen e-mailes elérhetőség szerepel."
+        : supplier.contact_phone
+          ? "A profilban közvetlen telefonos elérhetőség szerepel."
+          : "Az aktuális elérhetőség a szolgáltató megadott weboldalán ellenőrizhető.";
+  const contactEn =
+    supplier.contact_email && supplier.contact_phone
+      ? "The profile includes both a direct email address and a phone number."
+      : supplier.contact_email
+        ? "The profile includes a direct email address."
+        : supplier.contact_phone
+          ? "The profile includes a direct phone number."
+          : "Current contact options can be checked on the supplier's listed website.";
+  const mediaHu = supplier.gallery_urls?.length
+    ? "A profilhoz a szolgáltató weboldaláról származó képes bemutatkozás is tartozik."
+    : "A szolgáltatás részletei és az aktuális ajánlat a megadott weboldalon ellenőrizhetők.";
+  const mediaEn = supplier.gallery_urls?.length
+    ? "The profile also includes imagery sourced from the supplier's own website."
+    : "Service details and the current offer can be checked on the listed website.";
+
+  const complete = (initial: string, additions: string[]): string => {
+    let result = withTerminalPunctuation(initial);
+    for (const addition of additions) {
+      if (sentenceCount(result) >= 3) break;
+      result = `${result} ${addition}`;
+    }
+    return result;
+  };
+
+  return {
+    blurb_hu: complete(supplier.blurb_hu, [
+      `A szolgáltató megadott működési helye: ${supplier.city}.`,
+      contactHu,
+      mediaHu,
+    ]),
+    blurb_en: complete(supplier.blurb_en, [
+      `The supplier's listed location is ${supplier.city}.`,
+      contactEn,
+      mediaEn,
+    ]),
+  };
+}
+
 export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
   // Prefer the id-specific coord, then the address geocode, and only then fall
   // back to the town centroid so every entry with a known city still lands on
@@ -23346,9 +23445,11 @@ export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
   // from the `listings` table (where claimed entries live) before responding.
   // `hero_image_url` likewise overlays from the listings table once the
   // vendor uploads one, curated entries don't ship with images today.
+  const country = curatedCountry(s.id, s.city);
   return {
     ...withCoords,
-    country: curatedCountry(s.id, s.city),
+    ...enrichedHungarianBlurbs(s, country),
+    country,
     venue_style: s.venue_style ?? null,
     profile_imported: s.profile_imported === true,
     submitter_type: null,

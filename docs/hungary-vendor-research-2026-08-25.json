@@ -1,0 +1,4083 @@
+{
+  "generated_at": "2026-08-25T12:59:57.186Z",
+  "discovery_source": "https://naszdal.hu/directory",
+  "official_site_policy": "Discovery only from the directory; retained gallery image is fetched and quality-checked from each business's official website.",
+  "privacy_note": "Only public business fields used by Weddly are retained. Discovery-site edit, approval, claim and account tokens are deliberately discarded.",
+  "baseline_hungarian_count": 823,
+  "target_hungarian_count": 1000,
+  "accepted_count": 177,
+  "checked_for_official_image": 391,
+  "records": [
+    {
+      "id": "hu-scale-a-te-fotostudiod-szolnok-125",
+      "discovery_profile": "https://naszdal.hu/directory/50b37869-a100-4867-923e-6392ac708b16",
+      "official_website": "http://atefotostudiod.hu/",
+      "name": "A TE Fotóstúdiód",
+      "category": "photography",
+      "city": "Szolnok",
+      "county": "Jász-Nagykun-Szolnok",
+      "contact_email": "atefotostudiod@gmail.com",
+      "contact_phone": "06 30 968 4902",
+      "official_image_urls": [
+        "http://atefotostudiod.hu/wp-content/uploads/2020/07/3655_kisgyerek_foto-1140x760.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 22
+    },
+    {
+      "id": "hu-scale-ajnara-bridal-menyasszonyi-ruha-sopron-sopron-157",
+      "discovery_profile": "https://naszdal.hu/directory/5dfe07a0-48e0-41fe-9fec-8c0cdddab366",
+      "official_website": "http://www.ajnara.hu/",
+      "name": "Ajnara Bridal | menyasszonyi ruha Sopron",
+      "category": "bridal_boutique",
+      "city": "Sopron",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "info@ajnara.hu",
+      "contact_phone": "06 70 328 6890",
+      "official_image_urls": [
+        "https://ajnara.hu/wp-content/uploads/2024/10/DSC0214-scaled.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 28
+    },
+    {
+      "id": "hu-scale-almassy-eva-eskuvoi-ruhaszalon-budapest-046",
+      "discovery_profile": "https://naszdal.hu/directory/a6d1958a-6e1c-4f01-8adf-51e6ea2f12ca",
+      "official_website": "http://www.almassyszalon.hu/",
+      "name": "Almássy ÉvA Esküvői Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "almassyszalon@gmail.com",
+      "contact_phone": "06 70 419 1141",
+      "official_image_urls": [
+        "https://www.almassyszalon.hu/images/0_Demetrios_Platina_3.jpg"
+      ],
+      "google_place_id": "ChIJP--GYm3cQUcRFAWnDh85pXg",
+      "google_rating_at_research_time": 4.2,
+      "google_review_count_at_research_time": 527
+    },
+    {
+      "id": "hu-scale-alomvirag-dunakeszi-047",
+      "discovery_profile": "https://naszdal.hu/directory/a0c95e15-838a-4a61-98af-7f2de90eaa7e",
+      "official_website": "http://www.alomviragdekor.hu/",
+      "name": "Álomvirág",
+      "category": "florist",
+      "city": "Dunakeszi",
+      "county": "Pest",
+      "contact_email": "alomviragdekor@gmail.com",
+      "contact_phone": "06 70 632 8868",
+      "official_image_urls": [
+        "https://alomviragdekor.hu/wp-content/uploads/2015/05/kezdolap-1024x581.jpg"
+      ],
+      "google_place_id": "ChIJdfbmUzHRQUcR_xhjV4dJ4MY",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 174
+    },
+    {
+      "id": "hu-scale-ambrozia-etterem-es-panzio-kazincbarcika-044",
+      "discovery_profile": "https://naszdal.hu/directory/45c0672e-6048-4f07-ba19-765c1dc75ecd",
+      "official_website": "http://www.ambroziapanzio.hu/",
+      "name": "Ambrózia Étterem és Panzió",
+      "category": "venue",
+      "city": "Kazincbarcika",
+      "county": "Borsod-Abaúj-Zemplén",
+      "contact_email": "info@ambroziapanzio.hu",
+      "contact_phone": "(06 48) 310 883",
+      "official_image_urls": [
+        "https://www.ambroziapanzio.hu/public/1140/content/image/xAmbrzia_log.jpg.pagespeed.ic.CANo-FPA-w.jpg"
+      ],
+      "google_place_id": "ChIJP7qi8hl7P0cRMwPZaov1qhM",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 1707
+    },
+    {
+      "id": "hu-scale-ambrus-tamas-magyar-angol-nemet-es-holland-nyelvu-ceremoniamester-musorvezeto-szentendre-043",
+      "discovery_profile": "https://naszdal.hu/directory/195eaeb8-2d5d-4db7-8581-bee2c5da355e",
+      "official_website": "http://www.ceremonia-mester.com/",
+      "name": "Ambrus Tamás magyar, angol, német és holland nyelvű ceremóniamester, műsorvezető",
+      "category": "mc_celebrant",
+      "city": "Szentendre",
+      "county": "Pest",
+      "contact_email": "tamasambrus76@gmail.com",
+      "contact_phone": "06 30 989 9507",
+      "official_image_urls": [
+        "https://ceremonia-mester.com/wp-content/uploads/077-Fatima_and_Ferenc_wedding_cut.jpg"
+      ],
+      "google_place_id": "ChIJUYIKaerZQUcRaYaSdiqG-tc",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 43
+    },
+    {
+      "id": "hu-scale-amstel-hattyu-fogado-gyor-136",
+      "discovery_profile": "https://naszdal.hu/directory/4e16eaae-7335-45a6-bfe1-648ac8ab4615",
+      "official_website": "https://amstelhattyu.hu/",
+      "name": "Amstel Hattyú Fogadó",
+      "category": "venue",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "info@amstelhattyu.eu",
+      "contact_phone": "(06 96) 335 488",
+      "official_image_urls": [
+        "https://amstelhattyu.hu/wp-content/uploads/2023/12/amstel_hattyu.png"
+      ],
+      "google_place_id": "ChIJsUMg2-G_a0cR5UeY8B3K_P0",
+      "google_rating_at_research_time": 4.4,
+      "google_review_count_at_research_time": 778
+    },
+    {
+      "id": "hu-scale-anderella-wedding-boutique-eskuvoi-ruhaszalon-gyal-170",
+      "discovery_profile": "https://naszdal.hu/directory/cf9dd2d2-c667-4025-907e-ecdab3e030f3",
+      "official_website": "https://www.anderella.hu/",
+      "name": "Anderella Wedding Boutique - Esküvői Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Gyál",
+      "county": "Budapest",
+      "contact_email": "info@anderella.hu",
+      "contact_phone": "06 70 533 2572",
+      "official_image_urls": [
+        "https://anderella.cdn.shoprenter.hu/custom/anderella/image/cache/w530h400q100/Kepek_kategoriak/nepszeru_kat_ekszerek.jpg.webp?lastmod=0.1674549101"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 47
+    },
+    {
+      "id": "hu-scale-aranykorona-tortenelmi-etterem-latvanypince-miskolc-137",
+      "discovery_profile": "https://naszdal.hu/directory/eb3a29ee-758e-4374-99d3-09861b7237c0",
+      "official_website": "https://aranykorona.eu/",
+      "name": "Aranykorona Történelmi Étterem & Látványpince",
+      "category": "venue",
+      "city": "Miskolc",
+      "county": "Borsod-Abaúj-Zemplén",
+      "contact_email": "aranykorona@aranykorona.eu",
+      "contact_phone": "(06 46) 506 882",
+      "official_image_urls": [
+        "https://sp-ao.shortpixel.ai/client/to_webp,q_glossy,ret_img/https://aranykorona.eu/wp-content/uploads/home-pege-slide1.jpeg"
+      ],
+      "google_place_id": "ChIJqbp0wbWfQEcR8bL-0Ntwl00",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 882
+    },
+    {
+      "id": "hu-scale-aranyvirag-ekszerszalon-debrecen-048",
+      "discovery_profile": "https://naszdal.hu/directory/7f95bfd6-66fc-4274-867b-c222174baef9",
+      "official_website": "https://aranyviragekszer.hu/",
+      "name": "Aranyvirág Ékszerszalon",
+      "category": "wedding_jewelry",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "info@aranyviragekszer.hu",
+      "contact_phone": "(06 52) 792 292",
+      "official_image_urls": [
+        "https://aranyviragekszer.hu/wp-content/uploads/2017/10/aranyvirag-arany-ezust-ekszer-debrecen-hatter2c.jpg"
+      ],
+      "google_place_id": "ChIJGU1Ac3UOR0cR3BYBFErI1v4",
+      "google_rating_at_research_time": 4.3,
+      "google_review_count_at_research_time": 114
+    },
+    {
+      "id": "hu-scale-araperla-kft-gyor-174",
+      "discovery_profile": "https://naszdal.hu/directory/a36a0012-a421-48a7-928c-348c98b51861",
+      "official_website": "http://araperla.hu/",
+      "name": "Araperla Kft",
+      "category": "bridal_boutique",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "info@araperla.hu",
+      "contact_phone": "06 20 371 2186",
+      "official_image_urls": [
+        "http://araperla.hu/wp-content/uploads/2023/01/ladybird.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 57
+    },
+    {
+      "id": "hu-scale-art-design-ekszer-ajka-134",
+      "discovery_profile": "https://naszdal.hu/directory/fd753cbd-7898-43f2-b6aa-87f7ac25dcaf",
+      "official_website": "http://www.artdesignkarikagyuru.hu/",
+      "name": "Art Design Ékszer",
+      "category": "wedding_jewelry",
+      "city": "Ajka",
+      "county": "Veszprém",
+      "contact_email": "info@mandoli.hu",
+      "contact_phone": "06 70 673 2301",
+      "official_image_urls": [
+        "http://hellovp.cdn.shoprenter.hu/custom/hellovp/image/cache/w430h520q100/foldali-kepek/mozaikeljgy-Photoroom.jpg.webp?lastmod=0.1774263750"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 61
+    },
+    {
+      "id": "hu-scale-asztalka-cukraszda-budapest-081",
+      "discovery_profile": "https://naszdal.hu/directory/2ff4bd39-2f58-4ed3-b7da-ee2a6876d733",
+      "official_website": "http://www.asztalkacukraszda.hu/",
+      "name": "Asztalka Cukrászda",
+      "category": "cake_dessert",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "asztalka@asztalka.com",
+      "contact_phone": "06 20 581 3399",
+      "official_image_urls": [
+        "https://www.asztalkacukraszda.hu/wp-content/uploads/2014/05/kep_1_outside-darker-3-comp-2048x1561.jpg"
+      ],
+      "google_place_id": "ChIJPWybWzjcQUcRQHHr9s08gg4",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 802
+    },
+    {
+      "id": "hu-scale-auris-ekszerbolt-arany-ezust-ekszer-kereskedelmi-bt-szekesfehervar-172",
+      "discovery_profile": "https://naszdal.hu/directory/fcf3f2e3-475f-4521-b5c6-aab2253d8168",
+      "official_website": "http://aurisekszer.hu/",
+      "name": "Auris Ékszerbolt, Arany-Ezüst Ékszer Kereskedelmi Bt.",
+      "category": "wedding_jewelry",
+      "city": "Székesfehérvár",
+      "county": "Fejér",
+      "contact_email": "info@aurisekszer.hu",
+      "contact_phone": "(06 22) 333 459",
+      "official_image_urls": [
+        "https://aurisekszer.hu/wp-content/uploads/2021/08/jewellery-girl-welcome-row-1.png"
+      ],
+      "google_place_id": "ChIJe3nn-a33aUcRggqHZF5oHjs",
+      "google_rating_at_research_time": 4.4,
+      "google_review_count_at_research_time": 39
+    },
+    {
+      "id": "hu-scale-bacsi-soforszolgalat-kecskemet-soforszolgalata-kecskemet-035",
+      "discovery_profile": "https://naszdal.hu/directory/a62e26ac-489f-4846-84d5-7a026031bf45",
+      "official_website": "https://bacsisofor.hu/",
+      "name": "BÁCSi Sofőrszolgálat | Kecskemét Sofőrszolgálata",
+      "category": "transport",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "bacsisofor@gmail.com",
+      "contact_phone": "06 31 200 3000",
+      "official_image_urls": [
+        "https://bacsisofor.hu/wp-content/uploads/2021/11/soforszolgalat.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 55
+    },
+    {
+      "id": "hu-scale-balaton-hotel-siofok-siofok-164",
+      "discovery_profile": "https://naszdal.hu/directory/6294585d-d9a5-4c7e-ba32-3694b753a69e",
+      "official_website": "http://www.balatonhotelsiofok.hu/",
+      "name": "Balaton Hotel Siófok",
+      "category": "venue",
+      "city": "Siófok",
+      "county": "Somogy",
+      "contact_email": "info@balatonhotelsiofok.hu",
+      "contact_phone": "(06 84) 506 970",
+      "official_image_urls": [
+        "https://balatonhotelsiofok.hu/assets/img/elements/fb.jpg"
+      ],
+      "google_place_id": "ChIJFf3_uoXAaUcRaJ69d5wk050",
+      "google_rating_at_research_time": 4.3,
+      "google_review_count_at_research_time": 1820
+    },
+    {
+      "id": "hu-scale-balint-borarium-pazmand-154",
+      "discovery_profile": "https://naszdal.hu/directory/d4f4a8cd-d3f3-4923-aee7-0af88930c008",
+      "official_website": "http://www.balintborarium.hu/",
+      "name": "Bálint Borárium",
+      "category": "catering",
+      "city": "Pázmánd",
+      "county": "Veszprém",
+      "contact_email": "info@balintborarium.hu",
+      "contact_phone": "06 20 209 5919",
+      "official_image_urls": [
+        "https://balintborarium.hu/wp-content/uploads/2022/11/hangulat-1-scaled.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 596
+    },
+    {
+      "id": "hu-scale-balogh-ora-es-ekszer-uzlet-szombathely-105",
+      "discovery_profile": "https://naszdal.hu/directory/a4fcf678-f248-4282-884a-38433b00e2e6",
+      "official_website": "https://baloghekszer.hu/#utm_source=google&utm_medium=google-cegem&utm_campaign=google-cegem-fo-ter-27",
+      "name": "Balogh Óra és Ékszer üzlet",
+      "category": "wedding_jewelry",
+      "city": "Szombathely",
+      "county": "Vas",
+      "contact_email": "webshop@baloghekszer.hu",
+      "contact_phone": "06 30 474 7111",
+      "official_image_urls": [
+        "https://baloghekszer.hu/shop_ordered/49223/pic/nyitocsempek/karorak-csempe.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.2,
+      "google_review_count_at_research_time": 57
+    },
+    {
+      "id": "hu-scale-barabas-villa-budapest-149",
+      "discovery_profile": "https://naszdal.hu/directory/f5fbc1cf-671b-4061-b104-4a8dcb630019",
+      "official_website": "http://www.barabasvilla.hu/",
+      "name": "Barabás Villa",
+      "category": "venue",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@barabasvilla.hu",
+      "contact_phone": "(06 1) 225 1389",
+      "official_image_urls": [
+        "https://spcdn.shortpixel.ai/spio/ret_img,q_cdnize,to_webp,s_webp/barabasvilla.hu/wp-content/uploads/2024/03/705173-10151195513503089-1442715242-o.jpg"
+      ],
+      "google_place_id": "ChIJE0jYA6LeQUcR3MykmRYSLxM",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 1241
+    },
+    {
+      "id": "hu-scale-barcsik-ekszer-kecskemet-171",
+      "discovery_profile": "https://naszdal.hu/directory/ef9aa2bd-7f10-4c4c-a280-71c68f14863d",
+      "official_website": "http://www.barcsikekszer.hu/",
+      "name": "Barcsik Ékszer",
+      "category": "wedding_jewelry",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "kozpont@barcsikekszer.hu",
+      "contact_phone": "06 70 797 8643",
+      "official_image_urls": [
+        "https://www.barcsikekszer.hu/shop_ordered/31062/pic/OG.jpg"
+      ],
+      "google_place_id": "ChIJDzyWFA7aQ0cRCIsGvK_jz6I",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 14
+    },
+    {
+      "id": "hu-scale-barta-kavehaz-tata-016",
+      "discovery_profile": "https://naszdal.hu/directory/a495c051-f0cb-4c2f-bb02-3b6e923d123f",
+      "official_website": "http://bartacuki.hu/",
+      "name": "Barta Kávéház",
+      "category": "catering",
+      "city": "Tata",
+      "county": "Komárom-Esztergom",
+      "contact_email": "bartacuki@gmail.com",
+      "contact_phone": "(06 34) 384 264",
+      "official_image_urls": [
+        "https://bartacuki.hu/sites/default/files/styles/content_header/public/pano4_henger.jpg?itok=aLJOIk5C"
+      ],
+      "google_place_id": "ChIJPf1WFt1FakcRPdjjbE-F-SM",
+      "google_rating_at_research_time": 4.4,
+      "google_review_count_at_research_time": 2072
+    },
+    {
+      "id": "hu-scale-bastya-hotel-miskolc-036",
+      "discovery_profile": "https://naszdal.hu/directory/ce165a04-7571-4735-93e7-3e9e88065810",
+      "official_website": "http://www.bastyawellnesshotel.hu/",
+      "name": "Bástya Hotel",
+      "category": "venue",
+      "city": "Miskolc",
+      "county": "Borsod-Abaúj-Zemplén",
+      "contact_email": "info@bastyahotel.hu",
+      "contact_phone": "(06 46) 422 100",
+      "official_image_urls": [
+        "https://www.bastyawellnesshotel.hu/wp-content/uploads/elementor/thumbs/oszi-wellness-ajanlat-2025-bastya-wellness-hotel-miskolc-rakt2620d87mduv2wb825kmdhd78jxz1cj30cztbgk.webp"
+      ],
+      "google_place_id": "ChIJgU4bG2-fQEcRrBruEsZ8xBU",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 3882
+    },
+    {
+      "id": "hu-scale-be-happy-ajandek-es-zaszlo-kecskemet-056",
+      "discovery_profile": "https://naszdal.hu/directory/13da5d8e-ecb9-4f7f-a363-f448f4f6379a",
+      "official_website": "http://behappyajandek.hu/",
+      "name": "Be Happy Ajándék és Zászló",
+      "category": "wedding_decor",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "gubacsiandrea1974@gmail.com",
+      "contact_phone": "(06 76) 955 337",
+      "official_image_urls": [
+        "https://behappyajandek.hu/wp-content/uploads/2022/08/be-happy-weboldali-kiegeszito-kreativ-v2.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 48
+    },
+    {
+      "id": "hu-scale-bolla-gabor-photographer-zalaegerszeg-079",
+      "discovery_profile": "https://naszdal.hu/directory/87f1a8a6-19fd-4dfa-aec2-587e46f715f4",
+      "official_website": "http://www.bollagabor.com/",
+      "name": "Bolla Gábor | Photographer",
+      "category": "photography",
+      "city": "Zalaegerszeg",
+      "county": "Zala",
+      "contact_email": "hello@bollagabor.com",
+      "contact_phone": "06 30 989 5962",
+      "official_image_urls": [
+        "https://bollagabor.com/wp-content/uploads/2022/11/click-1108.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 76
+    },
+    {
+      "id": "hu-scale-borcsa-etterem-balatonfured-003",
+      "discovery_profile": "https://naszdal.hu/directory/2a404b38-302d-4a01-b2d7-c4b54b8e3b56",
+      "official_website": "http://www.borcsaetterem.hu/",
+      "name": "Borcsa Étterem",
+      "category": "catering",
+      "city": "Balatonfüred",
+      "county": "Veszprém",
+      "contact_email": "borcsaetterem@freemail.hu",
+      "contact_phone": "(06 87) 580 070",
+      "official_image_urls": [
+        "http://borcsaetterem.hu/wp-content/uploads/topslider-2.jpg"
+      ],
+      "google_place_id": "ChIJ0_h5ngu9aUcRNBz1NsRq23w",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 6975
+    },
+    {
+      "id": "hu-scale-borgulya-zsolt-eskuvo-party-dj-ceremoniamester-garantalt-buli-hangulat-sopron-118",
+      "discovery_profile": "https://naszdal.hu/directory/cfd52835-93bc-42b9-84c1-d55223a0bcd7",
+      "official_website": "http://www.eskuvo-partydj.hu/",
+      "name": "Borgulya Zsolt Esküvő & Party dj/ Ceremóniamester / Garantált BULI Hangulat",
+      "category": "dj",
+      "city": "Sopron",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "borgesz64@gmail.com",
+      "contact_phone": "06 30 253 5794",
+      "official_image_urls": [
+        "http://eskuvo-partydj.hu/wp-content/uploads/2018/11/12-copy.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 6
+    },
+    {
+      "id": "hu-scale-bundiner-cukraszda-fot-041",
+      "discovery_profile": "https://naszdal.hu/directory/a75e2f09-b597-450b-bd13-36be7c215dd5",
+      "official_website": "http://www.bundiner.hu/",
+      "name": "Bundiner Cukrászda",
+      "category": "cake_dessert",
+      "city": "Fót",
+      "county": "Pest",
+      "contact_email": "info@bundiner.hu",
+      "contact_phone": "(06 27) 363 033",
+      "official_image_urls": [
+        "https://bundiner.hu/assets/uploads/slider/69d47-slider-summer.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 2493
+    },
+    {
+      "id": "hu-scale-cool-fashion-noi-ruhak-es-kiegeszitok-debrecen-coolfashion-kft-coolfashion-hu-debrecen-015",
+      "discovery_profile": "https://naszdal.hu/directory/80cae54c-66d4-47a7-b042-af62711a1814",
+      "official_website": "https://coolfashion.hu/kategoriak/",
+      "name": "COOL Fashion-női ruhák és kiegészítők - Debrecen - Coolfashion Kft (coolfashion.hu)",
+      "category": "bridal_boutique",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "shop@coolfashion.hu",
+      "contact_phone": "06 70 242 0444",
+      "official_image_urls": [
+        "https://coolfashion.hu/wp-content/uploads/2026/01/10-fruzsina-beige-nadrag-mystic-day-fruzsina-beige-nadrag-2.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 691
+    },
+    {
+      "id": "hu-scale-creppy-palacsintahaz-etterem-center-miskolc-miskolc-045",
+      "discovery_profile": "https://naszdal.hu/directory/33da8717-63d5-4cf7-953f-9f2409bd0224",
+      "official_website": "http://www.creppy.hu/",
+      "name": "Creppy PalacsintaHáz Étterem & Center Miskolc",
+      "category": "catering",
+      "city": "Miskolc",
+      "county": "Borsod-Abaúj-Zemplén",
+      "contact_email": "palacsintahaz@creppy.hu",
+      "contact_phone": "06 70 374 3671",
+      "official_image_urls": [
+        "https://creppy.hu/storage/og/og-fooldal.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 4316
+    },
+    {
+      "id": "hu-scale-csamango-ora-ekszer-kft-kalocsa-095",
+      "discovery_profile": "https://naszdal.hu/directory/0aaa6716-a959-4f10-a7c4-571117c43cf5",
+      "official_website": "https://www.ekszerora.hu/",
+      "name": "Csamangó-Óra-Ékszer Kft",
+      "category": "wedding_jewelry",
+      "city": "Kalocsa",
+      "county": "Bács-Kiskun",
+      "contact_email": "info@ekszerora.hu",
+      "contact_phone": "(06 78) 466 238",
+      "official_image_urls": [
+        "https://www.ekszerora.hu/wp-content/uploads/2023/09/Csamango-slider_karikagyuru_3-1536x496.jpg.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 34
+    },
+    {
+      "id": "hu-scale-cupcake-tortamuhely-budapest-103",
+      "discovery_profile": "https://naszdal.hu/directory/e82e41bc-f9f2-487d-893a-99590ab36c22",
+      "official_website": "http://cupcake.hu/",
+      "name": "Cupcake Tortaműhely",
+      "category": "cake_dessert",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@cupcake.hu",
+      "contact_phone": "06 30 355 5372",
+      "official_image_urls": [
+        "https://cupcake.hu/wp-content/uploads/2025/12/Baner_ceges.jpg"
+      ],
+      "google_place_id": "ChIJMQXVuyTcQUcRUAN2tLNP_2Y",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 550
+    },
+    {
+      "id": "hu-scale-dance-for-art-tanc-studio-kecskemet-090",
+      "discovery_profile": "https://naszdal.hu/directory/efc78fa6-87c1-4ed3-8599-d60af02918a1",
+      "official_website": "http://www.danceforart.hu/",
+      "name": "Dance for Art Tánc-stúdió",
+      "category": "dance_lessons",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "info@danceforart.hu",
+      "contact_phone": "06 70 576 6564",
+      "official_image_urls": [
+        "https://danceforart.hu/wp-content/uploads/2020/08/DFA_CSAPAT.jpg"
+      ],
+      "google_place_id": "ChIJcd_c4xLaQ0cR0rpe2fWSVxA",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 45
+    },
+    {
+      "id": "hu-scale-deak-ekszerszalon-gyemant-gyuru-webshop-deakdiamond-hu-gyula-109",
+      "discovery_profile": "https://naszdal.hu/directory/583067d5-bd08-4df7-afaf-54e6763856b0",
+      "official_website": "https://deakekszer.hu/",
+      "name": "Deák Ékszerszalon / Gyémánt gyűrű webshop / deakdiamond.hu",
+      "category": "wedding_jewelry",
+      "city": "Gyula",
+      "county": "Békés",
+      "contact_email": "deakekszer@t-online.hu",
+      "contact_phone": "06 20 453 7982",
+      "official_image_urls": [
+        "https://deakekszer.hu/pics/carousel/01.jpg"
+      ],
+      "google_place_id": "ChIJOUpiy3_XRUcRPVYytlYOMr8",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 88
+    },
+    {
+      "id": "hu-scale-dekoragi-teljeskoru-rendezveny-dekoracio-berbeadas-budapest-073",
+      "discovery_profile": "https://naszdal.hu/directory/964b4279-f567-43a6-a582-2fe433b66cd0",
+      "official_website": "http://www.dekoragi.com/",
+      "name": "DekorÁgi - Teljeskörű rendezvény dekoráció, bérbeadás",
+      "category": "wedding_decor",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@dekoragi.com",
+      "contact_phone": "06 20 471 9323",
+      "official_image_urls": [
+        "https://www.dekoragi.com/wp-content/uploads/2025/03/dekoragi16.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 65
+    },
+    {
+      "id": "hu-scale-dekowest-eskuvoi-es-rendezveny-dekoracio-szekesfehervar-148",
+      "discovery_profile": "https://naszdal.hu/directory/525f431f-dcfc-4c6e-b976-0c970cfa1a96",
+      "official_website": "http://www.dekowest.hu/",
+      "name": "Dekowest esküvői - és rendezvény dekoráció",
+      "category": "wedding_decor",
+      "city": "Székesfehérvár",
+      "county": "Fejér",
+      "contact_email": "dekowest@dekowest.hu",
+      "contact_phone": "06 30 204 0233",
+      "official_image_urls": [
+        "https://dekowest.hu/wp-content/uploads/2023/01/20220827_125625.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 10
+    },
+    {
+      "id": "hu-scale-diora-luxus-eskuvoi-ruhaszalon-budapest-054",
+      "discovery_profile": "https://naszdal.hu/directory/df6bc61b-3066-4707-af29-f9134c21202b",
+      "official_website": "https://dioraeskuvo.hu/",
+      "name": "Diora Luxus Esküvői Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Budapest",
+      "county": "Pest",
+      "contact_email": "info@dioraeskuvo.hu",
+      "contact_phone": "(06 1) 951 6545",
+      "official_image_urls": [
+        "https://dioraeskuvo.hu/wp-content/uploads/E6115909-995F-45B4-A86B-F9D1983595C4.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 163
+    },
+    {
+      "id": "hu-scale-dj-louis-paolo-debrecen-063",
+      "discovery_profile": "https://naszdal.hu/directory/1cfd72e7-a07e-4eb9-bc9a-737ddd8070a6",
+      "official_website": "https://djlouispaolo.hu/",
+      "name": "Dj Louis Paolo",
+      "category": "dj",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "info@djlouispaolo.hu",
+      "contact_phone": "06 20 372 1241",
+      "official_image_urls": [
+        "https://www.djlouispaolo.hu/wp-content/uploads/2021/03/djlouispaolo2.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 8
+    },
+    {
+      "id": "hu-scale-dj-richie-eskuvoi-dj-es-egyben-modern-ceremoniamester-eskuvore-rendezvenyre-budapest-104",
+      "discovery_profile": "https://naszdal.hu/directory/98f9fd31-ac71-4461-9904-ae0828c210e6",
+      "official_website": "http://www.djrichie.hu/",
+      "name": "Dj Richie - Esküvői Dj és Egyben Modern Ceremóniamester Esküvőre, Rendezvényre",
+      "category": "dj",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@djrichie.hu",
+      "contact_phone": "06 30 952 0320",
+      "official_image_urls": [
+        "http://www.djrichie.hu/IMAGES/DJ-R-Nyito-arnyekolva%20uj%20gombbal.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.1,
+      "google_review_count_at_research_time": 57
+    },
+    {
+      "id": "hu-scale-dominium-pinceszet-es-panzio-gyongyos-138",
+      "discovery_profile": "https://naszdal.hu/directory/b652f11d-27e1-4bea-bfc1-6499f5823059",
+      "official_website": "http://www.dominiumwine.com/",
+      "name": "Dominium Pincészet és Panzió",
+      "category": "catering",
+      "city": "Gyöngyös",
+      "county": "Heves",
+      "contact_email": "info@dominiumwine.com",
+      "contact_phone": "06 30 570 3849",
+      "official_image_urls": [
+        "http://dominiumwine.com/wp-content/uploads/2023/01/DSC_1221-scaled.jpg"
+      ],
+      "google_place_id": "ChIJ1W6uKEpbQEcRVT3lwBi4vxo",
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 285
+    },
+    {
+      "id": "hu-scale-dream-weddings-budapest-budapest-012",
+      "discovery_profile": "https://naszdal.hu/directory/2f44d5a6-4f49-4509-b7e2-9c3d0a9630fa",
+      "official_website": "http://dreamweddingsbudapest.com/",
+      "name": "Dream Weddings Budapest",
+      "category": "wedding_planner",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@dreamweddingsbudapest.com",
+      "contact_phone": "06 70 312 3210",
+      "official_image_urls": [
+        "https://dreamweddingsbudapest.com/wp-content/uploads/2024/01/Budapest-wedding-planner-Fishermans-Bastion-wedding-decor.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 17
+    },
+    {
+      "id": "hu-scale-ecler-wedding-and-event-crew-dunaujvaros-115",
+      "discovery_profile": "https://naszdal.hu/directory/a56c33ed-4dc7-4cfd-bef2-ddb1d8dc9623",
+      "official_website": "https://eclercrew.hu/",
+      "name": "Ecler Wedding And Event Crew",
+      "category": "dj",
+      "city": "Dunaújváros",
+      "county": "Fejér",
+      "contact_email": "info@maxer.hu",
+      "contact_phone": "06 30 681 7701",
+      "official_image_urls": [
+        "https://eclercrew.hu/wp-content/uploads/463457203_1137077177890136_5197360129626359967_n.jpg"
+      ],
+      "google_place_id": "ChIJ92ZKEQMjQkcRABFf1jbmVtE",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 30
+    },
+    {
+      "id": "hu-scale-eden-lounge-etterem-es-panzio-veresegyhaz-155",
+      "discovery_profile": "https://naszdal.hu/directory/cd648081-9ab9-421f-b3d3-7410b5a20249",
+      "official_website": "https://edenlounge.hu/",
+      "name": "Éden Lounge Étterem és Panzió",
+      "category": "venue",
+      "city": "Veresegyház",
+      "county": "Pest",
+      "contact_email": "etterem@edenlounge.hu",
+      "contact_phone": "06 20 489 2827",
+      "official_image_urls": [
+        "https://edenlounge.hu/wp-content/uploads/2026/02/26_Valentin-nap-724x1024.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 606
+    },
+    {
+      "id": "hu-scale-elite-menyasszonyi-ruha-bolt-budapest-102",
+      "discovery_profile": "https://naszdal.hu/directory/ea375d0b-6f8f-4c44-87ff-5298d172aa49",
+      "official_website": "https://www.eliteszalon.hu/",
+      "name": "ELITE menyasszonyi ruha bolt",
+      "category": "bridal_boutique",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@eliteszalon.hu",
+      "contact_phone": "06 20 986 3390",
+      "official_image_urls": [
+        "https://www.eliteszalon.hu/files/editor/og-image.jpg"
+      ],
+      "google_place_id": "ChIJUxE5DBrdQUcRWb2ZiiTT1rU",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 55
+    },
+    {
+      "id": "hu-scale-elmenyor-horvath-gabor-paks-070",
+      "discovery_profile": "https://naszdal.hu/directory/9a625d6b-e2d1-4720-9246-fbdfb8e2f2d1",
+      "official_website": "https://elmenyor.hu/",
+      "name": "ÉlményŐr - Horváth Gábor",
+      "category": "photography",
+      "city": "Paks",
+      "county": "Tolna",
+      "contact_email": "elmenyor@gmail.com",
+      "contact_phone": "06 20 591 0480",
+      "official_image_urls": [
+        "https://elmenyor.hu/wp-content/uploads/2025/10/Zsuska_es_Navindu_4k.mp4_snapshot_02.43.440-1140x489.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 30
+    },
+    {
+      "id": "hu-scale-enterband-eskuvoi-zenekar-partyzenekar-gyongyos-049",
+      "discovery_profile": "https://naszdal.hu/directory/f2c7d82c-fdb1-42d0-97bb-c7716a68472a",
+      "official_website": "https://enterband.hu/",
+      "name": "Enterband esküvői zenekar, partyzenekar",
+      "category": "dj",
+      "city": "Gyöngyös",
+      "county": "Heves",
+      "contact_email": "info@enterband.hu",
+      "contact_phone": "06 70 502 8596",
+      "official_image_urls": [
+        "https://enterband.hu/wp-content/uploads/2016/09/lakodalmas-zenekar.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 18
+    },
+    {
+      "id": "hu-scale-entertrain-party-band-tatabanya-092",
+      "discovery_profile": "https://naszdal.hu/directory/6c21f11b-0ac3-479d-923c-1c98ed84bf51",
+      "official_website": "http://entertrain.hu/",
+      "name": "EnterTrain Party Band",
+      "category": "dj",
+      "city": "Tatabánya",
+      "county": "Komárom-Esztergom",
+      "contact_email": "info@entertrain.hu",
+      "contact_phone": "06 20 298 7309",
+      "official_image_urls": [
+        "https://entertrain.hu/wp-content/uploads/2022/10/Pirosfekete-scaled.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 33
+    },
+    {
+      "id": "hu-scale-eskuvoi-dj-major-gabor-e-v-gyor-034",
+      "discovery_profile": "https://naszdal.hu/directory/fd3aa7a9-b44e-48c2-b53d-1eb1a33bc92f",
+      "official_website": "http://www.djmajorgabe.hu/",
+      "name": "Esküvői DJ - Major Gábor E.V.",
+      "category": "dj",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "djmayorgabe@gmail.com",
+      "contact_phone": "06 30 622 2155",
+      "official_image_urls": [
+        "https://www.djmajorgabe.hu/wp-admin/admin-ajax.php?action=rank_math_overlay_thumb&id=206&type=play&hash=708701fb8f838b7c365c2eb21690e03a"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 51
+    },
+    {
+      "id": "hu-scale-eskuvoi-meghivok-debrecen-039",
+      "discovery_profile": "https://naszdal.hu/directory/da7f9733-346a-4a5a-b5b1-17bf9495d275",
+      "official_website": "https://eskuvoi-meghivok.hu/",
+      "name": "Esküvői meghívók",
+      "category": "invitation_graphics",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "info@eskuvoi-meghivok.hu",
+      "contact_phone": "06 20 409 2609",
+      "official_image_urls": [
+        "https://eskuvoi-meghivok.hu/wp-content/uploads/2024/08/grafikus-eskuvoi-meghivo-42-4.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 68
+    },
+    {
+      "id": "hu-scale-eskuvoi-riportfoto-nagy-karoly-debrecen-175",
+      "discovery_profile": "https://naszdal.hu/directory/473efc3a-5184-4f5f-95ca-add258ffd902",
+      "official_website": "http://www.eskuvoi-riportfoto.hu/?utm_source=mybusiness&utm_medium=mybusiness",
+      "name": "Esküvői Riportfotó - Nagy Károly",
+      "category": "photography",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "info@eskuvoi-riportfoto.hu",
+      "contact_phone": "06 30 331 5005",
+      "official_image_urls": [
+        "https://eskuvoi-riportfoto.hu/wp-content/uploads/2024/12/Slider-1.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 51
+    },
+    {
+      "id": "hu-scale-eskuvoi-smink-alkalmi-smink-kecskemet-victoria-makeup-profi-sminkes-es-szemoldok-stylist-kecskemet-053",
+      "discovery_profile": "https://naszdal.hu/directory/df1fd406-7e1a-4123-b708-88c0da88a8bc",
+      "official_website": "http://www.victoriamakeup.hu/",
+      "name": "Esküvői smink, alkalmi smink Kecskemét | Victoria MakeUp profi sminkes és szemöldök stylist",
+      "category": "hair_makeup",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "vm@victoriamakeup.hu",
+      "contact_phone": "06 30 164 5940",
+      "official_image_urls": [
+        "https://www.victoriamakeup.hu/wp-content/uploads/2023/10/DSC_6186-1024x682.jpg"
+      ],
+      "google_place_id": "ChIJX6SLE6HdQUcR8Xo1Ep6j4QQ",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 78
+    },
+    {
+      "id": "hu-scale-ezustgyongy-eskuvoi-ruhaszalon-mirila-kft-kecskemet-009",
+      "discovery_profile": "https://naszdal.hu/directory/64a4b7eb-3350-41e5-9f44-75f430a21094",
+      "official_website": "http://ezustgyongy.hu/",
+      "name": "Ezüstgyöngy Esküvői Ruhaszalon Mirila Kft",
+      "category": "bridal_boutique",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "ezustgyongyi@gmail.com",
+      "contact_phone": "06 30 317 4555",
+      "official_image_urls": [
+        "https://ezustgyongy.hu/media/pics/page_main_pics/MGmain4.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 108
+    },
+    {
+      "id": "hu-scale-fantazia-foto-video-studio-veszprem-028",
+      "discovery_profile": "https://naszdal.hu/directory/d4b2f389-cbd0-4728-8304-f919b521544a",
+      "official_website": "http://www.fantaziafoto.hu/",
+      "name": "Fantázia Fotó Videó Studió",
+      "category": "photography",
+      "city": "Veszprém",
+      "county": "Veszprém",
+      "contact_email": "zsolt@fantaziafoto.hu",
+      "contact_phone": "06 30 238 6211",
+      "official_image_urls": [
+        "https://www.fantaziafoto.hu/wp-content/uploads/2023/01/eskuvo_landing_01.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 129
+    },
+    {
+      "id": "hu-scale-fantazia-rendezvenyszervezes-es-dekoracio-pecs-124",
+      "discovery_profile": "https://naszdal.hu/directory/3c509f9e-613b-4e9a-bc25-17f5a77149f3",
+      "official_website": "http://www.retirita.hu/",
+      "name": "Fantázia rendezvényszervezés és dekoráció",
+      "category": "wedding_decor",
+      "city": "Pécs",
+      "county": "Baranya",
+      "contact_email": "fantaziarendezveny@gmail.com",
+      "contact_phone": "06 30 334 7879",
+      "official_image_urls": [
+        "https://retirita.hu/wp-content/uploads/2018/10/fantazia-40-1.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 9
+    },
+    {
+      "id": "hu-scale-feher-rozsa-menyasszonyi-es-eskuvoi-ruha-szalon-szombathely-128",
+      "discovery_profile": "https://naszdal.hu/directory/336c122e-8710-4ba1-8b85-e6cc2c60c7cd",
+      "official_website": "https://feherrozsaszalon.hu/",
+      "name": "Fehér Rózsa Menyasszonyi és Esküvői Ruha Szalon",
+      "category": "bridal_boutique",
+      "city": "Szombathely",
+      "county": "Vas",
+      "contact_email": "feherrozsaszalon@gmail.com",
+      "contact_phone": "06 30 599 6600",
+      "official_image_urls": [
+        "https://feherrozsaszalon.hu/wp-content/uploads/2019/06/9847_FF_opt.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 52
+    },
+    {
+      "id": "hu-scale-feher-sas-panzio-es-etterem-miskolc-122",
+      "discovery_profile": "https://naszdal.hu/directory/6ff0b60e-bd52-43e9-9a99-4506e07d5cfa",
+      "official_website": "https://www.fehersaspanzio.hu/",
+      "name": "Fehér Sas Panzió és Étterem",
+      "category": "venue",
+      "city": "Miskolc",
+      "county": "Borsod-Abaúj-Zemplén",
+      "contact_email": "info@fehersaspanzio.hu",
+      "contact_phone": "06 30 331 3545",
+      "official_image_urls": [
+        "https://www.fehersaspanzio.hu/uploads/bemutatkozas/1714675004.jpg"
+      ],
+      "google_place_id": "ChIJO8slgXKCQEcRv2TsFjqEAbY",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 1373
+    },
+    {
+      "id": "hu-scale-fekete-golya-etterem-kecskemet-026",
+      "discovery_profile": "https://naszdal.hu/directory/c4e82044-a803-4275-93cd-d4e8322b7712",
+      "official_website": "http://feketegolya.hu/",
+      "name": "Fekete Gólya étterem",
+      "category": "venue",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "foglalas@feketegolya.hu",
+      "contact_phone": "06 30 445 3140",
+      "official_image_urls": [
+        "https://feketegolya.hu/media/images/kepvalto/kepvalto_50.jpg"
+      ],
+      "google_place_id": "ChIJSRu8F3vZQ0cR2-lHNNN_afA",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 8157
+    },
+    {
+      "id": "hu-scale-fekete-sas-kavehaz-hodmezovasarhely-097",
+      "discovery_profile": "https://naszdal.hu/directory/6cb81c47-3e5a-40f6-894f-a521ceef420f",
+      "official_website": "http://www.bandula.hu/",
+      "name": "Fekete Sas Kávéház",
+      "category": "catering",
+      "city": "Hódmezővásárhely",
+      "county": "Csongrád-Csanád",
+      "contact_email": "bandulaponthu@gmail.com",
+      "contact_phone": "06 20 482 2706",
+      "official_image_urls": [
+        "https://www.bandula.hu/wp-content/uploads/2025/03/2.png"
+      ],
+      "google_place_id": "ChIJxUVFzXlvREcRtdju5f92uY8",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 1397
+    },
+    {
+      "id": "hu-scale-feva-eskuvoi-szalon-kalocsa-153",
+      "discovery_profile": "https://naszdal.hu/directory/63248b25-4e18-4c6a-91ca-2ccc35055e31",
+      "official_website": "https://feva.hu/",
+      "name": "FÉVA Esküvői Szalon",
+      "category": "bridal_boutique",
+      "city": "Kalocsa",
+      "county": "Bács-Kiskun",
+      "contact_email": "info@feva.hu",
+      "contact_phone": "06 30 906 7304",
+      "official_image_urls": [
+        "https://feva.hu/images/feva.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.3,
+      "google_review_count_at_research_time": 48
+    },
+    {
+      "id": "hu-scale-flames-tanc-es-mozgasstudio-gyor-052",
+      "discovery_profile": "https://naszdal.hu/directory/1a799c8e-b0e7-4b56-b7cf-792b5e57288a",
+      "official_website": "https://flamesstudio.hu/",
+      "name": "Flames Tánc- és Mozgásstúdió",
+      "category": "dance_lessons",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "flamestms@gmail.com",
+      "contact_phone": "06 20 312 1108",
+      "official_image_urls": [
+        "https://flamesstudio.hu/wp-content/uploads/2022/01/CB69015B-C0F4-4154-953B-327D23D7A08C.png"
+      ],
+      "google_place_id": "ChIJ85imhbu_a0cRa3R9lSWtDCY",
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 64
+    },
+    {
+      "id": "hu-scale-fogado-a-magyar-kiralyokhoz-budaors-127",
+      "discovery_profile": "https://naszdal.hu/directory/6acc1ab8-f67c-4300-9d96-9447b1b5dcba",
+      "official_website": "http://www.magyarkiralyok.hu/",
+      "name": "Fogadó a magyar királyokhoz",
+      "category": "venue",
+      "city": "Budaörs",
+      "county": "Pest",
+      "contact_email": "magyarkiralyok.ka@gmail.com",
+      "contact_phone": "(06 23) 442 512",
+      "official_image_urls": [
+        "https://www.magyarkiralyok.hu/assets/image/about/pancel.jpg"
+      ],
+      "google_place_id": "ChIJBfYA1hbeQUcRaNhERT5vxys",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 2121
+    },
+    {
+      "id": "hu-scale-fonix-viragkuldes-szolnok-067",
+      "discovery_profile": "https://naszdal.hu/directory/e44af23f-86da-4ca2-a4bb-c1b312938110",
+      "official_website": "https://www.fonixvirag.hu/",
+      "name": "Főnix Virágküldés",
+      "category": "florist",
+      "city": "Szolnok",
+      "county": "Jász-Nagykun-Szolnok",
+      "contact_email": "info@fonixvirag.hu",
+      "contact_phone": "06 30 264 7576",
+      "official_image_urls": [
+        "https://api.fonixvirag.hu/uploads/lowres-1736276193589_viragcsokor_pasztell_orom.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 77
+    },
+    {
+      "id": "hu-scale-gala-korzo-tatabanya-069",
+      "discovery_profile": "https://naszdal.hu/directory/7eed58ae-3dad-447e-b7e9-b1333ce637fc",
+      "official_website": "http://www.galakorzo.hu/",
+      "name": "Gála Korzó",
+      "category": "catering",
+      "city": "Tatabánya",
+      "county": "Komárom-Esztergom",
+      "contact_email": "info@galakorzo.hu",
+      "contact_phone": "06 20 417 4334",
+      "official_image_urls": [
+        "https://galakorzo.hu/wp-content/uploads/2021/01/DSC03626-768x576.jpg"
+      ],
+      "google_place_id": "ChIJdYKtJSZBakcRcNo7NhNwcVI",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 1012
+    },
+    {
+      "id": "hu-scale-gasper-eskuvoi-dj-kecskemet-kecskemet-006",
+      "discovery_profile": "https://naszdal.hu/directory/0bf600f7-f6a9-4459-9bb5-31ea22d7fed6",
+      "official_website": "https://gaspereskuvoidj.hu/",
+      "name": "Gasper esküvői DJ, Kecskemét",
+      "category": "dj",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "info@gaspereskuvoidj.hu",
+      "contact_phone": "06 20 390 6630",
+      "official_image_urls": [
+        "https://gaspereskuvoidj.hu/wp-content/uploads/elementor/thumbs/KCS_3154-for-pdf-scaled-rned8j3hpl7ci56n22mbz7lb3yratu8j308tyj251c.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 85
+    },
+    {
+      "id": "hu-scale-gergely-borhaz-balatonfured-116",
+      "discovery_profile": "https://naszdal.hu/directory/dd9f0b4d-515c-47d7-af56-237e1e1123fd",
+      "official_website": "http://www.gergelyborhaz.hu/",
+      "name": "Gergely Borház",
+      "category": "catering",
+      "city": "Balatonfüred",
+      "county": "Veszprém",
+      "contact_email": "gergelyborhaz@t-online.hu",
+      "contact_phone": "06 20 357 7360",
+      "official_image_urls": [
+        "http://gergelyborhaz.hu/wp-content/uploads/2017/11/martonnap2017.jpg"
+      ],
+      "google_place_id": "ChIJC2RWuMSmaUcR2lof0fxwQNI",
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 310
+    },
+    {
+      "id": "hu-scale-goldcity-ekszer-webaruhaz-nyiregyhaza-130",
+      "discovery_profile": "https://naszdal.hu/directory/73779751-223f-4000-b6c4-f90d76c854c3",
+      "official_website": "https://goldcity.hu/",
+      "name": "GoldCity Ékszer Webáruház",
+      "category": "wedding_jewelry",
+      "city": "Nyíregyháza",
+      "county": "Szabolcs-Szatmár-Bereg",
+      "contact_email": "goldcityekszer@gmail.com",
+      "contact_phone": "06 30 350 7687",
+      "official_image_urls": [
+        "https://goldcity.cdn.shoprenter.hu/custom/goldcity/image/cache/w1800h800/ekszer_kep/GoldCity-fulbevalok.jpg.webp?lastmod=0.1678356070"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 11
+    },
+    {
+      "id": "hu-scale-goldprint-nyomdaipari-es-ker-kft-szeged-080",
+      "discovery_profile": "https://naszdal.hu/directory/8d34727d-90c1-48b2-afb1-540e9700ec5a",
+      "official_website": "http://www.goldprint.hu/",
+      "name": "Goldprint Nyomdaipari és Ker. Kft.",
+      "category": "invitation_graphics",
+      "city": "Szeged",
+      "county": "Csongrád-Csanád",
+      "contact_email": "info@domainem.hu",
+      "contact_phone": "(06 62) 426 104",
+      "official_image_urls": [
+        "https://e2e2db9d8d.clvaw-cdnwnd.com/44462544c97f8881ea2b756a6ace6555/200000188-d5c3dd5c3e/700/montazs-6.png?ph=e2e2db9d8d"
+      ],
+      "google_place_id": "ChIJnV9YWnGIREcRL49GSlssyAM",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 29
+    },
+    {
+      "id": "hu-scale-golyafeszek-vendeglo-papa-014",
+      "discovery_profile": "https://naszdal.hu/directory/a88c9ccf-015f-4399-a69e-bf494041dea1",
+      "official_website": "http://www.golyafeszekvendeglo.hu/",
+      "name": "Gólyafészek Vendéglő",
+      "category": "catering",
+      "city": "Pápa",
+      "county": "Veszprém",
+      "contact_email": "info@golyafeszekvendeglo.hu",
+      "contact_phone": "(06 89) 313 850",
+      "official_image_urls": [
+        "https://golyafeszekvendeglo.hu/wp-content/uploads/2021/04/home-slide-1.jpg"
+      ],
+      "google_place_id": "ChIJHRmIaA1haUcRe_XUau4C9YA",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 2227
+    },
+    {
+      "id": "hu-scale-good-vibes-photostudio-szeged-152",
+      "discovery_profile": "https://naszdal.hu/directory/029d6b46-8a22-44be-8ac0-c1c424f9e871",
+      "official_website": "http://www.goodvibesphotostudio.hu/",
+      "name": "Good Vibes Photostudio",
+      "category": "photography",
+      "city": "Szeged",
+      "county": "Csongrád-Csanád",
+      "contact_email": "info@goodvibesphotostudio.hu",
+      "contact_phone": "06 70 607 7793",
+      "official_image_urls": [
+        "https://goodvibesphotostudio.hu/wp-content/uploads/2026/01/G_V_PS260015.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 18
+    },
+    {
+      "id": "hu-scale-green-gold-ekszer-manufaktura-bekescsaba-151",
+      "discovery_profile": "https://naszdal.hu/directory/e17a3900-8be3-46d6-8d2f-3eb9901be010",
+      "official_website": "http://www.greengoldekszer.hu/",
+      "name": "Green Gold Ékszer Manufaktúra",
+      "category": "wedding_jewelry",
+      "city": "Békéscsaba",
+      "county": "Békés",
+      "contact_email": "ggekszeruzlet@gmail.com",
+      "contact_phone": "06 30 116 0431",
+      "official_image_urls": [
+        "https://www.greengoldekszer.hu/shop_ordered/66767/pic/og1.jpg"
+      ],
+      "google_place_id": "ChIJ-8JvcDArREcRIvUoQC9D_h4",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 31
+    },
+    {
+      "id": "hu-scale-gyemant-eljegyzesi-gyuru-budapest-055",
+      "discovery_profile": "https://naszdal.hu/directory/069efb80-621f-4f29-bda8-d7c2ac14aed6",
+      "official_website": "https://gyemanteljegyzesigyuru.hu/shop-katalogus/",
+      "name": "Gyémánt Eljegyzési Gyűrű",
+      "category": "wedding_jewelry",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@gyemanteljegyzesigyuruk.hu",
+      "contact_phone": "06 30 532 3122",
+      "official_image_urls": [
+        "https://gyemanteljegyzesigyuru.hu/wp-content/uploads/2022/09/katalogus-scaled.jpg"
+      ],
+      "google_place_id": "ChIJx-aFpjbBQUcRsaldBXfcBNo",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 111
+    },
+    {
+      "id": "hu-scale-gyongyvirag-viraguzlet-kiskunhalas-112",
+      "discovery_profile": "https://naszdal.hu/directory/2b4600cd-ef2a-4d6c-9e7e-f3964964f27c",
+      "official_website": "https://viragkuldeskiskunhalas.hu/",
+      "name": "Gyöngyvirág virágüzlet",
+      "category": "florist",
+      "city": "Kiskunhalas",
+      "county": "Bács-Kiskun",
+      "contact_email": "gyongyviragkotomestermariann@viragkuldeskiskunhalas.hu",
+      "contact_phone": "06 20 341 3207",
+      "official_image_urls": [
+        "https://viragkuldeskiskunhalas.hu/wp-content/uploads/2022/04/20220409_083622-scaled-e1652179269656.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 42
+    },
+    {
+      "id": "hu-scale-gyorki-zoltan-fotografia-budapest-162",
+      "discovery_profile": "https://naszdal.hu/directory/a7329cd3-1fe1-48de-847a-852096637866",
+      "official_website": "https://gyorkizoltan.com/",
+      "name": "Györki Zoltán fotográfia",
+      "category": "photography",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@gyorkizoltan.com",
+      "contact_phone": "06 30 434 1312",
+      "official_image_urls": [
+        "https://gyorkizoltan.com/wp-content/uploads/2022/01/20210828_193137_0593_sm.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 15
+    },
+    {
+      "id": "hu-scale-h-szabo-foto-kiskunfelegyhaza-kiskunfelegyhaza-082",
+      "discovery_profile": "https://naszdal.hu/directory/fd954b75-0427-41a4-9e3d-42c70e47355a",
+      "official_website": "https://h-szabo.hu/",
+      "name": "H-Szabó Fotó Kiskunfélegyháza",
+      "category": "photography",
+      "city": "Kiskunfélegyháza",
+      "county": "Bács-Kiskun",
+      "contact_email": "info@h-szabo.hu",
+      "contact_phone": "06 30 648 5707",
+      "official_image_urls": [
+        "https://h-szabo.hu/wp-content/uploads/2023/10/H-Szabo_Foto1-1-scaled.webp"
+      ],
+      "google_place_id": "ChIJBxR35_lqAG0RrxSwtKk5EJY",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 59
+    },
+    {
+      "id": "hu-scale-hajcsapda-gyor-hairsalon-gyor-066",
+      "discovery_profile": "https://naszdal.hu/directory/8dd4aadc-3be4-412b-bd29-9196d5f877d8",
+      "official_website": "https://www.hajcsapda.hu/",
+      "name": "Hajcsapda Győr HairSalon",
+      "category": "hair_makeup",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "info@hajcsapda.hu",
+      "contact_phone": "06 70 317 6289",
+      "official_image_urls": [
+        "https://www.hajcsapda.hu/images/slider/slide-4.jpg"
+      ],
+      "google_place_id": "ChIJQYCkv-e_a0cRIlTd2lkgs-Y",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 303
+    },
+    {
+      "id": "hu-scale-halaszcsarda-keszthely-161",
+      "discovery_profile": "https://naszdal.hu/directory/16f93268-ee60-4b6f-a98c-26c8c30aad4b",
+      "official_website": "http://www.halaszcsardakeszthely.hu/",
+      "name": "Halászcsárda",
+      "category": "catering",
+      "city": "Keszthely",
+      "county": "Zala",
+      "contact_email": "szitagabor@yahoo.com",
+      "contact_phone": "(06 83) 310 036",
+      "official_image_urls": [
+        "http://www.halaszcsardakeszthely.hu/img/wedding.jpg"
+      ],
+      "google_place_id": "ChIJJ-IT27niaEcRmbFACVrlQII",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 2822
+    },
+    {
+      "id": "hu-scale-hanna-s-picture-collection-esztergom-020",
+      "discovery_profile": "https://naszdal.hu/directory/3fc10fbf-ee83-4dd4-97f9-0c91b9b69457",
+      "official_website": "https://hannapicturecollection.hu/",
+      "name": "Hanna's Picture Collection",
+      "category": "photography",
+      "city": "Esztergom",
+      "county": "Komárom-Esztergom",
+      "contact_email": "hanna.picture.collection@gmail.com",
+      "contact_phone": "06 70 348 8744",
+      "official_image_urls": [
+        "https://hannapicturecollection.hu/assets/gallery/mennyasszony.webp"
+      ],
+      "google_place_id": "ChIJx7nfZIlKSoQRyN53f14pKHg",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 42
+    },
+    {
+      "id": "hu-scale-harangvirag-cukraszda-budapest-166",
+      "discovery_profile": "https://naszdal.hu/directory/bd91c93b-4a87-4a67-a87a-8b7d63219aea",
+      "official_website": "http://www.harangviragcukraszda.hu/",
+      "name": "Harangvirág cukrászda",
+      "category": "cake_dessert",
+      "city": "Budapest",
+      "county": "Nógrád",
+      "contact_email": "info@harangviragcukraszda.hu",
+      "contact_phone": "06 30 854 8286",
+      "official_image_urls": [
+        "https://www.harangviragcukraszda.hu/images/rendszer/honlapfejlec5.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.4,
+      "google_review_count_at_research_time": 1532
+    },
+    {
+      "id": "hu-scale-hedge-hair-university-debrecen-160",
+      "discovery_profile": "https://naszdal.hu/directory/32f40583-84b2-452a-a9dc-4349c67de8de",
+      "official_website": "http://www.hedgehair.com/",
+      "name": "Hedge Hair UNIVERSITY",
+      "category": "hair_makeup",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "hedgehairdebrecen@gmail.com",
+      "contact_phone": "06 30 154 7070",
+      "official_image_urls": [
+        "https://hedgehair.com/wp-content/uploads/2021/03/8ac0ca8b6f59333fdb09ac7be53654fe.jpeg"
+      ],
+      "google_place_id": "ChIJnzMBpNwNR0cRnUTWeNcfn7c",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 80
+    },
+    {
+      "id": "hu-scale-hegedusne-szigeti-erika-e-v-olimpia-eskuvoi-ruhaszalon-es-jelmezkolcsonzo-tatabanya-108",
+      "discovery_profile": "https://naszdal.hu/directory/c004a474-64de-40a9-886c-fb910fc982ea",
+      "official_website": "http://www.olimpiaszalon.hu/",
+      "name": "Hegedűsné Szigeti Erika E.V. - Olimpia Esküvői Ruhaszalon és Jelmezkölcsönző",
+      "category": "bridal_boutique",
+      "city": "Tatabánya",
+      "county": "Komárom-Esztergom",
+      "contact_email": "kolcsonzo66@gmail.com",
+      "contact_phone": "06 30 747 7776",
+      "official_image_urls": [
+        "https://olimpiaszalon.hu/wp-content/uploads/2020/11/kiemelt.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.2,
+      "google_review_count_at_research_time": 31
+    },
+    {
+      "id": "hu-scale-henci-dekor-hezoki-kft-eskuvoszervezo-es-viragkoto-menyasszonyi-csokor-viragkosar-asztaldisz-koszoru-debrecen-131",
+      "discovery_profile": "https://naszdal.hu/directory/049b1669-20fe-4aa2-a2d4-0185019cc0da",
+      "official_website": "https://www.hencidekor.hu/",
+      "name": "Henci Dekor (Hezoki Kft.) - Esküvőszervező és Virágkötő, Menyasszonyi Csokor, Virágkosár, Asztaldísz, Koszorú",
+      "category": "florist",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "henrietta.racz79@gmail.com",
+      "contact_phone": "06 30 463 7473",
+      "official_image_urls": [
+        "https://c6d32790d9.clvaw-cdnwnd.com/1a7bea6659ff07f227e84fae5da8f1d0/200001572-a965ca9660/700/344322855_756463889272310_6567093499444724604_n.jpeg?ph=c6d32790d9"
+      ],
+      "google_place_id": "ChIJJ3U-OtEPR0cRrVf2GXg1j6I",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 33
+    },
+    {
+      "id": "hu-scale-hollosy-cukraszat-budaors-057",
+      "discovery_profile": "https://naszdal.hu/directory/962f2fee-a95f-4bbb-bca6-832cdcc55e20",
+      "official_website": "http://hollosy-cukraszat.hu/",
+      "name": "Hollósy Cukrászat",
+      "category": "cake_dessert",
+      "city": "Budaörs",
+      "county": "Pest",
+      "contact_email": "info@hollosy-cukraszat.hu",
+      "contact_phone": "(06 23) 420 840",
+      "official_image_urls": [
+        "https://hollosy-cukraszat.hu/slide/slide1.jpg"
+      ],
+      "google_place_id": "ChIJuy7LEdbfQUcRjZieqpjk_rE",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 1264
+    },
+    {
+      "id": "hu-scale-hotel-famulus-gyor-159",
+      "discovery_profile": "https://naszdal.hu/directory/3697cea5-22a4-4fc5-b213-f2b4c5e77bcf",
+      "official_website": "https://famulushotel.hu/",
+      "name": "Hotel Famulus",
+      "category": "venue",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "hotel@hotelfamulus.hu",
+      "contact_phone": "(06 96) 547 770",
+      "official_image_urls": [
+        "https://famulushotel.hu/assets/img/slides/slide-tavasz-2020_03_05_12_05_46.jpg"
+      ],
+      "google_place_id": "ChIJHYAAV-V2QUcRyVsjPAon1J4",
+      "google_rating_at_research_time": 4.3,
+      "google_review_count_at_research_time": 1418
+    },
+    {
+      "id": "hu-scale-hotel-helikon-keszthely-106",
+      "discovery_profile": "https://naszdal.hu/directory/db5a9146-eca5-4bee-b1a2-ea2299cd333f",
+      "official_website": "http://www.hotelhelikon.hu/",
+      "name": "Hotel Helikon",
+      "category": "venue",
+      "city": "Keszthely",
+      "county": "Zala",
+      "contact_email": "reservation@hotelhelikon.hu",
+      "contact_phone": "(06 83) 889 600",
+      "official_image_urls": [
+        "https://hotelhelikon.hu/wp-content/uploads/2026/01/h.png"
+      ],
+      "google_place_id": "ChIJWwBO3KPiaEcRGN59cezqR3A",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 1787
+    },
+    {
+      "id": "hu-scale-hunguest-bal-resort-balatonalmadi-balatonalmadi-031",
+      "discovery_profile": "https://naszdal.hu/directory/2b8bdc87-aad9-45a3-8c5f-ef2abd5cb3ae",
+      "official_website": "https://hunguesthotels.hu/balresort",
+      "name": "Hunguest BÁL Resort Balatonalmádi",
+      "category": "venue",
+      "city": "Balatonalmádi",
+      "county": "Veszprém",
+      "contact_email": "hotelbalresort@hunguesthotels.hu",
+      "contact_phone": "(06 88) 620 600",
+      "official_image_urls": [
+        "https://www.hunguesthotels.hu/images/hotel/16623618627945_s6.jpg"
+      ],
+      "google_place_id": "ChIJjWzEpbCRaUcRaKUt9Z9liPo",
+      "google_rating_at_research_time": 4.2,
+      "google_review_count_at_research_time": 2947
+    },
+    {
+      "id": "hu-scale-illes-hotel-es-stuszi-vadasz-etterem-szeged-094",
+      "discovery_profile": "https://naszdal.hu/directory/f7ae94e6-a76b-4552-8e44-3bb8d066935c",
+      "official_website": "http://www.illespanzio-vadaszetterem.hu/",
+      "name": "Illés Hotel és Stüszi Vadász Étterem",
+      "category": "venue",
+      "city": "Szeged",
+      "county": "Csongrád-Csanád",
+      "contact_email": "illeshotel@gmail.com",
+      "contact_phone": "(06 62) 315 640",
+      "official_image_urls": [
+        "https://www.illespanzio-vadaszetterem.hu/images/napfenyfurdo.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.3,
+      "google_review_count_at_research_time": 1066
+    },
+    {
+      "id": "hu-scale-jafo-dj-eskuvoi-dj-gyor-gyor-099",
+      "discovery_profile": "https://naszdal.hu/directory/1dae8cec-75e9-4a7e-b367-cf06b316c833",
+      "official_website": "https://www.jafodj.eu/",
+      "name": "Jafo Dj - Esküvői Dj Győr",
+      "category": "dj",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "jafo@jafodj.eu",
+      "contact_phone": "06 30 309 8117",
+      "official_image_urls": [
+        "https://e8d8655553.clvaw-cdnwnd.com/e071c08247b50a352893c88a058dc12b/200001378-40f5040f53/Jafo%20Dj%20-%20Esk%C3%BCv%C5%91i%20%C3%A9s%20Rendezv%C3%A9ny%20Dj.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 4
+    },
+    {
+      "id": "hu-scale-juhasz-roland-photohungary-com-nyiregyhaza-117",
+      "discovery_profile": "https://naszdal.hu/directory/b0366727-193e-4e1c-859a-e9dfd6d8cd91",
+      "official_website": "https://photohungary.com/",
+      "name": "Juhász Roland - Photohungary.com",
+      "category": "photography",
+      "city": "Nyíregyháza",
+      "county": "Szabolcs-Szatmár-Bereg",
+      "contact_email": "roland@photohungary.com",
+      "contact_phone": "06 70 629 2555",
+      "official_image_urls": [
+        "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,fit=crop/asnsaXBsBq0gVBsE/_z623785-2-uJC9s4SKHWrjXLgX.jpg"
+      ],
+      "google_place_id": "ChIJ22yIimhfR0cRd1m5ZWMhA_A",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 55
+    },
+    {
+      "id": "hu-scale-k-art-foto-fotos-fotozas-debrecen-debrecen-022",
+      "discovery_profile": "https://naszdal.hu/directory/b7bc595d-bcd8-467c-8941-93228f3990aa",
+      "official_website": "https://kartfoto.hu/",
+      "name": "K-Art Foto - Fotós, fotózás Debrecen",
+      "category": "photography",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "kart.fotografia@gmail.com",
+      "contact_phone": "06 30 470 5308",
+      "official_image_urls": [
+        "https://kartfoto.hu/wp-content/uploads/2024/02/opengraph.jpg"
+      ],
+      "google_place_id": "ChIJNx7d7p9rR0cRhFenEoopDZc",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 193
+    },
+    {
+      "id": "hu-scale-kaligraf-nyomda-debrecen-debrecen-064",
+      "discovery_profile": "https://naszdal.hu/directory/ab7e7497-d05e-4fc6-9148-24fa2df60812",
+      "official_website": "http://kaligraf.hu/",
+      "name": "Kaligráf Nyomda - Debrecen",
+      "category": "invitation_graphics",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "info@kaligraf.hu",
+      "contact_phone": "06 30 886 7422",
+      "official_image_urls": [
+        "https://kaligraf.hu/wp-content/uploads/2020/07/nagyformatum_hp_latex_315.jpg"
+      ],
+      "google_place_id": "ChIJg7jN6woOR0cRKIQyEeY1V6A",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 92
+    },
+    {
+      "id": "hu-scale-kep-studio-eskuvoi-fotozas-debrecen-debrecen-029",
+      "discovery_profile": "https://naszdal.hu/directory/b0472cf1-27e7-4afc-b08b-b32e10c87327",
+      "official_website": "https://www.kepstudio.com/",
+      "name": "Kép Studio – Esküvői Fotózás Debrecen",
+      "category": "photography",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "studiokep@gmail.com",
+      "contact_phone": "+36 20 2986660",
+      "official_image_urls": [
+        "https://format.creatorcdn.com/e849fe84-09fb-43a2-bf34-e40ca70707e3/0/0/0/417,0,2083,1666,1600,1200/0-0-0/ab82f34f-57e5-44e4-a998-9d4a86ffecca/1/2/csal%C3%A1di-fot%C3%B3z%C3%A1s-debrecen-63.jpg?fjkss=exp=2103219711~hmac=5bf042e42a9396200e8778e5713c8f2721c2ec60f02f85ce837f7c745b02a33b"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 138
+    },
+    {
+      "id": "hu-scale-keszthelyi-festetics-kastely-keszthely-010",
+      "discovery_profile": "https://naszdal.hu/directory/21cdafbd-f4c2-4abd-b74f-2ed5e86e676a",
+      "official_website": "https://www.festeticskastely.hu/",
+      "name": "keszthelyi Festetics-kastély",
+      "category": "venue",
+      "city": "Keszthely",
+      "county": "Zala",
+      "contact_email": "festeticskastely.keszthely@nof.hu",
+      "contact_phone": "(06 83) 314 194",
+      "official_image_urls": [
+        "https://helikonkastely.hu/wp-content/uploads/2023/08/hkm-slide-01.jpg"
+      ],
+      "google_place_id": "ChIJxdKChmAdaUcREeiZKbGTSw8",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 19261
+    },
+    {
+      "id": "hu-scale-kispal-gabor-ceremoniamester-monor-024",
+      "discovery_profile": "https://naszdal.hu/directory/71758dab-ae22-480f-a633-e3093777aeef",
+      "official_website": "https://eskuvoceremoniamester.hu/",
+      "name": "Kispál Gábor Ceremóniamester",
+      "category": "mc_celebrant",
+      "city": "Monor",
+      "county": "Pest",
+      "contact_email": "cm.kispalgabor@gmail.com",
+      "contact_phone": "06 70 381 6400",
+      "official_image_urls": [
+        "https://eskuvoceremoniamester.hu/feltoltesek/slider/1.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 33
+    },
+    {
+      "id": "hu-scale-kiss-roland-rolandkissphotography-com-szombathely-037",
+      "discovery_profile": "https://naszdal.hu/directory/48149e10-06a8-4419-848c-a605e1b99c9d",
+      "official_website": "http://www.rolandkissphotography.com/",
+      "name": "Kiss Roland - rolandkissphotography.com",
+      "category": "photography",
+      "city": "Szombathely",
+      "county": "Vas",
+      "contact_email": "roland@rolandkissphotography.com",
+      "contact_phone": "06 30 450 0025",
+      "official_image_urls": [
+        "https://www.rolandkissphotography.com/wp-content/uploads/2023/04/rolandkissphotography-wedding-eskuvo-sunshinephoto-vegyes-4-38.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 105
+    },
+    {
+      "id": "hu-scale-korzo-etterem-mosonmagyarovar-059",
+      "discovery_profile": "https://naszdal.hu/directory/f43f0dca-5d36-4d22-b19d-2acab422c125",
+      "official_website": "http://www.korzo-gosser.hu/",
+      "name": "Korzó Étterem",
+      "category": "catering",
+      "city": "Mosonmagyaróvár",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "info@korzo-gosser.hu",
+      "contact_phone": "(06 96) 579 743",
+      "official_image_urls": [
+        "https://korzo-gosser.hu/gfx/onepagev2/gfx_op_1/4000x1600.png"
+      ],
+      "google_place_id": "ChIJe5mYueN3bEcREymMfPUmyvg",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 468
+    },
+    {
+      "id": "hu-scale-kozaricsviktordress-whitewedding-showroom-pecs-pecs-060",
+      "discovery_profile": "https://naszdal.hu/directory/9a47968c-2e03-404f-92af-6b9e1f5f4045",
+      "official_website": "http://www.whitewedding.hu/",
+      "name": "KozaricsViktorDress - Whitewedding Showroom Pécs",
+      "category": "bridal_boutique",
+      "city": "Pécs",
+      "county": "Baranya",
+      "contact_email": "info@whitewedding.hu",
+      "contact_phone": "06 30 330 4785",
+      "official_image_urls": [
+        "https://static.wixstatic.com/media/262131_625514ca89254ee184198b0dc6ae44f1~mv2.jpg/v1/fill/w_2500,h_3750,al_c/262131_625514ca89254ee184198b0dc6ae44f1~mv2.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 65
+    },
+    {
+      "id": "hu-scale-kurucz-adam-eskuvoi-es-rendezveny-dj-tapolca-025",
+      "discovery_profile": "https://naszdal.hu/directory/4a45cfe6-37a3-4b15-8eec-e1f8f79f45f0",
+      "official_website": "https://kuruczadam-eventdj.hu/",
+      "name": "Kurucz Ádám Esküvői És Rendezvény DJ",
+      "category": "dj",
+      "city": "Tapolca",
+      "county": "Veszprém",
+      "contact_email": "kuruczadameventdj@gmail.com",
+      "contact_phone": "+36 30 329 8894",
+      "official_image_urls": [
+        "https://site-2686222.mozfiles.com/files/2686222/inlinepictures/s/background-fa10d7bc.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 8
+    },
+    {
+      "id": "hu-scale-la-mie-salon-eskuvoi-es-alkalmiruha-szeged-068",
+      "discovery_profile": "https://naszdal.hu/directory/fb41bcf7-5799-44eb-9f7f-072ca9748b2f",
+      "official_website": "http://la-mie.hu/",
+      "name": "La Mie Salon esküvői - és alkalmiruha",
+      "category": "bridal_boutique",
+      "city": "Szeged",
+      "county": "Csongrád-Csanád",
+      "contact_email": "lamiesalon2023@gmail.com",
+      "contact_phone": "06 70 371 3550",
+      "official_image_urls": [
+        "http://la-mie.hu/wp-content/uploads/2024/05/la_mie_salon_fb_piucture.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 30
+    },
+    {
+      "id": "hu-scale-lengyel-helga-kerekegyhaza-139",
+      "discovery_profile": "https://naszdal.hu/directory/e0d9199a-c134-4ac5-a5ce-c94a013778f8",
+      "official_website": "https://eskuvodekoracio.hu/",
+      "name": "Lengyel Helga",
+      "category": "wedding_decor",
+      "city": "Kerekegyháza",
+      "county": "Jász-Nagykun-Szolnok",
+      "contact_email": "lengyel.helga.odi@gmail.com",
+      "contact_phone": "06 70 453 7142",
+      "official_image_urls": [
+        "https://eskuvodekoracio.hu/wp-content/uploads/2025/04/ss5.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 8
+    },
+    {
+      "id": "hu-scale-leskovics-pirotechnika-kft-iroda-gyula-002",
+      "discovery_profile": "https://naszdal.hu/directory/1fe73917-3b95-4e73-a172-a06cc9539e02",
+      "official_website": "https://www.leskovicspiro.hu/",
+      "name": "Leskovics Pirotechnika Kft. iroda",
+      "category": "other",
+      "city": "Gyula",
+      "county": "Békés",
+      "contact_email": "tuzijatek@leskovicspiro.hu",
+      "contact_phone": "(06 66) 460 031",
+      "official_image_urls": [
+        "https://www.leskovicspiro.hu/wp-content/uploads/%C3%96nkorm%C3%A1nyzatoknak-1.jpg"
+      ],
+      "google_place_id": "ChIJRYFj7h_XRUcRNTVVfcKI6_o",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 28
+    },
+    {
+      "id": "hu-scale-life-style-ekszer-nyiregyhaza-011",
+      "discovery_profile": "https://naszdal.hu/directory/a177233e-3907-4a05-b8c5-5625cdd7ddf2",
+      "official_website": "https://lifeandstyle.hu/",
+      "name": "Life & Style ékszer",
+      "category": "wedding_jewelry",
+      "city": "Nyíregyháza",
+      "county": "Szabolcs-Szatmár-Bereg",
+      "contact_email": "lifeandstyle.ekszer@gmail.com",
+      "contact_phone": "06 70 389 6385",
+      "official_image_urls": [
+        "https://probalife.cdn.shoprenter.hu/custom/probalife/image/cache/w700h700q100/product/eljegyzesi-gyuru/eljegyzesi-gyuru-701-s.jpg.webp?lastmod=1714046676.1785238294"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 135
+    },
+    {
+      "id": "hu-scale-lovas-cukraszda-budapest-146",
+      "discovery_profile": "https://naszdal.hu/directory/9922395b-288d-4339-b19c-b48d1d1a4ff6",
+      "official_website": "http://www.lovascukraszda.hu/",
+      "name": "Lovas Cukrászda",
+      "category": "cake_dessert",
+      "city": "Budapest",
+      "county": "Nógrád",
+      "contact_email": "lovascukraszda@gmail.com",
+      "contact_phone": "06 20 203 3030",
+      "official_image_urls": [
+        "https://lovascukraszda.hu/slider/images/img_0251.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 797
+    },
+    {
+      "id": "hu-scale-love-eskuvoi-ruhaszalon-budapest-101",
+      "discovery_profile": "https://naszdal.hu/directory/cf13be34-07cd-465e-86f4-f9138d064cbe",
+      "official_website": "https://loveszalon.hu/",
+      "name": "LOVE Esküvői Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "love.szalon@gmail.com",
+      "contact_phone": "06 30 010 1740",
+      "official_image_urls": [
+        "https://loveszalon.hu/wp-content/uploads/08361-Libra-1-scaled-e1760597289314-670x800.jpg?v=1755250166"
+      ],
+      "google_place_id": "ChIJsysInG3cQUcRRbdggi1_evE",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 464
+    },
+    {
+      "id": "hu-scale-mademosielle-szalon-gyor-140",
+      "discovery_profile": "https://naszdal.hu/directory/c740684c-8df9-4e19-a7a0-06e8b93be7f1",
+      "official_website": "http://www.mademoiselleszalon.hu/",
+      "name": "Mademosielle Szalon",
+      "category": "bridal_boutique",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "info@mademoiselleszalon.hu",
+      "contact_phone": "06 20 955 4288",
+      "official_image_urls": [
+        "https://mademoiselleszalon.hu/images/microsites_headervideos/4000x1600/561e2582.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.4,
+      "google_review_count_at_research_time": 51
+    },
+    {
+      "id": "hu-scale-madonna-menyasszonyi-ruhaszalon-mako-083",
+      "discovery_profile": "https://naszdal.hu/directory/7672762a-2ef9-4d84-b59c-0fb6872b7b08",
+      "official_website": "http://www.madonnaszalon.hu/",
+      "name": "MADONNA MENYASSZONYI RUHASZALON",
+      "category": "bridal_boutique",
+      "city": "Makó",
+      "county": "Csongrád-Csanád",
+      "contact_email": "madonnaszalonmako@gmail.com",
+      "contact_phone": "06 20 504 6666",
+      "official_image_urls": [
+        "https://www.madonnaszalon.hu/Homepage/stock_photo_hero.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 41
+    },
+    {
+      "id": "hu-scale-magay-otvos-budapest-062",
+      "discovery_profile": "https://naszdal.hu/directory/ed21e489-ab41-4b86-9385-8ec90986b9b0",
+      "official_website": "http://magayotvos.hu/",
+      "name": "Magay Ötvös",
+      "category": "wedding_jewelry",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@magayotvos.hu",
+      "contact_phone": "(06 1) 360 1575",
+      "official_image_urls": [
+        "https://magayotvos.hu/images/gyuru.jpg"
+      ],
+      "google_place_id": "ChIJ2ax1UUjaQUcRwrr78E0vv98",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 166
+    },
+    {
+      "id": "hu-scale-makeup-by-edina-professional-makeup-artist-pmu-artist-budapest-budapest-018",
+      "discovery_profile": "https://naszdal.hu/directory/b2fd5fd4-b501-45de-81f1-c8ec9de75176",
+      "official_website": "http://makeupbyedina.com/home",
+      "name": "Makeup by Edina - Professional makeup artist/ PMU artist Budapest",
+      "category": "hair_makeup",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "makeupbyedina@gmail.com",
+      "contact_phone": "06 30 911 8162",
+      "official_image_urls": [
+        "https://teszt.makeupbyedina.com/storage/blocknote/q0i8VhtHCxaOAqxnUILSxCKKQ6tR8iGNCU7AatdX.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 65
+    },
+    {
+      "id": "hu-scale-mango-foto-design-studio-gyor-008",
+      "discovery_profile": "https://naszdal.hu/directory/41d96d9f-d6aa-4311-9059-fcdd96a511ee",
+      "official_website": "http://www.mangofoto.hu/eskuvo",
+      "name": "Mango Foto & Design Studio",
+      "category": "photography",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "mango.fotostudio@gmail.com",
+      "contact_phone": "06 20 252 7355",
+      "official_image_urls": [
+        "https://static.wixstatic.com/media/4992fb_3f88099de2424589b27c8b411c06ab4f~mv2_d_1400_1464_s_2.jpg/v1/fill/w_2500,h_2614,al_c/4992fb_3f88099de2424589b27c8b411c06ab4f~mv2_d_1400_1464_s_2.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 130
+    },
+    {
+      "id": "hu-scale-mary-wedding-eskuvoszervezo-dunakeszi-023",
+      "discovery_profile": "https://naszdal.hu/directory/83d19ddd-792a-4270-820a-7c37766263f3",
+      "official_website": "https://marywedding.hu/",
+      "name": "Mary Wedding-Esküvőszervező",
+      "category": "wedding_planner",
+      "city": "Dunakeszi",
+      "county": "Pest",
+      "contact_email": "marywedding.hu@gmail.com",
+      "contact_phone": "06 30 983 6986",
+      "official_image_urls": [
+        "https://marywedding.hu/wp-content/uploads/2021/02/jeweler03.jpg"
+      ],
+      "google_place_id": "ChIJU5mewDHRQUcRTjg3zrDApgw",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 8
+    },
+    {
+      "id": "hu-scale-melinda-taylor-makeup-artist-sminkes-budapest-076",
+      "discovery_profile": "https://naszdal.hu/directory/bea71afa-84a3-48c0-90ac-5a6b03cce792",
+      "official_website": "http://www.makeupforlove.com/",
+      "name": "Melinda Taylor Makeup Artist Sminkes",
+      "category": "hair_makeup",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "makeupforlove.info@gmail.com",
+      "contact_phone": "06 20 955 3426",
+      "official_image_urls": [
+        "https://makeupforlove.com/wp-content/uploads/2024/09/IMG_7830.jpeg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 63
+    },
+    {
+      "id": "hu-scale-menyasszonyismink-hu-budaors-163",
+      "discovery_profile": "https://naszdal.hu/directory/ea75efa8-d02d-4c08-9b0c-7d1378334b76",
+      "official_website": "http://www.sminkesgabi.hu/",
+      "name": "Menyasszonyismink.hu",
+      "category": "hair_makeup",
+      "city": "Budaörs",
+      "county": "Pest",
+      "contact_email": "hello@sminkesgabi.hu",
+      "contact_phone": "06 30 562 6278",
+      "official_image_urls": [
+        "https://sminkesgabi.hu/wp-content/uploads/2022/12/eskuvo_classic_eskuvoi_sminkes_sminkes_gabi_profil_kep-1.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 40
+    },
+    {
+      "id": "hu-scale-mischler-cakes-pecs-158",
+      "discovery_profile": "https://naszdal.hu/directory/5d721ffe-b8dd-47c4-a95a-813a99913c74",
+      "official_website": "http://www.mischlercukraszda.hu/",
+      "name": "Mischler Cakes",
+      "category": "cake_dessert",
+      "city": "Pécs",
+      "county": "Baranya",
+      "contact_email": "hello@mischlercakes.hu",
+      "contact_phone": "06 20 322 0042",
+      "official_image_urls": [
+        "https://static.wixstatic.com/media/016864_d8b889a41a8c40d6a96c14e3414cc8cc%7Emv2.jpg/v1/fit/w_2500,h_1330,al_c/016864_d8b889a41a8c40d6a96c14e3414cc8cc%7Emv2.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 3.8,
+      "google_review_count_at_research_time": 80
+    },
+    {
+      "id": "hu-scale-mokka-cukraszda-nyiregyhaza-050",
+      "discovery_profile": "https://naszdal.hu/directory/ef2f21ad-84a7-4f85-93b0-70e93af86ab9",
+      "official_website": "http://www.mokkacukraszda.hu/",
+      "name": "Mokka Cukrászda",
+      "category": "cake_dessert",
+      "city": "Nyíregyháza",
+      "county": "Szabolcs-Szatmár-Bereg",
+      "contact_email": "rendelesmokka@gmail.com",
+      "contact_phone": "(06 42) 311 314",
+      "official_image_urls": [
+        "https://mokkacukraszda.hu/images/categories/dcj_szelet_____jo_20260123_084354.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 1538
+    },
+    {
+      "id": "hu-scale-molinero-eskuvoi-ruhaszalon-erd-126",
+      "discovery_profile": "https://naszdal.hu/directory/1f8019ef-9b86-4bd9-9033-aae360eabd96",
+      "official_website": "http://molinero.hu/",
+      "name": "Molinero Esküvői Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Érd",
+      "county": "Pest",
+      "contact_email": "info@molinero.hu",
+      "contact_phone": "06 20 372 3155",
+      "official_image_urls": [
+        "https://molinero.hu/wp-content/uploads/2025/09/Menyasszonyi-801x1024.jpg"
+      ],
+      "google_place_id": "ChIJPb0LmZPhQUcRo06uDXbqfsg",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 160
+    },
+    {
+      "id": "hu-scale-molnar-csaba-ceremoniamester-nagykata-027",
+      "discovery_profile": "https://naszdal.hu/directory/478bbfef-ffa3-4b92-909f-707541b07c1e",
+      "official_website": "https://mcsabaeskuvo.hu/",
+      "name": "Molnár Csaba ceremóniamester",
+      "category": "mc_celebrant",
+      "city": "Nagykáta",
+      "county": "Heves",
+      "contact_email": "hello@mcsabaeskuvo.hu",
+      "contact_phone": "06 30 313 9005",
+      "official_image_urls": [
+        "https://mcsabaeskuvo.hu/wp-content/uploads/2024/07/IMG_2410-1-nobg.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 25
+    },
+    {
+      "id": "hu-scale-montilla-produkcio-eskuvoi-dj-es-rendezveny-dj-szolnok-040",
+      "discovery_profile": "https://naszdal.hu/directory/b775a284-c2d4-4d94-9042-883d07c70082",
+      "official_website": "https://montillaprodukcio.hu/",
+      "name": "Montilla Produkció Esküvői DJ és Rendezvény DJ",
+      "category": "dj",
+      "city": "Szolnok",
+      "county": "Jász-Nagykun-Szolnok",
+      "contact_email": "emailcim@domain.hu",
+      "contact_phone": "06 30 868 0559",
+      "official_image_urls": [
+        "https://montillaprodukcio.hu/themes/montilla/images/banner1.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 11
+    },
+    {
+      "id": "hu-scale-motion-photo-film-balatonfured-143",
+      "discovery_profile": "https://naszdal.hu/directory/ea22cf5b-bfa4-4593-b930-4fdea7c7e847",
+      "official_website": "https://motionphotoandfilm.com/",
+      "name": "Motion Photo & Film",
+      "category": "photography",
+      "city": "Balatonfüred",
+      "county": "Veszprém",
+      "contact_email": "info@motionphotoandfilm.com",
+      "contact_phone": "06 30 288 5116",
+      "official_image_urls": [
+        "https://motionphotoandfilm.com/wp-content/uploads/2021/02/3333-scaled.jpg"
+      ],
+      "google_place_id": "ChIJ2XpOAti9aUcRi6skPjqNOt0",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 23
+    },
+    {
+      "id": "hu-scale-nadasi-krisztian-ceremoniamester-budapest-030",
+      "discovery_profile": "https://naszdal.hu/directory/18281abf-4888-4bb9-a761-7097bb06d1a3",
+      "official_website": "https://bestmanwedding.com/",
+      "name": "Nádasi Krisztián ceremóniamester",
+      "category": "mc_celebrant",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "nadasikr@gmail.com",
+      "contact_phone": "06 20 917 1858",
+      "official_image_urls": [
+        "https://bestmanwedding.com/wp-content/uploads/2024/05/featured.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 32
+    },
+    {
+      "id": "hu-scale-nandori-cukraszda-budapest-019",
+      "discovery_profile": "https://naszdal.hu/directory/4bb47d7c-6861-4fb7-a130-4b0695aaee0d",
+      "official_website": "http://www.nandori.hu/",
+      "name": "Nándori Cukrászda",
+      "category": "cake_dessert",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "nandoricukraszda@nandori.hu",
+      "contact_phone": "(06 1) 215 8776",
+      "official_image_urls": [
+        "https://nandori.hu/uploads/stamps/event/fg-fooldal-1787048692-0.jpg"
+      ],
+      "google_place_id": "ChIJ57-ZXVbcQUcRu_8DxZf7kmc",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 3796
+    },
+    {
+      "id": "hu-scale-nefelejcs-eskuvoi-ruhaszalon-vac-120",
+      "discovery_profile": "https://naszdal.hu/directory/da277bbe-fe37-43c0-a537-9c47b64ff846",
+      "official_website": "http://www.nefelejcseskuvo.hu/",
+      "name": "Nefelejcs Esküvői Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Vác",
+      "county": "Pest",
+      "contact_email": "info@nefelejcseskuvo.hu",
+      "contact_phone": "06 30 608 3627",
+      "official_image_urls": [
+        "http://nefelejcseskuvo.hu/wp-content/uploads/boritokep-sw-scaled.png"
+      ],
+      "google_place_id": "ChIJ97IGpZIqQEcR__1Kqj3yLDA",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 59
+    },
+    {
+      "id": "hu-scale-new-generation-tanccsoport-tancoktatas-kiskoros-032",
+      "discovery_profile": "https://naszdal.hu/directory/f72cdaa5-2bf0-49f7-a83d-ddf68f60a64e",
+      "official_website": "http://ngdance.hu/",
+      "name": "New Generation Tánccsoport, Táncoktatás",
+      "category": "dance_lessons",
+      "city": "Kiskőrös",
+      "county": "Bács-Kiskun",
+      "contact_email": "ngdance.hu@gmail.com",
+      "contact_phone": "06 30 562 3554",
+      "official_image_urls": [
+        "https://ngdance.hu/wp-content/uploads/2025/08/20250801_155126-1024x576.jpg"
+      ],
+      "google_place_id": "ChIJeW26AsCUQkcR-RghuIQIFdc",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 30
+    },
+    {
+      "id": "hu-scale-odette-menyasszonyi-ruhaszalon-budapest-001",
+      "discovery_profile": "https://naszdal.hu/directory/3aa8fcb3-1b27-4836-acf1-93ec7052c0d7",
+      "official_website": "http://odette.hu/",
+      "name": "Odette Menyasszonyi Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Budapest",
+      "county": "Pest",
+      "contact_email": "odetteszalon@gmail.com",
+      "contact_phone": "06 70 788 0888",
+      "official_image_urls": [
+        "https://www.odette.hu/classic.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 191
+    },
+    {
+      "id": "hu-scale-olasz-eskuvoi-alkalmi-oltonyszalon-es-webaruhaz-veszprem-144",
+      "discovery_profile": "https://naszdal.hu/directory/64c473b9-8b1d-4f4b-afb2-a0f26d64b054",
+      "official_website": "https://www.olaszruhaszalon.hu/",
+      "name": "OLASZ-ESKÜVŐI-ALKALMI-ÖLTÖNYSZALON és WEBÁRUHÁZ",
+      "category": "bridal_boutique",
+      "city": "Veszprém",
+      "county": "Veszprém",
+      "contact_email": "info@olaszruhaszalon.hu",
+      "contact_phone": "06 30 550 7555",
+      "official_image_urls": [
+        "https://www.olaszruhaszalon.hu/userImages/slideshow/1030-2019-Uj-kollekcio.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 149
+    },
+    {
+      "id": "hu-scale-oliva-etterem-veszprem-177",
+      "discovery_profile": "https://naszdal.hu/directory/e96095ff-2103-415b-81f9-d207c240e96d",
+      "official_website": "http://www.oliva.hu/",
+      "name": "Oliva Étterem",
+      "category": "venue",
+      "city": "Veszprém",
+      "county": "Veszprém",
+      "contact_email": "oliva@oliva.hu",
+      "contact_phone": "(06 88) 561 900",
+      "official_image_urls": [
+        "https://www.oliva.hu/public/media/home_prim_image/photo/xs/b427526af93364eded8c61e5f7c44a1fe832bceb.jpg"
+      ],
+      "google_place_id": "ChIJNcCErWeaaUcR-cuBaaw7wxA",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 582
+    },
+    {
+      "id": "hu-scale-opal-ekszerbolt-szentes-075",
+      "discovery_profile": "https://naszdal.hu/directory/0a62225f-190b-4bf3-acd2-9c4a4858ce39",
+      "official_website": "http://opalekszer.hu/",
+      "name": "Opál Ékszerbolt",
+      "category": "wedding_jewelry",
+      "city": "Szentes",
+      "county": "Csongrád-Csanád",
+      "contact_email": "info@opalekszer.hu",
+      "contact_phone": "(06 63) 312 512",
+      "official_image_urls": [
+        "http://opalekszer.hu/assets/img/store.jpg"
+      ],
+      "google_place_id": "ChIJ28igXNELREcRcecUHUfliTk",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 26
+    },
+    {
+      "id": "hu-scale-organza-eskuvoi-ruhaszalon-budapest-176",
+      "discovery_profile": "https://naszdal.hu/directory/3bb4cc5a-ed09-4306-be0d-d77196880d35",
+      "official_website": "https://organzaszalon.hu/",
+      "name": "Organza Esküvői Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@organzaszalon.hu",
+      "contact_phone": "06 20 342 8900",
+      "official_image_urls": [
+        "https://www.organzaszalon.hu/assets/images/seo.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 200
+    },
+    {
+      "id": "hu-scale-orgovany-virag-viraguzlet-viragbolt-szeged-089",
+      "discovery_profile": "https://naszdal.hu/directory/61db4e2d-191e-439e-9e5a-56bef74416a7",
+      "official_website": "https://www.orgovanyvirag.hu/",
+      "name": "Orgovány Virág - virágüzlet, virágbolt",
+      "category": "florist",
+      "city": "Szeged",
+      "county": "Csongrád-Csanád",
+      "contact_email": "orgovanyvirag@gmail.com",
+      "contact_phone": "06 30 171 7291",
+      "official_image_urls": [
+        "https://orgovanyvirag.hu/wp-content/uploads/2024/11/Flower-Shop-53b.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 65
+    },
+    {
+      "id": "hu-scale-otvos-ekszer-debrecen-debrecen-156",
+      "discovery_profile": "https://naszdal.hu/directory/9ec6f1a5-61fa-49e6-825b-744fddba1235",
+      "official_website": "http://otvosekszer.hu/",
+      "name": "Ötvös Ékszer Debrecen",
+      "category": "wedding_jewelry",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "otvosmester1984@gmail.com",
+      "contact_phone": "06 30 205 9818",
+      "official_image_urls": [
+        "https://otvosmester.cdn.shoprenter.hu/custom/otvosmester/image/data/slide-1-asztali-1920x700.jpg.webp?v=null.1669275884"
+      ],
+      "google_place_id": "ChIJ-eT-nHMOR0cRBFzz4YhVqv0",
+      "google_rating_at_research_time": 4.3,
+      "google_review_count_at_research_time": 159
+    },
+    {
+      "id": "hu-scale-parizsi-eskuvoi-es-alkalmi-ruhaszalon-veszprem-078",
+      "discovery_profile": "https://naszdal.hu/directory/403f2337-a992-4e9a-b407-256de8405170",
+      "official_website": "http://www.parizsiruhaszalon.hu/",
+      "name": "Párizsi Esküvői és Alkalmi Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Veszprém",
+      "county": "Veszprém",
+      "contact_email": "info@parizsiruhaszalon.hu",
+      "contact_phone": "06 70 540 0303",
+      "official_image_urls": [
+        "https://www.parizsiruhaszalon.hu/userImages/slideshow/cover-2020.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 48
+    },
+    {
+      "id": "hu-scale-party-shop-es-kellek-kft-kecskemet-121",
+      "discovery_profile": "https://naszdal.hu/directory/8efacaa7-6c9c-426f-b677-148bab6a00ba",
+      "official_website": "https://partyshopkecskemet.hu/",
+      "name": "Party Shop és Kellék Kft.",
+      "category": "wedding_decor",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "szabomonika8@gmail.com",
+      "contact_phone": "06 30 200 8252",
+      "official_image_urls": [
+        "https://partyshopkecskemet.hu/wp-content/uploads/2026/08/partyshop-lufikapu-keszites-uzleteknek-rendezvenyekre.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 28
+    },
+    {
+      "id": "hu-scale-partylimuzin-budapest-150",
+      "discovery_profile": "https://naszdal.hu/directory/affb6fd1-1ef5-4e29-9ae6-c9edc99de95b",
+      "official_website": "https://www.limuzinberles-budapesten.hu/",
+      "name": "Partylimuzin",
+      "category": "transport",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@limuzinberles-budapesten.hu",
+      "contact_phone": "06 70 514 4862",
+      "official_image_urls": [
+        "https://www.limuzinberles-budapesten.hu/wp-content/uploads/2024/02/PLS-partylimuzin-tetoablak-buli.jpg"
+      ],
+      "google_place_id": "ChIJ2TKUj5PdQUcRKW-GwrKQ8CE",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 22
+    },
+    {
+      "id": "hu-scale-partytukor-selfie-karaoke-box-miskolc-007",
+      "discovery_profile": "https://naszdal.hu/directory/51f07bee-f013-422d-a57b-72d288835a2f",
+      "official_website": "https://www.partytukor.hu/",
+      "name": "PartyTükör - Selfie & Karaoke Box",
+      "category": "other",
+      "city": "Miskolc",
+      "county": "Borsod-Abaúj-Zemplén",
+      "contact_email": "info.partytukor@gmail.com",
+      "contact_phone": "06 30 496 2728",
+      "official_image_urls": [
+        "https://www.partytukor.hu/assets/images/index-meta.png"
+      ],
+      "google_place_id": "ChIJU4-lyDKhQEcRk1Vmtqg4cC8",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 52
+    },
+    {
+      "id": "hu-scale-paszti-gabor-rendezvenyes-mobil-dj-eger-074",
+      "discovery_profile": "https://naszdal.hu/directory/4d253d4b-5674-44d3-b9a5-232b3e9f9337",
+      "official_website": "https://www.gaborgaborstudio.hu/",
+      "name": "Pászti Gábor Rendezvényés Mobil Dj",
+      "category": "dj",
+      "city": "Eger",
+      "county": "Heves",
+      "contact_email": "gabor.paszti@gmail.com",
+      "contact_phone": "06 70 311 8391",
+      "official_image_urls": [
+        "https://files.cdn-files-a.com/uploads/5987325/800_6788e54debaf8.jpg"
+      ],
+      "google_place_id": "ChIJEabymvVgCWERWsFTf4l0Izo",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 27
+    },
+    {
+      "id": "hu-scale-pethe-istvan-ceremoniamester-vofely-eskuvoszervezo-ceremoniavezeto-debrecen-038",
+      "discovery_profile": "https://naszdal.hu/directory/69d5093d-f800-4ad2-9711-db19b4a76150",
+      "official_website": "http://petheistvan.hu/",
+      "name": "Pethe István Ceremóniamester, Vőfély, Esküvőszervező, Ceremóniavezető",
+      "category": "mc_celebrant",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "petheistvan@gmail.com",
+      "contact_phone": "06 30 646 3239",
+      "official_image_urls": [
+        "https://petheistvan.hu/wp-content/uploads/2023/08/cropped-cropped-cropped-350114238_1972111873140521_568668612263228115_n.jpg"
+      ],
+      "google_place_id": "ChIJezcFieMNR0cRY1XugYtMAF4",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 148
+    },
+    {
+      "id": "hu-scale-petofi-tamas-ceremoniamester-budapest-005",
+      "discovery_profile": "https://naszdal.hu/directory/6c365392-8a91-4748-a0d0-82395be7406d",
+      "official_website": "https://petofitamas.hu/",
+      "name": "Petőfi Tamás - Ceremóniamester",
+      "category": "mc_celebrant",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "hello@petofitamas.hu",
+      "contact_phone": "06 70 222 9322",
+      "official_image_urls": [
+        "https://238e6f6c.delivery.rocketcdn.me/wp-content/uploads/2023/01/Nehru-atlatszo-Hybrid-Agency-honlapra-657x1024.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 36
+    },
+    {
+      "id": "hu-scale-pille-eskuvoi-ruhaszalon-nagykoros-165",
+      "discovery_profile": "https://naszdal.hu/directory/229728c0-bd27-436f-808c-dc337d7f1f2e",
+      "official_website": "https://pillewedding.com/",
+      "name": "Pille Esküvői Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Nagykőrös",
+      "county": "Pest",
+      "contact_email": "pillewedding.design@gmail.com",
+      "contact_phone": "06 50 136 1193",
+      "official_image_urls": [
+        "https://i0.wp.com/pillewedding.com/wp-content/uploads/2026/02/Pille-infinity-koszoruslany-ruhak.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 40
+    },
+    {
+      "id": "hu-scale-pingvin-cukraszda-vac-132",
+      "discovery_profile": "https://naszdal.hu/directory/c7d94858-fcac-4189-8404-46ee7ef71218",
+      "official_website": "http://pingvincukraszda.hu/",
+      "name": "Pingvin Cukrászda",
+      "category": "cake_dessert",
+      "city": "Vác",
+      "county": "Pest",
+      "contact_email": "pingvincukivac@gmail.com",
+      "contact_phone": "(06 27) 300 529",
+      "official_image_urls": [
+        "https://pingvincukraszda.cdn.shoprenter.hu/custom/pingvincukraszda/image/data/F%C5%91oldali%20slide/kardin%C3%A1lis.JPG%20web.JPG.webp?v=null.1671702601"
+      ],
+      "google_place_id": "ChIJydbwcWUqQEcREjkwbbEd64Y",
+      "google_rating_at_research_time": 4.3,
+      "google_review_count_at_research_time": 573
+    },
+    {
+      "id": "hu-scale-piramis-cukraszda-dunafoldvar-084",
+      "discovery_profile": "https://naszdal.hu/directory/67d14c7d-38bc-456c-b978-46d6e336b46c",
+      "official_website": "https://www.piramiscukraszda.hu/",
+      "name": "Piramis Cukrászda",
+      "category": "cake_dessert",
+      "city": "Dunaföldvár",
+      "county": "Tolna",
+      "contact_email": "info@piramiscukraszda.hu",
+      "contact_phone": "06 30 373 0659",
+      "official_image_urls": [
+        "https://www.piramiscukraszda.hu/assets/images/mbr-816x544.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 598
+    },
+    {
+      "id": "hu-scale-platina-dekor-kecskemet-110",
+      "discovery_profile": "https://naszdal.hu/directory/d1886e60-74f7-44d9-a315-ba4e6fff6d5f",
+      "official_website": "http://www.platinadekor.hu/",
+      "name": "Platina Dekor",
+      "category": "wedding_decor",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "platinadekor@gmail.com",
+      "contact_phone": "06 30 364 7544",
+      "official_image_urls": [
+        "https://platinadekor.hu/wp-content/uploads/2022/02/meeting.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 6
+    },
+    {
+      "id": "hu-scale-pongracz-kastely-csombard-173",
+      "discovery_profile": "https://naszdal.hu/directory/10b8c75c-b6ff-4ec9-87a5-5fce4cf988b5",
+      "official_website": "http://www.kastelyszallas.com/",
+      "name": "Pongrácz kastély",
+      "category": "venue",
+      "city": "Csombárd",
+      "county": "Somogy",
+      "contact_email": "pongraczkastely@gmail.com",
+      "contact_phone": "06 70 9301602",
+      "official_image_urls": [
+        "https://kastelyszallas.com/wp-content/uploads/2022/08/IMG_20220730_134254-1-768x1024.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 134
+    },
+    {
+      "id": "hu-scale-porbolyi-okoturisztikai-kozpont-baja-061",
+      "discovery_profile": "https://naszdal.hu/directory/8ca0b1fe-8e5f-46eb-a081-660cf7f18bbd",
+      "official_website": "http://turizmus.gemenczrt.hu/a-porbolyi-okoturisztikai-kozpont/",
+      "name": "Pörbölyi Ökoturisztikai Központ",
+      "category": "venue",
+      "city": "Baja",
+      "county": "Bács-Kiskun",
+      "contact_email": "okocentrum@gemenczrt.hu",
+      "contact_phone": "(06 74) 491 483",
+      "official_image_urls": [
+        "https://turizmus.gemenczrt.hu/wp-content/uploads/sites/2/2016/02/Gemenci-Erdei-Vasut2-e1741185784949.jpg"
+      ],
+      "google_place_id": "ChIJvZQSJVPnQkcRrmJTRXJsHBg",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 1929
+    },
+    {
+      "id": "hu-scale-promeeda-eskuvoi-ruhaszalon-budapest-100",
+      "discovery_profile": "https://naszdal.hu/directory/1eac19ad-ecec-42aa-923d-20c5bdad8d8c",
+      "official_website": "http://promeeda.hu/",
+      "name": "Promeéda Esküvői Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "promeedaeskuvo@gmail.com",
+      "contact_phone": "06 70 674 9526",
+      "official_image_urls": [
+        "https://promeeda.hu/wp-content/uploads/2021/08/promeeda-kep2.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 180
+    },
+    {
+      "id": "hu-scale-prominent-limousine-kft-budapest-119",
+      "discovery_profile": "https://naszdal.hu/directory/38259658-9745-4522-8d17-ab59f592a5f3",
+      "official_website": "https://prominentlimousine.hu/",
+      "name": "Prominent Limousine Kft.",
+      "category": "transport",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@prominentlimousine.hu",
+      "contact_phone": "06 20 356 3640",
+      "official_image_urls": [
+        "https://prominentlimousine.hu/wp-content/uploads/2022/12/Home-banner-1-1.webp"
+      ],
+      "google_place_id": "ChIJGVHwkjLdQUcRlAHZEryd_GA",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 38
+    },
+    {
+      "id": "hu-scale-pupicake-budapest-129",
+      "discovery_profile": "https://naszdal.hu/directory/35c62c1b-0dd9-4788-ad4f-6e6072dcfabe",
+      "official_website": "https://pupicake.hu/",
+      "name": "PupiCake",
+      "category": "cake_dessert",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@pupicake.hu",
+      "contact_phone": "06 20 248 0230",
+      "official_image_urls": [
+        "https://pupicake.hu/img/slide/index/slide_n_3.jpg"
+      ],
+      "google_place_id": "ChIJoyXNFE3cQUcRjFzBPDb0n3E",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 931
+    },
+    {
+      "id": "hu-scale-redei-david-foto-eskuvo-csalad-portre-budapest-087",
+      "discovery_profile": "https://naszdal.hu/directory/44cab8b8-fa5a-461f-8888-79e5ddade9c6",
+      "official_website": "http://redeidavidfoto.hu/",
+      "name": "Rédei Dávid Fotó / Esküvő - Család - Portré",
+      "category": "photography",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@redeidavidfoto.hu",
+      "contact_phone": "06 30 904 8252",
+      "official_image_urls": [
+        "https://00c00c71a5.clvaw-cdnwnd.com/0fabb5c2cd8f24be2398ed61bc51387b/200006782-85f5085f52/rdf%20n%C3%A9gyzet.png?ph=00c00c71a5"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 52
+    },
+    {
+      "id": "hu-scale-retrolett-kepmuhely-es-eskuvoi-dekoraciok-budapest-033",
+      "discovery_profile": "https://naszdal.hu/directory/5c2c32cf-e3eb-4a10-86a2-2a600483d88b",
+      "official_website": "https://www.retrolett.hu/",
+      "name": "Retrolett Képműhely és Esküvői Dekorációk",
+      "category": "wedding_decor",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "retrolett@t-online.hu",
+      "contact_phone": "06 70 550 7230",
+      "official_image_urls": [
+        "https://retrolett.hu/wp-content/uploads/2026/05/img_0963.jpg"
+      ],
+      "google_place_id": "ChIJx1BoPWjcQUcR4_vXo7gRfuM",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 54
+    },
+    {
+      "id": "hu-scale-rhythmsfoto-tatabanya-093",
+      "discovery_profile": "https://naszdal.hu/directory/cfbfeaf5-c835-4611-8321-a9cf1b66ec71",
+      "official_website": "https://www.rhythmsfoto.hu/",
+      "name": "Rhythmsfoto",
+      "category": "photography",
+      "city": "Tatabánya",
+      "county": "Komárom-Esztergom",
+      "contact_email": "rhythmsfoto@gmail.com",
+      "contact_phone": "06 70 223 0727",
+      "official_image_urls": [
+        "https://4dfdea0b2f.clvaw-cdnwnd.com/c09d34a60b79e8ac8042afce77ae159d/200003331-ea561ea563/700/DSC_6138%20%20XXX%20%20B%20.jpeg?ph=4dfdea0b2f"
+      ],
+      "google_place_id": "ChIJ43mOPPZBakcRZEfLauzdIzQ",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 28
+    },
+    {
+      "id": "hu-scale-ritter-nyomda-es-beruhazasi-zrt-budapest-167",
+      "discovery_profile": "https://naszdal.hu/directory/3af959db-439b-4d38-967a-f7d6c21ca755",
+      "official_website": "https://www.ritternyomda.hu/",
+      "name": "Ritter Nyomda és Beruházási Zrt.",
+      "category": "invitation_graphics",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "info@ritternyomda.hu",
+      "contact_phone": "06 70 639 4618",
+      "official_image_urls": [
+        "https://www.ritternyomda.hu/nyomdaiarculat/kepek/slider_unnepi_nyitvatartas_2022.jpg"
+      ],
+      "google_place_id": "ChIJFww9-_LbQUcRPwayS0RtCvk",
+      "google_rating_at_research_time": 4.1,
+      "google_review_count_at_research_time": 116
+    },
+    {
+      "id": "hu-scale-ronai-otvos-uzlet-kaposvar-145",
+      "discovery_profile": "https://naszdal.hu/directory/87be8596-ea5f-4010-92cf-9a53a510a1fc",
+      "official_website": "https://webaruhaz.ronaiotvosuzlet.hu/",
+      "name": "Rónai Ötvös üzlet",
+      "category": "wedding_jewelry",
+      "city": "Kaposvár",
+      "county": "Somogy",
+      "contact_email": "ronaiotvosuzlet21@gmail.com",
+      "contact_phone": "(06 82) 526 022",
+      "official_image_urls": [
+        "https://webaruhaz.ronaiotvosuzlet.hu/wp-content/uploads/20230124_1604531.jpg"
+      ],
+      "google_place_id": "ChIJAerMJvgVaEcRRbAXBfSrBnE",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 49
+    },
+    {
+      "id": "hu-scale-roses-and-styles-viragszalon-budapest-017",
+      "discovery_profile": "https://naszdal.hu/directory/01338930-c9bf-4e95-a1ee-cc72bf5ae042",
+      "official_website": "https://rosesandstyles.com/",
+      "name": "Roses and Styles Virágszalon",
+      "category": "florist",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "rosesandstyles@gmail.com",
+      "contact_phone": "06 30 201 2553",
+      "official_image_urls": [
+        "https://rosesandstyles.com/api/images/h8.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 190
+    },
+    {
+      "id": "hu-scale-rosinante-fogado-szentendre-168",
+      "discovery_profile": "https://naszdal.hu/directory/931ea320-f180-4aec-89b6-22e5e6c60487",
+      "official_website": "https://www.rosinante.hu/etterem",
+      "name": "Rosinante Fogadó",
+      "category": "venue",
+      "city": "Szentendre",
+      "county": "Pest",
+      "contact_email": "rosinante@rosinante.hu",
+      "contact_phone": "06 30 567 5956",
+      "official_image_urls": [
+        "https://www.rosinante.hu/images/design/15_head.jpg"
+      ],
+      "google_place_id": "ChIJtfPK8CbUQUcR8qUoNHKqzWo",
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 1334
+    },
+    {
+      "id": "hu-scale-sebestyen-beata-fenykepesz-albertirsa-111",
+      "discovery_profile": "https://naszdal.hu/directory/31bb9fb9-110a-4603-8bd9-2ed34486e1ff",
+      "official_website": "http://www.sebestyenbeata.hu/",
+      "name": "Sebestyén Beáta Fényképész",
+      "category": "photography",
+      "city": "Albertirsa",
+      "county": "Jász-Nagykun-Szolnok",
+      "contact_email": "beata.sebestyen@gmail.com",
+      "contact_phone": "06 30 249 7597",
+      "official_image_urls": [
+        "https://static.wixstatic.com/media/90eb86_34f3d7d63c1942a790156cf292a75b87~mv2.jpg/v1/fill/w_2500,h_1666,al_c/90eb86_34f3d7d63c1942a790156cf292a75b87~mv2.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 56
+    },
+    {
+      "id": "hu-scale-sense-style-fodraszat-kozmetika-masszazs-baja-114",
+      "discovery_profile": "https://naszdal.hu/directory/acd22a1a-e5e1-4b2f-929b-b7b1e45dad2b",
+      "official_website": "https://sensestyle.hu/",
+      "name": "Sense&Style | fodrászat, kozmetika, masszázs",
+      "category": "hair_makeup",
+      "city": "Baja",
+      "county": "Bács-Kiskun",
+      "contact_email": "fanni70321@gmail.com",
+      "contact_phone": "06 20 961 7311",
+      "official_image_urls": [
+        "https://sensestyle.hu/wp-content/uploads/2023/12/fm_2.jpg"
+      ],
+      "google_place_id": "ChIJRSv44PIfQ0cR-pYKYRoYSRw",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 50
+    },
+    {
+      "id": "hu-scale-sissy-ruhakolcsonzo-debrecen-133",
+      "discovery_profile": "https://naszdal.hu/directory/f9ec2a60-3c64-47b6-8935-6b529cebb5e4",
+      "official_website": "https://www.sissyruhakolcsonzo.hu/",
+      "name": "Sissy Ruhakölcsönző",
+      "category": "bridal_boutique",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "info@sissyruhakolcsonzo.hu",
+      "contact_phone": "06 20 444 4388",
+      "official_image_urls": [
+        "https://www.sissyruhakolcsonzo.hu/_data/prod_1547143056.jpg"
+      ],
+      "google_place_id": "ChIJQTJScHIOR0cR_L-hbg-tw64",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 77
+    },
+    {
+      "id": "hu-scale-somoskoi-kata-noi-ceremoniamester-budapest-065",
+      "discovery_profile": "https://naszdal.hu/directory/9a6e0856-e27f-4598-b2b2-af9d7c689942",
+      "official_website": "http://www.cmkatasomoskoi.hu/",
+      "name": "Somoskői Kata - Női Ceremóniamester",
+      "category": "mc_celebrant",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "eskuvo@cmkatasomoskoi.hu",
+      "contact_phone": "06 30 282 5390",
+      "official_image_urls": [
+        "https://cmkatasomoskoi.hu/wp-content/uploads/2023/05/Eskuvo-CM-Kata-4.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 13
+    },
+    {
+      "id": "hu-scale-sophia-loretta-exclusive-menyasszonyi-ruhaszalon-kecskemet-072",
+      "discovery_profile": "https://naszdal.hu/directory/1801080b-cfb6-4182-b96d-536a2ac00c51",
+      "official_website": "https://sophialoretta.hu/",
+      "name": "Sophia Loretta Exclusive Menyasszonyi Ruhaszalon",
+      "category": "bridal_boutique",
+      "city": "Kecskemét",
+      "county": "Bács-Kiskun",
+      "contact_email": "daranyi.szilvia@sophialoretta.hu",
+      "contact_phone": "06 20 849 3871",
+      "official_image_urls": [
+        "https://sophialoretta.hu/wp-content/uploads/2021/05/2.jpg"
+      ],
+      "google_place_id": "ChIJQROk9eLbQ0cRzOJ5mlB0DRU",
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 42
+    },
+    {
+      "id": "hu-scale-speter-hochzeitsfotografen-pecs-147",
+      "discovery_profile": "https://naszdal.hu/directory/a69cbf74-a550-4baf-ad10-b6e4ae5e5072",
+      "official_website": "http://www.speter.at/",
+      "name": "Speter - Hochzeitsfotografen",
+      "category": "photography",
+      "city": "Pécs",
+      "county": "Baranya",
+      "contact_email": "hello@hochzeitsfotografgraz.at.com",
+      "contact_phone": "0660 4087336",
+      "official_image_urls": [
+        "https://www.speter.at/wp-content/uploads/2024/04/SPG_1834-1024x682.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 27
+    },
+    {
+      "id": "hu-scale-szazszorszebb-eskuvo-eskuvoi-dekoracio-virag-chiavari-szek-eszkoz-berles-diy-turkeve-091",
+      "discovery_profile": "https://naszdal.hu/directory/cda50e82-b8bf-4587-abd5-95585935ab10",
+      "official_website": "https://szazszorszebbeskuvo.hu/",
+      "name": "Százszorszebb Esküvő | Esküvői dekoráció | Virág | Chiavari szék | Eszköz bérlés (DIY)",
+      "category": "wedding_decor",
+      "city": "Túrkeve",
+      "county": "Hajdú-Bihar",
+      "contact_email": "info@szazszorszebbeskuvo.hu",
+      "contact_phone": "06 20 356 4546",
+      "official_image_urls": [
+        "https://szazszorszebbeskuvo.hu/wp-content/uploads/2025/02/szazszorszebb-eskuvo-borito.webp"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 22
+    },
+    {
+      "id": "hu-scale-szegi-tibor-vofely-ceremoniamester-kineziologus-konzulens-szeged-szeged-051",
+      "discovery_profile": "https://naszdal.hu/directory/885f7d52-8705-4264-b4be-ae7162147c04",
+      "official_website": "http://www.szegedivofely.hu/",
+      "name": "Szegi Tibor Vőfély-Ceremóniamester & Kineziológus Konzulens Szeged",
+      "category": "mc_celebrant",
+      "city": "Szeged",
+      "county": "Csongrád-Csanád",
+      "contact_email": "szegi.tibor@gmail.com",
+      "contact_phone": "06 20 983 9349",
+      "official_image_urls": [
+        "https://szegedivofely.hu/wp-content/uploads/2019/10/image_23.jpg"
+      ],
+      "google_place_id": "ChIJMS4BbQJjREcRhuxO_9CY2Hg",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 26
+    },
+    {
+      "id": "hu-scale-teri-neni-s-bistorant-teri-neni-etterme-budaors-169",
+      "discovery_profile": "https://naszdal.hu/directory/2a19061c-c995-473b-9c7b-1f515f7cdc93",
+      "official_website": "http://rendeles.friedmann.hu/",
+      "name": "Teri néni's bistorant / Teri néni étterme",
+      "category": "catering",
+      "city": "Budaörs",
+      "county": "Pest",
+      "contact_email": "friedmann@friedmann.hu",
+      "contact_phone": "06 20 572 0601",
+      "official_image_urls": [
+        "http://rendeles.friedmann.hu/images/hatter.jpg"
+      ],
+      "google_place_id": "ChIJceUjmCneQUcRsSpT2FklgmM",
+      "google_rating_at_research_time": 4.3,
+      "google_review_count_at_research_time": 475
+    },
+    {
+      "id": "hu-scale-torta-muvek-kavezo-cukraszda-ujszeged-szeged-096",
+      "discovery_profile": "https://naszdal.hu/directory/ea7f67e3-744b-4cb4-b61f-4f0502ff0388",
+      "official_website": "http://www.tortamuvek.hu/",
+      "name": "Torta Művek Kávézó-Cukrászda-Újszeged",
+      "category": "cake_dessert",
+      "city": "Szeged",
+      "county": "Csongrád-Csanád",
+      "contact_email": "info@tortamuvek.hu",
+      "contact_phone": "06 70 630 0067",
+      "official_image_urls": [
+        "https://tortamuvek.hu/wp-content/uploads/2018/03/cropped-tortamuvek_-11-1.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 749
+    },
+    {
+      "id": "hu-scale-trusstech-kft-tatabanya-135",
+      "discovery_profile": "https://naszdal.hu/directory/82ce31c9-4a26-45ea-bbcf-4284ea4e193d",
+      "official_website": "https://trusstech.hu/",
+      "name": "Trusstech Kft.",
+      "category": "wedding_decor",
+      "city": "Tatabánya",
+      "county": "Komárom-Esztergom",
+      "contact_email": "info@trusstech.hu",
+      "contact_phone": "06 30 372 8969",
+      "official_image_urls": [
+        "https://trusstech.hu/wp-content/uploads/2019/10/stock-photo-headless-businessman-sitting-on-cloud-in-lotus-pose-and-meditating-564298381-1.jpg"
+      ],
+      "google_place_id": "ChIJbyjNDspAakcRsrNT2XW7670",
+      "google_rating_at_research_time": 4.4,
+      "google_review_count_at_research_time": 30
+    },
+    {
+      "id": "hu-scale-truta-ekszer-oroshaza-oroshaza-107",
+      "discovery_profile": "https://naszdal.hu/directory/04eae43e-7412-46c7-9b31-761add16c09b",
+      "official_website": "http://www.trutaekszer.hu/",
+      "name": "Truta Ékszer Orosháza",
+      "category": "wedding_jewelry",
+      "city": "Orosháza",
+      "county": "Békés",
+      "contact_email": "info@trutaekszer.hu",
+      "contact_phone": "(06 68) 700 150",
+      "official_image_urls": [
+        "https://trutaekszer.devsites.lnxc.hu/wp-content/uploads/2025/10/termek-kategoriak-2.webp"
+      ],
+      "google_place_id": "ChIJcdOfsvQ-REcR8edvdIHc67Q",
+      "google_rating_at_research_time": 4.5,
+      "google_review_count_at_research_time": 15
+    },
+    {
+      "id": "hu-scale-tunder-viragsziget-es-kavesarok-debrecen-077",
+      "discovery_profile": "https://naszdal.hu/directory/59141ab2-6bc0-4028-81cc-e42288bed400",
+      "official_website": "https://www.tunderviragsziget.hu/",
+      "name": "Tündér Virágsziget és Kávésarok",
+      "category": "florist",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "hello@sozedesign.hu",
+      "contact_phone": "06 30 273 5597",
+      "official_image_urls": [
+        "https://www.tunderviragsziget.hu/wp-content/uploads/2021/04/tunder-1.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 85
+    },
+    {
+      "id": "hu-scale-utazo-bar-dunakeszi-086",
+      "discovery_profile": "https://naszdal.hu/directory/b3ee0543-b148-4e6c-b1dd-8e2179207b5c",
+      "official_website": "https://utazobar.hu/",
+      "name": "Utazó Bár",
+      "category": "transport",
+      "city": "Dunakeszi",
+      "county": "Pest",
+      "contact_email": "tamas@utazobar.hu",
+      "contact_phone": "06 20 253 0049",
+      "official_image_urls": [
+        "https://utazobar.hu/wp-content/uploads/2023/03/bar1.jpg"
+      ],
+      "google_place_id": "ChIJ4RqlSuPRQUcRPoP6N6BJb7U",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 20
+    },
+    {
+      "id": "hu-scale-va-ku-studio-szekesfehervar-141",
+      "discovery_profile": "https://naszdal.hu/directory/319a94f8-c7d8-48bb-af1c-d1714cc42446",
+      "official_website": "http://www.vakustudio.hu/",
+      "name": "VA.KU stúdió",
+      "category": "photography",
+      "city": "Székesfehérvár",
+      "county": "Fejér",
+      "contact_email": "info@vakustudio.hu",
+      "contact_phone": "06 20 227 7198",
+      "official_image_urls": [
+        "https://www.vakustudio.hu/wp-content/uploads/2025/01/Nevjegy_2025_2.jpgweb.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 28
+    },
+    {
+      "id": "hu-scale-vadvirag-vendeglo-es-fogado-tatabanya-113",
+      "discovery_profile": "https://naszdal.hu/directory/78059357-f3f5-43c4-914a-841a01bea243",
+      "official_website": "https://vadviragtatabanya.hu/",
+      "name": "Vadvirág Vendéglő és Fogadó",
+      "category": "venue",
+      "city": "Tatabánya",
+      "county": "Komárom-Esztergom",
+      "contact_email": "etterem@vadviragtatabanya.hu",
+      "contact_phone": "06 20 280 6369",
+      "official_image_urls": [
+        "https://vadviragtatabanya.hu/assets/hero-dish-BzPYWjg0.jpg"
+      ],
+      "google_place_id": "ChIJRXwZW_ZAakcR2tRRFDi8qpU",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 1260
+    },
+    {
+      "id": "hu-scale-valex-decor-kft-dekoracios-kellek-webaruhaz-debrecen-004",
+      "discovery_profile": "https://naszdal.hu/directory/d9347b80-0a7c-4398-a355-3f336fbacf5d",
+      "official_website": "https://www.valex.hu/",
+      "name": "Valex Decor Kft. - Dekorációs kellék webáruház",
+      "category": "wedding_decor",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "hello@valex.hu",
+      "contact_phone": "06 30 703 1591",
+      "official_image_urls": [
+        "https://valex.hu/shop_ordered/6801/pic/arculat/home-start-kep4.png"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 446
+    },
+    {
+      "id": "hu-scale-varient-ora-ekszer-siofok-042",
+      "discovery_profile": "https://naszdal.hu/directory/025789df-7773-470a-812b-b225dbc76be7",
+      "official_website": "http://varientekszer.hu/",
+      "name": "Varient Óra - Ékszer",
+      "category": "wedding_jewelry",
+      "city": "Siófok",
+      "county": "Somogy",
+      "contact_email": "info@varientekszer.hu",
+      "contact_phone": "06 30 465 1540",
+      "official_image_urls": [
+        "https://varientekszer.hu/shop_ordered/88383/pic/VARIENT_WEBSHOP.png"
+      ],
+      "google_place_id": "ChIJZf1EwurBaUcROhfpHKGFSqc",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 53
+    },
+    {
+      "id": "hu-scale-vendeglo-a-harom-tolgyfahoz-tatabanya-142",
+      "discovery_profile": "https://naszdal.hu/directory/9e14cf27-025a-4d52-a0f5-320a5107459c",
+      "official_website": "https://vendegloaharomtolgyfahoz.metro.rest/",
+      "name": "Vendéglő a Három Tölgyfához",
+      "category": "venue",
+      "city": "Tatabánya",
+      "county": "Komárom-Esztergom",
+      "contact_email": "smgyula@gmail.com",
+      "contact_phone": "(06 34) 316 049",
+      "official_image_urls": [
+        "https://cdn.website.dish.co/media/2c/ee/825863.jpg"
+      ],
+      "google_place_id": "ChIJDa9iqo1AakcRAuqrds8ZjPM",
+      "google_rating_at_research_time": 4.6,
+      "google_review_count_at_research_time": 856
+    },
+    {
+      "id": "hu-scale-vintage-world-cafe-flower-debrecen-088",
+      "discovery_profile": "https://naszdal.hu/directory/7dc82d53-ab38-4a02-bb25-515f77a2b2ec",
+      "official_website": "http://vintageworld.hu/",
+      "name": "Vintage World cafe & flower",
+      "category": "wedding_decor",
+      "city": "Debrecen",
+      "county": "Hajdú-Bihar",
+      "contact_email": "info@vintageworld.hu",
+      "contact_phone": "(06 52) 445 445",
+      "official_image_urls": [
+        "https://vintageworld.hu/wp-content/uploads/2025/04/kozepes2.jpg"
+      ],
+      "google_place_id": "ChIJVXo373IOR0cR92I62idMh40",
+      "google_rating_at_research_time": 4.7,
+      "google_review_count_at_research_time": 1122
+    },
+    {
+      "id": "hu-scale-wedding-sound-budapest-013",
+      "discovery_profile": "https://naszdal.hu/directory/0282dc0e-088e-441d-a851-5b6b39bb784d",
+      "official_website": "http://weddingsound.hu/",
+      "name": "Wedding Sound",
+      "category": "dj",
+      "city": "Budapest",
+      "county": "Budapest",
+      "contact_email": "szabo.emil@soundteam.hu",
+      "contact_phone": "06 30 209 1765",
+      "official_image_urls": [
+        "https://weddingsound.hu/wp-content/uploads/2016/07/img03-555x320.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 189
+    },
+    {
+      "id": "hu-scale-wedding-with-tina-eskuvoszervezo-vac-021",
+      "discovery_profile": "https://naszdal.hu/directory/24a5a897-4e50-412d-83e9-6f55532983e5",
+      "official_website": "https://www.weddingwithtina.hu/",
+      "name": "Wedding with Tina - Esküvőszervező",
+      "category": "wedding_planner",
+      "city": "Vác",
+      "county": "Pest",
+      "contact_email": "hello@weddingwithtina.hu",
+      "contact_phone": "06 20 321 4249",
+      "official_image_urls": [
+        "https://weddingwithtina.hu/wp-content/uploads/2025/10/Aline-and-Victor-40-768x1152.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 4
+    },
+    {
+      "id": "hu-scale-winkler-mark-eskuvo-dj-kimle-085",
+      "discovery_profile": "https://naszdal.hu/directory/509445cf-d8ba-42b6-86a2-c00aa182b444",
+      "official_website": "http://www.djmark.hu/",
+      "name": "Winkler Márk Esküvő Dj",
+      "category": "dj",
+      "city": "Kimle",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "eskuvo@djmark.hu",
+      "contact_phone": "06 30 547 2887",
+      "official_image_urls": [
+        "https://www.djmark.hu/wp-content/uploads/2022/01/209349634_3705367856235546_5558276041797634794_n.jpeg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 12
+    },
+    {
+      "id": "hu-scale-wns-fodraszat-gyor-belvaros-gyor-098",
+      "discovery_profile": "https://naszdal.hu/directory/123ea499-0d1d-4504-90d9-9ff7c8db327b",
+      "official_website": "https://www.wns.hu/",
+      "name": "WNS Fodrászat Győr-belváros",
+      "category": "hair_makeup",
+      "city": "Győr",
+      "county": "Győr-Moson-Sopron",
+      "contact_email": "info@wns.hu",
+      "contact_phone": "06 70 364 1347",
+      "official_image_urls": [
+        "https://wns.hu/wp-content/uploads/2020/10/wily-new-style-facebook-kozossegi-media-megosztas.jpg"
+      ],
+      "google_place_id": "ChIJ-UKdC-a_a0cRJ-5DNivWIzg",
+      "google_rating_at_research_time": 5,
+      "google_review_count_at_research_time": 169
+    },
+    {
+      "id": "hu-scale-zacc-es-moha-balatonfured-071",
+      "discovery_profile": "https://naszdal.hu/directory/f6061055-e558-4f43-9d7f-8ce4843f92c5",
+      "official_website": "http://www.zaccesmoha.hu/",
+      "name": "Zacc és Moha",
+      "category": "wedding_decor",
+      "city": "Balatonfüred",
+      "county": "Veszprém",
+      "contact_email": "zaccesmoha.rendezveny@gmail.com",
+      "contact_phone": "06 20 230 0699",
+      "official_image_urls": [
+        "https://zaccesmoha.hu/wp-content/uploads/2022/04/DSC_3017-768x513.jpg"
+      ],
+      "google_place_id": "ChIJuZLJT4K9aUcRr5eV4-bSwGI",
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 64
+    },
+    {
+      "id": "hu-scale-zafir-ekszeruzlet-nyiregyhaza-123",
+      "discovery_profile": "https://naszdal.hu/directory/6ea93fe0-c1eb-4ef9-ae7e-279ada11a963",
+      "official_website": "http://www.xn--zafrkszer-e4a6b.hu/",
+      "name": "Zafír Ékszerüzlet",
+      "category": "wedding_jewelry",
+      "city": "Nyíregyháza",
+      "county": "Szabolcs-Szatmár-Bereg",
+      "contact_email": "zafirekszeruzlet@gmail.com",
+      "contact_phone": "06 30 752 9697",
+      "official_image_urls": [
+        "https://zafirekszer.hu/wp-content/uploads/2026/08/FBZM-F-8482-brill-zafir-fulbevalo.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.8,
+      "google_review_count_at_research_time": 122
+    },
+    {
+      "id": "hu-scale-zea-virag-kft-szeged-058",
+      "discovery_profile": "https://naszdal.hu/directory/e63aa45e-4613-4cdd-82ae-75d41573a82c",
+      "official_website": "http://zeavirag.hu/",
+      "name": "Zea Virág Kft.",
+      "category": "florist",
+      "city": "Szeged",
+      "county": "Csongrád-Csanád",
+      "contact_email": "zeavirag@gmail.com",
+      "contact_phone": "06 70 382 4394",
+      "official_image_urls": [
+        "http://zeavirag.premium.shp.hu/sites/zeavirag.premium.shp.hu/files/doboz3.jpg"
+      ],
+      "google_place_id": null,
+      "google_rating_at_research_time": 4.9,
+      "google_review_count_at_research_time": 44
+    }
+  ],
+  "rejected_image_checks": [
+    {
+      "discovery_id": "fa566c9e-8209-4179-91b1-8452b5c19832",
+      "name": "Gárdonyi Géza Emlékház",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "48c5d569-3c65-439a-b031-5f22b79ab8eb",
+      "name": "Szirom Virágküldés Budapest",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "47f75675-4cdc-44e6-896f-bec875581153",
+      "name": "Csabai Rendezvénypajta",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "edb626a8-4221-4b64-990c-2ca025e00e52",
+      "name": "Black Velvet Hair Fodrászat",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e62c58a6-d311-4961-9408-fbdc08302788",
+      "name": "Copyrama Nyomda kft. Szakdolgozat kötés, diplomakötés",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "4d3d5156-1837-4dad-be82-cc057314b077",
+      "name": "Aba-Novák Agóra Kulturális Központ",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f84e28ab-241c-4714-8cbc-09fde57c812a",
+      "name": "365 Oldtimer Museum",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f16dff76-a8f0-4f05-8e40-61edf128b5c2",
+      "name": "Szamos Marcipán Múzeum és Cukrászda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "d465a9d1-8cd2-486c-9694-ceb9ba77c3c8",
+      "name": "Ékszerkirály webáruház - Arany, ezüst, nemesacél ékszerek azonnal raktárról",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "f4b0b4ce-5101-433a-8687-374301feab28",
+      "name": "Árendás Virág Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "b3fa033d-9010-4b36-bc94-3e612bd2ae0f",
+      "name": "SUZUKI DEBRECEN LIMUZIN AUTÓHÁZ",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "40d05810-34ba-4934-8139-d6d40da2b4e4",
+      "name": "Nicol Party Bolt - Party kellékek, dekorációk",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "76677fe7-be9d-4859-b4f8-118532e1cc16",
+      "name": "Andi Táncegyüttes és Mozgásműhely",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "03249f0c-583e-45cd-979c-d56f85e85aca",
+      "name": "Garamond 91 kft. nyomda, dekoráció, matrica készítés",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "4ab03ae7-ee24-456f-ab47-8e1d65cb4085",
+      "name": "Horváth Cukrászda",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "4841c031-349a-4276-8412-04a994f35936",
+      "name": "Ad Astra Pirotechnika Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "ed101251-c55e-4765-b72d-dbef3ea90163",
+      "name": "Csalánosi Csárda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "40603bc3-cffb-4b31-9a86-4cc431617b97",
+      "name": "Dr. Szabó Barbara Közjegyzői Irodája",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "42dae7a8-0834-447a-a0bd-b972354f969b",
+      "name": "Szabó Imre Hair & Beauty Pest",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "35c0e5e4-338a-4c6f-b585-2f1bf49cbaae",
+      "name": "Hungaro Rental Kft Autókölcsönző",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "79fe1743-ed25-4ba2-9dc7-3dc917842775",
+      "name": "Dekorellátó Oktatóközpont és Kellékshop",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "04809cc0-8ceb-45ac-a7a1-9b560dd5269d",
+      "name": "netnyomda.hu",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "b10167c0-32f4-404a-809d-921c616e0ff6",
+      "name": "Piruett Tánc Stúdió",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c1e3fc28-700f-473a-bf7b-b6bd0b15bb31",
+      "name": "Csenki Szalon / Ékszer & Óra - Gyula",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "df9bdc52-3302-4d0c-ad5d-bcc71e501603",
+      "name": "Esküvői Dj Veress Attila",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "e9cb3047-6ebe-4f33-8584-ac2826addd85",
+      "name": "Autóbérlés Pécs - Farkas Autó",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "afb2b2c5-c1ab-4d31-9a0d-2dd59372aca8",
+      "name": "A Virágüzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "7d3f2bd7-25c1-450a-a9dd-4baf814e8e40",
+      "name": "Kukorica Csárda Balatonföldvár",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "23deacee-9150-432b-bcf3-bc88db428971",
+      "name": "Feeling Tánc és Mazsorett Egyesület Debrecen",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "fa9fef23-5784-40b3-9542-d18e2eef47a6",
+      "name": "Platán Bisztro",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "521e6638-afd4-4558-85af-0d6b3e4968ee",
+      "name": "Kócos Manó Családi és Gyermekfodrászat",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "7c5274a2-0bef-47a3-ac17-ae3b6a3f62b6",
+      "name": "Boglárka Szalon",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "6ecdfc7f-674e-47b8-a974-9cfc90f3b728",
+      "name": "LAP-Nyomda Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f988d611-14f2-4fcb-b3d9-1e9ef49466d3",
+      "name": "Kreatív Ötletek Boltja",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "71e19340-96cf-4a59-8b93-c46e74331894",
+      "name": "Veszprém Kormányablak (Mindszenty József utca 3-5.)",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "8b098572-00d8-4d02-8458-65792c6bd195",
+      "name": "FLORENTIN VIRÁGSZALON",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "507fc16c-54cc-460f-ac69-59df9708e76b",
+      "name": "Old Car Museum and Cafe",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "3c939752-aa6e-47b7-9009-8271ff54bc73",
+      "name": "E Trend Beauty",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "94616935-9e86-442e-8daa-5061405f6c8b",
+      "name": "Print Gyorsnyomda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "78b45215-d054-4d83-9f2f-c3d622578daf",
+      "name": "Garden Bistro&Beach",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "167255e6-dff0-447d-a18c-a192f771142d",
+      "name": "Pataki Cukrászda 1973",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "713bca39-683a-4569-96e2-b7bfb31b907e",
+      "name": "Gloriosa Szalon - Menyasszonyi Ruhaszalon",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "4dba3c89-6af1-46c1-95fa-28f7373dc19b",
+      "name": "Hölgyválasz Stúdió Táncoktatás",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e6d790f7-a1a5-4dce-96ce-4c95406b9449",
+      "name": "Ezüstpor Ékszerműhely",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "adf72716-1f64-44ad-9193-001bd7c16eb3",
+      "name": "Kézműves Cukrászda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "47cc213e-23bf-441a-b14c-b91287af7b1c",
+      "name": "Bodnár Zsolt Ceremóniamester, esküvőszervező",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e99e8a57-d179-4aae-aca2-41b9a75b4baa",
+      "name": "Orbán László",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c64e8d9f-2b65-4764-91be-0eea74cab5a0",
+      "name": "Rózsaszem",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "76bc5a58-4980-49ea-a137-343c4eb89e02",
+      "name": "STILL THE SALON - Fodrászat, Kozmetika, Veszprém",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "028c334d-d330-4e6a-a072-f6361ad46fe4",
+      "name": "Monarchia Kávéház",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "df175add-6a92-4f4b-ad92-44e3cbdf6654",
+      "name": "Szelfizz és Dekorálj Velünk !",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "c93382ba-d290-4c3c-b2bd-e98a62cddba3",
+      "name": "Nebuló Papíráruház & Grafika",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "3e756ca4-1064-47aa-8108-f32c1cea6b68",
+      "name": "Szilvia Ötvös Kft.",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "7194676e-2d9b-48be-a503-0e4e6db3c1b0",
+      "name": "Irisz Virág-Dekor Ajándékbolt",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "631dd83d-08e4-45af-af4f-79d4d33bfdeb",
+      "name": "Nesztor Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "32f62459-0ab4-4715-826e-63bb2b0c5f4d",
+      "name": "Éclat Boutique - Kozmetika Vác",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "062aa74a-b569-4da6-9767-388181d1e0d1",
+      "name": "Kondor Ernő Esküvői DJ & CM Esküvő, Születésnap, Rendezvény, Hétköznap kedvezményes ár!",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "10045835-e48e-436a-82d5-a02bd603f273",
+      "name": "Szent Anna Virágkötészet | Virág Debrecen | virágszállítás",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "0b591715-1a06-41e3-8b4e-ad729c808eb9",
+      "name": "Balaton Étterem",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "60985a6f-6fa1-4b3c-8eb7-1224b959c0f7",
+      "name": "picivirág csecsebecsék",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "25ac5bc9-b836-4734-ae56-dfd3551660c3",
+      "name": "Cziniel Cukrászda és Találkozóhely",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "b1331728-987a-4b4a-b6ad-0ef91a85db1a",
+      "name": "WABI Beauty Center",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "2723bf0b-3885-453a-b5b0-0d928a66f90e",
+      "name": "Pozitív Centrum Táncművészeti Egyesület - Positive Dance",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "bf674b9f-ed93-4a6a-84b3-45d771364e9a",
+      "name": "Casablanca Táncklub",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e09ff5da-8c2d-4c96-9837-a50818a00611",
+      "name": "Autókölcsönző Debrecen Bumeráng CAR Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "4c32db20-b92f-4ba6-a71a-3f58e96ebb6f",
+      "name": "Profi Nyomda Budapest",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "104a284a-f6d6-44b4-9000-9565aa21c535",
+      "name": "Miss Ara Esküvőszalon",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "69bd22f8-1a3d-4255-a686-9a72cfdf9dc5",
+      "name": "DecorWorld",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "3fca350a-adf3-4564-8606-f01d62ae378b",
+      "name": "Molnár és Társai Fotó Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "a8a74069-898e-452e-a83a-3a2b93b55908",
+      "name": "Autóbérlés, autómentés (ML Rent Kft.)",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "bcafdddb-55c9-4d9a-b2e0-ba636e9e3121",
+      "name": "Fiáker Étterem",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e0044684-6b3d-4114-95cb-ca8fd4a63f6f",
+      "name": "Pajti",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "615d983a-50a8-4a1d-bd67-28c9ae7b9283",
+      "name": "Golden Rose Esküvői Ruhaszalon",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "0967ccec-6479-4d30-9ce8-e600e47a8fd4",
+      "name": "Leporelló Papírszaküzlet, Profi póló nyomtatás",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "ed2509dc-68b9-4fa4-9414-88f8980369e6",
+      "name": "Gardénia Virágbolt Miskolc",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "d67d4359-6e2c-4703-85dd-870de8849af7",
+      "name": "CK média esküvői dj",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "0aa813fe-7afe-49cd-8359-1c605ea5ca67",
+      "name": "Pethő Kinga fotó és fotóstúdió",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "b7df2902-d44e-4a35-8ce7-8a3e224c652a",
+      "name": "Madison Swing Táncklub Kecskemét",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "940ee6dc-d3ab-4a59-9024-747c9c4fed83",
+      "name": "Vektor Print Kft. - Nyomda, dekor, grafika, mintázás",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c1276e2f-728b-4f2d-b79e-f12a26a8b837",
+      "name": "Kincses Fotó",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "b9dfacda-d075-4c7a-9ae4-40219199f603",
+      "name": "Puszta Csárda étterem",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "98d6200d-ba6c-4a3c-811e-89aa3fa431a0",
+      "name": "ÚTFUTÓ Személyszállítás és Bérautó",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "7e3079e3-72c8-4089-9e2d-930d793257cc",
+      "name": "VIP Rent - Luxusautó bérlés Budapest",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "576d82bc-1887-4740-8cae-161ea70a4116",
+      "name": "KlubZene.hu – Esküvői CM & DJ",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "a030508a-9036-4336-8e38-37a71c9bb5cd",
+      "name": "Gold Event Óra Ékszer Ajándék",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "681998c2-ba79-43a6-a26b-22cbdb3f3358",
+      "name": "Érdi Rózsa Nyomda Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "2a58f28b-19c8-46cf-9d1a-caf406390a78",
+      "name": "Vén Duna Cukrászda",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "8e5f83f2-0f3d-4cc2-ad3f-ff002c515c11",
+      "name": "Pappas Auto",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "819d3d6a-98f9-4b88-9785-08aa1d2d2fbd",
+      "name": "Iringó szárazvirág kötészet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "26004a93-5034-42c2-9b52-5508c544ac90",
+      "name": "Kisvendéglő a Hargitához",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "adc34413-991c-4643-b664-8cbf363754bc",
+      "name": "Sándor-Metternich-kastély",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "9261b5fd-2c79-4c2c-93d4-d49d0eb88389",
+      "name": "NG Szalon",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e91cb116-69c2-4c0e-b4a7-027f4f5985c3",
+      "name": "Grace - Gyermek Balett Sopronban",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "d2c24672-cec5-41a7-8e65-d78bc6b82210",
+      "name": "AD Kreatív Stúdió és Digitális Nyomda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "74146a94-1402-458a-a260-adb481194c53",
+      "name": "Oktogon Tánc Centrum",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "a9632401-0a52-475b-8a2e-d57a8b4a182e",
+      "name": "Apátsági Rege Cukrászda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "aad6ba0f-59a7-46a2-9b7d-9eecca6b1140",
+      "name": "Go Rent Autóbérlés Debrecen",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e70a347b-c6e1-4d72-b6c6-4dd9d45cf8cc",
+      "name": "Kasznár Katalin Photography",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "eba7c68b-9e61-4462-81c2-2d3fc190807d",
+      "name": "Beauty Garage Green",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "91f22ef6-7253-4ab3-836f-ae2d0c0567b2",
+      "name": "Partyballon Érd - partikellékek, lufik, ajándéktárgyak, dekorációk",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f1619013-22e1-4e54-9d56-db5d797b82bb",
+      "name": "Valcer Táncstudió",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "29524114-818c-4b88-ac2a-ffe304d33eca",
+      "name": "Szőke Cukrászda",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "ca95609a-d5d4-4ba3-9e48-90144627d18f",
+      "name": "A Boros Borbár és Étterem",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "fbf14a80-15d2-4e42-ba1b-24f09d9a51e9",
+      "name": "Bara Pál esküvői, rendezvény Dj. és ceremóniamester",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "27c9a8e4-99da-40fe-880e-996c71b837be",
+      "name": "Fehér Anita Sminkes",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "ee920cbd-9973-4dba-819f-cef9b1fe7b09",
+      "name": "Illusion Studio",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "30c1fb96-92b4-4049-9c36-209debf57be5",
+      "name": "Kovács András Óra-Ékszer Szaküzlete",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "e8756c39-b9a6-428a-8681-ca229038b4f6",
+      "name": "Land-Plan Hotel & Restaurant",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "de5aa554-99e3-445d-b973-3cccb3fa12ad",
+      "name": "Pontjo Grafika Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "23d0828d-41ba-4c5b-b243-d708897f7de7",
+      "name": "Bajnok Étterem",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e8439b0f-500a-4b83-84ef-eb9833253ce9",
+      "name": "OsCar Autókölcsönző",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f26ed7d9-dc49-483a-a21f-30ae55db56b1",
+      "name": "NK Hair & Head Spa Salon",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "84f5fe37-4d6f-46ee-8a80-d85868f4cefa",
+      "name": "Florália Virágüzlet-Virágbolt-Ajándékbolt",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "2227f116-4736-4a46-aad2-e2b4a9f0a4b6",
+      "name": "Karolina Kávéház és Koktélbár",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "20065cb7-e226-415a-9d2f-f59b3046d774",
+      "name": "Druk-ker Kft. Nyomda Kiskőrös",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e0852d43-12f0-4753-8abd-1c6827a698a9",
+      "name": "Black Sheep Kávézó & Konyha Gyula",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c54bd027-f3b7-45e9-b4e9-8687453befa2",
+      "name": "Anditta Virág és Ajándéküzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "6d0a2bf2-e03e-41c6-9c03-7811f86e8e5f",
+      "name": "DESIGN studio",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "a47605b8-c38f-4bd6-8646-78411a8ebde2",
+      "name": "Városi Óra-Ékszer Astron Üzlete Soltvadkert",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "c34db772-640e-4240-b6a6-70932b2450dc",
+      "name": "Decorcity",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "10865e86-8aad-4c85-847e-301e6dfd1edb",
+      "name": "Tóth Autóbérlés Debrecen",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "3394f6fe-af94-4f48-a6d3-f8a34857f0d8",
+      "name": "Vándor Vigadó",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "57de4382-42fc-4b80-a737-d7e63ce5e22b",
+      "name": "Nina's Dream Virágüzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e7ae356d-e158-4aaf-9159-9e94c51d2e7a",
+      "name": "Bicskás Székely Fogadó",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "0c26e793-40b4-40bd-86e2-c22d68aa61b7",
+      "name": "FOTOPLUS",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "4e51e5b0-68f1-4057-b26f-d18fc1e6f7e2",
+      "name": "ActiCity Tánc- és Mozgásművészeti Központ",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "124c4a45-7057-42c5-8984-d88068dbfe6e",
+      "name": "Glória Dekor",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e31cb9e4-02db-43d3-881a-1783c9992559",
+      "name": "AB Bérautó Sopron - teherautó, személyautó, kisbusz bérlés",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "26a5d37a-6d3d-42b4-b471-ca278d615824",
+      "name": "Sopron autókölcsönzés és autómentés",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "4bb2dc79-5a3f-4627-b76b-b8f8dd7fe2fa",
+      "name": "Bergmann Cukrászda Balatonfüred",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "8e720110-1eb5-4335-8e27-249fe48dc1d9",
+      "name": "LAMAREDA Étterem és Bisztró",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c00db65e-24ae-47f4-a0d2-6f2c05c59907",
+      "name": "Aranysárkány Vendéglő",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "8ef47b00-8da1-4dc1-acb0-c52452f0bd56",
+      "name": "Endrődi Bt. | Printahome",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "ad458e97-4e8c-464a-ae75-a304aae8279f",
+      "name": "PrintR Nyomda - Reklámdekorációs és Grafikai Stúdió",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "727781e6-75cf-43e5-a440-a444d51bea2e",
+      "name": "Gyöngy Virág & Ajándéküzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "9b33d9dc-f70a-4747-83cc-b2fa25b0bbd0",
+      "name": "Zsuka photo & design - Fotós Székesfehérvár",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "ce5dec96-1b0f-43d1-b69d-8c5d33607764",
+      "name": "Harmony Beauty Salon Tata",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "3fff18dc-1fdb-40db-9921-a271f99d0893",
+      "name": "Mex - Press Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "3f2c9476-f153-4b45-8e37-0703bdfed55f",
+      "name": "Öltözék Bt. - méteráru szaküzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "57108617-787d-40dc-83d6-9d2bf859090d",
+      "name": "Autómentés,utánfutó bérlés Nagykanizsán",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "92ca86f8-7c29-4285-acc2-f484e2975a2b",
+      "name": "Davehairstyle - fodrászat - sminkes - Karajz Dávid - 1. Kerület",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "78478c4a-9ff6-4805-83ac-f50bbe897e31",
+      "name": "Remete Pince Étterem",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "dfcc91e5-1721-440b-8e2c-35bb1e5ee9d1",
+      "name": "Bodnár Vivien Sminktetoválás és Eltávolítás Miskolc",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "60ba3915-7049-4036-90b7-6fe19d4ae7d6",
+      "name": "Eve's Bouquet Virág Debrecen",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "7884ce34-3b68-437c-96f5-2d73691643e9",
+      "name": "Turbo Print gyorsnyomda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c45f93a7-b15d-4bfa-8cfc-b7fe85b2b508",
+      "name": "Hotel Akadémia",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "f9d48c4e-7653-4283-bb59-4e232323062c",
+      "name": "Szent Korona Cukrászda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "b94b84f7-00ac-439d-ba8f-5a0b85636207",
+      "name": "Fagylaltszalon Cukrászda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f261af11-a591-4cc9-8557-c62bdfe717f9",
+      "name": "Thoma Franciska Sminktetoválás, Sminkoktatás",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "dd5d2ca3-439e-4d1f-aa8d-908e276ca91f",
+      "name": "Losi Dekor",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "fd9821d4-2877-449a-8a87-666f155e10f3",
+      "name": "Horváth Nyomda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "59a4222b-0928-45ca-a0a1-4e061745bf14",
+      "name": "Álomvirág Virágüzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "dab09194-6245-4362-840e-8f582493e930",
+      "name": "Tóth Cukrászda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "31322604-b2bf-4b52-855d-38b8bc40610d",
+      "name": "Kisbagoly Vendéglő",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "ceb6a612-8018-4a2f-abf7-328763459cc7",
+      "name": "AUTÓ-MARKET 2 SALGÓTARJÁN JÁRMŰ KERESKEDÉS",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e8a3666a-caff-4869-b98b-35e7e398e173",
+      "name": "levendula virag",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "631b738a-ab5f-497d-aa79-81c96745f5e9",
+      "name": "Touché Szalon",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c68652c8-67f1-4eb0-91cc-71a116d1d91b",
+      "name": "BALO",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "bebc6459-cf82-4e8c-af25-915234844241",
+      "name": "Zóka Fotó",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "0b992a27-7405-4f1a-9703-1159aa586ca4",
+      "name": "Vár Vendéglő Panzió",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "fe560034-21fe-40b5-8bca-dad85c463b5d",
+      "name": "Correct Gold- Zalaegerszeg |Befektetési arany értékesítés készletről és azonnali felvásárlás|Törtarany átvétel felvásárlásra",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c86e32a1-93a1-4c63-9681-1f8a63a0b710",
+      "name": "Kisbusz bérlés, mikrobusz kölcsönzés Szeged - Rikoma-team",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "e7ddcaa6-ab56-482c-bcc8-016285346927",
+      "name": "NYÍREGYHÁZI AUTÓKÖLCSÖNZŐ",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "5cabff66-2d82-478f-8687-463f07b3c088",
+      "name": "Sira Print Kft. - Üzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "87ad9f30-9959-44be-bd5a-173a8fce2da4",
+      "name": "Multi Shop Ajándék és Gyorsnyomda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "4c46812d-ed57-4d37-b74e-9f4dd5e77a1a",
+      "name": "Zabrakadabra",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "5d363169-6701-4d39-8f6f-9268c194d67a",
+      "name": "Shelby Autókölcsönző",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f52f3dc8-d0c9-4e00-af5f-928fad191ce0",
+      "name": "Grill Étterem",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f6a3c908-225c-4786-8994-dbf0e7400bd9",
+      "name": "La Perla Szépségszalon, kozmetika Szekszárd",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "a67d0173-fb08-4396-b41a-a747eb266c93",
+      "name": "Pipitér Virágüzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "3f22591b-58c2-4210-bc77-bf94a353a71d",
+      "name": "Kucsák Könyvkötészet és Nyomda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f70e003d-5cf6-4b48-8f34-e2f026a8e9e3",
+      "name": "ViolaHairStudio",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "514b89df-88e1-4d30-9cf0-1f388d3624b7",
+      "name": "Autóbérlés Sopron",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "19e20044-1409-4d80-a4fb-b7d500bcfeb2",
+      "name": "Hoffer Cukrászda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "4967b374-c388-42f5-9134-c6b480181884",
+      "name": "Dekorház Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "d3975bd3-a86d-40a0-a8ea-7e401a7739a6",
+      "name": "Profi Print Stúdió Kaposvár",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "2c4965c6-1737-49e8-bb46-8816b0121a13",
+      "name": "Bella Mia Virágszalon",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "0096dd27-821e-4866-b2a9-1b49ec38768d",
+      "name": "Wernesgrüner Étterem",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "6457d624-1319-4c55-97fa-6b7a40dc95e0",
+      "name": "PrintMax gyorsnyomda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "5b19fa59-a7b5-4385-b6e0-ea750a3d52f6",
+      "name": "MonArt Stúdió",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "788b79a9-5741-4976-8883-799c1028b42f",
+      "name": "StyleNails Műköröm ès Oktatàs (Nail technician)",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "6fa28f34-9dfb-42d7-a9ca-4dbcc0defd70",
+      "name": "Jázmin Virág Bolt & Webshop",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "ea3c4c3d-7e27-4a62-a7bb-2cbde9415cf4",
+      "name": "Írisz Virágüzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "57c59b50-27ff-477f-b759-48eed32d5090",
+      "name": "Jogar Továbbképző Központ és Hotel",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "fe2394c6-31b6-4bfb-8901-8b6bc93d618b",
+      "name": "Rózsa Ékszer - Óra",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "f5a409d0-dc98-4685-a182-4548070759bf",
+      "name": "SUGAR!",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "6c5f14a0-3013-4657-948d-d80b309e38b5",
+      "name": "Print and Go",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "7baee0bc-98af-4fee-856c-089c49d2ebf4",
+      "name": "Ara Online menyasszonyi ruha üzlet",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "113bd86e-8bff-451c-ac49-83e19024b63a",
+      "name": "Smaragd Szépségcentrum",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "a87e8f17-98c8-4936-9adc-f963dfc3ca24",
+      "name": "Dekorbarátok virág ajándék üzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c78732b7-bad2-45f0-bded-9f9ce0060017",
+      "name": "Center-Print Nyomda Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "208bc61c-c24b-4e5a-bb4b-d3282dc5f682",
+      "name": "Magic Mushroom Stúdio - Kismama Családi Fotózás",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "15a8166b-bf9e-4cbc-bcb0-bd75b1b3fe2d",
+      "name": "Kékes Zöld",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "44097ac2-1849-4f5e-892e-a8d3ffe320b6",
+      "name": "Ékszerész",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "dc71d8d8-2e57-49ee-9025-f357a97a2555",
+      "name": "Rigoletto Cukrászda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "d5b788cd-aaeb-48f2-b2de-38e17abc9351",
+      "name": "Szirmai Virág és Ajándékbolt",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "ed5f3090-e291-488d-afa1-589e84fd5255",
+      "name": "Bencze Csilla Fodrász-Hájó Hair Stúdió",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "a06b086c-90a1-4e47-a8ee-6d00e1d2c595",
+      "name": "Dancsó Erika szalon",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "2cd02a2f-a80c-44e8-a93b-d22dea24a312",
+      "name": "Printmágus.com",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "c22aaf51-e5ea-4bbc-b991-6a0f98029946",
+      "name": "Kismandula Cukrászda",
+      "reason": "official_website_has_no_usable_image"
+    },
+    {
+      "discovery_id": "ed5c1388-0465-486c-bad8-abe1e144a2fc",
+      "name": "Városi Virágküldés Kaposvár - Virágküldő Webáruház",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "35cbf7b8-a22a-41b1-a9b2-e7695e3ac920",
+      "name": "KincsesHaj Fodrászszalon",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "6b267720-d043-414d-bc2e-7c6278cfca17",
+      "name": "Ásvány Ékszer",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "f75fc16a-8827-4967-9869-7976166d773f",
+      "name": "Gecco Mexikói Étterem",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "35dcbc57-166a-4fa3-8f7a-9f080b041b03",
+      "name": "Lindressphoto",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "cfabe577-4ebc-4e15-9859-7f0cef279031",
+      "name": "Beatrix Virágüzlet",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "11753a46-96f9-476d-a3cb-dfd350e29804",
+      "name": "Kalóz Fregatt",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "34b54ee8-7127-4f5b-96db-0dc03e41272a",
+      "name": "BrandMax Reklámstúdió",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "5d3c5338-da4e-46c9-9f02-b0338db8dd76",
+      "name": "Wearing",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "cfc078cb-5230-4efb-a531-7e0ba3e43e6d",
+      "name": "Velora Head Spa & Beauty",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "7b4fa716-41c7-4efc-a972-7a75443b44db",
+      "name": "Nádor cukrászda",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    },
+    {
+      "discovery_id": "0843f202-3df1-468d-b560-5586bc7ffdff",
+      "name": "Phoenix Studio - MGH Reklám Kft.",
+      "reason": "official_website_has_no_category_specific_wedding_evidence"
+    }
+  ]
+}

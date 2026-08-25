@@ -100,6 +100,33 @@ describe("curated directory integrity", () => {
     expect(bad).toEqual([]);
   });
 
+  test("the Hungarian directory has 1,000 rich profiles with a complete scale batch", () => {
+    const hungarian = DIRECTORY.filter((supplier) => supplier.country === "HU");
+    const scale = hungarian.filter((supplier) => supplier.id.startsWith("hu-scale-"));
+    const sentenceCount = (value: string) =>
+      Math.max(value.trim() ? 1 : 0, value.match(/[.!?](?=\s|$)/g)?.length ?? 0);
+
+    expect(hungarian.length).toBeGreaterThanOrEqual(1_000);
+    expect(scale).toHaveLength(177);
+    for (const supplier of hungarian) {
+      const huSentences = sentenceCount(supplier.blurb_hu);
+      const enSentences = sentenceCount(supplier.blurb_en);
+      expect(huSentences).toBeGreaterThanOrEqual(3);
+      expect(huSentences).toBeLessThanOrEqual(6);
+      expect(enSentences).toBeGreaterThanOrEqual(3);
+      expect(enSentences).toBeLessThanOrEqual(6);
+    }
+    for (const supplier of scale) {
+      expect(supplier.city.trim()).not.toBe("");
+      expect(supplier.lat).not.toBeNull();
+      expect(supplier.lng).not.toBeNull();
+      expect(supplier.website).toMatch(/^https?:\/\//);
+      expect(supplier.contact_email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+      expect(supplier.contact_phone?.replace(/\D/g, "").length).toBeGreaterThanOrEqual(7);
+      expect(supplier.gallery_urls?.[0]).toMatch(/^https?:\/\//);
+    }
+  });
+
   test("the Croatian scale batch only lists vendors with explicit wedding evidence", () => {
     const hrScale = DIRECTORY.filter((s) => s.id.startsWith("hr-scale-"));
     expect(hrScale.length).toBeGreaterThanOrEqual(50);
