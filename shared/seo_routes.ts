@@ -417,6 +417,27 @@ export function enPathFor(path: string): string {
   return HU_TO_EN_SLUG.get(path) ?? path;
 }
 
+/** Locale implied by a tool-page URL by itself: landing on the HU slug
+ *  means HU (title, body, `<html lang>`, and therefore the client's
+ *  hydrated locale too, via `data-default-locale`), landing on the EN
+ *  slug means EN. Returns null for every other path.
+ *
+ *  Without this, a visitor arriving at `/eszkozok/eskuvo-koltsegvetes-kalkulator`
+ *  with no saved locale and no `Accept-Language` signal (the production
+ *  default — see `localeForHost` in seo_ssr.ts) fell through to the global
+ *  EN default: a Hungarian-slugged, Hungarian-titled URL rendering English
+ *  copy to both Googlebot and a first-time visitor. `ROUTE_SEO` already
+ *  carries real HU text for every one of these paths; nothing was reading
+ *  it. Kept as a low-priority fallback (checked only when the caller has no
+ *  stronger host/Accept-Language signal) so it doesn't disturb the
+ *  multi-host EN-canonical-host redirect behaviour, which intentionally
+ *  lets the host outrank the slug. */
+export function localeForToolSlug(path: string): SeoLocale | null {
+  if (HU_TO_EN_SLUG.has(path)) return "hu";
+  if (EN_TO_HU_SLUG.has(path)) return "en";
+  return null;
+}
+
 /** Hungarian-alias `/impresszum` resolves to the same SEO entry as `/imprint`.
  *  EN tool slugs resolve to their HU pair's bilingual entry, the visitor's
  *  locale picks which copy renders. Done at lookup time rather than

@@ -24,7 +24,13 @@ import {
   type MarketingPage,
 } from "../../../shared/marketing_pages";
 import { SEO_FAQ } from "../../../shared/seo_faq";
-import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../shared/seo_routes";
+import {
+  enPathFor,
+  huPathFor,
+  localeForToolSlug,
+  lookupRouteSeo,
+  type RouteSeo,
+} from "../../../shared/seo_routes";
 import { toolFaqForPath } from "../../../shared/tool_faq";
 import { supplierCategoryLabel } from "../../../shared/suppliers";
 import { vendorPublicId } from "../../../shared/vendor_slug";
@@ -627,13 +633,28 @@ export function localeForHost(
 
 /** Hungarian feature/guide routes have no translated body yet. Keep the
  * document language and social metadata aligned with their actual content,
- * even though the shared landing defaults to English. */
+ * even though the shared landing defaults to English.
+ *
+ * Precedence: a marketing page is always HU (no EN alternative exists at
+ * all). Otherwise a configured EN-canonical host, or an explicit
+ * Accept-Language, outrank everything — that's the multi-host redirect
+ * behaviour in `buildHeadBlock` (a visitor on the EN host who typed the HU
+ * tool slug gets canonicalised to the EN slug on the EN host, not served a
+ * Hungarian page there). Only when NEITHER of those gave an answer — the
+ * ordinary single-host production request, where server.ts sends `null` for
+ * Accept-Language — does the tool-page URL itself get to decide, via
+ * `localeForToolSlug`. That's what makes a fresh visit to
+ * `/eszkozok/eskuvo-koltsegvetes-kalkulator` render its real HU copy instead
+ * of silently falling through to the global EN default. */
 function localeForPath(
   host: string | null | undefined,
   acceptLanguage: string | null | undefined,
   pathname: string,
 ): SeoLocale {
-  return marketingPageForPath(pathname) ? "hu" : localeForHost(host, acceptLanguage);
+  if (marketingPageForPath(pathname)) return "hu";
+  if (hostIsEnCanonical(host)) return "en";
+  if (acceptLanguage != null) return prefersHungarian(acceptLanguage) ? "hu" : "en";
+  return localeForToolSlug(pathname) ?? "en";
 }
 
 /** Canonical hostname for SEO link rels. When `EN_CANONICAL_HOST` is set

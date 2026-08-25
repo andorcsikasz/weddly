@@ -69,6 +69,37 @@ describe("seo: non-paired routes emit no EN alternate (single URL)", () => {
   });
 });
 
+describe("seo: single-host production request (no Accept-Language) picks locale from the tool URL itself", () => {
+  // server.ts's real production call passes `acceptLanguage: null` — no
+  // header forwarded at all. Before this, that fell straight through to the
+  // global EN default, so a fresh visit (or Googlebot's crawl) to the
+  // Hungarian-slugged, Hungarian-titled tool URL rendered English title,
+  // body and `<html lang>`, despite ROUTE_SEO carrying real HU copy for it.
+  function renderNoHeader(pathname: string): string {
+    return renderIndexHtml(TEMPLATE, { host: "tryweddly.com", pathname, isRsvp: false });
+  }
+
+  test("HU tool slug renders its real HU title/h1/lang, not the EN default", () => {
+    const html = renderNoHeader(HU_TOOL);
+    expect(html).toContain("<title>Esküvő költségvetés kalkulátor · Wēddly</title>");
+    expect(html).toContain("Esküvő költségvetés kalkulátor");
+    expect(html).toContain('<html lang="hu">');
+    expect(html).not.toContain("Wedding budget calculator");
+  });
+
+  test("EN tool slug still renders EN — unaffected by the fix", () => {
+    const html = renderNoHeader(EN_TOOL);
+    expect(html).toContain("<title>Wedding budget calculator · Wēddly</title>");
+    expect(html).toContain('<html lang="en">');
+    expect(html).not.toContain("Esküvő költségvetés kalkulátor");
+  });
+
+  test("a non-tool route (no slug pair) keeps the global EN default", () => {
+    const html = renderNoHeader("/about");
+    expect(html).toContain('<html lang="en">');
+  });
+});
+
 describe("seo: sitemap lists EN tool URLs in single-host mode", () => {
   test("includes a <loc> for the EN tool slug on weddly.hu", () => {
     const xml = renderSitemapXml("weddly.hu");
