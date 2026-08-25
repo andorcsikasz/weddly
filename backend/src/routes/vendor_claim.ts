@@ -29,6 +29,7 @@ import {
 } from "../domain/listing_claims";
 import { getListingById } from "../domain/listings";
 import { replayOutreachForListing } from "../domain/outreach";
+import { localeForCountry, resolveListingCountry } from "../domain/vendor_campaign";
 import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
 import { vendorCurrencyForLocale } from "@shared/vendor_billing";
 import { createVendorAccount } from "../domain/vendor_accounts";
@@ -289,6 +290,13 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
 
   const passwordHash = await hashPassword(password);
   const ts = now();
+  // Same rule the claim-invite mail itself used to reach this vendor: Hungarian
+  // for a Hungarian listing, English for every other country. Without this the
+  // insert left `users.locale` NULL, so every transactional mail afterwards
+  // (claim approved, profile share, ...) fell back to the legacy bilingual
+  // HU+EN stack — Hungarian-first, for a vendor who never asked for Hungarian
+  // at all. Reported by a vendor in Tirol, 2026-08-26.
+  const mailLocale = localeForCountry(resolveListingCountry(listing));
 
   // Sentinel errors thrown from inside the tx so we can map them to HTTP
   // responses cleanly outside. Using string sentinels rather than HttpError
@@ -318,10 +326,10 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
       userResult = db
         .prepare(
           `INSERT INTO users
-             (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
-           VALUES (?, ?, ?, 'active', 'vendor', 1, ?, ?)`,
+             (email, password_hash, full_name, status, role, verified_email, locale, created_at, updated_at)
+           VALUES (?, ?, ?, 'active', 'vendor', 1, ?, ?, ?)`,
         )
-        .run(claim.email_sent_to, passwordHash, fullName, ts, ts);
+        .run(claim.email_sent_to, passwordHash, fullName, mailLocale, ts, ts);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("UNIQUE")) throw new Error(ERR_EMAIL_TAKEN);
@@ -377,9 +385,9 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   // Claiming IS this vendor's activation, so the founding-or-trial window
   // starts here, the same grant the register + onboarding paths make. Without a
   // sub row the account would sit on the FREE plan with no lead window to
-  // enter (freemium: direct inquiries are PRO). Idempotent. Currency defaults
-  // to EUR, the claim flow carries no locale; the vendor can pay in EUR
-  // regardless of country.
+  // enter (freemium: direct inquiries are PRO). Idempotent. Currency stays
+  // pinned to EUR here regardless of the mail locale above — a deliberate
+  // billing decision, separate from what language we write to the vendor in.
   initVendorBilling(newVendorAccountId, vendorCurrencyForLocale(null), ts);
 
   // Hand over the couples who wrote to this business BEFORE it had an account.
