@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { intlLocale } from "../lib/format";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BlogCoverArt } from "../components/BlogCoverArt";
+import { BlogCover } from "../components/BlogCover";
 import { PublicShell } from "../components/PublicShell";
 import { blogApi } from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
@@ -122,46 +122,6 @@ function BlogTile({
         </div>
       </div>
     </Link>
-  );
-}
-
-export function BlogCover({
-  url,
-  slug,
-  category,
-  lazy,
-}: {
-  url: string | null;
-  /** Accepted for API compatibility — the SVG cover is aria-hidden and
-   *  the card's <h3> title supplies the accessible name. */
-  alt?: string;
-  /** Post slug, used to pick the content icon + the topical default
-   *  Unsplash photo when no upload exists. */
-  slug?: string;
-  /** Category eyebrow — accepted for API compatibility; the cover
-   *  itself no longer shows it since the card renders it next to the
-   *  title. */
-  category?: string;
-  /** Forwarded to BlogCoverArt — see its `lazy` prop. Set by the landing
-   *  page's teaser, where the covers are thousands of pixels below the fold;
-   *  left off in the feed, where they are the page. */
-  lazy?: boolean;
-}) {
-  // BlogCoverArt handles the whole composition now: it picks the
-  // photo (admin upload via `bgUrl`, else slug → DEFAULT_PHOTO_BY_SLUG,
-  // else paper fallback) and overlays the Wēddly wordmark + content
-  // icon on top. Single render path keeps the editorial chrome
-  // consistent across uploaded photos and topical defaults.
-  return (
-    <div className="aspect-[16/10] w-full overflow-hidden bg-paper-100 dark:bg-umber-800">
-      <BlogCoverArt
-        slug={slug}
-        bgUrl={url}
-        category={category}
-        lazy={lazy}
-        className="h-full w-full transition-transform duration-500 group-hover:scale-[1.02]"
-      />
-    </div>
   );
 }
 

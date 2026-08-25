@@ -640,8 +640,8 @@ export const GTM_INLINE_CSP_HASH = `'sha256-${new Bun.CryptoHasher("sha256")
  *  wired up inside the GTM web UI, not in code, so it does not appear here.
  *  Container ids are public by design; we still guard the format to keep
  *  anything odd in the env out of the page source.
- *  The gtm.js loader is tagged data-cookieconsent="statistics" so Cookiebot
- *  auto-blocking holds it until the visitor consents. The dataLayer bootstrap
+ *  The gtm.js loader is tagged data-cookieconsent="statistics" so Cookiebot's
+ *  manual markup holds it until the visitor consents. The dataLayer bootstrap
  *  runs immediately (harmless, no cookies, no network) so any pre-consent
  *  dataLayer.push() calls queue correctly. */
 function gtmScriptTag(): string {
@@ -1221,8 +1221,8 @@ function firstNonBlank(...values: (string | null | undefined)[]): string | null 
 function heroPreloadTags(path: string): string[] {
   if (path !== "/" && path !== "") return [];
   return [
-    `<link rel="preload" as="image" href="/cover-hero.jpg" fetchpriority="high" media="(min-width: 640px)" />`,
-    `<link rel="preload" as="image" href="/hero-mobile-cover.jpg" fetchpriority="high" media="(max-width: 639px)" />`,
+    `<link rel="preload" as="image" type="image/avif" href="/cover-hero.avif?v=20260825" fetchpriority="high" media="(min-width: 640px)" />`,
+    `<link rel="preload" as="image" type="image/avif" href="/hero-mobile-cover.avif?v=20260825" fetchpriority="high" media="(max-width: 639px)" />`,
   ];
 }
 

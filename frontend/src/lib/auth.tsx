@@ -8,6 +8,7 @@ import { SessionExpiredDialog } from "../components/SessionExpiredDialog";
 import {
   ADMIN_REAUTH_REQUIRED_EVENT,
   ApiError,
+  hasSession,
   SESSION_EXPIRED_EVENT,
   setToken as persistToken,
 } from "./api";
@@ -31,7 +32,12 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // A first-time public visitor has neither a legacy bearer nor the
+  // non-secret HttpOnly-session marker. Do not probe /auth/me in that case:
+  // the expected 401 was noisy in DevTools/Lighthouse and put an avoidable
+  // request on every public page's startup path. Storage-blocked browsers
+  // deliberately return true from hasSession(), preserving the cookie probe.
+  const [loading, setLoading] = useState(() => hasSession());
   // True when an /api/* call returned 401 mid-session — pops the re-login
   // modal so the user can resume without losing typed state.
   const [reauthReason, setReauthReason] = useState<"expired" | "admin" | null>(null);
@@ -114,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refresh();
+    if (hasSession()) void refresh();
   }, [refresh]);
 
   // Listen for fetch-layer 401s. We only open the modal if a user is

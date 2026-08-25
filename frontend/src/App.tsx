@@ -7,32 +7,29 @@ import { useAuth } from "./lib/auth";
 import { clearDemoSessionFlag, isCurrentSessionDemo } from "./lib/demoSession";
 import { MARKETING_PAGES } from "@shared/marketing_pages";
 
-// Public routes are eagerly imported — they're FCP-critical and small in
-// aggregate. The signed-in /app/* and admin/* areas, plus low-traffic
-// flows (rsvp, onboarding, invite-by-token, reset-password), are lazy so
-// they never ship in the landing-page first paint. Before this split the
-// public bundle was ~1.4 MB; the admin + planning + seating + timeline
-// + suppliers + leaflet code lived there even for an unauthenticated
-// visitor browsing /. After: only public components ship in the entry
-// chunk, the rest streams in when a session lands on /app.
-import AboutPage from "./pages/AboutPage";
-import BlogIndexPage from "./pages/BlogIndexPage";
-import BlogPostPage from "./pages/BlogPostPage";
-import BudgetCalculatorPage from "./pages/BudgetCalculatorPage";
-import CountdownPage from "./pages/CountdownPage";
-import CoupleCardsPage from "./pages/CoupleCardsPage";
-import WeddingChecklistToolPage from "./pages/WeddingChecklistToolPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import GuestListTemplatePage from "./pages/GuestListTemplatePage";
-import RsvpGeneratorPage from "./pages/RsvpGeneratorPage";
-import SeatingChartPage from "./pages/SeatingChartPage";
+// Only the landing route is FCP-critical on `/`. Other public pages have their
+// own route chunks: eagerly importing the entire tools, blog and auth surface
+// made a first-time landing visitor download code that Lighthouse measured as
+// unused. `Page` below already provides the Suspense/loading boundary.
 import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/LoginPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import RegisterPage from "./pages/RegisterPage";
-import VendorsPage from "./pages/VendorsPage";
-import PlannersPage from "./pages/PlannersPage";
-import MarketingContentPage from "./pages/MarketingContentPage";
+
+const AboutPage = lazyWithReload(() => import("./pages/AboutPage"));
+const BlogIndexPage = lazyWithReload(() => import("./pages/BlogIndexPage"));
+const BlogPostPage = lazyWithReload(() => import("./pages/BlogPostPage"));
+const BudgetCalculatorPage = lazyWithReload(() => import("./pages/BudgetCalculatorPage"));
+const CountdownPage = lazyWithReload(() => import("./pages/CountdownPage"));
+const CoupleCardsPage = lazyWithReload(() => import("./pages/CoupleCardsPage"));
+const WeddingChecklistToolPage = lazyWithReload(() => import("./pages/WeddingChecklistToolPage"));
+const ForgotPasswordPage = lazyWithReload(() => import("./pages/ForgotPasswordPage"));
+const GuestListTemplatePage = lazyWithReload(() => import("./pages/GuestListTemplatePage"));
+const RsvpGeneratorPage = lazyWithReload(() => import("./pages/RsvpGeneratorPage"));
+const SeatingChartPage = lazyWithReload(() => import("./pages/SeatingChartPage"));
+const LoginPage = lazyWithReload(() => import("./pages/LoginPage"));
+const NotFoundPage = lazyWithReload(() => import("./pages/NotFoundPage"));
+const RegisterPage = lazyWithReload(() => import("./pages/RegisterPage"));
+const VendorsPage = lazyWithReload(() => import("./pages/VendorsPage"));
+const PlannersPage = lazyWithReload(() => import("./pages/PlannersPage"));
+const MarketingContentPage = lazyWithReload(() => import("./pages/MarketingContentPage"));
 
 // The four legal pages are the one exception to "public routes ship eagerly",
 // and they earn it by weight rather than by traffic. Each renders the HU and

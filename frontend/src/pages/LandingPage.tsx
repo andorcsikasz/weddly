@@ -68,7 +68,7 @@ import { VENDOR_FOUNDING_CAP, vendorPrice } from "@shared/vendor_billing";
 import type { BlogPost } from "@shared/blog_posts";
 import { blogApi } from "../lib/endpoints";
 import { blogCopy } from "@shared/blog_posts";
-import { BlogCover } from "./BlogIndexPage";
+import { BlogCover } from "../components/BlogCover";
 import {
   COUPLE_CARD_DECKS,
   type Deck,
@@ -91,8 +91,7 @@ import {
 // vanish into a dark-mode page background it never actually sits on.
 const roleChipClass =
   "group inline-flex items-center rounded-full border border-paper-50/40 bg-paper-50/15 py-2 pl-2.5 pr-2.5 text-paper-50 shadow-soft backdrop-blur-sm transition-colors duration-200 hover:border-paper-50/80 hover:bg-paper-50 hover:text-umber-900 focus-visible:border-paper-50/80 focus-visible:bg-paper-50 focus-visible:text-umber-900";
-const roleChipTextWrap =
-  "grid grid-cols-[0fr] transition-[grid-template-columns] duration-300 ease-out group-hover:grid-cols-[1fr] group-focus-visible:grid-cols-[1fr]";
+const roleChipTextWrap = "hidden group-hover:grid group-focus-visible:grid";
 const roleChipText =
   "overflow-hidden whitespace-nowrap pl-2 font-grotesk text-sm font-medium tracking-tight";
 
@@ -138,6 +137,15 @@ const MOCKUP_AR_FEATURE = "496 / 376";
 const REFERRER_SESSION_KEY = "weddly.ref";
 const UTM_SESSION_KEY = "weddly.utm";
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
+
+// Both live-number sections consume the same endpoint. Sharing the in-flight
+// promise prevents the two mounts from issuing byte-identical requests during
+// startup (the duplicate was visible in Lighthouse's dependency tree).
+let landingPublicStatsPromise: ReturnType<typeof publicStatsApi.get> | null = null;
+function getLandingPublicStats() {
+  landingPublicStatsPromise ??= publicStatsApi.get();
+  return landingPublicStatsPromise;
+}
 
 export default function LandingPage() {
   const { t, locale } = useT();
@@ -227,10 +235,7 @@ export default function LandingPage() {
     setRevealedChip(key);
     return false;
   };
-  const chipTextWrap = (key: string) =>
-    revealedChip === key
-      ? "grid grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out"
-      : roleChipTextWrap;
+  const chipTextWrap = (key: string) => (revealedChip === key ? "grid" : roleChipTextWrap);
 
   return (
     <PublicShell>
@@ -369,16 +374,24 @@ export default function LandingPage() {
           {/* Decorative: the heading and the search box carry the meaning, so
               this stays out of the accessibility tree. width/height are the
               real pixels so the row reserves its space before the file lands. */}
-          <img
-            src="/suppliers-illustration.jpg"
-            alt=""
-            aria-hidden="true"
-            width={1100}
-            height={1015}
-            loading="lazy"
-            decoding="async"
-            className="h-auto w-full rounded-3xl"
-          />
+          <picture>
+            <source
+              type="image/avif"
+              srcSet="/suppliers-illustration-400.avif?v=20260825 400w, /suppliers-illustration-665.avif?v=20260825 665w, /suppliers-illustration-900.avif?v=20260825 900w"
+              sizes="(min-width: 1024px) 52vw, calc(100vw - 2rem)"
+            />
+            <img
+              src="/suppliers-illustration.jpg?v=20260825"
+              alt=""
+              aria-hidden="true"
+              width={1100}
+              height={1015}
+              loading="lazy"
+              decoding="async"
+              sizes="(min-width: 1024px) 52vw, calc(100vw - 2rem)"
+              className="h-auto w-full rounded-3xl"
+            />
+          </picture>
         </div>
       </section>
 
@@ -613,13 +626,17 @@ export default function LandingPage() {
           shared/blog_posts.ts. Each card is a Link into /blog/:slug; the
           section also offers a "Browse the magazine" CTA into the /blog
           index for visitors who want to see the full list. */}
-      <BlogTeaser />
+      <LazyMount eagerOnMobile={false} rootMargin="600px 0px" className="min-h-px">
+        <BlogTeaser />
+      </LazyMount>
 
       {/* ════════════════════════ 11.6 · Couple-cards teaser ═══════════════
           Four decks of 25 conversation cards. Mini grid mirrors the deck
           picker on the tool page; each tile and the bottom CTA navigate
           to the same tool slug (locale-aware). */}
-      <CoupleCardsTeaser />
+      <LazyMount eagerOnMobile={false} rootMargin="600px 0px" className="min-h-px">
+        <CoupleCardsTeaser />
+      </LazyMount>
 
       {/* ════════════════════════ Closing ════════════════════════
           Stationery texture, faded WĒDDLY watermark, huge italic
@@ -794,8 +811,7 @@ function LiveStatsBand() {
   const [stats, setStats] = useState<{ couples: number | null; rsvps: number | null } | null>(null);
   useEffect(() => {
     let cancelled = false;
-    publicStatsApi
-      .get()
+    getLandingPublicStats()
       .then((r) => {
         if (!cancelled) setStats({ couples: r.couples, rsvps: r.rsvps });
       })
@@ -876,8 +892,7 @@ function FoundingVendorsBand() {
 
   useEffect(() => {
     let cancelled = false;
-    publicStatsApi
-      .get()
+    getLandingPublicStats()
       .then((r) => {
         if (!cancelled) setStats({ vendors: r.vendors, listings: r.listings });
       })
@@ -1926,6 +1941,7 @@ function PricingPeek({
   return (
     <button
       type="button"
+      aria-label={card.label}
       onClick={onSelect}
       className={`flex h-full w-full flex-col items-start justify-start text-left ${TICKET_BOX} ${TICKET_FILL_BEHIND} opacity-95 transition-opacity duration-300 hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 ${
         // Content hugs the OUTER edge on each side: the inner two thirds of a
@@ -2271,21 +2287,25 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
         })}
       </div>
       {/* Position dots — affordance that the track wraps. */}
-      <div className="mt-4 flex justify-center gap-1.5">
+      <div className="mt-1 flex justify-center">
         {decks.map((deck, idx) => (
           <button
             key={deck.id}
             type="button"
             aria-label={t("tools.couple_cards.deck_number_label", { n: idx + 1 })}
+            aria-pressed={circularDelta(idx) === 0}
             onClick={() => setActive(idx)}
-            /* The visible dot stays 6px tall, but a transparent ::before
-               extends the hit area to a 44px-tall band that reaches each
-               neighbour's midpoint (gap-1.5 → +0.375rem), so the tap target
-               clears the WCAG/iOS floor without enlarging the dot itself. */
-            className={`relative h-1.5 rounded-full transition-all before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-[calc(100%+0.375rem)] before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] ${
-              circularDelta(idx) === 0 ? "w-5 bg-wnrs-red" : "w-1.5 bg-umber-300 dark:bg-umber-700"
-            }`}
-          />
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-wnrs-red"
+          >
+            <span
+              aria-hidden="true"
+              className={`h-1.5 rounded-full transition-colors ${
+                circularDelta(idx) === 0
+                  ? "w-5 bg-wnrs-red"
+                  : "w-1.5 bg-umber-300 dark:bg-umber-700"
+              }`}
+            />
+          </button>
         ))}
       </div>
     </div>
@@ -2333,11 +2353,11 @@ function SupplierAction({
     </>
   );
   return to ? (
-    <Link to={to} aria-label={label} className={className}>
+    <Link to={to} className={className}>
       {inner}
     </Link>
   ) : (
-    <button type="button" onClick={onClick} aria-label={label} className={className}>
+    <button type="button" onClick={onClick} className={className}>
       {inner}
     </button>
   );
@@ -2395,13 +2415,12 @@ function AudienceRow({
       </span>
     </>
   );
-  const label = `${row}: ${ctaLabel}`;
   return to ? (
-    <Link to={to} aria-label={label} className={className}>
+    <Link to={to} className={className}>
       {inner}
     </Link>
   ) : (
-    <button type="button" onClick={onClick} aria-label={label} className={className}>
+    <button type="button" onClick={onClick} className={className}>
       {inner}
     </button>
   );

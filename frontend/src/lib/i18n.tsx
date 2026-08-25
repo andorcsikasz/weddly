@@ -1,7 +1,6 @@
 import { isUiLocale, UI_LOCALES, type UiLocale } from "@shared/locales";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import en from "../locales/en";
-import hu from "../locales/hu";
 import type { LocaleMessages, PartialLocaleMessages } from "../locales/keys";
 
 export type Locale = UiLocale;
@@ -42,7 +41,7 @@ const STORAGE_KEY = "weddly.locale";
 // promise is cached per-locale so a back-and-forth flip doesn't re-fetch.
 // Real non-EN users pay one extra network round trip on the I18nProvider
 // mount; everyone on the EN default saves the full translation chunk.
-const TREES: Partial<Record<Locale, PartialLocaleMessages>> = { en, hu };
+const TREES: Partial<Record<Locale, PartialLocaleMessages>> = { en };
 const lazyPromises: Partial<Record<Locale, Promise<PartialLocaleMessages>>> = {};
 
 /** The dynamic import per lazy locale. Written as a map rather than a ternary

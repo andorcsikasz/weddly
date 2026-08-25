@@ -2,9 +2,13 @@
 <html lang="hu" data-default-locale="hu" class="bg-paper-100 text-ink-800">
   <head>
     <meta charset="UTF-8" />
-    <!-- Cookiebot consent manager — must be the first script in <head> so it
-         can block other scripts before they fire. CBID is Weddly's account id. -->
-    <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="dbc1cd47-eac4-464f-a0ac-bf68a48bab1e" data-blockingmode="auto" type="text/javascript"></script>
+    <!-- Cookiebot in manual-blocking mode. Every optional analytics loader in
+         this document and in seo_ssr.ts is explicitly marked with
+         data-cookieconsent, so the CMP can load asynchronously without letting
+         tracking run before consent. Keeping this first still makes the banner
+         available as early as possible, while `async` removes uc.js from the
+         render-critical path. CBID is Weddly's public domain-group id. -->
+    <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="dbc1cd47-eac4-464f-a0ac-bf68a48bab1e" type="text/javascript" async></script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="manifest" href="/manifest.webmanifest" />

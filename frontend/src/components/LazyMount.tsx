@@ -10,6 +10,10 @@ type Props = {
    *  catches an empty box. */
   rootMargin?: string;
   className?: string;
+  /** Heavy phone-only sections may opt out of the historical eager-mobile
+   *  fallback. Product mockups keep the default so momentum scrolling never
+   *  exposes an empty frame; late landing teasers can safely stay deferred. */
+  eagerOnMobile?: boolean;
 };
 
 /** Renders `children` only after the placeholder enters (or nearly enters)
@@ -19,7 +23,13 @@ type Props = {
  *  Falls back to immediate mount when IntersectionObserver isn't
  *  available (older browsers, SSR). Once mounted, the children stay
  *  mounted — there's no unmount on scroll-out. */
-export function LazyMount({ children, aspectRatio, rootMargin = "1200px 0px", className }: Props) {
+export function LazyMount({
+  children,
+  aspectRatio,
+  rootMargin = "1200px 0px",
+  className,
+  eagerOnMobile = true,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(
     () =>
@@ -29,7 +39,7 @@ export function LazyMount({ children, aspectRatio, rootMargin = "1200px 0px", cl
       // before an observer callback is painted. Mounting the two landing
       // mockups eagerly on the true phone layout avoids a blank scroll beat;
       // larger screens still get the below-fold render saving.
-      window.matchMedia?.("(max-width: 767px)").matches === true,
+      (eagerOnMobile && window.matchMedia?.("(max-width: 767px)").matches === true),
   );
 
   useEffect(() => {

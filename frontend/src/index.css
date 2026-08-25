@@ -5,28 +5,28 @@
    system-stack families). Latin subset, four weights. */
 @font-face {
   font-family: "General Sans";
-  src: url("/fonts/general-sans-300.woff2") format("woff2");
+  src: url("/fonts/general-sans-300.woff2?v=20260825") format("woff2");
   font-weight: 300;
   font-display: swap;
   font-style: normal;
 }
 @font-face {
   font-family: "General Sans";
-  src: url("/fonts/general-sans-400.woff2") format("woff2");
+  src: url("/fonts/general-sans-400.woff2?v=20260825") format("woff2");
   font-weight: 400;
   font-display: swap;
   font-style: normal;
 }
 @font-face {
   font-family: "General Sans";
-  src: url("/fonts/general-sans-500.woff2") format("woff2");
+  src: url("/fonts/general-sans-500.woff2?v=20260825") format("woff2");
   font-weight: 500;
   font-display: swap;
   font-style: normal;
 }
 @font-face {
   font-family: "General Sans";
-  src: url("/fonts/general-sans-600.woff2") format("woff2");
+  src: url("/fonts/general-sans-600.woff2?v=20260825") format("woff2");
   font-weight: 600;
   font-display: swap;
   font-style: normal;
@@ -258,7 +258,7 @@
 /* Cormorant Garamond */
 @font-face {
   font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-400-italic-ext.woff2") format("woff2");
+  src: url("/fonts/cormorant-garamond-400-italic-ext.woff2?v=20260825") format("woff2");
   font-weight: 400;
   font-display: swap;
   font-style: italic;
@@ -266,14 +266,14 @@
 }
 @font-face {
   font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-400-italic.woff2") format("woff2");
+  src: url("/fonts/cormorant-garamond-400-italic.woff2?v=20260825") format("woff2");
   font-weight: 400;
   font-display: swap;
   font-style: italic;
 }
 @font-face {
   font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-500-italic-ext.woff2") format("woff2");
+  src: url("/fonts/cormorant-garamond-500-italic-ext.woff2?v=20260825") format("woff2");
   font-weight: 500;
   font-display: swap;
   font-style: italic;
@@ -281,14 +281,14 @@
 }
 @font-face {
   font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-500-italic.woff2") format("woff2");
+  src: url("/fonts/cormorant-garamond-500-italic.woff2?v=20260825") format("woff2");
   font-weight: 500;
   font-display: swap;
   font-style: italic;
 }
 @font-face {
   font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-600-ext.woff2") format("woff2");
+  src: url("/fonts/cormorant-garamond-600-ext.woff2?v=20260825") format("woff2");
   font-weight: 600;
   font-display: swap;
   font-style: normal;
@@ -296,7 +296,7 @@
 }
 @font-face {
   font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-600.woff2") format("woff2");
+  src: url("/fonts/cormorant-garamond-600.woff2?v=20260825") format("woff2");
   font-weight: 600;
   font-display: swap;
   font-style: normal;
@@ -1062,7 +1062,11 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .hero-photo-img {
     position: absolute;
     inset: 0;
-    background-image: url("/cover-hero.jpg");
+    background-image: url("/cover-hero.jpg?v=20260825");
+    background-image: image-set(
+      url("/cover-hero.avif?v=20260825") type("image/avif"),
+      url("/cover-hero.jpg?v=20260825") type("image/jpeg")
+    );
     background-size: cover;
     background-position: center 38%;
     background-repeat: no-repeat;
@@ -1071,7 +1075,11 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   @media (max-width: 639px) {
     .hero-photo-img {
-      background-image: url("/hero-mobile-cover.jpg");
+      background-image: url("/hero-mobile-cover.jpg?v=20260825");
+      background-image: image-set(
+        url("/hero-mobile-cover.avif?v=20260825") type("image/avif"),
+        url("/hero-mobile-cover.jpg?v=20260825") type("image/jpeg")
+      );
       background-position: center;
     }
   }

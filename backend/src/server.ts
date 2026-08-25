@@ -754,9 +754,17 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
     const f = Bun.file(filePath);
     if (await f.exists()) {
       const isHashedAsset = pathname.startsWith("/assets/");
-      const cacheHeader = isHashedAsset
-        ? "public, max-age=31536000, immutable"
-        : "public, max-age=300";
+      // Public files keep human-readable names, so their explicit `?v=` token
+      // is the deploy-time cache buster. This gives versioned images/fonts the
+      // same immutable lifetime as Vite hashes without making mutable icons or
+      // HTML sticky. Only asset extensions qualify.
+      const isVersionedStatic =
+        new URL(req.url).searchParams.has("v") &&
+        /\.(?:avif|webp|jpe?g|png|svg|woff2?)$/i.test(pathname);
+      const cacheHeader =
+        isHashedAsset || isVersionedStatic
+          ? "public, max-age=31536000, immutable"
+          : "public, max-age=300";
       // Prefer a precompressed sibling (frontend/scripts/precompress.ts emits
       // `<name>.br` / `<name>.gz` for text assets at build time) so we never
       // brotli a megabyte bundle per request. Serving the sibling means we

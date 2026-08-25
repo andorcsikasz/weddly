@@ -10,7 +10,7 @@ import { useT } from "../lib/i18n";
 import { useDocumentMetaLiteral } from "../lib/seo";
 import { type BlogBlock, type BlogLocale, type BlogPost, blogCopy } from "@shared/blog_posts";
 import NotFoundPage from "./NotFoundPage";
-import { BlogCover } from "./BlogIndexPage";
+import { BlogCover } from "../components/BlogCover";
 
 /** Hungarian + English Bible book name → biblia.hit.hu URL slug. The site
  *  uses the same slug set as their search engine (e.g. /bible/karoli/1CO/13
