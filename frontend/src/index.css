@@ -1062,11 +1062,14 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .hero-photo-img {
     position: absolute;
     inset: 0;
+    /* Plain url(), not image-set(): the AVIF variant via image-set() resolves
+       fine in getComputedStyle and the AVIF file itself decodes fine as a
+       plain <img>, but as a CSS background-image it silently fails to PAINT
+       in real Chrome — confirmed live on tryweddly.com, 2026-08-25. The
+       symptom is total: no image, no console error, no failed network
+       request, just the section's dark fallback color showing through. Not
+       worth re-attempting without a per-browser paint test in the loop. */
     background-image: url("/cover-hero.jpg?v=20260825");
-    background-image: image-set(
-      url("/cover-hero.avif?v=20260825") type("image/avif"),
-      url("/cover-hero.jpg?v=20260825") type("image/jpeg")
-    );
     background-size: cover;
     background-position: center 38%;
     background-repeat: no-repeat;
@@ -1076,10 +1079,6 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   @media (max-width: 639px) {
     .hero-photo-img {
       background-image: url("/hero-mobile-cover.jpg?v=20260825");
-      background-image: image-set(
-        url("/hero-mobile-cover.avif?v=20260825") type("image/avif"),
-        url("/hero-mobile-cover.jpg?v=20260825") type("image/jpeg")
-      );
       background-position: center;
     }
   }

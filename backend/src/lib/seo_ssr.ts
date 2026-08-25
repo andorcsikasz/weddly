@@ -1221,8 +1221,8 @@ function firstNonBlank(...values: (string | null | undefined)[]): string | null 
 function heroPreloadTags(path: string): string[] {
   if (path !== "/" && path !== "") return [];
   return [
-    `<link rel="preload" as="image" type="image/avif" href="/cover-hero.avif?v=20260825" fetchpriority="high" media="(min-width: 640px)" />`,
-    `<link rel="preload" as="image" type="image/avif" href="/hero-mobile-cover.avif?v=20260825" fetchpriority="high" media="(max-width: 639px)" />`,
+    `<link rel="preload" as="image" href="/cover-hero.jpg?v=20260825" fetchpriority="high" media="(min-width: 640px)" />`,
+    `<link rel="preload" as="image" href="/hero-mobile-cover.jpg?v=20260825" fetchpriority="high" media="(max-width: 639px)" />`,
   ];
 }
 
