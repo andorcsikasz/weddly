@@ -49,7 +49,11 @@ async function timeIt(
     ms.push(performance.now() - t0);
   }
   const sorted = [...ms].sort((a, b) => a - b);
-  const p95Idx = Math.floor(sorted.length * 0.95);
+  // Use the sample span (n - 1), not n, when selecting the percentile index.
+  // With the previous `floor(n * .95)`, every allowed 5-10 sample run selected
+  // the final element, so the value called p95 was always exactly max and the
+  // single-GC-pause protection described above did not exist.
+  const p95Idx = Math.floor((sorted.length - 1) * 0.95);
   const p95 = sorted[Math.min(p95Idx, sorted.length - 1)] ?? 0;
   const max = sorted[sorted.length - 1] ?? 0;
   return { p95, max, samples: ms };

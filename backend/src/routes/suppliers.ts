@@ -127,9 +127,12 @@ export function assembleDirectoryBase(opts: {
   category: SupplierCategory | null;
   country: string | null;
   geo?: { lat: number; lng: number; radiusKm: number } | null;
+  /** Reuse a caller's moderation snapshot when it already needed one (the
+   *  list endpoint also uses it to build country counts). */
+  curatedOverrides?: ReadonlyMap<string, unknown>;
 }): DirectorySupplierBase[] {
   // Drop curated entries an admin has hidden or deleted (moderation overrides).
-  const overrides = curatedOverrideMap();
+  const overrides = opts.curatedOverrides ?? curatedOverrideMap();
   const visible = overrides.size > 0 ? DIRECTORY.filter((s) => !overrides.has(s.id)) : DIRECTORY;
   const scoped = opts.country ? visible.filter((s) => s.country === opts.country) : visible;
   const curated = opts.category ? scoped.filter((s) => s.category === opts.category) : scoped;
@@ -160,23 +163,33 @@ export function assembleDirectoryBase(opts: {
   // table. Both curated and community entries default to null at the mapper
   // layer; here we pull the actual claim state + vendor-uploaded hero in one
   // query so the public card knows whether to render the "Ez a sajátom" CTA
-  // and which image to show. One IN(...) hop is cheaper than per-row lookups
-  // even at 200+ rows.
+  // and which image to show.
+  //
+  // For the full catalogue, read the five narrow columns sequentially and
+  // match them in memory. A freshly prepared `IN (?, …)` with thousands of
+  // placeholders made SQLite perform thousands of PK probes on every request.
+  // Small country/category slices keep the targeted query; once the slice is
+  // large, a sequential scan is materially faster even if the DB still holds
+  // an old curated row no longer in DIRECTORY. The map naturally ignores it.
   if (allBase.length > 0) {
-    const ids = allBase.map((b) => b.id);
-    const placeholders = ids.map(() => "?").join(",");
-    const rows = db
-      .prepare(
-        `SELECT id, vendor_account_id, hero_image_url, source, profile_imported
-           FROM listings WHERE id IN (${placeholders})`,
-      )
-      .all(...ids) as Array<{
+    type OverlayRow = {
       id: string;
       vendor_account_id: number | null;
       hero_image_url: string | null;
       source: string;
       profile_imported: number;
-    }>;
+    };
+    const columns = "id, vendor_account_id, hero_image_url, source, profile_imported";
+    let rows: OverlayRow[];
+    if (allBase.length >= 500) {
+      rows = db.prepare(`SELECT ${columns} FROM listings`).all() as OverlayRow[];
+    } else {
+      const ids = allBase.map((b) => b.id);
+      const placeholders = ids.map(() => "?").join(",");
+      rows = db
+        .prepare(`SELECT ${columns} FROM listings WHERE id IN (${placeholders})`)
+        .all(...ids) as OverlayRow[];
+    }
     const byListing = new Map(rows.map((r) => [r.id, r] as const));
     for (let i = 0; i < allBase.length; i++) {
       const row = byListing.get(allBase[i]!.id);
@@ -269,6 +282,7 @@ async function handleList(ctx: Ctx): Promise<Response> {
     category: (cat as SupplierCategory | null) ?? null,
     country: countryFilter,
     geo: hasGeoFilter ? { lat: nearLat, lng: nearLng, radiusKm } : null,
+    curatedOverrides: overrides,
   });
 
   const scores = getScoresMap();

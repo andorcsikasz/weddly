@@ -25,6 +25,11 @@ const COMPRESSIBLE =
 
 // Below this, the gzip/brotli framing overhead outweighs the savings.
 const MIN_COMPRESS_BYTES = 1024;
+// Large JSON responses care more about request latency than squeezing out the
+// last few percent: on the supplier catalogue (~3.7 MB raw), gzip level 1 is
+// about twice as fast as level 6 while still removing more than 80% of bytes.
+// Hashed static assets are precompressed at build time and never use this path.
+const FAST_COMPRESS_BYTES = 1024 * 1024;
 
 export type WireEncoding = "br" | "gzip";
 
@@ -43,15 +48,16 @@ export function negotiateEncoding(acceptEncoding: string | null): WireEncoding |
  *  on-the-fly path (speed over ratio); the build-time precompressor uses
  *  max quality since it only runs once. */
 export function compress(buf: Uint8Array, enc: WireEncoding): Uint8Array {
+  const fast = buf.byteLength >= FAST_COMPRESS_BYTES;
   if (enc === "br") {
     return brotliCompressSync(buf, {
       params: {
-        [constants.BROTLI_PARAM_QUALITY]: 5,
+        [constants.BROTLI_PARAM_QUALITY]: fast ? 1 : 5,
         [constants.BROTLI_PARAM_SIZE_HINT]: buf.byteLength,
       },
     });
   }
-  return gzipSync(buf, { level: 6 });
+  return gzipSync(buf, { level: fast ? 1 : 6 });
 }
 
 /** Returns true when this response is a candidate for on-the-fly compression. */
