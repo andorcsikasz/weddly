@@ -9,6 +9,7 @@ import type {
 import { FILM_AESTHETICS, FILM_FILTERS, MAX_PHOTOGRAPHER_LINKS } from "@shared/types";
 import {
   AlertTriangle,
+  ArrowRight,
   CalendarDays,
   Camera,
   Check,
@@ -28,7 +29,9 @@ import {
   Pencil,
   Plus,
   QrCode,
+  ScanLine,
   Share2,
+  Sparkles,
   Trash2,
   Upload,
   Users,
@@ -39,6 +42,7 @@ import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { useModalShell } from "../components/ui/modal_shell";
+import { Wordmark } from "../components/Wordmark";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
 import { intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -104,7 +108,7 @@ function formatPreciseCountdown(ms: number): string {
   return `${m}m`;
 }
 
-const DEMO_STRIP = ["/demo/film-hero.png", "/demo/film-02.jpg", "/demo/film-03.jpg"];
+const DEMO_STRIP = ["/demo/film-01.jpg", "/demo/film-02.jpg", "/demo/film-03.jpg"] as const;
 
 const AESTHETIC_LABELS: Record<FilmAesthetic, string> = {
   natural: "Natural",
@@ -912,6 +916,194 @@ function FilmModal({
   );
 }
 
+// --- Weddly guest-camera hero -----------------------------------------------
+
+function CameraHero({
+  album,
+  coupleName,
+  coverPhoto,
+  guestLinkUrl,
+  onCreate,
+  onShare,
+}: {
+  album: PhotoAlbum | null;
+  coupleName: string | null;
+  coverPhoto: string;
+  guestLinkUrl: string | null;
+  onCreate: () => void;
+  onShare: () => void;
+}) {
+  const { t } = useT();
+  const hasFilm = album !== null;
+  const filmName = album?.title || coupleName || t("media.film_settings_unnamed");
+
+  return (
+    <section className="relative order-1 overflow-hidden rounded-[2rem] bg-umber-950 text-paper-50 shadow-soft">
+      <div
+        aria-hidden="true"
+        className="absolute -right-20 -top-32 h-80 w-80 rounded-full bg-blush-500/20 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-paper-300/10 blur-3xl"
+      />
+
+      <div className="relative grid min-h-[34rem] items-center gap-10 px-6 py-10 sm:px-10 sm:py-12 lg:min-h-[38rem] lg:grid-cols-[minmax(0,1.02fr)_minmax(22rem,0.98fr)] lg:px-12 xl:px-16">
+        <div className="relative z-10 max-w-2xl">
+          <div className="mb-7 flex items-center gap-3 text-paper-200">
+            <Wordmark size="sm" className="text-paper-50" />
+            <span className="h-4 w-px bg-paper-50/20" aria-hidden="true" />
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]">
+              <Camera size={13} strokeWidth={1.7} aria-hidden="true" />
+              {t("media.film_title")}
+            </span>
+          </div>
+
+          {hasFilm ? (
+            <>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-sage-400/30 bg-sage-500/15 px-3 py-1.5 text-xs font-semibold text-sage-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-sage-300" aria-hidden="true" />
+                {t("media.film_header_active").replace("{count}", String(album.photoCount))}
+              </div>
+              <h1 className="max-w-[13ch] font-serif text-5xl font-semibold leading-[0.94] tracking-[-0.035em] !text-paper-50 sm:text-6xl xl:text-7xl">
+                {filmName}
+              </h1>
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-paper-200 sm:text-lg">
+                {t("media.film_sub")}
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="max-w-[12ch] font-serif text-5xl font-semibold leading-[0.94] tracking-[-0.035em] !text-paper-50 sm:text-6xl xl:text-7xl">
+                {t("media.hero_title")}
+              </h1>
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-paper-200 sm:text-lg">
+                {t("media.hero_sub")}
+              </p>
+            </>
+          )}
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            {hasFilm ? (
+              <>
+                <button
+                  type="button"
+                  onClick={onShare}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-blush-500 px-6 py-3.5 font-grotesk text-sm font-semibold text-white transition hover:bg-blush-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950"
+                >
+                  <Share2 size={17} aria-hidden="true" />
+                  {t("media.film_cta_share")}
+                  <ArrowRight size={16} aria-hidden="true" />
+                </button>
+                {guestLinkUrl && (
+                  <a
+                    href={guestLinkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-paper-50/20 bg-paper-50/5 px-6 py-3.5 font-grotesk text-sm font-semibold text-paper-50 transition hover:bg-paper-50/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50"
+                  >
+                    <Camera size={17} aria-hidden="true" />
+                    {t("media.film_guest_view")}
+                  </a>
+                )}
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={onCreate}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-blush-500 px-7 py-3.5 font-grotesk text-sm font-semibold text-white transition hover:bg-blush-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950"
+              >
+                {t("media.film_cta_create")}
+                <ArrowRight size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
+          <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-paper-300">
+            <span className="flex items-center gap-1.5">
+              <ScanLine size={14} aria-hidden="true" />
+              {t("media.film_no_app_hint")}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Lock size={13} aria-hidden="true" />
+              {t("media.film_privacy_notice")}
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="relative mx-auto h-[27rem] w-full max-w-[30rem] sm:h-[31rem]"
+          aria-hidden="true"
+        >
+          <div className="absolute left-0 top-16 w-[43%] -rotate-6 rounded-[1.25rem] bg-paper-50 p-2.5 pb-10 shadow-2xl sm:left-3 sm:top-20">
+            <img
+              src={DEMO_STRIP[2]}
+              alt=""
+              className="aspect-[4/5] w-full rounded-xl object-cover"
+              style={{ filter: FILM_FILTERS.warm }}
+            />
+          </div>
+
+          <div className="absolute right-1 top-0 z-10 w-[58%] rounded-[2.6rem] border-[6px] border-umber-700 bg-umber-900 p-2 shadow-2xl sm:right-4">
+            <div className="relative aspect-[9/17] overflow-hidden rounded-[2rem] bg-umber-800">
+              <img
+                src={coverPhoto}
+                alt=""
+                className="h-full w-full object-cover"
+                style={{ filter: FILM_FILTERS[album?.filmAesthetic ?? "vintage"] }}
+              />
+              <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-umber-950/80 to-transparent px-4 pb-10 pt-4 text-center">
+                <Wordmark size="sm" className="text-paper-50" />
+              </div>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-umber-950 via-umber-950/75 to-transparent px-4 pb-5 pt-16 text-center">
+                <p className="truncate font-serif text-xl font-semibold text-paper-50">
+                  {filmName}
+                </p>
+                <div className="mx-auto mt-4 flex h-14 w-14 items-center justify-center rounded-full border-4 border-paper-50 bg-paper-50/15 shadow-lg">
+                  <span className="h-10 w-10 rounded-full bg-paper-50" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute bottom-2 right-0 z-20 w-[38%] rotate-6 rounded-[1.1rem] bg-paper-50 p-2 pb-8 shadow-2xl">
+            <img
+              src={DEMO_STRIP[1]}
+              alt=""
+              className="aspect-square w-full rounded-lg object-cover"
+              style={{ filter: FILM_FILTERS.natural }}
+            />
+            <Sparkles className="absolute bottom-2.5 right-3 text-blush-500" size={15} />
+          </div>
+        </div>
+      </div>
+
+      {!hasFilm && (
+        <div className="relative grid border-t border-paper-50/10 bg-paper-50/[0.03] sm:grid-cols-3 sm:divide-x sm:divide-paper-50/10">
+          {[
+            { n: "01", title: t("media.film_how_1_title"), body: t("media.film_how_1_body") },
+            { n: "02", title: t("media.film_how_2_title"), body: t("media.film_how_2_body") },
+            { n: "03", title: t("media.film_how_3_title"), body: t("media.film_how_3_body") },
+          ].map((step) => (
+            <div
+              key={step.n}
+              className="grid grid-cols-[2.5rem_1fr] gap-3 border-t border-paper-50/10 px-6 py-5 first:border-t-0 sm:block sm:border-t-0 sm:px-7"
+            >
+              <span className="font-grotesk text-xs font-semibold tracking-[0.18em] text-blush-300">
+                {step.n}
+              </span>
+              <div>
+                <h2 className="font-grotesk text-sm font-semibold text-paper-50">{step.title}</h2>
+                <p className="mt-1 text-xs leading-relaxed text-paper-300">{step.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // --- page -------------------------------------------------------------------
 
 export default function MediaPage() {
@@ -936,25 +1128,6 @@ export default function MediaPage() {
   const [showFilmModal, setShowFilmModal] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
-  // Collapsible cover artwork — functional film controls always stay available.
-  const [filmOpen, setFilmOpen] = useState(() => {
-    try {
-      return localStorage.getItem("weddly.media.filmOpen") !== "0";
-    } catch {
-      return true;
-    }
-  });
-  function toggleFilm() {
-    setFilmOpen((v) => {
-      const next = !v;
-      try {
-        localStorage.setItem("weddly.media.filmOpen", next ? "1" : "0");
-      } catch {
-        // localStorage unavailable (private mode) — cover collapse still works in-session.
-      }
-      return next;
-    });
-  }
   const [linkCopied, setLinkCopied] = useState(false);
   const [editingSlug, setEditingSlug] = useState(false);
   const [slugDraft, setSlugDraft] = useState("");
@@ -1340,12 +1513,20 @@ export default function MediaPage() {
     : null;
 
   return (
-    <div>
+    <div className="flex flex-col">
       <FilmGrain />
-      <h1 className="sr-only">{t("media.title")}</h1>
+
+      <CameraHero
+        album={album}
+        coupleName={couple?.display_name ?? null}
+        coverPhoto={coverPhoto}
+        guestLinkUrl={guestLinkUrl}
+        onCreate={() => setShowFilmModal(true)}
+        onShare={() => setShowShare(true)}
+      />
 
       {/* ── Photographer gallery card (top) ───────────────────────── */}
-      <div className="overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft">
+      <div className="order-3 mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft">
         {/* ── Photographer row ──────────────────────────────────────── */}
         <div ref={photographerRowRef}>
           <h2 className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-600">
@@ -1497,65 +1678,12 @@ export default function MediaPage() {
         </div>
       </div>
 
-      {/* ── Wedding film card (collapsible) ───────────────────────── */}
-      <div className="mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft">
+      {/* ── Wedding film dashboard ────────────────────────────────── */}
+      <div
+        className={`order-2 mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft ${album ? "" : "hidden"}`}
+      >
         {album ? (
           <>
-            {/* ── Hero ──────────────────────────────────────────────── */}
-            <div
-              id="film-cover"
-              className={`relative overflow-hidden transition-[height] duration-300 ${filmOpen ? "h-48" : "h-24"}`}
-            >
-              <img
-                src={coverPhoto}
-                alt=""
-                className="h-full w-full object-cover object-center"
-                aria-hidden="true"
-              />
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(to top, rgba(15,10,7,0.94) 0%, rgba(15,10,7,0.82) 30%, rgba(15,10,7,0.4) 62%, transparent 88%)",
-                }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
-                <h2 className="mb-1.5 font-grotesk text-[11px] font-semibold uppercase tracking-[0.16em] text-paper-200">
-                  {t("media.film_title")}
-                </h2>
-                <div className="flex items-center gap-2">
-                  <h3
-                    className="font-serif text-2xl font-medium leading-snug !text-paper-50"
-                    style={{ textShadow: "0 2px 10px rgba(0,0,0,0.7)" }}
-                  >
-                    {album.title || couple?.display_name || t("media.film_settings_unnamed")}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setShowFilmModal(true)}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-paper-200/80 transition-colors hover:bg-white/10 hover:text-paper-50"
-                    aria-label={`${t("common.edit")}: ${t("media.film_settings_name")}`}
-                  >
-                    <Pencil size={16} aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={toggleFilm}
-                aria-expanded={filmOpen}
-                aria-controls="film-cover"
-                aria-label={filmOpen ? t("media.film_collapse") : t("media.film_expand")}
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-ink-900/40 text-paper-50 backdrop-blur transition-colors hover:bg-ink-900/60"
-              >
-                <ChevronRight
-                  size={18}
-                  aria-hidden="true"
-                  className={`transition-transform ${filmOpen ? "rotate-90" : ""}`}
-                />
-              </button>
-            </div>
-
             <>
               {/* ── Stats row ─────────────────────────────────────────── */}
               <div className="grid grid-cols-3 border-b border-paper-200">
