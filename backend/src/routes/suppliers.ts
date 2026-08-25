@@ -1070,9 +1070,16 @@ function handlePublicShowcase(ctx: Ctx): Response {
 
   // `?city=` scopes the sample to one town — where a city pick from the public
   // typeahead lands. Matched on the folded display name so "Wien" finds the
-  // curated "Wien, AT" rows and accents don't have to survive a URL.
+  // curated "Wien, AT" rows and accents don't have to survive a URL. The param
+  // itself goes through `cityDisplayName` too: the browse page's OWN city
+  // picker (`/api/public/vendors`'s `cities` facet) hands back the RAW stored
+  // value, suffix included, and round-trips it straight into this `?city=` —
+  // so a visitor who picked "Wien, AT" from the page's own dropdown matched
+  // nothing here even though the directory has dozens of Vienna listings,
+  // every non-HU market bore the same bug, and the whole page rendered as a
+  // dead end (see VendorBrowsePage's empty-state funnel, added the same day).
   const cityParam = ctx.url.searchParams.get("city");
-  const requestedCity = cityParam?.trim() ? foldForSearch(cityParam) : null;
+  const requestedCity = cityParam?.trim() ? foldForSearch(cityDisplayName(cityParam)) : null;
 
   const countryPool = requestedCountry
     ? candidates.filter((r) => r.country === requestedCountry)

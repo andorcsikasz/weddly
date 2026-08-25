@@ -9968,7 +9968,12 @@ const en: LocaleMessages = {
     couples_stat: "{count} couples are planning their wedding on Weddly right now",
     cta_couple: "Start planning",
     cta_vendor: "Join as vendor",
-    empty: "The directory is filling up, check back soon.",
+    emptyTitle: "We're just getting started here",
+    emptyTitleCity: "We're just getting started in {city}",
+    emptyBody:
+      "Our vendor directory hasn't caught up with this area yet, but Weddly's planning tools work with any vendor, anywhere. Add your own suppliers by hand and manage the budget, guest list, seating and timeline in one place.",
+    emptyCtaVendorCity: "Run a wedding business in {city}? Get listed on Weddly",
+    emptyExplore: "Vendors are already on Weddly in:",
     convert_title: "Plan the whole wedding here",
     convert_sub:
       "Browsing is free and needs no account. Sign up to save the ones you like, message them, and keep the budget, the guest list and the seating in the same place.",

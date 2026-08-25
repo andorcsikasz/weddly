@@ -10068,7 +10068,12 @@ const es: LocaleMessages = {
     couples_stat: "{count} parejas están organizando su boda en Weddly ahora mismo",
     cta_couple: "Empezar a organizar",
     cta_vendor: "Únete como proveedor",
-    empty: "El directorio se está llenando, vuelve pronto.",
+    emptyTitle: "Aquí todavía estamos empezando",
+    emptyTitleCity: "En {city} todavía estamos empezando",
+    emptyBody:
+      "Nuestro directorio de proveedores aún no ha llegado a esta zona, pero las herramientas de planificación de Weddly funcionan con cualquier proveedor, en cualquier lugar. Añade tus propios proveedores a mano y gestiona el presupuesto, la lista de invitados, la distribución de mesas y el cronograma en un solo sitio.",
+    emptyCtaVendorCity: "¿Tienes un negocio de bodas en {city}? Aparece en Weddly",
+    emptyExplore: "Ya hay proveedores en Weddly en:",
     convert_title: "Toda la boda cabe aquí",
     convert_sub:
       "Explorar es gratis y no necesita cuenta. Regístrate para guardar los que te gusten, escribirles y tener el presupuesto, la lista de invitados y las mesas en el mismo sitio.",

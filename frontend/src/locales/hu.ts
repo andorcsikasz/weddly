@@ -10037,7 +10037,12 @@ const hu: LocaleMessages = {
     couples_stat: "Jelenleg {count} pár tervezi az esküvőjét a Weddly-n",
     cta_couple: "Elkezdem a tervezést",
     cta_vendor: "Szolgáltatóként",
-    empty: "A katalógus épp töltődik fel, nézz vissza hamarosan.",
+    emptyTitle: "Ezen a területen még csak most épül a kínálatunk",
+    emptyTitleCity: "{city} térségében még csak most épül a kínálatunk",
+    emptyBody:
+      "A szolgáltatói katalógusunk még nem érte utol ezt a régiót, de a Weddly tervezőeszközei bármelyik szolgáltatóval működnek, bárhol. Vedd fel kézzel a saját szolgáltatóidat, és kezeld egy helyen a költségvetést, a vendéglistát, az ültetést és az idővonalat.",
+    emptyCtaVendorCity: "Esküvői szolgáltató vagy {city} térségében? Kerülj fel a Weddlyre",
+    emptyExplore: "A Weddlyn már vannak szolgáltatók ezekben az országokban:",
     convert_title: "Esküvőszervezés felesleges körök nélkül.",
     convert_sub:
       "Találd meg a szolgáltatókat, írj nekik közvetlenül, és kezeld a költségvetést, a vendéglistát és az ültetést egy helyen.\n\nBöngéssz fiók nélkül. Regisztrálj, amikor készen állsz a következő lépésre.",

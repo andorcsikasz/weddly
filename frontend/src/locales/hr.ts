@@ -9954,7 +9954,12 @@ const hr: LocaleMessages = {
     couples_stat: "{count} parova upravo planira vjenčanje na Weddlyju",
     cta_couple: "Počnite planirati",
     cta_vendor: "Pridružite se kao dobavljač",
-    empty: "Katalog se popunjava, navratite uskoro.",
+    emptyTitle: "Ovdje tek počinjemo",
+    emptyTitleCity: "U {city} tek počinjemo",
+    emptyBody:
+      "Naš katalog dobavljača još nije stigao do ovog područja, ali alati za planiranje Weddlyja rade s bilo kojim dobavljačem, bilo gdje. Dodajte svoje dobavljače ručno i upravljajte proračunom, popisom gostiju, rasporedom sjedenja i vremenskim planom na jednom mjestu.",
+    emptyCtaVendorCity: "Imate svadbeni obrt u {city}? Upišite se na Weddly",
+    emptyExplore: "Dobavljači su već na Weddlyju u:",
     convert_title: "Isplanirajte cijelo vjenčanje ovdje",
     convert_sub:
       "Pregledavanje je besplatno i ne treba račun. Registrirajte se da spremite one koji vam se sviđaju, pišete im i držite proračun, popis gostiju i raspored sjedenja na istom mjestu.",

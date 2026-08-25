@@ -10121,7 +10121,13 @@ const de: LocaleMessages = {
     couples_stat: "{count} Paare planen gerade ihre Hochzeit auf Weddly",
     cta_couple: "Planung starten",
     cta_vendor: "Als Dienstleister mitmachen",
-    empty: "Der Katalog füllt sich gerade, schauen Sie bald wieder vorbei.",
+    emptyTitle: "Hier fangen wir gerade erst an",
+    emptyTitleCity: "In {city} fangen wir gerade erst an",
+    emptyBody:
+      "Unser Anbieterkatalog hat diese Region noch nicht erreicht, aber die Planungstools von Weddly funktionieren mit jedem Anbieter, überall. Tragen Sie Ihre eigenen Dienstleister von Hand ein und verwalten Sie Budget, Gästeliste, Sitzordnung und Zeitplan an einem Ort.",
+    emptyCtaVendorCity:
+      "Führen Sie ein Hochzeitsunternehmen in {city}? Lassen Sie sich bei Weddly eintragen",
+    emptyExplore: "Auf Weddly gibt es bereits Anbieter in:",
     convert_title: "Planen Sie hier die ganze Hochzeit",
     convert_sub:
       "Stöbern kostet nichts und braucht kein Konto. Melden Sie sich an, um Ihre Favoriten zu speichern, ihnen zu schreiben und Budget, Gästeliste und Sitzordnung am selben Ort zu haben.",

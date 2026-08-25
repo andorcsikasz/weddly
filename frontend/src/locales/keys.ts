@@ -11237,7 +11237,17 @@ export interface LocaleMessages {
     couples_stat: string;
     cta_couple: string;
     cta_vendor: string;
-    empty: string;
+    /** Headline for the "no vendors here (yet)" funnel — reframes a thin
+     *  market as newness instead of an apology, and always sits above both
+     *  signup CTAs. `emptyTitleCity` names the filtered town; `emptyTitle` is
+     *  the (rarely reached) fallback with no city in scope. */
+    emptyTitle: string;
+    emptyTitleCity: string;
+    emptyBody: string;
+    /** Vendor CTA inside the empty-market funnel, naming the filtered town. */
+    emptyCtaVendorCity: string;
+    /** Label above the "browse a country that already has vendors" chips. */
+    emptyExplore: string;
     convert_title: string;
     convert_sub: string;
     vendor_prompt: string;

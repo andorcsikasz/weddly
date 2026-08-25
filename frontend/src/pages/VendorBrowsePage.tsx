@@ -50,8 +50,9 @@ import { VerifiedBadge } from "../components/VerifiedBadge";
 import { Wordmark } from "../components/Wordmark";
 import { SmartImage } from "../components/ui/SmartImage";
 import { CATEGORY_ICON } from "../lib/category_icons";
-import { supplierApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { publicStatsApi, supplierApi } from "../lib/endpoints";
+import { intlLocale } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { useTheme } from "../lib/useTheme";
 
@@ -538,6 +539,109 @@ function PlannerInviteModule({ t, vendors }: { t: T; vendors: PublicShowcaseVend
   );
 }
 
+// The real "nothing here yet" state — used to be one apologetic sentence
+// with nowhere to go, which is the worst possible look on the one page whose
+// entire job is turning a visitor into a signup. Reframes a thin market as
+// newness rather than a gap, and gives both audiences that can still act a
+// real destination: a couple can plan without the directory (Weddly's tools
+// work with any vendor), and a local vendor who isn't listed yet gets a plain
+// invitation. The country chips and "clear the city filter" link are the way
+// OUT of a city/country the catalogue hasn't reached — a dead end otherwise.
+function EmptyDirectoryFunnel({
+  city,
+  countries,
+  locale,
+  onExploreCountry,
+  onClearCity,
+  t,
+}: {
+  city: string | null;
+  countries: SupplierCountryCount[];
+  locale: Locale;
+  onExploreCountry: (code: string) => void;
+  onClearCity: () => void;
+  t: T;
+}) {
+  // Real, live figure (GET /api/public/stats) — never invented. Self-hides on
+  // a failed fetch, a null (admin has withheld the counter) or a genuine 0,
+  // same rule the landing page's own stats band follows.
+  const [couples, setCouples] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    publicStatsApi
+      .get()
+      .then((r) => {
+        if (!cancelled) setCouples(r.couples);
+      })
+      .catch(() => {
+        // Social proof only — never block the funnel on a failed fetch.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const fmt = new Intl.NumberFormat(intlLocale(locale));
+
+  return (
+    <div className="mx-auto max-w-xl py-16 text-center">
+      <h2 className="font-grotesk text-2xl font-semibold tracking-[-0.03em] text-ink-900 sm:text-3xl dark:text-paper-50">
+        {city ? t("vendorBrowse.emptyTitleCity", { city }) : t("vendorBrowse.emptyTitle")}
+      </h2>
+      <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-ink-500 dark:text-umber-200">
+        {t("vendorBrowse.emptyBody")}
+      </p>
+      {city && (
+        <button
+          type="button"
+          onClick={onClearCity}
+          className="mt-3 text-[13px] font-medium tracking-tight text-ink-500 underline-offset-4 transition hover:text-ink-900 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+        >
+          {t("vendorBrowse.city_filter_clear")}
+        </button>
+      )}
+      <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <Link
+          to="/signup"
+          className="inline-flex items-center gap-2 rounded-full bg-ink-900 px-6 py-3 text-sm font-semibold tracking-tight text-paper-50 transition hover:bg-ink-950 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
+        >
+          {t("vendorBrowse.cta_couple")}
+          <ArrowRight size={16} aria-hidden />
+        </Link>
+        <Link
+          to="/suppliers/signup"
+          className="inline-flex items-center gap-2 rounded-full border border-ink-900/20 px-6 py-3 text-sm font-medium tracking-tight text-ink-900 transition hover:border-ink-900 dark:border-paper-50/25 dark:text-paper-100"
+        >
+          {city ? t("vendorBrowse.emptyCtaVendorCity", { city }) : t("vendorBrowse.vendor_prompt")}
+        </Link>
+      </div>
+      {couples !== null && couples > 0 && (
+        <p className="mt-6 text-[13px] text-ink-400 dark:text-umber-400">
+          {t("vendorBrowse.couples_stat", { count: fmt.format(couples) })}
+        </p>
+      )}
+      {countries.length > 0 && (
+        <div className="mt-10 border-t border-ink-900/10 pt-8 dark:border-paper-50/10">
+          <p className="text-[13px] text-ink-500 dark:text-umber-300">
+            {t("vendorBrowse.emptyExplore")}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            {countries.slice(0, 10).map((c) => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => onExploreCountry(c.code)}
+                className="inline-flex items-center rounded-full border border-ink-900/15 px-3.5 py-1.5 text-[13px] tracking-tight text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-paper-50/20 dark:text-paper-200"
+              >
+                {countryName(c.code, locale === "hu" ? "hu" : "en")}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** The whole of one category, paginated. This is what "see every vendor"
  *  means in the UI: the rails above are a taste, and picking a category opens
  *  the catalogue behind it instead of a sign-up wall.
@@ -623,9 +727,28 @@ export function CatalogueGrid({
       </div>
 
       {vendors.length === 0 && !loading ? (
-        <p className="py-16 text-center text-[15px] text-ink-500 dark:text-umber-300">
-          {t("vendorBrowse.empty")}
-        </p>
+        <div className="mx-auto max-w-md py-16 text-center">
+          <p className="text-[15px] leading-relaxed text-ink-500 dark:text-umber-300">
+            {city ? t("vendorBrowse.emptyTitleCity", { city }) : t("vendorBrowse.emptyTitle")}
+          </p>
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              to="/signup"
+              className="inline-flex items-center gap-2 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-semibold tracking-tight text-paper-50 transition hover:bg-ink-950 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
+            >
+              {t("vendorBrowse.cta_couple")}
+              <ArrowRight size={15} aria-hidden />
+            </Link>
+            <Link
+              to="/suppliers/signup"
+              className="inline-flex items-center gap-2 rounded-full border border-ink-900/20 px-5 py-2.5 text-sm font-medium tracking-tight text-ink-900 transition hover:border-ink-900 dark:border-paper-50/25 dark:text-paper-100"
+            >
+              {city
+                ? t("vendorBrowse.emptyCtaVendorCity", { city })
+                : t("vendorBrowse.vendor_prompt")}
+            </Link>
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-4">
           {vendors.map((v) => (
@@ -922,6 +1045,13 @@ export default function VendorBrowsePage() {
     setParams(next, { replace: false });
   }
 
+  // The empty-market funnel's escape hatch: hop to a country that already has
+  // a real catalogue, clearing whatever thin town filter got the visitor here.
+  function exploreCountry(code: string) {
+    setCountry(code);
+    selectCity(null);
+  }
+
   return (
     <div className="min-h-screen bg-paper-50 dark:bg-umber-900">
       <TopBar t={t} />
@@ -1043,9 +1173,14 @@ export default function VendorBrowsePage() {
               <LoadingRails />
             </div>
           ) : categories.length === 0 ? (
-            <p className="py-16 text-center text-[15px] text-ink-500 dark:text-umber-300">
-              {t("vendorBrowse.empty")}
-            </p>
+            <EmptyDirectoryFunnel
+              city={city}
+              countries={countries}
+              locale={locale}
+              onExploreCountry={exploreCountry}
+              onClearCity={() => selectCity(null)}
+              t={t}
+            />
           ) : (
             <div className="space-y-10">
               {gridCategories.map((c) => (
