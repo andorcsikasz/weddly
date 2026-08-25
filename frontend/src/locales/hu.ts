@@ -2174,7 +2174,7 @@ const hu: LocaleMessages = {
     checklist_demo_download: "PDF letöltése",
     checklist_demo_convert_title: "Szép kezdet!",
     checklist_demo_convert_body:
-      "Hozzatok létre egy ingyenes fiókot, hogy megmaradjon ez a haladás, és megkapjátok hozzá a teljes esküvőtervező felületet.",
+      "Hozzatok létre egy fiókot, hogy megmaradjon ez a haladás, és megkapjátok hozzá a teljes esküvőtervező felületet.",
     checklist_demo_convert_dismiss: "Most nem",
     checklist_demo_convert_cta: "Mentsük el a haladást",
     checklist_demo_open_link: "Nyisd meg a teljes listát",

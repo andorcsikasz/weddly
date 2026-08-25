@@ -307,6 +307,13 @@ function eligibleTargets(opts: {
           -- Bulk collection produces these, and a claim-your-profile invite is
           -- the worst possible thing to send to one.
           AND l.contact_email_flag IS NULL
+          -- Suppression belongs to the address, not just this listing row. If
+          -- one brand sharing an inbox is held for review, another unflagged
+          -- brand must not provide a route around that hold.
+          AND LOWER(TRIM(l.contact_email)) NOT IN (
+                SELECT LOWER(TRIM(held.contact_email)) FROM listings held
+                 WHERE held.contact_email_flag IS NOT NULL
+                   AND held.contact_email IS NOT NULL)
           AND LOWER(TRIM(l.contact_email)) NOT IN (SELECT email FROM email_optouts)
           AND LOWER(TRIM(l.contact_email)) NOT IN (
                 SELECT email FROM vendor_claim_campaign_sends WHERE campaign_id = ?)
