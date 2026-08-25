@@ -141,6 +141,34 @@ describe("personal-invite campaign", () => {
     expect(text.indexOf("Sign up for Weddly:")).toBeLessThan(text.indexOf(forward));
   });
 
+  test('the greeting uses the given name only, never the whole imported "Family Given" string', () => {
+    // Hungarian order: given name is LAST.
+    const hu = buildEmail(
+      "personal_invite",
+      { name: "Szigeti Kristóf", ctaUrl: "https://weddly.test/r/invite/1.signed", locale: "hu" },
+      { recipientName: "Szigeti Kristóf", recipientLocale: "hu" },
+    );
+    expect(hu.rendered.text).toContain("Szia Kristóf!");
+    expect(hu.rendered.text).not.toContain("Szigeti Kristóf");
+
+    // Assumed Western order for the EN branch: given name is FIRST.
+    const en = buildEmail(
+      "personal_invite",
+      { name: "John Smith", ctaUrl: "https://weddly.test/r/invite/2.signed", locale: "en" },
+      { recipientName: "John Smith", recipientLocale: "en" },
+    );
+    expect(en.rendered.text).toContain("Hi John,");
+    expect(en.rendered.text).not.toContain("Smith");
+
+    // A single-word name is already just a given name, either branch.
+    const solo = buildEmail(
+      "personal_invite",
+      { name: "Anna", ctaUrl: "https://weddly.test/r/invite/3.signed", locale: "hu" },
+      { recipientName: "Anna", recipientLocale: "hu" },
+    );
+    expect(solo.rendered.text).toContain("Szia Anna!");
+  });
+
   test("every admin endpoint is admin-only", async () => {
     const reg = await registerAndVerify({
       email: "notadmin@test.test",

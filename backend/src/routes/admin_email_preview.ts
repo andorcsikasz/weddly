@@ -382,7 +382,10 @@ const STUBS: KindPayload = {
     locale: "hu",
   },
   personal_invite: {
-    name: "Anna",
+    // Two words on purpose: imported contacts are "Family Given" (Hungarian
+    // order), and the greeting only uses the given name (see givenNameFrom in
+    // templates.ts) - a single-word stub would hide that behind the preview.
+    name: "Kovács Anna",
     ctaUrl: `${BASE_URL}/?utm_source=invite&utm_medium=email&utm_campaign=friends-2026-07`,
     locale: "hu",
   },

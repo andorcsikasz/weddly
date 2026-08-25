@@ -1340,6 +1340,22 @@ function huDateSuffix(label: string): string {
   return label.replace(/\.\s*$/, "");
 }
 
+/** The given name (keresztnév) out of a two-part imported contact name, for a
+ *  greeting that reads like a person wrote it rather than a mail-merge. Name
+ *  order is the whole trick: Hungarian puts the given name LAST ("Szigeti
+ *  Kristóf" -> "Kristóf"), assumed Western order puts it FIRST ("John Smith"
+ *  -> "John") - the only signal a non-Hungarian contact even exists is a
+ *  non-HU email domain (detectLocale), so that same split doubles as the name-
+ *  order guess. A single-word name (already just a given name) or a compound
+ *  one ("Boglárka Mária") both pass through losing at most the second word -
+ *  the alternative, greeting by the whole "Family Given" string, is the
+ *  confusing-for-recipients behaviour this replaces. */
+function givenNameFrom(name: string, locale: "hu" | "en"): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  return locale === "hu" ? (parts[parts.length - 1] ?? "") : (parts[0] ?? "");
+}
+
 /** `2027-05-29` → "2027. május 29." / "29 May 2027". Formatted in UTC on
  *  purpose: the value is a calendar date, not an instant, and letting the
  *  server's zone parse it shifts the day back for anyone west of UTC. */
@@ -4530,7 +4546,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     ctaUrl: p.ctaUrl,
     hu: {
       preheader: "Egy éppen esküvőt tervező pár a Weddly oldalán megadta az e-mail-címedet.",
-      greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
+      greeting: p.name.trim() ? `Szia ${givenNameFrom(p.name, "hu")}!` : "Szia!",
       paragraphs: [
         "Egy éppen esküvőt tervező pár a Weddly oldalán megadta az e-mail-címedet.",
         "A Weddly egy online esküvőtervező, ahol egy helyen kezelheted a költségvetést, a vendéglistát, az online RSVP-t, az ülésrendet, a szolgáltatókat és az esküvői weboldalatokat.",
@@ -4548,7 +4564,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
     en: {
       preheader: "A couple currently planning their wedding on Weddly shared your email address.",
-      greeting: p.name.trim() ? `Hi ${p.name.trim()},` : "Hi there,",
+      greeting: p.name.trim() ? `Hi ${givenNameFrom(p.name, "en")},` : "Hi there,",
       paragraphs: [
         "A couple currently planning their wedding on Weddly shared your email address.",
         "Weddly is an online wedding planner where you can manage your budget, guest list, online RSVPs, seating plan, vendors and wedding website in one place.",
