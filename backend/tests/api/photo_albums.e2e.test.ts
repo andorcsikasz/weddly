@@ -1,4 +1,5 @@
 import "../setup";
+import { FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
@@ -41,7 +42,7 @@ describe("photo-albums API", () => {
   });
 
   test("POST /api/photo-albums creates an album", async () => {
-    const r = await req<{ album: { uploadToken: string; id: number } }>(
+    const r = await req<{ album: { uploadToken: string; id: number; guestCap: number } }>(
       "POST",
       "/api/photo-albums",
       { title: "Our Film", shots_per_guest: 5, film_aesthetic: "natural" },
@@ -50,7 +51,20 @@ describe("photo-albums API", () => {
     expect(r.status).toBe(201);
     expect(typeof r.data.album.uploadToken).toBe("string");
     expect(r.data.album.uploadToken.length).toBeGreaterThan(0);
+    expect(r.data.album.guestCap).toBe(FILM_TIER_CAPS.free);
     albumToken = r.data.album.uploadToken;
+  });
+
+  test("included capacity and the one-time unlock stay generous and low-cost", async () => {
+    const r = await req<{
+      access: { free: boolean; priceEurCents: number; checkoutEnabled: boolean };
+    }>("GET", "/api/photo-albums/film-access", undefined, { token });
+    expect(r.status).toBe(200);
+    expect(r.data.access.free).toBe(false);
+    expect(r.data.access.priceEurCents).toBe(FILM_TIER_PRICE_EUR_CENTS.paid);
+    expect(r.data.access.priceEurCents).toBe(790);
+    expect(FILM_TIER_CAPS.free).toBe(25);
+    expect(FILM_TIER_CAPS.paid).toBe(200);
   });
 
   test("POST /api/photo-albums/checkout is blocked by the film launch control", async () => {

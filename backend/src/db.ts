@@ -1735,13 +1735,13 @@ addColumnIfMissing(
   "film_aesthetic TEXT NOT NULL DEFAULT 'natural'",
 );
 addColumnIfMissing("photo_albums", "event_ends_at", "event_ends_at INTEGER");
-addColumnIfMissing("photo_albums", "guest_cap", "guest_cap INTEGER NOT NULL DEFAULT 15");
+addColumnIfMissing("photo_albums", "guest_cap", "guest_cap INTEGER NOT NULL DEFAULT 25");
 addColumnIfMissing("photo_albums", "stripe_payment_id", "stripe_payment_id TEXT");
 addColumnIfMissing("photo_albums", "stripe_tier", "stripe_tier TEXT");
 addColumnIfMissing("photo_albums", "paid_at", "paid_at INTEGER");
-// Bump existing free-tier albums from the old trial cap of 5 to 15.
-// Must run after paid_at column exists.
-db.exec("UPDATE photo_albums SET guest_cap = 15 WHERE guest_cap = 5 AND paid_at IS NULL");
+// Keep every unpaid album on the current included tier. Must run after paid_at
+// exists so a purchased 200-guest film is never touched.
+db.exec("UPDATE photo_albums SET guest_cap = 25 WHERE guest_cap IN (5, 15) AND paid_at IS NULL");
 addColumnIfMissing("photo_uploads", "filter_applied", "filter_applied TEXT");
 addColumnIfMissing("photo_uploads", "thumbnail_path", "thumbnail_path TEXT");
 // Custom guest-link slug (#17). Partial unique index lives AFTER the column add

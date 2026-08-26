@@ -699,25 +699,17 @@ export const FILM_FILTERS: Record<FilmAesthetic, string> = {
   warm: "sepia(0.15) saturate(1.3) brightness(1.05)",
 };
 
-export type FilmStripeTier = "free" | "ten" | "twentyfive" | "fifty" | "hundred" | "twohundred";
+export type FilmStripeTier = "free" | "paid";
 
 export const FILM_TIER_CAPS: Record<FilmStripeTier, number> = {
-  free: 15,
-  ten: 10,
-  twentyfive: 25,
-  fifty: 50,
-  hundred: 100,
-  twohundred: 200,
+  free: 25,
+  paid: 200,
 };
 
 /** Price in EUR cents for each paid tier (free = 0). */
 export const FILM_TIER_PRICE_EUR_CENTS: Record<FilmStripeTier, number> = {
   free: 0,
-  ten: 990,
-  twentyfive: 1990,
-  fifty: 3990,
-  hundred: 6990,
-  twohundred: 9990,
+  paid: 790,
 };
 
 export interface PhotoAlbum {

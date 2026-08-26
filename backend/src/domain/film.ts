@@ -10,5 +10,5 @@ export function activateFilmAlbum(albumId: number, stripePaymentId: string | nul
     `UPDATE photo_albums
         SET paid_at = ?, guest_cap = ?, stripe_payment_id = ?, stripe_tier = 'paid'
       WHERE id = ?`,
-  ).run(now(), FILM_TIER_CAPS.twohundred, stripePaymentId ?? null, albumId);
+  ).run(now(), FILM_TIER_CAPS.paid, stripePaymentId ?? null, albumId);
 }

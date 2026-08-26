@@ -4085,7 +4085,7 @@ export const photoAlbumApi = {
   filmAccess: (): Promise<{ access: FilmAccessCheck }> =>
     apiFetch<{ access: FilmAccessCheck }>("GET", "/api/photo-albums/film-access"),
 
-  /** Stripe Checkout session for the €9.90 film unlock. Returns the Stripe-hosted URL. */
+  /** Stripe Checkout session for the €7.90, 200-guest unlock. */
   filmCheckout: (): Promise<{ url: string }> =>
     apiFetch<{ url: string }>("POST", "/api/photo-albums/checkout", {}),
 

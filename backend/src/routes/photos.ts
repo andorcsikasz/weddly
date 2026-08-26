@@ -258,7 +258,7 @@ function toAlbum(row: AlbumRow): PhotoAlbum {
     allowGuestViewing: row.allow_guest_viewing === 1,
     filmAesthetic: safeAesthetic(row.film_aesthetic),
     coverImageUrl: row.cover_image_url,
-    guestCap: row.guest_cap ?? 15,
+    guestCap: row.guest_cap ?? FILM_TIER_CAPS.free,
     stripeTier: (row.stripe_tier as FilmStripeTier | null) ?? null,
     paidAt: row.paid_at,
     photoCount: countPhotos(row.id),
@@ -290,14 +290,14 @@ function checkFilmAccess(coupleId: number, coupleCreatedAt: number): FilmAccessC
   return {
     free: false,
     reason: null,
-    priceEurCents: FILM_TIER_PRICE_EUR_CENTS.ten,
+    priceEurCents: FILM_TIER_PRICE_EUR_CENTS.paid,
     checkoutEnabled: paymentProductAvailable("film_checkout"),
   };
 }
 
 // ─── authenticated handlers ───────────────────────────────────────────────────
 
-/** POST /api/photo-albums/checkout — Stripe Checkout for the €9.90 film unlock. */
+/** POST /api/photo-albums/checkout — Stripe Checkout for the €7.90, 200-guest unlock. */
 async function handleFilmCheckout(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   requirePaymentLaunch("film_checkout");
@@ -321,7 +321,7 @@ async function handleFilmCheckout(ctx: Ctx): Promise<Response> {
         {
           price_data: {
             currency: "eur",
-            unit_amount: FILM_TIER_PRICE_EUR_CENTS.ten,
+            unit_amount: FILM_TIER_PRICE_EUR_CENTS.paid,
             product_data: { name: "Wedding Film — Guest Camera" },
           },
           quantity: 1,
@@ -403,10 +403,10 @@ async function handleCreateAlbum(ctx: Ctx): Promise<Response> {
     }
   }
 
-  // Determine guest_cap (free loyal couples get unlocked cap for their tier,
-  // everyone else gets the free cap of 5).
+  // Loyal couples get the full 200-guest capacity. Everyone else starts on
+  // the generous included tier and only sees Checkout when they approach it.
   const access = checkFilmAccess(couple.id, couple.created_at);
-  const guestCap = access.free ? FILM_TIER_CAPS.twohundred : FILM_TIER_CAPS.free;
+  const guestCap = access.free ? FILM_TIER_CAPS.paid : FILM_TIER_CAPS.free;
 
   // Derive reveal_at from wedding date if not supplied.
   let finalRevealAt = typeof revealAt === "number" ? revealAt : null;
