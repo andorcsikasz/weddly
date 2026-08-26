@@ -3,6 +3,7 @@
 // reference — nothing here ever removes a planning_items row. An item only
 // exists on the couple's list once they've explicitly approved adding it.
 import { isUiLocale, type UiLocale } from "@shared/locales";
+import { toIsoDate } from "@shared/planning_timeline";
 import type { PlanningItem } from "@shared/types";
 import { checklistItemById, isChecklistTemplateId } from "@shared/wedding_checklist";
 import { db, now } from "../db";
@@ -35,7 +36,8 @@ export function addChecklistItem(
   }
   const locale: UiLocale =
     typeof rawLocale === "string" && isUiLocale(rawLocale) ? rawLocale : "en";
-  const template = checklistItemById(templateId, locale, weddingDate);
+  const todayIso = toIsoDate(new Date(now()));
+  const template = checklistItemById(templateId, locale, weddingDate, todayIso);
   if (!template) throw new HttpError(400, "Unknown checklist template id");
   const resolvedDueDate = dueDateOverride !== undefined ? dueDateOverride : template.dueDate;
 
@@ -47,7 +49,8 @@ export function addChecklistItem(
   // same real-world to-do. Titles are matched across every UI locale.
   const knownTitles = new Set(
     UI_LOCALES.map(
-      (candidateLocale) => checklistItemById(templateId, candidateLocale, weddingDate)?.title,
+      (candidateLocale) =>
+        checklistItemById(templateId, candidateLocale, weddingDate, todayIso)?.title,
     ).filter((title): title is string => Boolean(title)),
   );
   const reusable = existing.find(

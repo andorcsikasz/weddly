@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   TIMELINE_PHASES,
   WEDDING_TIMELINE,
+  compressLeadDays,
   summarizeTimeline,
   timelineDatesFor,
   timelineStatus,
@@ -62,6 +63,69 @@ describe("timelineDatesFor", () => {
     }
   });
 
+  test("with todayIso, a short runway compresses the lead instead of landing in the past", () => {
+    // Wedding is only 90 days out; a naive 450-day lead would be 360 days in
+    // the past. Compressed, the due date must land between today and the
+    // wedding day.
+    const r = timelineDatesFor(
+      "2026-09-12",
+      { lead: { days: 450 }, windowDays: 0 },
+      { todayIso: "2026-06-14" },
+    );
+    expect(r).not.toBeNull();
+    expect(r!.due_date >= "2026-06-14").toBe(true);
+    expect(r!.due_date <= "2026-09-12").toBe(true);
+  });
+
+  test("with todayIso, a lead that already lands in the future is untouched", () => {
+    // Plenty of runway (200 days) for a 30-day lead — no compression needed.
+    const withToday = timelineDatesFor(
+      "2026-09-12",
+      { lead: { days: 30 }, windowDays: 0 },
+      { todayIso: "2026-02-24" },
+    );
+    const withoutToday = timelineDatesFor("2026-09-12", { lead: { days: 30 }, windowDays: 0 });
+    expect(withToday?.due_date).toBe(withoutToday?.due_date);
+  });
+
+  test("without todayIso, the plain calendar subtraction is unchanged (may land in the past)", () => {
+    const r = timelineDatesFor("2026-09-12", { lead: { days: 450 }, windowDays: 0 });
+    expect(r?.due_date).toBe("2025-06-19");
+  });
+
+  test("full standard runway (450+ days) needs no compression", () => {
+    const r = timelineDatesFor(
+      "2028-01-01",
+      { lead: { days: 450 }, windowDays: 0 },
+      { todayIso: "2026-06-01" },
+    );
+    expect(r?.due_date).toBe("2026-10-08");
+  });
+
+  test("a compressed item's due date is never later than an unclamped item that naturally comes after it", () => {
+    // Wedding 100 days out. A "6-9 months before" item (315-day lead) has to
+    // clamp; a "2-3 months before" item (75-day lead) fits on its own and
+    // must keep its natural, later due date. The clamped (earlier-phase) item
+    // must still land on or before the untouched (later-phase) one.
+    const opts = { todayIso: "2026-06-14" };
+    const early = timelineDatesFor("2026-09-12", { lead: { days: 315 }, windowDays: 0 }, opts);
+    const late = timelineDatesFor("2026-09-12", { lead: { days: 75 }, windowDays: 0 }, opts);
+    expect(early?.due_date).toBe("2026-06-14"); // clamped to today
+    expect(late?.due_date).toBe("2026-06-29"); // untouched: 2026-09-12 − 75 days
+    expect(early!.due_date <= late!.due_date).toBe(true);
+  });
+
+  test("every WEDDING_TIMELINE item stays within [today, wedding day] on a tight runway", () => {
+    const todayIso = "2026-06-14";
+    const weddingIso = "2026-09-12"; // 90 days out
+    for (const item of WEDDING_TIMELINE) {
+      const r = timelineDatesFor(weddingIso, item, { todayIso });
+      expect(r, item.key).not.toBeNull();
+      expect(r!.due_date >= todayIso, item.key).toBe(true);
+      expect(r!.due_date <= weddingIso, item.key).toBe(true);
+    }
+  });
+
   test("items are grouped by phase in runway order", () => {
     // The array order must keep each phase's items contiguous so the generator
     // can render grouped sections straight from WEDDING_TIMELINE.
@@ -73,6 +137,44 @@ describe("timelineDatesFor", () => {
     expect(seen).toEqual(order.filter((id) => seen.includes(id)));
     // no phase appears in two separate runs
     expect(new Set(seen).size).toBe(seen.length);
+  });
+});
+
+describe("compressLeadDays", () => {
+  test("never touches a zero or negative lead (day-of / after-wedding tasks)", () => {
+    expect(compressLeadDays(0, 10)).toBe(0);
+    expect(compressLeadDays(-7, 10)).toBe(-7);
+  });
+
+  test("a lead that already fits inside the runway left is untouched", () => {
+    expect(compressLeadDays(450, 450)).toBe(450);
+    expect(compressLeadDays(450, 1000)).toBe(450);
+    expect(compressLeadDays(30, 60)).toBe(30);
+    expect(compressLeadDays(30, 30)).toBe(30);
+  });
+
+  test("a lead that doesn't fit clamps to exactly the days left", () => {
+    expect(compressLeadDays(450, 100)).toBe(100);
+    expect(compressLeadDays(150, 100)).toBe(100);
+    expect(compressLeadDays(31, 30)).toBe(30);
+  });
+
+  test("clamping can never invert two leads' relative order", () => {
+    // A lead that fits (75) must never end up with a smaller compressed value
+    // than a lead that had to be clamped down from something much bigger
+    // (315) — the exact regression a proportional scale-down against a fixed
+    // reference runway used to produce (see the compressLeadDays doc comment).
+    const daysLeft = 100;
+    const fits = compressLeadDays(75, daysLeft);
+    const clamped = compressLeadDays(315, daysLeft);
+    expect(fits).toBe(75);
+    expect(clamped).toBe(100);
+    expect(clamped).toBeGreaterThanOrEqual(fits);
+  });
+
+  test("a wedding that's already here or past compresses every positive lead to zero", () => {
+    expect(compressLeadDays(450, 0)).toBe(0);
+    expect(compressLeadDays(30, -5)).toBe(0);
   });
 });
 

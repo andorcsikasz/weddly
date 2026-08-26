@@ -1,5 +1,6 @@
 import { isUiLocale, type UiLocale } from "@shared/locales";
 import type { ConditionTag, ManualTagAnswers } from "@shared/planning_prompts";
+import { toIsoDate } from "@shared/planning_timeline";
 import {
   checklistSections,
   isChecklistItemApplicable,
@@ -89,7 +90,7 @@ async function handlePdf(ctx: Ctx): Promise<Response> {
       )
       .map((entry) => [entry.checklist_template_id as string, entry]),
   );
-  const sections = checklistSections(locale, couple.wedding_date)
+  const sections = checklistSections(locale, couple.wedding_date, toIsoDate(new Date()))
     .map((section) => ({
       title: section.title,
       items: section.items

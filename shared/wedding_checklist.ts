@@ -1029,6 +1029,11 @@ export function isChecklistItemApplicable(
 export function checklistSections(
   locale: UiLocale,
   weddingDate?: string | null,
+  /** Guards the catalog's suggested dates against landing in the past — see
+   *  `timelineDatesFor`'s `opts.todayIso`. Omit only when rendering a
+   *  read-only reference (the public/anonymous checklist has no wedding date
+   *  to compress against anyway). */
+  todayIso?: string,
 ): WeddingChecklistSection[] {
   const titles = ITEM_TITLES[locale];
   let flatIndex = 0;
@@ -1036,10 +1041,11 @@ export function checklistSections(
     const items: WeddingChecklistItem[] = section.items.map((definition) => {
       const title = titles[flatIndex] ?? ITEM_TITLES.en[flatIndex] ?? definition.id;
       flatIndex += 1;
-      const dates = timelineDatesFor(weddingDate, {
-        lead: { days: section.leadDays },
-        windowDays: 0,
-      });
+      const dates = timelineDatesFor(
+        weddingDate,
+        { lead: { days: section.leadDays }, windowDays: 0 },
+        { todayIso },
+      );
       return {
         id: definition.id,
         titleKey: `planning.checklist.items.${definition.id}`,
@@ -1049,10 +1055,11 @@ export function checklistSections(
       };
     });
     for (const extra of CONDITIONAL_EXTRAS.filter((entry) => entry.section === section.id)) {
-      const dates = timelineDatesFor(weddingDate, {
-        lead: { days: extra.leadDays },
-        windowDays: 0,
-      });
+      const dates = timelineDatesFor(
+        weddingDate,
+        { lead: { days: extra.leadDays }, windowDays: 0 },
+        { todayIso },
+      );
       items.push({
         id: extra.id,
         titleKey: `planning.checklist.items.${extra.id}`,
@@ -1070,9 +1077,14 @@ export function checklistSections(
   });
 }
 
-export function checklistItemById(id: string, locale: UiLocale, weddingDate?: string | null) {
+export function checklistItemById(
+  id: string,
+  locale: UiLocale,
+  weddingDate?: string | null,
+  todayIso?: string,
+) {
   return (
-    checklistSections(locale, weddingDate)
+    checklistSections(locale, weddingDate, todayIso)
       .flatMap((section) => section.items)
       .find((entry) => entry.id === id) ?? null
   );

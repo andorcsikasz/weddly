@@ -147,10 +147,13 @@ export function wandLeadFor(task: {
 
 /** Resolve a concrete {start_date, due_date} suggestion for a task. Returns
  *  null when the wedding date is missing/malformed — the wizard then shows the
- *  row without a pre-filled date rather than inventing one. */
+ *  row without a pre-filled date rather than inventing one. `todayIso`, when
+ *  given, keeps the suggestion from landing before today — see
+ *  `timelineDatesFor`'s `opts.todayIso`. */
 export function suggestSchedule(
   task: { title: string; seed_key: string | null; id?: number },
   weddingDateIso: string | null | undefined,
+  todayIso?: string,
 ): { start_date: string; due_date: string } | null {
-  return timelineDatesFor(weddingDateIso, wandLeadFor(task));
+  return timelineDatesFor(weddingDateIso, wandLeadFor(task), { todayIso });
 }

@@ -29,7 +29,6 @@ import {
   Columns3,
   Dices,
   Flag,
-  GanttChartSquare,
   GripVertical,
   Lightbulb,
   LayoutList,
@@ -1055,16 +1054,12 @@ export default function PlanningPage() {
                 </div>
 
                 {/* Fixed-width icon-tool group: labels stay in title/aria-label
-                 *  so hovering never changes geometry or the click target. */}
+                 *  so hovering never changes geometry or the click target.
+                 *  No separate link to /app/timeline here — the "Idővonal" tab
+                 *  in the main pill row above already reaches it in one click,
+                 *  regardless of which of these sub-tabs is active, so a second
+                 *  icon-only shortcut here was pure duplication. */}
                 <div className="inline-flex shrink-0 flex-nowrap items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100">
-                  <Link
-                    to="/app/timeline"
-                    className={PLAN_TOOL_BTN}
-                    title={t("planning.timeline_link_hint")}
-                    aria-label={t("planning.timeline_link")}
-                  >
-                    <GanttChartSquare size={16} aria-hidden="true" />
-                  </Link>
                   <button
                     type="button"
                     onClick={() => setTimelineGenOpen(true)}
@@ -1471,7 +1466,7 @@ function TimelineGeneratorDialog({
   const [dueDates, setDueDates] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     for (const item of WEDDING_TIMELINE) {
-      map[item.key] = timelineDatesFor(weddingDate, item)?.due_date ?? "";
+      map[item.key] = timelineDatesFor(weddingDate, item, { todayIso: todayIso() })?.due_date ?? "";
     }
     return map;
   });

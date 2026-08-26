@@ -2800,8 +2800,6 @@ const hu: LocaleMessages = {
     assignee_bride: "Menyasszony",
     assignee_groom: "Vőlegény",
     idea_suggested_by: "{name} javasolta",
-    timeline_link: "Idővonal",
-    timeline_link_hint: "Nyisd meg a feladatok Gantt-nézetét",
     task_group_wedding: "Esküvő",
     task_group_after_wedding: "Az esküvő után",
     task_group_honeymoon: "Nászút",
@@ -2956,6 +2954,9 @@ const hu: LocaleMessages = {
       download_error: "Nem sikerült elkészíteni a PDF-et. Próbáljátok újra.",
       due_date: "Ajánlott: {date}",
       owner: "Felelős: {name}",
+      suggest_deadlines_hint: "{count} teendőnek nincs még ütemezése",
+      suggest_deadlines_action: "Javasolt határidők",
+      suggest_deadlines_done: "{count} határidő hozzáadva",
     },
   },
   rate_vendors: {

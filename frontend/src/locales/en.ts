@@ -2777,8 +2777,6 @@ const en: LocaleMessages = {
     assignee_bride: "Bride",
     assignee_groom: "Groom",
     idea_suggested_by: "suggested by {name}",
-    timeline_link: "Timeline",
-    timeline_link_hint: "Open the Gantt view of your tasks",
     task_group_wedding: "Wedding",
     task_group_after_wedding: "After the wedding",
     task_group_honeymoon: "Honeymoon",
@@ -2933,6 +2931,9 @@ const en: LocaleMessages = {
       download_error: "Couldn't generate the PDF. Please try again.",
       due_date: "Recommended {date}",
       owner: "Owner: {name}",
+      suggest_deadlines_hint: "{count} tasks have no schedule yet",
+      suggest_deadlines_action: "Suggest deadlines",
+      suggest_deadlines_done: "{count} deadlines added",
     },
   },
   rate_vendors: {

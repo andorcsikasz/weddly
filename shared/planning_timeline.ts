@@ -633,18 +633,60 @@ function subMonths(d: Date, n: number): Date {
   return r;
 }
 
+/** Clamp a pre-wedding lead time to whatever runway is actually left, so a
+ *  couple who started planning late (or is simply close to the day) is never
+ *  handed a "suggested" deadline that already happened. A lead that already
+ *  fits inside the remaining days is returned unchanged — this never nudges a
+ *  task that was already going to land in the future. One that doesn't fit is
+ *  clamped to exactly the days left, i.e. "due now": there is no earlier slot
+ *  to invent for it, so every task that has fallen behind the ideal schedule
+ *  collapses onto the same catch-up date rather than being spread across a
+ *  made-up order. (An earlier version of this tried to preserve relative
+ *  spacing with a proportional scale-down against a fixed reference runway;
+ *  that let an item just past its own window compress to LESS lead than a
+ *  still-comfortably-early item's untouched one, putting them in the wrong
+ *  order. Clamping can't do that: an untouched lead is always <= the days
+ *  left, and a clamped one is always exactly the days left, so nothing
+ *  clamped can ever land after something left alone.) A zero/negative lead
+ *  (day-of or after-wedding tasks) is never touched. */
+export function compressLeadDays(leadDays: number, daysUntilWedding: number): number {
+  if (leadDays <= 0) return leadDays;
+  if (daysUntilWedding <= 0) return 0;
+  return Math.min(leadDays, daysUntilWedding);
+}
+
 /** Resolve a template item's concrete dates from a couple's wedding date.
  *  Returns null when the wedding date is missing/malformed (e.g. the couple
  *  only set a target month, not an exact day) — the caller then offers the task
- *  undated rather than inventing a deadline. */
+ *  undated rather than inventing a deadline.
+ *
+ *  `opts.todayIso`, when given, guards against suggesting a due date that has
+ *  already passed: the calendar lead is clamped (`compressLeadDays`) to
+ *  whatever's actually left before the wedding. Omitting it (the original
+ *  signature) keeps the plain calendar subtraction, past dates included —
+ *  callers that already know they're rendering a stored, couple-approved date
+ *  should never retroactively reschedule it. */
 export function timelineDatesFor(
   weddingDateIso: string | null | undefined,
   item: Pick<TimelineTemplateItem, "lead" | "windowDays">,
+  opts?: { todayIso?: string },
 ): { start_date: string; due_date: string } | null {
   const wed = parseIsoDate(weddingDateIso);
   if (!wed) return null;
-  const due =
+  let due =
     "months" in item.lead ? subMonths(wed, item.lead.months) : addDays(wed, -item.lead.days);
+  const todayIso = opts?.todayIso;
+  if (todayIso) {
+    const today = parseIsoDate(todayIso);
+    if (today) {
+      const naturalLeadDays = Math.round((wed.getTime() - due.getTime()) / 86_400_000);
+      const daysUntilWedding = Math.max(
+        0,
+        Math.round((wed.getTime() - today.getTime()) / 86_400_000),
+      );
+      due = addDays(wed, -compressLeadDays(naturalLeadDays, daysUntilWedding));
+    }
+  }
   const start = addDays(due, -item.windowDays);
   return { start_date: toIsoDate(start), due_date: toIsoDate(due) };
 }

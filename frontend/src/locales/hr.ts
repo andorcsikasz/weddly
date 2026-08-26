@@ -2783,8 +2783,6 @@ const hr: LocaleMessages = {
     assignee_bride: "Mladenka",
     assignee_groom: "Mladoženja",
     idea_suggested_by: "predložio/la {name}",
-    timeline_link: "Vremenski plan",
-    timeline_link_hint: "Otvorite Ganttov prikaz svojih zadataka",
     task_group_wedding: "Vjenčanje",
     task_group_after_wedding: "Nakon vjenčanja",
     task_group_honeymoon: "Medeni mjesec",
@@ -2932,6 +2930,9 @@ const hr: LocaleMessages = {
       download_error: "PDF nije moguće izraditi. Pokušajte ponovno.",
       due_date: "Preporučeno: {date}",
       owner: "Zadužen/a: {name}",
+      suggest_deadlines_hint: "{count} zadataka još nema rok",
+      suggest_deadlines_action: "Predloži rokove",
+      suggest_deadlines_done: "{count} rokova dodano",
     },
   },
   rate_vendors: {

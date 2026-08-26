@@ -15,6 +15,7 @@ import { createPortal } from "react-dom";
 import { useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { planningApi } from "../../lib/endpoints";
+import { todayIso } from "../../lib/format";
 import { useT } from "../../lib/i18n";
 
 interface WandRow {
@@ -39,7 +40,7 @@ function subtractDays(iso: string, days: number): string {
 
 function buildRows(tasks: PlanningItem[], weddingDateIso: string | null): WandRow[] {
   const rows: WandRow[] = tasks.map((task) => {
-    const suggestion = suggestSchedule(task, weddingDateIso);
+    const suggestion = suggestSchedule(task, weddingDateIso, todayIso());
     return {
       id: task.id,
       title: task.title,

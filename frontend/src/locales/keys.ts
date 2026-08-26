@@ -3499,8 +3499,6 @@ export interface LocaleMessages {
     assignee_groom: string;
     idea_suggested_by: string;
     /** Cross-link from the Tasks tab toolbar to the /app/timeline Gantt view. */
-    timeline_link: string;
-    timeline_link_hint: string;
     /** Section headers above the strictly-separated task groups on the
      *  Tasks tab. Only rendered when at least two groups have items. */
     task_group_wedding: string;
@@ -3664,6 +3662,9 @@ export interface LocaleMessages {
       download_error: string;
       due_date: string;
       owner: string;
+      suggest_deadlines_hint: string;
+      suggest_deadlines_action: string;
+      suggest_deadlines_done: string;
     };
   };
   /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */

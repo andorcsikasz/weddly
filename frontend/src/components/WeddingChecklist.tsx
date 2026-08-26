@@ -4,6 +4,7 @@
 // always visible, and nothing here is ever deletable. An item only joins the
 // couple's own to-do list (and counts toward progress) once they approve it by
 // tapping its "+".
+import { timelineStatus } from "@shared/planning_timeline";
 import { checklistSections, isChecklistItemApplicable } from "@shared/wedding_checklist";
 import type { WeddingChecklistItem } from "@shared/wedding_checklist";
 import type { PlanningItem } from "@shared/types";
@@ -16,6 +17,7 @@ import {
   Loader2,
   Plus,
   SlidersHorizontal,
+  Sparkles,
   UserRound,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -25,6 +27,7 @@ import {
   type PlanningPromptTags,
   weddingChecklistPdfUrl,
 } from "../lib/endpoints";
+import { todayIso } from "../lib/format";
 import { useToast } from "./ui";
 import { type Locale, LOCALES, LOCALE_NAMES, useT } from "../lib/i18n";
 
@@ -108,6 +111,7 @@ export function WeddingChecklist({
   const [filter, setFilter] = useState<ChecklistFilter>("all");
   const [savingIds, setSavingIds] = useState<Set<number>>(() => new Set());
   const [addingIds, setAddingIds] = useState<Set<string>>(() => new Set());
+  const [applyingAll, setApplyingAll] = useState(false);
   // The couple's own edit of a not-yet-approved item's suggested due date,
   // keyed by template id. Nothing is written until they tap "+" — that's the
   // confirm. Absent = still showing the catalog's own suggested date.
@@ -123,6 +127,10 @@ export function WeddingChecklist({
 
   useEffect(() => setPdfLocale(locale), [locale]);
 
+  // Computed once per render so the catalog's compressed suggestions and each
+  // added row's overdue check agree on what "today" is.
+  const today = todayIso();
+
   const taskByTemplateId = useMemo(
     () =>
       new Map(
@@ -134,17 +142,22 @@ export function WeddingChecklist({
   );
   const sections = useMemo(
     () =>
-      checklistSections(locale, weddingDate).map((section) => ({
+      checklistSections(locale, weddingDate, today).map((section) => ({
         ...section,
         items: section.items.filter((entry) => isChecklistItemApplicable(entry, profile)),
       })),
-    [locale, weddingDate, profile],
+    [locale, weddingDate, profile, today],
   );
   const applicable = sections.flatMap((section) => section.items);
   const added = applicable.filter((entry) => taskByTemplateId.has(entry.id));
   const completed = added.filter((entry) => taskByTemplateId.get(entry.id)?.done).length;
   const total = added.length;
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  // Not-yet-approved items — what "Suggest deadlines" bulk-adds. Every one of
+  // these already carries a catalog date that can't be in the past (the
+  // wedding-date compression in checklistSections handles that), so there's
+  // nothing left to confirm beyond the couple choosing to do this.
+  const remaining = applicable.filter((entry) => !taskByTemplateId.has(entry.id));
 
   useEffect(() => {
     if (demoProgressApplied.current) return;
@@ -180,6 +193,37 @@ export function WeddingChecklist({
         next.delete(template.id);
         return next;
       });
+    }
+  }
+
+  /** Approves every not-yet-added catalog item at once, each with its own
+   *  catalog-suggested date (already guaranteed sane by the wedding-date
+   *  compression in checklistSections — never in the past, never later than
+   *  the wedding day). One request per item, sequential like `bulkCreate` in
+   *  PlanningPage, so the couple's own list order stays predictable and a
+   *  failure partway through still keeps everything added so far. */
+  async function applySuggestedDeadlines() {
+    if (applyingAll || remaining.length === 0) return;
+    setApplyingAll(true);
+    let addedCount = 0;
+    try {
+      const created: PlanningItem[] = [];
+      for (const template of remaining) {
+        const result = await planningApi.addChecklistItem(template.id, locale, template.dueDate);
+        created.push(result.item);
+        addedCount += 1;
+      }
+      onItemsChange((current) => [
+        ...current.filter((entry) => !created.some((item) => item.id === entry.id)),
+        ...created,
+      ]);
+      if (addedCount > 0) {
+        toast.success(t("planning.checklist.suggest_deadlines_done", { count: addedCount }));
+      }
+    } catch {
+      toast.error(t("planning.checklist.add_error"));
+    } finally {
+      setApplyingAll(false);
     }
   }
 
@@ -262,6 +306,22 @@ export function WeddingChecklist({
                 <ClipboardCheck size={21} aria-hidden="true" />
               </span>
             </div>
+            {weddingDate && remaining.length > 0 && (
+              <button
+                type="button"
+                onClick={applySuggestedDeadlines}
+                disabled={applyingAll}
+                title={t("planning.checklist.suggest_deadlines_hint", { count: remaining.length })}
+                className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 disabled:cursor-wait disabled:opacity-60"
+              >
+                {applyingAll ? (
+                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Sparkles size={16} aria-hidden="true" />
+                )}
+                {t("planning.checklist.suggest_deadlines_action")}
+              </button>
+            )}
             <div
               className="mt-8 h-1.5 overflow-hidden bg-white/20"
               role="progressbar"
@@ -460,8 +520,9 @@ export function WeddingChecklist({
                   </span>
                 </div>
                 <ul className="divide-y divide-ink-900/10 dark:divide-paper-50/10">
-                  {rows.map(({ template, task }) =>
-                    task ? (
+                  {rows.map(({ template, task }) => {
+                    const status = task ? timelineStatus(task.due_date, task.done, today) : null;
+                    return task ? (
                       <li
                         key={template.id}
                         className="group flex min-w-0 items-start gap-3 px-4 py-4 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025]"
@@ -499,13 +560,23 @@ export function WeddingChecklist({
                             {template.title}
                           </p>
                           {(task.due_date || task.assignee) && (
-                            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
                               {task.due_date && (
                                 <span className="inline-flex items-center gap-1">
                                   <CalendarDays size={12} aria-hidden="true" />
                                   {t("planning.checklist.due_date", {
                                     date: formatShortDate(task.due_date, locale),
                                   })}
+                                </span>
+                              )}
+                              {status === "overdue" && (
+                                <span className="inline-flex shrink-0 items-center rounded-full bg-blush-500 px-2 py-0.5 text-[11px] font-medium text-paper-50">
+                                  {t("planning.status_overdue")}
+                                </span>
+                              )}
+                              {status === "due_soon" && (
+                                <span className="inline-flex shrink-0 items-center rounded-full bg-blush-50 px-2 py-0.5 text-[11px] font-medium text-blush-700 ring-1 ring-blush-200 dark:bg-blush-400/15 dark:text-blush-300 dark:ring-blush-400/30">
+                                  {t("planning.status_due_soon")}
                                 </span>
                               )}
                               {task.assignee && (
@@ -559,8 +630,8 @@ export function WeddingChecklist({
                           </div>
                         </div>
                       </li>
-                    ),
-                  )}
+                    );
+                  })}
                 </ul>
               </section>
             );

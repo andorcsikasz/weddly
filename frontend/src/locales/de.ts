@@ -2847,8 +2847,6 @@ const de: LocaleMessages = {
     assignee_bride: "Braut",
     assignee_groom: "Bräutigam",
     idea_suggested_by: "vorgeschlagen von {name}",
-    timeline_link: "Zeitplan",
-    timeline_link_hint: "Gantt-Ansicht Ihrer Aufgaben öffnen",
     task_group_wedding: "Hochzeit",
     task_group_after_wedding: "Nach der Hochzeit",
     task_group_honeymoon: "Flitterwochen",
@@ -2997,6 +2995,9 @@ const de: LocaleMessages = {
       download_error: "Das PDF konnte nicht erstellt werden. Bitte erneut versuchen.",
       due_date: "Empfohlen: {date}",
       owner: "Verantwortlich: {name}",
+      suggest_deadlines_hint: "{count} Aufgaben haben noch keinen Termin",
+      suggest_deadlines_action: "Fristen vorschlagen",
+      suggest_deadlines_done: "{count} Fristen hinzugefügt",
     },
   },
   rate_vendors: {
