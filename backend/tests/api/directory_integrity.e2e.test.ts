@@ -100,14 +100,14 @@ describe("curated directory integrity", () => {
     expect(bad).toEqual([]);
   });
 
-  test("the Hungarian directory has 1,000 rich profiles with a complete scale batch", () => {
+  test("the Hungarian directory has a quality-checked scale batch", () => {
     const hungarian = DIRECTORY.filter((supplier) => supplier.country === "HU");
     const scale = hungarian.filter((supplier) => supplier.id.startsWith("hu-scale-"));
     const sentenceCount = (value: string) =>
       Math.max(value.trim() ? 1 : 0, value.match(/[.!?](?=\s|$)/g)?.length ?? 0);
 
-    expect(hungarian.length).toBeGreaterThanOrEqual(1_000);
-    expect(scale).toHaveLength(177);
+    expect(hungarian.length).toBeGreaterThanOrEqual(1_290);
+    expect(scale).toHaveLength(467);
     for (const supplier of hungarian) {
       const huSentences = sentenceCount(supplier.blurb_hu);
       const enSentences = sentenceCount(supplier.blurb_en);
@@ -117,13 +117,19 @@ describe("curated directory integrity", () => {
       expect(enSentences).toBeLessThanOrEqual(6);
     }
     for (const supplier of scale) {
+      expect(sentenceCount(supplier.blurb_hu)).toBeGreaterThanOrEqual(4);
+      expect(sentenceCount(supplier.blurb_hu)).toBeLessThanOrEqual(6);
+      expect(sentenceCount(supplier.blurb_en)).toBeGreaterThanOrEqual(4);
+      expect(sentenceCount(supplier.blurb_en)).toBeLessThanOrEqual(6);
       expect(supplier.city.trim()).not.toBe("");
       expect(supplier.lat).not.toBeNull();
       expect(supplier.lng).not.toBeNull();
       expect(supplier.website).toMatch(/^https?:\/\//);
       expect(supplier.contact_email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
       expect(supplier.contact_phone?.replace(/\D/g, "").length).toBeGreaterThanOrEqual(7);
-      expect(supplier.gallery_urls?.[0]).toMatch(/^https?:\/\//);
+      expect(supplier.gallery_urls?.length).toBeGreaterThanOrEqual(2);
+      expect(supplier.gallery_urls?.length).toBeLessThanOrEqual(6);
+      for (const image of supplier.gallery_urls ?? []) expect(image).toMatch(/^https?:\/\//);
     }
   });
 

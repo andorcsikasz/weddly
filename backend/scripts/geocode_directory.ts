@@ -230,7 +230,7 @@ function readGenerated(): Map<string, { lat: number; lng: number }> {
   const body = between(src);
   const out = new Map<string, { lat: number; lng: number }>();
   for (const m of body.matchAll(
-    /"?([\w-]+)"?:\s*\{\s*lat:\s*([-\d.]+),\s*lng:\s*([-\d.]+)\s*\}/g,
+    /"?([\w-]+)"?:\s*\{\s*lat:\s*([-\d.]+),\s*lng:\s*([-\d.]+),?\s*\}/g,
   )) {
     const [, id, lat, lng] = m;
     if (id && lat && lng) out.set(id, { lat: Number(lat), lng: Number(lng) });
