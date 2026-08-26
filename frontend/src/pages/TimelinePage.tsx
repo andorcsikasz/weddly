@@ -62,6 +62,7 @@ import MonthView from "./timeline/MonthView";
 import ScheduleWand from "./timeline/ScheduleWand";
 import WeekView from "./timeline/WeekView";
 import { ApiError } from "../lib/api";
+import { fireConfetti } from "../lib/confetti";
 import {
   coupleApi,
   coupleSupplierApi,
@@ -436,11 +437,15 @@ export default function TimelinePage() {
 }
 
 /** Days-until-wedding pill in the page header. Hidden until the couple has
- *  locked an exact date (weddingDate is null otherwise). Reads as a calm
- *  blush chip; on the day itself and after, the copy swaps so it never shows
- *  a negative or zero day count. */
+ *  locked an exact date (weddingDate is null otherwise). Uber-style: the
+ *  number carries the meaning (big, tabular) with a one-word unit beside it
+ *  rather than a full sentence; the sentence still lives in the tooltip/aria
+ *  label for screen readers. On the day itself and after, there's no number
+ *  worth blowing up, so it falls back to the short phrase. Tapping it is a
+ *  small celebration in either case. */
 function CountdownChip({ weddingDate }: { weddingDate: Date | null }) {
   const { t } = useT();
+  const ref = useRef<HTMLButtonElement>(null);
   if (!weddingDate) return null;
   const days = diffDays(startOfDay(new Date()), weddingDate);
   const label =
@@ -449,11 +454,39 @@ function CountdownChip({ weddingDate }: { weddingDate: Date | null }) {
       : days === 0
         ? t("timeline.countdown_today")
         : t("timeline.countdown_past", { count: Math.abs(days) });
+
+  function celebrate() {
+    const box = ref.current?.getBoundingClientRect();
+    fireConfetti(box ? { x: box.left + box.width / 2, y: box.bottom } : undefined);
+  }
+
   return (
-    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-blush-700 dark:text-blush-300">
-      <Heart size={14} aria-hidden="true" />
-      <span className="tabular-nums">{label}</span>
-    </span>
+    <button
+      ref={ref}
+      type="button"
+      onClick={celebrate}
+      title={label}
+      aria-label={label}
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors hover:bg-blush-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-500 focus-visible:ring-offset-2 active:scale-95 dark:hover:bg-blush-900/20"
+    >
+      {days > 0 ? (
+        <>
+          <span className="stat-num text-xl font-bold leading-none tabular-nums text-blush-700 dark:text-blush-300 sm:text-2xl">
+            {days}
+          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-blush-600/80 dark:text-blush-300/70">
+            {t("guest_portal.countdown_days")}
+          </span>
+        </>
+      ) : (
+        <>
+          <Heart size={14} className="text-blush-700 dark:text-blush-300" aria-hidden="true" />
+          <span className="tabular-nums text-sm font-medium text-blush-700 dark:text-blush-300">
+            {label}
+          </span>
+        </>
+      )}
+    </button>
   );
 }
 
