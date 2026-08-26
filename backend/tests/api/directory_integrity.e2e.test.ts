@@ -278,6 +278,34 @@ describe("curated directory integrity", () => {
     }
   });
 
+  test("the Czech, German, French and Italian directories each have 250 rich vendors", () => {
+    const expectedAdded: Record<string, number> = { CZ: 245, DE: 232, FR: 220, IT: 210 };
+    const expansion = DIRECTORY.filter((supplier) => supplier.id.startsWith("eu26-"));
+    expect(expansion).toHaveLength(907);
+
+    for (const [country, added] of Object.entries(expectedAdded)) {
+      const countryDirectory = DIRECTORY.filter((supplier) => supplier.country === country);
+      const countryExpansion = expansion.filter((supplier) => supplier.country === country);
+      expect(countryDirectory).toHaveLength(250);
+      expect(countryExpansion).toHaveLength(added);
+
+      for (const supplier of countryExpansion) {
+        expect(supplier.city.endsWith(`, ${country}`)).toBe(true);
+        expect(supplier.address || (supplier.lat !== null && supplier.lng !== null)).toBeTruthy();
+        expect(supplier.website).toMatch(/^https?:\/\//);
+        expect(supplier.contact_email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+        expect(supplier.contact_phone?.replace(/\D/g, "").length).toBeGreaterThanOrEqual(7);
+        expect(supplier.blurb_hu.trim()).not.toBe("");
+        expect(supplier.blurb_en.trim()).not.toBe("");
+        expect(supplier.gallery_urls?.length).toBeGreaterThanOrEqual(1);
+        for (const image of supplier.gallery_urls ?? []) {
+          expect(image).toMatch(/^https?:\/\//);
+          expect(image).not.toMatch(/\.svg(?:[?#]|$)/i);
+        }
+      }
+    }
+  });
+
   test("the curated directory contains at least 2,000 vendors", () => {
     expect(DIRECTORY.length).toBeGreaterThanOrEqual(2_000);
   });

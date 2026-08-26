@@ -22,12 +22,26 @@ const requestedCountries = new Set(
     .map((value) => value.trim().toUpperCase())
     .filter(Boolean),
 );
+const flexible = process.argv.includes("--flexible");
+
+const COUNTRY_NAMES = {
+  CZ: "Czechia",
+  DE: "Germany",
+  FR: "France",
+  HR: "Croatia",
+  IT: "Italy",
+};
+const WEDDING_RE =
+  /\bweddings?\b|elopement|hochzeit|trauung|heirat|braut|trauring|ehering|svatb|svateb|sňat|nevěst|snubní\s+prsten|mariage|mariée|noces|nuptial|alliances?\s+de\s+mariage|matrimoni|nozze|sposa|sposi|nuzial|fedi\s+nuziali/i;
 
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/124 Safari/537.36";
 const PAGE_LIMIT = 2_500_000;
 const TIMEOUT_MS = 12_000;
-const CONCURRENCY = 18;
+const CONCURRENCY = Math.max(
+  1,
+  Number.parseInt(process.env.WEDDLY_RESEARCH_CONCURRENCY || "18", 10) || 18,
+);
 
 const fetchCache = new Map();
 
@@ -170,6 +184,9 @@ function phonesFrom(html) {
   for (const match of text.matchAll(/(?:\+|00)385[\s()./-]*(?:\d[\s()./-]*){8,10}/g)) {
     values.push(match[0]);
   }
+  for (const match of text.matchAll(/(?:\+|00)\d{1,3}[\s()./-]*(?:\d[\s()./-]*){6,14}/g)) {
+    values.push(match[0]);
+  }
   for (const match of text.matchAll(
     /(?:^|\D)(0(?:1|2\d|3\d|4\d|5\d|9\d)[\s()./-]*(?:\d[\s()./-]*){6,8})(?=\D|$)/g,
   )) {
@@ -190,7 +207,7 @@ function walkJson(value, visitor) {
   }
 }
 
-function structuredContacts(html) {
+function structuredContacts(html, fallbackCountry = "Croatia") {
   const result = { emails: [], phones: [], addresses: [], images: [] };
   for (const match of html.matchAll(
     /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
@@ -214,7 +231,7 @@ function structuredContacts(html) {
               : node.address.addressCountry;
           if (street && locality) {
             result.addresses.push({
-              value: `${street}, ${[postcode, locality].filter(Boolean).join(" ")}${country ? `, ${country}` : ", Croatia"}`,
+              value: `${street}, ${[postcode, locality].filter(Boolean).join(" ")}${country ? `, ${country}` : `, ${fallbackCountry}`}`,
               city: locality,
             });
           }
@@ -272,6 +289,7 @@ function contactLinks(html, pageUrl) {
       let score = 0;
       if (/kontakt|contact|get-in-touch|reach-us/.test(clue)) score += 5;
       if (/impressum|imprint|legal|o-nama|about/.test(clue)) score += 3;
+      if (WEDDING_RE.test(clue)) score += 7;
       if (!score) continue;
       url.hash = "";
       scored.push({ url: url.href, score });
@@ -282,7 +300,7 @@ function contactLinks(html, pageUrl) {
   return [
     ...new Map(scored.sort((a, b) => b.score - a.score).map((item) => [item.url, item])).values(),
   ]
-    .slice(0, 2)
+    .slice(0, 4)
     .map((item) => item.url);
 }
 
@@ -297,18 +315,16 @@ function bestWebsiteEmail(values, website) {
 
 function cleanPhone(value) {
   if (!value) return null;
-  return value
-    .replace(/^00385/, "+385")
-    .replace(/\s+/g, " ")
-    .trim();
+  return value.replace(/^00/, "+").replace(/\s+/g, " ").trim();
 }
 
 function usableAddress(value) {
   return Boolean(value && /[A-Za-zÀ-ž]{3}/.test(value) && value.includes(","));
 }
 
-async function verifyImage(candidates) {
-  for (const url of candidates.slice(0, 12)) {
+async function verifyImages(candidates) {
+  const verified = [];
+  for (const url of candidates.slice(0, 24)) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8_000);
     try {
@@ -321,7 +337,9 @@ async function verifyImage(candidates) {
       const type = response.headers.get("content-type") || "";
       const length = Number(response.headers.get("content-length") || 0);
       if (response.ok && /^image\//i.test(type) && (length === 0 || length >= 10_000)) {
-        return response.url;
+        verified.push(response.url);
+        if (verified.length >= 6) break;
+        continue;
       }
       if (response.status === 403 || response.status === 405 || !/^image\//i.test(type)) {
         const getResponse = await fetch(url, {
@@ -337,7 +355,9 @@ async function verifyImage(candidates) {
         const getType = getResponse.headers.get("content-type") || "";
         if (getResponse.ok && /^image\//i.test(getType)) {
           await getResponse.body?.cancel();
-          return getResponse.url;
+          verified.push(getResponse.url);
+          if (verified.length >= 6) break;
+          continue;
         }
         await getResponse.body?.cancel();
       }
@@ -346,6 +366,18 @@ async function verifyImage(candidates) {
     } finally {
       clearTimeout(timer);
     }
+  }
+  return [...new Set(verified)];
+}
+
+function metaDescription(html) {
+  for (const pattern of [
+    /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i,
+  ]) {
+    const value = html.match(pattern)?.[1];
+    if (value) return decodeHtml(value).replace(/\s+/g, " ").trim().slice(0, 500);
   }
   return null;
 }
@@ -381,8 +413,9 @@ async function enrich(row) {
   const phones = [];
   const addresses = [];
   const images = [];
+  const fallbackCountry = COUNTRY_NAMES[row.country] || "Croatia";
   for (const page of pages) {
-    const structured = structuredContacts(page.html);
+    const structured = structuredContacts(page.html, fallbackCountry);
     emails.push(...emailsFrom(page.html), ...structured.emails);
     phones.push(...phonesFrom(page.html), ...structured.phones);
     addresses.push(...structured.addresses);
@@ -394,24 +427,54 @@ async function enrich(row) {
   const structuredAddress = addresses.find((item) => usableAddress(item.value));
   const address = row.address || structuredAddress?.value || null;
   const city = row.city || structuredAddress?.city || null;
-  const image = await verifyImage(images);
-  const accepted = Boolean(email && phone && usableAddress(address) && city && image);
-  return {
+  const weddingEvidence = pages
+    .map((page) => {
+      const text = `${page.url} ${stripMarkup(page.html)}`;
+      const match = text.match(WEDDING_RE);
+      return match ? { page: page.url, term: match[0] } : null;
+    })
+    .find(Boolean);
+  const sharedResult = {
     ...row,
     website: firstPage.url,
     contact_email: email,
     contact_phone: phone,
     address,
     city,
-    gallery_urls: image ? [image] : [],
     pages_checked: pages.map((page) => page.url),
+    description:
+      pages.map((page) => metaDescription(page.html)).find(Boolean) || row.osm_description,
+    wedding_evidence: weddingEvidence,
+  };
+  if (flexible && !weddingEvidence) {
+    return {
+      ...sharedResult,
+      gallery_urls: [],
+      accepted: false,
+      missing: ["wedding_evidence"],
+    };
+  }
+  const gallery = await verifyImages(images);
+  const directContact = Boolean(email || phone);
+  const usableLocation = Boolean(
+    city && (usableAddress(address) || (row.lat != null && row.lng != null)),
+  );
+  const accepted = flexible
+    ? Boolean(directContact && usableLocation && gallery.length && weddingEvidence)
+    : Boolean(email && phone && usableAddress(address) && city && gallery.length);
+  return {
+    ...sharedResult,
+    gallery_urls: gallery,
     accepted,
     missing: [
       !email && "email",
       !phone && "phone",
       !usableAddress(address) && "address",
       !city && "city",
-      !image && "image",
+      !gallery.length && "image",
+      flexible && !weddingEvidence && "wedding_evidence",
+      flexible && !directContact && "direct_contact",
+      flexible && !usableLocation && "location",
     ].filter(Boolean),
   };
 }
@@ -433,8 +496,27 @@ if (Number.isFinite(perCountry)) {
   input = [...grouped.values()].flatMap((rows) =>
     rows
       .sort((a, b) => {
-        const score = (row) =>
-          (row.contact_email ? 4 : 0) + (row.contact_phone ? 3 : 0) + (row.image_hint ? 1 : 0);
+        const score = (row) => {
+          const categoryWeight = {
+            venue: 8,
+            wedding_planner: 8,
+            catering: 7,
+            photography: 6,
+            florist: 5,
+            bridal_boutique: 5,
+            wedding_jewelry: 4,
+            accommodation: 3,
+            hair_makeup: 2,
+          };
+          return (
+            (WEDDING_RE.test(`${row.name} ${row.website}`) ? 12 : 0) +
+            (categoryWeight[row.category] || 0) +
+            (row.contact_email ? 4 : 0) +
+            (row.contact_phone ? 3 : 0) +
+            (row.address ? 2 : 0) +
+            (row.image_hint ? 1 : 0)
+          );
+        };
         return score(b) - score(a) || a.name.localeCompare(b.name);
       })
       .slice(0, perCountry),

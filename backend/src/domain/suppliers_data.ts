@@ -25,8 +25,13 @@ import { AUSTRIA_OPEN_WEB_2026_08 } from "./suppliers_data_at";
 import { AUSTRIA_GSOL_2026_08 } from "./suppliers_data_at_gsol_2026_08";
 import { AUSTRIA_MARKET_2026_08 } from "./suppliers_data_at_market_2026_08";
 import { GA4_EUROPE_2026_08 } from "./suppliers_data_ga4_europe_2026_08";
+import { CZ_OPEN_WEB_2026_08 } from "./suppliers_data_cz_2026_08";
+import { DE_OPEN_WEB_2026_08 } from "./suppliers_data_de_2026_08";
+import { EUROPE_LEGACY_ENRICHMENTS_2026_08 } from "./suppliers_data_europe_legacy_enrichments_2026_08";
+import { FR_OPEN_WEB_2026_08 } from "./suppliers_data_fr_2026_08";
 import { HUNGARY_OPEN_WEB_2026_08 } from "./suppliers_data_hu_open_web";
 import { HUNGARY_SCALE_2026_08 } from "./suppliers_data_hu_scale_2026_08";
+import { IT_OPEN_WEB_2026_08 } from "./suppliers_data_it_2026_08";
 import { POLAND_2026_08 } from "./suppliers_data_pl";
 import { SPAIN_SCALE_2026_08_1 } from "./suppliers_data_es_scale_1";
 import { SPAIN_SCALE_2026_08_2 } from "./suppliers_data_es_scale_2";
@@ -22286,6 +22291,10 @@ const RAW_DIRECTORY: RawDirectoryEntry[] = [
   ...AUSTRIA_MARKET_2026_08,
   ...AUSTRIA_GSOL_2026_08,
   ...GA4_EUROPE_2026_08,
+  ...CZ_OPEN_WEB_2026_08,
+  ...DE_OPEN_WEB_2026_08,
+  ...FR_OPEN_WEB_2026_08,
+  ...IT_OPEN_WEB_2026_08,
   ...CEREMONY_MASTERS_2026_08,
   ...CROATIA_2026_08,
   ...CROATIA_FOOD_2026_08,
@@ -23434,27 +23443,32 @@ function enrichedHungarianBlurbs(
 }
 
 export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
+  const enriched = EUROPE_LEGACY_ENRICHMENTS_2026_08[s.id]
+    ? { ...s, ...EUROPE_LEGACY_ENRICHMENTS_2026_08[s.id] }
+    : s;
   // Prefer the id-specific coord, then the address geocode, and only then fall
   // back to the town centroid so every entry with a known city still lands on
   // the map view.
   const c =
-    VENUE_COORDS[s.id] ?? GEOCODED_COORDS[s.id] ?? (s.city ? CITY_COORDS[s.city] : undefined);
-  const withCoords = c ? { ...s, lat: c.lat, lng: c.lng } : s;
+    VENUE_COORDS[enriched.id] ??
+    GEOCODED_COORDS[enriched.id] ??
+    (enriched.city ? CITY_COORDS[enriched.city] : undefined);
+  const withCoords = c ? { ...enriched, lat: c.lat, lng: c.lng } : enriched;
   // `vendor_account_id` defaults to null at the code layer; the
   // public-list handler in routes/suppliers.ts overlays the real value
   // from the `listings` table (where claimed entries live) before responding.
   // `hero_image_url` likewise overlays from the listings table once the
   // vendor uploads one, curated entries don't ship with images today.
-  const country = curatedCountry(s.id, s.city);
+  const country = curatedCountry(enriched.id, enriched.city);
   return {
     ...withCoords,
-    ...enrichedHungarianBlurbs(s, country),
+    ...enrichedHungarianBlurbs(enriched, country),
     country,
-    venue_style: s.venue_style ?? null,
-    profile_imported: s.profile_imported === true,
+    venue_style: enriched.venue_style ?? null,
+    profile_imported: enriched.profile_imported === true,
     submitter_type: null,
     vendor_account_id: null,
-    gallery_urls: s.gallery_urls ?? null,
-    hero_image_url: s.gallery_urls?.[0] ?? null,
+    gallery_urls: enriched.gallery_urls ?? null,
+    hero_image_url: enriched.gallery_urls?.[0] ?? null,
   };
 });
