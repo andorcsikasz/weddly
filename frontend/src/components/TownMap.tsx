@@ -102,14 +102,170 @@ export default function TownMap(props: TownMapProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {props.mode === "country"
-        ? props.countries.map((c) => (
-            <CountryPin key={c.code} country={c} onSelect={props.onSelect} />
-          ))
-        : props.towns.map((t) => (
-            <TownPin key={t.city} town={t} category={props.category} onSelect={props.onSelect} />
-          ))}
+      {props.mode === "country" ? (
+        <ClusteredCountryPins countries={props.countries} onSelect={props.onSelect} />
+      ) : (
+        <ClusteredTownPins
+          towns={props.towns}
+          category={props.category}
+          onSelect={props.onSelect}
+        />
+      )}
     </MapContainer>
+  );
+}
+
+/** Groups points that land within `gridPx` of each other AT THE CURRENT ZOOM
+ *  into one cluster, re-run on every 'zoomend' — the same idea
+ *  leaflet.markercluster runs, hand-rolled because the app already carries
+ *  its own map primitives and a few hundred points is cheap to re-bucket.
+ *  Reached for once the directory had enough small towns close together
+ *  (rural Hungary, four countries meeting near one border) that their pins
+ *  piled into an unreadable stack of overlapping circles — a real visitor
+ *  complaint, not a hypothetical. Panning does NOT re-cluster: `map.project`
+ *  gives absolute pixel coordinates for a given zoom, independent of the
+ *  current viewport, so a cluster's membership only changes when the zoom
+ *  that defines its grid does. */
+function useClusters<T extends { lat: number; lng: number }>(
+  map: L.Map,
+  points: T[],
+  gridPx = 44,
+): { key: string; lat: number; lng: number; items: T[] }[] {
+  const [zoom, setZoom] = useState(() => map.getZoom());
+  useEffect(() => {
+    function onZoom() {
+      setZoom(map.getZoom());
+    }
+    map.on("zoomend", onZoom);
+    return () => {
+      map.off("zoomend", onZoom);
+    };
+  }, [map]);
+
+  return useMemo(() => {
+    const cells = new Map<string, { key: string; lat: number; lng: number; items: T[] }>();
+    for (const p of points) {
+      const px = map.project([p.lat, p.lng], zoom);
+      const key = `${Math.floor(px.x / gridPx)}:${Math.floor(px.y / gridPx)}`;
+      const existing = cells.get(key);
+      if (existing) {
+        // Running mean, so the cluster marker sits at the centroid of what it
+        // is hiding rather than at whichever point happened to start the
+        // bucket.
+        const n = existing.items.length;
+        existing.lat += (p.lat - existing.lat) / (n + 1);
+        existing.lng += (p.lng - existing.lng) / (n + 1);
+        existing.items.push(p);
+      } else {
+        cells.set(key, { key, lat: p.lat, lng: p.lng, items: [p] });
+      }
+    }
+    return [...cells.values()];
+  }, [points, zoom, map, gridPx]);
+}
+
+function ClusteredTownPins({
+  towns,
+  category,
+  onSelect,
+}: {
+  towns: PlacedTown[];
+  category: SupplierCategory | null;
+  onSelect: (city: string) => void;
+}) {
+  const map = useMap();
+  const groups = useClusters(map, towns);
+  return (
+    <>
+      {groups.map((g) => {
+        const only = g.items.length === 1 ? g.items[0] : undefined;
+        return only ? (
+          <TownPin key={g.key} town={only} category={category} onSelect={onSelect} />
+        ) : (
+          <ClusterPin
+            key={g.key}
+            lat={g.lat}
+            lng={g.lng}
+            size={g.items.length}
+            onClick={() => map.setView([g.lat, g.lng], Math.min(map.getZoom() + 3, 15))}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function ClusteredCountryPins({
+  countries,
+  onSelect,
+}: {
+  countries: PlacedCountry[];
+  onSelect: (code: string) => void;
+}) {
+  const map = useMap();
+  const groups = useClusters(map, countries);
+  return (
+    <>
+      {groups.map((g) => {
+        const only = g.items.length === 1 ? g.items[0] : undefined;
+        return only ? (
+          <CountryPin key={g.key} country={only} onSelect={onSelect} />
+        ) : (
+          <ClusterPin
+            key={g.key}
+            lat={g.lat}
+            lng={g.lng}
+            size={g.items.length}
+            onClick={() => map.setView([g.lat, g.lng], Math.min(map.getZoom() + 2, 7))}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+/** A cluster's own marker: the same round-badge family as TownPin/CountryPin,
+ *  a size up, labelled with how many pins it is hiding rather than a glyph —
+ *  there is no one icon for "several of these". Clicking zooms the map in on
+ *  the cluster's centroid rather than picking anything, since a cluster does
+ *  not correspond to one town or country to select. */
+function ClusterPin({
+  lat,
+  lng,
+  size,
+  onClick,
+}: {
+  lat: number;
+  lng: number;
+  size: number;
+  onClick: () => void;
+}) {
+  const [host] = useState(() => {
+    const el = document.createElement("div");
+    el.className = "relative flex h-[40px] w-[40px] items-center justify-center";
+    return el;
+  });
+  const icon = useMemo(
+    () =>
+      L.divIcon({
+        html: host,
+        className: "supplier-pin",
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+      }),
+    [host],
+  );
+
+  return (
+    <>
+      {createPortal(
+        <span className="grid h-[40px] w-[40px] cursor-pointer place-items-center rounded-full border-2 border-paper-50 bg-ink-800 text-[13px] font-bold tabular-nums text-paper-50 shadow-sm transition-colors hover:bg-blush-600">
+          {size}
+        </span>,
+        host,
+      )}
+      <Marker position={[lat, lng]} icon={icon} eventHandlers={{ click: onClick }} />
+    </>
   );
 }
 

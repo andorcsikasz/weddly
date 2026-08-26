@@ -66,7 +66,11 @@ export function searchPublicVendors(rawQuery: string): PublicVendorSearchResult 
 
   // Cities are folded so "Wien, AT" and "Wien" are one place; the label keeps
   // the first spelling seen so accents survive the fold used for matching.
-  const cities = new Map<string, { label: string; count: number }>();
+  // Country rides along the same way — first-seen wins, same idiom as
+  // `cityCountryOf` in the full directory endpoint — so a picked city can
+  // set the browse page's country filter to match rather than leaving
+  // whatever was already selected silently filtering the new town back out.
+  const cities = new Map<string, { label: string; count: number; country: string }>();
   for (const r of rows) {
     if (!r.has_photo) continue;
     const label = cityDisplayName(r.city);
@@ -80,9 +84,9 @@ export function searchPublicVendors(rawQuery: string): PublicVendorSearchResult 
     const key = foldForSearch(label);
     const entry = cities.get(key);
     if (entry) entry.count += 1;
-    else cities.set(key, { label, count: 1 });
+    else cities.set(key, { label, count: 1, country: r.country });
   }
-  for (const { label, count } of cities.values()) {
+  for (const { label, count, country } of cities.values()) {
     const base = searchScore(label, q);
     if (base === 0) continue;
     suggestions.push({
@@ -90,6 +94,7 @@ export function searchPublicVendors(rawQuery: string): PublicVendorSearchResult 
       score: base + volumeBonus(count),
       label,
       count,
+      country,
     });
   }
 

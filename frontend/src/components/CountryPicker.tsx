@@ -39,6 +39,7 @@ export function CountryPicker({
   tone = "brand",
   searchPlaceholder,
   searchEmptyLabel,
+  className = "",
 }: {
   /** null = every country. */
   value: string | null;
@@ -64,6 +65,11 @@ export function CountryPicker({
   searchPlaceholder?: string;
   /** Shown in place of the list when a search matches nothing. */
   searchEmptyLabel?: string;
+  /** Extra classes on the root, e.g. `min-w-0 flex-1` so a row of several
+   *  pickers can share a fixed-width row on a narrow screen instead of
+   *  wrapping — the trigger fills whatever width that leaves it and its own
+   *  label truncates rather than pushing a sibling off the row. */
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -171,7 +177,7 @@ export function CountryPicker({
   }
 
   return (
-    <div ref={rootRef} className="relative inline-block" onKeyDown={onKeyDown}>
+    <div ref={rootRef} className={`relative flex min-w-0 ${className}`} onKeyDown={onKeyDown}>
       <button
         ref={triggerRef}
         type="button"
@@ -180,7 +186,7 @@ export function CountryPicker({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-label={ariaLabel}
-        className={`inline-flex min-h-tap items-center gap-2 rounded-full border px-4 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900 ${
+        className={`flex min-h-tap w-full min-w-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 sm:gap-2 sm:px-4 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900 ${
           selected
             ? tone === "ink"
               ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-ink-900"
@@ -190,16 +196,22 @@ export function CountryPicker({
               : "border-umber-600 bg-paper-50 text-ink-700 hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
         }`}
       >
-        <Icon size={15} aria-hidden />
-        <span>{selected ? selected.label : allLabel}</span>
+        <Icon size={15} className="shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-left">
+          {selected ? selected.label : allLabel}
+        </span>
+        {/* The count rides along on desktop; dropped below `sm` so three
+            pills (country, town, map) plus a search bar can share one row
+            on a phone without wrapping — the number is still the first
+            thing in the open list. */}
         {selected && (
-          <span className="rounded-full bg-paper-100/20 px-1.5 py-0.5 text-[11px] tabular-nums">
+          <span className="hidden shrink-0 rounded-full bg-paper-100/20 px-1.5 py-0.5 text-[11px] tabular-nums sm:inline-block">
             {selected.count}
           </span>
         )}
         <ChevronDown
           size={15}
-          className={`transition-transform ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
           aria-hidden
         />
       </button>

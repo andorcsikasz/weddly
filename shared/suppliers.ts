@@ -1040,6 +1040,12 @@ export interface PublicVendorSuggestion {
   city?: string;
   /** City + category hits: how many photographed listings sit behind it. */
   count?: number;
+  /** City hits only: the ISO alpha-2 the town resolves to. Lets a city pick
+   *  set the browse page's country filter to match instead of leaving it on
+   *  whatever the visitor had before — without this a search for a town in
+   *  another country landed the visitor on the right city with the wrong
+   *  country still selected, silently filtering the town right back out. */
+  country?: string;
 }
 
 /** GET /api/public/vendor-search?q= — vendor + city hits, plus the category

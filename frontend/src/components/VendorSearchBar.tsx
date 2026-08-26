@@ -30,7 +30,15 @@ const DEBOUNCE_MS = 200;
  *  a town and a category are both filters on the browse teaser. */
 function hrefFor(s: PublicVendorSuggestion): string {
   if (s.kind === "vendor" && s.id) return `/suppliers/${encodeURIComponent(s.id)}`;
-  if (s.kind === "city") return `/suppliers/browse?city=${encodeURIComponent(s.label)}`;
+  if (s.kind === "city") {
+    const qs = new URLSearchParams({ city: s.label });
+    // Carries the town's own country along so the browse page's country
+    // filter follows the pick instead of staying on whatever was already
+    // selected — see VendorBrowsePage's city-sync effect, the other half of
+    // this fix.
+    if (s.country) qs.set("country", s.country);
+    return `/suppliers/browse?${qs}`;
+  }
   if (s.kind === "category" && s.category) {
     return `/suppliers/browse?category=${encodeURIComponent(s.category)}`;
   }

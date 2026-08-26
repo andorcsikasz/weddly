@@ -46,6 +46,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { CountryPicker } from "../components/CountryPicker";
 import { LocaleSwitcher } from "../components/LocaleSwitcher";
 import TownMapModal from "../components/TownMapModal";
+import { VendorSearchBar } from "../components/VendorSearchBar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { Wordmark } from "../components/Wordmark";
 import { SmartImage } from "../components/ui/SmartImage";
@@ -842,6 +843,13 @@ export default function VendorBrowsePage() {
   const [countryPinFacets, setCountryPinFacets] = useState<
     { code: string; count: number; lat: number | null; lng: number | null }[]
   >([]);
+  // Same fetch already returns a full category breakdown for the active
+  // country (counted against the OTHER filters, so it never collapses to
+  // just the category already picked) — feeds the map modal's own vendor-type
+  // filter, so switching type there doesn't need a separate round trip.
+  const [categoryFacets, setCategoryFacets] = useState<
+    { category: SupplierCategory; count: number }[]
+  >([]);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [showPill, setShowPill] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
@@ -898,12 +906,14 @@ export default function VendorBrowsePage() {
         if (!cancelled) {
           setCityFacets(r.cities);
           setCountryPinFacets(r.country_pins);
+          setCategoryFacets(r.categories);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setCityFacets([]);
           setCountryPinFacets([]);
+          setCategoryFacets([]);
         }
       });
     return () => {
@@ -912,23 +922,48 @@ export default function VendorBrowsePage() {
   }, [activeCategory, country]);
 
   // A `city` filter implies a country too, but only `selectCity` (picking a
-  // town from THIS page's own dropdown/map) ever set one — a deep link like
-  // `?city=Budapest` (the landing-page typeahead, a shared URL) left `country`
-  // at null forever, since the geo-IP sync above only runs on a load with NO
-  // city. The visible symptom: the country picker still read "Mind" and the
-  // town map opened on every country in Europe instead of jumping into
-  // Hungary, despite the grid already being scoped to one town. Runs once per
-  // distinct city (via the ref) so it doesn't fight a visitor who deliberately
-  // clears the country back to "Mind" while keeping the same town filtered.
+  // town from THIS page's own dropdown/map) ever set one directly. Two other
+  // sources feed the same sync, tried in order:
+  //
+  // 1. An explicit `?country=` hint on the URL. VendorSearchBar's city hits
+  //    carry the town's own resolved country this way (see its `hrefFor`) —
+  //    needed because the SPA is typically already mounted with SOME country
+  //    active (geo-IP, or a previous pick) by the time a visitor searches, so
+  //    `cityFacets` below is scoped to THAT country and can't answer for a
+  //    town in a different one. Fires regardless of the current `country`,
+  //    which is the fix: the old guard skipped this whole effect whenever
+  //    `country` already held a value, so searching a town in another
+  //    country landed on the right town with the wrong country still
+  //    selected, silently filtering it back out. Consumed once and stripped
+  //    from the URL — `country` itself is never URL-persisted past this.
+  // 2. Falling back to `cityFacets` for a bare `?city=` deep link with no
+  //    hint (an older shared URL) — a fresh load starts with `country=null`
+  //    (the geo-IP sync above only runs on a load with NO city), so its own
+  //    `cityFacets` fetch is itself unscoped and already contains every
+  //    town. Keeps the original guard against `country` already being set,
+  //    so it doesn't fight a visitor who deliberately clears the country
+  //    back to "Mind" while keeping the same town filtered.
+  //
+  // Either way runs once per distinct city, via the ref.
   const citySyncedForRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!city || country || citySyncedForRef.current === city) return;
+    if (!city || citySyncedForRef.current === city) return;
+    const hintedCountry = params.get("country");
+    if (hintedCountry) {
+      citySyncedForRef.current = city;
+      setCountry(hintedCountry.toUpperCase());
+      const next = new URLSearchParams(params);
+      next.delete("country");
+      setParams(next, { replace: true });
+      return;
+    }
+    if (country) return;
     const facet = cityFacets.find((c) => c.city === city);
     if (facet) {
       citySyncedForRef.current = city;
       setCountry(facet.country);
     }
-  }, [city, country, cityFacets]);
+  }, [city, country, cityFacets, params, setParams]);
 
   // Pull planners out of the vendor rails — they get their own reframed module.
   const gridCategories = categories?.filter((c) => c.category !== "wedding_planner") ?? [];
@@ -1071,6 +1106,18 @@ export default function VendorBrowsePage() {
     selectCity(null);
   }
 
+  // The map modal's own vendor-type filter: same URL param `jumpTo` writes,
+  // so switching type from inside the map lands on the exact page state a
+  // visitor would get by clicking that category's chip outside it — the grid
+  // underneath updates to match once the modal closes, rather than the two
+  // ever disagreeing about which category is active.
+  function selectMapCategory(next: SupplierCategory | null) {
+    const nextParams = new URLSearchParams(params);
+    if (next) nextParams.set("category", next);
+    else nextParams.delete("category");
+    setParams(nextParams, { replace: false });
+  }
+
   return (
     <div className="min-h-screen bg-paper-50 dark:bg-umber-900">
       <TopBar t={t} />
@@ -1081,27 +1128,40 @@ export default function VendorBrowsePage() {
           the intro with the controls instead of stacking a third block under
           it, which is where most of the vertical was going. */}
       <section className="mx-auto max-w-7xl px-4 pb-5 pt-8 sm:px-6 sm:pb-7 sm:pt-11 lg:px-8">
-        {/* Sized to set on ONE line in every locale, which is what the width
-            cap used to prevent: 6.5vw keeps the longest string (ES, "Explora
-            proveedores de bodas") inside the content box at every width down to
-            ~490px, where the 2rem floor takes over and phones wrap as they
-            should. leading-[1.05] rather than tighter because Hungarian sets
-            ő/á up top, and at 1 the accents touch the line above on a wrap. */}
-        <h1 className="text-balance font-grotesk text-[clamp(2rem,6.5vw,4.25rem)] font-semibold leading-[1.05] tracking-[-0.04em] text-ink-900 dark:text-paper-50">
-          {t("vendorBrowse.title")}
-        </h1>
+        {/* The visible headline is gone (owner call): on a page whose top bar
+            already says WEDDLY and whose very next row is a search box plus
+            filters, a second restatement of "browse vendors" was a full
+            viewport-width line of dead air before anything useful. The tag
+            stays, just visually hidden — search engines and screen readers
+            still get an H1, `vendorBrowse.title` still is the document
+            <title>, nothing downstream (the meta description, warnDrift)
+            changes. */}
+        <h1 className="sr-only">{t("vendorBrowse.title")}</h1>
 
-        {/* The intro paragraph that used to sit left of these filters is gone
-            (owner call): it described the page to someone already looking at
-            it, and the controls beside it say the same thing by existing. The
-            `vendorBrowse.subtitle` string stays in the locales because it is
-            still this page's meta description, which is read by search results
-            rather than by a visitor.
-
-            The row keeps its shape so the filters sit where they always did;
-            with one child, `justify-between` simply leaves them at the start. */}
-        <div className="mt-4 flex flex-col gap-4 sm:mt-5 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 lg:shrink-0">
+        {/* Search and the filter pickers share ONE row from `lg:` up —
+            stacked below it purely for width, not because they're a
+            different kind of control. Two stacked rows of controls above
+            the fold was a lot of vertical for a desktop visitor who has the
+            width to spare; `justify-between` lets the search box grow
+            (capped at `max-w-xl`, so it doesn't stretch absurdly on an
+            ultra-wide screen) while the picker group hugs the right edge. */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          {/* Search first: a visitor who knows the business or town name
+              types it; the filters beside it are for browsing rather than
+              searching. Same component the landing page and the
+              vendor-signup page use, so autocomplete behaviour (name / town
+              / category, one Enter to the best match) is identical
+              everywhere a visitor can search the directory. */}
+          <VendorSearchBar className="max-w-xl lg:flex-1" />
+          {/* Below `sm`, all three controls stay on ONE row rather than
+              wrapping: `flex-nowrap` plus letting the two pickers shrink
+              (`min-w-0 flex-1`, truncating their own label — see
+              CountryPicker) and pinning the map button to its icon
+              (`shrink-0`, label hidden) is what keeps a phone from getting a
+              lone third pill stranded on its own row underneath the other
+              two. `sm:` and up reverts to the original comfortable
+              wrap-and-full-label layout, where there's room to spare. */}
+          <div className="flex flex-nowrap items-center gap-2 sm:flex-wrap sm:gap-x-5 sm:gap-y-3 lg:shrink-0">
             {/* Country first, town second: the wider filter reads before the
                 narrower one it scopes. */}
             {countries.length > 1 && (
@@ -1109,6 +1169,7 @@ export default function VendorBrowsePage() {
                 value={country}
                 onChange={setCountry}
                 tone="ink"
+                className="min-w-0 flex-1 sm:flex-none"
                 allLabel={t("suppliers.country_filter_all")}
                 ariaLabel={t("suppliers.country_filter_label")}
                 options={countries.map((c) => ({
@@ -1130,6 +1191,7 @@ export default function VendorBrowsePage() {
                 onChange={selectCity}
                 tone="ink"
                 icon={MapPin}
+                className="min-w-0 flex-1 sm:flex-none"
                 allLabel={t("vendorBrowse.all_towns")}
                 ariaLabel={t("vendorBrowse.city_filter_label")}
                 searchPlaceholder={t("vendorBrowse.town_search_placeholder")}
@@ -1144,15 +1206,19 @@ export default function VendorBrowsePage() {
             {/* Opens the "explore by town" map instead of sitting inline: a
                 visitor who wants to scan a map rather than type is a minority
                 of one, not a whole section's worth of page. Needs at least one
-                placeable town, or the modal would open on an empty map. */}
+                placeable town, or the modal would open on an empty map. Icon
+                only below `sm` (the aria-label keeps it announced) — the two
+                pickers beside it need the room more than this one needs its
+                caption. */}
             {cityFacets.some((c) => c.lat != null && c.lng != null) && (
               <button
                 type="button"
                 onClick={() => setMapOpen(true)}
-                className="inline-flex min-h-tap items-center gap-2 rounded-full border border-ink-900/15 bg-transparent px-4 text-sm font-medium text-ink-700 transition hover:border-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:border-paper-50/20 dark:text-paper-100 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900"
+                aria-label={t("vendorBrowse.map_button")}
+                className="inline-flex min-h-tap shrink-0 items-center gap-2 rounded-full border border-ink-900/15 bg-transparent px-3 text-sm font-medium text-ink-700 transition hover:border-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 sm:px-4 dark:border-paper-50/20 dark:text-paper-100 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900"
               >
-                <MapIcon size={15} aria-hidden />
-                <span>{t("vendorBrowse.map_button")}</span>
+                <MapIcon size={15} className="shrink-0" aria-hidden />
+                <span className="hidden sm:inline">{t("vendorBrowse.map_button")}</span>
               </button>
             )}
           </div>
@@ -1163,10 +1229,12 @@ export default function VendorBrowsePage() {
         <TownMapModal
           towns={cityFacets}
           countryPins={countryPinFacets}
+          categories={categoryFacets}
           category={activeCategory}
           activeCountry={country}
           onSelectCity={selectCity}
           onSelectCountry={setCountry}
+          onSelectCategory={selectMapCategory}
           onClose={() => setMapOpen(false)}
         />
       )}

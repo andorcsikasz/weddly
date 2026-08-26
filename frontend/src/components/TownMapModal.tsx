@@ -9,12 +9,13 @@
 // towns on click (see `drillCountry`), staying open rather than closing like
 // a town pick does: picking a country is scoping the search, not finishing it.
 
+import { countryName } from "@shared/country_list";
 import type { SupplierCategory } from "@shared/suppliers";
-import { ChevronLeft, X } from "lucide-react";
+import { ListFilter, X } from "lucide-react";
 import { Suspense, lazy, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { categoryIcon } from "../lib/category_icons";
 import { useT } from "../lib/i18n";
+import { CountryPicker } from "./CountryPicker";
 import type { PlacedCountry, PlacedTown } from "./TownMap";
 
 const TownMap = lazy(() => import("./TownMap"));
@@ -36,16 +37,23 @@ export interface TownMapCountryPin {
 export default function TownMapModal({
   towns,
   countryPins,
+  categories,
   category,
   activeCountry,
   onSelectCity,
   onSelectCountry,
+  onSelectCategory,
   onClose,
 }: {
   towns: TownMapTown[];
   /** One entry per country, scoped the same way `towns` is. Only worth
    *  showing as its own view when there's more than one to pick between. */
   countryPins: TownMapCountryPin[];
+  /** Full vendor-type breakdown for the active country, counted against the
+   *  OTHER filters (matching every other facet in this app) so it never
+   *  collapses to just the type already picked. Feeds the type picker below;
+   *  only worth showing past one option. */
+  categories: { category: SupplierCategory; count: number }[];
   category: SupplierCategory | null;
   /** The country filter already applied on the page behind the modal, if
    *  any. Non-null skips straight to that country's towns, matching what the
@@ -58,15 +66,15 @@ export default function TownMapModal({
    *  countries"). Unlike `onSelectCity`, this does NOT close the modal — the
    *  visitor is narrowing the map, not finishing with it. */
   onSelectCountry: (code: string | null) => void;
+  /** Fires from the type picker only (the map itself has no per-vendor pin to
+   *  click a type on). Same as country, this narrows rather than closes. */
+  onSelectCategory: (category: SupplierCategory | null) => void;
   onClose: () => void;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const titleId = useId();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  // Only rendered while `category` is set (see the header below); the "" arm
-  // never reaches the screen, it just keeps categoryIcon's string param happy.
-  const CategoryGlyph = categoryIcon(category ?? "");
 
   const placedCountries = useMemo(
     (): PlacedCountry[] =>
@@ -78,6 +86,27 @@ export default function TownMapModal({
         .map((c) => ({ code: c.code, count: c.count, lat: c.lat, lng: c.lng }))
         .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code)),
     [countryPins],
+  );
+
+  // The header's two pickers: same {code,label,count} shape CountryPicker
+  // already runs for country/town on the page behind this modal, reused here
+  // rather than a bespoke `<select>` pair — one control, one set of keyboard
+  // semantics, whether it's picking a town's country or a town's vendor type.
+  // Built off `countryPins` (not `placedCountries`), which is coordinate-only:
+  // a country the map can't PLACE can still be picked from a list.
+  const countryOptions = useMemo(
+    () =>
+      countryPins
+        .map((c) => ({ code: c.code, label: countryName(c.code, locale), count: c.count }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+    [countryPins, locale],
+  );
+  const categoryOptions = useMemo(
+    () =>
+      categories
+        .map((c) => ({ code: c.category, label: t(`suppliers.cat.${c.category}`), count: c.count }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+    [categories, t],
   );
 
   // The map's own drill state: which country it's showing towns for, distinct
@@ -154,30 +183,13 @@ export default function TownMapModal({
             >
               {t("vendorBrowse.map_title")}
             </h2>
-            {/* The pins already carry the category's own glyph; this line is
-                what tells a visitor the WHOLE map is scoped to it, rather than
-                leaving them to notice a repeated icon and guess. */}
-            {category && (
-              <p className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-ink-500 dark:text-umber-300">
-                <CategoryGlyph size={13} aria-hidden />
-                {t("vendorBrowse.map_category_note", { category: t(`suppliers.cat.${category}`) })}
-              </p>
-            )}
-            {showingCountries ? (
+            {/* Only shown pre-drill: once a country (or its type picker) has
+                narrowed the map to towns, the pickers below say the same
+                thing more usefully than this hint does. */}
+            {showingCountries && (
               <p className="mt-1 text-[13px] font-medium text-ink-500 dark:text-umber-300">
                 {t("vendorBrowse.map_countries_hint")}
               </p>
-            ) : (
-              placedCountries.length > 1 && (
-                <button
-                  type="button"
-                  onClick={backToCountries}
-                  className="mt-1 inline-flex items-center gap-1 text-[13px] font-medium text-ink-500 underline-offset-4 transition hover:text-ink-900 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
-                >
-                  <ChevronLeft size={14} aria-hidden />
-                  {t("vendorBrowse.map_back_to_countries")}
-                </button>
-              )
             )}
           </div>
           <div className="flex shrink-0 items-center gap-3">
@@ -198,6 +210,37 @@ export default function TownMapModal({
             </button>
           </div>
         </header>
+
+        {/* Changing either filter here narrows the SAME map rather than
+            leaving the visitor to close the modal, pick outside it, and
+            reopen — the country picker doubles as the "back to countries"
+            exit (its own "Mind" row), and the type picker is the only place
+            on this whole map that can change vendor type at all. */}
+        {(categoryOptions.length > 1 || countryOptions.length > 1) && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-paper-200 px-5 py-3 dark:border-umber-700">
+            {categoryOptions.length > 1 && (
+              <CountryPicker
+                value={category}
+                onChange={(code) => onSelectCategory(code as SupplierCategory | null)}
+                tone="ink"
+                icon={ListFilter}
+                allLabel={t("vendorBrowse.map_category_all")}
+                ariaLabel={t("vendorBrowse.map_category_filter_label")}
+                options={categoryOptions}
+              />
+            )}
+            {countryOptions.length > 1 && (
+              <CountryPicker
+                value={drillCountry}
+                onChange={(code) => (code ? pickCountry(code) : backToCountries())}
+                tone="ink"
+                allLabel={t("suppliers.country_filter_all")}
+                ariaLabel={t("suppliers.country_filter_label")}
+                options={countryOptions}
+              />
+            )}
+          </div>
+        )}
 
         <div className="min-h-0 flex-1 bg-paper-200 dark:bg-umber-700">
           <Suspense
