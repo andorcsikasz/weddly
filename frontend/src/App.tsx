@@ -29,6 +29,7 @@ const NotFoundPage = lazyWithReload(() => import("./pages/NotFoundPage"));
 const RegisterPage = lazyWithReload(() => import("./pages/RegisterPage"));
 const VendorsPage = lazyWithReload(() => import("./pages/VendorsPage"));
 const PlannersPage = lazyWithReload(() => import("./pages/PlannersPage"));
+const CameraPage = lazyWithReload(() => import("./pages/CameraPage"));
 const MarketingContentPage = lazyWithReload(() => import("./pages/MarketingContentPage"));
 
 // The four legal pages are the one exception to "public routes ship eagerly",
@@ -646,6 +647,14 @@ export default function App() {
           element={
             <Page>
               <AboutPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/camera"
+          element={
+            <Page>
+              <CameraPage />
             </Page>
           }
         />

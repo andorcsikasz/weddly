@@ -1241,7 +1241,8 @@ function isIndexableHtmlPath(
     path === "/impresszum" ||
     path === "/suppliers" ||
     path === "/suppliers/browse" ||
-    path === "/planners"
+    path === "/planners" ||
+    path === "/camera"
   ) {
     return true;
   }
