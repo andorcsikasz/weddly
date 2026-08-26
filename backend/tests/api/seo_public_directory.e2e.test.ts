@@ -108,6 +108,50 @@ describe("GET /api/public/vendors — the whole catalogue, for anybody", () => {
     const r = await req<PublicDirectoryPage>("GET", "/api/public/vendors?limit=100000");
     expect(r.data.vendors.length).toBeLessThanOrEqual(48);
   });
+
+  // assembleDirectoryBase() deliberately leaves claimed listings unscoped by
+  // country so a verified vendor stays findable in a couple's cross-border
+  // in-app directory. The public browser's ?country= means something
+  // narrower ("businesses located here"), so handlePublicDirectory has to
+  // re-filter on top of that, without it, filtering the browse page to
+  // Hungary still leaked claimed vendors from Austria, Slovakia, Croatia
+  // etc. onto both the grid and the "explore by town" map.
+  test("a verified vendor outside the picked country is dropped from the filtered browse", async () => {
+    const userId = Number(
+      db
+        .prepare(
+          `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+           VALUES ('at-vendor-test@weddly.test', 'x', 'AT Owner', 'active', 'vendor', 1, ?, ?)`,
+        )
+        .run(Date.now(), Date.now()).lastInsertRowid,
+    );
+    const vendorAccountId = Number(
+      db
+        .prepare(
+          `INSERT INTO vendor_accounts (owner_user_id, display_name, contact_email, country, created_at, updated_at)
+           VALUES (?, 'Vienna Venue Owner', 'at-vendor-test@weddly.test', 'AT', ?, ?)`,
+        )
+        .run(userId, Date.now(), Date.now()).lastInsertRowid,
+    );
+    db.prepare(
+      `INSERT INTO listings
+         (id, source, vendor_account_id, category, name, city, status, hero_image_url, content_hash, created_at, updated_at)
+       VALUES ('at-country-filter-test', 'claimed', ?, 'venue', 'Vienna Country Filter Test Venue', 'Vienna', 'active', 'https://picsum.photos/seed/at-country-filter/800/600', '', ?, ?)`,
+    ).run(vendorAccountId, Date.now(), Date.now());
+
+    const hu = await req<PublicDirectoryPage>(
+      "GET",
+      "/api/public/vendors?limit=48&category=venue&country=HU",
+    );
+    expect(hu.data.vendors.some((v) => v.id === "at-country-filter-test")).toBe(false);
+    expect(hu.data.cities.some((c) => c.city === "Vienna")).toBe(false);
+
+    const at = await req<PublicDirectoryPage>(
+      "GET",
+      "/api/public/vendors?limit=48&category=venue&country=AT",
+    );
+    expect(at.data.vendors.some((v) => v.id === "at-country-filter-test")).toBe(true);
+  });
 });
 
 describe("the sitemap offers substantial vendor pages", () => {

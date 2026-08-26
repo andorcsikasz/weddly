@@ -833,6 +833,14 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
   const reviewCounts = getReviewCountsMap();
   const cards = base
     .filter((b) => b.hero_image_url)
+    // `assembleDirectoryBase` deliberately leaves claimed listings unscoped
+    // by country (see its own comment) so a verified vendor stays findable
+    // in the couple's cross-border in-app directory. The public *browser*'s
+    // country filter means something narrower, "businesses located here",
+    // so a claimed listing outside the picked country has to be dropped
+    // here rather than upstream, or a Hungary filter leaks every claimed
+    // Austrian/Slovak/Croatian venue onto the grid and the town map.
+    .filter((b) => !country || b.country === country)
     .map((b) => withVotes(b, scores, null, completeIds, EMPTY_IDS, reviewCounts));
 
   // Free-text match over the fields a visitor would type: the business name and
