@@ -1954,7 +1954,7 @@ const de: LocaleMessages = {
     feature_seating: "Sitzplan",
     feature_print: "Karten drucken",
     feature_suppliers: "Dienstleister",
-    keyinfo_title: "Kerninfos",
+    keyinfo_title: "Lieferantenliste",
     keyinfo_venue_label: "Location",
     keyinfo_map: "Karte",
     keyinfo_call: "Anrufen",
@@ -1962,6 +1962,7 @@ const de: LocaleMessages = {
     keyinfo_all_suppliers: "Alle Dienstleister",
     keyinfo_no_venue: "Angaben zur Location ergänzen",
     keyinfo_add_suppliers: "Dienstleister hinzufügen",
+    keyinfo_add_phone: "Telefonnummer hinzufügen",
     keyinfo_edit: "Bearbeiten",
     keyinfo_edit_title: "Kerninfos bearbeiten",
     keyinfo_coordinator: "Koordinator",
@@ -2321,6 +2322,7 @@ const de: LocaleMessages = {
     footer_couples_budget: "Budgetrechner",
     footer_couples_seating: "Sitzplan-Editor",
     footer_couples_rsvp: "RSVP-Textgenerator",
+    footer_couples_camera: "Wēddly Camera",
     footer_vendors_waitlist: "Betrieb eintragen",
     footer_vendors_about: "So funktioniert's",
     footer_vendors_browse: "Hochzeitsdienstleister entdecken",
@@ -8522,6 +8524,44 @@ const de: LocaleMessages = {
       "Ihre Daten gehören Ihnen. Exportieren, pausieren oder löschen Sie sie zu Ihren Bedingungen, ganz ohne Support-Ticket.",
     en_section_label: "English",
   },
+  camera: {
+    seo_title: "Wēddly Camera",
+    seo_description:
+      "Eine gemeinsame Fotogalerie im Stil einer Einwegkamera für Hochzeitsgäste — ein QR-Code, jedes Handy, keine App, und alle Fotos werden nach dem großen Tag gemeinsam enthüllt.",
+    dev_banner:
+      "Wēddly Camera befindet sich in der Entwicklung. Preise und Buchung sind noch nicht verfügbar — hinterlassen Sie unten Ihre E-Mail-Adresse, wir schreiben Ihnen, sobald es so weit ist.",
+    eyebrow: "Neu von Wēddly",
+    h1: "Die Einwegkamera für eure Hochzeit,\nohne Gang zur Drogerie.",
+    subtitle:
+      "Jeder Gast wird zum Fotografen. Sie scannen einen QR-Code, fotografieren mit dem Handy, das sie ohnehin dabeihaben, und die ganze Galerie wird gemeinsam enthüllt, genau dann, wann ihr es wollt.",
+    cta_notify: "Beim Start benachrichtigen",
+    cta_how_it_works: "So funktioniert's",
+    mock_wordmark: "WĒDDLY CAMERA",
+    mock_counter: "Noch 24 / 25 Fotos",
+    mock_cta: "Foto aufnehmen",
+    how_it_works_title: "So funktioniert's",
+    step1_title: "Einen QR-Code teilen",
+    step1_body:
+      "Keine App zum Installieren, keine Gästeliste zum Importieren. Wer ihn scannt, kann sofort loslegen.",
+    step2_title: "Jedes Foto landet in einer Galerie",
+    step2_body:
+      "Live aufgenommene Fotos und aus der Kamerarolle importierte zählen zum selben gemeinsamen Album, sodass nichts auf jemandes Handy zurückbleibt.",
+    step3_title: "Die Galerie wird gemeinsam enthüllt",
+    step3_body:
+      "Wie beim Warten auf entwickelten Film sieht niemand ein Foto vorzeitig. Die ganze Galerie öffnet sich für alle gleichzeitig, an dem Datum, das ihr festlegt.",
+    pricing_title: "Geplante Preise",
+    pricing_subtitle:
+      "Einmalig pro Veranstaltung, kein Abo. Wēddly-Paare erhalten 25 % Rabatt auf jede kostenpflichtige Stufe.",
+    pricing_guest_cap: "Bis zu {n} Gäste",
+    pricing_custom_cap: "400+ Gäste",
+    pricing_custom_price: "Kontaktiert uns",
+    pricing_couple_note: "Wēddly-Paare: {price}",
+    pricing_note:
+      "Das sind die Stufen, die wir für den Start planen. Buchungen sind noch nicht möglich.",
+    notify_title: "Erfahrt es als Erste",
+    notify_body:
+      "Hinterlasst eure E-Mail-Adresse, wir schreiben euch, sobald Wēddly Camera buchbar ist.",
+  },
   blog: {
     eyebrow: "Blog",
     index_title: "Blog",
@@ -10156,9 +10196,9 @@ const de: LocaleMessages = {
     map_button: "Karte",
     map_title: "Nach Ort entdecken",
     map_view_all: "Alle {count} Orte ansehen",
-    map_category_note: "Nur {category} wird angezeigt",
     map_countries_hint: "Eine Markierung pro Land — auswählen, um die Orte darin zu sehen.",
-    map_back_to_countries: "Alle Länder",
+    map_category_all: "Alle Kategorien",
+    map_category_filter_label: "Anbietertyp",
   },
 };
 

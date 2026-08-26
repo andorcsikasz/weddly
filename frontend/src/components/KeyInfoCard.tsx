@@ -2,16 +2,19 @@
 // Surfaces the two things people hunt for all through planning (not just on the
 // day): the venue's map + phone, and one-tap dialling for booked suppliers.
 //
-// Deliberately a READ/aggregate surface with ZERO new data model, and read-only
-// since 2026-08-01 (owner call): the pencil that opened an inline editor for the
-// venue/coordinator/emergency fields is gone, so the card is purely glanceable.
-// The venue is derived from what the couple already has — a picked directory
-// venue (rich: address / phone / coords) or the free-text `venue_name` +
-// `venue_city` fallback (name + an in-app geocoded map, no phone); the venue is
-// SET on /app/guest-page, which is where the empty state points. Contacts reuse
-// the same picks → suppliers merge that TimelinePage's "Kapcsolattartók" panel
-// uses, so there is no second copy of the contact data. Everything is fetched
-// from the existing /api/picks, /api/suppliers, /api/couple-suppliers endpoints.
+// Deliberately a READ/aggregate surface with ZERO new data model — read-only
+// since 2026-08-01 (owner call, the pencil that opened a full inline editor for
+// the venue/coordinator/emergency fields is gone), with ONE narrow exception:
+// a missing PHONE can be typed in inline (see PhoneEditor below), because a
+// blank dial button is a dead end the couple can fix in one click and there is
+// nowhere else on the app that asks for it. The venue is derived from what the
+// couple already has — a picked directory venue (rich: address / phone /
+// coords) or the free-text `venue_name` + `venue_city` fallback (name + an
+// in-app geocoded map); the venue is SET on /app/vendors (or its own directory
+// card), which is where the empty state points. Contacts reuse the same picks
+// → suppliers merge that TimelinePage's "Kapcsolattartók" panel uses, so there
+// is no second copy of the contact data. Everything is fetched from the
+// existing /api/picks, /api/suppliers, /api/couple-suppliers endpoints.
 
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
@@ -19,6 +22,7 @@ import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
 import type { Couple } from "@shared/types";
 import {
   Building2,
+  Check,
   ChevronDown,
   ChevronRight,
   MapPin,
@@ -31,11 +35,12 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { coupleSupplierApi, picksApi, supplierApi } from "../lib/endpoints";
+import { coupleApi, coupleSupplierApi, picksApi, supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { venueDetachedFromPick, venueVendorHref } from "../lib/venue_link";
 import { Skeleton } from "./ui";
+import { VerifiedBadge } from "./VerifiedBadge";
 
 // Lazy so the OpenStreetMap embed bundle only loads when a couple opens the
 // venue map. Reused verbatim from the supplier detail page so the in-app map
@@ -52,18 +57,21 @@ import { CATEGORY_ICON } from "../lib/category_icons";
 const MAX_CONTACTS = 4;
 const STORAGE_KEY = "weddly.dashboard.keyinfo";
 
-/** The collapse control. Open, it sits on the black cap and goes light-on-dark;
- *  collapsed, it sits on the card surface and keeps the usual ink treatment.
- *  Smaller when open, since that row's whole point is to be thin: a 24px target
- *  inside a 24px strip is what keeps the cap from growing back into a header.
- *  `transition-all` rather than `transition-colors` so the size step animates
- *  with the cap it sits on instead of snapping ahead of it. */
+/** The collapse chevron's own circle. Purely decorative now — the whole header
+ *  row is the button (see the header markup below), so this just echoes the
+ *  hover state onto the glyph instead of carrying its own focus ring. Open, it
+ *  sits on the black cap and goes light-on-dark; collapsed, it sits on the card
+ *  surface and keeps the usual ink treatment. Smaller when open, since that
+ *  row's whole point is to be thin: a 24px glyph inside a 24px strip is what
+ *  keeps the cap from growing back into a header. `transition-all` rather than
+ *  `transition-colors` so the size step animates with the cap it sits on
+ *  instead of snapping ahead of it. */
 function headerIconClass(open: boolean): string {
   const base =
-    "inline-flex shrink-0 items-center justify-center rounded-full transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100";
+    "inline-flex shrink-0 items-center justify-center rounded-full transition-all duration-300 ease-out";
   return open
-    ? `${base} h-6 w-6 text-paper-200 hover:bg-white/15 hover:text-white focus-visible:ring-paper-100`
-    : `${base} h-8 w-8 text-ink-500 hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50`;
+    ? `${base} h-6 w-6 text-paper-200 group-hover:bg-white/15 group-hover:text-white`
+    : `${base} h-8 w-8 text-ink-500 group-hover:bg-paper-100 group-hover:text-ink-900 dark:text-umber-300 dark:group-hover:bg-umber-700 dark:group-hover:text-paper-50`;
 }
 
 type VenueInfo = {
@@ -94,6 +102,10 @@ type Contact = {
   // Directory entries (curated + community) have a `/app/suppliers/:id` detail
   // page; DIY entries don't surface there, so their name stays non-clickable.
   linkable: boolean;
+  // Registered Weddly vendor (`source === "claimed"`) — same blue-check rule
+  // as the directory (see VerifiedBadge). Always false for a DIY entry.
+  verified: boolean;
+  listingComplete: boolean;
 };
 
 /** The venue + day-of contact fields the card reads off the couple, as a plain
@@ -192,9 +204,26 @@ function resolveVenue(
 export function KeyInfoCard({ couple }: { couple: Couple }) {
   const { t } = useT();
 
-  const fields = useMemo(() => pickFields(couple), [couple]);
+  // `venuePhoneOverride` lets a freshly-typed venue phone show immediately
+  // without waiting on the parent to refetch `couple` (this card doesn't own
+  // that fetch — see saveVenuePhone).
+  const [venuePhoneOverride, setVenuePhoneOverride] = useState<string | null>(null);
+  const fields = useMemo(() => {
+    const f = pickFields(couple);
+    if (venuePhoneOverride !== null) f.venue_phone = venuePhoneOverride;
+    return f;
+  }, [couple, venuePhoneOverride]);
   // In-app venue map modal (replaces the old external Google Maps hand-off).
   const [mapOpen, setMapOpen] = useState(false);
+
+  // Inline "no number yet? type one in" editor — the one write this otherwise
+  // read-only card makes. One editor open at a time; `target` says whether it's
+  // the venue row or which vendor row.
+  const [phoneEdit, setPhoneEdit] = useState<
+    { kind: "venue" } | { kind: "contact"; id: string } | null
+  >(null);
+  const [phoneDraft, setPhoneDraft] = useState("");
+  const [phoneSaving, setPhoneSaving] = useState(false);
 
   // Collapse state persists per browser so a couple who tucks it away keeps it
   // that way. Defaults to open (the panel is meant to be glanceable above fold).
@@ -297,6 +326,8 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           // for the couple's own picks precisely so this row survives.
           phone: p.contact_phone ?? null,
           linkable: true,
+          verified: dir.source === "claimed",
+          listingComplete: dir.listing_complete,
         });
         continue;
       }
@@ -307,8 +338,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           id: diy.id,
           name: diy.name,
           category: diy.category,
-          phone: null,
+          phone: diy.contact_phone,
           linkable: false,
+          verified: false,
+          listingComplete: false,
         });
       }
     }
@@ -316,6 +349,35 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
   }, [data, directoryById, diyById]);
 
   const shownContacts = contacts.slice(0, MAX_CONTACTS);
+
+  async function saveVenuePhone(value: string) {
+    const trimmed = value.trim();
+    if (!trimmed || phoneSaving) return;
+    setPhoneSaving(true);
+    try {
+      await coupleApi.update({ venue_phone: trimmed });
+      setVenuePhoneOverride(trimmed);
+      setPhoneEdit(null);
+    } finally {
+      setPhoneSaving(false);
+    }
+  }
+
+  // DIY only — a directory pick's phone is the vendor's own published line,
+  // resolved server-side (CouplePick.contact_phone), not something the couple
+  // can invent from this card.
+  async function saveContactPhone(id: string, value: string) {
+    const trimmed = value.trim();
+    if (!trimmed || phoneSaving) return;
+    setPhoneSaving(true);
+    try {
+      const { supplier } = await coupleSupplierApi.update(id, { contact_phone: trimmed });
+      setData((d) => (d ? { ...d, diy: d.diy.map((s) => (s.id === id ? supplier : s)) } : d));
+      setPhoneEdit(null);
+    } finally {
+      setPhoneSaving(false);
+    }
+  }
 
   return (
     <section className="card mb-6 p-0" data-tour-target="dashboard-keyinfo">
@@ -334,39 +396,43 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           The title is FADED rather than swapped in and out (it used to toggle
           `sr-only`), which is what lets the cap animate: the row keeps one
           layout in both states, so only the colour and the padding move and
-          nothing jumps as the body slides. */}
+          nothing jumps as the body slides.
+
+          The whole strip is the toggle, not just the chevron: a 16px target in
+          the corner of a full-width bar is easy to miss and awkward to aim for
+          on a phone. It's one `<button>` spanning the row rather than a
+          `role="button"` div, so it's keyboard- and screen-reader-operable for
+          free; the all-vendors link stays out of it, at the BOTTOM of the
+          vendor list as its own add-a-vendor row. */}
       <header
-        className={`flex items-center justify-between gap-2 transition-[background-color,padding] duration-300 ease-out ${
-          open
-            ? "rounded-t-2xl bg-ink-900 px-2 py-0 dark:bg-ink-950"
-            : "rounded-t-2xl bg-transparent px-5 py-2.5"
+        className={`rounded-t-2xl transition-[background-color] duration-300 ease-out ${
+          open ? "bg-ink-900 dark:bg-ink-950" : "bg-transparent"
         }`}
       >
-        <h2
-          aria-hidden={open}
-          className={`flex items-center gap-2.5 font-grotesk text-base font-medium leading-tight tracking-tight text-ink-900 transition-opacity duration-200 ease-out dark:text-paper-50 ${
-            open ? "pointer-events-none opacity-0" : "opacity-100"
-          }`}
-        >
-          <span className="inline-block h-4 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
-          {t("dashboard.keyinfo_title")}
-        </h2>
-        {/* Collapse only. The all-vendors link lives at the BOTTOM of the vendor
-            list now, as its own add-a-vendor row: two icons up here made the cap
-            read as a toolbar, and the link belongs beside the vendors it
-            opens. */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={t("dashboard.keyinfo_title")}
-          className={headerIconClass(open)}
+          className={`group flex w-full items-center justify-between gap-2 rounded-t-2xl text-left transition-[padding] duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${
+            open ? "px-2 py-0" : "px-5 py-2.5 hover:bg-paper-100/60 dark:hover:bg-umber-800/40"
+          }`}
         >
-          <ChevronDown
-            size={16}
-            aria-hidden="true"
-            className={`transition-transform duration-300 ease-out ${open ? "" : "-rotate-90"}`}
-          />
+          <h2
+            aria-hidden={open}
+            className={`flex items-center gap-2.5 font-grotesk text-base font-medium leading-tight tracking-tight text-ink-900 transition-opacity duration-200 ease-out dark:text-paper-50 ${
+              open ? "pointer-events-none opacity-0" : "opacity-100"
+            }`}
+          >
+            <span className="inline-block h-4 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
+            {t("dashboard.keyinfo_title")}
+          </h2>
+          <span aria-hidden="true" className={headerIconClass(open)}>
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-300 ease-out ${open ? "" : "-rotate-90"}`}
+            />
+          </span>
         </button>
       </header>
 
@@ -404,15 +470,31 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                       className="absolute inset-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
                     />
                     <span className="pointer-events-none flex min-w-0 items-center gap-3">
-                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
+                      {/* The pin IS the map shortcut — no separate button for it
+                          on the other side of the row any more. `pointer-events-auto`
+                          + `relative z-10` punches a hole in the row's inert wrapper
+                          (and above the row-covering Link below it) so a click here
+                          opens the map instead of falling through to it. */}
+                      <button
+                        type="button"
+                        onClick={() => setMapOpen(true)}
+                        aria-label={t("dashboard.keyinfo_map")}
+                        title={t("dashboard.keyinfo_map")}
+                        className="relative z-10 pointer-events-auto inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-paper-200 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
+                      >
                         <MapPin size={16} aria-hidden="true" />
-                      </span>
+                      </button>
                       <span className="min-w-0">
                         <span className="block text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
                           {t("dashboard.keyinfo_venue_label")}
                         </span>
-                        <span className="block truncate text-sm font-semibold leading-tight text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300">
-                          {venue.name}
+                        <span className="flex items-center gap-1.5">
+                          <span className="block truncate text-sm font-semibold leading-tight text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300">
+                            {venue.name}
+                          </span>
+                          {linkedDir?.source === "claimed" && (
+                            <VerifiedBadge size={13} complete={linkedDir.listing_complete} />
+                          )}
                         </span>
                         {venue.detail && (
                           <span className="block truncate text-xs leading-tight text-ink-600 dark:text-umber-200">
@@ -422,16 +504,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                       </span>
                     </span>
                     <div className="relative z-10 flex shrink-0 items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setMapOpen(true)}
-                        aria-label={t("dashboard.keyinfo_map")}
-                        title={t("dashboard.keyinfo_map")}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-ink-200 text-ink-700 transition-colors hover:border-ink-400 hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
-                      >
-                        <MapPin size={15} aria-hidden="true" />
-                      </button>
-                      {venue.phone && (
+                      {venue.phone ? (
                         <a
                           href={`tel:${venue.phone.replace(/\s+/g, "")}`}
                           title={venue.phone}
@@ -440,12 +513,35 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                         >
                           <Phone size={15} aria-hidden="true" />
                         </a>
+                      ) : phoneEdit?.kind === "venue" ? (
+                        <PhoneEditor
+                          value={phoneDraft}
+                          onChange={setPhoneDraft}
+                          onSave={() => saveVenuePhone(phoneDraft)}
+                          onCancel={() => setPhoneEdit(null)}
+                          saving={phoneSaving}
+                          placeholder={t("dashboard.keyinfo_field_venue_phone")}
+                          saveLabel={t("common.save")}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPhoneDraft("");
+                            setPhoneEdit({ kind: "venue" });
+                          }}
+                          aria-label={t("dashboard.keyinfo_add_phone")}
+                          title={t("dashboard.keyinfo_add_phone")}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-paper-300 text-ink-400 transition-colors hover:border-blush-400 hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-blush-400 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
+                        >
+                          <Plus size={15} aria-hidden="true" />
+                        </button>
                       )}
                     </div>
                   </div>
                 ) : (
                   <Link
-                    to="/app/guest-page"
+                    to="/app/vendors"
                     className="flex items-center gap-3 rounded-2xl border border-dashed border-paper-300 px-4 py-2 text-sm text-ink-600 transition-colors hover:border-blush-300 hover:bg-paper-100/50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-900/40"
                   >
                     <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-umber-200">
@@ -509,8 +605,13 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                             <Icon size={14} aria-hidden="true" />
                           </span>
                           <span className="pointer-events-none min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium leading-tight text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300">
-                              {c.name}
+                            <span className="flex items-center gap-1.5">
+                              <span className="block truncate text-sm font-medium leading-tight text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300">
+                                {c.name}
+                              </span>
+                              {c.verified && (
+                                <VerifiedBadge size={12} complete={c.listingComplete} />
+                              )}
                             </span>
                             <span className="block truncate text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
                               {t(`suppliers.cat.${c.category}`)}
@@ -530,7 +631,19 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                             >
                               <Phone size={14} aria-hidden="true" />
                             </a>
-                          ) : (
+                          ) : phoneEdit?.kind === "contact" && phoneEdit.id === c.id ? (
+                            <PhoneEditor
+                              value={phoneDraft}
+                              onChange={setPhoneDraft}
+                              onSave={() => saveContactPhone(c.id, phoneDraft)}
+                              onCancel={() => setPhoneEdit(null)}
+                              saving={phoneSaving}
+                              placeholder={t("dashboard.keyinfo_field_phone")}
+                              saveLabel={t("common.save")}
+                            />
+                          ) : c.linkable ? (
+                            // A directory pick's phone is the vendor's own published
+                            // line (resolved server-side) — nothing to type in here.
                             <span
                               className="relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100/60 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
                               aria-label={t("suppliers.no_phone")}
@@ -538,6 +651,19 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                             >
                               <Phone size={14} aria-hidden="true" />
                             </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPhoneDraft("");
+                                setPhoneEdit({ kind: "contact", id: c.id });
+                              }}
+                              aria-label={t("dashboard.keyinfo_add_phone")}
+                              title={t("dashboard.keyinfo_add_phone")}
+                              className="relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-paper-300 text-ink-400 transition-colors hover:border-blush-400 hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-blush-400 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
+                            >
+                              <Plus size={14} aria-hidden="true" />
+                            </button>
                           )}
                         </li>
                       );
@@ -639,5 +765,60 @@ function CallPill({ phone }: { phone: string }) {
     >
       <Phone size={14} aria-hidden="true" />
     </a>
+  );
+}
+
+/** Replaces a missing-phone placeholder in place: a compact pill input plus a
+ *  save circle sized to match the h-9 call/add buttons on either side of it,
+ *  so the row doesn't jump when the couple starts typing. Escape cancels;
+ *  Enter or the check button saves. Sits `relative z-10` like every other
+ *  trailing control here, above the row's full-bleed Link overlay. */
+function PhoneEditor({
+  value,
+  onChange,
+  onSave,
+  onCancel,
+  saving,
+  placeholder,
+  saveLabel,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
+  placeholder: string;
+  saveLabel: string;
+}) {
+  return (
+    <form
+      className="relative z-10 flex shrink-0 items-center gap-1.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave();
+      }}
+    >
+      <input
+        type="tel"
+        autoFocus
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onCancel();
+        }}
+        placeholder={placeholder}
+        disabled={saving}
+        className="input !h-9 !min-h-0 w-28 rounded-full !py-0 px-3 text-xs"
+      />
+      <button
+        type="submit"
+        disabled={saving || !value.trim()}
+        aria-label={saveLabel}
+        title={saveLabel}
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-600 text-white transition-colors hover:bg-blush-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+      >
+        <Check size={14} aria-hidden="true" />
+      </button>
+    </form>
   );
 }

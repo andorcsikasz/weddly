@@ -2,8 +2,9 @@
 // priority (picked directory venue → free-text venue_name → CTA), the Google
 // Maps link (exact coords when available, else name/address + city), the
 // tel: call buttons, the booked-supplier contact list (venue excluded), the
-// empty state, and that the card stays READ-ONLY (the inline editor is gone —
-// the venue is set on /app/guest-page). The card self-fetches /api/picks + /api/suppliers +
+// empty state (which points at /app/vendors), and that the card stays
+// READ-ONLY apart from the inline phone editor (see PhoneEditor in
+// KeyInfoCard.tsx). The card self-fetches /api/picks + /api/suppliers +
 // /api/couple-suppliers, so we stub globalThis.fetch with the same handler-
 // registry pattern the other dashboard-card tests use.
 
@@ -322,7 +323,7 @@ describe("<KeyInfoCard>", () => {
     await flush();
 
     expect(screen.getByText("Add your venue details")).toBeInTheDocument();
-    expect(container.querySelector('a[href="/app/guest-page"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/app/vendors"]')).toBeTruthy();
     expect(screen.getByText("Add vendors")).toBeInTheDocument();
   });
 
@@ -340,7 +341,7 @@ describe("<KeyInfoCard>", () => {
     await flush();
     expect(screen.getByText("Sári Csárda")).toBeInTheDocument();
 
-    const toggle = screen.getByRole("button", { name: "Key info" });
+    const toggle = screen.getByRole("button", { name: "Suppliers list" });
     const panel = container.querySelector("section > div.grid");
     expect(panel?.className).toContain("visible");
     expect(panel?.className).not.toContain("invisible");

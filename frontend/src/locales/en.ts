@@ -1883,7 +1883,7 @@ const en: LocaleMessages = {
     feature_seating: "Seating",
     feature_print: "Print cards",
     feature_suppliers: "Suppliers",
-    keyinfo_title: "Key info",
+    keyinfo_title: "Suppliers list",
     keyinfo_venue_label: "Venue",
     keyinfo_map: "Map",
     keyinfo_call: "Call",
@@ -1891,6 +1891,7 @@ const en: LocaleMessages = {
     keyinfo_all_suppliers: "All vendors",
     keyinfo_no_venue: "Add your venue details",
     keyinfo_add_suppliers: "Add vendors",
+    keyinfo_add_phone: "Add phone number",
     keyinfo_edit: "Edit",
     keyinfo_edit_title: "Edit key info",
     keyinfo_coordinator: "Coordinator",
@@ -2252,6 +2253,7 @@ const en: LocaleMessages = {
     footer_couples_budget: "Budget calculator",
     footer_couples_seating: "Seating chart maker",
     footer_couples_rsvp: "RSVP wording generator",
+    footer_couples_camera: "Wēddly Camera",
     footer_vendors_waitlist: "List your business",
     footer_vendors_about: "How it works",
     footer_vendors_browse: "Browse wedding vendors",
@@ -8387,6 +8389,42 @@ const en: LocaleMessages = {
       "Your data is yours. Export, pause, or delete on your own terms; no support ticket required.",
     en_section_label: "English",
   },
+  camera: {
+    seo_title: "Wēddly Camera",
+    seo_description:
+      "A shared, disposable-camera-style photo gallery for wedding guests — one QR code, any phone, no app, with every photo revealed together after the big day.",
+    dev_banner:
+      "Wēddly Camera is under development. Pricing and booking aren't open yet — leave your email below and we'll write the moment they are.",
+    eyebrow: "New from Wēddly",
+    h1: "The disposable camera for your wedding,\nwithout the drugstore trip.",
+    subtitle:
+      "Every guest becomes a photographer. They scan one QR code, shoot with the phone already in their pocket, and the whole gallery reveals together, at the moment you choose.",
+    cta_notify: "Get notified at launch",
+    cta_how_it_works: "See how it works",
+    mock_wordmark: "WĒDDLY CAMERA",
+    mock_counter: "24 / 25 shots left",
+    mock_cta: "Take a photo",
+    how_it_works_title: "How it works",
+    step1_title: "Share one QR code",
+    step1_body:
+      "No app to install and no guest list to import. Anyone who scans it can start shooting straight away.",
+    step2_title: "Every shot joins one gallery",
+    step2_body:
+      "Live photos and camera-roll imports both count toward the same shared album, so nothing gets left behind on someone's phone.",
+    step3_title: "The gallery reveals together",
+    step3_body:
+      "Like waiting for film to develop, nobody sees a single photo early. The whole gallery unlocks for everyone at once, on the date you set.",
+    pricing_title: "Planned pricing",
+    pricing_subtitle:
+      "Priced once per event, not a subscription. Wēddly couples get 25% off every paid tier.",
+    pricing_guest_cap: "Up to {n} guests",
+    pricing_custom_cap: "400+ guests",
+    pricing_custom_price: "Contact us",
+    pricing_couple_note: "Wēddly couples: {price}",
+    pricing_note: "These are the tiers we're planning for launch. Booking isn't open yet.",
+    notify_title: "Be first to know",
+    notify_body: "Leave your email and we'll write the moment Wēddly Camera is ready to book.",
+  },
   blog: {
     eyebrow: "Blog",
     index_title: "Blog",
@@ -10003,9 +10041,9 @@ const en: LocaleMessages = {
     map_button: "Map",
     map_title: "Explore by town",
     map_view_all: "View all {count} towns",
-    map_category_note: "Showing {category} only",
     map_countries_hint: "One pin per country — pick one to see its towns.",
-    map_back_to_countries: "All countries",
+    map_category_all: "All vendor types",
+    map_category_filter_label: "Vendor type",
   },
 };
 

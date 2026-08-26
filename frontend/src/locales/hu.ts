@@ -1900,7 +1900,7 @@ const hu: LocaleMessages = {
     feature_seating: "Ültetési rend",
     feature_print: "Nyomtatható kártyák",
     feature_suppliers: "Szállítók",
-    keyinfo_title: "Kulcsinfó",
+    keyinfo_title: "Szolgáltatók listája",
     keyinfo_venue_label: "Helyszín",
     keyinfo_map: "Térkép",
     keyinfo_call: "Hívás",
@@ -1908,6 +1908,7 @@ const hu: LocaleMessages = {
     keyinfo_all_suppliers: "Összes szolgáltató",
     keyinfo_no_venue: "Add meg a helyszín adatait",
     keyinfo_add_suppliers: "Szolgáltatók hozzáadása",
+    keyinfo_add_phone: "Telefonszám hozzáadása",
     keyinfo_edit: "Szerkesztés",
     keyinfo_edit_title: "Kulcsinfó szerkesztése",
     keyinfo_coordinator: "Koordinátor",
@@ -2272,6 +2273,7 @@ const hu: LocaleMessages = {
     footer_couples_budget: "Költségvetés-kalkulátor",
     footer_couples_seating: "Ültetési rend készítő",
     footer_couples_rsvp: "RSVP szöveg generátor",
+    footer_couples_camera: "Wēddly Camera",
     footer_vendors_waitlist: "Hirdesd a vállalkozásod",
     footer_vendors_about: "Hogyan működik",
     footer_vendors_browse: "Szolgáltatók böngészése",
@@ -8460,6 +8462,42 @@ const hu: LocaleMessages = {
       "Az adataitok a tiétek. Exportáljátok, szüneteltessétek vagy töröljétek, ahogy szeretnétek; ehhez nem kell ügyfélszolgálat.",
     en_section_label: "English",
   },
+  camera: {
+    seo_title: "Wēddly Camera",
+    seo_description:
+      "Közös, eldobható fényképezőgép-hangulatú galéria az esküvői vendégeknek — egyetlen QR-kód, bármilyen telefon, applikáció nélkül, és minden fotó együtt tárul fel az esküvő után.",
+    dev_banner:
+      "A Wēddly Camera fejlesztés alatt áll. Az árazás és a foglalás még nem él — add meg az e-mail-címed lent, és írunk, amint elindul.",
+    eyebrow: "Új a Wēddlytől",
+    h1: "Az eldobható fényképezőgép a ti esküvőtökre,\ndrogéria nélkül.",
+    subtitle:
+      "Minden vendég fotóssá válik. Beolvasnak egy QR-kódot, a zsebükben lévő telefonnal fotóznak, és a teljes galéria egyszerre tárul fel, akkor, amikor ti szeretnétek.",
+    cta_notify: "Értesítést kérek az indulásról",
+    cta_how_it_works: "Így működik",
+    mock_wordmark: "WĒDDLY CAMERA",
+    mock_counter: "24 / 25 kép van hátra",
+    mock_cta: "Fotózz",
+    how_it_works_title: "Így működik",
+    step1_title: "Oszd meg a QR-kódot",
+    step1_body:
+      "Nincs telepítendő app, nincs importálandó vendéglista. Aki beolvassa, azonnal fotózhat.",
+    step2_title: "Minden kép egy galériába kerül",
+    step2_body:
+      "Az élőben készült fotók és a galériából feltöltött képek is ugyanabba a közös albumba számítanak, így semmi nem marad valakinek a telefonján.",
+    step3_title: "A galéria egyszerre tárul fel",
+    step3_body:
+      "Mint amikor a filmet előhívják: senki nem lát egyetlen képet sem korábban. A teljes galéria egyszerre nyílik meg mindenkinek, az általatok megadott napon.",
+    pricing_title: "Tervezett árazás",
+    pricing_subtitle:
+      "Egyszeri díj eseményenként, nem előfizetés. A Wēddly párok 25% kedvezményt kapnak minden fizetős csomagból.",
+    pricing_guest_cap: "Legfeljebb {n} vendég",
+    pricing_custom_cap: "400+ vendég",
+    pricing_custom_price: "Kérj ajánlatot",
+    pricing_couple_note: "Wēddly pároknak: {price}",
+    pricing_note: "Ezek az indulásra tervezett csomagok. A foglalás még nem érhető el.",
+    notify_title: "Legyél az első, aki megtudja",
+    notify_body: "Add meg az e-mail-címed, és írunk, amint a Wēddly Camera foglalható.",
+  },
   blog: {
     eyebrow: "Blog",
     index_title: "Blog",
@@ -10072,9 +10110,9 @@ const hu: LocaleMessages = {
     map_button: "Térkép",
     map_title: "Böngéssz település szerint",
     map_view_all: "Mind a(z) {count} település",
-    map_category_note: "Csak: {category}",
     map_countries_hint: "Egy tű országonként — válassz egyet a települések megtekintéséhez.",
-    map_back_to_countries: "Minden ország",
+    map_category_all: "Minden kategória",
+    map_category_filter_label: "Szolgáltatás típusa",
   },
 };
 

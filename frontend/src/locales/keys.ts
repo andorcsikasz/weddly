@@ -2461,6 +2461,7 @@ export interface LocaleMessages {
     keyinfo_all_suppliers: string;
     keyinfo_no_venue: string;
     keyinfo_add_suppliers: string;
+    keyinfo_add_phone: string;
     keyinfo_edit: string;
     keyinfo_edit_title: string;
     keyinfo_coordinator: string;
@@ -2868,6 +2869,10 @@ export interface LocaleMessages {
     footer_couples_budget: string;
     footer_couples_seating: string;
     footer_couples_rsvp: string;
+    /** Links to the standalone `/camera` product, still under development —
+     *  see `camera.dev_banner`. Lives in the couples column since a couple is
+     *  the primary buyer, even though the page itself is open to anyone. */
+    footer_couples_camera: string;
     footer_vendors_waitlist: string;
     footer_vendors_about: string;
     /** For-suppliers footer column: the real, locale-neutral directory browse
@@ -9678,6 +9683,40 @@ export interface LocaleMessages {
     principle_no_lock_in: string;
     en_section_label: string;
   };
+  /** Public, unauthenticated `/camera` product page for the pov.camera-style
+   *  standalone guest-camera product. Still under development: no checkout
+   *  exists yet, so `dev_banner` is load-bearing, not decorative. Pricing
+   *  numbers themselves live in the component (they're digits, not prose);
+   *  these keys are the surrounding copy only. */
+  camera: {
+    seo_title: string;
+    seo_description: string;
+    dev_banner: string;
+    eyebrow: string;
+    h1: string;
+    subtitle: string;
+    cta_notify: string;
+    cta_how_it_works: string;
+    mock_wordmark: string;
+    mock_counter: string;
+    mock_cta: string;
+    how_it_works_title: string;
+    step1_title: string;
+    step1_body: string;
+    step2_title: string;
+    step2_body: string;
+    step3_title: string;
+    step3_body: string;
+    pricing_title: string;
+    pricing_subtitle: string;
+    pricing_guest_cap: string;
+    pricing_custom_cap: string;
+    pricing_custom_price: string;
+    pricing_couple_note: string;
+    pricing_note: string;
+    notify_title: string;
+    notify_body: string;
+  };
   /** Public-facing blog index and post pages. Body content lives in the
    *  `blog_posts` DB table; these are the chrome strings around it. */
   blog: {
@@ -11293,15 +11332,13 @@ export interface LocaleMessages {
     /** Top-right link in the modal; clears the town filter. `{count}` is the
      *  number of towns listed, same figure the town chips below it sum to. */
     map_view_all: string;
-    /** Subtitle under the modal heading when a category filter is active, so
-     *  the map's scope is stated rather than left to the pin glyphs to imply.
-     *  `{category}` is the already-localised category label. */
-    map_category_note: string;
     /** Subtitle shown when the map opens on one pin per country (no country
      *  picked yet) instead of one per town. */
     map_countries_hint: string;
-    /** Link that zooms the map back out from one country's towns to the
-     *  continent-wide, one-pin-per-country view. */
-    map_back_to_countries: string;
+    /** "Every vendor type" row in the map's own type picker (CountryPicker
+     *  reused for category). */
+    map_category_all: string;
+    /** aria-label for the map's type picker. */
+    map_category_filter_label: string;
   };
 }

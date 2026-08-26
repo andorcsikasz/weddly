@@ -1925,7 +1925,7 @@ const es: LocaleMessages = {
     feature_seating: "Mesas",
     feature_print: "Imprimir tarjetas",
     feature_suppliers: "Proveedores",
-    keyinfo_title: "Información clave",
+    keyinfo_title: "Lista de proveedores",
     keyinfo_venue_label: "Espacio",
     keyinfo_map: "Mapa",
     keyinfo_call: "Llamar",
@@ -1933,6 +1933,7 @@ const es: LocaleMessages = {
     keyinfo_all_suppliers: "Todos los proveedores",
     keyinfo_no_venue: "Añade los datos de tu espacio",
     keyinfo_add_suppliers: "Añadir proveedores",
+    keyinfo_add_phone: "Añadir número de teléfono",
     keyinfo_edit: "Editar",
     keyinfo_edit_title: "Editar información clave",
     keyinfo_coordinator: "Coordinador",
@@ -2301,6 +2302,7 @@ const es: LocaleMessages = {
     footer_couples_budget: "Calculadora de presupuesto",
     footer_couples_seating: "Creador de planos de mesas",
     footer_couples_rsvp: "Generador de textos de confirmación",
+    footer_couples_camera: "Wēddly Camera",
     footer_vendors_waitlist: "Publica tu negocio",
     footer_vendors_about: "Cómo funciona",
     footer_vendors_browse: "Explora proveedores de bodas",
@@ -8468,6 +8470,44 @@ const es: LocaleMessages = {
       "Tus datos son tuyos. Exporta, pausa o elimina según tus propios términos; sin necesidad de abrir un ticket de soporte.",
     en_section_label: "Inglés",
   },
+  camera: {
+    seo_title: "Wēddly Camera",
+    seo_description:
+      "Una galería compartida al estilo cámara desechable para los invitados de la boda: un código QR, cualquier móvil, sin apps, y todas las fotos reveladas juntas después del gran día.",
+    dev_banner:
+      "Wēddly Camera está en desarrollo. Los precios y las reservas aún no están disponibles: deja tu correo abajo y te avisaremos en cuanto lo estén.",
+    eyebrow: "Nuevo de Wēddly",
+    h1: "La cámara desechable para vuestra boda,\nsin pasar por la farmacia.",
+    subtitle:
+      "Cada invitado se convierte en fotógrafo. Escanean un código QR, hacen fotos con el móvil que ya llevan en el bolsillo, y toda la galería se revela junta, en el momento que elijáis.",
+    cta_notify: "Avisadme cuando esté listo",
+    cta_how_it_works: "Ver cómo funciona",
+    mock_wordmark: "WĒDDLY CAMERA",
+    mock_counter: "Quedan 24 / 25 fotos",
+    mock_cta: "Hacer una foto",
+    how_it_works_title: "Cómo funciona",
+    step1_title: "Compartid un código QR",
+    step1_body:
+      "Sin apps que instalar ni listas de invitados que importar. Quien lo escanea puede empezar a hacer fotos al instante.",
+    step2_title: "Cada foto se suma a una galería",
+    step2_body:
+      "Las fotos hechas en el momento y las importadas del carrete cuentan para el mismo álbum compartido, así nada se queda olvidado en el móvil de alguien.",
+    step3_title: "La galería se revela junta",
+    step3_body:
+      "Como esperar a que se revele el carrete: nadie ve ni una sola foto antes de tiempo. Toda la galería se desbloquea para todos a la vez, en la fecha que fijéis.",
+    pricing_title: "Precios previstos",
+    pricing_subtitle:
+      "Se paga una vez por evento, no es una suscripción. Las parejas de Wēddly tienen un 25% de descuento en cualquier plan de pago.",
+    pricing_guest_cap: "Hasta {n} invitados",
+    pricing_custom_cap: "Más de 400 invitados",
+    pricing_custom_price: "Contactadnos",
+    pricing_couple_note: "Parejas de Wēddly: {price}",
+    pricing_note:
+      "Estos son los planes que estamos preparando para el lanzamiento. Las reservas aún no están abiertas.",
+    notify_title: "Sed los primeros en saberlo",
+    notify_body:
+      "Dejad vuestro correo y os escribiremos en cuanto Wēddly Camera esté lista para reservar.",
+  },
   blog: {
     eyebrow: "Blog",
     index_title: "Blog",
@@ -10103,9 +10143,9 @@ const es: LocaleMessages = {
     map_button: "Mapa",
     map_title: "Explora por localidad",
     map_view_all: "Ver las {count} localidades",
-    map_category_note: "Mostrando solo {category}",
     map_countries_hint: "Un marcador por país — elige uno para ver sus localidades.",
-    map_back_to_countries: "Todos los países",
+    map_category_all: "Todos los tipos",
+    map_category_filter_label: "Tipo de proveedor",
   },
 };
 

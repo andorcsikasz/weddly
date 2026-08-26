@@ -1909,7 +1909,7 @@ const hr: LocaleMessages = {
     feature_seating: "Sjedenje",
     feature_print: "Kartice za ispis",
     feature_suppliers: "Dobavljači",
-    keyinfo_title: "Ključni podaci",
+    keyinfo_title: "Popis dobavljača",
     keyinfo_venue_label: "Lokacija",
     keyinfo_map: "Karta",
     keyinfo_call: "Nazovi",
@@ -1917,6 +1917,7 @@ const hr: LocaleMessages = {
     keyinfo_all_suppliers: "Svi dobavljači",
     keyinfo_no_venue: "Dodajte podatke o lokaciji",
     keyinfo_add_suppliers: "Dodajte dobavljače",
+    keyinfo_add_phone: "Dodaj broj telefona",
     keyinfo_edit: "Uredi",
     keyinfo_edit_title: "Uredite ključne podatke",
     keyinfo_coordinator: "Koordinator",
@@ -2270,6 +2271,7 @@ const hr: LocaleMessages = {
     footer_couples_budget: "Kalkulator proračuna",
     footer_couples_seating: "Izrada rasporeda sjedenja",
     footer_couples_rsvp: "Generator RSVP teksta",
+    footer_couples_camera: "Wēddly Camera",
     footer_vendors_waitlist: "Prijavite svoju tvrtku",
     footer_vendors_about: "Kako radi",
     footer_vendors_browse: "Pregledajte dobavljače za vjenčanja",
@@ -8379,6 +8381,43 @@ const hr: LocaleMessages = {
       "Vaši podaci pripadaju vama. Izvezite ih, pauzirajte ili izbrišite kad želite, bez ijedne prijave podršci.",
     en_section_label: "English",
   },
+  camera: {
+    seo_title: "Wēddly Camera",
+    seo_description:
+      "Zajednička galerija fotografija u stilu fotoaparata na jedno korištenje za vjenčane goste — jedan QR kod, bilo koji telefon, bez aplikacije, sve fotografije otkrivaju se zajedno nakon velikog dana.",
+    dev_banner:
+      "Wēddly Camera je u razvoju. Cijene i rezervacije još nisu dostupne — ostavite svoj e-mail ispod i javit ćemo vam se čim budu.",
+    eyebrow: "Novo od Wēddlyja",
+    h1: "Fotoaparat na jedno korištenje za vaše vjenčanje,\nbez odlaska u trgovinu.",
+    subtitle:
+      "Svaki gost postaje fotograf. Skeniraju jedan QR kod, snimaju telefonom koji već imaju u džepu, a cijela se galerija otkriva zajedno, u trenutku koji vi odaberete.",
+    cta_notify: "Obavijestite me pri lansiranju",
+    cta_how_it_works: "Pogledajte kako funkcionira",
+    mock_wordmark: "WĒDDLY CAMERA",
+    mock_counter: "Preostalo 24 / 25 fotografija",
+    mock_cta: "Fotografiraj",
+    how_it_works_title: "Kako funkcionira",
+    step1_title: "Podijelite jedan QR kod",
+    step1_body:
+      "Nema aplikacije za instalirati, nema popisa gostiju za uvoziti. Tko god ga skenira, može odmah početi fotografirati.",
+    step2_title: "Svaka fotografija ide u jednu galeriju",
+    step2_body:
+      "Fotografije snimljene uživo i one uvezene iz galerije telefona broje se u isti zajednički album, pa ništa ne ostaje zaboravljeno na nečijem telefonu.",
+    step3_title: "Galerija se otkriva zajedno",
+    step3_body:
+      "Kao čekanje da se film razvije — nitko ne vidi nijednu fotografiju prije vremena. Cijela se galerija otključava svima odjednom, na datum koji odredite.",
+    pricing_title: "Planirane cijene",
+    pricing_subtitle:
+      "Plaća se jednom po događaju, nije pretplata. Wēddly parovi dobivaju 25% popusta na svaki plaćeni paket.",
+    pricing_guest_cap: "Do {n} gostiju",
+    pricing_custom_cap: "400+ gostiju",
+    pricing_custom_price: "Kontaktirajte nas",
+    pricing_couple_note: "Wēddly parovi: {price}",
+    pricing_note: "Ovo su paketi koje planiramo za lansiranje. Rezervacije još nisu otvorene.",
+    notify_title: "Budite prvi koji će saznati",
+    notify_body:
+      "Ostavite svoj e-mail i javit ćemo vam se čim Wēddly Camera bude spremna za rezervaciju.",
+  },
   blog: {
     eyebrow: "Blog",
     index_title: "Blog",
@@ -9988,9 +10027,9 @@ const hr: LocaleMessages = {
     map_button: "Karta",
     map_title: "Istražite po gradu",
     map_view_all: "Pogledajte svih {count} gradova",
-    map_category_note: "Prikazuje se samo: {category}",
     map_countries_hint: "Jedna oznaka po državi — odaberite jednu za prikaz njezinih gradova.",
-    map_back_to_countries: "Sve države",
+    map_category_all: "Sve kategorije",
+    map_category_filter_label: "Vrsta dobavljača",
   },
 };
 
