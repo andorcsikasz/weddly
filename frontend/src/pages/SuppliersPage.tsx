@@ -821,7 +821,7 @@ export default function SuppliersPage() {
   }, [coupleId]);
 
   const togglePicked = useCallback(
-    (supplier: DirectorySupplier | CoupleSupplier) => {
+    (supplier: DirectorySupplier | CoupleSupplier, origin?: { x: number; y: number }) => {
       if (coupleId === null) {
         toast.info(t("suppliers.save_no_couple"));
         return;
@@ -830,7 +830,13 @@ export default function SuppliersPage() {
       const isPicked = selection[cat] === supplier.id;
       const next = setSelection(coupleId, cat, isPicked ? null : supplier.id);
       setSelectionState(next);
-      if (!isPicked) celebrateSelection(cat, selection, next);
+      if (!isPicked) {
+        // A pop from the Save button itself, every time — the couple picked a
+        // vendor, not just chipped away at a checklist. The milestone bursts
+        // below layer on top rather than replace it.
+        fireConfetti(origin);
+        celebrateSelection(cat, selection, next);
+      }
     },
     [coupleId, selection, toast, t],
   );
@@ -2572,10 +2578,10 @@ export default function SuppliersPage() {
                       <article
                         key={s.id}
                         data-supplier-id={s.id}
-                        className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition hover:shadow-sm ${
+                        className={`relative flex items-center gap-3 rounded-2xl px-4 py-3 transition hover:shadow-sm ${
                           isPicked
-                            ? "border-sage-400 bg-sage-50/70 dark:border-sage-400/40 dark:bg-sage-400/15"
-                            : "border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+                            ? "border-2 border-sage-500 bg-sage-50/70 dark:border-sage-400/60 dark:bg-sage-400/15"
+                            : "border border-paper-200 bg-paper-50 hover:border-paper-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
                         } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                       >
                         <Avatar
@@ -2706,7 +2712,10 @@ export default function SuppliersPage() {
                           )}
                           <button
                             type="button"
-                            onClick={() => togglePicked(s)}
+                            onClick={(e) => {
+                              const r = e.currentTarget.getBoundingClientRect();
+                              togglePicked(s, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
+                            }}
                             aria-label={
                               isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")
                             }
@@ -2813,7 +2822,10 @@ export default function SuppliersPage() {
                           })()}
                           <button
                             type="button"
-                            onClick={() => togglePicked(s)}
+                            onClick={(e) => {
+                              const r = e.currentTarget.getBoundingClientRect();
+                              togglePicked(s, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
+                            }}
                             aria-label={
                               isPicked ? t("suppliers.unpick_aria") : t("suppliers.pick_aria")
                             }
