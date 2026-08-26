@@ -5370,4 +5370,132 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
       ],
     },
   },
+
+  // ── Multilingual wedding invitations and RSVP ──────────────────────
+  {
+    slug: "multilingual-wedding-invitations-and-rsvp",
+    published_at: "2026-08-26",
+    read_minutes: 6,
+    category: { hu: "Nemzetközi esküvő", en: "International wedding" },
+    hu: {
+      title: "Kétnyelvű esküvő szervezése: meghívó és RSVP minden nyelven",
+      lead: "Két család, két nyelv, néha két ország: így lehet egyetlen közös vendéglistátok és egyetlen RSVP-folyamatotok, ami mindenkinek működik, külön táblázatok és nyelvenkénti űrlapok helyett.",
+      seo_title: "Kétnyelvű esküvő szervezése: meghívó és RSVP minden nyelven · Wēddly",
+      seo_description:
+        "Gyakorlati útmutató kétnyelvű vagy nemzetközi esküvő szervezéséhez: meghívó nyelvi felépítése, egy közös vendéglista, egy RSVP-link minden nyelven, és fordítási tippek, amikkel elkerülhetők a kínos hibák.",
+      body: [
+        {
+          type: "p",
+          text: "Ha a családotok és a barátaitok nem beszélnek közös nyelvet, vagy más országból házasodtok össze, a nehézség ritkán a meghívó szövegében rejlik. Sokkal inkább abban, hogy legyen egyetlen közös vendéglistátok és egyetlen RSVP-folyamatotok, ami tényleg mindenkinek működik, két egyeztetendő táblázat és három, kicsit másképp megfogalmazott űrlap helyett.",
+        },
+        { type: "h2", text: "Először a meghívó nyelvi felépítését döntsétek el" },
+        {
+          type: "p",
+          text: "Mielőtt egyetlen szót is leírnátok, döntsétek el, hogyan álljon egymás mellett a két (vagy több) nyelv. Két nyelv esetén jól működik az egymás melletti, kétnyelvű elrendezés, ha egyik szöveg sem túl hosszú. Elegáns megoldás az is, ha az egyik nyelv az elülső, a másik a hátoldalon szerepel. Három vagy több nyelvnél érdemes a nyomtatott meghívót minimálisra venni, csak nevek, dátum, helyszín, a teljes részletet pedig az esküvői weboldalatokra tenni.",
+        },
+        { type: "h2", text: "Először egy alapváltozatot írjatok, csak utána fordítsatok" },
+        {
+          type: "p",
+          text: "Előbb egy nyelven zárjátok le a neveket, a dátumot, a szertartás és a vacsora időpontját, a helyszín nevét és címét, az öltözködési kódot, az RSVP-határidőt és a plusz egy fő vagy gyerekek szabályát. Ezt a jóváhagyott változatot fordítsátok, ne külön-külön írjátok meg nyelvenként, mert így könnyen ellentmondó verziók születnek. Ahol a szöveg finomabb, megszólítások, családnevek, vallási kifejezések, kérjetek meg egy anyanyelvi beszélőt, hogy nézze át mindegyik változatot nyomtatás előtt.",
+        },
+        { type: "h2", text: "Egy közös vendéglista legyen, ne kettő" },
+        {
+          type: "p",
+          text: "A leggyakoribb hiba, hogy mindkét fél a saját nyelvén, a saját fájljában vezeti a listáját, majd pár hónappal az esküvő előtt kézzel egyesítik. Minden vendég egyetlen, közösen szerkesztett listában legyen a legelső naptól kezdve, háztartásonként csoportosítva, hogy egy család vagy pár egy sorként szerepeljen, és oldal szerint megjelölve, hogy a vendéglista egyensúlyát átlássátok külön dokumentum nélkül is. Pontosan így épül fel a Weddly vendéglistája is, így mindketten mindig ugyanazt a listát nézitek, nem kettőt hasonlítotok össze.",
+        },
+        { type: "h2", text: "Egy RSVP-link legyen, ne nyelvenként egy" },
+        {
+          type: "p",
+          text: "Nem kell külön francia, magyar és angol űrlapot építenetek. Egyetlen esküvői weboldal és RSVP-link nyelvváltóval lehetővé teszi, hogy minden vendég a saját nyelvén olvassa ugyanazt az oldalt, gombokkal, feliratokkal és dátumformátummal együtt, anélkül hogy nektek három külön verziót kellene karbantartanotok. A Weddly esküvői oldala és RSVP-űrlapja is alapból támogatja ezt, angolul, magyarul, spanyolul, horvátul és németül, így egy francia anyanyelvű vendég és a magyar nagymama is ugyanazt a linket használhatja.",
+        },
+        { type: "h2", text: "Néhány apróság, ami később sok fejfájást spórol" },
+        {
+          type: "ul",
+          items: [
+            "Kerüljétek a kétértelmű, számjegyes dátumokat, mint 06/09/2027, inkább írjátok ki a hónapot minden nyelven.",
+            "A neveket, a helyszín nevét, a QR-kódot és a linkeket nem kell duplán megjeleníteni, ezek nyelvfüggetlenek.",
+            "Próbáljátok ki magatok az RSVP-folyamatot minden nyelven, telefonon, mielőtt egyetlen meghívót is elküldenétek.",
+            "A kevésbé digitálisan jártas rokonoknak adjatok telefonos vagy emailes alternatívát a saját nyelvükön.",
+          ],
+        },
+        { type: "h2", text: "Rövid ellenőrzőlista" },
+        {
+          type: "ul",
+          items: [
+            "Előbb a meghívó nyelvi felépítését döntsétek el, csak utána írjatok szöveget.",
+            "Egy alapváltozatot írjatok, azt fordítsátok, majd nézessétek át.",
+            "Egy közös vendéglista a legelső naptól, háztartánként csoportosítva, oldal szerint jelölve.",
+            "Egy RSVP-link nyelvváltóval, ne nyelvenként külön űrlap.",
+            "Minden nyelvi útvonalat próbáljatok ki magatok, mielőtt kiküldenétek a meghívókat.",
+          ],
+        },
+        {
+          type: "cta",
+          lead: "Szeretnétek, hogy a vendéglistátok, az RSVP és az esküvői weboldalatok tényleg minden nyelven működjön, amit a vendégeitek beszélnek? A Weddlyben mindez egy közös, élő munkaterületen van.",
+          href: "/signup",
+          label: "Kezdjétek el ingyen",
+        },
+      ],
+    },
+    en: {
+      title: "How to plan a multilingual wedding invitation and RSVP",
+      lead: "Two families, two languages, sometimes two countries: here's how to run one shared guest list and one RSVP process that works for every guest, instead of building a separate spreadsheet or form per language.",
+      seo_title: "How to plan a multilingual wedding invitation and RSVP · Weddly",
+      seo_description:
+        "A practical guide to planning a bilingual or multilingual wedding: invitation language structure, one shared guest list, one RSVP link for every language, and translation tips that avoid awkward mistakes.",
+      body: [
+        {
+          type: "p",
+          text: "If your families and friends don't share a language, or you're marrying someone from a different country, the hard part usually isn't the words on the invitation. It's ending up with one shared guest list and one RSVP process that actually works for everyone, instead of two spreadsheets that need reconciling and three different forms that all say something slightly different.",
+        },
+        { type: "h2", text: "Decide the invitation language structure first" },
+        {
+          type: "p",
+          text: "Before you write a single word, decide how the languages will sit next to each other. For two languages, a side-by-side bilingual invitation works well when both are reasonably compact. Another clean option is one language on the front and the other on the back. With three or more languages, keep the printed piece minimal, names, date, venue, and put the full detail on your wedding website instead.",
+        },
+        { type: "h2", text: "Write one source version, then translate it" },
+        {
+          type: "p",
+          text: "Finalize names, the date, ceremony and reception times, venue names and addresses, dress code, the RSVP deadline, and any plus-one or children policy in one language first. Translate that approved version rather than writing each language independently, so you don't end up with two versions that quietly disagree. For anything with real etiquette weight, formal titles, family names, religious wording, have a fluent or native speaker check each version before it's printed.",
+        },
+        { type: "h2", text: "Keep one guest list, not two" },
+        {
+          type: "p",
+          text: "The most common way this goes wrong is each partner keeping their own list, in their own language, in their own file, and merging them by hand a couple of months before the wedding. Every guest should sit in one shared, live list from day one, grouped by household so a couple or family counts as one row, and tagged by side so you can still see the balance without needing two separate documents. That's the exact structure Weddly's guest list is built around, so both of you are always looking at the same list, not comparing two.",
+        },
+        { type: "h2", text: "One RSVP link, not one per language" },
+        {
+          type: "p",
+          text: "You don't need to build a French form, a Hungarian form and an English form. A single wedding website and RSVP link with a language switcher lets each guest read the same page in their own language, buttons, labels and date formats included, without you maintaining three separate versions of the same questions. Weddly's guest site and RSVP form both support this out of the box, in English, Hungarian, Spanish, Croatian and German, so a French-speaking guest and a Hungarian grandparent can use the exact same link.",
+        },
+        { type: "h2", text: "A few details that save you a headache later" },
+        {
+          type: "ul",
+          items: [
+            "Avoid ambiguous numeric dates like 06/09/2027, spell out the month in each language instead.",
+            "Names, venue names, QR codes and URLs don't need to be duplicated, keep them visually universal.",
+            "Test the RSVP flow yourself, in each language, on a phone, before you send a single invite.",
+            "Give less digitally comfortable relatives a phone or email fallback in their own language.",
+          ],
+        },
+        { type: "h2", text: "Short checklist" },
+        {
+          type: "ul",
+          items: [
+            "Pick the invitation language structure before writing anything.",
+            "Write one source version, then translate it, then have it reviewed.",
+            "One shared guest list from day one, grouped by household, tagged by side.",
+            "One RSVP link with a language switcher, not one form per language.",
+            "Test every language path yourself before sending invitations.",
+          ],
+        },
+        {
+          type: "cta",
+          lead: "Want your guest list, RSVP and wedding website to actually work in every language your guests speak? Weddly keeps all of it in one shared, live workspace.",
+          href: "/signup",
+          label: "Start free",
+        },
+      ],
+    },
+  },
 ];
