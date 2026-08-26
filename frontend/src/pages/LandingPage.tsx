@@ -1662,7 +1662,7 @@ function PricingDeck() {
           the tap row are both real buttons, so the event reaches here), and a
           drag anywhere on it slides the ring. overflow-x-clip keeps the narrow
           layout's off-screen cards from widening the document; clip rather
-          than hidden so the cards' shadows still bleed vertically. */}
+          than hidden so the front ticket's lifted CTA still bleeds vertically. */}
       <div
         ref={deckRef}
         className="relative mx-auto max-w-4xl overflow-x-clip"
@@ -1707,7 +1707,7 @@ function PricingDeck() {
           return (
             <div
               key={id}
-              className="absolute left-1/2 top-0 h-full w-full max-w-lg [filter:drop-shadow(0_20px_28px_rgba(16,24,48,0.16))]"
+              className="absolute left-1/2 top-0 h-full w-full max-w-lg"
               style={{
                 transform: `translateX(calc(-50% + ${p * step}px)) rotate(${3 * p}deg) scale(${1 - 0.06 * ap})`,
                 zIndex: Math.round(20 - ap * 10),
@@ -1977,6 +1977,12 @@ function PricingPeek({
         </span>
         <span className="mt-1.5 font-grotesk text-xs text-umber-600 dark:text-umber-300">
           {perMonth}
+        </span>
+        {/* Same one-liner the front ticket highlights in its callout box, so a
+            peek is more than a bare number — the visible strip is narrow, so
+            this wraps rather than running the card's full width. */}
+        <span className="mt-2.5 max-w-[11rem] font-grotesk text-xs leading-snug text-umber-700 dark:text-umber-200">
+          {card.callout}
         </span>
       </span>
     </button>
