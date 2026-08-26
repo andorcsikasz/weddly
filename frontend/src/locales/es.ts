@@ -5276,6 +5276,7 @@ const es: LocaleMessages = {
     save_aria: "Guardar",
     unsave_aria: "Quitar de guardados",
     save_no_couple: "Completa tu perfil para guardar proveedores.",
+    venue_unpick_redirect: "Gestiona tu lugar de celebración desde la página de invitados.",
     saved_filter: "Guardados ({n})",
     pick_aria: "Elegir este",
     unpick_aria: "Quitar nuestra elección",

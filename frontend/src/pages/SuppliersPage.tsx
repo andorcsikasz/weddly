@@ -828,6 +828,17 @@ export default function SuppliersPage() {
       }
       const cat = supplier.category;
       const isPicked = selection[cat] === supplier.id;
+      // Un-picking the venue wipes the couple-row copy that Kulcsinfó, the
+      // public guest page and the run sheet all read (see backend
+      // domain/venue_sync.ts) — a bigger, more consequential action than
+      // un-booking any other vendor, so it goes through the guest page's own
+      // "remove venue" flow (with its warning about what disappears) instead
+      // of a silent one-click un-save here. Picking a venue is unaffected.
+      if (isPicked && cat === "venue") {
+        toast.info(t("suppliers.venue_unpick_redirect"));
+        navigate("/app/guest-page?edit=venue_manage");
+        return;
+      }
       const next = setSelection(coupleId, cat, isPicked ? null : supplier.id);
       setSelectionState(next);
       if (!isPicked) {
@@ -838,7 +849,7 @@ export default function SuppliersPage() {
         celebrateSelection(cat, selection, next);
       }
     },
-    [coupleId, selection, toast, t],
+    [coupleId, selection, toast, t, navigate],
   );
 
   // Adopt a directory listing instead of minting a private "Saját" copy of it.

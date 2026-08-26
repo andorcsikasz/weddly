@@ -308,8 +308,18 @@ export default function SupplierDetailPage() {
       return;
     }
     if (pickCategory === null || savedKey === null) return;
+    // Un-picking the venue here would silently wipe the couple-row copy
+    // Kulcsinfó/the public guest page/the run sheet read (venue_sync.ts on
+    // the backend) with no warning about what disappears — that flow lives
+    // on the guest page's own "remove venue" dialog instead. Picking one is
+    // unaffected.
+    if (isPicked && pickCategory === "venue") {
+      toast.info(t("suppliers.venue_unpick_redirect"));
+      navigate("/app/guest-page?edit=venue_manage");
+      return;
+    }
     setSelectionState(setSelection(coupleId, pickCategory, isPicked ? null : savedKey));
-  }, [coupleId, isPicked, pickCategory, savedKey, t, toast]);
+  }, [coupleId, isPicked, pickCategory, savedKey, t, toast, navigate]);
 
   // Outreach compose modal — opens with the current supplier pre-attached
   // so the user can write a tailored inquiry without re-picking a vendor.

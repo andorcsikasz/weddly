@@ -12,6 +12,7 @@
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { getCoupleForUser } from "../domain/couples";
 import * as picksDomain from "../domain/couple_picks";
+import { syncCoupleVenueFromPick } from "../domain/venue_sync";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
@@ -58,6 +59,11 @@ async function handleUpsert(ctx: Ctx): Promise<Response> {
 
   const before = picksDomain.getPick(couple.id, category);
   const pick = picksDomain.upsertPick(couple.id, category, supplierId, userId);
+  // The venue pick has a denormalized copy on the couple row (Kulcsinfó, the
+  // public guest page, the run sheet all read it) — see venue_sync.ts. Every
+  // pick-toggle in the app funnels through this route, so this is the one
+  // place that keeps the copy from going stale no matter which surface picked.
+  if (category === "venue") syncCoupleVenueFromPick(couple.id);
 
   addAuditLog({
     actor_user_id: userId,
@@ -82,6 +88,7 @@ function handleRemove(ctx: Ctx): Response {
   const category = parseCategoryParam(ctx.params.category);
   const before = picksDomain.getPick(couple.id, category);
   const removed = picksDomain.removePick(couple.id, category);
+  if (category === "venue") syncCoupleVenueFromPick(couple.id);
 
   // Audit only when we actually cleared something — silent no-op on a
   // double DELETE keeps the UI's clear-button idempotent without spamming

@@ -5224,6 +5224,7 @@ const hu: LocaleMessages = {
     save_aria: "Mentés",
     unsave_aria: "Mentés visszavonása",
     save_no_couple: "Töltsd ki a profilodat a mentéshez.",
+    venue_unpick_redirect: "A helyszínt a Vendégoldalon kezelheted.",
     saved_filter: "Mentett ({n})",
     pick_aria: "Elmentem",
     unpick_aria: "Választás visszavonása",

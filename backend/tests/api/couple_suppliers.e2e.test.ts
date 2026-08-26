@@ -174,7 +174,7 @@ describe("couple-suppliers venue location + contact", () => {
 });
 
 describe("venue selection wiring (picks + couple row)", () => {
-  test("picking a venue vendor and patching the couple reflects everywhere", async () => {
+  test("picking a venue vendor reflects everywhere, no manual couple PATCH needed", async () => {
     const { token } = await bootstrapCouple("cs-venue-select@weddly.test");
     const c = await req<{ supplier: SupplierDTO }>(
       "POST",
@@ -195,22 +195,10 @@ describe("venue selection wiring (picks + couple row)", () => {
     const pick = await req("PUT", "/api/picks/venue", { supplier_id: id }, { token });
     expect(pick.status).toBe(200);
 
-    const patch = await req<{ couple: CoupleDTO }>(
-      "PATCH",
-      "/api/couples/current",
-      {
-        venue_name: "Kastély",
-        venue_city: "Gödöllő",
-        venue_address: "Grassalkovich-kastély",
-        venue_phone: "+36 1 111 1111",
-        location_lat: 47.6,
-        location_lng: 19.36,
-      },
-      { token },
-    );
-    expect(patch.status).toBe(200);
-    expect(patch.data.couple.location_lat).toBeCloseTo(47.6, 4);
-
+    // The pick itself is now what writes the couple row's copy (see
+    // domain/venue_sync.ts) — a caller re-sending the same fields via PATCH
+    // /api/couples/current would find them already in place and 400 on
+    // "No fields to update", which is the sync working, not a regression.
     const picks = await req<{ picks: { category: string; supplier_id: string }[] }>(
       "GET",
       "/api/picks",
@@ -231,6 +219,184 @@ describe("venue selection wiring (picks + couple row)", () => {
     const { token } = await bootstrapCouple("cs-venue-lonecoord@weddly.test");
     const r = await req("PATCH", "/api/couples/current", { location_lat: 47.6 }, { token });
     expect(r.status).toBe(400);
+  });
+});
+
+// The couple's venue_* + location_lat/lng columns are a denormalized copy of
+// the "venue" category pick (see backend/src/domain/venue_sync.ts). These
+// exercise the sync happening as a SIDE EFFECT of the pick/DIY-supplier
+// routes themselves — no manual PATCH /api/couples/current involved — which
+// is what makes the copy correct no matter which surface in the app changed
+// the pick (a browse-card bookmark toggle, a supplier detail page, deleting
+// or editing the DIY entry that's picked), not just the guest-page editor.
+describe("venue auto-sync (couple row follows the pick, no manual PATCH)", () => {
+  test("PUT /api/picks/venue alone populates the couple row", async () => {
+    const { token } = await bootstrapCouple("cs-venue-autosync-pick@weddly.test");
+    const c = await req<{ supplier: SupplierDTO }>(
+      "POST",
+      "/api/couple-suppliers",
+      {
+        name: "Tófeje Kúria",
+        category: "venue",
+        city: "Tófej",
+        address: "Fő út 9",
+        lat: 46.8,
+        lng: 16.7,
+        contact_phone: "+36 30 999 8888",
+      },
+      { token },
+    );
+    const id = c.data.supplier.id;
+
+    const pick = await req("PUT", "/api/picks/venue", { supplier_id: id }, { token });
+    expect(pick.status).toBe(200);
+
+    const cur = await req<{ couple: CoupleDTO }>("GET", "/api/couples/current", undefined, {
+      token,
+    });
+    expect(cur.data.couple.venue_name).toBe("Tófeje Kúria");
+    expect(cur.data.couple.venue_city).toBe("Tófej");
+    expect(cur.data.couple.venue_address).toBe("Fő út 9");
+    expect(cur.data.couple.venue_phone).toBe("+36 30 999 8888");
+    expect(cur.data.couple.location_lat).toBeCloseTo(46.8, 4);
+    expect(cur.data.couple.location_lng).toBeCloseTo(16.7, 4);
+  });
+
+  test("DELETE /api/picks/venue clears the couple row", async () => {
+    const { token } = await bootstrapCouple("cs-venue-autosync-unpick@weddly.test");
+    const c = await req<{ supplier: SupplierDTO }>(
+      "POST",
+      "/api/couple-suppliers",
+      {
+        name: "Malom",
+        category: "venue",
+        city: "Eger",
+        address: "Malom u. 1",
+        lat: 47.9,
+        lng: 20.4,
+      },
+      { token },
+    );
+    await req("PUT", "/api/picks/venue", { supplier_id: c.data.supplier.id }, { token });
+
+    const remove = await req("DELETE", "/api/picks/venue", undefined, { token });
+    expect(remove.status).toBe(200);
+
+    const cur = await req<{ couple: CoupleDTO }>("GET", "/api/couples/current", undefined, {
+      token,
+    });
+    expect(cur.data.couple.venue_name).toBeNull();
+    expect(cur.data.couple.venue_address).toBeNull();
+    expect(cur.data.couple.location_lat).toBeNull();
+    expect(cur.data.couple.location_lng).toBeNull();
+  });
+
+  test("deleting the picked DIY venue clears both the pick and the couple row", async () => {
+    const { token } = await bootstrapCouple("cs-venue-autosync-delete@weddly.test");
+    const c = await req<{ supplier: SupplierDTO }>(
+      "POST",
+      "/api/couple-suppliers",
+      {
+        name: "Pajta",
+        category: "venue",
+        city: "Sopron",
+        address: "Fő tér 2",
+        lat: 47.68,
+        lng: 16.6,
+      },
+      { token },
+    );
+    const id = c.data.supplier.id;
+    await req("PUT", "/api/picks/venue", { supplier_id: id }, { token });
+
+    const del = await req("DELETE", `/api/couple-suppliers/${id}`, undefined, { token });
+    expect(del.status).toBe(200);
+
+    const picks = await req<{ picks: { category: string; supplier_id: string }[] }>(
+      "GET",
+      "/api/picks",
+      undefined,
+      { token },
+    );
+    expect(picks.data.picks.find((p) => p.category === "venue")).toBeUndefined();
+
+    const cur = await req<{ couple: CoupleDTO }>("GET", "/api/couples/current", undefined, {
+      token,
+    });
+    expect(cur.data.couple.venue_name).toBeNull();
+    expect(cur.data.couple.venue_address).toBeNull();
+    expect(cur.data.couple.location_lat).toBeNull();
+  });
+
+  test("editing the picked DIY venue's address updates the couple row", async () => {
+    const { token } = await bootstrapCouple("cs-venue-autosync-edit@weddly.test");
+    const c = await req<{ supplier: SupplierDTO }>(
+      "POST",
+      "/api/couple-suppliers",
+      {
+        name: "Csűr",
+        category: "venue",
+        city: "Vác",
+        address: "Régi cím 1",
+        lat: 47.77,
+        lng: 19.13,
+      },
+      { token },
+    );
+    const id = c.data.supplier.id;
+    await req("PUT", "/api/picks/venue", { supplier_id: id }, { token });
+
+    const patch = await req<{ supplier: SupplierDTO }>(
+      "PATCH",
+      `/api/couple-suppliers/${id}`,
+      { address: "Új cím 42", contact_phone: "+36 20 111 2233" },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+
+    const cur = await req<{ couple: CoupleDTO }>("GET", "/api/couples/current", undefined, {
+      token,
+    });
+    expect(cur.data.couple.venue_address).toBe("Új cím 42");
+    expect(cur.data.couple.venue_phone).toBe("+36 20 111 2233");
+  });
+
+  test("editing an unrelated (non-picked) DIY supplier never touches the couple's venue", async () => {
+    const { token } = await bootstrapCouple("cs-venue-autosync-unrelated@weddly.test");
+    const venue = await req<{ supplier: SupplierDTO }>(
+      "POST",
+      "/api/couple-suppliers",
+      {
+        name: "Igazi Helyszín",
+        category: "venue",
+        city: "Pécs",
+        address: "Cím 1",
+        lat: 46.07,
+        lng: 18.23,
+      },
+      { token },
+    );
+    await req("PUT", "/api/picks/venue", { supplier_id: venue.data.supplier.id }, { token });
+
+    const other = await req<{ supplier: SupplierDTO }>(
+      "POST",
+      "/api/couple-suppliers",
+      { name: "Virágos", category: "florist" },
+      { token },
+    );
+    const patch = await req(
+      "PATCH",
+      `/api/couple-suppliers/${other.data.supplier.id}`,
+      { notes: "hoz egy csokrot" },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+
+    const cur = await req<{ couple: CoupleDTO }>("GET", "/api/couples/current", undefined, {
+      token,
+    });
+    expect(cur.data.couple.venue_name).toBe("Igazi Helyszín");
+    expect(cur.data.couple.venue_address).toBe("Cím 1");
   });
 });
 

@@ -397,48 +397,48 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
               <>
                 {/* ── Venue ─────────────────────────────────────────────── */}
                 {venue ? (
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="group relative -mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-1 transition-colors hover:bg-paper-100/70 dark:hover:bg-umber-800/40">
                     <Link
                       to={venueLinkTo}
-                      className="group flex min-w-0 items-center gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
-                    >
+                      aria-label={venue.name}
+                      className="absolute inset-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+                    />
+                    <span className="pointer-events-none flex min-w-0 items-center gap-3">
                       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
                         <MapPin size={16} aria-hidden="true" />
                       </span>
-                      <div className="min-w-0">
-                        <p className="text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
+                      <span className="min-w-0">
+                        <span className="block text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
                           {t("dashboard.keyinfo_venue_label")}
-                        </p>
-                        <p className="truncate text-sm font-semibold leading-tight text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
+                        </span>
+                        <span className="block truncate text-sm font-semibold leading-tight text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300">
                           {venue.name}
-                        </p>
+                        </span>
                         {venue.detail && (
-                          <p className="truncate text-xs leading-tight text-ink-600 dark:text-umber-200">
+                          <span className="block truncate text-xs leading-tight text-ink-600 dark:text-umber-200">
                             {venue.detail}
-                          </p>
+                          </span>
                         )}
-                      </div>
-                    </Link>
-                    <div className="flex shrink-0 items-center gap-2">
+                      </span>
+                    </span>
+                    <div className="relative z-10 flex shrink-0 items-center gap-2">
                       <button
                         type="button"
                         onClick={() => setMapOpen(true)}
                         aria-label={t("dashboard.keyinfo_map")}
                         title={t("dashboard.keyinfo_map")}
-                        className="btn-outline btn-sm inline-flex min-h-[38px] items-center gap-1.5 sm:min-h-[34px]"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-ink-200 text-ink-700 transition-colors hover:border-ink-400 hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
                       >
                         <MapPin size={15} aria-hidden="true" />
-                        <span className="hidden sm:inline">{t("dashboard.keyinfo_map")}</span>
                       </button>
                       {venue.phone && (
                         <a
                           href={`tel:${venue.phone.replace(/\s+/g, "")}`}
                           title={venue.phone}
                           aria-label={`${t("dashboard.keyinfo_call")} ${venue.phone}`}
-                          className="btn-primary btn-sm inline-flex min-h-[38px] items-center gap-1.5 sm:min-h-[34px]"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush-600 text-white transition-colors hover:bg-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
                         >
                           <Phone size={15} aria-hidden="true" />
-                          <span className="hidden sm:inline">{t("dashboard.keyinfo_call")}</span>
                         </a>
                       )}
                     </div>
@@ -496,41 +496,47 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                         ? `/app/suppliers/${encodeURIComponent(c.id)}`
                         : "/app/vendors";
                       return (
-                        <li key={c.key} className="flex items-center gap-3 py-1.5">
+                        <li
+                          key={c.key}
+                          className="group relative -mx-1 flex items-center gap-3 rounded-lg px-1 py-1.5 transition-colors hover:bg-paper-100/70 dark:hover:bg-umber-800/40"
+                        >
                           <Link
                             to={to}
-                            className="group flex min-w-0 flex-1 items-center gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
-                          >
-                            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
-                              <Icon size={14} aria-hidden="true" />
+                            aria-label={c.name}
+                            className="absolute inset-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+                          />
+                          <span className="pointer-events-none inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
+                            <Icon size={14} aria-hidden="true" />
+                          </span>
+                          <span className="pointer-events-none min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium leading-tight text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300">
+                              {c.name}
                             </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium leading-tight text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
-                                {c.name}
-                              </p>
-                              <p className="truncate text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
-                                {t(`suppliers.cat.${c.category}`)}
-                              </p>
-                            </div>
-                          </Link>
+                            <span className="block truncate text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
+                              {t(`suppliers.cat.${c.category}`)}
+                            </span>
+                          </span>
+                          <ChevronRight
+                            size={14}
+                            aria-hidden="true"
+                            className="pointer-events-none shrink-0 text-ink-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-umber-500"
+                          />
                           {c.phone ? (
                             <a
                               href={`tel:${c.phone.replace(/\s+/g, "")}`}
                               title={c.phone}
                               aria-label={`${t("dashboard.keyinfo_call")} ${c.phone}`}
-                              className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full bg-paper-100 px-3 text-xs font-medium text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 sm:min-h-[32px] dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
+                              className="relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
                             >
-                              <Phone size={13} aria-hidden="true" />
-                              <span>{t("dashboard.keyinfo_call")}</span>
+                              <Phone size={14} aria-hidden="true" />
                             </a>
                           ) : (
                             <span
-                              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-paper-100/60 px-2.5 py-1 text-xs text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
+                              className="relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100/60 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
                               aria-label={t("suppliers.no_phone")}
                               title={t("suppliers.no_phone")}
                             >
-                              <Phone size={13} aria-hidden="true" />
-                              <span>-</span>
+                              <Phone size={14} aria-hidden="true" />
                             </span>
                           )}
                         </li>
@@ -578,7 +584,7 @@ function PersonRow({
   phone: string;
 }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 rounded-lg px-1 py-0.5">
       <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
         <Icon size={14} aria-hidden="true" />
       </span>
@@ -604,7 +610,7 @@ function AddVendorRow({ label }: { label: string }) {
   return (
     <Link
       to="/app/vendors"
-      className="group flex items-center gap-3 rounded-lg py-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+      className="group -mx-1 flex items-center gap-3 rounded-lg px-1 py-1.5 transition-colors hover:bg-paper-100/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:hover:bg-umber-800/40 dark:focus-visible:ring-paper-100"
     >
       <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-paper-300 text-ink-400 transition-colors group-hover:border-ink-900 group-hover:text-ink-900 dark:border-umber-600 dark:text-umber-300 dark:group-hover:border-paper-200 dark:group-hover:text-paper-100">
         <Store size={14} aria-hidden="true" />
@@ -629,10 +635,9 @@ function CallPill({ phone }: { phone: string }) {
       href={`tel:${phone.replace(/\s+/g, "")}`}
       title={phone}
       aria-label={`${t("dashboard.keyinfo_call")} ${phone}`}
-      className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full bg-paper-100 px-3 text-xs font-medium text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 sm:min-h-[32px] dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
     >
-      <Phone size={13} aria-hidden="true" />
-      <span>{t("dashboard.keyinfo_call")}</span>
+      <Phone size={14} aria-hidden="true" />
     </a>
   );
 }

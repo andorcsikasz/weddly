@@ -5217,6 +5217,7 @@ const hr: LocaleMessages = {
     save_aria: "Spremi",
     unsave_aria: "Ukloni iz spremljenih",
     save_no_couple: "Dovršite svoj profil da biste spremali dobavljače.",
+    venue_unpick_redirect: "Uredite mjesto vjenčanja na stranici za goste.",
     saved_filter: "Spremljeno ({n})",
     pick_aria: "Odaberite ovoga",
     unpick_aria: "Poništite odabir",

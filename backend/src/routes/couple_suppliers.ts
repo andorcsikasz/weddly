@@ -3,10 +3,12 @@
 // authenticated user. No admin visibility.
 
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
+import * as picksDomain from "../domain/couple_picks";
 import { getCoupleForUser } from "../domain/couples";
 import * as domain from "../domain/couple_suppliers";
 import { findDirectoryTwinByName } from "../domain/listings";
 import * as installments from "../domain/supplier_installments";
+import { syncCoupleVenueFromPick } from "../domain/venue_sync";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
@@ -267,6 +269,10 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 
   const updated = domain.update(id, couple.id, parsed);
   if (!updated) throw new HttpError(404, "Supplier not found");
+  // Cheap no-op unless this row IS the couple's currently-picked venue, in
+  // which case an address/phone edit here must not go stale on Kulcsinfó and
+  // the public guest page — see venue_sync.ts.
+  syncCoupleVenueFromPick(couple.id);
 
   addAuditLog({
     actor_user_id: userId,
@@ -323,6 +329,10 @@ function handleAdopt(ctx: Ctx): Response {
   if (!updated) throw new HttpError(404, "Supplier not found");
   const row = domain.getRowById(id, couple.id);
   if (row) domain.mirrorPriceToListingCost(couple.id, match.id, row);
+  // bindListing() moves the category pick to the listing with a raw UPDATE
+  // (it doesn't go through picksDomain.upsertPick) — if that pick was
+  // "venue", the couple row's copy has to follow it here explicitly.
+  syncCoupleVenueFromPick(couple.id);
 
   addAuditLog({
     actor_user_id: userId,
@@ -346,6 +356,17 @@ function handleDelete(ctx: Ctx): Response {
 
   const ok = domain.deleteById(id, couple.id);
   if (!ok) throw new HttpError(404, "Supplier not found");
+
+  // A pick pointing at the row we just deleted would otherwise dangle: only
+  // one frontend call site ever cleared it client-side (unselectById on
+  // /app/vendors), and at least one other delete flow (the Planning board)
+  // never did. Clearing it here server-side closes that gap for good, and
+  // resyncing the venue copy after covers the case where the deleted row was
+  // the picked venue.
+  for (const p of picksDomain.listPicksForCouple(couple.id)) {
+    if (p.supplier_id === id) picksDomain.removePick(couple.id, p.category);
+  }
+  syncCoupleVenueFromPick(couple.id);
 
   addAuditLog({
     actor_user_id: userId,

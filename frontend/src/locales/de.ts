@@ -5327,6 +5327,7 @@ const de: LocaleMessages = {
     save_aria: "Speichern",
     unsave_aria: "Aus den gespeicherten entfernen",
     save_no_couple: "Vervollständigen Sie Ihr Profil, um Dienstleister zu speichern.",
+    venue_unpick_redirect: "Verwalte deinen Veranstaltungsort auf der Gästeseite.",
     saved_filter: "Gespeichert ({n})",
     pick_aria: "Diesen auswählen",
     unpick_aria: "Auswahl aufheben",

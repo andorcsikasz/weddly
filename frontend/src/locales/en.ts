@@ -5176,6 +5176,7 @@ const en: LocaleMessages = {
     save_aria: "Like",
     unsave_aria: "Unlike",
     save_no_couple: "Complete your profile to save vendors.",
+    venue_unpick_redirect: "Manage your venue from the guest page.",
     saved_filter: "Saved ({n})",
     pick_aria: "Save",
     unpick_aria: "Unsave",

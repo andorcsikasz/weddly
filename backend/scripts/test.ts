@@ -10,10 +10,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const backendDir = join(import.meta.dir, "..");
-const perfTest = "tests/api/perf_budget.e2e.test.ts";
+// Bun 1.3.10 fails to resolve a bare relative path ("tests/api/x.test.ts")
+// passed as a `bun test` positional argument — it reads as a package
+// specifier and 404s with "Cannot find module ... from ''" — but resolves a
+// "./"-prefixed or absolute path fine. Every path here (the default-prefix
+// walk below, plus these two constants it's compared against) carries the
+// prefix for that reason.
+const perfTest = "./tests/api/perf_budget.e2e.test.ts";
 const resourceHeavyTests = new Set([
-  "tests/printed_cards_visual.test.ts",
-  "tests/api/seating_schedule.e2e.test.ts",
+  "./tests/printed_cards_visual.test.ts",
+  "./tests/api/seating_schedule.e2e.test.ts",
 ]);
 const allocatedPorts = new Set<number>();
 
@@ -30,7 +36,7 @@ function allocateTestPort(): number {
   }
 }
 
-function testFiles(dir: string, prefix = "tests"): string[] {
+function testFiles(dir: string, prefix = "./tests"): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const relative = `${prefix}/${entry.name}`;
