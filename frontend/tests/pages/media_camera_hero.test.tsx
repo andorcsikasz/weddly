@@ -39,7 +39,6 @@ describe("<CameraHero>", () => {
           album={null}
           coupleName="Andor & Sári"
           coverPhoto="/demo/film-01.jpg"
-          guestLinkUrl={null}
           onCreate={onCreate}
           onShare={() => {}}
         />
@@ -61,7 +60,7 @@ describe("<CameraHero>", () => {
     expect(onCreate).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the live film's share and guest-preview actions prominent", () => {
+  it("keeps the live film's share action prominent, with no in-app camera link", () => {
     const onShare = mock(() => {});
 
     render(
@@ -70,7 +69,6 @@ describe("<CameraHero>", () => {
           album={album}
           coupleName="Andor & Sári"
           coverPhoto="/demo/film-01.jpg"
-          guestLinkUrl="https://tryweddly.com/photos/andor-and-sari"
           onCreate={() => {}}
           onShare={onShare}
         />
@@ -81,10 +79,9 @@ describe("<CameraHero>", () => {
     expect(
       screen.getByText("Wedding Film is live. 42 photos captured so far."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Camera" })).toHaveAttribute(
-      "href",
-      "https://tryweddly.com/photos/andor-and-sari",
-    );
+    // The shared guest link is the only way to reach the camera — the couple's
+    // own view no longer offers a redundant "open the camera" affordance.
+    expect(screen.queryByRole("link", { name: "Camera" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Share guest link" }));
     expect(onShare).toHaveBeenCalledTimes(1);

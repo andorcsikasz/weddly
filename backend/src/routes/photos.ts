@@ -14,6 +14,7 @@
 //   PATCH /api/photo-albums/current             — update settings
 //   POST /api/photo-albums/current/rotate-link   — revoke token + slug, issue a new token
 //   GET  /api/photo-albums/current/photos       — all uploads (host bypasses reveal lock)
+//   DELETE /api/photo-albums/current/photos/:photoId — soft-remove one photo
 //   GET  /api/photo-albums/current/devices      — participant list
 //   GET  /api/photo-albums/:token/preview        — read-only host preview metadata
 
@@ -723,6 +724,42 @@ async function handleListPhotos(ctx: Ctx): Promise<Response> {
   return json({ uploads, total: uploads.length });
 }
 
+/** DELETE /api/photo-albums/current/photos/:photoId — soft-remove one photo.
+ *  Couple-only, same never-hard-delete pattern as `handleRemoveDevice`: sets
+ *  `hidden_at` so the row (and the audit trail) survives, it just drops out of
+ *  every `hidden_at IS NULL` read (host gallery, guest reveal, shot counts). */
+async function handleDeletePhoto(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple found");
+
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
+  if (!row) throw new HttpError(404, "No album found");
+
+  const photoId = Number(ctx.params.photoId);
+  if (!Number.isInteger(photoId) || photoId <= 0) throw new HttpError(400, "photoId required");
+
+  const result = db
+    .prepare(
+      `UPDATE photo_uploads SET hidden_at = ?
+        WHERE id = ? AND album_id = ? AND hidden_at IS NULL`,
+    )
+    .run(now(), photoId, row.id);
+  if (result.changes === 0) throw new HttpError(404, "Photo not found");
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "film.photo.remove",
+    target_kind: "photo_upload",
+    target_id: photoId,
+  });
+
+  return json({ removed: true });
+}
+
 /** GET /api/photo-albums/current/devices — participant list for host dashboard. */
 async function handleListDevices(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
@@ -1405,6 +1442,7 @@ export function registerPhotoRoutes(router: Router): void {
   router.post("/api/photo-albums/current/email-guests", handleEmailGuestsPhotos, true);
   router.post("/api/photo-albums/current/photos", handleCoupleUpload, true);
   router.get("/api/photo-albums/current/photos", handleListPhotos, true);
+  router.delete("/api/photo-albums/current/photos/:photoId", handleDeletePhoto, true);
   router.get("/api/photo-albums/current/devices", handleListDevices, true);
   router.delete("/api/photo-albums/current/devices/:deviceId", handleRemoveDevice, true);
   router.get("/api/photo-albums/:token/preview", handleGetHostPreview, true);

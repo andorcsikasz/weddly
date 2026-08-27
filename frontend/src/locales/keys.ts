@@ -3977,7 +3977,6 @@ export interface LocaleMessages {
     film_privacy_notice: string;
     film_save_qr: string;
     film_share_btn: string;
-    film_guest_view: string;
     film_collapse: string;
     film_expand: string;
     film_expired_alert: string;
@@ -4052,6 +4051,12 @@ export interface LocaleMessages {
     gallery_download: string;
     gallery_prev: string;
     gallery_next: string;
+    /** Trash icon in the lightbox — couple-only removal of one photo. */
+    photo_delete: string;
+    photo_delete_title: string;
+    photo_delete_body: string;
+    photo_delete_confirm: string;
+    photo_deleted: string;
   };
   /** /photos/:token — public guest upload page. */
   photos: {
@@ -5220,6 +5225,8 @@ export interface LocaleMessages {
     table_dietary_selected: string;
     table_sort_hint: string;
     table_household_placeholder: string;
+    table_household_rename_hint: string;
+    table_household_new_hint: string;
     table_new_name_placeholder: string;
     table_email_placeholder: string;
     dietary: string;

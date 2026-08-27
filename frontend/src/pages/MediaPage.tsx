@@ -427,14 +427,18 @@ function Lightbox({
   uploads,
   index,
   aesthetic,
+  deleting,
   onClose,
   onMove,
+  onDelete,
 }: {
   uploads: FilmUpload[];
   index: number;
   aesthetic: FilmAesthetic;
+  deleting: boolean;
   onClose: () => void;
   onMove: (next: number) => void;
+  onDelete: (upload: FilmUpload) => void;
 }) {
   const { locale, t } = useT();
   const current = uploads[index];
@@ -496,6 +500,16 @@ function Lightbox({
         </a>
         <button
           type="button"
+          onClick={() => onDelete(current)}
+          disabled={deleting}
+          aria-label={t("media.photo_delete")}
+          title={t("media.photo_delete")}
+          className={`${arrow} disabled:opacity-50`}
+        >
+          <Trash2 size={18} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
           onClick={onClose}
           aria-label={t("a11y.close")}
           title={t("a11y.close")}
@@ -542,17 +556,53 @@ export function FilmGallery({
   uploads,
   aesthetic,
   loading,
+  onDeletePhoto,
 }: {
   uploads: FilmUpload[];
   aesthetic: FilmAesthetic;
   loading: boolean;
+  onDeletePhoto: (photoId: number) => Promise<void>;
 }) {
   const { locale, t } = useT();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [showAll, setShowAll] = useState(false);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const galleryId = useId();
 
   const visible = showAll ? uploads : uploads.slice(0, GALLERY_PREVIEW);
+
+  async function handleDeletePhoto(upload: FilmUpload) {
+    if (deletingId !== null) return;
+    const ok = await confirm({
+      title: t("media.photo_delete_title"),
+      body: t("media.photo_delete_body"),
+      confirmLabel: t("media.photo_delete_confirm"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeletingId(upload.id);
+    try {
+      await onDeletePhoto(upload.id);
+      toast.success(t("media.photo_deleted"));
+      // `uploads` here is still the pre-deletion array (this closure predates
+      // the parent's re-render), so its length minus one is the count after —
+      // used to keep the lightbox index in bounds instead of pointing past
+      // the end of the array the next render hands back.
+      setOpenIndex((current) => {
+        if (current === null) return current;
+        const remaining = uploads.length - 1;
+        if (remaining <= 0) return null;
+        return current >= remaining ? remaining - 1 : current;
+      });
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="border-t border-paper-200 px-4 pb-4 pt-3">
@@ -646,8 +696,10 @@ export function FilmGallery({
           uploads={uploads}
           index={openIndex}
           aesthetic={aesthetic}
+          deleting={deletingId !== null}
           onClose={() => setOpenIndex(null)}
           onMove={setOpenIndex}
+          onDelete={handleDeletePhoto}
         />
       )}
     </div>
@@ -975,14 +1027,12 @@ export function CameraHero({
   album,
   coupleName,
   coverPhoto,
-  guestLinkUrl,
   onCreate,
   onShare,
 }: {
   album: PhotoAlbum | null;
   coupleName: string | null;
   coverPhoto: string;
-  guestLinkUrl: string | null;
   onCreate: () => void;
   onShare: () => void;
 }) {
@@ -1058,17 +1108,6 @@ export function CameraHero({
                   {t("media.film_cta_share")}
                   <ArrowRight size={16} aria-hidden="true" />
                 </button>
-                {guestLinkUrl && (
-                  <a
-                    href={guestLinkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-paper-50/20 bg-paper-50/5 px-6 py-3.5 font-grotesk text-sm font-semibold text-paper-50 transition hover:bg-paper-50/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50"
-                  >
-                    <Camera size={17} aria-hidden="true" />
-                    {t("media.film_guest_view")}
-                  </a>
-                )}
               </>
             ) : (
               <button
@@ -1255,6 +1294,15 @@ export default function MediaPage() {
       .then((r) => setUploads(r.uploads))
       .catch(() => {})
       .finally(() => setUploadsLoading(false));
+  }, []);
+
+  const handleDeletePhoto = useCallback(async (photoId: number) => {
+    await photoAlbumApi.deletePhoto(photoId);
+    setUploads((prev) => prev.filter((u) => u.id !== photoId));
+    photoAlbumApi
+      .current()
+      .then((r) => setAlbum(r.album))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -1597,7 +1645,6 @@ export default function MediaPage() {
         album={album}
         coupleName={couple?.display_name ?? null}
         coverPhoto={coverPhoto}
-        guestLinkUrl={guestLinkUrl}
         onCreate={() => setShowFilmModal(true)}
         onShare={() => setShowShare(true)}
       />
@@ -1831,6 +1878,7 @@ export default function MediaPage() {
                 uploads={uploads}
                 aesthetic={album.filmAesthetic}
                 loading={uploadsLoading}
+                onDeletePhoto={handleDeletePhoto}
               />
 
               {/* ── Action toolbar ────────────────────────────────────── */}
@@ -1861,19 +1909,6 @@ export default function MediaPage() {
                         {t("media.film_share_btn")}
                       </span>
                     </button>
-                    <a
-                      href={`${uploadUrl}?preview=1`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex flex-1 flex-col items-center gap-2"
-                    >
-                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-paper-100 text-umber-900 transition-colors group-hover:bg-paper-200">
-                        <Camera size={22} aria-hidden="true" />
-                      </span>
-                      <span className="text-xs font-medium text-umber-700">
-                        {t("media.film_guest_view")}
-                      </span>
-                    </a>
                     {/* Only once revealed — a link to a locked gallery would
                         greet the guest with "come back later" instead of
                         their own photos. */}

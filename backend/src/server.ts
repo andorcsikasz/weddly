@@ -662,8 +662,14 @@ function publicUploadKey(key: string): boolean {
   // These couple-owned assets are intentionally public-by-URL for a published
   // wedding page, gift list or random-capability guest album. Private document,
   // message and moodboard namespaces never match.
+  // `photos/<albumId>/<uploadId>` optionally carries a `-<32-hex>` suffix: rows
+  // written before the privacy fix that added it (a9978209) never got one, and
+  // this key is the ONLY thing standing between them and this function, which
+  // otherwise treats an unmatched key as private. Requiring the suffix
+  // unconditionally turned every pre-fix Wedding Film photo into a dead image
+  // — the fix's own commit message promised "existing rows keep resolving".
   if (
-    /^couples\/\d+\/(?:cover\.(?:jpe?g|png|webp)|site-photo-[12]\.(?:jpe?g|png|webp)|honeymoon-cover\.(?:jpe?g|png|webp)|wishlist\/[a-f0-9]{16}\.(?:jpe?g|png|webp)|photos\/\d+\/\d+-[a-f0-9]{32}\.(?:jpe?g|png|webp))$/i.test(
+    /^couples\/\d+\/(?:cover\.(?:jpe?g|png|webp)|site-photo-[12]\.(?:jpe?g|png|webp)|honeymoon-cover\.(?:jpe?g|png|webp)|wishlist\/[a-f0-9]{16}\.(?:jpe?g|png|webp)|photos\/\d+\/\d+(?:-[a-f0-9]{32})?\.(?:jpe?g|png|webp))$/i.test(
       key,
     )
   ) {

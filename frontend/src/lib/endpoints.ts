@@ -4160,6 +4160,10 @@ export const photoAlbumApi = {
   listDevices: (): Promise<{ devices: FilmDevice[]; total: number }> =>
     apiFetch("GET", "/api/photo-albums/current/devices"),
 
+  /** Host-only: soft-remove a single photo from the film. */
+  deletePhoto: (photoId: number): Promise<{ removed: boolean }> =>
+    apiFetch("DELETE", `/api/photo-albums/current/photos/${photoId}`),
+
   /** Host-only: soft-remove a participant (#6). `purgePhotos` also hides their shots. */
   removeDevice: (
     deviceId: string,

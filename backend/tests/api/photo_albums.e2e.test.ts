@@ -938,6 +938,123 @@ describe("couple-upload source tag (#11)", () => {
   });
 });
 
+describe("couple-only single-photo delete", () => {
+  let token: string;
+  let albumToken: string;
+
+  beforeAll(async () => {
+    wipeFilm();
+    ({ token } = await bootstrapCouple("photodelete@weddly.test"));
+    albumToken = await createAlbum(token);
+    await req("POST", `/api/photo-albums/${albumToken}/devices`, { device_id: "pd-guest" });
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("deleting a photo drops it from the gallery and the count, and it stays gone", async () => {
+    const up = await guestUpload(albumToken, "pd-guest");
+    expect(up.status).toBe(201);
+    const { upload } = (await up.json()) as { upload: { id: number } };
+
+    const before = await req<{ album: { photoCount: number } }>(
+      "GET",
+      "/api/photo-albums/current",
+      undefined,
+      { token },
+    );
+    expect(before.data.album.photoCount).toBe(1);
+
+    const del = await req<{ removed: boolean }>(
+      "DELETE",
+      `/api/photo-albums/current/photos/${upload.id}`,
+      undefined,
+      { token },
+    );
+    expect(del.status).toBe(200);
+    expect(del.data.removed).toBe(true);
+
+    const list = await req<{ uploads: { id: number }[]; total: number }>(
+      "GET",
+      "/api/photo-albums/current/photos",
+      undefined,
+      { token },
+    );
+    expect(list.data.total).toBe(0);
+    expect(list.data.uploads.map((u) => u.id)).not.toContain(upload.id);
+
+    const after = await req<{ album: { photoCount: number } }>(
+      "GET",
+      "/api/photo-albums/current",
+      undefined,
+      { token },
+    );
+    expect(after.data.album.photoCount).toBe(0);
+
+    // Never hard-deleted (data-loss ban) — the row survives, just hidden.
+    const row = db.prepare("SELECT hidden_at FROM photo_uploads WHERE id = ?").get(upload.id) as {
+      hidden_at: number | null;
+    };
+    expect(row.hidden_at).not.toBeNull();
+
+    // Re-deleting an already-hidden photo 404s rather than double-hiding it.
+    const redel = await req("DELETE", `/api/photo-albums/current/photos/${upload.id}`, undefined, {
+      token,
+    });
+    expect(redel.status).toBe(404);
+  });
+
+  test("a deleted photo also drops out of the guest-facing reveal", async () => {
+    const up = await guestUpload(albumToken, "pd-guest");
+    expect(up.status).toBe(201);
+    const { upload } = (await up.json()) as { upload: { id: number } };
+
+    db.exec(`UPDATE photo_albums SET reveal_at = 1 WHERE upload_token = '${albumToken}'`);
+    const revealed = await req<{ locked: boolean; total: number }>(
+      "GET",
+      `/api/photo-albums/${albumToken}/photos`,
+    );
+    expect(revealed.data.total).toBe(1);
+
+    await req("DELETE", `/api/photo-albums/current/photos/${upload.id}`, undefined, { token });
+
+    const afterDelete = await req<{ locked: boolean; total: number }>(
+      "GET",
+      `/api/photo-albums/${albumToken}/photos`,
+    );
+    expect(afterDelete.data.total).toBe(0);
+  });
+
+  test("deleting an unknown photo id 404s", async () => {
+    const r = await req("DELETE", "/api/photo-albums/current/photos/999999", undefined, {
+      token,
+    });
+    expect(r.status).toBe(404);
+  });
+
+  test("a couple cannot delete another couple's photo", async () => {
+    const up = await guestUpload(albumToken, "pd-guest");
+    expect(up.status).toBe(201);
+    const { upload } = (await up.json()) as { upload: { id: number } };
+
+    const { token: otherToken } = await bootstrapCouple("photodelete-other@weddly.test");
+    await createAlbum(otherToken);
+
+    const r = await req("DELETE", `/api/photo-albums/current/photos/${upload.id}`, undefined, {
+      token: otherToken,
+    });
+    expect(r.status).toBe(404);
+
+    // Untouched — still resolvable by its actual owner.
+    const list = await req<{ uploads: { id: number }[] }>(
+      "GET",
+      "/api/photo-albums/current/photos",
+      undefined,
+      { token },
+    );
+    expect(list.data.uploads.map((u) => u.id)).toContain(upload.id);
+  });
+});
+
 // ── Feature D: email guests their own photos ───────────────────────────────────
 
 function emailLogCount(coupleId: number, kind: string): number {
