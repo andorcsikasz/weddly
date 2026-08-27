@@ -38,6 +38,7 @@ import {
 import type { VendorClientView } from "@shared/vendor_clients";
 import type { SupplierBooking } from "@shared/suppliers";
 import { db } from "../../src/db";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import { insertMessage } from "../../src/domain/booking_messages";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
@@ -398,6 +399,9 @@ async function bootstrapVendor(
     token: claim?.token,
     password: "vendorpass123",
     full_name: `Vendor ${slug}`,
+    privacy_version: PRIVACY_VERSION,
+    vendor_terms_version: VENDOR_TERMS_VERSION,
+    highlighted_terms_accepted: true,
   });
   expect(complete.status).toBe(201);
   const acct = db

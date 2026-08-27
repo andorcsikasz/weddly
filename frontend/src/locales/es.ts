@@ -2650,10 +2650,12 @@ const es: LocaleMessages = {
     highlighted_accept:
       "Acepto por separado las cláusulas destacadas sobre renovación automática, límites de responsabilidad, cambios de tarifas, modificaciones, jurisdicción y posiciones patrocinadas.",
     legal_accept_required: "Acepta ambas confirmaciones para crear la cuenta.",
-    legal_update_title: "Revisa las condiciones actuales para proveedores",
+    legal_update_title: "Hemos actualizado nuestras condiciones para proveedores",
     legal_update_body:
-      "Tu espacio de proveedor queda pausado hasta que revises y aceptes las condiciones de suscripción actuales y las cláusulas destacadas. Puedes abrir el documento completo antes de decidir.",
-    legal_update_cta: "Aceptar y continuar",
+      "No tienes que hacer nada aquí, salvo echar un vistazo si quieres — al continuar aceptas la actualización.",
+    legal_update_link: "Leer las condiciones actualizadas",
+    legal_update_cta: "Continuar",
+    legal_update_note: "Continuar equivale a aceptar las condiciones actualizadas.",
     submit: "Crear cuenta",
     continue_to_onboarding: "Continuar",
   },

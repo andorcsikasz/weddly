@@ -38,6 +38,7 @@ import {
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import { buildEmail } from "../../src/domain/emails/templates";
 import {
   MESSAGE_BODY_MAX_LEN,
@@ -144,6 +145,9 @@ async function claimListing(
     token: claim?.token,
     password: "vendorpass123",
     full_name: fullName,
+    privacy_version: PRIVACY_VERSION,
+    vendor_terms_version: VENDOR_TERMS_VERSION,
+    highlighted_terms_accepted: true,
   });
   expect(complete.status).toBe(201);
   return { vendorToken: complete.data.token, listingId };

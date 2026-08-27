@@ -38,6 +38,7 @@ import {
 } from "@shared/vendor_points";
 import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import { createReview } from "../../src/domain/reviews";
 import { updateBookingStatus } from "../../src/domain/supplier_bookings";
 import {
@@ -118,6 +119,9 @@ async function bootstrapVendor(seed: string): Promise<{
     token: claim.token,
     password: "vendorpass123",
     full_name: "Vendor Owner",
+    privacy_version: PRIVACY_VERSION,
+    vendor_terms_version: VENDOR_TERMS_VERSION,
+    highlighted_terms_accepted: true,
   });
   expect(complete.status).toBe(201);
   const acct = db

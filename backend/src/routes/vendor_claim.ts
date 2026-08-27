@@ -13,11 +13,13 @@
 
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import type { AuthSession } from "@shared/types";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import { isVendorSelfServeBlocked } from "@shared/suppliers";
 import { hashPassword } from "../auth/password";
 import { issueSession } from "../auth/session";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
+import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails/send";
 import {
   cancelAllPendingClaims,
@@ -251,6 +253,21 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   }
   const password = parsePassword(body.password);
   const fullName = parseFullName(body.full_name);
+  // Claiming IS this vendor's registration — the same expectation as
+  // VendorRegisterPage's checkboxes, so the acceptance is captured here
+  // rather than left for the post-login legal-status gate to surprise a
+  // vendor who thought signup was already done.
+  if (
+    body.privacy_version !== PRIVACY_VERSION ||
+    body.vendor_terms_version !== VENDOR_TERMS_VERSION
+  ) {
+    throw new HttpError(409, "Legal documents changed; refresh and review the current version", {
+      code: "legal_version_stale",
+    });
+  }
+  if (body.highlighted_terms_accepted !== true) {
+    throw new HttpError(400, "The highlighted vendor clauses must be expressly accepted");
+  }
 
   const claimRowRaw = getClaimByToken(tokenRaw);
   if (!claimRowRaw) throw new HttpError(404, "Claim not found");
@@ -389,6 +406,25 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   // pinned to EUR here regardless of the mail locale above — a deliberate
   // billing decision, separate from what language we write to the vendor in.
   initVendorBilling(newVendorAccountId, vendorCurrencyForLocale(null), ts);
+
+  // One ledger row per accepted document, same shape as vendor_register.ts's
+  // finalizeVendorSignup — this is what makes hasCurrentVendorAcceptance
+  // (vendor_account.ts) already read true the moment the vendor lands on
+  // /vendor, instead of the post-login legal-status gate blocking them cold.
+  const consentEvidence = {
+    subjectUserId: newUserId,
+    subjectKind: "user" as const,
+    subjectRef: null,
+    ip: ctx.clientIp,
+    userAgent: ctx.req.headers.get("user-agent"),
+  };
+  recordConsent({ ...consentEvidence, document: "privacy", version: PRIVACY_VERSION });
+  recordConsent({ ...consentEvidence, document: "vendor_terms", version: VENDOR_TERMS_VERSION });
+  recordConsent({
+    ...consentEvidence,
+    document: "vendor_terms_highlighted",
+    version: VENDOR_TERMS_VERSION,
+  });
 
   // Hand over the couples who wrote to this business BEFORE it had an account.
   // Those messages are the reason claiming is worth anything, and until now the

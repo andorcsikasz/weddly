@@ -2603,10 +2603,12 @@ const hr: LocaleMessages = {
     highlighted_accept:
       "Zasebno prihvaćam istaknute odredbe o automatskom obnavljanju, ograničenju odgovornosti, promjenama naknada, izmjenama, nadležnosti i sponzoriranim pozicijama.",
     legal_accept_required: "Prihvatite obje potvrde kako biste izradili račun.",
-    legal_update_title: "Pregledajte važeće uvjete za pružatelje usluga",
+    legal_update_title: "Ažurirali smo uvjete za pružatelje usluga",
     legal_update_body:
-      "Vaš prostor za pružatelje usluga pauziran je dok ne pregledate i prihvatite važeće uvjete pretplate i posebno istaknute odredbe. Prije odluke možete otvoriti cijeli dokument.",
-    legal_update_cta: "Prihvati i nastavi",
+      "Ovdje nemate ništa za napraviti, osim ako želite pogledati — nastavkom prihvaćate ažuriranje.",
+    legal_update_link: "Pročitajte ažurirane uvjete",
+    legal_update_cta: "Nastavi",
+    legal_update_note: "Nastavak se smatra prihvaćanjem ažuriranih uvjeta.",
     submit: "Otvorite račun",
     continue_to_onboarding: "Nastavite",
   },

@@ -583,8 +583,6 @@ export function VendorShell({ children }: { children: ReactNode }) {
     privacy_version: string;
     vendor_terms_version: string;
   } | null>(null);
-  const [legalChecked, setLegalChecked] = useState(false);
-  const [legalHighlighted, setLegalHighlighted] = useState(false);
   const [legalBusy, setLegalBusy] = useState(false);
   const [legalFailed, setLegalFailed] = useState(false);
   useEffect(() => {
@@ -605,7 +603,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
   }, []);
 
   async function acceptCurrentVendorTerms() {
-    if (!legalStatus || !legalChecked || !legalHighlighted) return;
+    if (!legalStatus) return;
     setLegalBusy(true);
     setLegalFailed(false);
     try {
@@ -1079,45 +1077,26 @@ export function VendorShell({ children }: { children: ReactNode }) {
               {t("vendor_register.legal_update_title")}
             </h2>
             <p className="mt-2 text-sm text-ink-600 dark:text-paper-300">
-              {t("vendor_register.legal_update_body")}
+              {t("vendor_register.legal_update_body")}{" "}
+              <Link className="underline" to="/terms/vendor-subscription" target="_blank">
+                {t("vendor_register.legal_update_link")}
+              </Link>
+              .
             </p>
-            <label className="mt-5 flex items-start gap-3 text-sm text-ink-800 dark:text-paper-100">
-              <input
-                type="checkbox"
-                checked={legalChecked}
-                onChange={(e) => setLegalChecked(e.target.checked)}
-                className="mt-1"
-              />
-              <span>
-                {t("vendor_register.legal_accept_prefix")}{" "}
-                <Link className="underline" to="/terms/vendor-subscription" target="_blank">
-                  {t("vendor_register.legal_accept_link")}
-                </Link>{" "}
-                {t("vendor_register.legal_accept_suffix")}
-              </span>
-            </label>
-            <label className="mt-3 flex items-start gap-3 text-sm text-ink-800 dark:text-paper-100">
-              <input
-                type="checkbox"
-                checked={legalHighlighted}
-                onChange={(e) => setLegalHighlighted(e.target.checked)}
-                className="mt-1"
-              />
-              <span>{t("vendor_register.highlighted_accept")}</span>
-            </label>
             {legalFailed && (
               <p className="mt-3 text-sm text-red-700">{t("common.error_generic")}</p>
             )}
             <button
               type="button"
               className="btn-primary mt-5 w-full"
-              disabled={
-                !legalChecked || !legalHighlighted || legalBusy || !legalStatus.vendor_terms_version
-              }
+              disabled={legalBusy || !legalStatus.vendor_terms_version}
               onClick={() => void acceptCurrentVendorTerms()}
             >
               {legalBusy ? t("common.loading") : t("vendor_register.legal_update_cta")}
             </button>
+            <p className="mt-3 text-center text-xs text-ink-500 dark:text-paper-400">
+              {t("vendor_register.legal_update_note")}
+            </p>
           </div>
         </div>
       )}

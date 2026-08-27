@@ -2615,10 +2615,12 @@ const hu: LocaleMessages = {
     highlighted_accept:
       "Külön elfogadom az automatikus megújításra, felelősségkorlátozásra, díjmódosításra, ÁSZF-módosításra, joghatóságra és szponzorált megjelenésekre vonatkozó kiemelt kikötéseket.",
     legal_accept_required: "A fiók létrehozásához fogadd el mindkét szolgáltatói nyilatkozatot.",
-    legal_update_title: "Tekintsd át a hatályos szolgáltatói feltételeket",
+    legal_update_title: "Frissültek a szolgáltatói feltételeink",
     legal_update_body:
-      "A szolgáltatói munkaterületed addig szünetel, amíg át nem tekinted és el nem fogadod a hatályos előfizetési feltételeket és a külön kiemelt kikötéseket. Döntés előtt megnyithatod a teljes dokumentumot.",
-    legal_update_cta: "Elfogadom és folytatom",
+      "Nincs itt semmi teendőd, legfeljebb ha kíváncsi vagy rá — a folytatással elfogadod a frissítést.",
+    legal_update_link: "Elolvasom a frissített feltételeket",
+    legal_update_cta: "Folytatás",
+    legal_update_note: "A folytatás a frissített feltételek elfogadásának számít.",
     submit: "Fiók létrehozása",
     continue_to_onboarding: "Tovább",
   },

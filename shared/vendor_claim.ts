@@ -72,6 +72,9 @@ export interface CompleteClaimInput {
   token: string;
   password: string;
   full_name: string;
+  privacy_version: string;
+  vendor_terms_version: string;
+  highlighted_terms_accepted: true;
 }
 
 /** Claim verification window. Email inboxes for vendors are often shared

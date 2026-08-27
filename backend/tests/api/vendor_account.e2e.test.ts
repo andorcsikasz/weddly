@@ -111,6 +111,9 @@ async function claimListing(
     token: claim?.token,
     password: "vendorpass123",
     full_name: fullName,
+    privacy_version: PRIVACY_VERSION,
+    vendor_terms_version: VENDOR_TERMS_VERSION,
+    highlighted_terms_accepted: true,
   });
   expect(complete.status).toBe(201);
   return { vendorToken: complete.data.token };
@@ -395,6 +398,12 @@ describe("vendor legal-version gate", () => {
       "vendor-legal-gate@weddly.test",
       "Legal Gate Vendor",
     );
+    // claimListing now records consent itself (the vendor accepted at
+    // claim-complete, same as a fresh register). Strip it back out to
+    // simulate the real "legacy vendor" this test is about: an account that
+    // predates consent capture entirely (no row at all, not just a missing
+    // vendor_terms one) and must hit the reaccept gate.
+    db.prepare("DELETE FROM user_consents").run();
 
     const initial = await req<{
       accepted: boolean;

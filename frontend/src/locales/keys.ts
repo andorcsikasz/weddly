@@ -3268,7 +3268,9 @@ export interface LocaleMessages {
     legal_accept_required: string;
     legal_update_title: string;
     legal_update_body: string;
+    legal_update_link: string;
     legal_update_cta: string;
+    legal_update_note: string;
     submit: string;
     continue_to_onboarding: string;
   };

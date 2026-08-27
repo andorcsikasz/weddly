@@ -20,6 +20,7 @@ import { describe, expect, test } from "bun:test";
 import {
   COUPLE_SUBSCRIPTION_TERMS_VERSION,
   PLANNER_SUBSCRIPTION_TERMS_VERSION,
+  PRIVACY_VERSION,
   VENDOR_TERMS_VERSION,
 } from "@shared/legal";
 import type { BillingStatusResponse } from "@shared/billing";
@@ -120,6 +121,9 @@ async function claimVendor(
     token: claim?.token,
     password: "vendorpass123",
     full_name: "Vendor Owner",
+    privacy_version: PRIVACY_VERSION,
+    vendor_terms_version: VENDOR_TERMS_VERSION,
+    highlighted_terms_accepted: true,
   });
   expect(complete.status).toBe(201);
   const acct = db
@@ -307,6 +311,13 @@ describe("vendor checkout terms gate (VENDOR_TERMS_REVIEWED is already true)", (
       listingId,
       "vendor-terms-gate@weddly.test",
     );
+    // claimVendor now records consent itself (claim-complete IS this
+    // vendor's registration). This gate exists for the vendor who never did —
+    // a legacy account from before consent capture — so strip it back out to
+    // simulate that instead of the now-impossible "claimed but unaccepted".
+    db.prepare(
+      "DELETE FROM user_consents WHERE document IN ('vendor_terms', 'vendor_terms_highlighted')",
+    ).run();
     const restore = await makeVendorBillingReady();
     try {
       for (const path of ["/api/vendor/billing/setup", "/api/vendor/billing/checkout"]) {

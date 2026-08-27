@@ -15,6 +15,7 @@ import { describe, expect, test } from "bun:test";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 
 interface GrowthRow {
   kind: string;
@@ -335,6 +336,9 @@ describe("P2.C vendor claim — happy path", () => {
       token: claimRow!.token,
       password: "vendorpass123",
       full_name: "Vendor Owner",
+      privacy_version: PRIVACY_VERSION,
+      vendor_terms_version: VENDOR_TERMS_VERSION,
+      highlighted_terms_accepted: true,
     });
     expect(complete.status).toBe(201);
     expect(complete.data.user.role).toBe("vendor");
@@ -441,6 +445,9 @@ describe("P2.C vendor claim — error paths", () => {
       token: c1!.token,
       password: "vendorpass123",
       full_name: "First Claimant",
+      privacy_version: PRIVACY_VERSION,
+      vendor_terms_version: VENDOR_TERMS_VERSION,
+      highlighted_terms_accepted: true,
     });
     expect(done1.status).toBe(201);
 
@@ -484,6 +491,9 @@ describe("P2.C vendor claim — error paths", () => {
       token: c!.token,
       password: "newpass123",
       full_name: "New Vendor",
+      privacy_version: PRIVACY_VERSION,
+      vendor_terms_version: VENDOR_TERMS_VERSION,
+      highlighted_terms_accepted: true,
     });
     expect(complete.status).toBe(409);
   });

@@ -36,7 +36,17 @@ interface LegalAcceptanceBody {
   highlighted_terms_accepted?: unknown;
 }
 
+// Demo vendors (demo-…@demo.weddly.local, see vendor_demo_seed.ts) are seeded
+// with a raw INSERT INTO users, never through register/claim, so they never
+// pick up a consent row and would otherwise hit this gate on their very first
+// look at the workspace — a prospective vendor touring the demo has nothing
+// to "review and accept". Same predicate the rest of the codebase reaps/
+// excludes demo rows by.
+const DEMO_EMAIL_SUFFIX = "@demo.weddly.local";
+
 export function hasCurrentVendorAcceptance(userId: number): boolean {
+  const user = getUserById(userId);
+  if (user?.email.toLowerCase().endsWith(DEMO_EMAIL_SUFFIX)) return true;
   const rows = db
     .prepare(
       `SELECT document FROM user_consents

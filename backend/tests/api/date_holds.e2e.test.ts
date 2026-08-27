@@ -32,6 +32,7 @@ import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { type DateHold, HOLD_DEFAULT_HOURS, HOLD_MAX_HOURS } from "@shared/date_holds";
 import type { SupplierAvailability, SupplierBooking } from "@shared/suppliers";
 import type { VendorClientView } from "@shared/vendor_clients";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 
 interface ClaimRow {
   token: string;
@@ -130,6 +131,9 @@ async function bootstrapVendor(
     token: claim?.token,
     password: "vendorpass123",
     full_name: `Vendor ${slug}`,
+    privacy_version: PRIVACY_VERSION,
+    vendor_terms_version: VENDOR_TERMS_VERSION,
+    highlighted_terms_accepted: true,
   });
   expect(complete.status).toBe(201);
   const acct = db

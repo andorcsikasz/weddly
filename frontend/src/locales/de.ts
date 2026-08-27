@@ -2663,10 +2663,12 @@ const de: LocaleMessages = {
     highlighted_accept:
       "Ich akzeptiere gesondert die hervorgehobenen Klauseln zu automatischer Verlängerung, Haftungsbegrenzung, Gebührenänderungen, Änderungen, Gerichtsstand und gesponserten Platzierungen.",
     legal_accept_required: "Bitte bestätigen Sie beide Erklärungen, um das Konto zu erstellen.",
-    legal_update_title: "Aktuelle Anbieterbedingungen prüfen",
+    legal_update_title: "Wir haben unsere Anbieterbedingungen aktualisiert",
     legal_update_body:
-      "Ihr Anbieterbereich pausiert, bis Sie die aktuellen Abonnementbedingungen und die hervorgehobenen Klauseln geprüft und angenommen haben. Sie können zuvor das vollständige Dokument öffnen.",
-    legal_update_cta: "Akzeptieren und fortfahren",
+      "Sie müssen hier nichts tun, außer wenn Sie einen Blick darauf werfen möchten — mit „Weiter“ stimmen Sie der Aktualisierung zu.",
+    legal_update_link: "Aktualisierte Bedingungen lesen",
+    legal_update_cta: "Weiter",
+    legal_update_note: "„Weiter“ gilt als Zustimmung zu den aktualisierten Bedingungen.",
     submit: "Konto anlegen",
     continue_to_onboarding: "Weiter",
   },

@@ -21,6 +21,7 @@ import { vendorClaimApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import type { ClaimVerifyView } from "@shared/vendor_claim";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 
 // Narrow ApiError.detail (typed `unknown`) to its conventional `{ code }`
 // shape so callers can branch on `code === "email_taken"` etc. without
@@ -59,6 +60,8 @@ export default function VendorClaimVerifyPage() {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptedVendorTerms, setAcceptedVendorTerms] = useState(false);
+  const [acceptedHighlightedTerms, setAcceptedHighlightedTerms] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -103,12 +106,19 @@ export default function VendorClaimVerifyPage() {
       toast.error(t("vendor_claim.form_err_password"));
       return;
     }
+    if (!acceptedVendorTerms || !acceptedHighlightedTerms) {
+      toast.error(t("vendor_register.legal_accept_required"));
+      return;
+    }
     setState({ kind: "completing", view: state.view });
     try {
       const session = await vendorClaimApi.complete({
         token,
         password,
         full_name: trimmedName,
+        privacy_version: PRIVACY_VERSION,
+        vendor_terms_version: VENDOR_TERMS_VERSION,
+        highlighted_terms_accepted: true,
       });
       setSession(session.token, session.user);
       toast.success(t("vendor_claim.success_toast"));
@@ -208,6 +218,41 @@ export default function VendorClaimVerifyPage() {
                   <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                     {t("vendor_claim.form_password_hint")}
                   </p>
+                </div>
+                <div className="space-y-3 rounded-xl border border-umber-200 bg-paper-50 p-4 text-sm text-umber-800">
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={acceptedVendorTerms}
+                      onChange={(e) => setAcceptedVendorTerms(e.target.checked)}
+                      disabled={state.kind === "completing"}
+                      required
+                    />
+                    <span>
+                      {t("vendor_register.legal_accept_prefix")}{" "}
+                      <Link
+                        to="/terms/vendor-subscription"
+                        target="_blank"
+                        rel="noopener"
+                        className="underline hover:text-umber-950"
+                      >
+                        {t("vendor_register.legal_accept_link")}
+                      </Link>{" "}
+                      {t("vendor_register.legal_accept_suffix")}
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={acceptedHighlightedTerms}
+                      onChange={(e) => setAcceptedHighlightedTerms(e.target.checked)}
+                      disabled={state.kind === "completing"}
+                      required
+                    />
+                    <span>{t("vendor_register.highlighted_accept")}</span>
+                  </label>
                 </div>
                 <button
                   type="submit"

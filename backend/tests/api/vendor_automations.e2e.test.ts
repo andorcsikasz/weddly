@@ -38,6 +38,7 @@ import { CONFIG } from "../../src/config";
 import { db } from "../../src/db";
 import { insertMessage } from "../../src/domain/booking_messages";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import { senderForKind } from "../../src/domain/emails/kinds";
 import { addOptOut } from "../../src/domain/emails/optouts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
@@ -145,6 +146,9 @@ async function bootstrapVendor(slug: string, claimantEmail: string): Promise<voi
     token: claim?.token,
     password: "vendorpass123",
     full_name: `Vendor ${slug}`,
+    privacy_version: PRIVACY_VERSION,
+    vendor_terms_version: VENDOR_TERMS_VERSION,
+    highlighted_terms_accepted: true,
   });
   expect(complete.status).toBe(201);
   vendorToken = complete.data.token;

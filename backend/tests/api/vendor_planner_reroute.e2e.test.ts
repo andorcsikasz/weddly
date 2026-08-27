@@ -28,6 +28,7 @@ import type { AuthSession } from "@shared/types";
 import type { ClaimVerifyView } from "@shared/vendor_claim";
 import type { VendorCampaign, VendorCampaignTarget } from "@shared/vendor_campaign";
 import { bootstrapCouple, registerAndVerify, req, verifyUserEmail, wipeAll } from "../helpers";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 
 let adminToken = "";
 
@@ -136,6 +137,9 @@ describe("planner listings are closed to the vendor funnel", () => {
       token: claim.token,
       password: "supersafe123",
       full_name: "Planner Two",
+      privacy_version: PRIVACY_VERSION,
+      vendor_terms_version: VENDOR_TERMS_VERSION,
+      highlighted_terms_accepted: true,
     });
     expect(c.status).toBe(409);
     // No account, no flipped listing.

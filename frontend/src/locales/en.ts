@@ -2593,10 +2593,12 @@ const en: LocaleMessages = {
     highlighted_accept:
       "I separately accept the highlighted clauses on automatic renewal, liability limits, fee changes, amendments, jurisdiction and sponsored placements.",
     legal_accept_required: "Accept both vendor-terms confirmations to create the account.",
-    legal_update_title: "Review the current vendor terms",
+    legal_update_title: "We've updated our vendor terms",
     legal_update_body:
-      "Your vendor workspace is paused until you review and accept the current subscription terms and highlighted clauses. You can open the full document before deciding.",
-    legal_update_cta: "Accept and continue",
+      "Nothing you need to do here except take a look if you'd like — continuing means you're good with the update.",
+    legal_update_link: "Read the updated terms",
+    legal_update_cta: "Continue",
+    legal_update_note: "Continuing counts as accepting the updated terms.",
     submit: "Create account",
     continue_to_onboarding: "Continue",
   },

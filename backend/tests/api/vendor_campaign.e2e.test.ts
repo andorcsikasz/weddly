@@ -31,6 +31,7 @@ import { db, now } from "../../src/db";
 import { buildEmail } from "../../src/domain/emails/templates";
 import { runCampaignSweep } from "../../src/domain/emails/worker";
 import { backfillListings } from "../../src/domain/listings";
+import { PRIVACY_VERSION, VENDOR_TERMS_VERSION } from "@shared/legal";
 import {
   eligibleCampaignEmails,
   getCampaignRow,
@@ -382,6 +383,9 @@ describe("vendor claim-invite campaign", () => {
       token: claimTokenFromLocation(redirect.location),
       password: "vendorpass123",
       full_name: "Click Owner",
+      privacy_version: PRIVACY_VERSION,
+      vendor_terms_version: VENDOR_TERMS_VERSION,
+      highlighted_terms_accepted: true,
     });
     expect(complete.status).toBe(201);
     const listing = db
@@ -424,6 +428,9 @@ describe("vendor claim-invite campaign", () => {
         token: claimTokenFromLocation(huRedirect.location),
         password: "vendorpass123",
         full_name: "HU Owner",
+        privacy_version: PRIVACY_VERSION,
+        vendor_terms_version: VENDOR_TERMS_VERSION,
+        highlighted_terms_accepted: true,
       },
     );
     expect(huComplete.status).toBe(201);
@@ -437,6 +444,9 @@ describe("vendor claim-invite campaign", () => {
         token: claimTokenFromLocation(itRedirect.location),
         password: "vendorpass123",
         full_name: "IT Owner",
+        privacy_version: PRIVACY_VERSION,
+        vendor_terms_version: VENDOR_TERMS_VERSION,
+        highlighted_terms_accepted: true,
       },
     );
     expect(itComplete.status).toBe(201);
@@ -657,6 +667,9 @@ describe("vendor claim-invite campaign", () => {
       token: claimTokenFromLocation(redirect.location),
       password: "vendorpass123",
       full_name: "Conv Owner",
+      privacy_version: PRIVACY_VERSION,
+      vendor_terms_version: VENDOR_TERMS_VERSION,
+      highlighted_terms_accepted: true,
     });
 
     const detail = await req<VendorCampaignDetail>(
