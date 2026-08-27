@@ -258,12 +258,6 @@ describe("vendor google calendar — connect + sync", () => {
     const events = __fakeCalendarEvents(status.calendarId as string);
     expect(events.length).toBe(3);
 
-    // A pending inquiry must NOT mark the vendor busy — it isn't a commitment.
-    const inquiry = events.find((e) => e.summary?.includes("Inquiry"));
-    expect(inquiry?.transparency).toBe("transparent");
-    expect(allDay(inquiry?.start)).toBe("2030-06-15");
-    expect(allDay(inquiry?.end)).toBe("2030-06-16");
-
     // A whole-day block is all-day and genuinely busy.
     const blocked = events.find((e) => e.summary?.startsWith("⛔"));
     expect(blocked?.transparency).toBe("opaque");
@@ -273,6 +267,15 @@ describe("vendor google calendar — connect + sync", () => {
     const task = events.find((e) => e.summary?.includes("Send the contract"));
     expect(task?.transparency).toBe("transparent");
     expect(allDay(task?.start)).toBe("2030-05-01");
+
+    // A pending inquiry must NOT mark the vendor busy — it isn't a commitment.
+    // Found by elimination rather than by label text: the claimed vendor's
+    // listing is Hungarian, so the calendar's own labels are Hungarian too
+    // (ae9d4552) and a fixed "Inquiry" substring no longer matches.
+    const inquiry = events.find((e) => e !== blocked && e !== task);
+    expect(inquiry?.transparency).toBe("transparent");
+    expect(allDay(inquiry?.start)).toBe("2030-06-15");
+    expect(allDay(inquiry?.end)).toBe("2030-06-16");
 
     // Confirming the booking flips it to a busy wedding and REPLACES the
     // inquiry event (different source_kind ⇒ delete + insert).
