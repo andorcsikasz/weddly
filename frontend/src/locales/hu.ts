@@ -4466,6 +4466,8 @@ const hu: LocaleMessages = {
     household_remove: "Háztartás törlése",
     household_expand: "Háztartás kibontása",
     household_collapse: "Háztartás összecsukása",
+    collapse_all: "Összes összecsukása",
+    expand_all: "Összes kibontása",
     household_accommodation_on: "Szállás-kérés kérdés bekapcsolva, kattints a kikapcsoláshoz",
     household_accommodation_off: "Szállás-kérés kérdés kikapcsolva, kattints a bekapcsoláshoz",
     household_section_title: "Háztartások",

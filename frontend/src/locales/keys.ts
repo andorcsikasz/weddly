@@ -5081,6 +5081,11 @@ export interface LocaleMessages {
     household_remove: string;
     household_expand: string;
     household_collapse: string;
+    /** Bulk toggle above the household list — collapses/expands every visible
+     *  household card in one click. Label flips once every visible card
+     *  already matches the target state. */
+    collapse_all: string;
+    expand_all: string;
     /** Bed-icon button toggle in each household header — flips the per-household
      *  `rsvp_offers_accommodation` flag so the public RSVP form for that family
      *  surfaces (or hides) the "needs accommodation?" checkbox. */

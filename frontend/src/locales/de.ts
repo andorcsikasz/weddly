@@ -4564,6 +4564,8 @@ const de: LocaleMessages = {
     household_remove: "Haushalt löschen",
     household_expand: "Haushalt ausklappen",
     household_collapse: "Haushalt einklappen",
+    collapse_all: "Alle einklappen",
+    expand_all: "Alle ausklappen",
     household_accommodation_on: "Unterkunftsfrage an, zum Ausschalten klicken",
     household_accommodation_off: "Unterkunftsfrage aus, zum Einschalten klicken",
     household_section_title: "Haushalte",

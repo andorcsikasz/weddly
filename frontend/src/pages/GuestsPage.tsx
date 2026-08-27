@@ -49,6 +49,7 @@ import {
   GripVertical,
   Heart,
   Home,
+  HousePlus,
   LayoutGrid,
   Leaf,
   Link2,
@@ -122,6 +123,58 @@ const GROUPS: GuestGroupTag[] = [
   "work",
   "other",
 ];
+
+/** One hue per side/group tag, reused everywhere the tag appears (the
+ *  household's own chip, the filter panel, the grouped-view section
+ *  headers) so the colour is a stable identity for that group rather than
+ *  something the couple has to re-learn per surface. "His" tags sit in the
+ *  blue family, "her" tags in the magenta family (paired but distinct
+ *  within each side), and the three tags with no side get their own
+ *  unrelated hues. Deliberately avoids emerald (the RSVP "yes" signal),
+ *  blush (delete/danger throughout this page) and sky/amber/orange/yellow/
+ *  cyan (already the dietary-allergen tones a few hundred lines down) so no
+ *  colour on this page means two different things. */
+const GROUP_TAG_TONE: Record<GuestGroupTag, string> = {
+  his_family:
+    "border-indigo-300 bg-indigo-50 text-indigo-800 dark:border-indigo-400/40 dark:bg-indigo-400/15 dark:text-indigo-300",
+  his_friends:
+    "border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-400/40 dark:bg-blue-400/15 dark:text-blue-300",
+  her_family:
+    "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800 dark:border-fuchsia-400/40 dark:bg-fuchsia-400/15 dark:text-fuchsia-300",
+  her_friends:
+    "border-violet-300 bg-violet-50 text-violet-800 dark:border-violet-400/40 dark:bg-violet-400/15 dark:text-violet-300",
+  shared_friends:
+    "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-400/40 dark:bg-teal-400/15 dark:text-teal-300",
+  work: "border-slate-300 bg-slate-50 text-slate-800 dark:border-slate-400/40 dark:bg-slate-400/15 dark:text-slate-300",
+  other:
+    "border-stone-300 bg-stone-50 text-stone-800 dark:border-stone-400/40 dark:bg-stone-400/15 dark:text-stone-300",
+};
+/** Louder variant of the same hue for a PRESSED/active chip — solid fill
+ *  instead of a tint, mirroring how the generic filter chip already goes
+ *  dark-solid when active. */
+const GROUP_TAG_TONE_ACTIVE: Record<GuestGroupTag, string> = {
+  his_family:
+    "border-indigo-600 bg-indigo-600 text-white dark:border-indigo-500 dark:bg-indigo-500",
+  his_friends: "border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500",
+  her_family:
+    "border-fuchsia-600 bg-fuchsia-600 text-white dark:border-fuchsia-500 dark:bg-fuchsia-500",
+  her_friends:
+    "border-violet-600 bg-violet-600 text-white dark:border-violet-500 dark:bg-violet-500",
+  shared_friends: "border-teal-600 bg-teal-600 text-white dark:border-teal-500 dark:bg-teal-500",
+  work: "border-slate-600 bg-slate-600 text-white dark:border-slate-500 dark:bg-slate-500",
+  other: "border-stone-600 bg-stone-600 text-white dark:border-stone-500 dark:bg-stone-500",
+};
+/** Solid dot/accent-bar colour per tag — used where text-on-tint isn't the
+ *  shape (a small swatch, a left accent border). */
+const GROUP_TAG_DOT: Record<GuestGroupTag, string> = {
+  his_family: "bg-indigo-500",
+  his_friends: "bg-blue-500",
+  her_family: "bg-fuchsia-500",
+  her_friends: "bg-violet-500",
+  shared_friends: "bg-teal-500",
+  work: "bg-slate-500",
+  other: "bg-stone-500",
+};
 
 /** Every slot this couple offers, in render order: the six canonical ones and
  *  then their own. Replaces a hardcoded six-item array that could not show a
@@ -245,6 +298,46 @@ export default function GuestsPage() {
   const [couple, setCouple] = useState<Couple | null>(null);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [households, setHouseholds] = useState<Household[]>([]);
+  // Which household cards are collapsed, lifted out of `HouseholdCard` itself
+  // (it used to own this as private per-card state) so a page-level "collapse
+  // all" control can act on every visible card at once. Same localStorage key
+  // as before, so an existing per-browser preference survives the refactor.
+  const [collapsedHouseholds, setCollapsedHouseholds] = useState<Set<number>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = window.localStorage.getItem("weddly.guests.collapsed_households");
+      const ids = raw ? (JSON.parse(raw) as unknown) : [];
+      return new Set(Array.isArray(ids) ? (ids as number[]) : []);
+    } catch {
+      return new Set();
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "weddly.guests.collapsed_households",
+        JSON.stringify([...collapsedHouseholds]),
+      );
+    } catch {}
+  }, [collapsedHouseholds]);
+  function toggleHouseholdCollapsed(id: number) {
+    setCollapsedHouseholds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function setHouseholdsCollapsed(ids: number[], collapsed: boolean) {
+    setCollapsedHouseholds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (collapsed) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  }
   // Drag-to-reorder state for the default household list. `armedId` gates
   // native draggability to a press on the grip handle (so the inline rename
   // input and action buttons stay interactive); `dragId`/`dragOverId` drive
@@ -775,6 +868,15 @@ export default function GuestsPage() {
     [listableGuests],
   );
 
+  // How many (listable) guests sit in each side/group tag, regardless of
+  // household size — feeds the count badge on every "side & group" filter
+  // chip so a couple can see e.g. "His family (12)" before opening it.
+  const guestCountByGroup = useMemo(() => {
+    const counts = new Map<GuestGroupTag, number>();
+    for (const g of listableGuests) counts.set(g.group_tag, (counts.get(g.group_tag) ?? 0) + 1);
+    return counts;
+  }, [listableGuests]);
+
   // Closed households = multi-member households (explicitly grouped units).
   // Declared up here because the flat-list predicate below needs the id set:
   // "group households" has to narrow the table and the search results too, not
@@ -787,6 +889,22 @@ export default function GuestsPage() {
     () => new Set(closedHouseholds.map((hh) => hh.id)),
     [closedHouseholds],
   );
+
+  // The three GUEST-level predicate axes (as opposed to `groupSet` and
+  // `householdFilter`, which are household-shaped). Factored out so the flat
+  // list and the grouped-household view test the exact same thing: a guest
+  // that would appear in the flat list is the same guest that makes a
+  // household "match" in the grouped view below.
+  const matchesGuestPredicates = useCallback(
+    (g: Guest) => {
+      if (rsvpSet.size > 0 && !rsvpSet.has(g.rsvp_status)) return false;
+      if (invitedFilter && g.invited_at == null) return false;
+      if (accommodationFilter && !g.accommodation_needed) return false;
+      return true;
+    },
+    [rsvpSet, invitedFilter, accommodationFilter],
+  );
+  const predicateActive = rsvpSet.size > 0 || invitedFilter || accommodationFilter;
 
   // Results for the query currently in the box, or null while the answer is
   // still in flight. Both `searching` and the flat list read this one value, so
@@ -802,10 +920,8 @@ export default function GuestsPage() {
     const base = debouncedQuery ? (freshResults ?? []) : listableGuests;
     const out = base.filter((g) => {
       if (g.partner_role) return false;
-      if (rsvpSet.size > 0 && !rsvpSet.has(g.rsvp_status)) return false;
+      if (!matchesGuestPredicates(g)) return false;
       if (groupSet.size > 0 && !groupSet.has(g.group_tag)) return false;
-      if (invitedFilter && g.invited_at == null) return false;
-      if (accommodationFilter && !g.accommodation_needed) return false;
       // "Group households" is a real predicate, not only a card-view lens. The
       // table branch renders this list and is checked BEFORE the grouped view,
       // so without this the chip sat there pressed and changed nothing —
@@ -821,10 +937,8 @@ export default function GuestsPage() {
     debouncedQuery,
     freshResults,
     listableGuests,
-    rsvpSet,
+    matchesGuestPredicates,
     groupSet,
-    invitedFilter,
-    accommodationFilter,
     householdFilter,
     closedHouseholdIds,
     sortKey,
@@ -834,14 +948,24 @@ export default function GuestsPage() {
     return GROUPS.filter((g) => present.has(g));
   }, [closedHouseholds]);
   // Households shown in the grouped browse lens, narrowed by the (multi)
-  // side/group selection.
-  const filteredClosedHouseholds = useMemo(
-    () =>
-      groupSet.size > 0
-        ? closedHouseholds.filter((hh) => groupSet.has(hh.group_tag))
-        : closedHouseholds,
-    [closedHouseholds, groupSet],
-  );
+  // side/group selection AND, since a guest-level filter (RSVP / invited /
+  // accommodation) no longer bounces the page out to the flat list, by
+  // whether the household has at least one member who'd pass those filters —
+  // the same guest that would have shown up in the flat list. The household
+  // itself still renders in full (see `HouseholdCard`'s `highlightGuest`
+  // prop): the point of this view is the family unit, so a "who's still
+  // pending" filter should point at the household without hiding the rest of
+  // it.
+  const filteredClosedHouseholds = useMemo(() => {
+    let list = closedHouseholds;
+    if (groupSet.size > 0) list = list.filter((hh) => groupSet.has(hh.group_tag));
+    if (predicateActive) {
+      list = list.filter((hh) =>
+        (guestsByHousehold.get(hh.id) ?? []).some((g) => matchesGuestPredicates(g)),
+      );
+    }
+    return list;
+  }, [closedHouseholds, groupSet, predicateActive, guestsByHousehold, matchesGuestPredicates]);
   // Default (unfiltered) household list, honoring the sort control.
   const sortedListableHouseholds = useMemo(
     () => sortHouseholds(listableHouseholds, sortKey),
@@ -948,13 +1072,15 @@ export default function GuestsPage() {
       : null;
 
   // ── View mode ────────────────────────────────────────────────────────
-  // A guest-level predicate (rsvp / invited / accommodation) or a search flips
-  // the page to the flat filtered list. A side/group selection does the same
-  // UNLESS the grouped-household browse lens is on, where it just narrows the
-  // sections. So every axis still composes; the only question is grouped-cards
-  // vs flat-list presentation.
-  const predicateActive = rsvpSet.size > 0 || invitedFilter || accommodationFilter;
-  const flatView = !!debouncedQuery || predicateActive || (groupSet.size > 0 && !householdFilter);
+  // A search always flips to the flat list (nothing about "search" implies a
+  // household). A guest-level predicate (rsvp / invited / accommodation) or a
+  // side/group selection does the same UNLESS the grouped-household browse
+  // lens is on, where they instead narrow which households/sections show
+  // (see `filteredClosedHouseholds`) — a couple filtering "pending" no longer
+  // gets bounced out of the coloured family view just for using the RSVP
+  // filter at the same time. So every axis still composes; the only question
+  // is grouped-cards vs flat-list presentation.
+  const flatView = !!debouncedQuery || ((predicateActive || groupSet.size > 0) && !householdFilter);
   const activeFilterCount =
     rsvpSet.size + groupSet.size + (invitedFilter ? 1 : 0) + (accommodationFilter ? 1 : 0);
 
@@ -1119,6 +1245,7 @@ export default function GuestsPage() {
           onQueryChange={setQuery}
           rsvpSet={rsvpSet}
           groupSet={groupSet}
+          guestCountByGroup={guestCountByGroup}
           invited={invitedFilter}
           accommodation={accommodationFilter}
           householdView={householdFilter}
@@ -1236,17 +1363,46 @@ export default function GuestsPage() {
         </div>
       ) : householdFilter ? (
         <div ref={listRef} className="space-y-6">
+          {filteredClosedHouseholds.length > 0 && (
+            <div className="flex justify-end">
+              <CollapseAllButton
+                householdIds={filteredClosedHouseholds.map((hh) => hh.id)}
+                collapsedHouseholds={collapsedHouseholds}
+                onSetCollapsed={setHouseholdsCollapsed}
+              />
+            </div>
+          )}
           {(groupSet.size > 0 ? GROUPS.filter((g) => groupSet.has(g)) : activeGroupTags).map(
-            (tag) => {
+            (tag, i) => {
               const tagHouseholds = sortHouseholds(
                 filteredClosedHouseholds.filter((hh) => hh.group_tag === tag),
                 sortKey,
               );
               if (tagHouseholds.length === 0) return null;
+              const guestCount = tagHouseholds.reduce(
+                (sum, hh) => sum + (guestsByHousehold.get(hh.id)?.length ?? 0),
+                0,
+              );
               return (
-                <div key={tag}>
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-umber-500">
+                // Each section fades/rises in on mount, staggered a touch by
+                // its position so the coloured groups read as a sequence
+                // rather than all popping at once. Capped at 6 steps — with 7
+                // possible tags a flat stagger tail would start to feel slow
+                // rather than lively.
+                <div
+                  key={tag}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${Math.min(i, 6) * 40}ms`, animationFillMode: "both" }}
+                >
+                  <h3
+                    className={`mb-2 inline-flex items-center gap-2 rounded-full border py-1.5 pl-3 pr-3 text-xs font-semibold uppercase tracking-widest ${GROUP_TAG_TONE[tag]}`}
+                  >
+                    <GroupIcon group={tag} />
                     {t(`guests.group_${tag}`)}
+                    <span className="rounded-full bg-white/60 px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal dark:bg-black/20">
+                      {t("guests.total_summary_households", { n: tagHouseholds.length })} ·{" "}
+                      {guestCount}
+                    </span>
                   </h3>
                   <div className="space-y-3">
                     {tagHouseholds.map((hh) => (
@@ -1255,6 +1411,9 @@ export default function GuestsPage() {
                         household={hh}
                         members={guestsByHousehold.get(hh.id) ?? []}
                         coupleSlug={couple?.slug ?? null}
+                        collapsed={collapsedHouseholds.has(hh.id)}
+                        onToggleCollapsed={() => toggleHouseholdCollapsed(hh.id)}
+                        highlightGuest={predicateActive ? matchesGuestPredicates : undefined}
                         onCopyShare={() => {
                           void copyShare(couple?.slug ?? null, hh.code);
                         }}
@@ -1284,6 +1443,15 @@ export default function GuestsPage() {
         </div>
       ) : (
         <div ref={listRef} className="space-y-4">
+          {sortedListableHouseholds.length > 1 && (
+            <div className="flex justify-end">
+              <CollapseAllButton
+                householdIds={sortedListableHouseholds.map((hh) => hh.id)}
+                collapsedHouseholds={collapsedHouseholds}
+                onSetCollapsed={setHouseholdsCollapsed}
+              />
+            </div>
+          )}
           {(virtualReveal ? sortedListableHouseholds : sortedListableHouseholds.slice(0, 100)).map(
             (hh) => (
               // `content-visibility: auto` lets the browser skip layout +
@@ -1338,6 +1506,8 @@ export default function GuestsPage() {
                   coupleSlug={couple?.slug ?? null}
                   reorderable={sortKey === "default"}
                   onGripPointerDown={() => setArmedId(hh.id)}
+                  collapsed={collapsedHouseholds.has(hh.id)}
+                  onToggleCollapsed={() => toggleHouseholdCollapsed(hh.id)}
                   onCopyShare={() => {
                     void copyShare(couple?.slug ?? null, hh.code);
                   }}
@@ -1569,6 +1739,23 @@ function SearchResults({
 
 // Compact cell dropdown shared by the table's inline editors. appearance-none
 // + our own chevron so the control reads as a quiet cell until hovered.
+/** Excel/Sheets-style grid cell shared by every table cell — header, body and
+ *  the always-empty new-row alike. A plain border on all four sides plus
+ *  `border-collapse` on the `<table>` renders one crisp grid line between
+ *  every cell instead of the old hover-only "card row" look. */
+const CELL = "border border-paper-200 px-2.5 py-1.5 align-middle dark:border-umber-700";
+const CELL_HEAD = `${CELL} bg-paper-100/80 text-left text-[11px] font-semibold uppercase tracking-widest text-ink-400 dark:bg-umber-800/70 dark:text-umber-500`;
+
+/** Shared look for every inline editor living inside a cell (text input or
+ *  <select>): flat and borderless at rest, and a real ring around the whole
+ *  field on focus — the "this is the active cell" highlight a spreadsheet
+ *  gives you, rather than a form field's soft rounded pill. No right padding
+ *  baked in on purpose: a caller that needs room for a chevron adds `pr-6`,
+ *  everyone else adds `pr-2` — two classes fighting over the same padding
+ *  side is a Tailwind cascade-order trap, so the base only ever sets `pl-2`. */
+const CELL_FIELD =
+  "h-8 w-full rounded border border-transparent bg-transparent pl-2 text-xs text-ink-800 transition-colors placeholder:text-ink-400 hover:border-paper-300 hover:bg-paper-100/70 focus:border-umber-500 focus:bg-paper-50 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-umber-500 disabled:opacity-60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:hover:border-umber-600 dark:hover:bg-umber-800/50 dark:focus:bg-umber-800 dark:focus:ring-umber-400";
+
 function CellSelect({
   value,
   ariaLabel,
@@ -1587,7 +1774,7 @@ function CellSelect({
   return (
     <span className={`relative inline-flex w-full min-w-[6.5rem] ${className}`} title={title}>
       <select
-        className="h-8 w-full cursor-pointer appearance-none truncate rounded-lg border border-transparent bg-transparent py-0 pl-2 pr-6 text-xs text-ink-700 transition-colors hover:border-paper-300 hover:bg-paper-100 focus:border-umber-500 focus:outline-none dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
+        className={`${CELL_FIELD} cursor-pointer appearance-none pr-6`}
         value={value}
         aria-label={ariaLabel}
         onChange={(e) => onChange(e.target.value)}
@@ -2271,6 +2458,9 @@ function HouseholdCard({
   coupleSlug,
   reorderable = false,
   onGripPointerDown,
+  collapsed,
+  onToggleCollapsed,
+  highlightGuest,
   onCopyShare,
   onAddMember,
   onEditGuest,
@@ -2291,6 +2481,13 @@ function HouseholdCard({
   /** Arms the parent wrapper's `draggable` on grip press so the rest of the
    *  card (rename input, action buttons) stays interactive. */
   onGripPointerDown?: () => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  /** When a guest-level filter (RSVP / invited / accommodation) is active
+   *  alongside the grouped household view, this marks which member rows are
+   *  the ones that made the household match — so the family stays together
+   *  on screen but the couple can still see at a glance who triggered it. */
+  highlightGuest?: (g: Guest) => boolean;
   onCopyShare: () => void;
   onAddMember: () => void;
   onEditGuest: (g: Guest) => void;
@@ -2305,28 +2502,6 @@ function HouseholdCard({
   const { t } = useT();
   const isHosts = household.is_couple_household;
   const orderedMembers = useMemo(() => orderHouseholdMembers(members), [members]);
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const raw = window.localStorage.getItem("weddly.guests.collapsed_households");
-      if (!raw) return false;
-      const ids = JSON.parse(raw) as unknown;
-      return Array.isArray(ids) && ids.includes(household.id);
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem("weddly.guests.collapsed_households");
-      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
-      const ids = new Set<number>(Array.isArray(parsed) ? (parsed as number[]) : []);
-      if (collapsed) ids.add(household.id);
-      else ids.delete(household.id);
-      window.localStorage.setItem("weddly.guests.collapsed_households", JSON.stringify([...ids]));
-    } catch {}
-  }, [collapsed, household.id]);
   return (
     /* The couple's own household card swaps the neutral card chrome for
        a thin blush outline + the shared `.stationery-blush` diagonal
@@ -2461,7 +2636,7 @@ function HouseholdCard({
           <button
             type="button"
             className={`btn-ghost btn-sm ${isHosts ? "!text-paper-100 hover:!bg-umber-700 hover:!text-paper-50" : ""}`}
-            onClick={() => setCollapsed((v) => !v)}
+            onClick={onToggleCollapsed}
             aria-expanded={!collapsed}
             aria-label={collapsed ? t("guests.household_expand") : t("guests.household_collapse")}
             title={collapsed ? t("guests.household_expand") : t("guests.household_collapse")}
@@ -2469,7 +2644,7 @@ function HouseholdCard({
             <ChevronDown
               size={14}
               aria-hidden
-              className={collapsed ? "transition-transform" : "rotate-180 transition-transform"}
+              className={`transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${collapsed ? "" : "rotate-180"}`}
             />
           </button>
         </div>
@@ -2491,8 +2666,20 @@ function HouseholdCard({
         </div>
       )}
 
-      {!collapsed && (
-        <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+      {/* Height-animated collapse: the grid track goes from its natural
+          content height (`1fr`) to `0fr`, and the `overflow-hidden` on the
+          single grid child clips whatever doesn't fit. This needs no JS
+          measuring of scrollHeight — the browser interpolates the fr unit
+          against the content's own intrinsic size — and it needs the list to
+          stay mounted while collapsed (unlike the old `{!collapsed && ...}`
+          guard) so there's something to animate to. Zeroed for free by the
+          site-wide `prefers-reduced-motion` rule, which clamps every
+          transition-duration to ~0: the row still lands on its new state, it
+          just stops travelling. */}
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${collapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]"}`}
+      >
+        <ul className="divide-y divide-paper-200 overflow-hidden dark:divide-umber-700">
           {orderedMembers.map(({ guest: g, isPlusOne }) => (
             <li
               key={g.id}
@@ -2505,10 +2692,14 @@ function HouseholdCard({
                *  inline) → flexible spacer → RSVP badge + edit/print/
                *  delete pinned right. Same layout for every guest.
                *  A materialised +1 is nudged right and gets an L-shaped
-               *  hairline connector tying it back up to its host above. */
+               *  hairline connector tying it back up to its host above.
+               *  `highlightGuest` (set only while a guest-level filter is
+               *  active inside the grouped household view) washes the row
+               *  that made this household match, so the family stays
+               *  together on screen without hiding why it's here. */
               className={`flex items-center gap-2 py-2 md:gap-3 md:py-2.5 ${
                 isPlusOne ? "relative pl-9 pr-3 md:pl-12 md:pr-4" : "px-3 md:px-4"
-              }`}
+              } ${highlightGuest?.(g) ? "bg-sage-50 dark:bg-sage-900/20" : ""}`}
             >
               {isPlusOne && (
                 <span
@@ -2578,8 +2769,42 @@ function HouseholdCard({
             </li>
           )}
         </ul>
-      )}
+      </div>
     </div>
+  );
+}
+
+/** Bulk collapse/expand for every household currently in view (whichever
+ *  list handed it `householdIds` — a single grouped section's list stays
+ *  independent of this button, since it can only see the whole list). Reads
+ *  as "Collapse all" until every visible card is already collapsed, then
+ *  flips to "Expand all" — never a static label that stops matching what a
+ *  second click would do. */
+function CollapseAllButton({
+  householdIds,
+  collapsedHouseholds,
+  onSetCollapsed,
+}: {
+  householdIds: number[];
+  collapsedHouseholds: Set<number>;
+  onSetCollapsed: (ids: number[], collapsed: boolean) => void;
+}) {
+  const { t } = useT();
+  const allCollapsed =
+    householdIds.length > 0 && householdIds.every((id) => collapsedHouseholds.has(id));
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs font-medium text-ink-600 transition-all hover:border-paper-400 active:scale-95 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:border-umber-600"
+      onClick={() => onSetCollapsed(householdIds, !allCollapsed)}
+    >
+      <ChevronDown
+        size={13}
+        aria-hidden
+        className={`transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${allCollapsed ? "" : "rotate-180"}`}
+      />
+      {allCollapsed ? t("guests.expand_all") : t("guests.collapse_all")}
+    </button>
   );
 }
 
@@ -4050,10 +4275,12 @@ function HouseholdGroupChip({
 }) {
   const { t } = useT();
   return (
-    <span className="relative inline-flex items-center gap-1.5 rounded-xl border border-paper-300 bg-paper-50 px-2 py-1 text-xs font-medium text-ink-700 transition-colors hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600">
+    <span
+      className={`relative inline-flex items-center gap-1.5 rounded-xl border px-2 py-1 text-xs font-medium transition-colors ${GROUP_TAG_TONE[value]}`}
+    >
       <GroupIcon group={value} />
       <span className="truncate">{t(`guests.group_${value}`)}</span>
-      <ChevronDown size={12} aria-hidden className="text-ink-500 dark:text-umber-300" />
+      <ChevronDown size={12} aria-hidden className="opacity-70" />
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as GuestGroupTag)}
@@ -5146,6 +5373,7 @@ function GuestFilterBar({
   onQueryChange,
   rsvpSet,
   groupSet,
+  guestCountByGroup,
   invited,
   accommodation,
   householdView,
@@ -5165,6 +5393,9 @@ function GuestFilterBar({
   onQueryChange: (v: string) => void;
   rsvpSet: Set<RsvpStatus>;
   groupSet: Set<GuestGroupTag>;
+  /** Guest count per side/group tag, shown on each chip so a couple can see
+   *  e.g. "His family (12)" before ever opening the grouped view. */
+  guestCountByGroup: Map<GuestGroupTag, number>;
   invited: boolean;
   accommodation: boolean;
   householdView: boolean;
@@ -5195,10 +5426,19 @@ function GuestFilterBar({
   const sortOptions: SortKey[] = ["default", "name", "added", "rsvp", "group"];
   const chip = (on: boolean) =>
     [
-      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm transition-colors",
+      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm transition-all active:scale-95",
       on
         ? "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
         : "bg-paper-100 text-ink-700 ring-1 ring-paper-200 hover:bg-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-700",
+    ].join(" ");
+  // Side/group chips get their tag's own colour instead of the generic
+  // monochrome treatment above — the filter panel, the section headers in the
+  // grouped view and each household's own chip all speak the same colour
+  // language now, so a couple learns a tag's colour once.
+  const groupChip = (g: GuestGroupTag, on: boolean) =>
+    [
+      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition-all active:scale-95",
+      on ? GROUP_TAG_TONE_ACTIVE[g] : GROUP_TAG_TONE[g],
     ].join(" ");
   const hasActive = activeFilterCount > 0 || householdView;
 
@@ -5344,11 +5584,13 @@ function GuestFilterBar({
               <button
                 key={g}
                 type="button"
-                className={chip(groupSet.has(g))}
+                className={groupChip(g, groupSet.has(g))}
                 aria-pressed={groupSet.has(g)}
                 onClick={() => onToggleGroup(g)}
               >
+                <GroupIcon group={g} />
                 {t(`guests.group_${g}`)}
+                <span className="opacity-70">({guestCountByGroup.get(g) ?? 0})</span>
               </button>
             ))}
           </FilterGroup>
@@ -5393,8 +5635,10 @@ function GuestFilterBar({
           {[...groupSet].map((g) => (
             <ActiveChip
               key={`g-${g}`}
+              icon={<GroupIcon group={g} />}
               label={t(`guests.group_${g}`)}
               onRemove={() => onToggleGroup(g)}
+              tone={GROUP_TAG_TONE[g]}
             />
           ))}
           {invited && (
@@ -5446,15 +5690,22 @@ function ActiveChip({
   icon,
   label,
   onRemove,
+  tone,
 }: {
   icon?: ReactNode;
   label: string;
   onRemove: () => void;
+  /** Overrides the default neutral pill with a group tag's own colour — see
+   *  `GROUP_TAG_TONE` — so a side/group filter still reads as its colour once
+   *  it drops out of the panel and into the active-filter summary row. */
+  tone?: string;
 }) {
   const { t } = useT();
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-sm text-ink-700 ring-1 ring-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700">
-      {icon && <span className="text-ink-500 dark:text-umber-300">{icon}</span>}
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${tone ?? "border-paper-200 bg-paper-100 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"}`}
+    >
+      {icon && <span className="opacity-80">{icon}</span>}
       <span className="font-medium">{label}</span>
       <button
         type="button"

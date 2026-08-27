@@ -4430,6 +4430,8 @@ const en: LocaleMessages = {
     household_remove: "Delete household",
     household_expand: "Expand household",
     household_collapse: "Collapse household",
+    collapse_all: "Collapse all",
+    expand_all: "Expand all",
     household_accommodation_on: "Accommodation question on, click to turn off",
     household_accommodation_off: "Accommodation question off, click to turn on",
     household_section_title: "Households",

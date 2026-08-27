@@ -10,7 +10,8 @@
       "**/*.css",
       "docs/*.json",
       "**/vite.config.*.timestamp-*",
-      ".claude"
+      ".claude",
+      "graphify-out"
     ]
   },
   "organizeImports": { "enabled": false },

@@ -4464,6 +4464,8 @@ const hr: LocaleMessages = {
     household_remove: "Izbrišite kućanstvo",
     household_expand: "Raširite kućanstvo",
     household_collapse: "Sklopite kućanstvo",
+    collapse_all: "Sklopi sve",
+    expand_all: "Raširi sve",
     household_accommodation_on: "Pitanje o smještaju uključeno, kliknite za isključivanje",
     household_accommodation_off: "Pitanje o smještaju isključeno, kliknite za uključivanje",
     household_section_title: "Kućanstva",

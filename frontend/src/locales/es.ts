@@ -4517,6 +4517,8 @@ const es: LocaleMessages = {
     household_remove: "Eliminar hogar",
     household_expand: "Expandir hogar",
     household_collapse: "Contraer hogar",
+    collapse_all: "Contraer todo",
+    expand_all: "Expandir todo",
     household_accommodation_on: "Pregunta de alojamiento activada; haz clic para desactivarla",
     household_accommodation_off: "Pregunta de alojamiento desactivada; haz clic para activarla",
     household_section_title: "Hogares",
