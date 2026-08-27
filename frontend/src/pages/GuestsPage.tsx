@@ -1331,6 +1331,7 @@ export default function GuestsPage() {
             onUpdateGuest={onInlineUpdateGuest}
             onChangeGroup={onTableChangeGroup}
             onChangeHousehold={onInlineChangeHousehold}
+            onRenameHousehold={onRenameHousehold}
             onCreateGuest={onCreateGuestInline}
             onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
             onDeleteGuest={onDeleteGuest}
@@ -1762,7 +1763,12 @@ function CellSelect({
   title,
   onChange,
   children,
-  className = "",
+  // A caller's className REPLACES this default rather than appending to it —
+  // two `min-w-*` utilities on the same element race for whichever Tailwind
+  // happens to emit last, so widening a specific column (e.g. the Group
+  // select, whose Hungarian labels run long) means passing a full override,
+  // not just an extra class.
+  className = "min-w-[6.5rem]",
 }: {
   value: string;
   ariaLabel: string;
@@ -1772,7 +1778,7 @@ function CellSelect({
   className?: string;
 }) {
   return (
-    <span className={`relative inline-flex w-full min-w-[6.5rem] ${className}`} title={title}>
+    <span className={`relative inline-flex w-full ${className}`} title={title}>
       <select
         className={`${CELL_FIELD} cursor-pointer appearance-none pr-6`}
         value={value}
@@ -1835,24 +1841,41 @@ function HouseholdDatalist({ households }: { households: Household[] }) {
 
 /** Inline household editor: a datalist-backed combobox so the couple can pick an
  *  existing household from the native dropdown OR type a brand-new name.
- *  Committed on blur / Enter; Escape reverts. Resolution goes through
- *  {@link resolveHouseholdTarget} (reuse-or-create). Empty text reverts so an
- *  edit never orphans the guest. */
+ *  Committed on blur / Enter; Escape reverts. Empty text reverts so an edit
+ *  never orphans the guest.
+ *
+ *  Typing over an ALREADY-housed guest's text is a RENAME, not a move: the
+ *  household label lives on the household row, not per-guest, so editing it
+ *  here renames the whole household and every member picks it up (via
+ *  `onRenameHousehold`). Matching a *different* existing household's label
+ *  still reassigns the guest there (`onChangeHousehold`), same as before.
+ *  Splitting a guest OUT into their own brand-new household — when the
+ *  couple wants a new unique household rather than a rename — is the
+ *  explicit "+" button beside the field, which arms `forceNewRef` for the
+ *  next commit. */
 function HouseholdCell({
   label,
+  householdId,
   households,
-  onChange,
+  onChangeHousehold,
+  onRenameHousehold,
 }: {
   label: string | null;
+  householdId: number | null;
   households: Household[];
-  onChange: (target: { household_id: number } | { new_household_label: string }) => void;
+  onChangeHousehold: (target: { household_id: number } | { new_household_label: string }) => void;
+  onRenameHousehold: (id: number, label: string) => void;
 }) {
   const { t } = useT();
   const [text, setText] = useState(label ?? "");
+  const inputRef = useRef<HTMLInputElement>(null);
   // Set on Escape so the blur it triggers reverts instead of committing. A ref
   // (not state) because commit runs synchronously inside that same blur, before
   // any state update would flush.
   const revertRef = useRef(false);
+  // Armed by the "new household" button — the next commit always creates a
+  // fresh household instead of renaming the one this guest is already in.
+  const forceNewRef = useRef(false);
   // Re-sync when the row's household changes underneath us (optimistic update,
   // refresh, or a move triggered elsewhere).
   useEffect(() => setText(label ?? ""), [label]);
@@ -1860,46 +1883,78 @@ function HouseholdCell({
   function commit() {
     if (revertRef.current) {
       revertRef.current = false;
+      forceNewRef.current = false;
       setText(label ?? "");
       return;
     }
+    const forceNew = forceNewRef.current;
+    forceNewRef.current = false;
     const trimmed = text.trim();
     const current = (label ?? "").trim();
-    if (trimmed === current) return; // no change
+    if (!forceNew && trimmed === current) return; // no change
     if (!trimmed) {
       setText(label ?? ""); // empty → revert, never orphan
       return;
     }
-    const target = resolveHouseholdTarget(trimmed, households);
-    if (target) onChange(target);
+    const match = households.find((h) => h.label.trim().toLowerCase() === trimmed.toLowerCase());
+    if (match && match.id !== householdId) {
+      // Matches a different existing household by name → move there.
+      onChangeHousehold({ household_id: match.id });
+    } else if (householdId != null && !forceNew) {
+      // Already-housed guest, no distinct match → a rename, applying to
+      // every guest sharing this household.
+      onRenameHousehold(householdId, trimmed);
+    } else {
+      // No current household, or the couple explicitly asked for a new one.
+      onChangeHousehold({ new_household_label: trimmed });
+    }
   }
 
   return (
-    <span className="relative inline-flex w-full min-w-[7rem]">
-      <input
-        type="text"
-        list={HOUSEHOLD_DATALIST_ID}
-        value={text}
-        aria-label={t("guests.table_col_household")}
-        placeholder={t("guests.table_household_placeholder")}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            e.currentTarget.blur();
-          } else if (e.key === "Escape") {
-            revertRef.current = true;
-            e.currentTarget.blur();
-          }
-        }}
-        className="h-8 w-full cursor-text truncate rounded-lg border border-transparent bg-transparent py-0 pl-2 pr-6 text-xs text-ink-700 transition-colors hover:border-paper-300 hover:bg-paper-100 focus:border-umber-500 focus:outline-none dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
-      />
-      <ChevronDown
-        size={12}
-        aria-hidden
-        className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
-      />
+    <span className="flex items-center gap-1">
+      <span className="relative inline-flex w-full min-w-[10rem]">
+        <input
+          ref={inputRef}
+          type="text"
+          list={HOUSEHOLD_DATALIST_ID}
+          value={text}
+          aria-label={t("guests.table_col_household")}
+          placeholder={t("guests.table_household_placeholder")}
+          title={householdId != null ? t("guests.table_household_rename_hint") : undefined}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            } else if (e.key === "Escape") {
+              revertRef.current = true;
+              e.currentTarget.blur();
+            }
+          }}
+          className={`${CELL_FIELD} cursor-text pr-6`}
+        />
+        <ChevronDown
+          size={12}
+          aria-hidden
+          className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+        />
+      </span>
+      {householdId != null && (
+        <button
+          type="button"
+          className="btn-ghost btn-sm shrink-0"
+          title={t("guests.table_household_new_hint")}
+          aria-label={t("guests.table_household_new_hint")}
+          onClick={() => {
+            forceNewRef.current = true;
+            setText("");
+            inputRef.current?.focus();
+          }}
+        >
+          <HousePlus size={13} aria-hidden />
+        </button>
+      )}
     </span>
   );
 }
@@ -1947,7 +2002,7 @@ function EmailCell({
           e.currentTarget.blur();
         }
       }}
-      className="h-8 w-full min-w-[9rem] cursor-text truncate rounded-lg border border-transparent bg-transparent px-2 py-0 text-xs text-ink-700 transition-colors placeholder:text-ink-400 hover:border-paper-300 hover:bg-paper-100 focus:border-umber-500 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-400 dark:hover:border-umber-600 dark:hover:bg-umber-800"
+      className={`${CELL_FIELD} min-w-[9rem] cursor-text truncate pr-2`}
     />
   );
 }
@@ -2002,13 +2057,11 @@ function GuestTableNewRow({
     }
   }
 
-  const cellInput =
-    "h-8 w-full rounded-lg border border-transparent bg-transparent py-0 px-2 text-xs text-ink-800 transition-colors placeholder:text-ink-400 hover:border-paper-300 focus:border-umber-500 focus:bg-paper-100 focus:outline-none disabled:opacity-60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:hover:border-umber-600 dark:focus:bg-umber-800";
-  const placeholderCell = "px-3 py-2 text-xs text-ink-300 dark:text-umber-600";
+  const placeholderCell = `${CELL} text-xs text-ink-300 dark:text-umber-600`;
 
   return (
     <tr className="bg-paper-50/50 dark:bg-umber-900/30">
-      <td className="px-3 py-2">
+      <td className={CELL}>
         <span className="flex items-center gap-1.5">
           <Plus size={13} aria-hidden className="shrink-0 text-ink-300 dark:text-umber-500" />
           <input
@@ -2025,11 +2078,11 @@ function GuestTableNewRow({
                 void commit();
               }
             }}
-            className={`${cellInput} font-medium`}
+            className={`${CELL_FIELD} pr-2 font-medium`}
           />
         </span>
       </td>
-      <td className="px-3 py-2">
+      <td className={CELL}>
         <input
           type="email"
           value={email}
@@ -2043,11 +2096,11 @@ function GuestTableNewRow({
               void commit();
             }
           }}
-          className={`${cellInput} min-w-[9rem] truncate`}
+          className={`${CELL_FIELD} min-w-[9rem] truncate pr-2`}
         />
       </td>
-      <td className="px-3 py-2">
-        <span className="relative inline-flex w-full min-w-[7rem]">
+      <td className={`${CELL} min-w-[12rem]`}>
+        <span className="relative inline-flex w-full min-w-[10rem]">
           <input
             type="text"
             list={HOUSEHOLD_DATALIST_ID}
@@ -2062,7 +2115,7 @@ function GuestTableNewRow({
                 void commit();
               }
             }}
-            className={`${cellInput} truncate pr-6`}
+            className={`${CELL_FIELD} pr-6`}
           />
           <ChevronDown
             size={12}
@@ -2071,11 +2124,12 @@ function GuestTableNewRow({
           />
         </span>
       </td>
-      <td className="px-3 py-2">
+      <td className={CELL}>
         <CellSelect
           value={group}
           ariaLabel={t("guests.table_col_group")}
           onChange={(v) => setGroup(v as GuestGroupTag)}
+          className="min-w-[11rem]"
         >
           {GROUPS.map((gr) => (
             <option key={gr} value={gr}>
@@ -2091,7 +2145,7 @@ function GuestTableNewRow({
       <td className={placeholderCell}>–</td>
       <td className={`${placeholderCell} text-center`}>–</td>
       <td className={`${placeholderCell} text-center`}>–</td>
-      <td className="px-3 py-2">
+      <td className={CELL}>
         <span className="flex items-center justify-end gap-1">
           <button
             type="button"
@@ -2123,6 +2177,7 @@ function GuestTable({
   onUpdateGuest,
   onChangeGroup,
   onChangeHousehold,
+  onRenameHousehold,
   onCreateGuest,
   onEditGuest,
   onDeleteGuest,
@@ -2139,6 +2194,7 @@ function GuestTable({
     g: Guest,
     target: { household_id: number } | { new_household_label: string },
   ) => void | Promise<void>;
+  onRenameHousehold: (id: number, label: string) => void | Promise<void>;
   onCreateGuest: (body: GuestUpsert) => Promise<boolean>;
   onEditGuest: (g: Guest) => void;
   onDeleteGuest: (id: number) => void | Promise<void>;
@@ -2151,8 +2207,7 @@ function GuestTable({
     return m;
   }, [households]);
 
-  const th =
-    "px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-ink-400 dark:text-umber-500";
+  const th = CELL_HEAD;
   const sortableHeader = (key: SortKey, label: string) => (
     <button
       type="button"
@@ -2172,7 +2227,7 @@ function GuestTable({
       <HouseholdDatalist households={households} />
       <table className="w-full min-w-[920px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-paper-200 dark:border-umber-700">
+          <tr>
             <th className={th} scope="col">
               {sortableHeader("name", t("guests.table_col_name"))}
             </th>
@@ -2205,7 +2260,7 @@ function GuestTable({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-paper-200 dark:divide-umber-700">
+        <tbody>
           {guests.map((g) => (
             <GuestTableRow
               key={g.id}
@@ -2218,6 +2273,7 @@ function GuestTable({
               onUpdateGuest={onUpdateGuest}
               onChangeGroup={onChangeGroup}
               onChangeHousehold={onChangeHousehold}
+              onRenameHousehold={onRenameHousehold}
               onEditGuest={onEditGuest}
               onDeleteGuest={onDeleteGuest}
               onToggleGuestInvited={onToggleGuestInvited}
@@ -2240,6 +2296,7 @@ function GuestTableRow({
   onUpdateGuest,
   onChangeGroup,
   onChangeHousehold,
+  onRenameHousehold,
   onEditGuest,
   onDeleteGuest,
   onToggleGuestInvited,
@@ -2254,6 +2311,7 @@ function GuestTableRow({
     g: Guest,
     target: { household_id: number } | { new_household_label: string },
   ) => void | Promise<void>;
+  onRenameHousehold: (id: number, label: string) => void | Promise<void>;
   onEditGuest: (g: Guest) => void;
   onDeleteGuest: (id: number) => void | Promise<void>;
   onToggleGuestInvited: (g: Guest) => void | Promise<void>;
@@ -2270,7 +2328,7 @@ function GuestTableRow({
 
   return (
     <tr className="transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-800/40">
-      <td className="max-w-[16rem] px-3 py-2">
+      <td className={`${CELL} max-w-[16rem]`}>
         <span className="flex items-center gap-1.5">
           <PartnerRoleIcon role={g.partner_role} />
           <KindIcon kind={g.kind} />
@@ -2281,26 +2339,26 @@ function GuestTableRow({
           </span>
         </span>
       </td>
-      <td className="max-w-[14rem] px-3 py-2">
+      <td className={`${CELL} max-w-[14rem]`}>
         <EmailCell email={g.email} onChange={(v) => void onUpdateGuest(g, { email: v })} />
       </td>
-      <td className="max-w-[11rem] px-3 py-2">
+      <td className={`${CELL} min-w-[12rem]`}>
         {/* A +1's household is bound to its host server-side, so editing it here
             would silently revert, so show it read-only. Everyone else gets the
             pick-or-type combobox. */}
         {g.is_plus_one ? (
-          <span className="truncate text-xs text-ink-600 dark:text-umber-200">
-            {householdLabel ?? "–"}
-          </span>
+          <span className="text-xs text-ink-600 dark:text-umber-200">{householdLabel ?? "–"}</span>
         ) : (
           <HouseholdCell
             label={householdLabel}
+            householdId={g.household_id}
             households={households}
-            onChange={(target) => void onChangeHousehold(g, target)}
+            onChangeHousehold={(target) => void onChangeHousehold(g, target)}
+            onRenameHousehold={(id, label) => void onRenameHousehold(id, label)}
           />
         )}
       </td>
-      <td className="px-3 py-2">
+      <td className={CELL}>
         {/* Group is household-canonical on the backend, so this select edits
             the whole household's tag (title says so), not just this row. */}
         <CellSelect
@@ -2308,6 +2366,7 @@ function GuestTableRow({
           ariaLabel={t("guests.table_col_group")}
           title={g.household_id != null ? t("guests.table_group_household_hint") : undefined}
           onChange={(v) => void onChangeGroup(g, v as GuestGroupTag)}
+          className="min-w-[11rem]"
         >
           {GROUPS.map((gr) => (
             <option key={gr} value={gr}>
@@ -2316,7 +2375,7 @@ function GuestTableRow({
           ))}
         </CellSelect>
       </td>
-      <td className="px-3 py-2">
+      <td className={CELL}>
         <CellSelect
           value={g.rsvp_status}
           ariaLabel={t("guests.table_col_rsvp")}
@@ -2336,7 +2395,7 @@ function GuestTableRow({
           ))}
         </CellSelect>
       </td>
-      <td className="px-3 py-2">
+      <td className={CELL}>
         <CellSelect
           value={g.meal_choice ?? ""}
           ariaLabel={t("guests.table_col_meal")}
@@ -2355,7 +2414,7 @@ function GuestTableRow({
             ))}
         </CellSelect>
       </td>
-      <td className="px-3 py-2">
+      <td className={CELL}>
         <span className="flex items-center gap-1.5">
           <MealIcons meal={null} dietary={g.dietary} />
           {/* Toggle-select: value stays "", the visible summary lives in the
@@ -2380,7 +2439,7 @@ function GuestTableRow({
           </CellSelect>
         </span>
       </td>
-      <td className="px-3 py-2 text-center">
+      <td className={`${CELL} text-center`}>
         <input
           type="checkbox"
           className="h-4 w-4 cursor-pointer accent-umber-700 dark:accent-paper-100"
@@ -2389,10 +2448,10 @@ function GuestTableRow({
           onChange={(e) => void onUpdateGuest(g, { accommodation_needed: e.target.checked })}
         />
       </td>
-      <td className="px-3 py-2 text-center">
+      <td className={`${CELL} text-center`}>
         <InviteChip guest={g} onToggle={() => void onToggleGuestInvited(g)} />
       </td>
-      <td className="px-3 py-2">
+      <td className={CELL}>
         <span className="flex items-center justify-end gap-1">
           <button
             type="button"
