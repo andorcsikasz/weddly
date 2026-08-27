@@ -26,6 +26,17 @@ import { useT } from "../lib/i18n";
 
 const DEBOUNCE_MS = 200;
 
+// The landing page's own instance only: a handful of near-universal
+// categories (every market has photographers and venues) so the demo never
+// types something a thin market has zero results for.
+const DEMO_CATEGORIES = ["photography", "venue", "florist", "dj", "catering"] as const;
+// Total budget is the 6s the runner is allowed: ~1s before the first
+// keystroke (lets the section settle into view), up to ~2.6s of typing, then
+// a beat to read what landed before the handoff.
+const DEMO_START_DELAY_MS = 1000;
+const DEMO_TYPE_BUDGET_MS = 2600;
+const DEMO_HOLD_MS = 1600;
+
 /** Where picking a row takes the visitor. A vendor has its own public page;
  *  a town and a category are both filters on the browse teaser. */
 function hrefFor(s: PublicVendorSuggestion): string {
@@ -45,7 +56,16 @@ function hrefFor(s: PublicVendorSuggestion): string {
   return "/suppliers/browse";
 }
 
-export function VendorSearchBar({ className = "" }: { className?: string }) {
+export function VendorSearchBar({
+  className = "",
+  autoDemo = false,
+}: {
+  className?: string;
+  /** Landing-page only: types an example category into the box on its own,
+   *  then — if the visitor never touched the box — hands off to the real
+   *  directory. See the effect below for why and how. */
+  autoDemo?: boolean;
+}) {
   const { t } = useT();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
@@ -118,8 +138,83 @@ export function VendorSearchBar({ className = "" }: { className?: string }) {
     return () => document.removeEventListener("pointerdown", onDown);
   }, [open]);
 
+  // The landing-page "runner": types one example category into the box on
+  // its own so the box never sits looking inert on a page a visitor hasn't
+  // touched yet. Any real interaction — a click, a keypress, focusing the
+  // input — cancels it permanently for this mount; it never fights a
+  // visitor who is actually using the box. If nobody touches it, the typed
+  // example hands off to the real directory: `window.open` is attempted
+  // first, but since nothing here is a genuine user gesture, browsers block
+  // it as a popup in practice, so the `location.href` fallback is what
+  // actually runs almost every time — a same-tab redirect, not a new tab.
+  useEffect(() => {
+    if (!autoDemo) return;
+    if (typeof window === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const root = rootRef.current;
+    if (!root) return;
+
+    let cancelled = false;
+    const timers: Array<ReturnType<typeof setTimeout>> = [];
+    let typeInterval: ReturnType<typeof setInterval> | null = null;
+
+    function stop() {
+      cancelled = true;
+      for (const timer of timers) clearTimeout(timer);
+      if (typeInterval) clearInterval(typeInterval);
+    }
+
+    function onInteract() {
+      stop();
+    }
+    root.addEventListener("pointerdown", onInteract);
+    root.addEventListener("focusin", onInteract);
+    root.addEventListener("keydown", onInteract);
+
+    const startTimer = setTimeout(() => {
+      if (cancelled) return;
+      const category = DEMO_CATEGORIES[Math.floor(Math.random() * DEMO_CATEGORIES.length)];
+      if (!category) return;
+      const label = t(`suppliers.cat.${category}`);
+      const stepMs = Math.max(55, Math.min(140, DEMO_TYPE_BUDGET_MS / Math.max(label.length, 1)));
+      let i = 0;
+      typeInterval = setInterval(() => {
+        if (cancelled) return;
+        i += 1;
+        setQ(label.slice(0, i));
+        if (i >= label.length) {
+          if (typeInterval) clearInterval(typeInterval);
+          const holdTimer = setTimeout(() => {
+            if (cancelled) return;
+            const url = `${window.location.origin}/suppliers/browse?category=${encodeURIComponent(category)}`;
+            const win = window.open(url, "_blank", "noopener,noreferrer");
+            if (!win) window.location.href = url;
+          }, DEMO_HOLD_MS);
+          timers.push(holdTimer);
+        }
+      }, stepMs);
+    }, DEMO_START_DELAY_MS);
+    timers.push(startTimer);
+
+    return () => {
+      stop();
+      root.removeEventListener("pointerdown", onInteract);
+      root.removeEventListener("focusin", onInteract);
+      root.removeEventListener("keydown", onInteract);
+    };
+    // Deliberately one-shot on mount: `t` and `autoDemo` don't change mid-life
+    // for this instance, and re-keying on `t` would restart the runner on
+    // every locale-tree reload.
+  }, [autoDemo]);
+
   function go(s: PublicVendorSuggestion | null) {
     setOpen(false);
+    // A vendor hit leaves the page entirely, so the stale query never shows
+    // again; a city/category hit stays on /suppliers/browse (this same
+    // component instance), and without this the box kept showing what was
+    // TYPED ("Buda") while the pickers beside it already read the picked
+    // value ("Budapest") — two answers to "what's filtered right now".
+    setQ("");
     navigate(s ? hrefFor(s) : "/suppliers/browse");
   }
 

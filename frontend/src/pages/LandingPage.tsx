@@ -355,7 +355,7 @@ export default function LandingPage() {
             </h2>
             {/* Search first, doors under it: a visitor who knows what they're
                 after types it; the two rows are for the ones who don't. */}
-            <VendorSearchBar className="mt-8" />
+            <VendorSearchBar className="mt-8" autoDemo />
             <div className="mt-6 divide-y divide-paper-300 border-y border-paper-300 dark:divide-umber-700 dark:border-umber-700">
               <SupplierAction
                 icon={<Sparkles size={18} strokeWidth={1.6} />}
