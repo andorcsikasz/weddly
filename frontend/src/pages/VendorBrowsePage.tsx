@@ -1099,11 +1099,27 @@ export default function VendorBrowsePage() {
     setParams(next, { replace: false });
   }
 
+  // Both country pickers (the page's own, and the map modal's) run through
+  // this rather than `setCountry` directly. A `city` filter only ever means
+  // something WITHIN the country it was picked from — `cityFacets` is scoped
+  // to the country active when the visitor picked it — so switching country
+  // without clearing it left the URL holding `country=ES&city=Budapest`: the
+  // town picker fell back to its "every town" label (its own `value` no
+  // longer matched any option in the now-Spain-scoped list) while the empty
+  // state underneath still read the stale `city` param and told a visitor
+  // browsing Spain that Weddly's catalogue "hasn't reached the Budapest area
+  // yet" — the same confusion as a Hungarian town leaking into a Spanish
+  // town list, just reached by picking the country control instead of typing
+  // in the town one.
+  function selectCountry(code: string | null) {
+    setCountry(code);
+    selectCity(null);
+  }
+
   // The empty-market funnel's escape hatch: hop to a country that already has
   // a real catalogue, clearing whatever thin town filter got the visitor here.
   function exploreCountry(code: string) {
-    setCountry(code);
-    selectCity(null);
+    selectCountry(code);
   }
 
   // The map modal's own vendor-type filter: same URL param `jumpTo` writes,
@@ -1167,7 +1183,7 @@ export default function VendorBrowsePage() {
             {countries.length > 1 && (
               <CountryPicker
                 value={country}
-                onChange={setCountry}
+                onChange={selectCountry}
                 tone="ink"
                 className="min-w-0 flex-1 sm:flex-none"
                 allLabel={t("suppliers.country_filter_all")}
@@ -1233,7 +1249,7 @@ export default function VendorBrowsePage() {
           category={activeCategory}
           activeCountry={country}
           onSelectCity={selectCity}
-          onSelectCountry={setCountry}
+          onSelectCountry={selectCountry}
           onSelectCategory={selectMapCategory}
           onClose={() => setMapOpen(false)}
         />
