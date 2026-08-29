@@ -30,12 +30,16 @@ const DEBOUNCE_MS = 200;
 // categories (every market has photographers and venues) so the demo never
 // types something a thin market has zero results for.
 const DEMO_CATEGORIES = ["photography", "venue", "florist", "dj", "catering"] as const;
-// Total budget is the 6s the runner is allowed: ~1s before the first
-// keystroke (lets the section settle into view), up to ~2.6s of typing, then
-// a beat to read what landed before the handoff.
+// The runner types, holds, erases, and moves to the next word — a loop
+// that never leaves the page. ~1s before the first keystroke (lets the
+// section settle into view), then each word gets its own type/hold/erase
+// beat.
+const DEMO_WORD_COUNT = 4;
 const DEMO_START_DELAY_MS = 1000;
-const DEMO_TYPE_BUDGET_MS = 2600;
-const DEMO_HOLD_MS = 1600;
+const DEMO_TYPE_BUDGET_MS = 1400;
+const DEMO_HOLD_MS = 1100;
+const DEMO_ERASE_STEP_MS = 30;
+const DEMO_PAUSE_MS = 450;
 
 /** Where picking a row takes the visitor. A vendor has its own public page;
  *  a town and a category are both filters on the browse teaser. */
@@ -138,15 +142,14 @@ export function VendorSearchBar({
     return () => document.removeEventListener("pointerdown", onDown);
   }, [open]);
 
-  // The landing-page "runner": types one example category into the box on
-  // its own so the box never sits looking inert on a page a visitor hasn't
-  // touched yet. Any real interaction — a click, a keypress, focusing the
-  // input — cancels it permanently for this mount; it never fights a
-  // visitor who is actually using the box. If nobody touches it, the typed
-  // example hands off to the real directory: `window.open` is attempted
-  // first, but since nothing here is a genuine user gesture, browsers block
-  // it as a popup in practice, so the `location.href` fallback is what
-  // actually runs almost every time — a same-tab redirect, not a new tab.
+  // The landing-page "runner": types a handful of example categories into
+  // the box on its own, one after another, so the box never sits looking
+  // inert on a page a visitor hasn't touched yet. It never navigates —
+  // typing an example is a demo, not a decision the visitor made, so the
+  // loop just erases each word and moves to the next rather than handing
+  // the visitor off to the directory. Any real interaction — a click, a
+  // keypress, focusing the input — cancels it permanently for this mount;
+  // it never fights a visitor who is actually using the box.
   useEffect(() => {
     if (!autoDemo) return;
     if (typeof window === "undefined") return;
@@ -156,12 +159,12 @@ export function VendorSearchBar({
 
     let cancelled = false;
     const timers: Array<ReturnType<typeof setTimeout>> = [];
-    let typeInterval: ReturnType<typeof setInterval> | null = null;
+    let tickInterval: ReturnType<typeof setInterval> | null = null;
 
     function stop() {
       cancelled = true;
       for (const timer of timers) clearTimeout(timer);
-      if (typeInterval) clearInterval(typeInterval);
+      if (tickInterval) clearInterval(tickInterval);
     }
 
     function onInteract() {
@@ -171,29 +174,54 @@ export function VendorSearchBar({
     root.addEventListener("focusin", onInteract);
     root.addEventListener("keydown", onInteract);
 
-    const startTimer = setTimeout(() => {
+    // Shuffled once per mount and then looped, so a visitor who lingers
+    // sees a handful of different examples cycle rather than one word
+    // repeating.
+    const sequence = [...DEMO_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, DEMO_WORD_COUNT);
+    let wordIndex = 0;
+
+    function typeWord() {
       if (cancelled) return;
-      const category = DEMO_CATEGORIES[Math.floor(Math.random() * DEMO_CATEGORIES.length)];
+      const category = sequence[wordIndex % sequence.length];
       if (!category) return;
       const label = t(`suppliers.cat.${category}`);
       const stepMs = Math.max(55, Math.min(140, DEMO_TYPE_BUDGET_MS / Math.max(label.length, 1)));
       let i = 0;
-      typeInterval = setInterval(() => {
+      tickInterval = setInterval(() => {
         if (cancelled) return;
         i += 1;
         setQ(label.slice(0, i));
         if (i >= label.length) {
-          if (typeInterval) clearInterval(typeInterval);
+          if (tickInterval) clearInterval(tickInterval);
           const holdTimer = setTimeout(() => {
             if (cancelled) return;
-            const url = `${window.location.origin}/suppliers/browse?category=${encodeURIComponent(category)}`;
-            const win = window.open(url, "_blank", "noopener,noreferrer");
-            if (!win) window.location.href = url;
+            eraseWord(label);
           }, DEMO_HOLD_MS);
           timers.push(holdTimer);
         }
       }, stepMs);
-    }, DEMO_START_DELAY_MS);
+    }
+
+    function eraseWord(label: string) {
+      if (cancelled) return;
+      let i = label.length;
+      tickInterval = setInterval(() => {
+        if (cancelled) return;
+        i -= 1;
+        setQ(label.slice(0, Math.max(i, 0)));
+        if (i <= 0) {
+          if (tickInterval) clearInterval(tickInterval);
+          wordIndex += 1;
+          const pauseTimer = setTimeout(() => {
+            if (cancelled) return;
+            typeWord();
+          }, DEMO_PAUSE_MS);
+          timers.push(pauseTimer);
+        }
+      }, DEMO_ERASE_STEP_MS);
+    }
+
+    const startTimer = setTimeout(typeWord, DEMO_START_DELAY_MS);
     timers.push(startTimer);
 
     return () => {
