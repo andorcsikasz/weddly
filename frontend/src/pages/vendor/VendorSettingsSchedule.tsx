@@ -596,7 +596,11 @@ function GoogleCalendarSection() {
           />
           {t("vendor.schedule.gcal_title")}
         </h2>
-        <GoogleCalendarConnect api={vendorGoogleCalendarApi} keyPrefix="vendor_calendar" />
+        <GoogleCalendarConnect
+          api={vendorGoogleCalendarApi}
+          keyPrefix="vendor_calendar"
+          onStatusChange={setStatus}
+        />
       </div>
       <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
         {t("vendor.schedule.gcal_body")}

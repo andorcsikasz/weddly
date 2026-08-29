@@ -33,12 +33,20 @@ export interface GoogleCalendarApi {
 export function GoogleCalendarConnect({
   api,
   keyPrefix,
+  onStatusChange,
 }: {
   api: GoogleCalendarApi;
   /** i18n namespace holding the `gcal_*` keys, e.g. "timeline" or
    *  "vendor_calendar" — the two surfaces describe different things being
    *  synced, so the copy is per-surface even though the UI is not. */
   keyPrefix: string;
+  /** Fired whenever this pill's own status changes (initial load, sync,
+   *  disconnect, or the OAuth-redirect result). A page that renders extra
+   *  connected-only controls beside the pill (the vendor pull-calendar picker)
+   *  fetches `connected` on its own and has no other way to learn a disconnect
+   *  just happened — without this it kept showing the checkbox and calendar
+   *  list, correctly, until the next full reload. */
+  onStatusChange?: (status: GoogleCalendarStatus) => void;
 }) {
   const { t } = useT();
   const toast = useToast();
@@ -48,12 +56,20 @@ export function GoogleCalendarConnect({
   const [menuOpen, setMenuOpen] = useState(false);
   const k = (name: string) => `${keyPrefix}.${name}`;
 
+  const applyStatus = useCallback(
+    (next: GoogleCalendarStatus) => {
+      setStatus(next);
+      onStatusChange?.(next);
+    },
+    [onStatusChange],
+  );
+
   const refresh = useCallback(() => {
     api
       .status()
-      .then(setStatus)
+      .then(applyStatus)
       .catch(() => {});
-  }, [api]);
+  }, [api, applyStatus]);
 
   useEffect(() => {
     refresh();
@@ -109,7 +125,7 @@ export function GoogleCalendarConnect({
     setMenuOpen(false);
     setBusy(true);
     try {
-      setStatus(await api.sync());
+      applyStatus(await api.sync());
       toast.success(t(k("gcal_toast_synced")));
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -130,7 +146,7 @@ export function GoogleCalendarConnect({
     if (!ok) return;
     setBusy(true);
     try {
-      setStatus(await api.disconnect());
+      applyStatus(await api.disconnect());
       toast.success(t(k("gcal_toast_disconnected")));
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
