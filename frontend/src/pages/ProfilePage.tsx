@@ -1822,6 +1822,11 @@ function EmailPreferencesCard({ t }: { t: T }) {
   const [optOut, setOptOut] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Turning email OFF is asymmetric on purpose, same reasoning as the vendor
+  // listing visibility switch: going dark from every reminder is the one
+  // direction that costs the couple something later, so it asks first via an
+  // inline row rather than flipping instantly. Turning back on stays instant.
+  const [offAsked, setOffAsked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1840,18 +1845,27 @@ function EmailPreferencesCard({ t }: { t: T }) {
 
   const subscribed = optOut === false;
 
-  async function flip() {
+  async function setSubscribed(next: boolean) {
     if (optOut === null || saving) return;
     setSaving(true);
     setError(null);
     try {
-      const r = await emailPrefsApi.update(!optOut);
+      const r = await emailPrefsApi.update(!next);
       setOptOut(r.lifecycle_opt_out);
+      setOffAsked(false);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setSaving(false);
     }
+  }
+
+  function onToggle(next: boolean) {
+    if (next) {
+      void setSubscribed(true);
+      return;
+    }
+    setOffAsked(true);
   }
 
   return (
@@ -1871,7 +1885,7 @@ function EmailPreferencesCard({ t }: { t: T }) {
             role="switch"
             className="peer sr-only"
             checked={subscribed}
-            onChange={flip}
+            onChange={(e) => onToggle(e.target.checked)}
             disabled={saving || optOut === null}
             aria-label={t("profile.email_prefs_toggle_aria")}
           />
@@ -1896,6 +1910,31 @@ function EmailPreferencesCard({ t }: { t: T }) {
           </span>
         </label>
       </div>
+
+      {offAsked && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 dark:border-amber-400/40 dark:bg-amber-400/10">
+          <p className="min-w-0 text-sm text-ink-700 dark:text-paper-200">
+            {t("profile.email_prefs_off_confirm")}
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setOffAsked(false)}
+              className="btn btn-outline btn-sm"
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              onClick={() => void setSubscribed(false)}
+              disabled={saving}
+              className="btn-sm btn-primary"
+            >
+              {t("profile.email_prefs_off_confirm_action")}
+            </button>
+          </div>
+        </div>
+      )}
 
       {error && <p className="field-error mt-3">{error}</p>}
     </section>

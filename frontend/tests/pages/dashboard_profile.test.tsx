@@ -880,4 +880,43 @@ describe("<ProfilePage>", () => {
       expect(screen.getByRole("button", { name: /^leave$/i })).toBeInTheDocument(),
     );
   });
+
+  it("turning email reminders off asks for confirmation before saving", async () => {
+    const calls: string[] = [];
+    let posted: unknown;
+    globalThis.fetch = buildFetch({
+      calls,
+      override: async (url, init) => {
+        if (url.endsWith("/api/account/email-preferences") && (init?.method ?? "GET") === "GET") {
+          return new Response(
+            JSON.stringify({ lifecycle_opt_out: false, unsubscribe_token: "t" }),
+            { status: 200 },
+          );
+        }
+        if (url.endsWith("/api/account/email-preferences") && init?.method === "POST") {
+          posted = JSON.parse(String(init.body));
+          return new Response(JSON.stringify({ ok: true, lifecycle_opt_out: true }), {
+            status: 200,
+          });
+        }
+        return null;
+      },
+    });
+    renderPage("profile");
+
+    const toggle = await waitFor(() => screen.getByRole("switch", { name: /reminder emails/i }));
+    await waitFor(() => expect(toggle).toBeChecked());
+    fireEvent.click(toggle);
+
+    // Flipping off must NOT save immediately — it asks first.
+    await waitFor(() => expect(screen.getByText(/turn off reminder emails/i)).toBeInTheDocument());
+    expect(calls.some((c) => c.startsWith("POST /api/account/email-preferences"))).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: /yes, turn off/i }));
+
+    await waitFor(() =>
+      expect(calls.some((c) => c.startsWith("POST /api/account/email-preferences"))).toBe(true),
+    );
+    expect(posted).toEqual({ lifecycle_opt_out: true });
+  });
 });

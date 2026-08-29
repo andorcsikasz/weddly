@@ -7796,6 +7796,9 @@ const de: LocaleMessages = {
     email_prefs_toggle_aria: "Erinnerungs-E-Mails",
     email_prefs_on: "Erinnerungs-E-Mails sind an",
     email_prefs_off: "Erinnerungs-E-Mails sind aus",
+    email_prefs_off_confirm:
+      "Erinnerungs-E-Mails ausschalten? Sie verpassen dann Meilenstein- und Planungshinweise.",
+    email_prefs_off_confirm_action: "Ja, ausschalten",
     rsvp_title: "RSVP-Einstellungen",
     rsvp_body: "Diese Einstellungen steuern, welche Fragen Ihre Gäste beim Antworten sehen.",
     rsvp_offers_accommodation_label: "Unterkunft im RSVP anbieten",

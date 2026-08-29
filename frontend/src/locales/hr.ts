@@ -7661,6 +7661,9 @@ const hr: LocaleMessages = {
     email_prefs_toggle_aria: "Podsjetnici e-poštom",
     email_prefs_on: "Podsjetnici e-poštom su uključeni",
     email_prefs_off: "Podsjetnici e-poštom su isključeni",
+    email_prefs_off_confirm:
+      "Isključiti podsjetnike e-poštom? Propustit ćete obavijesti o prekretnicama i planiranju.",
+    email_prefs_off_confirm_action: "Da, isključi",
     rsvp_title: "RSVP postavke",
     rsvp_body: "Ove postavke određuju koja pitanja gosti vide kad odgovaraju.",
     rsvp_offers_accommodation_label: "Ponuda smještaja u RSVP-u",

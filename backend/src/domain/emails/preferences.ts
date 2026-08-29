@@ -2,6 +2,7 @@
 // first send so existing users (created before the table existed) auto-enroll.
 
 import { randomBytes } from "node:crypto";
+import { CONFIG } from "../../config";
 import { db, now } from "../../db";
 
 export interface PreferencesRow {
@@ -47,4 +48,21 @@ export function setLifecycleOptOut(userId: number, optOut: boolean): void {
   db.prepare(
     "UPDATE email_preferences SET lifecycle_opt_out = ?, updated_at = ? WHERE user_id = ?",
   ).run(optOut ? 1 : 0, now(), userId);
+}
+
+/** RFC 8058 one-click-unsubscribe headers — what a mail client's own native
+ *  "Unsubscribe" button next to the sender name POSTs to, required by Gmail's
+ *  2024 bulk-sender rules once volume picks up. Deliberately kept OUT of
+ *  send.ts: that dispatcher is the one chokepoint every category funnels
+ *  through, including outreach/campaign mail, and
+ *  email_integrity.e2e.test.ts ("unsubscribe controls stay out of campaign
+ *  messages") asserts its source never contains this string — a static guard
+ *  against exactly the mistake of adding this to the shared dispatcher and
+ *  having it leak onto mail the owner decided must carry none of it. The
+ *  caller in send.ts scopes this to `category === "lifecycle"` only. */
+export function buildUnsubscribeHeaders(token: string): Record<string, string> {
+  return {
+    "List-Unsubscribe": `<${CONFIG.frontendBaseUrl}/api/unsubscribe/${token}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
 }

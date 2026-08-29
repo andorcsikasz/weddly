@@ -11,9 +11,10 @@
 // change. `lib/` stays app-agnostic — nothing here imports from `domain/`.
 
 import { existsSync } from "node:fs";
-import { rm } from "node:fs/promises";
+import { rm, statfs } from "node:fs/promises";
 import { resolve } from "node:path";
 import { CONFIG, R2_ENABLED } from "../config";
+import { log } from "./logger";
 
 /** Map a file extension to a content type for objects we store. Uploads are
  *  validated to this set upstream (image sniffing + PDF for budget docs). */
@@ -57,6 +58,40 @@ export interface Storage {
 
 // ─── Disk backend ─────────────────────────────────────────────────────────────
 
+// Once the local volume crosses this, refuse new local writes rather than let
+// the OS return ENOSPC mid-write. A full disk doesn't just fail the upload —
+// it fails every SQLite write app-wide (sessions, signups, rate limiting,
+// the email dispatch dedupe), which is what turned one oversized curated-
+// directory photo batch into a ~40h production outage on 2026-08-27.
+// `/api/health/deep` already alerts external monitors at 90% (`near_full`),
+// so a human has a five-point window to react before this backstop fires;
+// this is what catches it when nobody did, or nobody was watching.
+const DISK_WRITE_BLOCK_PCT = 95;
+// statfs is cheap, but a bulk import can write hundreds of files a second —
+// re-checking on every single one buys nothing once we're nowhere near the
+// edge. Short TTL so a genuinely fast-filling disk is still caught quickly.
+const HEADROOM_CACHE_MS = 2_000;
+let headroomCache: { checkedAt: number; blocked: boolean } | null = null;
+
+async function assertDiskHeadroom(root: string): Promise<void> {
+  const cached = headroomCache;
+  if (cached && Date.now() - cached.checkedAt < HEADROOM_CACHE_MS) {
+    if (cached.blocked) throw new Error("storage: local disk is near full, refusing write");
+    return;
+  }
+  const s = await statfs(root).catch(() => null);
+  if (!s) return; // statfs failing isn't what should block a write here.
+  const totalBytes = s.bsize * s.blocks;
+  const freeBytes = s.bsize * s.bavail;
+  const percentUsed = totalBytes > 0 ? ((totalBytes - freeBytes) / totalBytes) * 100 : 0;
+  const blocked = percentUsed >= DISK_WRITE_BLOCK_PCT;
+  headroomCache = { checkedAt: Date.now(), blocked };
+  if (blocked) {
+    log.error("storage.disk_near_full", { percent_used: Math.round(percentUsed) });
+    throw new Error("storage: local disk is near full, refusing write");
+  }
+}
+
 class DiskStorage implements Storage {
   readonly driver = "disk" as const;
   private readonly root = resolve(CONFIG.uploadsDir);
@@ -73,6 +108,7 @@ class DiskStorage implements Storage {
   async write(key: string, data: Writable): Promise<void> {
     const p = this.abs(key);
     if (!p) throw new Error(`storage: refusing unsafe key '${key}'`);
+    await assertDiskHeadroom(this.root);
     // Bun.write creates missing parent directories automatically.
     await Bun.write(p, data as Blob);
   }

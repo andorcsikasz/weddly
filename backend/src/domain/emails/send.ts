@@ -21,7 +21,7 @@ import { makeOpenTrackingToken } from "../../routes/email_track";
 import { type EmailKind, type EmailSender, KIND_CATEGORY, senderForKind } from "./kinds";
 import { recordEmailAttempt } from "./log";
 import { isOptedOut } from "./optouts";
-import { ensurePreferences } from "./preferences";
+import { buildUnsubscribeHeaders, ensurePreferences } from "./preferences";
 import { isUiLocale } from "@shared/locales";
 import type { RecipientLocale } from "./template";
 import { buildEmail, type KindPayload } from "./templates";
@@ -243,8 +243,16 @@ async function sendKindInner<K extends EmailKind>(
       : null;
   const primaryLocaleHint: "hu" | "en" | undefined =
     submitterLocale === "hu" || submitterLocale === "en" ? submitterLocale : undefined;
+  // Feeds the RFC 8058 `List-Unsubscribe` header below — the machine-facing
+  // one-click channel Gmail/Outlook's own "Unsubscribe" button POSTs to.
+  // Deliberately separate from the human-visible footer link, which points
+  // into account settings instead: a mail client's native one-click control
+  // is expected by Gmail's bulk-sender rules to act instantly, but a human
+  // reading the footer is routed through the account settings page.
+  let unsubscribeToken: string | undefined;
   if (target.user) {
     const prefs = ensurePreferences(target.user.id);
+    unsubscribeToken = prefs.unsubscribe_token;
     if (category === "lifecycle" && prefs.lifecycle_opt_out) {
       const built = buildEmail(kind, payload, {
         recipientName: recipient.name,
@@ -311,6 +319,15 @@ async function sendKindInner<K extends EmailKind>(
     }
   }
 
+  // One-click unsubscribe headers (see preferences.ts for why the header
+  // construction itself lives there, not here). Lifecycle-only, matching the
+  // "why am I getting this" carve-out above: transactional mail isn't a
+  // reminder and offers no opt-out.
+  const unsubscribeHeaders: Record<string, string> | undefined =
+    category === "lifecycle" && unsubscribeToken
+      ? buildUnsubscribeHeaders(unsubscribeToken)
+      : undefined;
+
   if (!CONFIG.resendApiKey) {
     // Dev/test: mailer.ts just logs to stdout, never throws. Record the
     // attempt SYNCHRONOUSLY (before any await) so callers using fire-and-forget
@@ -333,6 +350,7 @@ async function sendKindInner<K extends EmailKind>(
       html: built.rendered.html,
       text: built.rendered.text,
       replyTo,
+      headers: unsubscribeHeaders,
     });
     return { status: "skipped_no_provider" };
   }
@@ -345,6 +363,7 @@ async function sendKindInner<K extends EmailKind>(
       html: built.rendered.html,
       text: built.rendered.text,
       replyTo,
+      headers: unsubscribeHeaders,
     });
     recordEmailAttempt({
       user_id: target.user?.id ?? null,

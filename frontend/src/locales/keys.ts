@@ -9067,6 +9067,8 @@ export interface LocaleMessages {
     email_prefs_toggle_aria: string;
     email_prefs_on: string;
     email_prefs_off: string;
+    email_prefs_off_confirm: string;
+    email_prefs_off_confirm_action: string;
     /** "Wedding RSVP" settings card on /app/profile. Today it carries a
      *  single opt-in: whether the RSVP flow asks guests if they need
      *  accommodation. Default off so couples who don't offer it don't ask. */

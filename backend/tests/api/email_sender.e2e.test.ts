@@ -7,6 +7,7 @@ import { db } from "../../src/db";
 import { buildResendPayload } from "../../src/lib/mailer";
 import { scanAdminSenderIntegrity } from "../../src/domain/emails/integrity_check";
 import { senderForKind } from "../../src/domain/emails/kinds";
+import { buildUnsubscribeHeaders } from "../../src/domain/emails/preferences";
 import { sendKind } from "../../src/domain/emails/send";
 import { registerAndVerify, req, wipeAll } from "../helpers";
 
@@ -204,6 +205,27 @@ describe("a reply reaches a human", () => {
     const headers = payload.headers as Record<string, string>;
     expect(headers["List-Unsubscribe"]).toBe("<https://x.test/u>");
     expect(Object.keys(headers).map((k) => k.toLowerCase())).not.toContain("reply-to");
+  });
+});
+
+describe("one-click unsubscribe headers", () => {
+  test("builds the RFC 8058 pair pointing at the token URL", () => {
+    const headers = buildUnsubscribeHeaders("abc123");
+    expect(headers["List-Unsubscribe"]).toBe(`<${CONFIG.frontendBaseUrl}/api/unsubscribe/abc123>`);
+    expect(headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
+  });
+
+  test("reaches buildResendPayload untouched, same as any other header", () => {
+    const payload = buildResendPayload({
+      to: "couple@test.test",
+      subject: "A reminder",
+      html: "<p>hi</p>",
+      text: "hi",
+      headers: buildUnsubscribeHeaders("xyz789"),
+    });
+    const headers = payload.headers as Record<string, string>;
+    expect(headers["List-Unsubscribe"]).toBe(`<${CONFIG.frontendBaseUrl}/api/unsubscribe/xyz789>`);
+    expect(headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
   });
 });
 

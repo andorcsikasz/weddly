@@ -7678,6 +7678,8 @@ const en: LocaleMessages = {
     email_prefs_toggle_aria: "Reminder emails",
     email_prefs_on: "Reminder emails are on",
     email_prefs_off: "Reminder emails are off",
+    email_prefs_off_confirm: "Turn off reminder emails? You'll miss milestone and planning nudges.",
+    email_prefs_off_confirm_action: "Yes, turn off",
     rsvp_title: "RSVP settings",
     rsvp_body: "These settings control which questions guests see when they respond.",
     rsvp_offers_accommodation_label: "Offer accommodation in RSVP",

@@ -271,6 +271,12 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     if (primary?.footerHelpLabel) {
       out.push(`${primary.footerHelpLabel} ${CONFIG.supportEmail}`);
     }
+    if (category === "lifecycle") {
+      const emailPrefsLabel = EMAIL_PREFS_LABEL[single ?? "bilingual"] ?? EMAIL_PREFS_LABEL.en!;
+      out.push(
+        `${emailPrefsLabel}: ${CONFIG.frontendBaseUrl}/app/settings/account#email-preferences`,
+      );
+    }
     if (primary?.suppressFooterWhyLine) {
       out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
       out.push("Weddly · tryweddly.com");
@@ -512,11 +518,19 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     // what "Questions?" means, and every single-language render stays clean.
     const helpLabel =
       primary?.footerHelpLabel ?? HELP_LABELS[single ?? "bilingual"] ?? HELP_LABELS.en!;
+    const emailPrefsLabel = EMAIL_PREFS_LABEL[single ?? "bilingual"] ?? EMAIL_PREFS_LABEL.en!;
     return `
       ${primary?.suppressFooterWhyLine ? "" : `<p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">${why}</p>`}
       <p style="margin:${primary?.suppressFooterWhyLine ? "0" : "8px"} 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
         ${helpLabel} <a href="mailto:${escapeAttr(CONFIG.supportEmail)}" style="color:${COLOR.muted};text-decoration:underline;">${escapeHtml(CONFIG.supportEmail)}</a>
       </p>
+      ${
+        category === "lifecycle"
+          ? `<p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
+        <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/app/settings/account#email-preferences`)}" style="color:${COLOR.muted};text-decoration:underline;">${escapeHtml(emailPrefsLabel)}</a>
+      </p>`
+          : ""
+      }
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 0 0;">
         <tr>
           ${SOCIAL.map(
@@ -737,6 +751,17 @@ const HELP_LABELS: Partial<Record<UiLocale | "bilingual", string>> = {
   es: "¿Preguntas?",
   hr: "Pitanja?",
   de: "Fragen?",
+};
+
+/** Quiet footer link to the account's email-preferences toggle, lifecycle mail
+ *  only — transactional mail (verification, RSVP, password reset) offers no
+ *  opt-out since it isn't a reminder. Deliberately the same visual weight as
+ *  the "Questions?" line above it, not a styled CTA: this is a settings
+ *  pointer, not a button. Same EN-fallback rule as the rest of the footer. */
+const EMAIL_PREFS_LABEL: Partial<Record<UiLocale | "bilingual", string>> = {
+  bilingual: "Email beállítások / Email preferences",
+  hu: "Email beállítások",
+  en: "Email preferences",
 };
 
 /** The "why am I getting this" line in the locales beyond HU/EN. Same fallback

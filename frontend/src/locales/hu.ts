@@ -7746,6 +7746,9 @@ const hu: LocaleMessages = {
     email_prefs_toggle_aria: "Emlékeztető emailek",
     email_prefs_on: "Emlékeztető emailek bekapcsolva",
     email_prefs_off: "Emlékeztető emailek kikapcsolva",
+    email_prefs_off_confirm:
+      "Kikapcsolod az emlékeztető emaileket? Lemaradsz a mérföldkövekről és tervezési tippekről.",
+    email_prefs_off_confirm_action: "Igen, kikapcsolom",
     rsvp_title: "RSVP beállítások",
     rsvp_body:
       "Ezek a beállítások szabályozzák, milyen kérdéseket látnak a vendégek a visszajelzéskor.",

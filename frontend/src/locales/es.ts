@@ -7743,6 +7743,9 @@ const es: LocaleMessages = {
     email_prefs_toggle_aria: "Correos de recordatorio",
     email_prefs_on: "Los correos de recordatorio están activados",
     email_prefs_off: "Los correos de recordatorio están desactivados",
+    email_prefs_off_confirm:
+      "¿Desactivar los correos de recordatorio? Te perderás los avisos de hitos y planificación.",
+    email_prefs_off_confirm_action: "Sí, desactivar",
     rsvp_title: "Ajustes de confirmación de asistencia",
     rsvp_body: "Estos ajustes controlan qué preguntas ven los invitados al responder.",
     rsvp_offers_accommodation_label: "Ofrecer alojamiento en la confirmación de asistencia",
