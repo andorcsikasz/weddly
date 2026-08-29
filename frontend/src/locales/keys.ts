@@ -824,6 +824,11 @@ export interface LocaleMessages {
     /** The one line that stays on screen; the full text above moved into an
      *  InfoHint next to the toggle's label. */
     label_hide_contact_hint_short: string;
+    /** Pooled straight from the package prices below (packagePriceSummary) —
+     *  the figure couples will filter by. Whole row is a button to Packages. */
+    price_range_label: string;
+    price_range_hint: string;
+    price_range_empty: string;
     label_price_band: string;
     label_price_band_help: string;
     /** Anti-fraud cooldown (shared/listings.ts PRICE_BAND_COOLDOWN_DAYS):

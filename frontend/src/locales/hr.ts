@@ -569,6 +569,9 @@ const hr: LocaleMessages = {
       "Odjavljeni posjetitelji vide djelomično skrivenu adresu (npr. Ilica •••); parovi nakon prijave dobivaju punu adresu. Vaš telefon ostaje djelomično skriven do prijave, a adresa e-pošte se ne objavljuje nikada.",
     label_hide_contact_hint_short:
       "Odjavljeni posjetitelji vaše kontaktne podatke vide djelomično prekrivene.",
+    price_range_label: "Cjenovni raspon",
+    price_range_hint: "Izračunato na temelju paketa u nastavku. Parovi će vas po tome filtrirati.",
+    price_range_empty: "Dodajte cijenu",
     label_price_band: "Cjenovni razred",
     label_price_band_help: "1 = povoljno, 5 = premium. Ostavite prazno da se ne prikazuje.",
     price_band_locked_until:

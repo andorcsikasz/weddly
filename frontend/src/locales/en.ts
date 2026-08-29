@@ -544,6 +544,10 @@ const en: LocaleMessages = {
     label_hide_contact_hint:
       "Logged-out visitors see a partly hidden address (e.g. Attila út •••); couples get the full address once signed in. Your phone stays partly hidden until sign-in, and your email address is never published at all.",
     label_hide_contact_hint_short: "Signed-out visitors see your contact details partly masked.",
+    price_range_label: "Price range",
+    price_range_hint:
+      "Calculated from the packages below. This is what couples will filter you by.",
+    price_range_empty: "Add pricing",
     label_price_band: "Price band",
     label_price_band_help: "1 = budget, 5 = premium. Leave blank to hide.",
     price_band_locked_until:

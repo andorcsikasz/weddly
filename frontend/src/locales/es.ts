@@ -570,6 +570,10 @@ const es: LocaleMessages = {
       "Los visitantes sin sesión ven una dirección parcialmente oculta (p. ej. Attila út •••); las parejas obtienen la dirección completa una vez que inician sesión. Tu teléfono queda parcialmente oculto hasta el inicio de sesión y tu correo no se publica en ningún caso.",
     label_hide_contact_hint_short:
       "Los visitantes sin sesión ven tus datos de contacto parcialmente ocultos.",
+    price_range_label: "Rango de precios",
+    price_range_hint:
+      "Calculado a partir de los paquetes de abajo. Las parejas podrán filtrar por esto.",
+    price_range_empty: "Añadir precio",
     label_price_band: "Franja de precio",
     label_price_band_help: "1 = económico, 5 = premium. Déjalo en blanco para ocultarlo.",
     price_band_locked_until:

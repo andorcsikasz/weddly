@@ -553,6 +553,9 @@ const hu: LocaleMessages = {
       "A kijelentkezett látogatók részben elrejtett címet látnak (pl. Attila út •••); a párok bejelentkezve a teljes címet kapják. A telefonszám bejelentkezésig részben rejtve marad, az e-mail-címed pedig egyáltalán nem jelenik meg.",
     label_hide_contact_hint_short:
       "A kijelentkezett látogatók részben rejtett elérhetőséget látnak.",
+    price_range_label: "Ártartomány",
+    price_range_hint: "A lenti csomagok árai alapján. Erre tudnak majd szűrni a párok.",
+    price_range_empty: "Ár megadása",
     label_price_band: "Árkategória",
     label_price_band_help: "1 = legolcsóbb, 5 = prémium. Üresen hagyva nem jelenik meg.",
     price_band_locked_until:

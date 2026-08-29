@@ -50,6 +50,7 @@ import {
   type VendorListingEditInput,
   type VendorListingView,
 } from "@shared/listings";
+import { packagePriceSummary } from "@shared/listing_pricing";
 import {
   capacityKindFor,
   languageLabel,
@@ -69,6 +70,7 @@ import { TextField } from "../../components/ui/TextField";
 import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
 import { type Locale, useT } from "../../lib/i18n";
+import { formatPackagePrice } from "../../lib/listingPricing";
 import { useDocumentTitle } from "../../lib/seo";
 import { Skeleton, SkeletonText, SmartImage, useConfirm } from "../../components/ui";
 import VendorListingPreview from "./VendorListingPreview";
@@ -648,6 +650,15 @@ export default function VendorListingPage() {
     setForm((prev) => (prev ? { ...prev, price_band: String(level) } : prev));
   };
 
+  // The numeric range couples will filter by — pooled straight from the
+  // package prices below, never a separate figure the vendor has to keep in
+  // sync by hand. See shared/listing_pricing.ts.
+  const scrollToPackages = () => {
+    document
+      .getElementById("vendor-section-packages")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const clearPriceBand = async () => {
     const ok = await confirm({
       title: t("vendor_home.price_band_clear_title"),
@@ -747,6 +758,12 @@ export default function VendorListingPage() {
   // every listing had before this existed.
   const localLang = listingLocalLanguage(view?.account.country);
   const englishOnlyListing = localLang.code === "en";
+
+  const priceSummary = view ? packagePriceSummary(view.packages ?? []) : null;
+  const priceRangeText =
+    priceSummary && view
+      ? formatPackagePrice(priceSummary.range, priceSummary.mode, view.currency, locale, t)
+      : null;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -1409,6 +1426,38 @@ export default function VendorListingPage() {
                   : t("vendor_home.section_pricing_only")}
               </legend>
 
+              {/* The figure couples will actually filter by, pooled straight
+                  from the package prices below (shared/listing_pricing.ts) —
+                  never a second number the vendor has to keep in sync by
+                  hand. One row: the value if there is one, a nudge to fill in
+                  a package price if not, always tapping through to Packages. */}
+              <button
+                type="button"
+                onClick={scrollToPackages}
+                className="flex w-full items-center justify-between gap-3 rounded-lg border border-paper-200 px-3 py-2.5 text-left transition-colors hover:border-paper-300 hover:bg-paper-50 dark:border-umber-700 dark:hover:border-umber-600 dark:hover:bg-umber-800/60"
+              >
+                <span className="min-w-0">
+                  <span className="flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+                    {t("vendor_home.price_range_label")}
+                    <InfoHint text={t("vendor_home.price_range_hint")} />
+                  </span>
+                  <span
+                    className={
+                      priceRangeText
+                        ? "block truncate text-base font-semibold text-ink-900 dark:text-paper-50"
+                        : "block text-sm font-medium text-blush-600 dark:text-blush-300"
+                    }
+                  >
+                    {priceRangeText ?? t("vendor_home.price_range_empty")}
+                  </span>
+                </span>
+                <ArrowRight
+                  size={16}
+                  aria-hidden="true"
+                  className="shrink-0 text-ink-400 dark:text-umber-400"
+                />
+              </button>
+
               <div>
                 <span className="field-label">{t("vendor_home.label_price_band")}</span>
                 {priceLocked && priceUnlockDate && (
@@ -1420,9 +1469,9 @@ export default function VendorListingPage() {
                 <div
                   role="radiogroup"
                   aria-label={t("vendor_home.label_price_band")}
-                  className="grid grid-cols-2 gap-2 sm:grid-cols-5"
+                  className="inline-flex w-full overflow-hidden rounded-lg border border-paper-300 dark:border-umber-700"
                 >
-                  {PRICE_LEVELS.map((lvl) => {
+                  {PRICE_LEVELS.map((lvl, i) => {
                     const active = form.price_band === String(lvl);
                     return (
                       <button
@@ -1438,10 +1487,12 @@ export default function VendorListingPage() {
                         title={t(`vendor_home.price_band_level_${lvl}_name`)}
                         onClick={() => setPriceBand(lvl)}
                         disabled={priceLocked}
-                        className={`flex items-center justify-center rounded-xl border px-2.5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                        className={`flex flex-1 items-center justify-center gap-0.5 py-2.5 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                          i > 0 ? "border-l border-paper-300 dark:border-umber-700" : ""
+                        } ${
                           active
-                            ? "border-blush-500 bg-blush-500 text-white"
-                            : "border-paper-300 bg-paper-50 text-ink-600 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-paper-400"
+                            ? "bg-blush-500 text-white"
+                            : "bg-white text-ink-500 hover:bg-paper-50 dark:bg-umber-900 dark:text-umber-300 dark:hover:bg-umber-800"
                         }`}
                       >
                         <span className="inline-flex items-center gap-0.5" aria-hidden="true">

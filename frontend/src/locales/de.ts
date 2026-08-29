@@ -586,6 +586,9 @@ const de: LocaleMessages = {
       "Nicht angemeldete Besucher sehen eine teilweise verdeckte Adresse (z. B. Hauptstraße •••); Paare bekommen nach der Anmeldung die volle Adresse. Ihre Telefonnummer bleibt bis zur Anmeldung teilweise verdeckt, und Ihre E-Mail-Adresse wird nie veröffentlicht.",
     label_hide_contact_hint_short:
       "Nicht angemeldete Besucher sehen Ihre Kontaktdaten teilweise verdeckt.",
+    price_range_label: "Preisspanne",
+    price_range_hint: "Berechnet aus den Paketen unten. Danach können Paare filtern.",
+    price_range_empty: "Preis hinzufügen",
     label_price_band: "Preisklasse",
     label_price_band_help: "1 = günstig, 5 = Premium. Leer lassen, um sie auszublenden.",
     price_band_locked_until:
