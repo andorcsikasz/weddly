@@ -7,8 +7,9 @@
 //      geocode fills the address/city line.
 //
 // Leaflet is ~150KB, so this whole module is lazy-imported by the parent (never
-// executes under happy-dom in the test suite). Basemap is CARTO Voyager, the
-// same soft raster the public VenueMap uses; the marker is the Weddly dove pin.
+// executes under happy-dom in the test suite). Basemap is CARTO Voyager (see
+// VenueMap.tsx for the VITE_CARTO_API_KEY note), the same soft raster the
+// public VenueMap uses; the marker is the Weddly dove pin.
 // Leaflet paints SVG/canvas, not Tailwind classes, so the accent is a literal
 // (mirroring components/SupplierMap.tsx) rather than a token utility.
 
@@ -21,6 +22,11 @@ import { geoApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { venuePinIcon } from "./venuePin";
+
+const CARTO_API_KEY = (import.meta.env.VITE_CARTO_API_KEY ?? "").trim();
+const CARTO_TILE_URL = `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${
+  CARTO_API_KEY ? `?key=${CARTO_API_KEY}` : ""
+}`;
 
 const PIN_ACCENT = "#bf4a30"; // blush-600 — matches the in-app map pin accent
 // Fallback centre before anything is placed: Budapest.
@@ -134,7 +140,7 @@ export default function VenueLocationPicker({
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            url={CARTO_TILE_URL}
             subdomains="abcd"
             detectRetina
           />

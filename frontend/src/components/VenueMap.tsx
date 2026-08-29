@@ -4,11 +4,13 @@
 // Lazy-imported by WeddingSiteView so the ~150KB leaflet bundle only ships to a
 // real browser (and never executes under happy-dom in the test suite).
 //
-// Basemap: CARTO Voyager, a soft, warm, keyless raster style, a genuine step
-// up from raw OSM tiles for a wedding page, and free for this volume. Its host
-// (basemaps.cartocdn.com) is allowlisted in the img-src CSP directive
-// (backend/src/server.ts). The per-style-pack CSS `filter` still layers on top,
-// so the couple's chosen mood (sepia / grayscale / …) rides over the base.
+// Basemap: CARTO Voyager, a soft, warm raster style, a genuine step up from
+// raw OSM tiles for a wedding page, free up to 5M tile requests/month against
+// VITE_CARTO_API_KEY (baked at build time; an unset key still loads tiles, just
+// with CARTO's "API key required" watermark). Its host (basemaps.cartocdn.com)
+// is allowlisted in the img-src CSP directive (backend/src/server.ts). The
+// per-style-pack CSS `filter` still layers on top, so the couple's chosen mood
+// (sepia / grayscale / …) rides over the base.
 //
 // Marker: the Weddly dove pin (components/venuePin.ts), tinted with the couple's
 // accent. `accent` is the per-theme pin colour (passed as `var(--wt-accent)` so
@@ -18,6 +20,11 @@
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import { venuePinIcon } from "./venuePin";
+
+const CARTO_API_KEY = (import.meta.env.VITE_CARTO_API_KEY ?? "").trim();
+const CARTO_TILE_URL = `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${
+  CARTO_API_KEY ? `?key=${CARTO_API_KEY}` : ""
+}`;
 
 export default function VenueMap({
   lat,
@@ -54,7 +61,7 @@ export default function VenueMap({
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          url={CARTO_TILE_URL}
           subdomains="abcd"
           detectRetina
         />
