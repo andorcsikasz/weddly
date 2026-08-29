@@ -15,7 +15,11 @@ COPY backend  ./backend
 COPY frontend ./frontend
 
 # VITE_* env vars are baked at build time — declare them as ARGs so Railway
-# forwards same-named service variables into the build.
+# forwards same-named service variables into the build. New ones (like
+# VITE_CARTO_API_KEY) need a fresh `railway up` snapshot to actually pick up a
+# variable set after the previous build: a `redeploy --from-source` reuses the
+# build-arg values frozen at the source snapshot's own upload time, not the
+# service's current variables.
 ARG VITE_PLAUSIBLE_DOMAIN
 ARG VITE_SENTRY_DSN
 ARG VITE_GOOGLE_CLIENT_ID
