@@ -3331,8 +3331,7 @@ const hu: LocaleMessages = {
     feedback_success: "Köszönjük, megérkezett. Minden visszajelzést elolvasunk.",
     feedback_empty_error: "Írj pár szót a küldés előtt.",
     film_title: "Esküvői film",
-    film_sub:
-      "Adj minden vendégnek egy virtuális egyszer-használatos fényképezőt. Gyűítsd össze a spontán pillanatokat mindenki szemszögéből, majd tárd fel az emlékeket.",
+    film_sub: "Egyszer-használatos fényképező minden vendégnek, az esküvő után feltárva.",
     film_cta_create: "Esküvői film létrehozása",
     film_cta_view: "Vendég kameralinkje",
     film_cta_preview: "Vendégélmény előnézete",
@@ -7865,6 +7864,12 @@ const hu: LocaleMessages = {
     version_label: "Verzió",
     report_illegal_content: "Jogellenes tartalom bejelentése",
   },
+  cookie_consent: {
+    title: "Sütiket használunk",
+    body: "Néhány süti szükséges a bejelentkezés fenntartásához. Csak a hozzájárulásoddal kapcsolunk be pár analitikai eszközt is, hogy megértsük, hogyan használod a Weddlyt — addig ezek kikapcsolva maradnak.",
+    accept: "Elfogadom",
+    decline: "Elutasítom",
+  },
   privacy: {
     seo_title: "Adatvédelmi szabályzat · Wēddly",
     seo_description:
@@ -7978,7 +7983,7 @@ const hu: LocaleMessages = {
     subprocessors_google:
       "Google Ireland Ltd. / Google LLC (USA), belépés Google-fiókkal, opcionális Google Naptár-szinkron és nyilvános üzleti adatokhoz használt Google Maps Places lekérdezések. Az alkalmazandó szerepet és adattovábbítási garanciát bekapcsolt funkciónként rögzítjük és ellenőrizzük.",
     subprocessors_other:
-      "További, funkcióhoz kötött szolgáltatók: Stripe (fizetés és csalásmegelőzés), Cloudflare R2 (objektumtárolás), Anthropic (felhasználó által indított AI-szövegtervezet), Apple (opcionális belépés), DeepL (fordítás), MaxMind (ország-meghatározás), Cookiebot (hozzájárulási nyilvántartás), valamint csak statisztikai hozzájárulás után a Plausible, Google Analytics/Tag Manager és Microsoft Clarity. A Sentry csak bekapcsolás esetén kap megtisztított hibaadatot.",
+      "További, funkcióhoz kötött szolgáltatók: Stripe (fizetés és csalásmegelőzés), Cloudflare R2 (objektumtárolás), Anthropic (felhasználó által indított AI-szövegtervezet), Apple (opcionális belépés), DeepL (fordítás), MaxMind (ország-meghatározás), valamint csak statisztikai hozzájárulás után a Plausible, Google Analytics/Tag Manager és Microsoft Clarity. A Sentry csak bekapcsolás esetén kap megtisztított hibaadatot.",
     google_data_title: "Google-fiókból származó adatok (belépés és naptárszinkron)",
     google_data_body:
       "Mindkét funkció opcionális, és egyik sem indul el addig, amíg át nem kattintotok a Google saját engedélyező képernyőjén. Aki nem köti össze a fiókját, arra az alábbiakból semmi nem vonatkozik.",
@@ -7995,7 +8000,7 @@ const hu: LocaleMessages = {
     google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Sütik és localStorage",
     cookies_intro:
-      "A bejelentkezett munkamenetet szükséges HttpOnly süti tartja fenn; a böngészőtárhely csak nem titkos beállításokat őriz. A Cookiebot eltárolja a hozzájárulási választást. Az opcionális analitikai szolgáltatók csak statisztikai hozzájárulás után állíthatnak be vagy olvashatnak azonosítót.",
+      "A bejelentkezett munkamenetet szükséges HttpOnly süti tartja fenn; a böngészőtárhely csak nem titkos beállításokat őriz, köztük a hozzájárulási választásodat. Az opcionális analitikai szolgáltatók csak statisztikai hozzájárulás után állíthatnak be vagy olvashatnak azonosítót.",
     cookies_settings: "Sütibeállítások áttekintése vagy visszavonása",
     cookies_locale:
       "weddly.locale, megjegyzi, hogy a magyar vagy az angol felületet preferáljátok.",

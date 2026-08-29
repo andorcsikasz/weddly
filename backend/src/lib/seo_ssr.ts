@@ -640,9 +640,11 @@ export const GTM_INLINE_CSP_HASH = `'sha256-${new Bun.CryptoHasher("sha256")
  *  wired up inside the GTM web UI, not in code, so it does not appear here.
  *  Container ids are public by design; we still guard the format to keep
  *  anything odd in the env out of the page source.
- *  The gtm.js loader is tagged data-cookieconsent="statistics" so Cookiebot's
- *  manual markup holds it until the visitor consents. The dataLayer bootstrap
- *  runs immediately (harmless, no cookies, no network) so any pre-consent
+ *  The gtm.js loader is tagged data-cookieconsent="statistics" as inert
+ *  `type="text/plain"`; frontend/src/lib/consent.ts flips it to a real
+ *  script once the visitor consents (first-party — see index.html's header
+ *  comment for why this replaced Cookiebot). The dataLayer bootstrap runs
+ *  immediately (harmless, no cookies, no network) so any pre-consent
  *  dataLayer.push() calls queue correctly. */
 function gtmScriptTag(): string {
   const id = gtmContainerIdEnv();
@@ -655,9 +657,10 @@ function gtmScriptTag(): string {
 
 // ── Direct GA4 (bypass GTM) ───────────────────────────────────────────────────
 // Activated by GA4_MEASUREMENT_ID env var (e.g. "G-XXXXXXXXXX"). Both the
-// remote loader and inline config remain inert until Cookiebot records
-// statistics consent. Remove this var if a GA4 Configuration tag is later
-// added inside GTM to avoid double-counting.
+// remote loader and inline config remain inert until the first-party consent
+// banner (frontend/src/lib/consent.ts) records statistics consent. Remove
+// this var if a GA4 Configuration tag is later added inside GTM to avoid
+// double-counting.
 
 function ga4MeasurementIdEnv(): string {
   return (process.env.GA4_MEASUREMENT_ID ?? "").trim();

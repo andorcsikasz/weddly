@@ -402,11 +402,10 @@ const CSP = [
   // dataLayer `gtm.js` push) without opening the policy to 'unsafe-inline'.
   // Harmless when GTM is disabled — it just allow-lists a script that never
   // appears in the page.
-  // Cookiebot consent manager loads uc.js from consent.cookiebot.com and the
-  // banner UI from consentcdn.cookiebot.com; without both the cookie banner
-  // (and therefore every consent-gated analytics script) silently fails to
-  // load. Microsoft Clarity loads its tag from www.clarity.ms.
-  `script-src 'self' ${GTM_INLINE_CSP_HASH}${GA4_CSP_HASHES ? " " + GA4_CSP_HASHES : ""} https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com https://consent.cookiebot.com https://consentcdn.cookiebot.com https://www.clarity.ms`,
+  // Cookie consent is first-party (frontend/src/lib/consent.ts) — no CMP
+  // origins to whitelist here any more. Microsoft Clarity loads its tag from
+  // www.clarity.ms.
+  `script-src 'self' ${GTM_INLINE_CSP_HASH}${GA4_CSP_HASHES ? " " + GA4_CSP_HASHES : ""} https://plausible.io https://accounts.google.com https://apis.google.com https://www.gstatic.com https://www.googletagmanager.com https://appleid.cdn-apple.com https://www.clarity.ms`,
   "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com https://appleid.cdn-apple.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.
@@ -429,17 +428,16 @@ const CSP = [
   // img.youtube.com + i.ytimg.com host the vendor video-reel poster thumbnails
   // (hqdefault.jpg) shown before the click-to-play iframe on supplier detail
   // pages; img.youtube.com 302s to i.ytimg.com, so both origins are needed.
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://imgsct.cookiebot.com https://*.clarity.ms https://c.bing.com https://img.youtube.com https://i.ytimg.com",
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://*.clarity.ms https://c.bing.com https://img.youtube.com https://i.ytimg.com",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
   // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may
   // also XHR the container config from googletagmanager.com.
   // appleid.apple.com is the authorization origin the Sign in with Apple JS
   // XHRs against while it runs the popup handshake.
-  // Cookiebot XHRs the consent state from consentcdn.cookiebot.com; Microsoft
-  // Clarity beacons session data to *.clarity.ms and syncs the MUID via
-  // c.bing.com.
-  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://*.clarity.ms https://c.bing.com",
+  // Microsoft Clarity beacons session data to *.clarity.ms and syncs the
+  // MUID via c.bing.com.
+  "connect-src 'self' https://plausible.io https://*.sentry.io https://rsms.me https://accounts.google.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://appleid.apple.com https://*.clarity.ms https://c.bing.com",
   // OSM's /export/embed.html is iframed by the honeymoon map modal.
   // `blob:` is for the /app/seating PDF preview modal — the generated chart
   // is handed to <iframe src="blob:..."> so the browser's native PDF viewer
@@ -450,7 +448,7 @@ const CSP = [
   // reference-video embeds on supplier detail pages; the nocookie host serves
   // the iframe but redirects some players through www.youtube.com, so both are
   // whitelisted.
-  "frame-src https://www.openstreetmap.org https://accounts.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://www.youtube-nocookie.com https://www.youtube.com blob:",
+  "frame-src https://www.openstreetmap.org https://accounts.google.com https://appleid.apple.com https://www.youtube-nocookie.com https://www.youtube.com blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

@@ -1,5 +1,6 @@
 import { Suspense, type JSX, type ReactNode, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { lazyWithReload } from "./lib/lazy_reload";
 import { VerifyEmailGate } from "./components/VerifyEmailGate";
@@ -381,6 +382,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
+      <CookieConsentBanner />
       <Routes>
         <Route
           path="/"

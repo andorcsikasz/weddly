@@ -3304,8 +3304,7 @@ const en: LocaleMessages = {
     feedback_success: "Thanks, got it. We read every message.",
     feedback_empty_error: "Write a couple of words before sending.",
     film_title: "Wedding Film",
-    film_sub:
-      "Give every guest a virtual disposable camera. Collect candid moments from everyone's perspective, then reveal them after the wedding.",
+    film_sub: "A disposable camera for every guest, revealed after the wedding.",
     film_cta_create: "Create Wedding Film",
     film_cta_view: "View guest camera link",
     film_cta_preview: "Preview guest experience",
@@ -7795,6 +7794,12 @@ const en: LocaleMessages = {
     version_label: "Version",
     report_illegal_content: "Report illegal content",
   },
+  cookie_consent: {
+    title: "We use cookies",
+    body: "A few cookies keep you signed in. Only with your consent do we also switch on a handful of analytics tools to understand how Weddly is used — until then they stay off.",
+    accept: "Accept",
+    decline: "Decline",
+  },
   privacy: {
     seo_title: "Privacy policy · Weddly",
     seo_description:
@@ -7908,7 +7913,7 @@ const en: LocaleMessages = {
     subprocessors_google:
       "Google Ireland Ltd. / Google LLC (USA), three separate functions: sign-in with Google (we receive your name, email address and Google account id), the optional Google Calendar sync described in the next section, and Google Maps Places lookups for public business data. The applicable role and transfer safeguard are recorded and verified per enabled function.",
     subprocessors_other:
-      "Other feature-specific providers: Stripe (payments and fraud prevention), Cloudflare R2 (object storage), Anthropic (user-triggered AI drafting), Apple (optional sign-in), DeepL (translation), MaxMind (country lookup), Cookiebot (consent record), and—only after statistics consent—Plausible, Google Analytics/Tag Manager and Microsoft Clarity. Sentry receives scrubbed error telemetry only when configured.",
+      "Other feature-specific providers: Stripe (payments and fraud prevention), Cloudflare R2 (object storage), Anthropic (user-triggered AI drafting), Apple (optional sign-in), DeepL (translation), MaxMind (country lookup), and—only after statistics consent—Plausible, Google Analytics/Tag Manager and Microsoft Clarity. Sentry receives scrubbed error telemetry only when configured.",
     google_data_title: "Google account data (sign-in and calendar sync)",
     google_data_body:
       "Both features are optional and neither starts until you click through Google's own consent screen. Nothing below happens for an account that never connects.",
@@ -7925,7 +7930,7 @@ const en: LocaleMessages = {
     google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Cookies and local storage",
     cookies_intro:
-      "A necessary HttpOnly cookie keeps your signed-in session; browser storage holds non-secret preferences below. Cookiebot stores your consent choice. Optional analytics providers may set or read identifiers only after statistics consent; rejecting statistics leaves those tags inactive.",
+      "A necessary HttpOnly cookie keeps your signed-in session; browser storage holds non-secret preferences below, including your consent choice. Optional analytics providers may set or read identifiers only after statistics consent; rejecting statistics leaves those tags inactive.",
     cookies_settings: "Review or withdraw cookie choices",
     cookies_locale: "weddly.locale, remembers whether you prefer the Hungarian or English UI.",
     cookies_verify_dismiss:

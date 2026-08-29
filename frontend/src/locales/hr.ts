@@ -3302,8 +3302,7 @@ const hr: LocaleMessages = {
     feedback_success: "Hvala, stiglo je. Čitamo svaku poruku.",
     feedback_empty_error: "Napišite nekoliko riječi prije slanja.",
     film_title: "Vjenčani film",
-    film_sub:
-      "Dajte svakom gostu virtualni jednokratni fotoaparat. Skupite spontane trenutke iz svačije perspektive, a zatim ih otkrijte nakon vjenčanja.",
+    film_sub: "Jednokratni fotoaparat za svakog gosta, otkriven nakon vjenčanja.",
     film_cta_create: "Stvorite vjenčani film",
     film_cta_view: "Pogledajte poveznicu kamere",
     film_cta_preview: "Pregled iskustva gostiju",
@@ -7779,6 +7778,12 @@ const hr: LocaleMessages = {
     version_label: "Verzija",
     report_illegal_content: "Prijavi nezakonit sadržaj",
   },
+  cookie_consent: {
+    title: "Koristimo kolačiće",
+    body: "Nekoliko kolačića održava vašu prijavu. Samo uz vaš pristanak uključujemo i nekoliko analitičkih alata kako bismo razumjeli kako se Weddly koristi — do tada ostaju isključeni.",
+    accept: "Prihvati",
+    decline: "Odbij",
+  },
   privacy: {
     seo_title: "Pravila privatnosti · Weddly",
     seo_description:
@@ -7892,7 +7897,7 @@ const hr: LocaleMessages = {
     subprocessors_google:
       "Google Ireland Ltd. / Google LLC (SAD), za tri odvojene funkcije: prijavu putem Googlea, neobaveznu sinkronizaciju s Google kalendarom i upite Google Maps Placesa o javnim poslovnim podacima. Uloga i jamstvo prijenosa bilježe se i provjeravaju zasebno za svaku uključenu funkciju.",
     subprocessors_other:
-      "Ostali pružatelji povezani s funkcijama mogu biti Stripe, Cloudflare R2, Anthropic, Apple, DeepL, MaxMind i Cookiebot te—samo nakon pristanka na statistiku—Plausible, Google Analytics/Tag Manager i Microsoft Clarity. Sentry prima očišćenu telemetriju samo kada je uključen.",
+      "Ostali pružatelji povezani s funkcijama mogu biti Stripe, Cloudflare R2, Anthropic, Apple, DeepL, MaxMind te—samo nakon pristanka na statistiku—Plausible, Google Analytics/Tag Manager i Microsoft Clarity. Sentry prima očišćenu telemetriju samo kada je uključen.",
     google_data_title: "Podaci iz Google računa (prijava i sinkronizacija kalendara)",
     google_data_body:
       "Obje su funkcije neobavezne i nijedna se ne pokreće dok ne prođete kroz Googleov vlastiti zaslon za odobrenje. Na račun koji se nikada ne poveže ništa se od navedenoga ne odnosi.",
@@ -7909,7 +7914,7 @@ const hr: LocaleMessages = {
     google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Kolačići i lokalna pohrana",
     cookies_intro:
-      "Nužni HttpOnly kolačić održava prijavljenu sesiju; lokalna pohrana preglednika sadrži samo dolje navedene postavke koje nisu tajne. Cookiebot sprema vaš izbor privole. Neobavezna analitika smije postaviti ili čitati identifikatore tek nakon privole za statistiku.",
+      "Nužni HttpOnly kolačić održava prijavljenu sesiju; lokalna pohrana preglednika sadrži samo dolje navedene postavke koje nisu tajne, uključujući vaš izbor privole. Neobavezna analitika smije postaviti ili čitati identifikatore tek nakon privole za statistiku.",
     cookies_settings: "Pregledajte ili povucite odabir kolačića",
     cookies_locale: "weddly.locale, pamti preferirate li mađarsko ili englesko sučelje.",
     cookies_verify_dismiss:

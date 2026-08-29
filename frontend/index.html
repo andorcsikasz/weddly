@@ -2,13 +2,13 @@
 <html lang="hu" data-default-locale="hu" class="bg-paper-100 text-ink-800">
   <head>
     <meta charset="UTF-8" />
-    <!-- Cookiebot in manual-blocking mode. Every optional analytics loader in
-         this document and in seo_ssr.ts is explicitly marked with
-         data-cookieconsent, so the CMP can load asynchronously without letting
-         tracking run before consent. Keeping this first still makes the banner
-         available as early as possible, while `async` removes uc.js from the
-         render-critical path. CBID is Weddly's public domain-group id. -->
-    <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="dbc1cd47-eac4-464f-a0ac-bf68a48bab1e" type="text/javascript" async></script>
+    <!-- Cookie consent is first-party now (see src/lib/consent.ts +
+         src/components/CookieConsentBanner.tsx) — the Cookiebot account this
+         used to depend on had its domain never authorized and its trial
+         expired, permanently blocking the banner. Every optional analytics
+         loader in this document and in seo_ssr.ts stays marked
+         data-cookieconsent="statistics" as inert `type="text/plain"`; the
+         banner flips them to real scripts on consent, same convention. -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/logo.png" />
@@ -78,229 +78,6 @@
     -->
     <style>
       .seo-prerender { display: none !important; }
-
-      /* ── Cookiebot consent banner — Weddly brand skin ────────────────────
-         Targets the Cookiebot-injected DOM. All overrides need !important
-         because Cookiebot's own stylesheet is also !important-heavy.
-         Color tokens mirror tailwind.config.js exactly so a token change
-         only needs updating here.
-         paper-100:#f6f2e7  paper-200:#efe9d9  paper-300:#e3d9bf
-         umber-500:#8a6841  umber-700:#3a2e22  umber-900:#1a1410
-         Accent (Accept-all / active toggle / nav underline) = umber-900
-         near-black #1a1410, hover #000 — no red/blush in this surface.
-      ──────────────────────────────────────────────────────────────────── */
-
-      /* Overlay backdrop — very subtle so the page feels alive behind */
-      #CybotCookiebotDialogUnderlay {
-        background: rgba(26, 20, 16, 0.35) !important;
-        backdrop-filter: blur(2px) !important;
-      }
-
-      /* Main dialog card. `html body` prefix raises specificity above
-         Cookiebot's banner-template width rules — without it the bottom-bar
-         template stretches the dialog full-width and ignores max-width. */
-      html body #CybotCookiebotDialog {
-        font-family: "General Sans", ui-sans-serif, system-ui, sans-serif !important;
-        background: #f6f2e7 !important;
-        border: 1px solid #e3d9bf !important;
-        border-radius: 1rem !important;
-        box-shadow: 0 16px 48px rgba(26, 20, 16, 0.18), 0 4px 16px rgba(26, 20, 16, 0.08) !important;
-        color: #1a1410 !important;
-        max-width: 280px !important;
-        width: calc(100vw - 3rem) !important;
-        max-height: calc(100dvh - 3rem) !important;
-        overflow-y: auto !important;
-        padding: 0 !important;
-        inset: auto auto 1.5rem 1.5rem !important;
-        transform: none !important;
-      }
-
-      /* Inner body wrapper — single column, tighter padding */
-      html body #CybotCookiebotDialogBody {
-        display: block !important;
-        max-width: none !important;
-        padding: 1.25rem 1.25rem 0 !important;
-      }
-
-      /* Hide the inline granular toggle row (Necessary / Preferences /
-         Statistics / Marketing) on the first screen so the card stays small;
-         it's still reachable behind the "Show details" link. */
-      html body #CybotCookiebotDialogBodyLevelButtonsSelectPane,
-      html body #CybotCookiebotDialogDetailBodyContentCookieContainerTypes {
-        display: none !important;
-      }
-
-      /* Header / logo row — hide Cookiebot's default logo area */
-      #CybotCookiebotDialogHeader {
-        display: none !important;
-      }
-
-      /* Title */
-      html body #CybotCookiebotDialogBodyContentTitle {
-        font-family: "General Sans", ui-sans-serif, system-ui, sans-serif !important;
-        font-size: 0.9375rem !important;
-        font-weight: 700 !important;
-        letter-spacing: -0.01em !important;
-        color: #1a1410 !important;
-        margin-bottom: 0.375rem !important;
-        margin-top: 0 !important;
-        padding: 0 !important;
-      }
-
-      /* Body text */
-      html body #CybotCookiebotDialogBodyContentText,
-      html body #CybotCookiebotDialogBodyContentText * {
-        font-family: "General Sans", ui-sans-serif, system-ui, sans-serif !important;
-        font-size: 0.75rem !important;
-        line-height: 1.5 !important;
-        color: #8a6841 !important;
-      }
-      #CybotCookiebotDialogBodyContentText a {
-        color: #8a6841 !important;
-        text-decoration: underline !important;
-        text-underline-offset: 2px !important;
-      }
-
-      /* Tab nav (Consent / Details / About) */
-      #CybotCookiebotDialogNav {
-        border-bottom: 1px solid #e3d9bf !important;
-        margin: 1rem 0 0 !important;
-        padding: 0 !important;
-        gap: 0 !important;
-      }
-      .CybotCookiebotDialogNavItemLink {
-        font-family: "General Sans", ui-sans-serif, system-ui, sans-serif !important;
-        font-size: 0.75rem !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.05em !important;
-        text-transform: uppercase !important;
-        color: #8a6841 !important;
-        padding: 0.6rem 0.875rem !important;
-        border-bottom: 2px solid transparent !important;
-        margin-bottom: -1px !important;
-        transition: color 0.15s, border-color 0.15s !important;
-      }
-      .CybotCookiebotDialogNavItemLink:hover {
-        color: #1a1410 !important;
-      }
-      .CybotCookiebotDialogNavItemLink.CybotCookiebotDialogNavItemLinkActive {
-        color: #1a1410 !important;
-        border-bottom-color: #1a1410 !important;
-      }
-
-      /* Details / checkboxes area */
-      #CybotCookiebotDialogBodyLevelButtonsTable {
-        background: transparent !important;
-        border: none !important;
-      }
-      .CybotCookiebotDialogBodyLevelButtonDescription {
-        font-size: 0.75rem !important;
-        color: #8a6841 !important;
-      }
-      /* Toggle switches */
-      .CybotCookiebotDialogBodyLevelButtonSlider {
-        background: #e3d9bf !important;
-        border-radius: 9999px !important;
-      }
-      input:checked + .CybotCookiebotDialogBodyLevelButtonSlider {
-        background: #1a1410 !important;
-      }
-
-      /* Buttons wrapper — force a static, single-column stack (the banner
-         template floats these to the right at full width otherwise). */
-      html body #CybotCookiebotDialogBodyButtonsWrapper {
-        position: static !important;
-        float: none !important;
-        width: auto !important;
-        max-width: none !important;
-        padding: 1rem 1.25rem 1.25rem !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 0.4rem !important;
-        margin: 0 !important;
-      }
-
-      /* All buttons — base reset */
-      html body #CybotCookiebotDialogBodyButtonsWrapper button,
-      html body #CybotCookiebotDialogBodyButtonsWrapper a[id*="Button"] {
-        font-family: "General Sans", ui-sans-serif, system-ui, sans-serif !important;
-        font-size: 0.8125rem !important;
-        font-weight: 600 !important;
-        border-radius: 9999px !important;
-        padding: 0.5rem 1rem !important;
-        width: 100% !important;
-        margin: 0 !important;
-        text-align: center !important;
-        cursor: pointer !important;
-        transition: background 0.15s, color 0.15s, border-color 0.15s !important;
-        line-height: 1.2 !important;
-        letter-spacing: 0 !important;
-      }
-
-      /* Accept all — filled near-black */
-      #CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll {
-        background: #1a1410 !important;
-        color: #fff !important;
-        border: 2px solid #1a1410 !important;
-        order: 1 !important;
-      }
-      #CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll:hover {
-        background: #000 !important;
-        border-color: #000 !important;
-      }
-
-      /* Allow selection — outline */
-      #CybotCookiebotDialogBodyLevelButtonLevelOptinAllowselection {
-        background: transparent !important;
-        color: #1a1410 !important;
-        border: 2px solid #e3d9bf !important;
-        order: 2 !important;
-      }
-      #CybotCookiebotDialogBodyLevelButtonLevelOptinAllowselection:hover {
-        border-color: #bfae7b !important;
-        background: #efe9d9 !important;
-      }
-
-      /* Decline / necessary only — ghost text */
-      #CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll,
-      #CybotCookiebotDialogBodyButtonDecline {
-        background: transparent !important;
-        color: #8a6841 !important;
-        border: 2px solid transparent !important;
-        order: 3 !important;
-        font-weight: 500 !important;
-      }
-      #CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll:hover,
-      #CybotCookiebotDialogBodyButtonDecline:hover {
-        color: #1a1410 !important;
-        background: #efe9d9 !important;
-      }
-
-      /* Powered-by footer */
-      #CybotCookiebotDialogPoweredByText,
-      #CybotCookiebotDialogPoweredbyLink,
-      .CybotCookiebotDialogPoweredByText {
-        font-size: 0.6875rem !important;
-        color: #bfae7b !important;
-        opacity: 0.7 !important;
-        display: block !important;
-        text-align: center !important;
-        padding-bottom: 1rem !important;
-      }
-
-      /* Mobile: full-width at bottom (matching specificity so it still wins) */
-      @media (max-width: 480px) {
-        html body #CybotCookiebotDialog {
-          inset: auto 0 0 0 !important;
-          width: 100% !important;
-          max-width: 100% !important;
-          max-height: 85dvh !important;
-          border-bottom-left-radius: 0 !important;
-          border-bottom-right-radius: 0 !important;
-          border-bottom: none !important;
-        }
-      }
     </style>
     <!--
       Fonts are intentionally NOT loaded from third-party hosts (rsms.me,
@@ -313,8 +90,9 @@
       in src/index.css -- but keep them self-hosted.
     -->
     <!-- Microsoft Clarity is optional analytics. Keep the bootstrap inert
-         until Cookiebot records statistics consent; loading it before that
-         would contradict both the banner choice and the privacy notice. -->
+         until the consent banner (src/components/CookieConsentBanner.tsx)
+         records statistics consent; loading it before that would contradict
+         both the banner choice and the privacy notice. -->
     <script type="text/plain" data-cookieconsent="statistics">
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};

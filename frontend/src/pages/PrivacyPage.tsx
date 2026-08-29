@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
+import { reopenConsentBanner } from "../lib/consent";
 import { useT } from "../lib/i18n";
 import en from "../locales/en";
 import hu from "../locales/hu";
@@ -416,13 +417,7 @@ function PrivacyBodyForLocale({
       <button
         type="button"
         className="mt-4 underline underline-offset-2"
-        onClick={() =>
-          (
-            window as Window & {
-              Cookiebot?: { renew: () => void };
-            }
-          ).Cookiebot?.renew()
-        }
+        onClick={() => reopenConsentBanner()}
       >
         {strings.cookies_settings}
       </button>

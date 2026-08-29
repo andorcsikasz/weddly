@@ -3375,8 +3375,7 @@ const de: LocaleMessages = {
     feedback_success: "Danke, angekommen. Wir lesen jede Nachricht.",
     feedback_empty_error: "Schreiben Sie ein paar Worte, bevor Sie senden.",
     film_title: "Hochzeitsfilm",
-    film_sub:
-      "Geben Sie jedem Gast eine virtuelle Einwegkamera. Sammeln Sie ungestellte Momente aus allen Perspektiven und enthüllen Sie sie nach der Hochzeit.",
+    film_sub: "Eine Einwegkamera für jeden Gast, enthüllt nach der Hochzeit.",
     film_cta_create: "Hochzeitsfilm erstellen",
     film_cta_view: "Gästekamera-Link ansehen",
     film_cta_preview: "Vorschau der Gästeansicht",
@@ -7915,6 +7914,12 @@ const de: LocaleMessages = {
     version_label: "Version",
     report_illegal_content: "Illegale Inhalte melden",
   },
+  cookie_consent: {
+    title: "Wir verwenden Cookies",
+    body: "Einige Cookies halten Sie angemeldet. Nur mit Ihrer Zustimmung schalten wir außerdem ein paar Analysetools ein, um zu verstehen, wie Weddly genutzt wird — bis dahin bleiben sie deaktiviert.",
+    accept: "Akzeptieren",
+    decline: "Ablehnen",
+  },
   privacy: {
     seo_title: "Datenschutzerklärung · Weddly",
     seo_description:
@@ -8028,7 +8033,7 @@ const de: LocaleMessages = {
     subprocessors_google:
       "Google Ireland Ltd. / Google LLC (USA), drei getrennte Funktionen: Anmeldung mit Google, die optionale Google-Kalender-Synchronisierung sowie Google-Maps-Places-Abfragen zu öffentlichen Unternehmensdaten. Rolle und Übermittlungsgarantie werden für jede aktivierte Funktion gesondert dokumentiert und geprüft.",
     subprocessors_other:
-      "Weitere funktionsbezogene Anbieter können Stripe, Cloudflare R2, Anthropic, Apple, DeepL, MaxMind und Cookiebot sowie—nur nach Statistik-Einwilligung—Plausible, Google Analytics/Tag Manager und Microsoft Clarity sein. Sentry erhält nur bei Aktivierung bereinigte Fehlerdaten.",
+      "Weitere funktionsbezogene Anbieter können Stripe, Cloudflare R2, Anthropic, Apple, DeepL, MaxMind sowie—nur nach Statistik-Einwilligung—Plausible, Google Analytics/Tag Manager und Microsoft Clarity sein. Sentry erhält nur bei Aktivierung bereinigte Fehlerdaten.",
     google_data_title: "Daten aus dem Google-Konto (Anmeldung und Kalendersynchronisierung)",
     google_data_body:
       "Beide Funktionen sind optional, und keine startet, bevor Sie sich durch Googles eigenen Einwilligungsbildschirm geklickt haben. Für ein Konto, das nie verbunden wird, gilt nichts von dem Folgenden.",
@@ -8045,7 +8050,7 @@ const de: LocaleMessages = {
     google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Cookies und lokale Speicherung",
     cookies_intro:
-      "Ein notwendiges HttpOnly-Cookie hält Ihre angemeldete Sitzung; die lokale Browserspeicherung enthält nur die unten genannten nicht geheimen Einstellungen. Cookiebot speichert Ihre Einwilligungsentscheidung. Optionale Analysedienste dürfen Kennungen erst nach Statistik-Einwilligung setzen oder lesen.",
+      "Ein notwendiges HttpOnly-Cookie hält Ihre angemeldete Sitzung; die lokale Browserspeicherung enthält nur die unten genannten nicht geheimen Einstellungen, einschließlich Ihrer Einwilligungsentscheidung. Optionale Analysedienste dürfen Kennungen erst nach Statistik-Einwilligung setzen oder lesen.",
     cookies_settings: "Cookie-Auswahl prüfen oder widerrufen",
     cookies_locale:
       "weddly.locale, merkt sich, ob Sie die ungarische oder die englische Oberfläche bevorzugen.",

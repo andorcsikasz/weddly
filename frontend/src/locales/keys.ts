@@ -9205,6 +9205,16 @@ export interface LocaleMessages {
     version_label: string;
     report_illegal_content: string;
   };
+  /** The first-party cookie consent banner (replaces the old Cookiebot CMP).
+   *  Two equally-prominent buttons only — accept / decline — since Weddly
+   *  gates exactly one non-essential category (statistics: GTM/GA4/Clarity/
+   *  Plausible). See lib/consent.ts. */
+  cookie_consent: {
+    title: string;
+    body: string;
+    accept: string;
+    decline: string;
+  };
   privacy: {
     seo_title: string;
     seo_description: string;
