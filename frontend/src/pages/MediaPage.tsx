@@ -43,7 +43,7 @@ import React, { type FormEvent, useCallback, useEffect, useId, useRef, useState 
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { CameraHero, DEMO_STRIP } from "../components/CameraHero";
-import { Dialog, useConfirm, useToast } from "../components/ui";
+import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
 import { useModalShell } from "../components/ui/modal_shell";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
 import { intlLocale } from "../lib/format";
@@ -734,6 +734,7 @@ function FilmModal({
   const [revealAt, setRevealAt] = useState<string>(
     album?.revealAt ? toDatetimeLocal(album.revealAt) : "",
   );
+  const [promptsEnabled, setPromptsEnabled] = useState<boolean>(album?.promptsEnabled ?? true);
 
   useEffect(() => {
     if (!open) return;
@@ -741,6 +742,7 @@ function FilmModal({
     setAesthetic(album?.filmAesthetic ?? "natural");
     setShots(album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "24");
     setRevealAt(album?.revealAt ? toDatetimeLocal(album.revealAt) : "");
+    setPromptsEnabled(album?.promptsEnabled ?? true);
     if (!isEdit) {
       const b = couple?.bride_name?.trim();
       const g = couple?.groom_name?.trim();
@@ -773,6 +775,7 @@ function FilmModal({
           title: title.trim() || null,
           filmAesthetic: aesthetic,
           shotsPerGuest: spg,
+          promptsEnabled,
           ...(endsMs !== null ? { eventEndsAt: endsMs } : {}),
           ...(revealMs !== null ? { revealAt: revealMs } : {}),
         });
@@ -953,6 +956,23 @@ function FilmModal({
                 className="input w-auto min-w-0 shrink rounded-xl px-3 text-right text-sm"
               />
             </label>
+            {isEdit && (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <span className="flex-1">
+                  <span className="block text-sm font-medium text-umber-900 dark:text-paper-100">
+                    {t("media.film_settings_prompts")}
+                  </span>
+                  <span className="block text-xs text-umber-600 dark:text-paper-300">
+                    {t("media.film_settings_prompts_hint")}
+                  </span>
+                </span>
+                <Switch
+                  checked={promptsEnabled}
+                  onChange={setPromptsEnabled}
+                  label={t("media.film_settings_prompts")}
+                />
+              </div>
+            )}
           </div>
         </fieldset>
       </form>

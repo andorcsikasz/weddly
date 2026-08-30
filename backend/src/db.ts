@@ -1845,6 +1845,11 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_film_devices_email ON film_devices(album
 // joined or uploaded since the last round, never a repeat send.
 addColumnIfMissing("film_devices", "photos_emailed_at", "photos_emailed_at INTEGER");
 
+// Rotating playful capture prompts (dev-note §4) — decorative only, content is
+// a curated client-side set; this is the couple's one on/off switch. Defaults
+// on so existing films pick it up without anyone having to opt in.
+addColumnIfMissing("photo_albums", "prompts_enabled", "prompts_enabled INTEGER NOT NULL DEFAULT 1");
+
 // planner_clients indexes live here (not schema.sql) per the May 2026 ordering rule.
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_planner_clients_planner ON planner_clients(planner_user_id)",

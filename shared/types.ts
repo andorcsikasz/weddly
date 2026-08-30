@@ -730,6 +730,10 @@ export interface PhotoAlbum {
   paidAt: number | null;
   photoCount: number;
   participantCount: number;
+  /** Rotating playful capture prompts shown above the guest shutter (#dev-note
+   *  §4). Content is a curated, localised set picked client-side — this flag
+   *  is the only thing the couple controls. Defaults on. */
+  promptsEnabled: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -747,6 +751,7 @@ export interface PhotoAlbumPublic {
   revealAt: number | null;
   filmAesthetic: FilmAesthetic;
   coverImageUrl: string | null;
+  promptsEnabled: boolean;
 }
 
 export interface FilmDevice {

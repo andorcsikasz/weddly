@@ -3962,6 +3962,11 @@ export interface LocaleMessages {
     film_settings_reveal_hint: string;
     film_settings_cap: string;
     film_settings_cap_hint: string;
+    /** On/off for the rotating playful capture prompts shown to guests
+     *  above the shutter (dev-note §4). Edit-only — a fresh film starts with
+     *  it on. */
+    film_settings_prompts: string;
+    film_settings_prompts_hint: string;
     film_settings_upload: string;
     film_settings_unnamed: string;
     film_empty_title: string;
@@ -4122,6 +4127,26 @@ export interface LocaleMessages {
     sent_toast: string;
     invite_aria: string;
     queue_retry: string;
+    /** First-visit landing screen shown before name capture — one CTA, no
+     *  navigation, matches the dev note's "no app / no account / private"
+     *  reassurance triad. Returning guests skip straight past it. */
+    landing_heading: string;
+    landing_body: string;
+    landing_cta: string;
+    landing_reassure_no_app: string;
+    landing_reassure_no_account: string;
+    landing_reassure_private: string;
+    /** Rotating playful capture prompts shown above the shutter (dev-note §4),
+     *  gated by the couple's `promptsEnabled` switch. A fixed curated set,
+     *  picked and rotated client-side — not couple-editable text yet. */
+    prompt_1: string;
+    prompt_2: string;
+    prompt_3: string;
+    prompt_4: string;
+    prompt_5: string;
+    prompt_6: string;
+    prompt_7: string;
+    prompt_8: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   /** /app/design — the curated wedding visual-identity editor. */

@@ -42,7 +42,9 @@ describe("photo-albums API", () => {
   });
 
   test("POST /api/photo-albums creates an album", async () => {
-    const r = await req<{ album: { uploadToken: string; id: number; guestCap: number } }>(
+    const r = await req<{
+      album: { uploadToken: string; id: number; guestCap: number; promptsEnabled: boolean };
+    }>(
       "POST",
       "/api/photo-albums",
       { title: "Our Film", shots_per_guest: 5, film_aesthetic: "natural" },
@@ -52,6 +54,8 @@ describe("photo-albums API", () => {
     expect(typeof r.data.album.uploadToken).toBe("string");
     expect(r.data.album.uploadToken.length).toBeGreaterThan(0);
     expect(r.data.album.guestCap).toBe(FILM_TIER_CAPS.free);
+    // Decorative capture prompts (dev-note §4) default on, unprompted.
+    expect(r.data.album.promptsEnabled).toBe(true);
     albumToken = r.data.album.uploadToken;
   });
 
@@ -175,6 +179,65 @@ describe("photo-albums API", () => {
     expect((await req("GET", "/api/photo-albums/rotate-me")).status).toBe(404);
     expect((await req("GET", `/api/photo-albums/${oldToken}/qr`)).status).toBe(404);
     expect((await req("GET", `/api/photo-albums/${albumToken}`)).status).toBe(200);
+  });
+
+  // Isolated couple/album: a device registration here would otherwise bump
+  // the shared suite's `participantCount` and break its exact-count assertions.
+  test("prompts_enabled toggles via PATCH and reaches every guest-facing read", async () => {
+    const { token: promptToken } = await bootstrapCouple("film-prompts@weddly.test");
+    const created = await req<{ album: { uploadToken: string } }>(
+      "POST",
+      "/api/photo-albums",
+      { title: "Prompt Toggle Film" },
+      { token: promptToken },
+    );
+    const promptAlbumToken = created.data.album.uploadToken;
+
+    const off = await req<{ album: { promptsEnabled: boolean } }>(
+      "PATCH",
+      "/api/photo-albums/current",
+      { prompts_enabled: false },
+      { token: promptToken },
+    );
+    expect(off.status).toBe(200);
+    expect(off.data.album.promptsEnabled).toBe(false);
+
+    const publicGet = await req<{ album: { promptsEnabled: boolean } }>(
+      "GET",
+      `/api/photo-albums/${promptAlbumToken}`,
+    );
+    expect(publicGet.data.album.promptsEnabled).toBe(false);
+
+    const preview = await req<{ album: { promptsEnabled: boolean } }>(
+      "GET",
+      `/api/photo-albums/${promptAlbumToken}/preview`,
+      undefined,
+      { token: promptToken },
+    );
+    expect(preview.data.album.promptsEnabled).toBe(false);
+
+    const registered = await req<{ album: { promptsEnabled: boolean } }>(
+      "POST",
+      `/api/photo-albums/${promptAlbumToken}/devices`,
+      { device_id: "prompt-check-device" },
+    );
+    expect(registered.data.album.promptsEnabled).toBe(false);
+
+    const on = await req<{ album: { promptsEnabled: boolean } }>(
+      "PATCH",
+      "/api/photo-albums/current",
+      { prompts_enabled: true },
+      { token: promptToken },
+    );
+    expect(on.data.album.promptsEnabled).toBe(true);
+
+    const invalid = await req<{ detail?: unknown }>(
+      "PATCH",
+      "/api/photo-albums/current",
+      { prompts_enabled: "yes" },
+      { token: promptToken },
+    );
+    expect(invalid.status).toBe(400);
   });
 
   test("preview-marked device registration is rejected without mutating the film", async () => {

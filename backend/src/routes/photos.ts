@@ -86,6 +86,7 @@ interface AlbumRow {
   stripe_payment_id: string | null;
   stripe_tier: string | null;
   paid_at: number | null;
+  prompts_enabled: number;
   created_at: number;
   updated_at: number;
 }
@@ -264,8 +265,27 @@ function toAlbum(row: AlbumRow): PhotoAlbum {
     paidAt: row.paid_at,
     photoCount: countPhotos(row.id),
     participantCount: countParticipants(row.id),
+    promptsEnabled: row.prompts_enabled === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+/** The guest-facing subset — shared by device registration, host preview, and
+ *  the plain public lookup so the three can never drift on what a guest sees. */
+function toPublicAlbum(row: AlbumWithCouple): PhotoAlbumPublic {
+  return {
+    displayName: row.display_name,
+    weddingDate: row.wedding_date,
+    slug: row.slug,
+    title: row.title,
+    shotsPerGuest: row.shots_per_guest,
+    isUploadEnabled: row.is_upload_enabled === 1,
+    eventEndsAt: row.event_ends_at,
+    revealAt: row.reveal_at,
+    filmAesthetic: safeAesthetic(row.film_aesthetic),
+    coverImageUrl: row.cover_image_url,
+    promptsEnabled: row.prompts_enabled === 1,
   };
 }
 
@@ -476,6 +496,12 @@ async function handleUpdateAlbum(ctx: Ctx): Promise<Response> {
       throw new HttpError(400, "is_upload_enabled must be boolean");
     updates.push("is_upload_enabled = ?");
     params.push(body.is_upload_enabled ? 1 : 0);
+  }
+  if ("prompts_enabled" in body) {
+    if (typeof body.prompts_enabled !== "boolean")
+      throw new HttpError(400, "prompts_enabled must be boolean");
+    updates.push("prompts_enabled = ?");
+    params.push(body.prompts_enabled ? 1 : 0);
   }
   if ("shots_per_guest" in body) {
     const v = body.shots_per_guest;
@@ -1109,18 +1135,7 @@ async function handleRegisterDevice(ctx: Ctx): Promise<Response> {
     });
   }
 
-  const publicAlbum: PhotoAlbumPublic = {
-    displayName: row.display_name,
-    weddingDate: row.wedding_date,
-    slug: row.slug,
-    title: row.title,
-    shotsPerGuest: row.shots_per_guest,
-    isUploadEnabled: row.is_upload_enabled === 1,
-    eventEndsAt: row.event_ends_at,
-    revealAt: row.reveal_at,
-    filmAesthetic: safeAesthetic(row.film_aesthetic),
-    coverImageUrl: row.cover_image_url,
-  };
+  const publicAlbum = toPublicAlbum(row);
 
   const shotCount = countParticipantShots(row.id, deviceId, guestName, finalEmail);
 
@@ -1142,18 +1157,7 @@ async function handleGetHostPreview(ctx: Ctx): Promise<Response> {
   // Do not reveal whether another workspace's token exists.
   if (!row || row.couple_id !== couple.id) throw new HttpError(404, "Album not found");
 
-  const album: PhotoAlbumPublic = {
-    displayName: row.display_name,
-    weddingDate: row.wedding_date,
-    slug: row.slug,
-    title: row.title,
-    shotsPerGuest: row.shots_per_guest,
-    isUploadEnabled: row.is_upload_enabled === 1,
-    eventEndsAt: row.event_ends_at,
-    revealAt: row.reveal_at,
-    filmAesthetic: safeAesthetic(row.film_aesthetic),
-    coverImageUrl: row.cover_image_url,
-  };
+  const album = toPublicAlbum(row);
 
   return json({ album, shotCount: 0, readOnly: true });
 }
@@ -1166,18 +1170,7 @@ async function handleGetPublicAlbum(ctx: Ctx): Promise<Response> {
   const row = albumWithCoupleQuery(token);
   if (!row) throw new HttpError(404, "Album not found");
 
-  const album: PhotoAlbumPublic = {
-    displayName: row.display_name,
-    weddingDate: row.wedding_date,
-    slug: row.slug,
-    title: row.title,
-    shotsPerGuest: row.shots_per_guest,
-    isUploadEnabled: row.is_upload_enabled === 1,
-    eventEndsAt: row.event_ends_at,
-    revealAt: row.reveal_at,
-    filmAesthetic: safeAesthetic(row.film_aesthetic),
-    coverImageUrl: row.cover_image_url,
-  };
+  const album = toPublicAlbum(row);
 
   return json({ album });
 }

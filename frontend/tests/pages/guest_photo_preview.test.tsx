@@ -80,10 +80,15 @@ describe("<GuestPhotoPage> host preview", () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByRole("textbox", { name: "A neved" })).toBeInTheDocument(),
+      expect(screen.getByRole("button", { name: "Kamera megnyitása" })).toBeInTheDocument(),
     );
     expect(registrations).toHaveLength(1);
     expect(registrations[0]?.guest_name).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Kamera megnyitása" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "A neved" })).toBeInTheDocument(),
+    );
 
     fireEvent.change(screen.getByRole("textbox", { name: "A neved" }), {
       target: { value: "  Nóra  " },
@@ -145,9 +150,14 @@ describe("<GuestPhotoPage> host preview", () => {
       </I18nProvider>,
     );
 
-    await waitFor(() => expect(screen.getByText("Hogy hívnak?")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Kamera megnyitása" })).toBeInTheDocument(),
+    );
     expect(screen.getByText("Tulajdonosi előnézet · feltöltés kikapcsolva")).toBeInTheDocument();
     expect(requests).toEqual([{ url: "/api/photo-albums/preview-token/preview", method: "GET" }]);
+    fireEvent.click(screen.getByRole("button", { name: "Kamera megnyitása" }));
+
+    await waitFor(() => expect(screen.getByText("Hogy hívnak?")).toBeInTheDocument());
 
     fireEvent.change(screen.getByPlaceholderText("A neved"), { target: { value: "Andor" } });
     fireEvent.change(screen.getByPlaceholderText("E-mail-címed"), {

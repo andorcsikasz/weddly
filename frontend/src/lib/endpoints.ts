@@ -4125,6 +4125,7 @@ export const photoAlbumApi = {
     coverImageUrl?: string | null;
     /** Custom guest-link slug (#17); null clears it. */
     slug?: string | null;
+    promptsEnabled?: boolean;
   }): Promise<{ album: PhotoAlbum }> {
     const body: Record<string, unknown> = {};
     if ("isUploadEnabled" in patch) body.is_upload_enabled = patch.isUploadEnabled;
@@ -4135,6 +4136,7 @@ export const photoAlbumApi = {
     if ("eventEndsAt" in patch) body.event_ends_at = patch.eventEndsAt ?? null;
     if ("coverImageUrl" in patch) body.cover_image_url = patch.coverImageUrl ?? null;
     if ("slug" in patch) body.slug = patch.slug ?? null;
+    if ("promptsEnabled" in patch) body.prompts_enabled = patch.promptsEnabled;
     return apiFetch<{ album: PhotoAlbum }>("PATCH", "/api/photo-albums/current", body);
   },
 

@@ -15,6 +15,7 @@
 //   loading       — registering device / fetching album
 //   not_found     — 404 or closed film
 //   disabled      — is_upload_enabled = false
+//   landing       — first-ever visit; cover photo, one "Open camera" CTA
 //   name_capture  — first visit; ask guest's name
 //   viewfinder    — live camera or file-picker; shot counter visible
 //   developing    — reveal_at is in the future; countdown shown
@@ -101,6 +102,9 @@ type PageState =
   | { kind: "busy" }
   | { kind: "preview_unavailable" }
   | { kind: "disabled" }
+  // First-ever visit: one screen, one CTA, before any form. Returning guests
+  // (storedName !== null) skip straight past it into name_capture/viewfinder.
+  | { kind: "landing"; album: PhotoAlbumPublic }
   | { kind: "name_capture"; album: PhotoAlbumPublic }
   | { kind: "returning_welcome"; album: PhotoAlbumPublic; guestName: string; shotCount: number }
   | { kind: "viewfinder"; album: PhotoAlbumPublic; guestName: string | null; shotCount: number }
@@ -353,6 +357,59 @@ interface QueueItem {
   errorMessage?: string;
 }
 
+// ─── rotating capture prompts (dev-note §4) ──────────────────────────────────
+// Content is a fixed curated set, picked and rotated entirely client-side —
+// the couple only controls the on/off switch (`album.promptsEnabled`). Kept
+// client-side on purpose: it respects the GUEST's own locale via useT, which
+// the backend has no way to know for an anonymous visitor.
+
+const PROMPT_KEYS = [
+  "photos.prompt_1",
+  "photos.prompt_2",
+  "photos.prompt_3",
+  "photos.prompt_4",
+  "photos.prompt_5",
+  "photos.prompt_6",
+  "photos.prompt_7",
+  "photos.prompt_8",
+] as const;
+
+const PROMPT_ROTATE_MS = 8000;
+
+function shuffled<T>(items: readonly T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j] as T, copy[i] as T];
+  }
+  return copy;
+}
+
+/** Cycles through a shuffled pass of every prompt before reshuffling, so nine
+ *  guests in a row never see the same one first and no prompt repeats twice
+ *  running. Returns null when prompts are off, which callers render nothing for. */
+function useRotatingPrompt(enabled: boolean): string | null {
+  const { t } = useT();
+  const orderRef = useRef<string[]>(shuffled(PROMPT_KEYS));
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const id = setInterval(() => {
+      setIndex((i) => {
+        const next = i + 1;
+        if (next < orderRef.current.length) return next;
+        orderRef.current = shuffled(PROMPT_KEYS);
+        return 0;
+      });
+    }, PROMPT_ROTATE_MS);
+    return () => clearInterval(id);
+  }, [enabled]);
+
+  if (!enabled) return null;
+  return t(orderRef.current[index] ?? PROMPT_KEYS[0]);
+}
+
 // ─── viewfinder ───────────────────────────────────────────────────────────────
 
 function Viewfinder({
@@ -375,6 +432,7 @@ function Viewfinder({
   const { t, locale } = useT();
   const mobile = isMobileDevice();
   const inApp = isInAppBrowser();
+  const promptText = useRotatingPrompt(album.promptsEnabled && !preview);
   const [facing, setFacing] = useState<Facing>("environment");
   // Host preview must not even request camera permission. It renders the same
   // chrome with a clearly marked, inert viewfinder instead.
@@ -880,6 +938,15 @@ function Viewfinder({
         )}
       </div>
 
+      {/* ── Prompt: a playful idea, above the shutter ──────────────── */}
+      {promptText && (
+        <div className="flex justify-center px-8 pt-4">
+          <span className="rounded-full bg-paper-50/10 px-4 py-2 text-center text-[13px] font-medium text-paper-50/75">
+            {promptText}
+          </span>
+        </div>
+      )}
+
       {/* ── Controls: upload · shutter · flip ──────────────────────── */}
       <div className="grid grid-cols-3 items-center px-8 pb-[max(2rem,env(safe-area-inset-bottom))] pt-6">
         <div className="flex justify-start">
@@ -1060,7 +1127,7 @@ export default function GuestPhotoPage() {
     if (preview) {
       photoAlbumApi
         .getPreview(token)
-        .then(({ album }) => setState({ kind: "name_capture", album }))
+        .then(({ album }) => setState({ kind: "landing", album }))
         .catch(() => setState({ kind: "preview_unavailable" }));
       return;
     }
@@ -1089,7 +1156,7 @@ export default function GuestPhotoPage() {
           return;
         }
         if (storedName === null) {
-          setState({ kind: "name_capture", album });
+          setState({ kind: "landing", album });
         } else if (shotCount > 0) {
           // Returning guest who already shared at least one shot: warm welcome
           // back before dropping them into the live viewfinder.
@@ -1106,6 +1173,11 @@ export default function GuestPhotoPage() {
         else setState({ kind: "not_found" });
       });
   }, [preview, token]);
+
+  function handleOpenCamera() {
+    if (state.kind !== "landing") return;
+    setState({ kind: "name_capture", album: state.album });
+  }
 
   async function handleNameSubmit(name: string, email: string, optIn: boolean) {
     if (state.kind !== "name_capture") return;
@@ -1208,6 +1280,50 @@ export default function GuestPhotoPage() {
           <SheetTitle>{t("photos.preview_unavailable")}</SheetTitle>
           <SheetBody>{t("photos.preview_unavailable_sub")}</SheetBody>
         </FilmSheet>
+      </>
+    );
+  }
+
+  if (state.kind === "landing") {
+    return (
+      <>
+        {preview && <PreviewBanner />}
+        <div className="relative flex min-h-dvh flex-col justify-end overflow-hidden bg-ink-950 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-16 text-paper-50">
+          {state.album.coverImageUrl && (
+            <img
+              src={state.album.coverImageUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/75 to-ink-950/25"
+          />
+          <div className="relative mx-auto w-full max-w-sm">
+            <SheetKicker album={state.album} />
+            <SheetTitle>{t("photos.landing_heading")}</SheetTitle>
+            <SheetBody>{t("photos.landing_body")}</SheetBody>
+            <button type="button" onClick={handleOpenCamera} className={`${PRIMARY_BTN} mt-10`}>
+              {t("photos.landing_cta")}
+            </button>
+            <div className="mt-5 flex flex-wrap justify-center gap-2 text-center">
+              {[
+                t("photos.landing_reassure_no_app"),
+                t("photos.landing_reassure_no_account"),
+                t("photos.landing_reassure_private"),
+              ].map((label) => (
+                <span
+                  key={label}
+                  className="rounded-full border border-paper-50/15 bg-paper-50/5 px-3 py-1.5 text-[12px] font-medium text-paper-50/60"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </>
     );
   }

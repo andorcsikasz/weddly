@@ -45,6 +45,7 @@ describe("<MediaPage> Wedding Film setup", () => {
       paidAt: null,
       photoCount: 0,
       participantCount: 0,
+      promptsEnabled: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };

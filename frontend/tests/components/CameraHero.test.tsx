@@ -21,6 +21,7 @@ const album: PhotoAlbum = {
   paidAt: null,
   photoCount: 42,
   participantCount: 18,
+  promptsEnabled: true,
   createdAt: Date.UTC(2026, 7, 1),
   updatedAt: Date.UTC(2026, 7, 2),
 };
