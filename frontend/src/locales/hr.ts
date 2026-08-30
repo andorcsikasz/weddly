@@ -8405,39 +8405,38 @@ const hr: LocaleMessages = {
   camera: {
     seo_title: "Wēddly Camera",
     seo_description:
-      "Zajednička galerija fotografija u stilu fotoaparata na jedno korištenje za vjenčane goste — jedan QR kod, bilo koji telefon, bez aplikacije, sve fotografije otkrivaju se zajedno nakon velikog dana.",
-    dev_banner:
-      "Wēddly Camera je u razvoju. Cijene i rezervacije još nisu dostupne — ostavite svoj e-mail ispod i javit ćemo vam se čim budu.",
-    eyebrow: "Novo od Wēddlyja",
-    h1: "Fotoaparat na jedno korištenje za vaše vjenčanje,\nbez odlaska u trgovinu.",
-    subtitle:
-      "Svaki gost postaje fotograf. Skeniraju jedan QR kod, snimaju telefonom koji već imaju u džepu, a cijela se galerija otkriva zajedno, u trenutku koji vi odaberete.",
-    cta_notify: "Obavijestite me pri lansiranju",
-    cta_how_it_works: "Pogledajte kako funkcionira",
-    mock_wordmark: "WĒDDLY CAMERA",
-    mock_counter: "Preostalo 24 / 25 fotografija",
-    mock_cta: "Fotografiraj",
-    how_it_works_title: "Kako funkcionira",
-    step1_title: "Podijelite jedan QR kod",
-    step1_body:
-      "Nema aplikacije za instalirati, nema popisa gostiju za uvoziti. Tko god ga skenira, može odmah početi fotografirati.",
-    step2_title: "Svaka fotografija ide u jednu galeriju",
-    step2_body:
-      "Fotografije snimljene uživo i one uvezene iz galerije telefona broje se u isti zajednički album, pa ništa ne ostaje zaboravljeno na nečijem telefonu.",
-    step3_title: "Galerija se otkriva zajedno",
-    step3_body:
-      "Kao čekanje da se film razvije — nitko ne vidi nijednu fotografiju prije vremena. Cijela se galerija otključava svima odjednom, na datum koji odredite.",
-    pricing_title: "Planirane cijene",
-    pricing_subtitle:
-      "Plaća se jednom po događaju, nije pretplata. Wēddly parovi dobivaju 25% popusta na svaki plaćeni paket.",
+      "Vlastita zajednička kamera vašeg vjenčanja — gosti skeniraju jedan QR kod, snimaju trenutke koje biste inače propustili, a cijela galerija otkriva se zajedno nakon velikog dana. Bez aplikacije, bez računa, uključeno u svako Weddly vjenčanje.",
+    banner_text:
+      "Wedding Camera dolazi besplatno uz svako Weddly vjenčanje. Samostalna verzija za vjenčanja izvan Weddlyja stiže uskoro.",
+    already_included:
+      "Već planirate vjenčanje na Weddlyju? Wedding Camera je već tu — bez zasebne kupnje.",
+    already_included_cta: "Otvori nadzornu ploču",
+    features_title: "Napravljeno da se osjeća kao fotoaparat, ne kao obrazac za slanje datoteka",
+    feature_1_title: "Bez aplikacije, bez računa",
+    feature_1_body:
+      "Gosti skeniraju kod i odmah počinju fotografirati. Ništa za instalirati, ništa za registraciju.",
+    feature_2_title: "Pravi tražilo",
+    feature_2_body:
+      "Live kamera preko cijelog zaslona, pravi okidač, bljeskalica i gumb za zamjenu kamere — ne birač datoteka koji glumi fotoaparat.",
+    feature_3_title: "Nijedna fotografija se ne gubi",
+    feature_3_body:
+      "Slab wifi na mjestu događaja? Fotografije tiho čekaju i učitavaju se čim se signal vrati.",
+    feature_4_title: "Jedno zajedničko otkrivanje",
+    feature_4_body:
+      "Postavite datum otkrivanja i cijela se galerija otvara svima odjednom — kao razvijeni film koji se vraća.",
+    standalone_eyebrow: "Dostupno i samostalno",
+    standalone_title: "Ne planirate vjenčanje na Weddlyju?",
+    standalone_body:
+      "Wedding Camera radi i samostalno — za svako vjenčanje, na svakoj platformi. Naplaćuje se jednom po događaju, nikad pretplatom.",
     pricing_guest_cap: "Do {n} gostiju",
     pricing_custom_cap: "400+ gostiju",
     pricing_custom_price: "Kontaktirajte nas",
     pricing_couple_note: "Wēddly parovi: {price}",
-    pricing_note: "Ovo su paketi koje planiramo za lansiranje. Rezervacije još nisu otvorene.",
-    notify_title: "Budite prvi koji će saznati",
+    pricing_note:
+      "Ovo su paketi s kojima krećemo. Rezervacije se otvaraju uskoro — ostavite svoj e-mail ispod i javit ćemo vam se čim budu dostupne.",
+    notify_title: "Budite prvi koji može rezervirati",
     notify_body:
-      "Ostavite svoj e-mail i javit ćemo vam se čim Wēddly Camera bude spremna za rezervaciju.",
+      "Ostavite svoj e-mail i javit ćemo vam se čim samostalna Wedding Camera bude spremna za rezervaciju.",
   },
   blog: {
     eyebrow: "Blog",

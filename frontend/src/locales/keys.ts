@@ -2874,8 +2874,9 @@ export interface LocaleMessages {
     footer_couples_budget: string;
     footer_couples_seating: string;
     footer_couples_rsvp: string;
-    /** Links to the standalone `/camera` product, still under development —
-     *  see `camera.dev_banner`. Lives in the couples column since a couple is
+    /** Links to `/camera` (Wedding Camera — ships free with every Weddly
+     *  wedding; also a stand-alone product for guests off Weddly, see
+     *  `camera.banner_text`). Lives in the couples column since a couple is
      *  the primary buyer, even though the page itself is open to anyone. */
     footer_couples_camera: string;
     footer_vendors_waitlist: string;
@@ -9722,24 +9723,21 @@ export interface LocaleMessages {
   camera: {
     seo_title: string;
     seo_description: string;
-    dev_banner: string;
-    eyebrow: string;
-    h1: string;
-    subtitle: string;
-    cta_notify: string;
-    cta_how_it_works: string;
-    mock_wordmark: string;
-    mock_counter: string;
-    mock_cta: string;
-    how_it_works_title: string;
-    step1_title: string;
-    step1_body: string;
-    step2_title: string;
-    step2_body: string;
-    step3_title: string;
-    step3_body: string;
-    pricing_title: string;
-    pricing_subtitle: string;
+    banner_text: string;
+    already_included: string;
+    already_included_cta: string;
+    features_title: string;
+    feature_1_title: string;
+    feature_1_body: string;
+    feature_2_title: string;
+    feature_2_body: string;
+    feature_3_title: string;
+    feature_3_body: string;
+    feature_4_title: string;
+    feature_4_body: string;
+    standalone_eyebrow: string;
+    standalone_title: string;
+    standalone_body: string;
     pricing_guest_cap: string;
     pricing_custom_cap: string;
     pricing_custom_price: string;

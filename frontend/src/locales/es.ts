@@ -8496,40 +8496,38 @@ const es: LocaleMessages = {
   camera: {
     seo_title: "Wēddly Camera",
     seo_description:
-      "Una galería compartida al estilo cámara desechable para los invitados de la boda: un código QR, cualquier móvil, sin apps, y todas las fotos reveladas juntas después del gran día.",
-    dev_banner:
-      "Wēddly Camera está en desarrollo. Los precios y las reservas aún no están disponibles: deja tu correo abajo y te avisaremos en cuanto lo estén.",
-    eyebrow: "Nuevo de Wēddly",
-    h1: "La cámara desechable para vuestra boda,\nsin pasar por la farmacia.",
-    subtitle:
-      "Cada invitado se convierte en fotógrafo. Escanean un código QR, hacen fotos con el móvil que ya llevan en el bolsillo, y toda la galería se revela junta, en el momento que elijáis.",
-    cta_notify: "Avisadme cuando esté listo",
-    cta_how_it_works: "Ver cómo funciona",
-    mock_wordmark: "WĒDDLY CAMERA",
-    mock_counter: "Quedan 24 / 25 fotos",
-    mock_cta: "Hacer una foto",
-    how_it_works_title: "Cómo funciona",
-    step1_title: "Compartid un código QR",
-    step1_body:
-      "Sin apps que instalar ni listas de invitados que importar. Quien lo escanea puede empezar a hacer fotos al instante.",
-    step2_title: "Cada foto se suma a una galería",
-    step2_body:
-      "Las fotos hechas en el momento y las importadas del carrete cuentan para el mismo álbum compartido, así nada se queda olvidado en el móvil de alguien.",
-    step3_title: "La galería se revela junta",
-    step3_body:
-      "Como esperar a que se revele el carrete: nadie ve ni una sola foto antes de tiempo. Toda la galería se desbloquea para todos a la vez, en la fecha que fijéis.",
-    pricing_title: "Precios previstos",
-    pricing_subtitle:
-      "Se paga una vez por evento, no es una suscripción. Las parejas de Wēddly tienen un 25% de descuento en cualquier plan de pago.",
+      "La cámara compartida de vuestra boda — los invitados escanean un código QR, capturan los momentos que os perderíais, y toda la galería se revela junta después del gran día. Sin app, sin cuenta, incluida en cada boda de Weddly.",
+    banner_text:
+      "Wedding Camera va incluida gratis en cada boda de Weddly. Llega pronto una versión independiente para bodas que no están en Weddly.",
+    already_included:
+      "¿Ya organizáis vuestra boda en Weddly? Wedding Camera ya está ahí — sin compra aparte.",
+    already_included_cta: "Abrir mi panel",
+    features_title: "Pensada para sentirse como una cámara, no como un formulario de subida",
+    feature_1_title: "Sin app, sin cuenta",
+    feature_1_body:
+      "Los invitados escanean un código y empiezan a disparar. Nada que instalar, nada en lo que registrarse.",
+    feature_2_title: "Un visor de verdad",
+    feature_2_body:
+      "Cámara en vivo a pantalla completa, un disparador de verdad, flash y botón para cambiar de cámara — no un selector de archivos disfrazado de cámara.",
+    feature_3_title: "Ninguna foto se pierde",
+    feature_3_body:
+      "¿Wifi irregular en el local? Las fotos esperan en silencio y se suben en cuanto vuelve la señal.",
+    feature_4_title: "Una sola revelación, juntos",
+    feature_4_body:
+      "Fijad una fecha de revelación y toda la galería se abre para todos a la vez, como el carrete que vuelve ya revelado.",
+    standalone_eyebrow: "También independiente",
+    standalone_title: "¿No organizáis vuestra boda en Weddly?",
+    standalone_body:
+      "Wedding Camera también funciona por su cuenta — para cualquier boda, en cualquier plataforma. Se paga una vez por evento, nunca una suscripción.",
     pricing_guest_cap: "Hasta {n} invitados",
     pricing_custom_cap: "Más de 400 invitados",
     pricing_custom_price: "Contactadnos",
     pricing_couple_note: "Parejas de Wēddly: {price}",
     pricing_note:
-      "Estos son los planes que estamos preparando para el lanzamiento. Las reservas aún no están abiertas.",
-    notify_title: "Sed los primeros en saberlo",
+      "Estos son los planes con los que lanzaremos. Las reservas abren pronto — deja tu correo abajo y te avisaremos en cuanto estén disponibles.",
+    notify_title: "Sed los primeros en poder reservar",
     notify_body:
-      "Dejad vuestro correo y os escribiremos en cuanto Wēddly Camera esté lista para reservar.",
+      "Dejad vuestro correo y os escribiremos en cuanto la Wedding Camera independiente esté lista para reservar.",
   },
   blog: {
     eyebrow: "Blog",

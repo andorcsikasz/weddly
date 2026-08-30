@@ -8413,38 +8413,38 @@ const en: LocaleMessages = {
   camera: {
     seo_title: "Wēddly Camera",
     seo_description:
-      "A shared, disposable-camera-style photo gallery for wedding guests — one QR code, any phone, no app, with every photo revealed together after the big day.",
-    dev_banner:
-      "Wēddly Camera is under development. Pricing and booking aren't open yet — leave your email below and we'll write the moment they are.",
-    eyebrow: "New from Wēddly",
-    h1: "The disposable camera for your wedding,\nwithout the drugstore trip.",
-    subtitle:
-      "Every guest becomes a photographer. They scan one QR code, shoot with the phone already in their pocket, and the whole gallery reveals together, at the moment you choose.",
-    cta_notify: "Get notified at launch",
-    cta_how_it_works: "See how it works",
-    mock_wordmark: "WĒDDLY CAMERA",
-    mock_counter: "24 / 25 shots left",
-    mock_cta: "Take a photo",
-    how_it_works_title: "How it works",
-    step1_title: "Share one QR code",
-    step1_body:
-      "No app to install and no guest list to import. Anyone who scans it can start shooting straight away.",
-    step2_title: "Every shot joins one gallery",
-    step2_body:
-      "Live photos and camera-roll imports both count toward the same shared album, so nothing gets left behind on someone's phone.",
-    step3_title: "The gallery reveals together",
-    step3_body:
-      "Like waiting for film to develop, nobody sees a single photo early. The whole gallery unlocks for everyone at once, on the date you set.",
-    pricing_title: "Planned pricing",
-    pricing_subtitle:
-      "Priced once per event, not a subscription. Wēddly couples get 25% off every paid tier.",
+      "Your wedding's own shared camera — guests scan one QR code, capture the moments you'd miss, and the whole gallery reveals together after the big day. No app, no account, included with every Weddly wedding.",
+    banner_text:
+      "Wedding Camera ships free with every Weddly wedding. A stand-alone version for weddings not on Weddly is on the way.",
+    already_included:
+      "Already planning your wedding on Weddly? Wedding Camera is already there — no separate purchase.",
+    already_included_cta: "Open your dashboard",
+    features_title: "Built to feel like a camera, not an upload form",
+    feature_1_title: "No app, no account",
+    feature_1_body:
+      "Guests scan a code and start shooting. Nothing to install, nothing to sign up for.",
+    feature_2_title: "A real viewfinder",
+    feature_2_body:
+      "Full-screen live camera, a proper shutter, flash and a flip-camera button — not a file picker pretending to be one.",
+    feature_3_title: "Never loses a shot",
+    feature_3_body:
+      "Patchy venue wifi? Photos wait quietly and upload the moment a signal comes back.",
+    feature_4_title: "One reveal, together",
+    feature_4_body:
+      "Set a reveal date and the whole gallery opens for everyone at once, like film coming back from developing.",
+    standalone_eyebrow: "Also stand-alone",
+    standalone_title: "Not planning your wedding on Weddly?",
+    standalone_body:
+      "Wedding Camera works on its own too — for any wedding, on any platform. Priced once per event, never a subscription.",
     pricing_guest_cap: "Up to {n} guests",
     pricing_custom_cap: "400+ guests",
     pricing_custom_price: "Contact us",
     pricing_couple_note: "Wēddly couples: {price}",
-    pricing_note: "These are the tiers we're planning for launch. Booking isn't open yet.",
-    notify_title: "Be first to know",
-    notify_body: "Leave your email and we'll write the moment Wēddly Camera is ready to book.",
+    pricing_note:
+      "These are the tiers we're launching with. Booking opens soon — leave your email below and we'll write the moment it does.",
+    notify_title: "Be first to book",
+    notify_body:
+      "Leave your email and we'll write the moment the stand-alone Wedding Camera is ready to book.",
   },
   blog: {
     eyebrow: "Blog",

@@ -2,7 +2,7 @@ import type { PhotoAlbum } from "@shared/types";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { I18nProvider } from "@/lib/i18n";
-import { CameraHero } from "@/pages/MediaPage";
+import { CameraHero } from "@/components/CameraHero";
 
 const album: PhotoAlbum = {
   id: 1,
