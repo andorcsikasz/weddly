@@ -1580,9 +1580,9 @@ export default function MediaPage() {
 
   if (loading) return null;
 
-  // Cover photo for hero. Once the film has anything in it, the newest shot is
-  // a truer cover than a stock frame — it is the couple's own day.
-  const coverPhoto = album?.coverImageUrl ?? uploads[0]?.fileUrl ?? DEMO_STRIP[0];
+  // Hero art is decorative (aria-hidden), so it always uses a preset template
+  // frame, never the couple's own shots, which can be dim or unflattering.
+  const coverPhoto = DEMO_STRIP[0];
   const filmExpired = album?.eventEndsAt != null && Date.now() >= album.eventEndsAt;
   const uploadsOpen = album?.isUploadEnabled === true && !filmExpired;
 
