@@ -30,7 +30,7 @@ const en: LocaleMessages = {
     back_home_aria: "Weddly, back to home",
   },
   app: {
-    name: "Wēddly",
+    name: "Weddly",
     tagline: "Low-cortisol wedding planning, with one live plan for both of you.",
   },
   seo: {
@@ -8429,40 +8429,31 @@ const en: LocaleMessages = {
     en_section_label: "English",
   },
   camera: {
-    seo_title: "Wēddly Camera",
+    seo_title: "Weddly Camera",
     seo_description:
       "Your wedding's own shared camera — guests scan one QR code, capture the moments you'd miss, and the whole gallery reveals together after the big day. No app, no account, included with every Weddly wedding.",
-    banner_text:
-      "Wedding Camera ships free with every Weddly wedding. A stand-alone version for weddings not on Weddly is on the way.",
-    already_included:
-      "Already planning your wedding on Weddly? Wedding Camera is already there — no separate purchase.",
+    banner_text: "Free with every Weddly wedding. A stand-alone version is coming soon.",
+    already_included: "Already on Weddly? Wedding Camera is already yours.",
     already_included_cta: "Open your dashboard",
     features_title: "Built to feel like a camera, not an upload form",
     feature_1_title: "No app, no account",
-    feature_1_body:
-      "Guests scan a code and start shooting. Nothing to install, nothing to sign up for.",
+    feature_1_body: "Guests scan a code and start shooting, no install, no signup.",
     feature_2_title: "A real viewfinder",
-    feature_2_body:
-      "Full-screen live camera, a proper shutter, flash and a flip-camera button — not a file picker pretending to be one.",
+    feature_2_body: "A real shutter, flash and flip-camera button, full screen.",
     feature_3_title: "Never loses a shot",
-    feature_3_body:
-      "Patchy venue wifi? Photos wait quietly and upload the moment a signal comes back.",
+    feature_3_body: "Weak venue wifi? Photos wait and upload once signal returns.",
     feature_4_title: "One reveal, together",
-    feature_4_body:
-      "Set a reveal date and the whole gallery opens for everyone at once, like film coming back from developing.",
+    feature_4_body: "Set a reveal date, and the whole gallery opens for everyone at once.",
     standalone_eyebrow: "Also stand-alone",
     standalone_title: "Not planning your wedding on Weddly?",
     standalone_body:
-      "Wedding Camera works on its own too — for any wedding, on any platform. Priced once per event, never a subscription.",
+      "Works for any wedding, on any platform. One price per event, never a subscription.",
     pricing_guest_cap: "Up to {n} guests",
     pricing_custom_cap: "400+ guests",
     pricing_custom_price: "Contact us",
-    pricing_couple_note: "Wēddly couples: {price}",
-    pricing_note:
-      "These are the tiers we're launching with. Booking opens soon — leave your email below and we'll write the moment it does.",
-    notify_title: "Be first to book",
-    notify_body:
-      "Leave your email and we'll write the moment the stand-alone Wedding Camera is ready to book.",
+    pricing_couple_note: "Weddly couples: {price}",
+    pricing_couple_free: "Free for Weddly couples",
+    pricing_note: "Booking opens soon.",
   },
   blog: {
     eyebrow: "Blog",

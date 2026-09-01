@@ -586,6 +586,7 @@ const KNOWN_FRONTEND_EXACT = new Set([
   "/",
   "/about",
   "/blog",
+  "/camera",
   "/forgot-password",
   "/impresszum",
   "/imprint",

@@ -326,6 +326,24 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "Short, practical reads on the parts of wedding planning that take the most time and money: budget allocation, seating, RSVP follow-up. Each post helps with one concrete decision.",
     },
   },
+  "/camera": {
+    hu: {
+      title: "Weddly Camera",
+      description:
+        "A ti esküvőtök saját közös kamerája: a vendégek QR-kóddal fotóznak, a galéria egyszerre tárul fel az esküvő után. Applikáció és regisztráció nélkül, ingyen jár.",
+      h1: "Gyűjtsd össze az esküvő minden emlékét egy helyen",
+      intro:
+        "Hozz létre egy privát QR-kódot, hogy a vendégek megoszthassák fotóikat, applikáció, fiók és káosz nélkül. Minden Weddly esküvőhöz ingyen jár; önálló verzió bármelyik esküvőhöz hamarosan érkezik.",
+    },
+    en: {
+      title: "Weddly Camera",
+      description:
+        "Your wedding's own shared camera. Guests scan a QR code, capture what you'd miss, and the gallery reveals together after the big day. No app needed.",
+      h1: "Collect every wedding memory in one place",
+      intro:
+        "Create a private QR code so guests can share photos from your wedding, no app, no account, no chaos. Free with every Weddly wedding; a stand-alone version for any wedding is coming soon.",
+    },
+  },
   "/signup": {
     hu: {
       title: "Regisztráció: Wēddly",

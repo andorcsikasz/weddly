@@ -42,7 +42,7 @@ const de: LocaleMessages = {
     back_home_aria: "Weddly, zurück zur Startseite",
   },
   app: {
-    name: "Wēddly",
+    name: "Weddly",
     tagline: "Stressarme Hochzeitsplanung mit einem gemeinsamen Live-Plan für Sie beide.",
   },
   seo: {
@@ -8564,40 +8564,32 @@ const de: LocaleMessages = {
     en_section_label: "English",
   },
   camera: {
-    seo_title: "Wēddly Camera",
+    seo_title: "Weddly Camera",
     seo_description:
       "Die eigene gemeinsame Kamera eurer Hochzeit — Gäste scannen einen QR-Code, halten die Momente fest, die euch entgehen würden, und die ganze Galerie wird nach dem großen Tag gemeinsam enthüllt. Ohne App, ohne Konto, kostenlos bei jeder Weddly-Hochzeit dabei.",
-    banner_text:
-      "Wedding Camera ist bei jeder Weddly-Hochzeit kostenlos dabei. Eine eigenständige Version für Hochzeiten außerhalb von Weddly kommt bald.",
-    already_included:
-      "Plant ihr eure Hochzeit schon auf Weddly? Wedding Camera ist bei euch bereits dabei — kein separater Kauf nötig.",
+    banner_text: "Kostenlos bei jeder Weddly-Hochzeit dabei. Die eigenständige Version kommt bald.",
+    already_included: "Plant ihr schon auf Weddly? Wedding Camera ist schon eure.",
     already_included_cta: "Zum Dashboard",
     features_title: "Gebaut, damit es sich wie eine Kamera anfühlt, nicht wie ein Upload-Formular",
     feature_1_title: "Ohne App, ohne Konto",
     feature_1_body:
-      "Gäste scannen einen Code und fotografieren los. Nichts zu installieren, nirgends anzumelden.",
+      "Gäste scannen einen Code und fotografieren los, ohne Installation, ohne Anmeldung.",
     feature_2_title: "Ein echter Sucher",
-    feature_2_body:
-      "Vollbild-Live-Kamera, ein echter Auslöser, Blitz und ein Kamera-Wechsel-Knopf — keine Dateiauswahl, die sich als Kamera ausgibt.",
+    feature_2_body: "Echter Auslöser, Blitz und Kamera-Wechsel-Knopf, im Vollbild.",
     feature_3_title: "Kein Foto geht verloren",
-    feature_3_body:
-      "Schwaches WLAN am Veranstaltungsort? Fotos warten still im Hintergrund und laden hoch, sobald wieder Signal da ist.",
+    feature_3_body: "Schwaches WLAN? Fotos warten und laden hoch, sobald wieder Signal da ist.",
     feature_4_title: "Eine gemeinsame Enthüllung",
-    feature_4_body:
-      "Legt ein Enthüllungsdatum fest, und die ganze Galerie öffnet sich für alle gleichzeitig — wie ein entwickelter Film, der zurückkommt.",
+    feature_4_body: "Legt ein Datum fest, und die ganze Galerie öffnet sich für alle gleichzeitig.",
     standalone_eyebrow: "Auch eigenständig",
     standalone_title: "Plant ihr eure Hochzeit nicht auf Weddly?",
     standalone_body:
-      "Wedding Camera funktioniert auch für sich allein — für jede Hochzeit, auf jeder Plattform. Einmalig pro Veranstaltung berechnet, nie ein Abo.",
+      "Funktioniert für jede Hochzeit, auf jeder Plattform. Einmalig pro Veranstaltung, nie ein Abo.",
     pricing_guest_cap: "Bis zu {n} Gäste",
     pricing_custom_cap: "400+ Gäste",
     pricing_custom_price: "Kontaktiert uns",
-    pricing_couple_note: "Wēddly-Paare: {price}",
-    pricing_note:
-      "Das sind die Stufen, mit denen wir starten. Buchungen öffnen bald — hinterlasst unten eure E-Mail-Adresse, wir schreiben euch, sobald es so weit ist.",
-    notify_title: "Erfahrt es als Erste",
-    notify_body:
-      "Hinterlasst eure E-Mail-Adresse, wir schreiben euch, sobald die eigenständige Wedding Camera buchbar ist.",
+    pricing_couple_note: "Weddly-Paare: {price}",
+    pricing_couple_free: "Kostenlos für Weddly-Paare",
+    pricing_note: "Buchungen öffnen bald.",
   },
   blog: {
     eyebrow: "Blog",

@@ -82,16 +82,22 @@ export function CameraHero({
   coverPhoto,
   onCreate,
   onShare,
+  headingFont = "serif",
 }: {
   album: PhotoAlbum | null;
   coupleName: string | null;
   coverPhoto: string;
   onCreate: () => void;
   onShare: () => void;
+  /** Dashboard keeps the workspace's Cormorant italic heading (the default);
+   *  the public /camera landing page passes "grotesk" so the hero title
+   *  matches the single display font the rest of that page uses. */
+  headingFont?: "serif" | "grotesk";
 }) {
   const { t } = useT();
   const hasFilm = album !== null;
   const filmName = album?.title || coupleName || t("media.film_settings_unnamed");
+  const headingFontClass = headingFont === "grotesk" ? "font-grotesk" : "font-serif";
 
   return (
     <section className="relative order-1 isolate overflow-hidden rounded-[2rem] bg-umber-950 text-paper-50 shadow-soft">
@@ -131,7 +137,9 @@ export function CameraHero({
                 <span className="h-1.5 w-1.5 rounded-full bg-sage-300" aria-hidden="true" />
                 {t("media.film_header_active").replace("{count}", String(album.photoCount))}
               </div>
-              <h1 className="max-w-[13ch] font-serif text-5xl font-semibold leading-[0.94] tracking-[-0.035em] !text-paper-50 sm:text-6xl xl:text-7xl">
+              <h1
+                className={`max-w-[13ch] text-5xl font-semibold leading-[0.94] tracking-[-0.035em] !text-paper-50 sm:text-6xl xl:text-7xl ${headingFontClass}`}
+              >
                 {filmName}
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-paper-200 sm:text-lg">
@@ -140,7 +148,9 @@ export function CameraHero({
             </>
           ) : (
             <>
-              <h1 className="max-w-[14ch] font-serif text-[3.15rem] font-semibold leading-[0.9] tracking-[-0.045em] !text-paper-50 sm:text-6xl lg:text-[4rem] xl:text-[4.4rem]">
+              <h1
+                className={`max-w-[14ch] text-[3.15rem] font-semibold leading-[0.9] tracking-[-0.045em] !text-paper-50 sm:text-6xl lg:text-[4rem] xl:text-[4.4rem] ${headingFontClass}`}
+              >
                 {t("media.hero_title")}
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-paper-200 sm:text-lg">

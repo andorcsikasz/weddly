@@ -30,7 +30,7 @@ const hu: LocaleMessages = {
     back_home_aria: "Weddly, vissza a főoldalra",
   },
   app: {
-    name: "Wēddly",
+    name: "Weddly",
     tagline: "Nyugodt esküvőszervezés, egyetlen közös, naprakész tervvel kettőtöknek.",
   },
   seo: {
@@ -3288,7 +3288,7 @@ const hu: LocaleMessages = {
     collect_saved: "Link elmentve.",
     collect_removed: "Link törölve.",
     collect_delete: "Link eltávolítása",
-    hero_title: "Gyűítsd össze az esküvő minden emlékét egy helyen",
+    hero_title: "Gyűjtsd össze az esküvő minden emlékét egy helyen",
     hero_sub:
       "Hozz létre egy privát QR-kódot, hogy a vendégek megoszthassák fotóikat. App nélkül, regisztráció nélkül, káosz nélkül.",
     hero_cta_create: "Vendég fotólink létrehozása",
@@ -8502,39 +8502,33 @@ const hu: LocaleMessages = {
     en_section_label: "English",
   },
   camera: {
-    seo_title: "Wēddly Camera",
+    seo_title: "Weddly Camera",
     seo_description:
-      "A ti esküvőtök saját közös kamerája — a vendégek beolvasnak egy QR-kódot, megörökítik, amit ti lemaradnátok róla, és a teljes galéria egyszerre tárul fel az esküvő után. Applikáció és regisztráció nélkül, minden Wēddly esküvőhöz ingyen jár.",
-    banner_text:
-      "A Wedding Camera ingyen jár minden Wēddly esküvőhöz. A nem Wēddlyn tervező pároknak szánt önálló változat hamarosan érkezik.",
-    already_included:
-      "Már a Wēddlyn tervezitek az esküvőt? A Wedding Camera már ott van nálatok — nincs külön vásárlás.",
+      "A ti esküvőtök saját közös kamerája: a vendégek beolvasnak egy QR-kódot, megörökítik, amit ti lemaradnátok róla, és a teljes galéria egyszerre tárul fel az esküvő után. Applikáció és regisztráció nélkül, minden Weddly esküvőhöz ingyen jár.",
+    banner_text: "Ingyen jár minden Weddly esküvőhöz. Az önálló változat hamarosan érkezik.",
+    already_included: "Már a Weddlyn tervezitek? A Wedding Camera már a tiétek.",
     already_included_cta: "Ugrás a fiókomba",
     features_title: "Úgy készült, hogy fényképezőgépnek érződjön, ne feltöltő űrlapnak",
     feature_1_title: "App és regisztráció nélkül",
     feature_1_body:
-      "A vendégek beolvasnak egy kódot, és már fotóznak is. Nincs mit telepíteni, nincs mire regisztrálni.",
+      "A vendégek beolvasnak egy kódot, és már fotóznak is, telepítés és regisztráció nélkül.",
     feature_2_title: "Valódi kereső",
-    feature_2_body:
-      "Teljes képernyős élő kamera, igazi exponálógomb, vaku és kameraváltó gomb — nem egy fájlválasztó, ami kamerának adja ki magát.",
+    feature_2_body: "Igazi exponálógomb, vaku és kameraváltó gomb, teljes képernyőn.",
     feature_3_title: "Egyetlen kép sem vész el",
-    feature_3_body:
-      "Gyenge a helyszín wifije? A fotók csendben várakoznak, és feltöltődnek, amint visszatér a jel.",
+    feature_3_body: "Gyenge a wifi? A fotók várnak, és feltöltődnek, amint visszatér a jel.",
     feature_4_title: "Egy közös feltárulás",
     feature_4_body:
-      "Adjatok meg egy feltárulási dátumot, és a teljes galéria egyszerre nyílik meg mindenkinek, mint amikor a film előhívva visszaérkezik.",
+      "Adjatok meg egy dátumot, és a teljes galéria egyszerre nyílik meg mindenkinek.",
     standalone_eyebrow: "Önállóan is elérhető",
-    standalone_title: "Nem a Wēddlyn tervezitek az esküvőtöket?",
+    standalone_title: "Nem a Weddlyn tervezitek az esküvőtöket?",
     standalone_body:
-      "A Wedding Camera önmagában is működik — bármilyen esküvőhöz, bármilyen platformon. Egyszeri díj eseményenként, sosem előfizetés.",
+      "Bármilyen esküvőhöz működik, bármilyen platformon. Egyszeri díj eseményenként, sosem előfizetés.",
     pricing_guest_cap: "Legfeljebb {n} vendég",
     pricing_custom_cap: "400+ vendég",
     pricing_custom_price: "Kérj ajánlatot",
-    pricing_couple_note: "Wēddly pároknak: {price}",
-    pricing_note:
-      "Ezekkel a csomagokkal indulunk. A foglalás hamarosan nyílik — add meg az e-mail-címed lent, és írunk, amint elérhető.",
-    notify_title: "Legyél az első, aki foglalhat",
-    notify_body: "Add meg az e-mail-címed, és írunk, amint az önálló Wedding Camera foglalható.",
+    pricing_couple_note: "Weddly pároknak: {price}",
+    pricing_couple_free: "Weddly pároknak ingyenes",
+    pricing_note: "A foglalás hamarosan nyílik.",
   },
   blog: {
     eyebrow: "Blog",

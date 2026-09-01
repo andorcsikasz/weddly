@@ -44,7 +44,7 @@ const hr: LocaleMessages = {
     back_home_aria: "Weddly, natrag na početnu",
   },
   app: {
-    name: "Wēddly",
+    name: "Weddly",
     tagline: "Planiranje vjenčanja bez stresa, uz jedan zajednički plan uživo za vas oboje.",
   },
   seo: {
@@ -8421,40 +8421,31 @@ const hr: LocaleMessages = {
     en_section_label: "English",
   },
   camera: {
-    seo_title: "Wēddly Camera",
+    seo_title: "Weddly Camera",
     seo_description:
       "Vlastita zajednička kamera vašeg vjenčanja — gosti skeniraju jedan QR kod, snimaju trenutke koje biste inače propustili, a cijela galerija otkriva se zajedno nakon velikog dana. Bez aplikacije, bez računa, uključeno u svako Weddly vjenčanje.",
-    banner_text:
-      "Wedding Camera dolazi besplatno uz svako Weddly vjenčanje. Samostalna verzija za vjenčanja izvan Weddlyja stiže uskoro.",
-    already_included:
-      "Već planirate vjenčanje na Weddlyju? Wedding Camera je već tu — bez zasebne kupnje.",
+    banner_text: "Besplatno uz svako Weddly vjenčanje. Samostalna verzija stiže uskoro.",
+    already_included: "Već ste na Weddlyju? Wedding Camera je već vaša.",
     already_included_cta: "Otvori nadzornu ploču",
     features_title: "Napravljeno da se osjeća kao fotoaparat, ne kao obrazac za slanje datoteka",
     feature_1_title: "Bez aplikacije, bez računa",
-    feature_1_body:
-      "Gosti skeniraju kod i odmah počinju fotografirati. Ništa za instalirati, ništa za registraciju.",
+    feature_1_body: "Gosti skeniraju kod i odmah snimaju, bez instalacije, bez registracije.",
     feature_2_title: "Pravi tražilo",
-    feature_2_body:
-      "Live kamera preko cijelog zaslona, pravi okidač, bljeskalica i gumb za zamjenu kamere — ne birač datoteka koji glumi fotoaparat.",
+    feature_2_body: "Pravi okidač, bljeskalica i gumb za zamjenu kamere, preko cijelog zaslona.",
     feature_3_title: "Nijedna fotografija se ne gubi",
-    feature_3_body:
-      "Slab wifi na mjestu događaja? Fotografije tiho čekaju i učitavaju se čim se signal vrati.",
+    feature_3_body: "Slab wifi? Fotografije čekaju i učitavaju se čim se signal vrati.",
     feature_4_title: "Jedno zajedničko otkrivanje",
-    feature_4_body:
-      "Postavite datum otkrivanja i cijela se galerija otvara svima odjednom — kao razvijeni film koji se vraća.",
+    feature_4_body: "Postavite datum, a cijela se galerija otvara svima odjednom.",
     standalone_eyebrow: "Dostupno i samostalno",
     standalone_title: "Ne planirate vjenčanje na Weddlyju?",
     standalone_body:
-      "Wedding Camera radi i samostalno — za svako vjenčanje, na svakoj platformi. Naplaćuje se jednom po događaju, nikad pretplatom.",
+      "Radi za svako vjenčanje, na svakoj platformi. Jednokratno po događaju, nikad pretplata.",
     pricing_guest_cap: "Do {n} gostiju",
     pricing_custom_cap: "400+ gostiju",
     pricing_custom_price: "Kontaktirajte nas",
-    pricing_couple_note: "Wēddly parovi: {price}",
-    pricing_note:
-      "Ovo su paketi s kojima krećemo. Rezervacije se otvaraju uskoro — ostavite svoj e-mail ispod i javit ćemo vam se čim budu dostupne.",
-    notify_title: "Budite prvi koji može rezervirati",
-    notify_body:
-      "Ostavite svoj e-mail i javit ćemo vam se čim samostalna Wedding Camera bude spremna za rezervaciju.",
+    pricing_couple_note: "Weddly parovi: {price}",
+    pricing_couple_free: "Besplatno za Weddly parove",
+    pricing_note: "Rezervacije se otvaraju uskoro.",
   },
   blog: {
     eyebrow: "Blog",

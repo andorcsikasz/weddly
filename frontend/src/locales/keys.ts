@@ -9767,9 +9767,8 @@ export interface LocaleMessages {
     pricing_custom_cap: string;
     pricing_custom_price: string;
     pricing_couple_note: string;
+    pricing_couple_free: string;
     pricing_note: string;
-    notify_title: string;
-    notify_body: string;
   };
   /** Public-facing blog index and post pages. Body content lives in the
    *  `blog_posts` DB table; these are the chrome strings around it. */
