@@ -276,16 +276,17 @@ function ThreadView({ bookingId }: { bookingId: number }) {
           void bookingMessagesApi.coupleMarkSeen(bookingId);
         }
       })
-      .catch(() => {
+      .catch((e) => {
         if (!cancelled) {
           setLoading(false);
+          toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
           navigate("/app/messages", { replace: true });
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [bookingId, navigate]);
+  }, [bookingId, navigate, t, toast]);
 
   useEffect(() => {
     let cancelled = false;

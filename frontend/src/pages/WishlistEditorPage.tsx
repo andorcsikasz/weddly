@@ -81,6 +81,7 @@ import {
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
+import { MoneyInput } from "../components/MoneyInput";
 import {
   defaultWishlistIcon,
   WISHLIST_ICON_CHOICES,
@@ -2087,15 +2088,11 @@ function WishlistItemDialog({
                 hint={t("wishlist_editor.target_amount_hint")}
               >
                 <div className="relative">
-                  <input
+                  <MoneyInput
                     className="input pr-24 font-grotesk tabular-nums"
-                    type="text"
-                    inputMode="numeric"
-                    // Display the raw digits with locale thousands grouping (HU
-                    // "200 000", EN "200,000"); store only digits so the math stays
-                    // exact regardless of the visible separator.
-                    value={amount === "" ? "" : formatNumber(Number(amount), locale)}
-                    onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
+                    value={amount}
+                    onChange={setAmount}
+                    locale={locale}
                     placeholder="0"
                   />
                   <select

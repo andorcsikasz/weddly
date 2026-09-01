@@ -93,6 +93,7 @@ import {
 import {
   currencySymbol,
   formatDateMs,
+  formatGroupedDigits,
   formatMoney,
   formatNumber,
   intlLocale,
@@ -229,36 +230,40 @@ export default function BudgetPage() {
   const ifMatchFor = (line: BudgetLine) => versionsRef.current.get(line.id) ?? line.updated_at;
 
   async function refresh() {
-    const [linesR, snapsR, coupleR, suppliersR, docsR, paymentsR] = await Promise.all([
-      budgetApi.listLines(),
-      budgetApi.listSnapshots(),
-      coupleApi.current(),
-      coupleSupplierApi.list(),
-      budgetDocApi.list(),
-      budgetPaymentApi.list(),
-    ]);
-    // Every list is coerced to an array before it reaches state. These are
-    // rendered with `for…of` / `.map`, so one malformed body (or a response
-    // that 200s with the wrong shape) doesn't misrender a section — it throws
-    // during render and takes the whole page down to a white screen. Only
-    // `suppliers` was guarded; the other five had the same exposure.
-    const rows = linesR.lines ?? [];
-    setLines(rows);
-    stampVersions(rows);
-    setSnapshots(snapsR.snapshots ?? []);
-    setCouple(coupleR.couple);
-    setCoupleSuppliers(suppliersR.suppliers ?? []);
-    setDocuments(docsR.documents ?? []);
-    setBudgetPayments(paymentsR.payments ?? []);
-    // Seed the slider with the shared cost-planning count if /app/suppliers
-    // or a prior session has one stored. Otherwise stay at `null` so the
-    // slider defaults to the couple's onboarding target. Hydration moved
-    // server-side via `couple.planning_count` (one-way local→server
-    // migration is fire-and-forget inside `hydrateCostPlanningCount`).
-    if (coupleR.couple) {
-      hydrateCostPlanningCount(coupleR.couple);
-      const stored = readCostPlanningCount(coupleR.couple.id);
-      if (stored !== null) setCount(stored);
+    try {
+      const [linesR, snapsR, coupleR, suppliersR, docsR, paymentsR] = await Promise.all([
+        budgetApi.listLines(),
+        budgetApi.listSnapshots(),
+        coupleApi.current(),
+        coupleSupplierApi.list(),
+        budgetDocApi.list(),
+        budgetPaymentApi.list(),
+      ]);
+      // Every list is coerced to an array before it reaches state. These are
+      // rendered with `for…of` / `.map`, so one malformed body (or a response
+      // that 200s with the wrong shape) doesn't misrender a section — it throws
+      // during render and takes the whole page down to a white screen. Only
+      // `suppliers` was guarded; the other five had the same exposure.
+      const rows = linesR.lines ?? [];
+      setLines(rows);
+      stampVersions(rows);
+      setSnapshots(snapsR.snapshots ?? []);
+      setCouple(coupleR.couple);
+      setCoupleSuppliers(suppliersR.suppliers ?? []);
+      setDocuments(docsR.documents ?? []);
+      setBudgetPayments(paymentsR.payments ?? []);
+      // Seed the slider with the shared cost-planning count if /app/suppliers
+      // or a prior session has one stored. Otherwise stay at `null` so the
+      // slider defaults to the couple's onboarding target. Hydration moved
+      // server-side via `couple.planning_count` (one-way local→server
+      // migration is fire-and-forget inside `hydrateCostPlanningCount`).
+      if (coupleR.couple) {
+        hydrateCostPlanningCount(coupleR.couple);
+        const stored = readCostPlanningCount(coupleR.couple.id);
+        if (stored !== null) setCount(stored);
+      }
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     }
   }
 
@@ -1570,7 +1575,7 @@ function AddCustomRowTr({
     options?: { perGuest?: boolean; icon?: string | null },
   ) => Promise<void> | void;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const [expanded, setExpanded] = useState(false);
   const [label, setLabel] = useState("");
   const [amountDraft, setAmountDraft] = useState("");
@@ -1655,7 +1660,7 @@ function AddCustomRowTr({
             placeholder={t("budget.custom_row_amount_placeholder")}
             onChange={(e) => {
               const digits = e.target.value.replace(/\D/g, "");
-              setAmountDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
+              setAmountDraft(digits === "" ? "" : formatNumber(Number(digits), locale));
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") void commit();
@@ -2248,7 +2253,7 @@ function PaidEntryDialog({
     }
   }
 
-  const groupedDraft = draft.replace(/\B(?=(\d{3})+(?!\d))/g, locale === "hu" ? " " : ",");
+  const groupedDraft = formatGroupedDigits(draft, locale);
   return (
     <Dialog
       open={open}
@@ -3103,7 +3108,7 @@ function AddCustomRowMobile({
     options?: { perGuest?: boolean; icon?: string | null },
   ) => Promise<void>;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("");
   const [amountDraft, setAmountDraft] = useState("");
@@ -3177,7 +3182,7 @@ function AddCustomRowMobile({
           disabled={saving}
           onChange={(e) => {
             const digits = e.target.value.replace(/\D/g, "");
-            setAmountDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
+            setAmountDraft(digits === "" ? "" : formatNumber(Number(digits), locale));
           }}
           className="input text-right tabular-nums"
         />

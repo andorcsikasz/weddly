@@ -922,6 +922,7 @@ function TripHero({
   onCoverReset: () => void;
 }) {
   const { t, locale } = useT();
+  const toast = useToast();
   const [auto, setAuto] = useState<{ url: string; matched: string | null } | null>(null);
   const [imgReady, setImgReady] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -980,8 +981,8 @@ function TripHero({
     try {
       const result = await honeymoonApi.uploadCover(file);
       onCoupleChange(result.couple);
-    } catch {
-      // Silent — the hero keeps whatever it was already showing.
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setUploading(false);
     }

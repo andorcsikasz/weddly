@@ -135,21 +135,25 @@ export default function LogisticsPage() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const [acc, rm, tr, gs, c, sch] = await Promise.all([
-      accommodationApi.list(),
-      accommodationRoomApi.list(),
-      transferApi.list(),
-      guestApi.list(),
-      coupleApi.current(),
-      scheduleApi.list(),
-    ]);
-    setAccommodations(acc.accommodations);
-    setRooms(rm.rooms);
-    setTransfers(tr.transfers);
-    setGuests(gs.guests);
-    setCouple(c.couple);
-    setScheduleEvents(sch.events);
-  }, []);
+    try {
+      const [acc, rm, tr, gs, c, sch] = await Promise.all([
+        accommodationApi.list(),
+        accommodationRoomApi.list(),
+        transferApi.list(),
+        guestApi.list(),
+        coupleApi.current(),
+        scheduleApi.list(),
+      ]);
+      setAccommodations(acc.accommodations);
+      setRooms(rm.rooms);
+      setTransfers(tr.transfers);
+      setGuests(gs.guests);
+      setCouple(c.couple);
+      setScheduleEvents(sch.events);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }, [t, toast]);
 
   useEffect(() => {
     setLoading(true);

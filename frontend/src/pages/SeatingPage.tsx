@@ -225,16 +225,20 @@ export default function SeatingPage() {
   }, []);
 
   async function refresh() {
-    const [plan, gs, c] = await Promise.all([
-      seatingApi.plan(),
-      guestApi.list(),
-      coupleApi.current(),
-    ]);
-    rememberTables(plan.tables);
-    setTables(plan.tables);
-    setAssignments(plan.assignments);
-    setGuests(gs.guests);
-    setCouple(c.couple);
+    try {
+      const [plan, gs, c] = await Promise.all([
+        seatingApi.plan(),
+        guestApi.list(),
+        coupleApi.current(),
+      ]);
+      rememberTables(plan.tables);
+      setTables(plan.tables);
+      setAssignments(plan.assignments);
+      setGuests(gs.guests);
+      setCouple(c.couple);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
   }
 
   // Merge one persisted row into state synchronously — mutation responses

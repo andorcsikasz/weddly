@@ -461,6 +461,8 @@ export default function GuestsPage() {
       setCouple(c.couple);
       setGuests(g.guests);
       setHouseholds(h.households);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
       setLoading(false);
     }
