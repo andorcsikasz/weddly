@@ -4417,7 +4417,7 @@ describe("community suppliers", () => {
     expect(after.data.suppliers.some((s) => s.id === numericId)).toBe(false);
   });
 
-  test("approval gate: cannot approve from pending or hidden — only awaiting_review", async () => {
+  test("approval gate: pending approves directly; active or hidden refuse with 409", async () => {
     wipeAll();
     const adminToken = await registerAdmin();
     const { token: coupleToken } = await bootstrapCouple("gate@weddly.test");
@@ -4431,40 +4431,20 @@ describe("community suppliers", () => {
     expect(submit.status).toBe(201);
     const numericId = Number(submit.data.supplier.id.slice(1));
 
-    // Still in `pending` — approve must refuse with 409.
-    const earlyApprove = await req(
+    // Admin's own review is the gate now — a `pending` row WITH a contact
+    // email approves directly, no vendor click required first.
+    const approve = await req(
       "POST",
       `/api/admin/suppliers/${numericId}/approve`,
       {},
       { token: adminToken },
     );
-    expect(earlyApprove.status).toBe(409);
-
-    // Verify email → row moves to awaiting_review (still NOT public). Submit
-    // alone no longer creates a token (admin must release the verify mail
-    // first); short-circuit by minting the token directly so this test can
-    // exercise the consumeVerificationToken flow.
-    createVerificationToken(numericId);
-    const tokenRow = db
-      .prepare(
-        "SELECT token FROM community_supplier_verifications WHERE supplier_id = ? ORDER BY id DESC LIMIT 1",
-      )
-      .get(numericId) as { token: string };
-    await req("POST", `/api/suppliers/community/verify/${tokenRow.token}`);
+    expect(approve.status).toBe(200);
 
     const list = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
-    expect(list.data.suppliers.some((s) => s.id === submit.data.supplier.id)).toBe(false);
+    expect(list.data.suppliers.some((s) => s.id === submit.data.supplier.id)).toBe(true);
 
-    // Now approve works.
-    const ok = await req(
-      "POST",
-      `/api/admin/suppliers/${numericId}/approve`,
-      {},
-      { token: adminToken },
-    );
-    expect(ok.status).toBe(200);
-
-    // Re-approving an already-active row also 409s.
+    // Re-approving an already-active row 409s.
     const reApprove = await req(
       "POST",
       `/api/admin/suppliers/${numericId}/approve`,

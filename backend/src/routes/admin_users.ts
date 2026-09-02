@@ -1056,7 +1056,8 @@ function seenWatermarks(userId: number): Record<AdminSection, number> {
  * page upserts `admin_section_seen` (via `handleMarkSectionSeen`) so
  * the badge clears on the next poll.
  *
- *   - suppliers       → community_suppliers awaiting_review, created_at > seen
+ *   - suppliers       → community_suppliers pending/awaiting_review (i.e. not
+ *                       yet approved), created_at > seen
  *   - users           → user_flags resolved_at IS NULL, created_at > seen
  *   - vendor_waitlist → vendor_waitlist status='new', created_at > seen
  *   - feedback        → feedback_submissions status='new', created_at > seen
@@ -1067,7 +1068,10 @@ function handleSidebarBadges(ctx: Ctx): Response {
   const suppliers = (
     db
       .prepare(
-        "SELECT COUNT(*) AS n FROM community_suppliers WHERE status = 'awaiting_review' AND created_at > ?",
+        // `pending` is the primary unreviewed queue now (approval no longer
+        // requires a vendor to pass through `awaiting_review` first); count
+        // both so the badge doesn't go dark while rows still wait on review.
+        "SELECT COUNT(*) AS n FROM community_suppliers WHERE status IN ('pending', 'awaiting_review') AND created_at > ?",
       )
       .get(seen.suppliers) as { n: number }
   ).n;

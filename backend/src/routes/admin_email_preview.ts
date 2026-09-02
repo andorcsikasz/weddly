@@ -342,6 +342,7 @@ const STUBS: KindPayload = {
   community_supplier_published: {
     supplierName: "Bloom Studio",
     listingUrl: `${BASE_URL}/suppliers/bloom-studio`,
+    suggestedByUser: true,
   },
   community_supplier_rejected: {
     supplierName: "Bloom Studio",

@@ -13,6 +13,7 @@ import {
   type VenueStyle,
   isKnownLanguage,
 } from "@shared/suppliers";
+import { vendorPublicId } from "@shared/vendor_slug";
 import {
   approveSupplier,
   createVerificationToken,
@@ -637,25 +638,17 @@ function handleApprove(ctx: Ctx): Response {
 
   const before = getCommunitySupplierById(id);
   if (!before) throw new HttpError(404, "Supplier not found");
-  // Two valid entry points to approval:
-  //  - awaiting_review: vendor has clicked the verify link, now admin signs off
-  //  - pending + no contact_email: nothing to verify, admin can publish direct
-  // A `pending` row WITH a contact_email is an error — admin should click
-  // "Send verify" first so the vendor proves they own the inbox before we
-  // publish their business in the directory.
-  const directApprovableNoEmail =
-    before.status === "pending" && !getCommunitySupplierWithEmail(id)?.contact_email;
-  if (before.status !== "awaiting_review" && !directApprovableNoEmail) {
-    if (before.status === "pending") {
-      throw new HttpError(
-        409,
-        "This listing has a contact email — click 'Send verify' first so the vendor confirms ownership before we publish.",
-        { code: "send_verify_first" },
-      );
-    }
+  // The admin's own review IS the gate now — a contact email is no longer a
+  // reason to make the vendor click something first. "Send verify" (below)
+  // stays available as an optional ownership check the admin can reach for on
+  // an uncertain row, but it is never required before approving a `pending`
+  // one. `awaiting_review` (a vendor who DID go through that optional check)
+  // is still approvable too, so nothing that already reached that state gets
+  // stuck.
+  if (before.status !== "awaiting_review" && before.status !== "pending") {
     throw new HttpError(
       409,
-      `Cannot approve from status="${before.status}" — only "awaiting_review" rows are approvable.`,
+      `Cannot approve from status="${before.status}" — only "pending" or "awaiting_review" rows are approvable.`,
     );
   }
 
@@ -674,15 +667,18 @@ function handleApprove(ctx: Ctx): Response {
   const after = getCommunitySupplierWithEmail(id);
   if (!after) throw new HttpError(500, "Failed to read updated supplier");
 
-  // Close the verify → moderation → live loop. The recipient last heard from
-  // us when they clicked the verify link; without this, they have no signal
-  // that moderation actually approved them. Fire-and-forget, guest target.
+  // Tell the vendor once the listing is actually live. For most rows this is
+  // the FIRST mail they ever get from Weddly about it — admin reviewed a raw
+  // submission and published it directly — so the copy has to stand on its
+  // own rather than assume they already know (see `suggestedByUser` in the
+  // template). Fire-and-forget, guest target.
   if (after.contact_email) {
     void sendKind(
       "community_supplier_published",
       {
         supplierName: after.name,
-        listingUrl: CONFIG.frontendBaseUrl,
+        listingUrl: `${CONFIG.frontendBaseUrl}/suppliers/${vendorPublicId(`c${after.id}`, after.name)}`,
+        suggestedByUser: after.submitter_type === "user",
       },
       { user: null, guest: { email: after.contact_email, full_name: after.name } },
     );
@@ -693,10 +689,13 @@ function handleApprove(ctx: Ctx): Response {
 }
 
 async function handleSendVerify(ctx: Ctx): Promise<Response> {
-  // Admin-gated verify-mail kickoff. Submission alone no longer sends the
-  // verify mail — any logged-in couple could otherwise blast verification
-  // mail at any business's contact_email by submitting them to the
-  // directory. Admin reviews the row first and explicitly releases the mail.
+  // OPTIONAL ownership check, not a gate — `handleApprove` no longer requires
+  // this before publishing a `pending` row. It exists for the admin who wants
+  // proof before publishing an uncertain one (e.g. a couple's recommendation
+  // the admin can't otherwise confirm): submission alone still never sends
+  // this mail on its own — any logged-in couple could otherwise blast
+  // verification mail at any business's contact_email just by submitting it —
+  // so the admin has to explicitly reach for this button.
   //
   // Stays at status='pending' (vendor still has to click) but issues a
   // fresh token + fires the cold-mail. Idempotent re-clicks generate a new

@@ -6,14 +6,19 @@ import type { SupplierCategory, VenueStyle } from "./suppliers";
 
 export type SupplierSource = "curated" | "community";
 /** Lifecycle:
- *  - `pending`          submitted but `contact_email` not yet verified — invisible
- *                       to everyone except the admin moderation queue.
- *  - `awaiting_review`  email verified, but admin hasn't signed off yet. Still
- *                       invisible to couples. This is the second of two gates
- *                       (email-ownership + human review) that v1.1 added after
- *                       the auto-activation regression.
- *  - `active`           approved by admin (or grandfathered from before the gate
- *                       existed); appears in the public directory.
+ *  - `pending`          submitted, not yet reviewed — invisible to everyone
+ *                       except the admin moderation queue. The admin's own
+ *                       review approves it directly from here; a contact
+ *                       email is never a reason to wait on a vendor click.
+ *  - `awaiting_review`  the admin optionally asked the vendor to confirm
+ *                       ownership (`community_supplier_verify`) and they did.
+ *                       Still invisible to couples until the admin approves —
+ *                       same approval action as `pending`, just reached via
+ *                       the optional check instead of skipping it.
+ *  - `active`           approved by admin (or grandfathered from before the
+ *                       moderation queue existed); appears in the public
+ *                       directory, and the contact (if any) is emailed that
+ *                       their business was added.
  *  - `hidden`           admin moderation OR auto-hidden by the report queue. */
 export type CommunitySupplierStatus = "pending" | "awaiting_review" | "active" | "hidden";
 /** $ (1) = budget through $$$$$ (5) = ultra-luxury. The directory has real
@@ -43,10 +48,12 @@ export interface SubmitCommunitySupplierInput {
   /** The BUSINESS's own address, not the submitter's. REQUIRED on the visitor
    *  path (an account-less stranger has to leave something the listing can be
    *  confirmed against), optional for a logged-in couple, who is reachable
-   *  through their own account. When provided we send a verification link here
-   *  before the listing goes to admin review; without it the submission skips
-   *  straight to the moderation queue. The address remains hidden from the
-   *  public DTO (privacy) and only surfaces in the admin moderation view. */
+   *  through their own account. Every submission goes straight to the admin
+   *  moderation queue regardless — this address is where the "you've been
+   *  added" notice goes once the admin approves, and where an admin can
+   *  optionally send an ownership-confirmation link first if a row looks
+   *  uncertain. The address remains hidden from the public DTO (privacy) and
+   *  only surfaces in the admin moderation view. */
   contact_email: string | null;
   contact_phone: string | null;
   blurb: string;

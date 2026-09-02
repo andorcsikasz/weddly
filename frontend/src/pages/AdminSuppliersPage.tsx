@@ -146,7 +146,7 @@ function ModerationView() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [enriching, setEnriching] = useState<number | null>(null);
   // Track which row is auto-expanded on initial load. We only ever auto-pop
-  // the very first awaiting_review row so the moderator's first action is
+  // the very first row awaiting a decision so the moderator's first action is
   // one click away — every other row stays collapsed until clicked.
   const [autoExpandId, setAutoExpandId] = useState<number | null>(null);
 
@@ -157,10 +157,14 @@ function ModerationView() {
         // Newest first by created_at — matches the spec's default sort.
         const sorted = [...r.suppliers].sort((a, b) => b.created_at - a.created_at);
         setSuppliers(sorted);
-        // First awaiting_review row in the sorted list — the moderator's
-        // hottest triage candidate. Set only once on mount so re-renders
+        // First row still awaiting an approve/hide decision — `pending` is
+        // the primary queue now (admin review approves it directly), and
+        // `awaiting_review` is the rare row that also went through the
+        // optional ownership check. Set only once on mount so re-renders
         // (after approve/hide/etc.) don't keep re-expanding a different row.
-        const firstAwaiting = sorted.find((s) => s.status === "awaiting_review");
+        const firstAwaiting = sorted.find(
+          (s) => s.status === "pending" || s.status === "awaiting_review",
+        );
         setAutoExpandId(firstAwaiting?.id ?? null);
       })
       .catch((e) => {
@@ -830,9 +834,9 @@ function SupplierCard({
   // warning and the submitter's address that made them open it.
   const [editing, setEditing] = useState(false);
   // Cards collapse by default. The parent flags exactly one row (the first
-  // awaiting_review submission) for auto-expand on mount so the moderator
-  // sees full detail + actions one click away. Everything else stays
-  // collapsed; the moderator can click any row to expand it.
+  // submission still awaiting a decision) for auto-expand on mount so the
+  // moderator sees full detail + actions one click away. Everything else
+  // stays collapsed; the moderator can click any row to expand it.
   const [expanded, setExpanded] = useState<boolean>(initiallyExpanded);
   const persisted = s.admin_notes ?? "";
   const dirty = notesDraft !== persisted;
@@ -1188,15 +1192,21 @@ function SupplierCard({
             </div>
           </section>
 
-          {/* Per-row action buttons. Keep the order familiar: Approve
-           *  (when applicable) → Enrich → Hide/Unhide → Delete. Footer
-           *  only renders inside the expanded body so the collapsed row
-           *  stays single-line. */}
+          {/* Per-row action buttons. Keep the order familiar: Send verify
+           *  (optional, pending+email only) → Approve (when applicable) →
+           *  Enrich → Hide/Unhide → Delete. Footer only renders inside the
+           *  expanded body so the collapsed row stays single-line.
+           *
+           *  Approve is the one required gate: admin review publishes a
+           *  `pending` row directly, with or without a contact email — a
+           *  vendor ownership click is never required first. "Send verify"
+           *  stays as an optional secondary action for a row the admin
+           *  isn't sure about yet. */}
           <footer className="flex flex-wrap items-center justify-end gap-1 border-t border-paper-200 dark:border-umber-700 pt-2">
             {s.status === "pending" && s.contact_email && (
               <button
                 type="button"
-                className="btn-primary btn-sm"
+                className="btn-outline btn-sm"
                 onClick={onSendVerify}
                 aria-label={t("admin.send_verify")}
                 title={t("admin.send_verify_hint")}
@@ -1204,23 +1214,13 @@ function SupplierCard({
                 {t("admin.send_verify")}
               </button>
             )}
-            {s.status === "awaiting_review" && (
+            {(s.status === "pending" || s.status === "awaiting_review") && (
               <button
                 type="button"
                 className="btn-primary btn-sm"
                 onClick={onApprove}
                 aria-label={t("admin.approve")}
-              >
-                <Check size={14} /> {t("admin.approve")}
-              </button>
-            )}
-            {s.status === "pending" && !s.contact_email && (
-              <button
-                type="button"
-                className="btn-primary btn-sm"
-                onClick={onApprove}
-                aria-label={t("admin.approve")}
-                title={t("admin.approve_direct_hint")}
+                title={t("admin.approve_hint")}
               >
                 <Check size={14} /> {t("admin.approve")}
               </button>

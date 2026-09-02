@@ -7606,7 +7606,7 @@ export interface LocaleMessages {
     /** Per-row admin actions for community suppliers. */
     approve: string;
     approve_success: string;
-    approve_direct_hint: string;
+    approve_hint: string;
     send_verify: string;
     send_verify_hint: string;
     send_verify_success: string;

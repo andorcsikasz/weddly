@@ -1514,9 +1514,13 @@ function sweepAdminModerationDigest(ts: number): number {
   if (adminEmails.length === 0) return 0;
 
   // Pull counts ONCE (not per-admin) — the same queue applies to every
-  // recipient.
+  // recipient. Both `pending` and `awaiting_review` are unreviewed by an
+  // admin — approval no longer requires a vendor to pass through
+  // `awaiting_review` first, so `pending` is now the primary queue and
+  // counting only `awaiting_review` would under-report it to nothing most
+  // weeks.
   const awaitingReviewSuppliers = scalar(
-    "SELECT COUNT(*) AS n FROM community_suppliers WHERE status = 'awaiting_review'",
+    "SELECT COUNT(*) AS n FROM community_suppliers WHERE status IN ('pending', 'awaiting_review')",
   );
   const newVendorWaitlistEntries = scalar(
     "SELECT COUNT(*) AS n FROM vendor_waitlist WHERE status = 'new'",

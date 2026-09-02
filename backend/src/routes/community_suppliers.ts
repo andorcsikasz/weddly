@@ -1,6 +1,9 @@
-// "Drop your own" supplier submissions. Gated by TWO sequential checks
-// before a row goes live: (1) email-ownership verification and (2) admin
-// approval. Admins can also hide or hard-delete via /api/admin/suppliers/*.
+// "Drop your own" supplier submissions. A row lands `pending` (invisible)
+// and the ADMIN's review is the one gate before it goes live — see
+// handleApprove in routes/admin_suppliers.ts. Email-ownership verification
+// (this file's handleVerify) is an optional check the admin can reach for on
+// an uncertain row; it is never required before publishing. Admins can also
+// hide or hard-delete via /api/admin/suppliers/*.
 
 import type {
   CommunitySupplierReportReason,

@@ -680,6 +680,12 @@ export interface CommunitySupplierPublishedPayload {
   supplierName: string;
   /** Public URL where couples will see the listing. */
   listingUrl: string;
+  /** Whether a couple put this business forward rather than the business
+   *  submitting itself. Admin approval no longer requires a prior vendor
+   *  click, so for most recipients this mail IS the first they hear of the
+   *  listing — same "who is telling them this" branch as
+   *  `CommunitySupplierVerifyPayload.suggestedByUser`. */
+  suggestedByUser: boolean;
 }
 
 export interface CommunitySupplierRejectedPayload {
@@ -4818,10 +4824,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     };
   },
 
-  // Admin moderation flipped a verified community-submitted supplier to
-  // 'active', it's now visible to couples. Closes the verify → moderation
-  // → live loop the recipient last heard about when they clicked the verify
-  // link.
+  // Admin approved a community-submitted supplier straight to 'active' — no
+  // prior vendor click required, so for most recipients this is the FIRST
+  // mail they get about the listing, not a "closing the loop" follow-up. The
+  // opening sentence has to say that plainly rather than assume they already
+  // know, same "a couple put you forward" framing the claim-invite campaign
+  // uses for the same reason (see CLAUDE.md's admin-mail rule).
   community_supplier_published: (p, ctx) => ({
     subject: localeSubject(
       ctx.recipientLocale,
@@ -4833,7 +4841,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `${p.supplierName} mostantól látszik a Weddly katalógusban.`,
       greeting: "Szia!",
       paragraphs: [
-        `A(z) ${p.supplierName} adatlapja mostantól elérhető a Weddly nyilvános szolgáltatói katalógusában.`,
+        p.suggestedByUser
+          ? `Egy pár, aki a Weddlyn tervezi az esküvőjét, hozzáadott ${huArticle(p.supplierName)} ${p.supplierName} adatlapját a szolgáltatói katalógushoz. Átnéztük, és mostantól elérhető a Weddly nyilvános szolgáltatói katalógusában.`
+          : `A(z) ${p.supplierName} adatlapja mostantól elérhető a Weddly nyilvános szolgáltatói katalógusában.`,
         "A párok megtalálhatják és megnyithatják az adatlapot. Frissítéshez válaszolj erre az e-mailre, és segítünk.",
       ],
       cta: "Adatlap megnyitása",
@@ -4841,7 +4851,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: "Hi there,",
       paragraphs: [
-        `We've reviewed your listing and ${p.supplierName} is now visible in Weddly's public supplier directory.`,
+        p.suggestedByUser
+          ? `A couple planning their wedding on Weddly added your business, ${p.supplierName}, to Weddly's supplier directory. We reviewed it, and it's now visible in Weddly's public supplier directory.`
+          : `We've reviewed your listing and ${p.supplierName} is now visible in Weddly's public supplier directory.`,
         "Couples can now find the listing. If the phone number, website or description needs updating, reply to this email and our team will help.",
       ],
       cta: "Open your listing",

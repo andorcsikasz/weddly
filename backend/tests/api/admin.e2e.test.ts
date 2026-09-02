@@ -1545,7 +1545,56 @@ describe("admin suppliers — list, approve, hide/unhide", () => {
     expect(audit).toBeDefined();
   });
 
-  test("approve — refuses non-awaiting_review rows with 409", async () => {
+  test("approve — a pending row WITH a contact email publishes directly and emails the vendor", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token } = await bootstrapCouple("direct-approve@weddly.test");
+    const submit = await req<SubmitVendorTipResult>(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        submitter_type: "user",
+        name: "Direct Approve Hall",
+        city: "Budapest",
+        website: "https://direct-approve-hall.test",
+        contact_email: "owner@direct-approve-hall.test",
+        blurb: "x",
+        price_band: 2,
+      },
+      { token },
+    );
+    expect(submit.status).toBe(201);
+    const id = Number(submit.data.supplier.id.slice(1));
+
+    // No verify token was ever minted for this row — the admin's own review
+    // is the only gate, so approving a still-`pending` row with a contact
+    // email must succeed directly rather than 409 asking for "Send verify"
+    // first.
+    const approve = await req<{ supplier: AdminSupplierRow }>(
+      "POST",
+      `/api/admin/suppliers/${id}/approve`,
+      {},
+      { token: adminToken },
+    );
+    expect(approve.status).toBe(200);
+    expect(approve.data.supplier.status).toBe("active");
+
+    const publicList = await req<{ suppliers: { id: string }[] }>("GET", "/api/suppliers");
+    expect(publicList.data.suppliers.some((s) => s.id === submit.data.supplier.id)).toBe(true);
+
+    // Approval itself is what tells the vendor — this is the FIRST mail they
+    // ever get about the listing, so the copy has to say a couple put them
+    // forward rather than assume they already know.
+    const mail = db
+      .prepare(
+        "SELECT to_email, subject FROM email_log WHERE kind = 'community_supplier_published' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string; subject: string } | undefined;
+    expect(mail?.to_email).toBe("owner@direct-approve-hall.test");
+    expect(mail?.subject.toLowerCase()).toContain("live");
+  });
+
+  test("approve — refuses already-active rows with 409", async () => {
     const adminToken = await bootstrapAdmin();
     const { token } = await bootstrapCouple("submitter@weddly.test");
     const id = await insertSupplierAwaitingReview(token);

@@ -1,7 +1,7 @@
 // User-submitted supplier rows: storage, mappers, and helpers. New submissions
-// land as status='pending' and only flip to 'active' once the contact email
-// owner clicks the verification link. Admins can hide (soft) or hard-delete
-// via the admin routes.
+// land as status='pending' (invisible, admin moderation queue) and flip to
+// 'active' when an admin approves — see `approveSupplier`. Admins can hide
+// (soft) or hard-delete via the admin routes.
 
 import { randomBytes } from "node:crypto";
 import type {
@@ -476,11 +476,11 @@ export function markPendingAsAwaitingReview(supplierId: number): void {
   syncListingFromCommunityId(supplierId);
 }
 
-/** Admin approval: flip `awaiting_review` or `pending` → `active`. The
- *  caller (admin route) gates which `pending` rows are eligible — typically
- *  only those without a contact_email, so admin doesn't accidentally publish
- *  a business whose ownership wasn't verified. No-op if already active;
- *  hidden rows have to be explicitly unhidden first. */
+/** Admin approval: flip `awaiting_review` or `pending` → `active`. Either
+ *  status is approvable regardless of contact_email — the admin's own review
+ *  is the gate, not a vendor-side ownership click (see routes/admin_suppliers
+ *  .ts:handleApprove). No-op if already active; hidden rows have to be
+ *  explicitly unhidden first. */
 export function approveSupplier(id: number): CommunitySupplierStatus {
   const ts = now();
   const cur = getCommunitySupplierById(id);
