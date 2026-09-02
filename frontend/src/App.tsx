@@ -403,7 +403,7 @@ const TOOL_KEY_BY_SLUG = new Map<string, ToolFaqSlug>(
   (Object.keys(TOOL_SLUG_BY_KEY) as ToolFaqSlug[]).map((key) => [TOOL_SLUG_BY_KEY[key], key]),
 );
 
-function ToolLangRoute() {
+export function ToolLangRoute() {
   const { lang, slug } = useParams();
   const { setLocale } = useT();
   const validLang = isUiLocale(lang) ? lang : null;
