@@ -1667,6 +1667,19 @@ export interface PublicDirectoryPage {
    *  view when no country is picked yet: one pin per country instead of one
    *  per town, which is unreadable at continent scale. */
   country_pins: { code: string; count: number; lat: number | null; lng: number | null }[];
+  /**
+   * Vendors of the SAME category just outside the filtered town, carrying
+   * `distance_km`. Only populated when a `category` AND a `city` filter are
+   * both active and that combination came back thin (see NEARBY_TRIGGER in
+   * `routes/suppliers.ts`): a visitor who searched "venues in Veszprém"
+   * never hits a dead end: they get the honest few in town plus everything
+   * within an hour's drive. Empty array whenever the trigger doesn't fire, so
+   * callers never branch on null. Same idiom as `PublicVendorShowcase.nearby`.
+   */
+  nearby: (DirectorySupplier & { distance_km: number })[];
+  /** The town `nearby` distances are measured from, as the visitor typed it.
+   *  Null when there is no nearby block. */
+  nearby_origin: string | null;
 }
 
 /** `GET /api/suppliers/:id/contact` — one listing's published PHONE, the only

@@ -728,28 +728,35 @@ export function CatalogueGrid({
       </div>
 
       {vendors.length === 0 && !loading ? (
-        <div className="mx-auto max-w-md py-16 text-center">
-          <p className="text-[15px] leading-relaxed text-ink-500 dark:text-umber-300">
-            {city ? t("vendorBrowse.emptyTitleCity", { city }) : t("vendorBrowse.emptyTitle")}
-          </p>
-          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-2 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-semibold tracking-tight text-paper-50 transition hover:bg-ink-950 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
-            >
-              {t("vendorBrowse.cta_couple")}
-              <ArrowRight size={15} aria-hidden />
-            </Link>
-            <Link
-              to="/suppliers/signup"
-              className="inline-flex items-center gap-2 rounded-full border border-ink-900/20 px-5 py-2.5 text-sm font-medium tracking-tight text-ink-900 transition hover:border-ink-900 dark:border-paper-50/25 dark:text-paper-100"
-            >
-              {city
-                ? t("vendorBrowse.emptyCtaVendorCity", { city })
-                : t("vendorBrowse.vendor_prompt")}
-            </Link>
+        page && page.nearby.length > 0 ? null : (
+          // Real dead end: no in-town results AND nothing findable within an
+          // hour's drive either (an ungeocoded town, or nothing that close in
+          // this category). Only case that still shows the "just getting
+          // started" framing; everywhere else the nearby block below answers
+          // instead.
+          <div className="mx-auto max-w-md py-16 text-center">
+            <p className="text-[15px] leading-relaxed text-ink-500 dark:text-umber-300">
+              {city ? t("vendorBrowse.emptyTitleCity", { city }) : t("vendorBrowse.emptyTitle")}
+            </p>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-2 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-semibold tracking-tight text-paper-50 transition hover:bg-ink-950 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
+              >
+                {t("vendorBrowse.cta_couple")}
+                <ArrowRight size={15} aria-hidden />
+              </Link>
+              <Link
+                to="/suppliers/signup"
+                className="inline-flex items-center gap-2 rounded-full border border-ink-900/20 px-5 py-2.5 text-sm font-medium tracking-tight text-ink-900 transition hover:border-ink-900 dark:border-paper-50/25 dark:text-paper-100"
+              >
+                {city
+                  ? t("vendorBrowse.emptyCtaVendorCity", { city })
+                  : t("vendorBrowse.vendor_prompt")}
+              </Link>
+            </div>
           </div>
-        </div>
+        )
       ) : (
         <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-4">
           {vendors.map((v) => (
@@ -765,6 +772,38 @@ export function CatalogueGrid({
               listingComplete={v.listing_complete}
             />
           ))}
+        </div>
+      )}
+
+      {/* Thin or empty in-town results: the town itself never dead-ends a
+          category search, it widens to a driving radius instead. Fires
+          whenever the server found the combination thin (see NEARBY_TRIGGER
+          in routes/suppliers.ts), whether that's zero in-town cards or just a
+          couple. */}
+      {!loading && page && page.nearby.length > 0 && (
+        <div className="mt-10 border-t border-ink-900/10 pt-10 dark:border-paper-50/10">
+          <h3 className="font-grotesk text-xl font-semibold tracking-[-0.02em] text-ink-900 sm:text-2xl dark:text-paper-50">
+            {t("vendorBrowse.nearby_title", { city: page.nearby_origin ?? city ?? "" })}
+          </h3>
+          <p className="mt-2 max-w-xl text-[14px] leading-relaxed text-ink-500 dark:text-umber-200">
+            {t("vendorBrowse.nearby_body", { city: page.nearby_origin ?? city ?? "" })}
+          </p>
+          <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-4">
+            {page.nearby.map((v) => (
+              <VendorCard
+                key={v.id}
+                id={v.id}
+                name={v.name}
+                city={v.city}
+                category={v.category}
+                categoryLabel={t(`suppliers.cat.${v.category}`)}
+                distanceLabel={t("vendorBrowse.distance_km", { km: v.distance_km })}
+                hero={v.hero_image_url}
+                verified={v.vendor_account_id !== null}
+                listingComplete={v.listing_complete}
+              />
+            ))}
+          </div>
         </div>
       )}
 

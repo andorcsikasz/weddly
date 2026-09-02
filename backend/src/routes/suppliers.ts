@@ -933,6 +933,47 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
     .filter((s) => (!category || s.category === category) && matchesCity(s) && matchesText(s))
     .sort(publicBrowseRank);
 
+  // ── The "thin town" rescue, same idea as the showcase teaser's
+  // NEARBY_TRIGGER (see its own comment) but scoped to the ACTIVE category: a
+  // visitor who filtered "venues in Veszprém" down to nothing does not hit a
+  // dead end, they get the honest few in town plus every venue within an
+  // hour's drive, distance-stamped. Only fires with a category picked (a bare
+  // city browse already has plenty to show, and "nearby venues" answers a
+  // question nobody asked when no category was chosen) and a city typed.
+  //
+  // The origin is measured across EVERY category matching the town, not just
+  // the (possibly empty) category+city filter: a town with zero venues can
+  // still anchor the search off its restaurants and florists, which is what
+  // lets this fire even when `filtered.length` is 0, unlike the showcase
+  // teaser's `total > 0` guard (that endpoint has no single active category
+  // to fall back on).
+  const nearby: (DirectorySupplier & { distance_km: number })[] = [];
+  let nearbyOrigin: string | null = null;
+  if (category && cityFolded && filtered.length <= NEARBY_TRIGGER) {
+    const origin = originOf(cards.filter(matchesCity));
+    if (origin) {
+      const shown = new Set(filtered.map((s) => s.id));
+      const withDistance = cards
+        .filter(
+          (s) => s.category === category && !shown.has(s.id) && s.lat != null && s.lng != null,
+        )
+        .map((s) => ({
+          row: s,
+          km: haversineKm(origin.lat, origin.lng, s.lat as number, s.lng as number),
+        }))
+        .filter((x) => x.km <= NEARBY_RADIUS_KM)
+        .sort((a, b) => a.km - b.km)
+        .slice(0, NEARBY_MAX);
+      for (const { row, km } of withDistance) {
+        // Rounded to the kilometre, same as the showcase teaser: these are
+        // straight-line distances between town centroids, and a decimal
+        // would claim a precision we don't have.
+        nearby.push({ ...row, distance_km: Math.max(1, Math.round(km)) });
+      }
+      if (nearby.length > 0) nearbyOrigin = cityParam;
+    }
+  }
+
   const payload: PublicDirectoryPage = {
     vendors: filtered.slice(offset, offset + limit),
     total: filtered.length,
@@ -978,6 +1019,8 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
         };
       })
       .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code)),
+    nearby,
+    nearby_origin: nearbyOrigin,
   };
   return json(payload);
 }
@@ -1054,8 +1097,12 @@ const NEARBY_PER_CATEGORY = 4;
  *  back to the whole-country pool's match on the same folded name, so a town
  *  whose only listing lacks coords can still anchor. Null when nothing in the
  *  town has been geocoded at all — then there is no nearby block, rather than
- *  a block measured from the wrong place. */
-function originOf(rows: ShowcaseVendorRow[]): { lat: number; lng: number } | null {
+ *  a block measured from the wrong place. Generic over the row shape so both
+ *  the showcase teaser (`ShowcaseVendorRow`) and the full public directory
+ *  (`DirectorySupplier`) share this one implementation. */
+function originOf<T extends { lat: number | null; lng: number | null }>(
+  rows: T[],
+): { lat: number; lng: number } | null {
   const placed = rows.filter((r) => r.lat != null && r.lng != null);
   if (placed.length === 0) return null;
   const lat = placed.reduce((n, r) => n + (r.lat as number), 0) / placed.length;
