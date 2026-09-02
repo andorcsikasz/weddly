@@ -15,6 +15,15 @@
  * running this script never overwrites it. Edit it directly if it needs
  * to change.
  *
+ * public/apple-touch-icon.png, public/icon-512.png and public/logo-192.png
+ * are also NOT in this list, and never should be: they're icon-only crops
+ * of og.png (resized via `sips`), used where the icon renders small — the
+ * apple-touch-icon link and the PWA manifest icons — because the full
+ * wordmark lockup in logo.png/logo.svg is illegible at those sizes (same
+ * reasoning as the dedicated /email/logo.png asset in
+ * backend/src/domain/emails/template.ts). Re-crop from og.png by hand if
+ * the mark changes; don't point them at logo.svg.
+ *
  * Usage: `bun run og` from the frontend workspace.
  *
  * The SVGs are the source of truth for the variants below — edit them,
