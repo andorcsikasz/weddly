@@ -3,6 +3,7 @@
 // Closes on outside click, Escape, route change, or item selection.
 
 import { type CouplePartnerView, PROFILE_ACTIVE_WINDOW_MS } from "@shared/types";
+import { toolPathFor } from "@shared/tool_faq";
 import {
   ArrowLeftRight,
   Check,
@@ -265,11 +266,7 @@ export function ProfileMenu({
             <span>{t("profile.menu_landing")}</span>
           </Link>
           <Link
-            to={
-              locale === "hu"
-                ? "/eszkozok/100-kerdes-eskuvo-elott"
-                : "/tools/100-questions-before-marriage"
-            }
+            to={toolPathFor(locale, "couple_cards")}
             role="menuitem"
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
           >

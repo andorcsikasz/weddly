@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { TOOL_FAQ } from "@shared/tool_faq";
 import { PublicWeddingChecklist } from "../components/PublicWeddingChecklist";
 import { PublicShell } from "../components/PublicShell";
-import { contentLocale, useT } from "../lib/i18n";
+import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function WeddingChecklistToolPage() {
@@ -62,7 +62,7 @@ export default function WeddingChecklistToolPage() {
             {t("tools.wedding_checklist.faq_h2")}
           </h2>
           <div className="mt-8 space-y-3">
-            {TOOL_FAQ[contentLocale(locale)].wedding_checklist.map((entry) => (
+            {TOOL_FAQ[locale].wedding_checklist.map((entry) => (
               <details
                 key={entry.q}
                 className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"

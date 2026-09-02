@@ -34,6 +34,7 @@ import {
   localeForHost,
   renderIndexHtml,
 } from "./lib/seo_ssr";
+import { TOOL_FAQ_PATHS, toolPathFor, type ToolFaqSlug } from "../../shared/tool_faq";
 import { backfillFoundingAnchor, entitlementBlock } from "./domain/billing";
 import { plannerEntitlementBlock } from "./domain/planner_billing";
 import { vendorEntitlementBlock } from "./domain/vendor_billing";
@@ -851,6 +852,20 @@ const CANONICAL_HOST = "tryweddly.com";
 // the redirect aggressively (308's cache semantics are weaker in practice).
 const PRESERVE_METHOD = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+// Legacy tool-page paths ("/eszkozok/*" HU, "/tools/*" EN) → their new
+// language-prefixed home ("/{lang}/tools/{slug}"). Built from
+// `TOOL_FAQ_PATHS` so it can't drift from the canonical slug table in
+// shared/tool_faq.ts.
+const LEGACY_TOOL_PATH_REDIRECTS = new Map<string, string>(
+  (Object.keys(TOOL_FAQ_PATHS) as ToolFaqSlug[]).flatMap((key) => {
+    const legacy = TOOL_FAQ_PATHS[key];
+    return [
+      [legacy.hu, toolPathFor("hu", key)],
+      [legacy.en, toolPathFor("en", key)],
+    ] as const;
+  }),
+);
+
 async function handleRequest(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
@@ -909,6 +924,19 @@ async function handleRequest(req: Request): Promise<Response> {
         "Cache-Control": "public, max-age=3600",
       },
     });
+  }
+
+  // Legacy tool-page paths → their new /{lang}/tools/{slug} home. Permanent,
+  // query string preserved (a `?` on a tool page is share-tracking, not
+  // page-identifying, so it always carries over unchanged).
+  {
+    const target = LEGACY_TOOL_PATH_REDIRECTS.get(url.pathname);
+    if (target) {
+      return new Response(null, {
+        status: PRESERVE_METHOD.has(req.method) ? 308 : 301,
+        headers: { Location: `${target}${url.search}`, "Cache-Control": "public, max-age=3600" },
+      });
+    }
   }
 
   if (req.method === "OPTIONS") return corsPreflight(req);

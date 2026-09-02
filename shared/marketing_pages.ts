@@ -6,6 +6,8 @@
  * structured data and the prerendered HTML from drifting apart.
  */
 
+import { toolPathFor } from "./tool_faq";
+
 export interface MarketingLink {
   href: string;
   label: string;
@@ -216,7 +218,7 @@ const featurePages: readonly MarketingPage[] = [
     related: [
       { href: "/utmutato/eskuvoi-koltsegvetes", label: "Esküvői költségvetés útmutató" },
       {
-        href: "/eszkozok/eskuvo-koltsegvetes-kalkulator",
+        href: toolPathFor("hu", "budget_calculator"),
         label: "Ingyenes költségvetés-kalkulátor",
       },
       { href: "/eskuvoi-szolgaltatok", label: "Esküvői szolgáltatók keresése" },
@@ -296,7 +298,7 @@ const featurePages: readonly MarketingPage[] = [
     related: [
       { href: "/eskuvoi-vendeglista", label: "Esküvői vendéglista" },
       { href: "/utmutato/eskuvoi-ultetesi-rend", label: "Ültetési rend készítési útmutató" },
-      { href: "/eszkozok/ultetesi-rend-keszito", label: "Ültetési rend készítő eszköz" },
+      { href: toolPathFor("hu", "seating_chart"), label: "Ültetési rend készítő eszköz" },
     ],
     cta: {
       title: "Rakjátok össze vizuálisan az ültetést",
@@ -373,7 +375,7 @@ const featurePages: readonly MarketingPage[] = [
     ],
     related: [
       { href: "/eskuvoi-vendeglista", label: "Esküvői vendéglista" },
-      { href: "/eszkozok/rsvp-szoveg-generator", label: "Esküvői RSVP-szöveg generátor" },
+      { href: toolPathFor("hu", "rsvp_generator"), label: "Esküvői RSVP-szöveg generátor" },
       { href: "/utmutato/eskuvoi-vendeglista", label: "Vendéglista és visszajelzés útmutató" },
     ],
     cta: {
@@ -615,7 +617,7 @@ const guidePages: readonly MarketingPage[] = [
     ],
     related: [
       { href: "/eskuvoi-koltsegvetes-tervezo", label: "Weddly költségvetés tervező" },
-      { href: "/eszkozok/eskuvo-koltsegvetes-kalkulator", label: "Költségvetés-kalkulátor" },
+      { href: toolPathFor("hu", "budget_calculator"), label: "Költségvetés-kalkulátor" },
       { href: "/eskuvoi-szolgaltatok", label: "Esküvői szolgáltatók" },
     ],
     cta: {
@@ -684,7 +686,7 @@ const guidePages: readonly MarketingPage[] = [
     related: [
       { href: "/eskuvoi-ultetesi-rend-tervezo", label: "Weddly ültetési rend tervező" },
       { href: "/eskuvoi-vendeglista", label: "Esküvői vendéglista" },
-      { href: "/eszkozok/ultetesi-rend-keszito", label: "Ültetési rend készítő eszköz" },
+      { href: toolPathFor("hu", "seating_chart"), label: "Ültetési rend készítő eszköz" },
     ],
     cta: {
       title: "Ha vizuálisan rendeznétek el a vendégeket",

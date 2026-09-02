@@ -2,6 +2,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { renderIndexHtml, renderSitemapXml } from "../../src/lib/seo_ssr";
+import { toolPathFor } from "../../../shared/tool_faq";
 
 // Same-host EN exposure: slug-paired routes (the tools, /eszkozok/X vs
 // /tools/X) get a real EN alternate URL on weddly.hu even without an
@@ -100,11 +101,17 @@ describe("seo: single-host production request (no Accept-Language) picks locale 
   });
 });
 
-describe("seo: sitemap lists EN tool URLs in single-host mode", () => {
-  test("includes a <loc> for the EN tool slug on weddly.hu", () => {
+describe("seo: sitemap lists the language-prefixed tool URLs, not the legacy paths", () => {
+  test("includes a <loc> for the HU and EN /{lang}/tools/{slug} URLs, not the old /eszkozok or /tools paths", () => {
     const xml = renderSitemapXml("weddly.hu");
-    expect(xml).toContain(`<loc>https://tryweddly.com${EN_TOOL}</loc>`);
-    expect(xml).toContain(`<loc>https://tryweddly.com${HU_TOOL}</loc>`);
+    expect(xml).toContain(
+      `<loc>https://tryweddly.com${toolPathFor("en", "budget_calculator")}</loc>`,
+    );
+    expect(xml).toContain(
+      `<loc>https://tryweddly.com${toolPathFor("hu", "budget_calculator")}</loc>`,
+    );
+    expect(xml).not.toContain(`<loc>https://tryweddly.com${EN_TOOL}</loc>`);
+    expect(xml).not.toContain(`<loc>https://tryweddly.com${HU_TOOL}</loc>`);
   });
 
   test("does not emit a duplicate EN loc for non-paired routes", () => {

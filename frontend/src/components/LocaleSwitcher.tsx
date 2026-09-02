@@ -5,6 +5,8 @@
 
 import { Check, Languages } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { matchToolLangPath, toolPathFor } from "@shared/tool_faq";
 import { LOCALE_NAMES, LOCALES, useT } from "../lib/i18n";
 
 /** Default top-bar icon-button styling; overridable per shell via
@@ -36,6 +38,13 @@ export function LocaleSwitcher({
   const { t, locale, setLocale } = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  // On a `/{lang}/tools/{slug}` page the URL itself names the language, so
+  // picking a new one from the switcher has to move to that tool's URL in
+  // the new language, not just relabel the current URL's content. Every
+  // other page keeps the plain setLocale-only behaviour below.
+  const toolLangMatch = matchToolLangPath(pathname);
 
   useEffect(() => {
     if (!open) return;
@@ -86,7 +95,10 @@ export function LocaleSwitcher({
               role="menuitemradio"
               aria-checked={l === locale}
               onClick={() => {
-                if (l !== locale) setLocale(l);
+                if (l !== locale) {
+                  setLocale(l);
+                  if (toolLangMatch) navigate(toolPathFor(l, toolLangMatch.key));
+                }
                 setOpen(false);
               }}
               className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-paper-100 dark:hover:bg-umber-900/50 ${

@@ -1,12 +1,16 @@
 import { Suspense, type JSX, type ReactNode, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import type { ComponentType } from "react";
 import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { lazyWithReload } from "./lib/lazy_reload";
 import { VerifyEmailGate } from "./components/VerifyEmailGate";
 import { useAuth } from "./lib/auth";
+import { useT } from "./lib/i18n";
 import { clearDemoSessionFlag, isCurrentSessionDemo } from "./lib/demoSession";
 import { MARKETING_PAGES } from "@shared/marketing_pages";
+import { isUiLocale } from "@shared/locales";
+import { TOOL_SLUG_BY_KEY, toolPathFor, type ToolFaqSlug } from "@shared/tool_faq";
 
 // Only the landing route is FCP-critical on `/`. Other public pages have their
 // own route chunks: eagerly importing the entire tools, blog and auth surface
@@ -32,6 +36,7 @@ const VendorsPage = lazyWithReload(() => import("./pages/VendorsPage"));
 const PlannersPage = lazyWithReload(() => import("./pages/PlannersPage"));
 const CameraPage = lazyWithReload(() => import("./pages/CameraPage"));
 const MarketingContentPage = lazyWithReload(() => import("./pages/MarketingContentPage"));
+const GamesPage = lazyWithReload(() => import("./pages/GamesPage"));
 
 // The four legal pages are the one exception to "public routes ship eagerly",
 // and they earn it by weight rather than by traffic. Each renders the HU and
@@ -378,6 +383,44 @@ function LegacyVendorsRedirect() {
   return <Navigate to={`${supplierPath}${search}${hash}`} replace />;
 }
 
+/** `/{lang}/tools/{slug}` — the language-prefixed SEO tool pilot. One
+ *  parametrized route stands in for what would otherwise be 7 tools × 5
+ *  languages = 35 near-identical `<Route>` blocks; adding a tool needs one
+ *  new line in `TOOL_PAGE_BY_KEY` below and nothing else here. The slug
+ *  itself comes from `shared/tool_faq.ts` so it can never drift from the
+ *  redirect table `server.ts` builds from the same source. */
+const TOOL_PAGE_BY_KEY: Record<ToolFaqSlug, ComponentType> = {
+  budget_calculator: BudgetCalculatorPage,
+  countdown: CountdownPage,
+  guest_list_template: GuestListTemplatePage,
+  seating_chart: SeatingChartPage,
+  rsvp_generator: RsvpGeneratorPage,
+  couple_cards: CoupleCardsPage,
+  wedding_checklist: WeddingChecklistToolPage,
+};
+
+const TOOL_KEY_BY_SLUG = new Map<string, ToolFaqSlug>(
+  (Object.keys(TOOL_SLUG_BY_KEY) as ToolFaqSlug[]).map((key) => [TOOL_SLUG_BY_KEY[key], key]),
+);
+
+function ToolLangRoute() {
+  const { lang, slug } = useParams();
+  const { setLocale } = useT();
+  const validLang = isUiLocale(lang) ? lang : null;
+  const key = slug ? TOOL_KEY_BY_SLUG.get(slug) : undefined;
+
+  // Landing on a language-prefixed URL is as explicit a language choice as
+  // clicking the switcher — sync it into app state so the rest of the page
+  // (which reads locale via useT(), not the URL) renders to match.
+  useEffect(() => {
+    if (validLang) setLocale(validLang);
+  }, [validLang, setLocale]);
+
+  if (!validLang || !key) return <NotFoundPage />;
+  const ToolPage = TOOL_PAGE_BY_KEY[key];
+  return <ToolPage />;
+}
+
 export default function App() {
   return (
     <>
@@ -389,6 +432,14 @@ export default function App() {
           element={
             <Page>
               <LandingPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/games"
+          element={
+            <Page>
+              <GamesPage />
             </Page>
           }
         />
@@ -475,123 +526,77 @@ export default function App() {
           }
         />
         <Route path="/planner" element={<Navigate to="/planners" replace />} />
-        {/* SEO tool pages mounted at /eszkozok/* (HU) and /tools/* (EN).
-         *  Each slug pair targets a long-tail search query in its locale and
-         *  shares the bilingual ROUTE_SEO entry — the visitor's locale picks
-         *  the copy that renders. The hreflang link rel in seo_ssr.ts pairs
-         *  the two slugs so Google indexes them as alternates of each other
-         *  on the multi-host weddly.hu ↔ weddly.com setup. */}
+        {/* SEO tool pages live at /{lang}/tools/{slug} — one language per UI
+         *  locale, one canonical (English-word) slug per tool. See
+         *  `ToolLangRoute` above and shared/tool_faq.ts for the slug table. */}
         <Route
-          path="/eszkozok/eskuvo-koltsegvetes-kalkulator"
+          path="/:lang/tools/:slug"
           element={
             <Page>
-              <BudgetCalculatorPage />
+              <ToolLangRoute />
             </Page>
           }
+        />
+        {/* Legacy /eszkozok/* (HU) and /tools/* (EN) paths 301 at the server
+         *  edge (server.ts); these client-side redirects are defense-in-depth
+         *  for same-tab SPA navigation that never reaches the server, e.g. a
+         *  stale in-app <Link> or a browser history entry from before the
+         *  URL structure changed. */}
+        <Route
+          path="/eszkozok/eskuvo-koltsegvetes-kalkulator"
+          element={<Navigate to={toolPathFor("hu", "budget_calculator")} replace />}
         />
         <Route
           path="/tools/wedding-budget-calculator"
-          element={
-            <Page>
-              <BudgetCalculatorPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("en", "budget_calculator")} replace />}
         />
         <Route
           path="/eszkozok/eskuvo-visszaszamlalo"
-          element={
-            <Page>
-              <CountdownPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("hu", "countdown")} replace />}
         />
         <Route
           path="/tools/wedding-countdown"
-          element={
-            <Page>
-              <CountdownPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("en", "countdown")} replace />}
         />
         <Route
           path="/eszkozok/vendeglista-sablon"
-          element={
-            <Page>
-              <GuestListTemplatePage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("hu", "guest_list_template")} replace />}
         />
         <Route
           path="/tools/guest-list-template"
-          element={
-            <Page>
-              <GuestListTemplatePage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("en", "guest_list_template")} replace />}
         />
         <Route
           path="/eszkozok/ultetesi-rend-keszito"
-          element={
-            <Page>
-              <SeatingChartPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("hu", "seating_chart")} replace />}
         />
         <Route
           path="/tools/seating-chart-builder"
-          element={
-            <Page>
-              <SeatingChartPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("en", "seating_chart")} replace />}
         />
         <Route
           path="/eszkozok/rsvp-szoveg-generator"
-          element={
-            <Page>
-              <RsvpGeneratorPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("hu", "rsvp_generator")} replace />}
         />
         <Route
           path="/tools/rsvp-text-generator"
-          element={
-            <Page>
-              <RsvpGeneratorPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("en", "rsvp_generator")} replace />}
         />
         <Route
           path="/eszkozok/100-kerdes-eskuvo-elott"
-          element={
-            <Page>
-              <CoupleCardsPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("hu", "couple_cards")} replace />}
         />
         <Route
           path="/tools/100-questions-before-marriage"
-          element={
-            <Page>
-              <CoupleCardsPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("en", "couple_cards")} replace />}
         />
         <Route
           path="/eszkozok/eskuvoi-ellenorzolista"
-          element={
-            <Page>
-              <WeddingChecklistToolPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("hu", "wedding_checklist")} replace />}
         />
         <Route
           path="/tools/wedding-checklist"
-          element={
-            <Page>
-              <WeddingChecklistToolPage />
-            </Page>
-          }
+          element={<Navigate to={toolPathFor("en", "wedding_checklist")} replace />}
         />
         <Route
           path="/privacy"

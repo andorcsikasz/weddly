@@ -11,6 +11,8 @@
 // Edit this file (not duplicates in locales/seo_ssr) when the FAQ copy
 // changes — that's the whole point of keeping it in `shared/`.
 
+import { toolPathFor } from "./tool_faq";
+
 export type SeoFaqLocale = "hu" | "en";
 
 export interface SeoFaqEntry {
@@ -40,7 +42,10 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
     {
       q: "Exportálhatjuk a vendéglistát és az ültetést?",
       a: "Igen. A vendégadatokat CSV-ben exportálhatjátok, az ültetési terveket pedig PDF-ben nyomtathatjátok A4, A6 és A3 méretben.",
-      cta: { href: "/eszkozok/ultetesi-rend-keszito", label: "Próbáld ki az ültetéstervezőt" },
+      cta: {
+        href: toolPathFor("hu", "seating_chart"),
+        label: "Próbáld ki az ültetéstervezőt",
+      },
     },
     {
       q: "Kié az esküvői adatunk?",
@@ -88,7 +93,7 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
     {
       q: "Can we export our guest list and seating plan?",
       a: "Yes. You can export guest data as CSV and print seating layouts as PDF in A4, A6 and A3 formats.",
-      cta: { href: "/tools/seating-chart-builder", label: "Try the seating chart builder" },
+      cta: { href: toolPathFor("en", "seating_chart"), label: "Try the seating chart builder" },
     },
     {
       q: "Who owns our wedding data?",

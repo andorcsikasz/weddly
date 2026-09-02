@@ -29,9 +29,18 @@ import {
   huPathFor,
   localeForToolSlug,
   lookupRouteSeo,
+  TOOL_SEO,
   type RouteSeo,
 } from "../../../shared/seo_routes";
-import { toolFaqForPath } from "../../../shared/tool_faq";
+import {
+  matchToolLangPath,
+  toolFaqForPath,
+  toolPathFor,
+  TOOL_FAQ,
+  TOOL_SLUG_BY_KEY,
+  type ToolFaqSlug,
+} from "../../../shared/tool_faq";
+import { UI_LOCALES, type UiLocale } from "../../../shared/locales";
 import { supplierCategoryLabel } from "../../../shared/suppliers";
 import { vendorPublicId } from "../../../shared/vendor_slug";
 import {
@@ -78,17 +87,11 @@ const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/", priority: "1.0", changefreq: "weekly" },
   ...FEATURE_PAGE_PATHS.map((path) => ({ path, priority: "0.9", changefreq: "monthly" })),
   ...GUIDE_PAGE_PATHS.map((path) => ({ path, priority: "0.8", changefreq: "monthly" })),
-  // Tool pages, high SEO value (each targets a long-tail HU query the
-  // landing can't rank for on its own) so they get a higher priority than
-  // the auth flows. Same path on both hosts; the locale switch happens via
-  // Host header just like the landing.
-  { path: "/eszkozok/eskuvo-koltsegvetes-kalkulator", priority: "0.8", changefreq: "monthly" },
-  { path: "/eszkozok/eskuvo-visszaszamlalo", priority: "0.8", changefreq: "monthly" },
-  { path: "/eszkozok/vendeglista-sablon", priority: "0.8", changefreq: "monthly" },
-  { path: "/eszkozok/ultetesi-rend-keszito", priority: "0.8", changefreq: "monthly" },
-  { path: "/eszkozok/rsvp-szoveg-generator", priority: "0.8", changefreq: "monthly" },
-  { path: "/eszkozok/100-kerdes-eskuvo-elott", priority: "0.8", changefreq: "monthly" },
-  { path: "/eszkozok/eskuvoi-ellenorzolista", priority: "0.8", changefreq: "monthly" },
+  // The legacy /eszkozok/* (HU) and /tools/* (EN) tool paths used to be
+  // listed here directly. They now 301-redirect into the language-prefixed
+  // `/{lang}/tools/{slug}` pilot (see server.ts), which gets its own
+  // dedicated sitemap loop below rather than living in this static list —
+  // a sitemap should never advertise a URL that immediately redirects.
   { path: "/blog", priority: "0.6", changefreq: "weekly" },
   // The public directory browser. Higher than the vendor-recruitment page it
   // sits under: it is the hub every one of the thousand-odd profile URLs below
@@ -435,12 +438,13 @@ function lookupBlogSlugPair(pathname: string): BlogSlugPair | null {
   };
 }
 
-/** True for the public free-tool landing pages (`/eszkozok/*` HU and
- *  `/tools/*` EN). Each gets its own WebApplication + BreadcrumbList JSON-LD
- *  so AI engines and Google rich results treat them as discrete free tools
- *  rather than slices of the brand landing. */
+/** True for the public free-tool landing pages: the legacy `/eszkozok/*` (HU)
+ *  and `/tools/*` (EN) paths, and the current `/{lang}/tools/{slug}` shape
+ *  (see `matchToolLangPath`). Each gets its own WebApplication +
+ *  BreadcrumbList JSON-LD so AI engines and Google rich results treat them
+ *  as discrete free tools rather than slices of the brand landing. */
 function isToolPath(pathname: string): boolean {
-  return /^\/(?:eszkozok|tools)\//.test(pathname);
+  return /^\/(?:eszkozok|tools)\//.test(pathname) || matchToolLangPath(pathname) !== null;
 }
 
 /** Full article body blocks for `/blog/:slug`, parsed from the locale's
@@ -548,7 +552,14 @@ interface LocaleMeta {
   brandDescription: string;
 }
 
-const META: Record<SeoLocale, LocaleMeta> = {
+// Keyed by the full `UiLocale` set (not just `SeoLocale`) so the
+// `/{lang}/tools/{slug}` pilot below can read a real brand title/description
+// for es/hr/de too. `SeoLocale` stays hu/en-only and every OTHER caller of
+// `META` still only ever indexes it with hu/en (see `localeForHost` /
+// `localeForPath`), so this widening changes nothing about the root landing
+// page or any other existing route — es/hr/de root-landing meta simply isn't
+// reachable yet outside the tool pilot.
+const META: Record<UiLocale, LocaleMeta> = {
   hu: {
     lang: "hu",
     ogLocale: "hu_HU",
@@ -574,6 +585,45 @@ const META: Record<SeoLocale, LocaleMeta> = {
     brandName: "Wēddly",
     brandDescription:
       "Wedding planning web app for couples: budget, guest list, RSVP, seating chart and printable cards in one shared workspace.",
+  },
+  es: {
+    lang: "es",
+    ogLocale: "es_ES",
+    title: "Wēddly · Planificación de bodas sin estrés",
+    description:
+      "Planificad la boda juntos: presupuesto compartido, lista de invitados, enlaces RSVP personales y plano de mesas visual, todo en un solo lugar.",
+    twDescription: "Planificación de bodas tranquila, con un plan compartido y siempre al día.",
+    ogImageAlt:
+      "Wēddly · Planificación de bodas tranquila, con un plan compartido y siempre al día.",
+    brandName: "Wēddly",
+    brandDescription:
+      "Aplicación de planificación de bodas para parejas: presupuesto, lista de invitados, RSVP, plano de mesas y tarjetas imprimibles, en un espacio de trabajo compartido.",
+  },
+  hr: {
+    lang: "hr",
+    ogLocale: "hr_HR",
+    title: "Wēddly · Planiranje vjenčanja bez stresa",
+    description:
+      "Planirajte vjenčanje zajedno: zajednički proračun, popis gostiju, osobne RSVP poveznice i vizualni raspored sjedenja, sve na jednom mjestu.",
+    twDescription: "Mirno planiranje vjenčanja, s jednim zajedničkim i uvijek ažurnim planom.",
+    ogImageAlt:
+      "Wēddly · Mirno planiranje vjenčanja, s jednim zajedničkim i uvijek ažurnim planom.",
+    brandName: "Wēddly",
+    brandDescription:
+      "Web aplikacija za planiranje vjenčanja za parove: proračun, popis gostiju, RSVP, raspored sjedenja i tiskovine, u jednom zajedničkom radnom prostoru.",
+  },
+  de: {
+    lang: "de",
+    ogLocale: "de_DE",
+    title: "Wēddly · Hochzeitsplanung ohne Stress",
+    description:
+      "Plant die Hochzeit gemeinsam: geteiltes Budget, Gästeliste, persönliche RSVP-Links und ein visueller Sitzplan, alles an einem Ort.",
+    twDescription: "Entspannte Hochzeitsplanung, mit einem gemeinsamen, stets aktuellen Plan.",
+    ogImageAlt:
+      "Wēddly · Entspannte Hochzeitsplanung, mit einem gemeinsamen, stets aktuellen Plan.",
+    brandName: "Wēddly",
+    brandDescription:
+      "Hochzeitsplanungs-App für Paare: Budget, Gästeliste, RSVP, Sitzplan und druckfertige Karten in einem gemeinsamen Arbeitsbereich.",
   },
 };
 
@@ -781,8 +831,19 @@ function escapeAttr(s: string): string {
  *  The blog/tool blocks turn the strongest long-tail + AI-citation assets
  *  into dated, attributable, machine-readable entities. They're SSR-injected
  *  into <head> before hydration, so they survive a JS-light crawl. */
+// BCP-47 tag + localised breadcrumb "Home" label per UI locale, used only by
+// the tool-lang branch below (everywhere else in this function narrows to
+// `pairLocale` and stays hu/en, unchanged).
+const JSONLD_LOCALE_META: Record<UiLocale, { inLanguage: string; home: string }> = {
+  hu: { inLanguage: "hu-HU", home: "Főoldal" },
+  en: { inLanguage: "en-US", home: "Home" },
+  es: { inLanguage: "es-ES", home: "Inicio" },
+  hr: { inLanguage: "hr-HR", home: "Početna" },
+  de: { inLanguage: "de-DE", home: "Start" },
+};
+
 function buildJsonLd(opts: {
-  locale: SeoLocale;
+  locale: UiLocale;
   canonicalHost: string;
   pathname: string;
   vendorMeta?: VendorPageMeta | null;
@@ -790,8 +851,12 @@ function buildJsonLd(opts: {
   const meta = META[opts.locale];
   const origin = `https://${opts.canonicalHost}`;
   const path = opts.pathname || "/";
-  const inLanguage = opts.locale === "hu" ? "hu-HU" : "en-US";
-  const priceCurrency = opts.locale === "hu" ? "HUF" : "EUR";
+  // Every branch below except the tool-lang one is hu/en-pair-shaped (blog,
+  // vendor, marketing, landing FAQ) — narrow to that pair once here rather
+  // than threading a 5-way locale through code that only ever had two.
+  const pairLocale: SeoLocale = opts.locale === "hu" ? "hu" : "en";
+  const inLanguage = JSONLD_LOCALE_META[opts.locale].inLanguage;
+  const priceCurrency = pairLocale === "hu" ? "HUF" : "EUR";
   const organization = {
     "@type": "Organization",
     name: meta.brandName,
@@ -821,11 +886,13 @@ function buildJsonLd(opts: {
     },
   ];
 
-  // Localised breadcrumb labels (Home / Blog).
-  const crumbLabels =
-    opts.locale === "hu"
-      ? { home: "Főoldal", blog: "Esküvői magazin" }
-      : { home: "Home", blog: "Wedding blog" };
+  // Localised breadcrumb labels (Home / Blog). Blog itself is still hu/en
+  // only (`pairLocale`); "Home" is real for all five via `JSONLD_LOCALE_META`
+  // and used by the tool-lang branch below.
+  const crumbLabels = {
+    home: JSONLD_LOCALE_META[opts.locale].home,
+    blog: pairLocale === "hu" ? "Esküvői magazin" : "Wedding blog",
+  };
 
   if (path === "/" || path === "") {
     blocks.push({
@@ -840,7 +907,7 @@ function buildJsonLd(opts: {
     blocks.push({
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      mainEntity: SEO_FAQ[opts.locale].map((entry) => ({
+      mainEntity: SEO_FAQ[pairLocale].map((entry) => ({
         "@type": "Question",
         name: entry.q,
         acceptedAnswer: { "@type": "Answer", text: entry.a },
@@ -913,7 +980,7 @@ function buildJsonLd(opts: {
           ? absoluteImageUrl(origin, opts.vendorMeta.heroImageUrl)
           : undefined,
         areaServed: opts.vendorMeta.city,
-        knowsAbout: supplierCategoryLabel(opts.vendorMeta.category, opts.locale),
+        knowsAbout: supplierCategoryLabel(opts.vendorMeta.category, pairLocale),
       });
       blocks.push({
         "@context": "https://schema.org",
@@ -963,8 +1030,13 @@ function buildJsonLd(opts: {
         ],
       });
     } else if (isToolPath(path)) {
-      const routeSeo = lookupRouteSeo(path);
-      const entry = routeSeo?.[opts.locale];
+      // The current `/{lang}/tools/{slug}` shape resolves through TOOL_SEO
+      // (all 5 UI locales); the legacy `/eszkozok/*` / `/tools/*` paths still
+      // resolve through the hu/en-only ROUTE_SEO map via `pairLocale`.
+      const toolLangMatch = matchToolLangPath(path);
+      const entry = toolLangMatch
+        ? TOOL_SEO[toolLangMatch.key][toolLangMatch.lang]
+        : lookupRouteSeo(path)?.[pairLocale];
       if (entry) {
         blocks.push({
           "@context": "https://schema.org",
@@ -1257,6 +1329,53 @@ function isIndexableHtmlPath(
   return false;
 }
 
+/** `<head>` block for the `/{lang}/tools/{slug}` pilot. Kept as a small,
+ *  self-contained builder rather than woven into `buildHeadBlock`'s hu/en
+ *  pair logic below (huPath/enPath/blogPair/locationCombo canonical
+ *  resolution) — none of that applies here, the URL already names its own
+ *  language, there's no pairing or Accept-Language guessing to do. Every
+ *  one of the 5 language versions links to all the others via hreflang,
+ *  plus x-default pointing at the EN version (the international default
+ *  everywhere else in this codebase, not HU — see the file banner). */
+function buildToolLangHeadBlock(lang: UiLocale, key: ToolFaqSlug, path: string): string {
+  const entry = TOOL_SEO[key][lang];
+  const defaultMeta = META[lang];
+  const canonicalUrl = `https://${CANONICAL_HOST}${path}`;
+  const alternates = UI_LOCALES.map(
+    (l) =>
+      `<link rel="alternate" hreflang="${l}" href="https://${CANONICAL_HOST}${toolPathFor(l, key)}" />`,
+  );
+  return [
+    `<title>${escapeAttr(entry.title)}</title>`,
+    `<meta name="description" content="${escapeAttr(entry.description)}" />`,
+    `<meta name="robots" content="index,follow" />`,
+    `<meta name="application-name" content="${escapeAttr(defaultMeta.brandName)}" />`,
+    `<link rel="canonical" href="${canonicalUrl}" />`,
+    `<meta property="og:type" content="website" />`,
+    `<meta property="og:site_name" content="Wēddly" />`,
+    `<meta property="og:locale" content="${defaultMeta.ogLocale}" />`,
+    `<meta property="og:url" content="${canonicalUrl}" />`,
+    `<meta property="og:title" content="${escapeAttr(entry.title)}" />`,
+    `<meta property="og:description" content="${escapeAttr(entry.description)}" />`,
+    `<meta property="og:image" content="https://${CANONICAL_HOST}/og.png" />`,
+    `<meta property="og:image:type" content="image/png" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="1200" />`,
+    `<meta property="og:image:alt" content="${escapeAttr(defaultMeta.ogImageAlt)}" />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:title" content="${escapeAttr(entry.title)}" />`,
+    `<meta name="twitter:description" content="${escapeAttr(entry.description)}" />`,
+    `<meta name="twitter:image" content="https://${CANONICAL_HOST}/og.png" />`,
+    `<meta name="twitter:image:alt" content="${escapeAttr(defaultMeta.ogImageAlt)}" />`,
+    ...alternates,
+    `<link rel="alternate" hreflang="x-default" href="https://${CANONICAL_HOST}${toolPathFor("en", key)}" />`,
+    buildJsonLd({ locale: lang, canonicalHost: CANONICAL_HOST, pathname: path }),
+    ...(plausibleScriptTag() ? [plausibleScriptTag()] : []),
+    ...(gtmScriptTag() ? [gtmScriptTag()] : []),
+    ...(ga4ScriptTag() ? [ga4ScriptTag()] : []),
+  ].join("\n    ");
+}
+
 function buildHeadBlock(opts: {
   host: string | null;
   pathname: string;
@@ -1276,6 +1395,10 @@ function buildHeadBlock(opts: {
    *  `weddingMeta`, applied to the vendor share card. */
   vendorMeta?: VendorPageMeta | null;
 }): string {
+  const toolLangMatch = matchToolLangPath(opts.pathname || "/");
+  if (toolLangMatch) {
+    return buildToolLangHeadBlock(toolLangMatch.lang, toolLangMatch.key, opts.pathname || "/");
+  }
   const locale = localeForPath(opts.host, opts.acceptLanguage ?? null, opts.pathname || "/");
   const defaultMeta = META[locale];
   const altDefaultMeta = META[locale === "hu" ? "en" : "hu"];
@@ -1546,6 +1669,114 @@ function renderMarketingPageHtml(page: MarketingPage): string {
     .join("\n");
 }
 
+const TOOL_LANG_FOOTER_LABELS: Record<
+  UiLocale,
+  {
+    home: string;
+    about: string;
+    privacy: string;
+    terms: string;
+    imprint: string;
+    imprintHref: string;
+    signup: string;
+    login: string;
+    vendors: string;
+  }
+> = {
+  hu: {
+    home: "Főoldal",
+    about: "Rólunk",
+    privacy: "Adatvédelem",
+    terms: "Felhasználási feltételek",
+    imprint: "Impresszum",
+    imprintHref: "/impresszum",
+    signup: "Regisztráció",
+    login: "Bejelentkezés",
+    vendors: "Szolgáltatóknak",
+  },
+  en: {
+    home: "Home",
+    about: "About",
+    privacy: "Privacy",
+    terms: "Terms",
+    imprint: "Imprint",
+    imprintHref: "/imprint",
+    signup: "Sign up",
+    login: "Sign in",
+    vendors: "For vendors",
+  },
+  es: {
+    home: "Inicio",
+    about: "Sobre nosotros",
+    privacy: "Privacidad",
+    terms: "Términos",
+    imprint: "Aviso legal",
+    imprintHref: "/imprint",
+    signup: "Regístrate",
+    login: "Iniciar sesión",
+    vendors: "Para proveedores",
+  },
+  hr: {
+    home: "Početna",
+    about: "O nama",
+    privacy: "Privatnost",
+    terms: "Uvjeti korištenja",
+    imprint: "Impresum",
+    imprintHref: "/imprint",
+    signup: "Registracija",
+    login: "Prijava",
+    vendors: "Za pružatelje usluga",
+  },
+  de: {
+    home: "Start",
+    about: "Über uns",
+    privacy: "Datenschutz",
+    terms: "Nutzungsbedingungen",
+    imprint: "Impressum",
+    imprintHref: "/imprint",
+    signup: "Registrieren",
+    login: "Anmelden",
+    vendors: "Für Anbieter",
+  },
+};
+
+/** SSR body for the `/{lang}/tools/{slug}` pilot — same header + FAQ-article
+ *  + footer-nav shape `renderRouteBody` below builds for the legacy tool
+ *  paths, sourced from `TOOL_SEO`/`TOOL_FAQ` (all 5 UI locales) instead of
+ *  the hu/en-only `ROUTE_SEO`/`TOOL_FAQ` lookup those use. Kept separate so
+ *  the legacy function's hu/en assumptions (vendor pages, blog, location
+ *  pages — none of which exist in 5 languages yet) don't need to move. */
+function renderToolLangRouteBody(lang: UiLocale, key: ToolFaqSlug): string {
+  const entry = TOOL_SEO[key][lang];
+  const faq = TOOL_FAQ[lang][key];
+  const faqHtml =
+    faq && faq.length > 0
+      ? `<article>\n        ${faq
+          .map((f) => `<h2>${escapeText(f.q)}</h2>\n        <p>${escapeText(f.a)}</p>`)
+          .join("\n        ")}\n      </article>`
+      : "";
+  const labels = TOOL_LANG_FOOTER_LABELS[lang];
+  return [
+    `<header>`,
+    `  <h1>${escapeAttr(entry.h1)}</h1>`,
+    `  <p>${escapeAttr(entry.intro)}</p>`,
+    `</header>`,
+    ...(faqHtml ? [faqHtml] : []),
+    `<footer>`,
+    `  <nav>`,
+    `    <a href="/">${escapeAttr(labels.home)}</a> · `,
+    `    <a href="/signup">${escapeAttr(labels.signup)}</a> · `,
+    `    <a href="/login">${escapeAttr(labels.login)}</a> · `,
+    `    <a href="/suppliers">${escapeAttr(labels.vendors)}</a> · `,
+    `    <a href="/about">${escapeAttr(labels.about)}</a> · `,
+    `    <a href="/privacy">${escapeAttr(labels.privacy)}</a> · `,
+    `    <a href="/terms">${escapeAttr(labels.terms)}</a> · `,
+    `    <a href="${labels.imprintHref}">${escapeAttr(labels.imprint)}</a>`,
+    `  </nav>`,
+    `</footer>`,
+  ].join("\n      ");
+}
+
 /** Build a tiny route-specific SSR body (h1 + intro + footer nav). Returns
  *  null for the landing and unknown paths, those keep whatever body the
  *  prerender script baked into the template. Used by renderIndexHtml below
@@ -1700,7 +1931,13 @@ export function renderIndexHtml(
     acceptLanguage?: string | null;
   },
 ): string {
+  const toolLangMatch = matchToolLangPath(opts.pathname || "/");
   const locale = localeForPath(opts.host, opts.acceptLanguage ?? null, opts.pathname || "/");
+  // The URL itself names the language for the tool-lang pilot — all 5 UI
+  // locales are valid standalone `<html lang>` tags, no `META` lookup or
+  // Accept-Language guessing needed. Every other route keeps `locale` as
+  // resolved above (hu/en only).
+  const effectiveLocale: UiLocale = toolLangMatch?.lang ?? locale;
   // Look up the couple + vendor meta once at the boundary, `buildHeadBlock` is
   // a pure string-builder so we keep the DB read here.
   const weddingMeta = lookupWeddingSiteMeta(opts.pathname);
@@ -1726,7 +1963,9 @@ export function renderIndexHtml(
   // script baked into the template, that's already the rich landing body
   // on landing files, and the same body is harmless as a fallback for
   // unknown paths.
-  const routeBody = renderRouteBody(opts.pathname || "/", locale);
+  const routeBody = toolLangMatch
+    ? renderToolLangRouteBody(toolLangMatch.lang, toolLangMatch.key)
+    : renderRouteBody(opts.pathname || "/", locale);
   if (routeBody) {
     const bodyStartIdx = out.indexOf(BODY_START);
     const bodyEndIdx = out.indexOf(BODY_END);
@@ -1738,8 +1977,8 @@ export function renderIndexHtml(
   }
 
   return out
-    .replace(/<html lang="[^"]*"/, `<html lang="${META[locale].lang}"`)
-    .replace(/data-default-locale="[^"]*"/, `data-default-locale="${locale}"`);
+    .replace(/<html lang="[^"]*"/, `<html lang="${META[effectiveLocale].lang}"`)
+    .replace(/data-default-locale="[^"]*"/, `data-default-locale="${effectiveLocale}"`);
 }
 
 export function renderRobotsTxt(_host: string | null): string {
@@ -1774,14 +2013,13 @@ export function renderLlmsTxt(_host: string | null): string {
   ];
 
   // Free tools, the strongest citable assets (each answers a high-intent
-  // wedding query). List the EN canonical slug with the EN title/description.
-  const toolPaths = STATIC_PUBLIC_PATHS.filter((p) => isToolPath(p.path));
-  if (toolPaths.length > 0) {
+  // wedding query). List the EN language-prefixed URL with the EN title/description.
+  const toolKeys = Object.keys(TOOL_SLUG_BY_KEY) as ToolFaqSlug[];
+  if (toolKeys.length > 0) {
     lines.push("## Free wedding tools", "");
-    for (const { path } of toolPaths) {
-      const seo = lookupRouteSeo(path);
-      if (!seo) continue;
-      lines.push(`- [${seo.en.h1}](${origin}${enPathFor(path)}): ${seo.en.description}`);
+    for (const key of toolKeys) {
+      const seo = TOOL_SEO[key].en;
+      lines.push(`- [${seo.h1}](${origin}${toolPathFor("en", key)}): ${seo.description}`);
     }
     lines.push("");
   }
@@ -1866,6 +2104,31 @@ export function renderSitemapXml(_host: string | null): string {
   }
 
   const blocks: string[] = [];
+
+  // /{lang}/tools/{slug} pilot: one <url> per tool per UI locale (35 total),
+  // each carrying the full 5-way hreflang set + x-default -> the EN URL —
+  // the international default everywhere else in this codebase, not HU.
+  for (const key of Object.keys(TOOL_SLUG_BY_KEY) as ToolFaqSlug[]) {
+    for (const lang of UI_LOCALES) {
+      const loc = `https://${CANONICAL_HOST}${toolPathFor(lang, key)}`;
+      const alternates = UI_LOCALES.map(
+        (l) =>
+          `    <xhtml:link rel="alternate" hreflang="${l}" href="https://${CANONICAL_HOST}${toolPathFor(l, key)}" />`,
+      );
+      blocks.push(
+        [
+          "  <url>",
+          `    <loc>${loc}</loc>`,
+          `    <lastmod>${SITEMAP_LASTMOD}</lastmod>`,
+          ...alternates,
+          `    <xhtml:link rel="alternate" hreflang="x-default" href="https://${CANONICAL_HOST}${toolPathFor("en", key)}" />`,
+          "    <changefreq>monthly</changefreq>",
+          "    <priority>0.8</priority>",
+          "  </url>",
+        ].join("\n"),
+      );
+    }
+  }
 
   // Static public paths (tools, landing, auth pages, etc.)
   for (const { path, priority, changefreq } of STATIC_PUBLIC_PATHS) {

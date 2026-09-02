@@ -60,6 +60,7 @@ import { lazyWithReload } from "../lib/lazy_reload";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
 import { SEO_FAQ } from "@shared/seo_faq";
+import { toolPathFor } from "@shared/tool_faq";
 // Every price the deck quotes comes from the billing contract, so the landing
 // page and Stripe cannot tell a visitor two different numbers.
 import { monthlyPrice } from "@shared/billing";
@@ -1993,8 +1994,7 @@ function PricingPeek({
  *  destination, so an EN visitor lands on the EN canonical slug. */
 function CoupleCardsTeaser() {
   const { t, locale } = useT();
-  const toolPath =
-    locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
+  const toolPath = toolPathFor(locale, "couple_cards");
 
   // Mirror the tool-page easter egg here: a horizontal swipe on the deck
   // row reveals a hidden accent card tucked off the edge. Right-swipe

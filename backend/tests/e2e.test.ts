@@ -11082,6 +11082,7 @@ import {
   renderSitemapXml,
 } from "../src/lib/seo_ssr";
 import { SEO_FAQ } from "../../shared/seo_faq";
+import { toolPathFor } from "../../shared/tool_faq";
 
 async function fetchWithHost(path: string, host: string | null): Promise<Response> {
   const headers: Record<string, string> = {};
@@ -11172,11 +11173,17 @@ describe("seo: /sitemap.xml", () => {
     expect(body).toContain(
       `<xhtml:link rel="alternate" hreflang="x-default" href="https://${HU_HOST}/"`,
     );
-    // Tool pages get an EN alternate + their own EN <loc> even single-host.
+    // Tool pages live at /{lang}/tools/{slug} now — every UI language gets
+    // its own <loc>, with hreflang alternates to all the others.
     expect(body).toContain(
-      `<xhtml:link rel="alternate" hreflang="en" href="https://${HU_HOST}/tools/wedding-budget-calculator"`,
+      `<xhtml:link rel="alternate" hreflang="en" href="https://${HU_HOST}${toolPathFor("en", "budget_calculator")}"`,
     );
-    expect(body).toContain(`<loc>https://${HU_HOST}/tools/wedding-budget-calculator</loc>`);
+    expect(body).toContain(
+      `<loc>https://${HU_HOST}${toolPathFor("en", "budget_calculator")}</loc>`,
+    );
+    expect(body).toContain(
+      `<loc>https://${HU_HOST}${toolPathFor("hu", "budget_calculator")}</loc>`,
+    );
     // No private paths leak into the sitemap.
     for (const blocked of ["/app/", "/onboarding", "/rsvp"]) {
       expect(body).not.toContain(`<loc>https://${HU_HOST}${blocked}`);
@@ -11495,17 +11502,25 @@ describe("seo: multi-host (EN canonical configured)", () => {
     );
   });
 
-  test("sitemap emits a parallel <url> for each paired EN slug", () => {
+  test("sitemap emits the /{lang}/tools/{slug} URL per tool per language, not the legacy paired slugs", () => {
     const body = renderSitemapXml("weddly.hu");
-    // HU canonical row stays.
-    expect(body).toContain(`<loc>https://${HU_HOST}/eszkozok/eskuvo-koltsegvetes-kalkulator</loc>`);
-    // EN canonical row appears separately so Google indexes the EN slug
-    // as its own <loc> rather than only as an alternate.
-    expect(body).toContain(`<loc>https://${EN_HOST}/tools/wedding-budget-calculator</loc>`);
-    expect(body).toContain(`<loc>https://${EN_HOST}/tools/wedding-countdown</loc>`);
-    expect(body).toContain(`<loc>https://${EN_HOST}/tools/guest-list-template</loc>`);
-    expect(body).toContain(`<loc>https://${EN_HOST}/tools/seating-chart-builder</loc>`);
-    expect(body).toContain(`<loc>https://${EN_HOST}/tools/rsvp-text-generator</loc>`);
+    // The legacy /eszkozok/* (HU) + /tools/* (EN) paired slugs 301-redirect
+    // now (server.ts), so a sitemap must not advertise them any more.
+    expect(body).not.toContain(
+      `<loc>https://${HU_HOST}/eszkozok/eskuvo-koltsegvetes-kalkulator</loc>`,
+    );
+    expect(body).not.toContain(`<loc>https://${EN_HOST}/tools/wedding-budget-calculator</loc>`);
+    // Every tool gets one <loc> per UI language on the single canonical host.
+    for (const key of [
+      "budget_calculator",
+      "countdown",
+      "guest_list_template",
+      "seating_chart",
+      "rsvp_generator",
+    ] as const) {
+      expect(body).toContain(`<loc>https://${HU_HOST}${toolPathFor("hu", key)}</loc>`);
+      expect(body).toContain(`<loc>https://${HU_HOST}${toolPathFor("en", key)}</loc>`);
+    }
   });
 
   test("non-paired paths (e.g. /about) keep the same path on both hosts", () => {

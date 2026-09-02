@@ -3,6 +3,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { HU_HOST, renderIndexHtml, renderSitemapXml } from "../../src/lib/seo_ssr";
 import { lookupRouteSeo, SLUG_PAIRS, huPathFor, enPathFor } from "../../../shared/seo_routes";
+import { toolPathFor } from "../../../shared/tool_faq";
 
 // Pinned SSR template, minimal but valid: the renderer only cares about the
 // SEO_HEAD markers + the <html lang=...> attr it rewrites. Mirrors how the
@@ -83,11 +84,12 @@ describe("seo: couple-cards SSR meta injection", () => {
 });
 
 describe("seo: couple-cards sitemap entry", () => {
-  test("sitemap.xml includes the new HU tool URL with a lastmod", () => {
+  test("sitemap.xml includes the /{lang}/tools/{slug} URL with a lastmod, not the legacy path", () => {
     const body = renderSitemapXml("weddly.hu");
-    expect(body).toContain(`<loc>https://${HU_HOST}${HU_PATH}</loc>`);
-    // STATIC_PUBLIC_PATHS entries all carry a lastmod stamp — without it
-    // Google can't schedule a recrawl when copy changes.
+    expect(body).toContain(`<loc>https://${HU_HOST}${toolPathFor("hu", "couple_cards")}</loc>`);
+    expect(body).not.toContain(`<loc>https://${HU_HOST}${HU_PATH}</loc>`);
+    // Every sitemap entry carries a lastmod stamp — without it Google can't
+    // schedule a recrawl when copy changes.
     expect(body).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
   });
 });

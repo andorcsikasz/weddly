@@ -15,11 +15,11 @@
 import { ArrowRight, Check, ChevronDown, ClipboardCheck, Download, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { TOOL_FAQ_PATHS } from "@shared/tool_faq";
+import { toolPathFor } from "@shared/tool_faq";
 import type { ChecklistSectionId } from "@shared/wedding_checklist";
 import { checklistSections, isChecklistItemApplicable } from "@shared/wedding_checklist";
 import { fetchPdfBlob, publicWeddingChecklistPdfUrl } from "../lib/endpoints";
-import { contentLocale, useT } from "../lib/i18n";
+import { useT } from "../lib/i18n";
 
 export const CHECKLIST_DEMO_PROGRESS_KEY = "weddly.checklist_demo_progress";
 const DISMISS_SESSION_KEY = "weddly.checklist_demo_convert_dismissed";
@@ -76,7 +76,7 @@ export function PublicWeddingChecklist({
   showHeader?: boolean;
 }) {
   const { t, locale } = useT();
-  const toolHref = TOOL_FAQ_PATHS.wedding_checklist[contentLocale(locale)];
+  const toolHref = toolPathFor(locale, "wedding_checklist");
   const sections = useMemo(
     () =>
       checklistSections(locale).map((section) => ({

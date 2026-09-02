@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { matchToolLangPath, toolPathFor } from "@shared/tool_faq";
 import { useAuth } from "../lib/auth";
 import { LOCALE_NAMES, LOCALES, useT } from "../lib/i18n";
 import { useTheme } from "../lib/useTheme";
@@ -123,12 +124,17 @@ function navLinkClass(active: boolean) {
 function PublicHeader() {
   const { t, locale, setLocale } = useT();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackEmail, setFeedbackEmail] = useState<string | null>(null);
   const { hidden, atTop } = useHeaderState();
   const isAudiencePage = pathname === "/planners" || pathname === "/suppliers";
+  // On a `/{lang}/tools/{slug}` page, picking a language from the mobile
+  // menu's switcher rows below has to move to that tool's URL in the new
+  // language — same reasoning as the desktop LocaleSwitcher.
+  const toolLangMatch = matchToolLangPath(pathname);
 
   // Theme toggle shared with the app shells via `localStorage["weddly.theme"]`
   // (see lib/useTheme.ts). Public default is `light` (the warm paper marketing
@@ -411,7 +417,10 @@ function PublicHeader() {
                   type="button"
                   aria-checked={l === locale}
                   onClick={() => {
-                    if (l !== locale) setLocale(l);
+                    if (l !== locale) {
+                      setLocale(l);
+                      if (toolLangMatch) navigate(toolPathFor(l, toolLangMatch.key));
+                    }
                     setMenuOpen(false);
                   }}
                   className={`grid min-h-tap w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50 ${
@@ -468,22 +477,15 @@ function PublicFooter() {
   const onVendorPage = pathname === "/suppliers";
   const isAudiencePage = pathname === "/planners" || pathname === "/suppliers";
   const askGuestCode = useGuestCodePrompt();
-  // Every /eszkozok (HU) path has a /tools (EN) twin rendering the same
-  // component — the URL only picks which keyword-targeted SEO path a visitor
-  // lands on, the page's own text still follows `locale`. Non-hu locales get
-  // the EN path, same convention as the rest of the app's dual-locale routes.
-  const couplesCardsPath =
-    locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
-  const couplesGuestlistPath =
-    locale === "hu" ? "/eszkozok/vendeglista-sablon" : "/tools/guest-list-template";
-  const couplesBudgetPath =
-    locale === "hu"
-      ? "/eszkozok/eskuvo-koltsegvetes-kalkulator"
-      : "/tools/wedding-budget-calculator";
-  const couplesSeatingPath =
-    locale === "hu" ? "/eszkozok/ultetesi-rend-keszito" : "/tools/seating-chart-builder";
-  const couplesRsvpPath =
-    locale === "hu" ? "/eszkozok/rsvp-szoveg-generator" : "/tools/rsvp-text-generator";
+  // Every tool lives at /{lang}/tools/{slug} — one canonical slug per tool,
+  // prefixed with whatever language is currently selected. Replaces the old
+  // binary hu-vs-everything-else split now that all 5 UI locales have a
+  // real URL (see shared/tool_faq.ts).
+  const couplesCardsPath = toolPathFor(locale, "couple_cards");
+  const couplesGuestlistPath = toolPathFor(locale, "guest_list_template");
+  const couplesBudgetPath = toolPathFor(locale, "budget_calculator");
+  const couplesSeatingPath = toolPathFor(locale, "seating_chart");
+  const couplesRsvpPath = toolPathFor(locale, "rsvp_generator");
   return (
     // The footer is a black slab in BOTH themes — an intentional hard edge that
     // closes the cream page. The `dark` class on the element (Tailwind's

@@ -13,7 +13,8 @@
 // Edit this file (not duplicates in locales/seo_ssr) when tool FAQ copy
 // changes — that is the whole point of keeping it in `shared/`.
 
-import type { SeoFaqEntry, SeoFaqLocale } from "./seo_faq";
+import { isUiLocale, type UiLocale } from "./locales";
+import type { SeoFaqEntry } from "./seo_faq";
 
 /** The six tools that have an FAQ block. The slug is the stable key; the two
  *  path spellings are the HU and EN canonical URLs the SSR layer matches on. */
@@ -46,7 +47,43 @@ export const TOOL_FAQ_PATHS: Record<ToolFaqSlug, { hu: string; en: string }> = {
   },
 };
 
-export const TOOL_FAQ: Record<SeoFaqLocale, Record<ToolFaqSlug, ReadonlyArray<SeoFaqEntry>>> = {
+/** Canonical slug per tool for the language-prefixed `/{lang}/tools/{slug}`
+ *  URLs — the existing EN slug, unified across every language rather than
+ *  translated per locale (one slug set to maintain, matches the EN half of
+ *  `TOOL_FAQ_PATHS` above so it can't drift from the legacy paths). */
+export const TOOL_SLUG_BY_KEY: Record<ToolFaqSlug, string> = Object.fromEntries(
+  (Object.keys(TOOL_FAQ_PATHS) as ToolFaqSlug[]).map((key) => [
+    key,
+    TOOL_FAQ_PATHS[key].en.replace(/^\/tools\//, ""),
+  ]),
+) as Record<ToolFaqSlug, string>;
+
+const SLUG_TO_TOOL_KEY = new Map<string, ToolFaqSlug>(
+  (Object.keys(TOOL_SLUG_BY_KEY) as ToolFaqSlug[]).map((key) => [
+    TOOL_SLUG_BY_KEY[key] as string,
+    key,
+  ]),
+);
+
+/** `/{lang}/tools/{slug}` URL for a tool in a given UI language. */
+export function toolPathFor(lang: UiLocale, key: ToolFaqSlug): string {
+  return `/${lang}/tools/${TOOL_SLUG_BY_KEY[key]}`;
+}
+
+/** Parses a `/{lang}/tools/{slug}` path. Null for anything else — an
+ *  unrecognised language, an unknown slug, or a path shaped differently
+ *  (including the legacy `/tools/*` / `/eszkozok/*` paths, which 301 to this
+ *  shape at the server edge rather than being matched here). */
+export function matchToolLangPath(pathname: string): { lang: UiLocale; key: ToolFaqSlug } | null {
+  const match = /^\/([a-z]{2})\/tools\/([a-z0-9-]+)$/.exec(pathname);
+  if (!match) return null;
+  const [, lang, slug] = match;
+  if (!isUiLocale(lang)) return null;
+  const key = SLUG_TO_TOOL_KEY.get(slug ?? "");
+  return key ? { lang, key } : null;
+}
+
+export const TOOL_FAQ: Record<UiLocale, Record<ToolFaqSlug, ReadonlyArray<SeoFaqEntry>>> = {
   hu: {
     budget_calculator: [
       {
@@ -263,11 +300,343 @@ export const TOOL_FAQ: Record<SeoFaqLocale, Record<ToolFaqSlug, ReadonlyArray<Se
       },
     ],
   },
+  // es/hr/de blocks below adapt the EN copy (the international-neutral
+  // master, not the HU text, which carries Hungary-specific figures that
+  // don't belong on a Spanish/Croatian/German page) into real, idiomatic
+  // copy — same question count and order as EN so nothing reads as thinner
+  // in translation.
+  es: {
+    budget_calculator: [
+      {
+        q: "¿Cuánto cuesta de media una boda?",
+        a: "Una boda de 80-100 invitados sigue el mismo reparto proporcional en casi cualquier país: catering y lugar dominan el presupuesto, y el 20-25% restante cubre vestuario, música, ceremonia y papelería. La calculadora muestra el reparto para cualquier número de invitados y presupuesto, en vuestra propia moneda.",
+      },
+      {
+        q: "¿Cuánto se gasta por invitado?",
+        a: "El catering, las bebidas, la decoración y la parte proporcional del lugar suelen ser el mayor coste por invitado. La calculadora obtiene la cifra exacta por invitado a partir del presupuesto total que fijéis, o al revés, partiendo de lo que podéis gastar por invitado.",
+      },
+      {
+        q: "¿Cómo se reparte el presupuesto de una boda por categorías?",
+        a: "Reparto orientativo: ~35% catering y bebidas, ~18% lugar, ~13% foto y vídeo, ~9% decoración y flores, ~8% vestuario y belleza, ~7% música/DJ, ~5% ceremonia, ~2% papelería, ~3% imprevistos. La calculadora lo muestra en vivo sobre vuestras cifras.",
+      },
+      {
+        q: "¿Se guardan las cifras después de registrarse?",
+        a: "Sí. El botón «Continuar en Wēddly» lleva el número de invitados y el presupuesto total al borrador de vuestro espacio de trabajo; el proceso de bienvenida arranca ya con esas cifras. A partir de ahí se edita por categoría y podéis pausar el espacio de trabajo cuando queráis.",
+      },
+    ],
+    countdown: [
+      {
+        q: "¿Con cuánta antelación hay que empezar a organizar la boda?",
+        a: "Lo habitual es 12-18 meses antes. El lugar y el fotógrafo se reservan primero; para fechas populares, 18 meses ya puede ir justo.",
+      },
+      {
+        q: "¿Con cuánta antelación se envían las invitaciones?",
+        a: "Lo clásico: 8-12 semanas antes de la boda, con fecha límite de confirmación ~4 semanas antes. Para invitados que viajan, enviad el save-the-date 4-6 semanas antes de eso.",
+      },
+      {
+        q: "¿Qué es un save-the-date y cuándo se envía?",
+        a: "Un save-the-date es un aviso breve con la fecha y la zona del lugar para que los invitados reserven hueco en su agenda. Momento ideal: 6-9 meses antes, sobre todo si muchos invitados van a viajar.",
+      },
+    ],
+    guest_list_template: [
+      {
+        q: "¿Cuántos invitados deberíamos tener?",
+        a: "Cifra habitual: 80-120 invitados. El número marca el lugar, el catering y en torno al 55% del presupuesto total, conviene fijar el número de invitados antes que el presupuesto. La calculadora de presupuesto de Wēddly muestra el efecto en vivo.",
+      },
+      {
+        q: "¿A quién NO invitar?",
+        a: "No hay una columna obligatoria. Una regla sencilla: si no os habéis visto en más de 2 años y no os importa de verdad que estén ese día, no los invitéis. Los invitados «por compromiso» son la fuente de tensión más habitual.",
+      },
+      {
+        q: "¿Qué columnas debería tener la hoja de la lista de invitados?",
+        a: "Mínimo: nombre, apellidos, contacto (email o teléfono), hogar, estado de RSVP. Extras útiles: dieta, acompañante, tipo de relación (familia / amigos / trabajo / universidad). La plantilla de Wēddly incluye todo esto.",
+      },
+    ],
+    seating_chart: [
+      {
+        q: "¿Cuántos invitados por mesa?",
+        a: "Mesa redonda: 8-10 ideal, máximo 12. Rectangular (banquete): 6-8 por lado, es decir 12-16 por mesa. Por encima de 10 la conversación se fragmenta; Wēddly avisa si sobrecargáis una mesa.",
+      },
+      {
+        q: "¿Cuándo hacer el plano de mesas?",
+        a: "Después de la fecha límite de RSVP (~4 semanas antes). Antes de eso el modo borrador es suficiente; finalizad cuando el número de invitados esté cerrado. Wēddly tiene modo borrador y final para no perder el trabajo intermedio.",
+      },
+      {
+        q: "¿Cómo gestionar a invitados que no se llevan bien?",
+        a: "Lo más seguro: mesas separadas, al menos 2 mesas de distancia. Añadid el conflicto como nota y Wēddly avisará si por error los arrastráis a mesas contiguas.",
+      },
+    ],
+    rsvp_generator: [
+      {
+        q: "¿Qué significa RSVP?",
+        a: "RSVP viene del francés «Répondez s'il vous plaît», «responded, por favor». En una boda significa: por favor, decidnos si podéis venir. Lo clásico es recoger las confirmaciones 3-4 semanas antes de la boda.",
+      },
+      {
+        q: "¿Cuándo enviar la solicitud de confirmación?",
+        a: "La solicitud de RSVP va con la invitación, normalmente 8-12 semanas antes. Fecha límite: ~4 semanas antes de la boda, para poder dar el número definitivo al lugar y al catering a tiempo.",
+      },
+      {
+        q: "¿Qué debe incluir el texto de RSVP?",
+        a: "Mínimo: vuestros nombres, la fecha de la boda, el lugar, la fecha límite y un contacto (email, teléfono o un enlace). Extras útiles: pregunta sobre dieta, campo de acompañante, alergias. La página de RSVP de Wēddly recoge todo esto a través de un único enlace.",
+      },
+    ],
+    couple_cards: [
+      {
+        q: "¿Para qué sirven estas 100 preguntas?",
+        a: "Para empezar conversaciones. La investigación sobre relaciones duraderas señala siempre lo mismo: las parejas que hablan con franqueza de dinero, familia, deseo y muerte suelen durar. Los cuatro mazos están organizados alrededor de esos temas, para que lo difícil no se quede sin hablar.",
+      },
+      {
+        q: "¿Hay que responder a las 100?",
+        a: "No. Cada carta es una conversación. Sacad una, habladla, y dejad el mazo. Vuestro navegador recuerda por dónde vais en cada mazo, así que la próxima visita continúa desde ahí.",
+      },
+      {
+        q: "¿Por qué precisamente estos cuatro mazos?",
+        a: "Partimos de la síntesis de diez perspectivas distintas (una terapeuta de pareja, una pareja con muchos años juntos, una coach de intimidad, un planificador financiero, un filósofo) y de los temas que aparecían en todas ellas: la herencia familiar, el dinero y el día a día, el cuerpo y el deseo, y el grupo muerte-crisis-sentido. De ahí salieron los cuatro mazos.",
+      },
+    ],
+    wedding_checklist: [
+      {
+        q: "¿Cuántas tareas tiene la lista?",
+        a: "Unos 100 elementos repartidos en 11 fases, desde 12-18 meses antes hasta después de la boda. Las bodas al aire libre, con alcohol o con niños suman automáticamente algunas tareas extra.",
+      },
+      {
+        q: "¿Las fechas límite se ajustan a nuestra boda?",
+        a: "En esta página no, porque aquí no hay una fecha de boda indicada. Tras registraros, Wēddly ajusta la fecha límite recomendada de cada tarea a vuestra fecha real y continúa en vuestro propio espacio de Planificación.",
+      },
+      {
+        q: "¿Puedo guardar lo que marco aquí?",
+        a: "Sí. Mientras solo consultéis la lista no hay ninguna restricción; en cuanto marquéis una tarea, os ofrecemos crear una cuenta gratuita que lleva lo marcado directamente a vuestra propia checklist.",
+      },
+      {
+        q: "¿La descarga en PDF es gratis?",
+        a: "Sí, la lista completa se descarga en PDF listo para imprimir, sin necesidad de registro.",
+      },
+    ],
+  },
+  hr: {
+    budget_calculator: [
+      {
+        q: "Koliko prosječno košta vjenčanje?",
+        a: "Vjenčanje s 80-100 gostiju u gotovo svakoj zemlji slijedi isti omjer: catering i prostor dominiraju proračunom, a preostalih 20-25% pokriva odjeću, glazbu, ceremoniju i tiskovine. Kalkulator prikazuje raspodjelu za bilo koji broj gostiju i ukupni iznos, u vašoj valuti.",
+      },
+      {
+        q: "Koliko potrošiti po gostu?",
+        a: "Catering, piće, dekor i udio prostora po gostu obično zajedno čine najveći trošak po gostu. Kalkulator izračunava točan iznos po gostu za zadani ukupni proračun, ili obrnuto, polazeći od iznosa po gostu koji si možete priuštiti.",
+      },
+      {
+        q: "Kako se proračun za vjenčanje dijeli po kategorijama?",
+        a: "Uobičajena raspodjela: ~35% catering i piće, ~18% prostor, ~13% foto/video, ~9% dekor i cvijeće, ~8% odjeća i uljepšavanje, ~7% glazba/DJ, ~5% ceremonija, ~2% tiskovine, ~3% rezerva. Kalkulator to prikazuje uživo na temelju vaših brojki.",
+      },
+      {
+        q: "Čuvaju li se brojke nakon registracije?",
+        a: "Da. Gumb „Nastavi u Wēddlyju” prenosi broj gostiju i ukupni proračun u skicu vašeg radnog prostora; uvodni proces kreće s tim brojkama već popunjenima. Odatle se sve uređuje po kategorijama, a radni prostor možete pauzirati kad god želite.",
+      },
+    ],
+    countdown: [
+      {
+        q: "Koliko unaprijed treba početi planirati vjenčanje?",
+        a: "Uobičajeno: 12-18 mjeseci unaprijed. Prostor i fotograf se rezerviraju prvi; za popularne datume 18 mjeseci već zna biti tijesno.",
+      },
+      {
+        q: "Koliko prije vjenčanja treba poslati pozivnice?",
+        a: "Klasično: 8-12 tjedana prije vjenčanja, s rokom za RSVP ~4 tjedna prije. Gostima koji putuju pošaljite najavu datuma (save-the-date) 4-6 tjedana ranije.",
+      },
+      {
+        q: "Što je save-the-date i kada se šalje?",
+        a: "Save-the-date je kratka najava datuma i regije vjenčanja kako bi gosti mogli rezervirati taj dan u kalendaru. Idealno vrijeme: 6-9 mjeseci unaprijed, pogotovo ako mnogo gostiju putuje.",
+      },
+    ],
+    guest_list_template: [
+      {
+        q: "Koliko gostiju pozvati na vjenčanje?",
+        a: "Uobičajeno: 80-120 gostiju. Broj gostiju određuje prostor, catering i oko 55% ukupnog proračuna, stoga prvo odredite broj gostiju, a tek onda proračun. Wēddlyjev kalkulator proračuna uživo prikazuje taj utjecaj.",
+      },
+      {
+        q: "Koga NE pozvati?",
+        a: "Nema obveznog stupca. Jednostavno pravilo: ako se niste vidjeli više od 2 godine i stvarno vam nije stalo da budu tu taj dan, preskočite ih. Gosti pozvani „iz obaveze” najčešći su izvor napetosti.",
+      },
+      {
+        q: "Koje stupce treba imati tablica s popisom gostiju?",
+        a: "Minimum: ime, prezime, kontakt (e-mail ili telefon), kućanstvo, status RSVP-a. Korisni dodaci: prehrana, pratnja, vrsta veze (obitelj / prijatelji / posao / fakultet). Wēddlyjev predložak sadrži sve ovo.",
+      },
+    ],
+    seating_chart: [
+      {
+        q: "Koliko gostiju po stolu?",
+        a: "Okrugli stol: idealno 8-10, najviše 12. Pravokutni (banket): 6-8 po strani, dakle 12-16 po stolu. Iznad 10 razgovor se raspada; Wēddly upozorava ako pretrpate stol.",
+      },
+      {
+        q: "Kada napraviti raspored sjedenja?",
+        a: "Nakon roka za RSVP (~4 tjedna prije). Do tada je dovoljan skica-način; finalizirajte kad je konačan broj gostiju poznat. Wēddly ima način skice i konačni način, tako da se međukorak ne gubi.",
+      },
+      {
+        q: "Kako riješiti goste koji se ne slažu?",
+        a: "Najsigurnije: odvojeni stolovi, razmak od najmanje 2 stola. Dodajte sukob kao bilješku, a Wēddly će upozoriti ako ih greškom povučete jedno do drugog.",
+      },
+    ],
+    rsvp_generator: [
+      {
+        q: "Što znači RSVP?",
+        a: "RSVP dolazi od francuskog „Répondez s'il vous plaît”, „molimo odgovorite”. Na vjenčanju znači: javite nam hoćete li moći doći. Klasično se RSVP odgovori prikupljaju 3-4 tjedna prije vjenčanja.",
+      },
+      {
+        q: "Kada poslati zahtjev za RSVP?",
+        a: "Zahtjev za RSVP ide uz pozivnicu, obično 8-12 tjedana prije. Rok za RSVP: ~4 tjedna prije vjenčanja, kako biste na vrijeme mogli javiti konačan broj gostiju prostoru i cateringu.",
+      },
+      {
+        q: "Što bi trebao sadržavati RSVP tekst?",
+        a: "Minimum: vaša imena, datum vjenčanja, mjesto, rok za RSVP i jedan kontakt (e-mail, telefon ili poveznica). Korisni dodaci: pitanje o prehrani, polje za pratnju, alergije. Wēddlyjeva RSVP stranica sve to rješava putem jedne poveznice.",
+      },
+    ],
+    couple_cards: [
+      {
+        q: "Čemu služi ovih 100 pitanja?",
+        a: "Pokretanju razgovora. Istraživanja o dugotrajnim vezama stalno pokazuju isto: parovi koji otvoreno razgovaraju o novcu, obitelji, želji i smrti obično ostaju zajedno dulje. Četiri špila su organizirana oko tih tema, kako teške stvari ne bi ostale nerečene.",
+      },
+      {
+        q: "Moramo li odgovoriti na svih 100?",
+        a: "Ne. Jedna kartica je jedan razgovor. Izvucite jednu, porazgovarajte o njoj, i odložite špil. Preglednik pamti dokle ste stigli u svakom špilu, pa sljedeći posjet nastavljate odande.",
+      },
+      {
+        q: "Zašto baš ova četiri špila?",
+        a: "Krenuli smo od sinteze deset različitih perspektiva (terapeutkinje za parove, dugogodišnjeg bračnog para, coachice za intimnost, financijskog planera, filozofa) i tema koje su se pojavljivale u svima njima: obiteljsko naslijeđe, novac i svakodnevica, tijelo i želja, te cjelina smrt-kriza-smisao. Tako smo došli do četiri špila.",
+      },
+    ],
+    wedding_checklist: [
+      {
+        q: "Koliko zadataka ima na popisu?",
+        a: "Oko 100 stavki raspoređenih u 11 faza, od 12-18 mjeseci unaprijed do razdoblja nakon vjenčanja. Vjenčanja na otvorenom, s alkoholom ili s djecom automatski dobivaju nekoliko dodatnih stavki.",
+      },
+      {
+        q: "Prilagođavaju li se rokovi našem datumu vjenčanja?",
+        a: "Ne na ovoj stranici, jer ovdje nije unesen datum vjenčanja. Nakon registracije Wēddly prilagođava preporučeni rok svake stavke vašem stvarnom datumu i nastavlja u vašem vlastitom prostoru za planiranje.",
+      },
+      {
+        q: "Mogu li spremiti što sam ovdje označio/la?",
+        a: "Da. Dok samo pregledavate, ništa vas ne ograničava; čim označite prvu stavku, ponudit ćemo vam besplatan račun koji označene stavke izravno prenosi u vaš vlastiti popis.",
+      },
+      {
+        q: "Je li preuzimanje PDF-a besplatno?",
+        a: "Da, cijeli popis preuzima se kao PDF spreman za ispis, bez potrebe za registracijom.",
+      },
+    ],
+  },
+  de: {
+    budget_calculator: [
+      {
+        q: "Was kostet eine Hochzeit im Durchschnitt?",
+        a: "Eine Hochzeit mit 80-100 Gästen folgt fast überall derselben anteiligen Aufteilung: Catering und Location dominieren das Budget, die restlichen 20-25% entfallen auf Kleidung, Musik, Zeremonie und Papeterie. Der Rechner zeigt die Aufteilung für jede Gästezahl und jedes Budget, in eurer eigenen Währung.",
+      },
+      {
+        q: "Wie viel pro Gast?",
+        a: "Catering, Getränke, Dekoration und der Gästeanteil an der Location machen meist zusammen den größten Kostenblock pro Gast aus. Der Rechner ermittelt den genauen Betrag pro Gast für das von euch gesetzte Gesamtbudget, oder umgekehrt, ausgehend davon, was ihr euch pro Gast leisten könnt.",
+      },
+      {
+        q: "Wie teilt sich ein Hochzeitsbudget nach Kategorien auf?",
+        a: "Typische Aufteilung: ~35% Catering und Getränke, ~18% Location, ~13% Foto/Video, ~9% Deko und Blumen, ~8% Kleidung und Beauty, ~7% Musik/DJ, ~5% Zeremonie, ~2% Papeterie, ~3% Puffer. Der Rechner visualisiert das live anhand eurer Zahlen.",
+      },
+      {
+        q: "Werden die Zahlen nach der Anmeldung gespeichert?",
+        a: "Ja. Der Button „Weiter in Wēddly” übernimmt Gästezahl und Gesamtbudget in den Entwurf eures Arbeitsbereichs; das Onboarding startet bereits mit diesen Zahlen. Von dort lässt sich alles pro Kategorie bearbeiten, und ihr könnt den Arbeitsbereich jederzeit pausieren.",
+      },
+    ],
+    countdown: [
+      {
+        q: "Wie früh sollte man mit der Hochzeitsplanung anfangen?",
+        a: "Üblich: 12-18 Monate vorher. Location und Fotograf werden am frühesten gebucht, bei beliebten Terminen sind 18 Monate schon knapp.",
+      },
+      {
+        q: "Wie lange vor der Hochzeit sollten die Einladungen raus?",
+        a: "Klassisch: 8-12 Wochen vor der Hochzeit, mit einer RSVP-Frist ~4 Wochen vorher. Für anreisende Gäste schickt Save-the-Dates 4-6 Wochen früher.",
+      },
+      {
+        q: "Was ist ein Save-the-Date und wann verschickt man es?",
+        a: "Ein Save-the-Date ist ein kurzer Hinweis auf Datum und Region der Hochzeit, damit Gäste sich den Termin freihalten können. Idealer Zeitpunkt: 6-9 Monate vorher, besonders wenn viele Gäste anreisen müssen.",
+      },
+    ],
+    guest_list_template: [
+      {
+        q: "Wie viele Gäste sollten wir einladen?",
+        a: "Üblich: 80-120 Gäste. Die Gästezahl bestimmt Location, Catering und rund 55% des Gesamtbudgets, legt daher die Gästezahl fest, bevor ihr das Budget festlegt. Der Wēddly-Budgetrechner zeigt die Auswirkung live.",
+      },
+      {
+        q: "Wen sollte man NICHT einladen?",
+        a: "Es gibt keine Pflichtspalte. Eine einfache Regel: Wenn ihr euch seit über 2 Jahren nicht gesehen habt und es euch nicht wirklich wichtig ist, dass die Person dabei ist, lasst sie weg. Pflichtgäste sind die häufigste Quelle für Spannungen.",
+      },
+      {
+        q: "Welche Spalten sollte eine Hochzeitsgästeliste haben?",
+        a: "Minimum: Vorname, Nachname, Kontakt (E-Mail oder Telefon), Haushalt, RSVP-Status. Nützliche Extras: Ernährung, Begleitung, Beziehung (Familie / Freunde / Arbeit / Studium). Die Wēddly-Vorlage deckt all das ab.",
+      },
+    ],
+    seating_chart: [
+      {
+        q: "Wie viele Gäste pro Tisch?",
+        a: "Rund: ideal 8-10, maximal 12. Rechteckig (Bankett): 6-8 pro Seite, also 12-16 pro Tisch. Über 10 Personen zerfällt das Gespräch; Wēddly warnt, wenn ihr einen Tisch überladet.",
+      },
+      {
+        q: "Wann sollte man den Sitzplan erstellen?",
+        a: "Nach der RSVP-Frist (~4 Wochen vorher). Davor reicht der Entwurfsmodus; finalisiert, sobald die Gästezahl feststeht. Wēddly hat einen Entwurfs- und einen finalen Modus, damit die Zwischenarbeit nicht verloren geht.",
+      },
+      {
+        q: "Wie geht man mit Gästen um, die sich nicht vertragen?",
+        a: "Am sichersten: getrennte Tische, mindestens 2 Tische Abstand. Tragt den Konflikt als Notiz ein, Wēddly warnt euch, wenn ihr sie versehentlich nebeneinander zieht.",
+      },
+    ],
+    rsvp_generator: [
+      {
+        q: "Was bedeutet RSVP?",
+        a: "RSVP kommt vom französischen „Répondez s'il vous plaît”, „bitte antworten Sie”. Bei einer Hochzeit heißt das: bitte sagt uns, ob ihr kommen könnt. Klassisch werden RSVPs 3-4 Wochen vor der Hochzeit eingesammelt.",
+      },
+      {
+        q: "Wann sollte man die RSVP-Bitte verschicken?",
+        a: "Die RSVP-Bitte geht mit der Einladung raus, typischerweise 8-12 Wochen vorher. RSVP-Frist: ~4 Wochen vor der Hochzeit, damit ihr die endgültige Gästezahl rechtzeitig an Location und Catering weitergeben könnt.",
+      },
+      {
+        q: "Was sollte im RSVP-Text stehen?",
+        a: "Minimum: eure Namen, das Hochzeitsdatum, die Location, die RSVP-Frist und ein Kontaktweg (E-Mail, Telefon oder ein Link). Nützliche Extras: eine Frage zur Ernährung, ein Begleitungs-Feld, Allergien. Die Wēddly-RSVP-Seite deckt all das über einen einzigen Link ab.",
+      },
+    ],
+    couple_cards: [
+      {
+        q: "Wofür sind diese 100 Fragen gut?",
+        a: "Als Gesprächseinstieg. Die Forschung zu langfristigen Beziehungen zeigt immer wieder dasselbe: Paare, die offen über Geld, Familie, Verlangen und Tod sprechen können, halten meist länger zusammen. Die vier Decks sind um genau diese Themen herum aufgebaut, damit das Schwierige nicht unter den Tisch fällt.",
+      },
+      {
+        q: "Müssen wir alle 100 beantworten?",
+        a: "Nein. Eine Karte ist ein Gespräch. Zieht eine, sprecht darüber, und legt das Deck weg. Euer Browser merkt sich, wo ihr in jedem Deck steht, sodass ihr beim nächsten Besuch dort weitermacht.",
+      },
+      {
+        q: "Warum genau diese vier Decks?",
+        a: "Wir haben die Synthese aus zehn verschiedenen Perspektiven gezogen (eine Paartherapeutin, ein langjähriges Ehepaar, eine Intimitäts-Coachin, ein Finanzplaner, ein Philosoph) und die Themen herausgefiltert, die bei allen wiederkehrten: familiäres Erbe, Geld und Alltag, Körper und Verlangen, sowie der Dreiklang Tod-Krise-Sinn. So kamen wir auf vier Decks.",
+      },
+    ],
+    wedding_checklist: [
+      {
+        q: "Wie viele Aufgaben stehen auf der Liste?",
+        a: "Rund 100 Punkte verteilt auf 11 Phasen, von 12-18 Monaten vorher bis nach der Hochzeit. Hochzeiten im Freien, mit Alkohol oder mit Kindern bekommen automatisch ein paar zusätzliche Punkte.",
+      },
+      {
+        q: "Richten sich die Fristen nach unserem Hochzeitsdatum?",
+        a: "Auf dieser Seite nicht, weil hier kein Hochzeitsdatum hinterlegt ist. Nach der Anmeldung passt Wēddly die empfohlene Frist jedes Punkts an euer tatsächliches Datum an und geht in eurem eigenen Planungsbereich weiter.",
+      },
+      {
+        q: "Kann ich speichern, was ich hier abgehakt habe?",
+        a: "Ja. Solange ihr nur stöbert, hindert euch nichts; sobald ihr den ersten Punkt abhakt, bieten wir ein kostenloses Konto an, das die abgehakten Punkte direkt in eure eigene Checkliste übernimmt.",
+      },
+      {
+        q: "Ist der PDF-Download kostenlos?",
+        a: "Ja, die komplette Checkliste lässt sich ohne Anmeldung als druckfertiges PDF herunterladen.",
+      },
+    ],
+  },
 };
 
-/** Resolve a request path (either locale's spelling, with or without a trailing
- *  slash) to its tool slug, or null when the path isn't a tool page. */
+/** Resolve a request path — the new `/{lang}/tools/{slug}` shape, or either
+ *  locale's legacy spelling (with or without a trailing slash) — to its tool
+ *  slug, or null when the path isn't a tool page. */
 export function toolFaqSlugForPath(pathname: string): ToolFaqSlug | null {
+  const langMatch = matchToolLangPath(pathname);
+  if (langMatch) return langMatch.key;
   const clean = pathname.replace(/\/+$/, "") || "/";
   for (const slug of Object.keys(TOOL_FAQ_PATHS) as ToolFaqSlug[]) {
     const pair = TOOL_FAQ_PATHS[slug];
@@ -276,10 +645,10 @@ export function toolFaqSlugForPath(pathname: string): ToolFaqSlug | null {
   return null;
 }
 
-/** The FAQ entries for a request path in the given locale, or null. */
+/** The FAQ entries for a request path in the given UI locale, or null. */
 export function toolFaqForPath(
   pathname: string,
-  locale: SeoFaqLocale,
+  locale: UiLocale,
 ): ReadonlyArray<SeoFaqEntry> | null {
   const slug = toolFaqSlugForPath(pathname);
   return slug ? TOOL_FAQ[locale][slug] : null;

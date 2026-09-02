@@ -14,6 +14,8 @@
 // so this is purely an SEO surface.
 
 import { MARKETING_PAGES } from "./marketing_pages";
+import type { ToolFaqSlug } from "./tool_faq";
+import type { UiLocale } from "./locales";
 
 export type SeoLocale = "hu" | "en";
 
@@ -477,3 +479,213 @@ export function lookupRouteSeo(pathname: string): RouteSeo | null {
   const resolved = EN_TO_HU_SLUG.get(aliased) ?? aliased;
   return ROUTE_SEO[resolved] ?? null;
 }
+
+/** Per-tool SEO metadata for the language-prefixed `/{lang}/tools/{slug}`
+ *  pilot (see `matchToolLangPath`/`toolPathFor` in `./tool_faq`) — a
+ *  separate map from `ROUTE_SEO` above rather than widening it, so every
+ *  OTHER route (still `hu`/`en` only) doesn't have to grow three more
+ *  languages just because these seven pages did.
+ *
+ *  `hu`/`en` reuse the existing `ROUTE_SEO` entries verbatim (same content,
+ *  just re-exposed under the new URL). `h1`/`intro` for `es`/`hr`/`de` are
+ *  copied verbatim from each tool page's own `tools.<key>.page_h1` /
+ *  `page_intro` locale strings (already professionally translated, full
+ *  locale trees per `frontend/src/lib/i18n.tsx`) so the SSR'd head can never
+ *  diverge from what the hydrated page actually renders — the same
+ *  cloaking concern the file banner above describes. `title`/`description`
+ *  are shorter SERP-snippet versions of that same text, not new claims. */
+export const TOOL_SEO: Record<ToolFaqSlug, Record<UiLocale, RouteSeoEntry>> = {
+  budget_calculator: {
+    hu: ROUTE_SEO["/eszkozok/eskuvo-koltsegvetes-kalkulator"]!.hu,
+    en: ROUTE_SEO["/eszkozok/eskuvo-koltsegvetes-kalkulator"]!.en,
+    es: {
+      title: "Calculadora de presupuesto de boda · Wēddly",
+      description:
+        "¿Cuánto cuesta una boda? Ajusta el número de invitados y el presupuesto, y cada categoría se recalcula al instante. Gratis, sin registro.",
+      h1: "Calculadora de presupuesto de boda",
+      intro:
+        "¿Cuánto cuesta una boda? Arrastra el número de invitados y el presupuesto previsto, y cada categoría se recalcula en vivo frente a los valores por defecto de Weddly para una boda de 80–100 invitados. Sin registro, sin correo; si te gusta lo que ves, un clic lleva los números a tu propio espacio de trabajo.",
+    },
+    hr: {
+      title: "Kalkulator proračuna za vjenčanje · Wēddly",
+      description:
+        "Koliko košta vjenčanje? Prilagodi broj gostiju i proračun, svaka kategorija se odmah preračunava. Besplatno, bez registracije.",
+      h1: "Kalkulator proračuna za vjenčanje",
+      intro:
+        "Koliko košta vjenčanje? Povucite broj gostiju i planirani proračun, svaka se kategorija preračunava uživo prema Weddlyjevim zadanim vrijednostima za vjenčanje s 80–100 gostiju. Bez registracije i bez e-adrese; ako vam se svidi što vidite, jedan klik prenosi brojke u vaš radni prostor.",
+    },
+    de: {
+      title: "Hochzeitsbudget-Rechner · Wēddly",
+      description:
+        "Was kostet eine Hochzeit? Gästezahl und Budget einstellen, jede Kategorie rechnet live neu. Kostenlos, ohne Anmeldung.",
+      h1: "Hochzeitsbudget-Rechner",
+      intro:
+        "Was kostet eine Hochzeit? Ziehen Sie an Gästezahl und geplantem Budget, jede Kategorie rechnet live gegen die Weddly-Vorgaben für eine Hochzeit mit 80–100 Gästen. Ohne Registrierung, ohne E-Mail-Adresse; wenn Ihnen gefällt, was Sie sehen, übernimmt ein Klick die Zahlen in Ihren eigenen Arbeitsbereich.",
+    },
+  },
+  countdown: {
+    hu: ROUTE_SEO["/eszkozok/eskuvo-visszaszamlalo"]!.hu,
+    en: ROUTE_SEO["/eszkozok/eskuvo-visszaszamlalo"]!.en,
+    es: {
+      title: "Cuenta atrás de la boda | Wēddly",
+      description:
+        "¿Cuántos días, semanas o meses faltan para vuestra boda? Elegid la fecha y obtened un calendario de hitos: qué organizar antes de la boda.",
+      h1: "Cuenta atrás de la boda",
+      intro:
+        "¿Cuántos días faltan para tu boda? Elige una fecha y ve los meses, semanas y días que quedan, en vivo. Con hitos incluidos: qué planificar a 12, 9, 6, 3, 1 mes y 1 semana vista.",
+    },
+    hr: {
+      title: "Odbrojavanje do vjenčanja | Wēddly",
+      description:
+        "Koliko dana, tjedana ili mjeseci je ostalo do vjenčanja? Odaberi datum i dobij plan s prekretnicama: što urediti i kada.",
+      h1: "Odbrojavanje do vjenčanja",
+      intro:
+        "Koliko je dana ostalo do vašeg vjenčanja? Odaberite datum i uživo vidite koliko je ostalo mjeseci, tjedana i dana. Uz prekretnice: što planirati 12, 9, 6, 3 i 1 mjesec te 1 tjedan prije.",
+    },
+    de: {
+      title: "Hochzeits-Countdown | Wēddly",
+      description:
+        "Wie viele Tage, Wochen, Monate bis zur Hochzeit? Datum wählen und einen Meilenstein-Zeitplan erhalten: was wann zu erledigen ist.",
+      h1: "Hochzeits-Countdown",
+      intro:
+        "Wie viele Tage sind es noch bis zu Ihrer Hochzeit? Wählen Sie ein Datum und sehen Sie live, wie viele Monate, Wochen und Tage bleiben. Mit Meilensteinen: was 12, 9, 6, 3 und 1 Monat sowie 1 Woche vorher zu planen ist.",
+    },
+  },
+  guest_list_template: {
+    hu: ROUTE_SEO["/eszkozok/vendeglista-sablon"]!.hu,
+    en: ROUTE_SEO["/eszkozok/vendeglista-sablon"]!.en,
+    es: {
+      title: "Plantilla de lista de invitados, CSV (gratis) | Wēddly",
+      description:
+        "Plantilla CSV descargable para la lista de invitados de boda: nombre, email, teléfono, hogar, dieta, acompañante, RSVP. Se importa directamente en Wēddly.",
+      h1: "Plantilla de lista de invitados para boda",
+      intro:
+        "Una plantilla CSV descargable de lista de invitados: nombre, apellidos, correo, teléfono, hogar, necesidades dietéticas, acompañante y estado de confirmación. Rellénala en Excel o Google Sheets, o impórtala directamente en Weddly para que ambos veáis la misma lista, en vivo.",
+    },
+    hr: {
+      title: "Predložak popisa gostiju za vjenčanje, CSV (besplatno) | Wēddly",
+      description:
+        "Predložak CSV popisa gostiju za vjenčanje za preuzimanje: ime, e-mail, telefon, kućanstvo, prehrana, pratnja, RSVP. Uvozi se izravno u Wēddly.",
+      h1: "Predložak popisa gostiju za vjenčanje",
+      intro:
+        "CSV predložak popisa gostiju za preuzimanje: ime, prezime, e-adresa, telefon, kućanstvo, prehrana, pratnja, RSVP status. Ispunite ga u Excelu ili Google Sheetsu ili ga uvezite izravno u Weddly, pa oboje vidite isti popis, uživo.",
+    },
+    de: {
+      title: "Gästeliste-Vorlage für die Hochzeit, CSV (kostenlos) | Wēddly",
+      description:
+        "Herunterladbare CSV-Vorlage für die Hochzeitsgästeliste: Vorname, E-Mail, Telefon, Haushalt, Ernährung, Begleitung, RSVP. Direkt in Wēddly importierbar.",
+      h1: "Gästelisten-Vorlage für die Hochzeit",
+      intro:
+        "Eine herunterladbare CSV-Vorlage für die Gästeliste: Vorname, Nachname, E-Mail, Telefon, Haushalt, Ernährung, Begleitung, RSVP-Status. Füllen Sie sie in Excel oder Google Sheets aus, oder importieren Sie sie direkt in Weddly, damit Sie beide dieselbe Liste live sehen.",
+    },
+  },
+  seating_chart: {
+    hu: ROUTE_SEO["/eszkozok/ultetesi-rend-keszito"]!.hu,
+    en: ROUTE_SEO["/eszkozok/ultetesi-rend-keszito"]!.en,
+    es: {
+      title: "Creador de plano de mesas para bodas, gratis | Wēddly",
+      description:
+        "Lienzo, mesas, invitados: arrastra a sus asientos y exporta a PDF en A4 / A6 / A3 con milímetros exactos. Gratis durante la beta abierta.",
+      h1: "Creador de planos de mesas para boda",
+      intro:
+        "Un lienzo, mesas, invitados, arrastra invitados a las mesas y Weddly exporta un plano de mesas imprimible en tamaños A4, A6 (tarjetas de sitio) y A3 (cartel de entrada). Va directo a la imprenta con milímetros exactos.",
+    },
+    hr: {
+      title: "Izrada rasporeda sjedenja za vjenčanje, besplatno | Wēddly",
+      description:
+        "Platno, stolovi, gosti: povuci ih na mjesta i izvezi u PDF u A4 / A6 / A3 formatu s točnim mm mjerama. Besplatno tijekom otvorene bete.",
+      h1: "Izrada rasporeda sjedenja za vjenčanje",
+      intro:
+        "Platno, stolovi, gosti: povucite goste na stolove i Weddly izvozi raspored sjedenja spreman za tisak u formatima A4, A6 (kartice za stol) i A3 (ploča na ulazu). Ide ravno u tiskaru, u točnim milimetrima.",
+    },
+    de: {
+      title: "Sitzplan-Editor für die Hochzeit, kostenlos | Wēddly",
+      description:
+        "Fläche, Tische, Gäste: per Drag-and-drop platzieren und als PDF in A4 / A6 / A3 mit exakten mm exportieren. Kostenlos während der offenen Beta.",
+      h1: "Sitzplan-Editor für die Hochzeit",
+      intro:
+        "Eine Fläche, Tische, Gäste: Ziehen Sie die Gäste an die Tische, und Weddly exportiert einen druckfertigen Sitzplan in A4, A6 (Platzkarten) und A3 (Aushang am Eingang). Geht millimetergenau direkt in die Druckerei.",
+    },
+  },
+  rsvp_generator: {
+    hu: ROUTE_SEO["/eszkozok/rsvp-szoveg-generator"]!.hu,
+    en: ROUTE_SEO["/eszkozok/rsvp-szoveg-generator"]!.en,
+    es: {
+      title: "Generador de texto RSVP para bodas | Wēddly",
+      description:
+        "Texto RSVP para invitaciones de boda: introduce vuestros nombres, fecha, lugar y fecha límite, y obtened un texto listo en estilo formal, informal o poético.",
+      h1: "Textos de confirmación de boda, generador",
+      intro:
+        "Rellena vuestros nombres, la fecha, el lugar y la fecha límite de confirmación; generamos textos listos para usar en tres estilos: formal, informal y poético. Cópialos con un clic y pégalos en tu invitación o en tu página de confirmación de Weddly.",
+    },
+    hr: {
+      title: "Generator RSVP teksta za vjenčanje | Wēddly",
+      description:
+        "Tekst za RSVP pozivnice za vjenčanje: unesite imena, datum, mjesto i rok, i dobijte gotov tekst u formalnom, opuštenom ili poetskom stilu.",
+      h1: "RSVP tekst za vjenčanje, generator",
+      intro:
+        "Upišite svoja imena, datum, lokaciju i rok za odgovor; generiramo gotov tekst u tri stila: formalnom, opuštenom i poetskom. Kopirajte jednim klikom i zalijepite ga u pozivnicu ili na svoju RSVP stranicu u Weddlyju.",
+    },
+    de: {
+      title: "RSVP-Textgenerator für die Hochzeit | Wēddly",
+      description:
+        "RSVP-Text für Hochzeitseinladungen: Namen, Datum, Ort und Frist eingeben und einen fertigen Text in formellem, lockerem oder poetischem Stil erhalten.",
+      h1: "RSVP-Text für die Hochzeit, Generator",
+      intro:
+        "Tragen Sie Ihre Namen, das Datum, die Location und die RSVP-Frist ein; wir erzeugen fertige Texte in drei Stilen: formell, locker und poetisch. Mit einem Klick kopieren und in Ihre Einladung oder Ihre RSVP-Seite in Weddly einfügen.",
+    },
+  },
+  couple_cards: {
+    hu: ROUTE_SEO["/eszkozok/100-kerdes-eskuvo-elott"]!.hu,
+    en: ROUTE_SEO["/eszkozok/100-kerdes-eskuvo-elott"]!.en,
+    es: {
+      title: "100 preguntas antes de decir sí · cartas de conversación para parejas | Wēddly",
+      description:
+        "Cuatro mazos de 25 preguntas profundas para parejas comprometidas: raíces, el día a día, cercanía, aguas profundas. Roba una carta y empezad a hablar.",
+      h1: "100 preguntas antes de decir sí",
+      intro: "Cuatro niveles, de la superficie a las aguas profundas.",
+    },
+    hr: {
+      title: "100 pitanja prije nego što kažete da · kartice za razgovor za parove | Wēddly",
+      description:
+        "Četiri špila po 25 dubokih pitanja za zaručene parove: korijeni, svakodnevica, bliskost, duboke vode. Izvuci karticu i pokreni razgovor.",
+      h1: "100 pitanja prije nego što kažete da",
+      intro: "Četiri razine, od površine do duboke vode.",
+    },
+    de: {
+      title: "100 Fragen, bevor Sie Ja sagen · Gesprächskarten für Paare | Wēddly",
+      description:
+        "Vier Kartendecks mit je 25 tiefgehenden Fragen für Verlobte: Wurzeln, Alltag, Nähe, tiefes Wasser. Karte ziehen und ins Gespräch kommen.",
+      h1: "100 Fragen, bevor Sie Ja sagen",
+      intro: "Vier Stufen, von der Oberfläche bis ins tiefe Wasser.",
+    },
+  },
+  wedding_checklist: {
+    hu: ROUTE_SEO["/eszkozok/eskuvoi-ellenorzolista"]!.hu,
+    en: ROUTE_SEO["/eszkozok/eskuvoi-ellenorzolista"]!.en,
+    es: {
+      title: "Checklist de boda, calendario de planificación gratis | Wēddly",
+      description:
+        "Qué organizar y cuándo: 11 fases, desde 12-18 meses antes hasta después de la boda. Marca lo hecho y descárgalo en PDF. Gratis, sin registro.",
+      h1: "Lista de tareas de boda",
+      intro:
+        "Todo el proceso de organización de la boda en una lista, desde 12–18 meses antes hasta la semana siguiente. Marcad lo que esté hecho y descargadla en PDF, cuando queráis, sin necesidad de cuenta.",
+    },
+    hr: {
+      title: "Checklist za vjenčanje, besplatni plan pripreme | Wēddly",
+      description:
+        "Što urediti i kada: 11 faza, od 12-18 mjeseci unaprijed do razdoblja nakon vjenčanja. Označi što je gotovo i preuzmi u PDF-u. Besplatno, bez registracije.",
+      h1: "Popis obaveza za vjenčanje",
+      intro:
+        "Cijeli proces planiranja vjenčanja u jednom popisu, od 12–18 mjeseci prije do tjedan dana nakon. Označite obavljeno i preuzmite ga kao PDF, u bilo kojem trenutku, bez potrebe za računom.",
+    },
+    de: {
+      title: "Hochzeits-Checkliste, kostenloser Planungszeitplan | Wēddly",
+      description:
+        "Was wann zu planen ist: 11 Phasen, von 12–18 Monaten vorher bis nach der Hochzeit. Erledigtes abhaken und als PDF herunterladen. Kostenlos, ohne Anmeldung.",
+      h1: "Hochzeits-Checkliste",
+      intro:
+        "Der gesamte Hochzeitsplanungs-Zeitplan in einer Liste, von 12–18 Monaten vorher bis zur Woche danach. Haken Sie ab, was erledigt ist, und laden Sie sie jederzeit als PDF herunter, ohne Konto.",
+    },
+  },
+};
