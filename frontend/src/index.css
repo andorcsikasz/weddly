@@ -1418,6 +1418,96 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     cursor: not-allowed;
   }
 
+  /* /camera pricing slider. Self-contained rather than reusing `.range-fill`:
+     that component's fill colours live on `--range-fill-*`, scoped to
+     `html.dark`, but this page forces dark via a local wrapper div (see
+     CameraPage's own note on the technique), so `html.dark` never matches
+     here. Colours are the page's fixed dark palette, not a var pair, since
+     the page has no light variant to invert for. JS supplies only the fill
+     percentage via `--camera-slider-fill`; the thumb glow is what makes the
+     six discrete stops feel like a dial rather than a form control. */
+  .camera-slider {
+    --camera-slider-fill: 0%;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 9999px;
+    cursor: pointer;
+    background: linear-gradient(
+      to right,
+      theme("colors.blush.400") 0%,
+      theme("colors.blush.400") var(--camera-slider-fill),
+      rgba(251, 250, 245, 0.12) var(--camera-slider-fill),
+      rgba(251, 250, 245, 0.12) 100%
+    );
+  }
+  .camera-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 9999px;
+    background: theme("colors.paper.50");
+    border: 3px solid theme("colors.blush.400");
+    box-shadow:
+      0 0 0 4px rgba(226, 130, 106, 0.18),
+      0 2px 8px rgba(0, 0, 0, 0.45);
+    cursor: grab;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .camera-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 9999px;
+    background: theme("colors.paper.50");
+    border: 3px solid theme("colors.blush.400");
+    box-shadow:
+      0 0 0 4px rgba(226, 130, 106, 0.18),
+      0 2px 8px rgba(0, 0, 0, 0.45);
+    cursor: grab;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .camera-slider::-moz-range-progress {
+    height: 4px;
+    border-radius: 9999px;
+    background: theme("colors.blush.400");
+  }
+  .camera-slider::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: rgba(251, 250, 245, 0.12);
+  }
+  .camera-slider:hover::-webkit-slider-thumb,
+  .camera-slider:focus-visible::-webkit-slider-thumb {
+    transform: scale(1.12);
+  }
+  .camera-slider:hover::-moz-range-thumb,
+  .camera-slider:focus-visible::-moz-range-thumb {
+    transform: scale(1.12);
+  }
+  .camera-slider:active::-webkit-slider-thumb {
+    cursor: grabbing;
+    transform: scale(1.2);
+    box-shadow:
+      0 0 0 7px rgba(226, 130, 106, 0.24),
+      0 2px 8px rgba(0, 0, 0, 0.45);
+  }
+  .camera-slider:active::-moz-range-thumb {
+    cursor: grabbing;
+    transform: scale(1.2);
+    box-shadow:
+      0 0 0 7px rgba(226, 130, 106, 0.24),
+      0 2px 8px rgba(0, 0, 0, 0.45);
+  }
+  .camera-slider:focus-visible {
+    outline: none;
+  }
+
   /* Subtle diagonal hairline texture for "stationery" surfaces. */
   .stationery {
     background-color: theme("colors.paper.200");

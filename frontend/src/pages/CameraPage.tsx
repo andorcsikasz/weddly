@@ -13,6 +13,7 @@
 // every heading and body line on it is font-grotesk, so the hero's h1 opts
 // out of the workspace's usual Cormorant serif via `headingFont`.
 import { ArrowLeft, Camera, Hourglass, ScanLine, Sparkles, Wifi } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CameraHero, DEMO_STRIP } from "../components/CameraHero";
@@ -42,6 +43,17 @@ const TIERS: PricingTier[] = [
   { cap: 250, price: "$69.99", couplePrice: "$52.49" },
   { cap: 400, price: "$99.99", couplePrice: "$74.99" },
 ];
+
+/** Thumb-aware fill offset for `.camera-slider`'s `--camera-slider-fill` var,
+ *  same idiom as the budget sliders' `rangeFillStyle`: the raw step
+ *  percentage overshoots near the middle and undershoots near the ends
+ *  because the native thumb travels between `thumbPx/2` and
+ *  `width - thumbPx/2`, not edge to edge. */
+function cameraSliderStyle(index: number, max: number, thumbPx = 20): CSSProperties {
+  const pct = max > 0 ? (index / max) * 100 : 0;
+  const offsetPx = thumbPx * (0.5 - pct / 100);
+  return { "--camera-slider-fill": `calc(${pct}% + ${offsetPx.toFixed(3)}px)` } as CSSProperties;
+}
 
 export default function CameraPage() {
   const { t, locale } = useT();
@@ -128,45 +140,58 @@ export default function CameraPage() {
               {t("camera.standalone_body")}
             </p>
 
-            <div className="mt-8 max-w-xl rounded-2xl border border-paper-50/10 bg-paper-50/[0.04] p-6 sm:p-7">
-              <div
-                className="flex flex-wrap gap-2"
-                role="group"
-                aria-label={t("camera.standalone_title")}
-              >
-                {TIERS.map((tw, i) => (
-                  <button
-                    key={tw.cap}
-                    type="button"
-                    onClick={() => setTierIndex(i)}
-                    aria-pressed={i === tierIndex}
-                    aria-label={t("camera.pricing_guest_cap", { n: tw.cap })}
-                    className={`min-h-11 rounded-xl px-4 text-sm font-bold transition ${
-                      i === tierIndex
-                        ? "bg-blush-500 text-white"
-                        : "border border-paper-50/15 text-paper-300 hover:border-paper-50/35 hover:text-paper-50"
-                    }`}
+            <div className="mt-8 max-w-xl rounded-2xl border border-paper-50/10 bg-paper-50/[0.04] p-6 sm:p-8">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div className="flex items-baseline gap-3">
+                  <span
+                    key={tier.price}
+                    className="stat-num animate-fade-in-up text-5xl font-bold tracking-tight text-paper-50 sm:text-6xl"
                   >
-                    {tw.cap}
-                  </button>
-                ))}
+                    {tier.price}
+                  </span>
+                  {tier.couplePrice && (
+                    <span className="rounded-full bg-blush-400/15 px-2.5 py-1 text-xs font-bold text-blush-300">
+                      {tier.couplePrice === "free"
+                        ? t("camera.pricing_couple_free")
+                        : t("camera.pricing_couple_note", { price: tier.couplePrice })}
+                    </span>
+                  )}
+                </div>
+                <span className="pb-1 text-sm font-semibold text-paper-400">
+                  {t("camera.pricing_guest_cap", { n: tier.cap })}
+                </span>
               </div>
 
-              <div className="mt-7 flex flex-wrap items-end gap-x-4 gap-y-1">
-                <span className="text-5xl font-bold tracking-tight text-paper-50">
-                  {tier.price}
-                </span>
-                {tier.couplePrice && (
-                  <span className="text-sm font-semibold text-blush-300">
-                    {tier.couplePrice === "free"
-                      ? t("camera.pricing_couple_free")
-                      : t("camera.pricing_couple_note", { price: tier.couplePrice })}
-                  </span>
-                )}
+              <div className="mt-9">
+                <input
+                  type="range"
+                  min={0}
+                  max={TIERS.length - 1}
+                  step={1}
+                  value={tierIndex}
+                  onChange={(e) => setTierIndex(Number(e.target.value))}
+                  className="camera-slider"
+                  style={cameraSliderStyle(tierIndex, TIERS.length - 1)}
+                  aria-label={t("camera.standalone_title")}
+                  aria-valuetext={t("camera.pricing_guest_cap", { n: tier.cap })}
+                />
+                <div className="mt-3 flex justify-between">
+                  {TIERS.map((tw, i) => (
+                    <button
+                      key={tw.cap}
+                      type="button"
+                      onClick={() => setTierIndex(i)}
+                      aria-label={t("camera.pricing_guest_cap", { n: tw.cap })}
+                      aria-current={i === tierIndex}
+                      className={`min-h-6 min-w-6 text-xs font-bold tabular-nums transition-colors ${
+                        i === tierIndex ? "text-blush-300" : "text-paper-500 hover:text-paper-300"
+                      }`}
+                    >
+                      {tw.cap}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <p className="mt-1 text-xs text-paper-400">
-                {t("camera.pricing_guest_cap", { n: tier.cap })}
-              </p>
             </div>
 
             <p className="mt-4 text-xs text-paper-400">
