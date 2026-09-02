@@ -2275,6 +2275,7 @@ const hr: LocaleMessages = {
     footer_couples_seating: "Izrada rasporeda sjedenja",
     footer_couples_rsvp: "Generator RSVP teksta",
     footer_couples_camera: "Wēddly Camera",
+    footer_couples_games: "Wēddly Games",
     footer_vendors_waitlist: "Prijavite svoju tvrtku",
     footer_vendors_about: "Kako radi",
     footer_vendors_browse: "Pregledajte dobavljače za vjenčanja",

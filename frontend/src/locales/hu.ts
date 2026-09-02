@@ -2277,6 +2277,7 @@ const hu: LocaleMessages = {
     footer_couples_seating: "Ültetési rend készítő",
     footer_couples_rsvp: "RSVP szöveg generátor",
     footer_couples_camera: "Wēddly Camera",
+    footer_couples_games: "Wēddly Games",
     footer_vendors_waitlist: "Hirdesd a vállalkozásod",
     footer_vendors_about: "Hogyan működik",
     footer_vendors_browse: "Szolgáltatók böngészése",

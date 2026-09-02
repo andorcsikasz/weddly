@@ -2879,6 +2879,7 @@ export interface LocaleMessages {
      *  `camera.banner_text`). Lives in the couples column since a couple is
      *  the primary buyer, even though the page itself is open to anyone. */
     footer_couples_camera: string;
+    footer_couples_games: string;
     footer_vendors_waitlist: string;
     footer_vendors_about: string;
     /** For-suppliers footer column: the real, locale-neutral directory browse

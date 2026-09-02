@@ -593,6 +593,7 @@ function PublicFooter() {
           <FooterLink to={couplesRsvpPath}>{t("landing.footer_couples_rsvp")}</FooterLink>
           <FooterLink to={couplesCardsPath}>{t("landing.footer_couples_cards")}</FooterLink>
           <FooterLink to="/camera">{t("landing.footer_couples_camera")}</FooterLink>
+          <FooterLink to="/games">{t("landing.footer_couples_games")}</FooterLink>
         </FooterColumn>
         {/* Mobile: Vendors + Guests stack in the right grid column (Guests
          *  directly under Vendors). `lg:contents` dissolves this wrapper on

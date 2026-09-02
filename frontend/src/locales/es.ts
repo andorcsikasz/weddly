@@ -2307,6 +2307,7 @@ const es: LocaleMessages = {
     footer_couples_seating: "Creador de planos de mesas",
     footer_couples_rsvp: "Generador de textos de confirmación",
     footer_couples_camera: "Wēddly Camera",
+    footer_couples_games: "Wēddly Games",
     footer_vendors_waitlist: "Publica tu negocio",
     footer_vendors_about: "Cómo funciona",
     footer_vendors_browse: "Explora proveedores de bodas",

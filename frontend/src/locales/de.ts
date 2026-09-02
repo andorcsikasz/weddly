@@ -2326,6 +2326,7 @@ const de: LocaleMessages = {
     footer_couples_seating: "Sitzplan-Editor",
     footer_couples_rsvp: "RSVP-Textgenerator",
     footer_couples_camera: "Wēddly Camera",
+    footer_couples_games: "Wēddly Games",
     footer_vendors_waitlist: "Betrieb eintragen",
     footer_vendors_about: "So funktioniert's",
     footer_vendors_browse: "Hochzeitsdienstleister entdecken",

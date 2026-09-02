@@ -2258,6 +2258,7 @@ const en: LocaleMessages = {
     footer_couples_seating: "Seating chart maker",
     footer_couples_rsvp: "RSVP wording generator",
     footer_couples_camera: "Wēddly Camera",
+    footer_couples_games: "Wēddly Games",
     footer_vendors_waitlist: "List your business",
     footer_vendors_about: "How it works",
     footer_vendors_browse: "Browse wedding vendors",
