@@ -28,8 +28,8 @@ describe("seo: /llms.txt", () => {
     const body = await (await fetch(`${BASE}/llms.txt`)).text();
     expect(body).toContain("## Free wedding tools");
     expect(body).toContain("## Wedding blog");
-    // EN canonical tool slug + a seeded blog post URL.
-    expect(body).toContain("https://tryweddly.com/tools/wedding-budget-calculator");
+    // EN canonical tool slug (language-prefixed) + a seeded blog post URL.
+    expect(body).toContain("https://tryweddly.com/en/tools/wedding-budget-calculator");
     expect(body).toContain("https://tryweddly.com/blog/");
   });
 });
