@@ -189,26 +189,30 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
   const [emailSubmitting, setEmailSubmitting] = useState(false);
 
   async function refresh() {
-    const [pause, current, docs, partnerRes, lines, inviteRes] = await Promise.all([
-      pauseApi.status(),
-      coupleApi.current(),
-      documentsApi.list(),
-      coupleApi.partner(),
-      budgetApi.listLines(),
-      // Hydrate any in-flight invite so the partner card can show the shareable
-      // link + copy/cancel across reloads. Returns { invite: null } once
-      // partner B has joined or no invite is outstanding.
-      coupleApi
-        .currentInvite()
-        .catch(() => ({ invite: null })),
-    ]);
-    setCoupleStatus(pause.couple_status);
-    setPauseReq(pause.pause_request);
-    setCouple(current.couple);
-    setDocuments(docs.exports);
-    setPartner(partnerRes.partner);
-    setBudgetLines(lines.lines);
-    setInvite(inviteRes.invite);
+    try {
+      const [pause, current, docs, partnerRes, lines, inviteRes] = await Promise.all([
+        pauseApi.status(),
+        coupleApi.current(),
+        documentsApi.list(),
+        coupleApi.partner(),
+        budgetApi.listLines(),
+        // Hydrate any in-flight invite so the partner card can show the shareable
+        // link + copy/cancel across reloads. Returns { invite: null } once
+        // partner B has joined or no invite is outstanding.
+        coupleApi
+          .currentInvite()
+          .catch(() => ({ invite: null })),
+      ]);
+      setCoupleStatus(pause.couple_status);
+      setPauseReq(pause.pause_request);
+      setCouple(current.couple);
+      setDocuments(docs.exports);
+      setPartner(partnerRes.partner);
+      setBudgetLines(lines.lines);
+      setInvite(inviteRes.invite);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
   }
   async function refreshDocuments() {
     try {

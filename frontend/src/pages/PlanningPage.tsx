@@ -561,9 +561,9 @@ export default function PlanningPage() {
         rest.push(i.assignee);
       }
     }
-    rest.sort((a, b) => a.localeCompare(b, "hu"));
+    rest.sort((a, b) => a.localeCompare(b, locale));
     return [...partnerNames, ...rest];
-  }, [items, partnerNames]);
+  }, [items, partnerNames, locale]);
 
   async function onToggleDone(item: PlanningItem) {
     const nextDone = !item.done;

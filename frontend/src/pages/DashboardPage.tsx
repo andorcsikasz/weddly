@@ -239,39 +239,46 @@ export default function DashboardPage() {
 
   useEffect(() => {
     (async () => {
-      const couple = (await coupleApi.current()).couple;
-      if (!couple) {
-        setData(null);
-        return;
+      try {
+        const couple = (await coupleApi.current()).couple;
+        if (!couple) {
+          setData(null);
+          return;
+        }
+        // Seed the cost-planning cache from the couple we just fetched so the
+        // slider lands on the shared scenario count instantly — no waiting on
+        // a second round-trip just to hydrate one number.
+        hydrateCostPlanningCount(couple);
+        const seeded = readCostPlanningCount(couple.id);
+        if (seeded !== null) setPlanningCount(seeded);
+        const [guestsR, linesR, planR, inviteR, activityR] = await Promise.all([
+          guestApi.list(),
+          budgetApi.listLines(),
+          seatingApi.plan(),
+          // Hydrate any in-flight partner invite so the dashboard can hide
+          // its "invite your partner" panel across page reloads (the panel
+          // is only useful before an invite is sent — afterwards the user
+          // manages the invite from the Profile partner card).
+          couple.partner_b_id ? Promise.resolve({ invite: null }) : coupleApi.currentInvite(),
+          coupleApi.activity(),
+        ]);
+        setInvite(inviteR.invite);
+        setActivity(activityR.entries);
+        setData({
+          couple,
+          guests: guestsR.guests,
+          lines: linesR.lines,
+          tableCount: planR.tables.length,
+          seatedGuestIds: new Set(planR.assignments.map((a) => a.guest_id)),
+          dietary: null,
+          schedule: null,
+        });
+      } catch (e) {
+        // Leave `data` at "loading" (the skeleton) rather than `null` — the
+        // latter navigates to /onboarding, which would wrongly bounce an
+        // already-onboarded couple there on a mere network hiccup.
+        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
       }
-      // Seed the cost-planning cache from the couple we just fetched so the
-      // slider lands on the shared scenario count instantly — no waiting on
-      // a second round-trip just to hydrate one number.
-      hydrateCostPlanningCount(couple);
-      const seeded = readCostPlanningCount(couple.id);
-      if (seeded !== null) setPlanningCount(seeded);
-      const [guestsR, linesR, planR, inviteR, activityR] = await Promise.all([
-        guestApi.list(),
-        budgetApi.listLines(),
-        seatingApi.plan(),
-        // Hydrate any in-flight partner invite so the dashboard can hide
-        // its "invite your partner" panel across page reloads (the panel
-        // is only useful before an invite is sent — afterwards the user
-        // manages the invite from the Profile partner card).
-        couple.partner_b_id ? Promise.resolve({ invite: null }) : coupleApi.currentInvite(),
-        coupleApi.activity(),
-      ]);
-      setInvite(inviteR.invite);
-      setActivity(activityR.entries);
-      setData({
-        couple,
-        guests: guestsR.guests,
-        lines: linesR.lines,
-        tableCount: planR.tables.length,
-        seatedGuestIds: new Set(planR.assignments.map((a) => a.guest_id)),
-        dietary: null,
-        schedule: null,
-      });
     })();
   }, []);
 
@@ -1599,7 +1606,7 @@ function BudgetKpiTile({
 
   function startEdit() {
     if (cap === null) return;
-    setDraft(formatNumber(cap, "hu"));
+    setDraft(formatNumber(cap, locale));
     setEditing(true);
   }
 
@@ -1695,7 +1702,7 @@ function BudgetKpiTile({
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "");
-                  setDraft(digits === "" ? "" : formatNumber(Number(digits), "hu"));
+                  setDraft(digits === "" ? "" : formatNumber(Number(digits), locale));
                 }}
                 onBlur={commit}
                 onKeyDown={(e) => {

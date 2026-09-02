@@ -765,7 +765,9 @@ export default function SuppliersPage() {
             .catch(() => undefined);
         }
       })
-      .catch(() => undefined);
+      .catch((e) => {
+        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      });
     // Per-supplier quotes + category budgets feed the comparison dialog.
     // Fire in parallel with the main load; either failing is fine — the
     // dialog gracefully falls back to "no quote" / "no budget" cells.
@@ -1058,7 +1060,7 @@ export default function SuppliersPage() {
   const cities = useMemo(() => {
     const set = new Set<string>();
     for (const s of scopedItems) if (s.city && !isOutOfScope(s)) set.add(s.city);
-    return Array.from(set).sort((a, b) => a.localeCompare(b, locale === "hu" ? "hu" : "en"));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, locale));
   }, [scopedItems, locale, isOutOfScope]);
 
   // Google-style suggestions for the free-text bar: a short mixed list of
@@ -1359,7 +1361,7 @@ export default function SuppliersPage() {
     // band sink to the bottom so the ranked area stays meaningful.
     const sorted = [...out];
     const collator = (a: { name: string }, b: { name: string }) =>
-      a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en");
+      a.name.localeCompare(b.name, locale);
     // Nothing here sorts by country scope any more: `partitionByCountryScope`
     // below takes the out-of-country verified cards out of the result set
     // altogether, and it preserves order, so whatever these comparators decide
@@ -2459,11 +2461,7 @@ export default function SuppliersPage() {
                                   </span>
                                   <span className="inline-flex items-center gap-1 whitespace-nowrap text-sage-700 dark:text-sage-300">
                                     <Wallet size={11} aria-hidden />
-                                    {formatMoney(
-                                      s.price_huf,
-                                      currency,
-                                      locale === "hu" ? "hu" : "en",
-                                    )}
+                                    {formatMoney(s.price_huf, currency, locale)}
                                   </span>
                                 </>
                               )}
@@ -2542,7 +2540,7 @@ export default function SuppliersPage() {
                             </div>
                             {s.price_huf !== null && s.price_huf > 0 && (
                               <span className="shrink-0 whitespace-nowrap text-xs font-medium text-sage-700 dark:text-sage-300">
-                                {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
+                                {formatMoney(s.price_huf, currency, locale)}
                               </span>
                             )}
                           </div>
