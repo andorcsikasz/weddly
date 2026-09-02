@@ -191,6 +191,38 @@ describe("private uploads are not reachable at a public /uploads/ URL", () => {
     await stray.arrayBuffer();
   });
 
+  test("a community listing can publish its admin-attached hero and gallery too", async () => {
+    // Regression: 6a8a4b5c (2026-08-24) rewrote this gate to widen curated
+    // publishing and only checked `source === "curated"`, which silently
+    // dropped every community (couple-submitted, admin-photographed) listing
+    // back to private — their hero/gallery 404'd publicly with nothing in the
+    // DB or the admin UI showing anything wrong.
+    wipeAll();
+    const ts = Date.now();
+    const listingId = "c-community-image-test";
+    const heroKey = `listings/${listingId}/hero.webp`;
+    const galleryKey = `listings/${listingId}/gallery/admin-upload.webp`;
+    db.prepare(
+      `INSERT INTO listings
+         (id, source, category, name, city, status, hero_image_url, profile_imported, created_at, updated_at)
+       VALUES (?, 'community', 'venue', 'Community venue', 'Pusztazámor', 'active', ?, 0, ?, ?)`,
+    ).run(listingId, `/uploads/${heroKey}?v=${ts}`, ts, ts);
+    db.prepare("INSERT INTO listing_photos (listing_id, url, created_at) VALUES (?, ?, ?)").run(
+      listingId,
+      `/uploads/${galleryKey}`,
+      ts,
+    );
+    await storage.write(heroKey, new Blob(["community hero"]));
+    await storage.write(galleryKey, new Blob(["community gallery"]));
+
+    const hero = await fetch(`${BASE}/uploads/${heroKey}?v=${ts}`);
+    expect(hero.status).toBe(200);
+    expect(await hero.text()).toBe("community hero");
+    const gallery = await fetch(`${BASE}/uploads/${galleryKey}`);
+    expect(gallery.status).toBe(200);
+    expect(await gallery.text()).toBe("community gallery");
+  });
+
   test("an imported profile exposes its one recorded teaser hero but not its gallery", async () => {
     wipeAll();
     const ts = Date.now();

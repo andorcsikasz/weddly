@@ -16,7 +16,7 @@ import type { SupplierAvailability, SupplierDetail } from "@shared/suppliers";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import SupplierDetailPage from "@/pages/SupplierDetailPage";
 import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
@@ -402,5 +402,68 @@ describe("SupplierDetailPage: send inquiry is offered whenever the channel is de
     detail = { ...detail, has_contact_email: false };
     await renderPage();
     for (const b of inquiryButtons()) expect(b.disabled).toBe(true);
+  });
+});
+
+// The in-app URL used to sit on a bare `v{N}`/`c{N}` id forever — the public
+// `/suppliers/:id` page and the Share button already upgrade to a name-based
+// slug (`vendorPublicId`), but a couple who copied THIS page's own address
+// bar, or opened it from an internal link that still pointed at the bare id,
+// handed out an opaque link. The page now self-heals the address bar to the
+// pretty id once the listing loads, the same slug Share already produces —
+// and does it WITHOUT a second `/api/suppliers/:id` round trip, since the
+// route param change is recognised as the same canonical listing already in
+// state (`canonicalListingId`). That second point matters beyond performance:
+// a naive re-fetch on the rewritten URL is a real regression trap; the
+// page's own effect could easily race back to the bare id or crash the panel
+// if the destination ever answered inconsistently.
+describe("SupplierDetailPage: address bar personalizes to the vendor name", () => {
+  const PRETTY_ID = `magyar-foto-${SUPPLIER_ID}`;
+
+  function LocationProbe() {
+    const location = useLocation();
+    return <div data-testid="location-probe">{location.pathname}</div>;
+  }
+
+  async function renderWithLocationProbe() {
+    render(
+      <MemoryRouter initialEntries={[`/app/suppliers/${SUPPLIER_ID}`]}>
+        <I18nProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <ConfirmDialogProvider>
+                <LocationProbe />
+                <Routes>
+                  <Route path="/app/suppliers/:supplier_id" element={<SupplierDetailPage />} />
+                </Routes>
+              </ConfirmDialogProvider>
+            </ToastProvider>
+          </AuthProvider>
+        </I18nProvider>
+      </MemoryRouter>,
+    );
+    await flush();
+  }
+
+  it("replaces a bare v{N}/c{N} id with the pretty slug, and settles there with one fetch", async () => {
+    installFetch();
+    await renderWithLocationProbe();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("location-probe").textContent).toBe(`/app/suppliers/${PRETTY_ID}`),
+    );
+    const detailCalls = calls.filter(
+      (c) => c.method === "GET" && /\/api\/suppliers\/[^/?]+(?:\?|$)/.test(c.url),
+    );
+    expect(detailCalls).toHaveLength(1);
+
+    // Settles: once the address bar carries the pretty id, re-rendering must
+    // not trigger a further navigation (no redirect loop) or a second fetch.
+    await flush(4);
+    expect(screen.getByTestId("location-probe").textContent).toBe(`/app/suppliers/${PRETTY_ID}`);
+    const detailCallsAfterSettle = calls.filter(
+      (c) => c.method === "GET" && /\/api\/suppliers\/[^/?]+(?:\?|$)/.test(c.url),
+    );
+    expect(detailCallsAfterSettle).toHaveLength(1);
   });
 });

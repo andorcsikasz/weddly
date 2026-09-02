@@ -83,7 +83,7 @@ import {
 import { pickListingBlurb } from "@shared/listing_language";
 import { packagePriceSummary } from "@shared/listing_pricing";
 import type { Currency } from "@shared/types";
-import { vendorPublicId } from "@shared/vendor_slug";
+import { canonicalListingId, vendorPublicId } from "@shared/vendor_slug";
 import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ComposeDialog } from "../components/OutreachInbox";
@@ -194,6 +194,29 @@ export default function SupplierDetailPage() {
     document.title = isAdmin ? `${detail.name} · ${t("suppliers.detail.adminTitle")}` : detail.name;
   }, [detail, isAdmin, t]);
 
+  // Once loaded, upgrade a bare id in the address bar (`c17`) to the pretty,
+  // name-based one (`oreg-tolgy-kastely-fogado-c17`) — the same slug the
+  // Share button already produces for the public page (see `shareVendor`
+  // below), so a URL copied straight from the bar reads as the business
+  // rather than an opaque id too. `vendorPublicId` is a no-op for curated
+  // slugs, so this only fires for `v{N}` / `c{N}` listings. `replace: true`
+  // keeps the upgrade out of back-button history.
+  useEffect(() => {
+    if (!detail) return;
+    const pretty = vendorPublicId(detail.id, detail.name);
+    if (pretty === supplierIdRaw) return;
+    const qs = searchParams.toString();
+    navigate(`/app/suppliers/${encodeURIComponent(pretty)}${qs ? `?${qs}` : ""}`, {
+      replace: true,
+    });
+  }, [detail, supplierIdRaw, searchParams, navigate]);
+
+  // The canonical id the data currently in state was fetched for (`v12` /
+  // `c17`), so the address-bar upgrade above — which changes `supplierId` to
+  // the pretty, name-based form pointing at the SAME listing — doesn't cost a
+  // second round trip for data we already have.
+  const lastFetchedIdRef = useRef<string | null>(null);
+
   const refresh = useCallback(async () => {
     if (!supplierId) return;
     try {
@@ -206,6 +229,7 @@ export default function SupplierDetailPage() {
         supplierCommentApi.list(supplierId, { limit: 50 }),
         supplierBookingApi.availability(supplierId),
       ]);
+      lastFetchedIdRef.current = d.id;
       setDetail(d);
       setReviews(rs.items);
       setCanReview(rs.can_review);
@@ -222,9 +246,12 @@ export default function SupplierDetailPage() {
   }, [supplierId, toast, isAdmin]);
 
   useEffect(() => {
+    if (!supplierId) return;
+    const canonical = canonicalListingId(supplierId) ?? supplierId;
+    if (canonical === lastFetchedIdRef.current) return;
     setLoading(true);
     void refresh();
-  }, [refresh]);
+  }, [supplierId, refresh]);
 
   // Count a profile open. Keyed on the RESOLVED listing id (`v12` /
   // `aranybastya`), not the route param: a pretty slug would land the event on

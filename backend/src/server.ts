@@ -702,13 +702,16 @@ function publicUploadKey(key: string): boolean {
   // package objects through the authenticated listing routes.
   if (listingRow.vendor_account_id !== null) return true;
 
-  // Curated profiles may also use the local image mirror, but only for URLs
-  // recorded in the public listing. Imported/unclaimed profiles intentionally
-  // publish one teaser image (redactUnclaimedImport), so their exact hero is
-  // allowed while their gallery remains closed until the vendor claims it.
-  // Editor-researched profiles may publish their recorded gallery too. An
+  // Curated AND community profiles may also use the local image mirror, but
+  // only for URLs recorded in the public listing. Imported/unclaimed curated
+  // profiles intentionally publish one teaser image (redactUnclaimedImport),
+  // so their exact hero is allowed while their gallery remains closed until
+  // the vendor claims it. Editor-researched curated profiles, and every
+  // community listing (a couple's submission an admin has attached photos to
+  // via `/api/admin/suppliers/:id/photos` — `profile_imported` is always 0
+  // there, never scraped) may publish their recorded gallery too. An
   // arbitrary file copied under either id stays private.
-  if (listingRow.source !== "curated") return false;
+  if (listingRow.source !== "curated" && listingRow.source !== "community") return false;
   const publicUrl = `/uploads/${key}`;
   const withoutQuery = (url: string | null): string | null => url?.split("?")[0] ?? null;
   if (withoutQuery(listingRow.hero_image_url) === publicUrl) return true;
