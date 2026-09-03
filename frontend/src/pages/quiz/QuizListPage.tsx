@@ -1,7 +1,8 @@
-// /app/games — the couple's quiz library. Create, rename-in, open the
-// builder, jump to the host console, or delete.
+// /app/games/quiz — the couple's quiz library, one of the two game types
+// nested under the /app/games hub (GamesHubPage). Create, rename-in, open
+// the builder, jump to the host console, or delete.
 
-import { Gamepad2, Play, Plus, Settings2, Trash2, Users } from "lucide-react";
+import { ChevronLeft, Gamepad2, Play, Plus, Settings2, Trash2, Users } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Skeleton, useConfirm, useToast } from "../../components/ui";
@@ -50,7 +51,7 @@ export default function QuizListPage() {
     setBusy(true);
     try {
       const { quiz } = await quizApi.create(title.trim());
-      navigate(`/app/games/${quiz.id}`);
+      navigate(`/app/games/quiz/${quiz.id}`);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : t("common.error_generic"));
     } finally {
@@ -77,6 +78,12 @@ export default function QuizListPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 xl:px-10">
+      <Link
+        to="/app/games"
+        className="mb-3 inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+      >
+        <ChevronLeft size={14} aria-hidden /> {t("games_hub.title")}
+      </Link>
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 font-grotesk text-3xl text-ink-900 dark:text-paper-50">
@@ -149,7 +156,7 @@ export default function QuizListPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <Link
-                    to={`/app/games/${quiz.id}`}
+                    to={`/app/games/quiz/${quiz.id}`}
                     className="truncate font-grotesk text-lg text-ink-900 hover:underline dark:text-paper-50"
                   >
                     {quiz.title}
@@ -165,13 +172,13 @@ export default function QuizListPage() {
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Link
-                  to={`/app/games/${quiz.id}`}
+                  to={`/app/games/quiz/${quiz.id}`}
                   className="btn-outline btn-sm"
                   aria-label={t("quiz.list.edit_button")}
                 >
                   <Settings2 size={15} aria-hidden /> {t("quiz.list.edit_button")}
                 </Link>
-                <Link to={`/app/games/${quiz.id}/host`} className="btn-primary btn-sm">
+                <Link to={`/app/games/quiz/${quiz.id}/host`} className="btn-primary btn-sm">
                   <Play size={15} aria-hidden /> {t("quiz.list.host_button")}
                 </Link>
                 <button

@@ -1,16 +1,18 @@
 // Live wedding prediction markets — couple-authenticated board management at
-// /app/markets. Sibling feature to the quiz game (frontend/src/pages/quiz/),
-// under the same "Wēddly Games" umbrella but its own nav row and its own
-// join code, since a pari-mutuel points market has no slide-by-slide host
-// console to share. See shared/markets.ts for the payout math.
+// /app/games/markets, one of the two game types nested under the /app/games
+// hub (GamesHubPage). Sibling feature to the quiz game
+// (frontend/src/pages/quiz/), under the same "Wēddly Games" umbrella but its
+// own join code, since a pari-mutuel points market has no slide-by-slide
+// host console to share. See shared/markets.ts for the payout math.
 //
 // One board per couple in practice — the API supports several, but the page
 // keeps that invisible: it auto-provisions the couple's first board on
 // arrival and manages it directly, no board-picker UI to build or explain.
 
 import type { MarketBoardDetail, MarketLeaderboardEntry, MarketQuestion } from "@shared/markets";
-import { Check, Copy, Pause, Play, QrCode, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, Copy, Pause, Play, QrCode, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { marketsApi } from "../lib/endpoints";
@@ -251,6 +253,12 @@ export default function MarketsPage() {
   if (loading || !board) {
     return (
       <div>
+        <Link
+          to="/app/games"
+          className="mb-3 inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+        >
+          <ChevronLeft size={14} aria-hidden /> {t("games_hub.title")}
+        </Link>
         <h1 className="text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
           {t("markets.page_title")}
         </h1>
@@ -260,6 +268,12 @@ export default function MarketsPage() {
 
   return (
     <div>
+      <Link
+        to="/app/games"
+        className="mb-3 inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+      >
+        <ChevronLeft size={14} aria-hidden /> {t("games_hub.title")}
+      </Link>
       <header className="mb-4">
         <h1 className="text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
           {t("markets.page_title")}

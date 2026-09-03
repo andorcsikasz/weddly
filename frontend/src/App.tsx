@@ -37,6 +37,7 @@ const PlannersPage = lazyWithReload(() => import("./pages/PlannersPage"));
 const CameraPage = lazyWithReload(() => import("./pages/CameraPage"));
 const MarketingContentPage = lazyWithReload(() => import("./pages/MarketingContentPage"));
 const GamesPage = lazyWithReload(() => import("./pages/GamesPage"));
+const GamesHubPage = lazyWithReload(() => import("./pages/games/GamesHubPage"));
 const MarketsPage = lazyWithReload(() => import("./pages/MarketsPage"));
 const PlayMarketsPage = lazyWithReload(() => import("./pages/PlayMarketsPage"));
 const QuizListPage = lazyWithReload(() => import("./pages/quiz/QuizListPage"));
@@ -271,6 +272,20 @@ function RequireVendorRole({ children }: { children: JSX.Element }) {
 function GuestPageRedirect() {
   const { slug = "", code = "" } = useParams<{ slug: string; code: string }>();
   return <Navigate to={`/w/${encodeURIComponent(slug)}/${encodeURIComponent(code)}`} replace />;
+}
+
+/** Legacy `/app/games/:quizId(/host)` → `/app/games/quiz/:quizId(/host)`,
+ *  from before the quiz and markets games were pulled under one `/app/games`
+ *  hub (see `GamesHubPage`). `/app/markets` → `/app/games/markets` is a
+ *  plain static redirect, next to the other legacy routes below. */
+function QuizBuilderLegacyRedirect() {
+  const { quizId = "" } = useParams<{ quizId: string }>();
+  return <Navigate to={`/app/games/quiz/${encodeURIComponent(quizId)}`} replace />;
+}
+
+function QuizHostLegacyRedirect() {
+  const { quizId = "" } = useParams<{ quizId: string }>();
+  return <Navigate to={`/app/games/quiz/${encodeURIComponent(quizId)}/host`} replace />;
 }
 
 /** Legacy `/register` → `/signup`. Planner invite emails and referral share
@@ -1240,8 +1255,20 @@ export default function App() {
               </Page>
             }
           />
+          {/* Wēddly Games hub — one nav row, one landing page for every game
+           *  type. Fans out into the live quiz (games/quiz/*) and the
+           *  prediction markets board (games/markets), which used to be two
+           *  separate top-level nav rows before this merge. */}
           <Route
             path="games"
+            element={
+              <Page>
+                <GamesHubPage />
+              </Page>
+            }
+          />
+          <Route
+            path="games/quiz"
             element={
               <Page>
                 <QuizListPage />
@@ -1249,7 +1276,7 @@ export default function App() {
             }
           />
           <Route
-            path="games/:quizId"
+            path="games/quiz/:quizId"
             element={
               <Page>
                 <QuizBuilderPage />
@@ -1257,25 +1284,27 @@ export default function App() {
             }
           />
           <Route
-            path="games/:quizId/host"
+            path="games/quiz/:quizId/host"
             element={
               <Page>
                 <QuizHostPage />
               </Page>
             }
           />
-          {/* Live prediction markets — sibling of the quiz game above, own
-           *  nav row and own path (not nested under /app/games) since a
-           *  pari-mutuel points board has no per-round host console to
-           *  share with the quiz's builder/host split. */}
           <Route
-            path="markets"
+            path="games/markets"
             element={
               <Page>
                 <MarketsPage />
               </Page>
             }
           />
+          {/* Legacy pre-hub URLs — static "quiz"/"markets" segments above
+           *  rank ahead of these dynamic ones, so only an actual old quiz id
+           *  falls through to the redirect. */}
+          <Route path="games/:quizId" element={<QuizBuilderLegacyRedirect />} />
+          <Route path="games/:quizId/host" element={<QuizHostLegacyRedirect />} />
+          <Route path="markets" element={<Navigate to="/app/games/markets" replace />} />
           {/* Legacy URLs from the older split — redirect into the merged
            *  /app/guest-page so existing bookmarks and external links keep
            *  resolving for at least one release after the merger. */}

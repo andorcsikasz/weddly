@@ -1,6 +1,6 @@
-// /app/games/:quizId — the couple's quiz builder. A slide list (up/down +
-// delete, no drag-and-drop dependency) on the left, a kind-specific editor on
-// the right. Locked once the quiz goes live — see requireEditable on the
+// /app/games/quiz/:quizId — the couple's quiz builder. A slide list (up/down
+// + delete, no drag-and-drop dependency) on the left, a kind-specific editor
+// on the right. Locked once the quiz goes live — see requireEditable on the
 // backend; the same rule is mirrored here so the couple sees why, not just a
 // 400 on save.
 
@@ -193,7 +193,7 @@ export default function QuizBuilderPage() {
     if (!ok) return;
     try {
       await quizApi.hostStart(quiz.id);
-      navigate(`/app/games/${quiz.id}/host`);
+      navigate(`/app/games/quiz/${quiz.id}/host`);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : t("common.error_generic"));
     }
@@ -227,7 +227,7 @@ export default function QuizBuilderPage() {
           </button>
         )}
         {quiz.status !== "draft" && (
-          <Link to={`/app/games/${quiz.id}/host`} className="btn-primary shrink-0">
+          <Link to={`/app/games/quiz/${quiz.id}/host`} className="btn-primary shrink-0">
             <Gamepad2 size={16} aria-hidden /> {t("quiz.builder.open_host")}
           </Link>
         )}

@@ -1,4 +1,4 @@
-// /app/games/:quizId/host — the "admin slide": QR + join code in the lobby,
+// /app/games/quiz/:quizId/host — the "admin slide": QR + join code in the lobby,
 // live answer count + countdown while a question is open, breakdown +
 // leaderboard on reveal, final leaderboard + confetti at the end. Polls
 // GET /api/quizzes/:id/host-state — no WebSocket in this codebase, see
