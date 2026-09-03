@@ -25,15 +25,9 @@ export default function WeddingChecklistToolPage() {
     <PublicShell>
       <section className="relative">
         <div className="mx-auto max-w-3xl px-4 pt-12 pb-10 sm:px-6 sm:pt-16 sm:pb-12">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-600 dark:text-blush-300">
-            {t("tools.wedding_checklist.page_eyebrow")}
-          </p>
-          <h1 className="mt-4 font-grotesk text-4xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+          <h1 className="font-grotesk text-4xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
             {t("tools.wedding_checklist.page_h1")}
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-ink-700 dark:text-paper-200">
-            {t("tools.wedding_checklist.page_intro")}
-          </p>
         </div>
       </section>
 
