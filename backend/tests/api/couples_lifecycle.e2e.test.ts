@@ -198,6 +198,99 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     expect(r.status).toBe(400);
   });
 
+  // 'quarter' replaced 'month'/'season' as the onboarding wizard's
+  // approximate-date shape (hemisphere-neutral, and the refinement is
+  // genuinely optional — see shared/types.ts on WeddingDateGoal). 'month'
+  // and 'season' stay accepted server-side for pre-existing rows only.
+  test("quarter goal with a year but no quarter picked round-trips as 'sometime that year'", async () => {
+    wipeAll();
+    const { token } = await freshUserNoCouple("quarter-yearonly@weddly.test");
+
+    const ob = await req<{
+      couple: {
+        wedding_date_goal: {
+          kind: string;
+          target_year: number | null;
+          target_quarter: number | null;
+        };
+      };
+    }>(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date_goal: { kind: "quarter", target_year: 2027 },
+      },
+      { token },
+    );
+    expect(ob.status).toBe(201);
+    expect(ob.data.couple.wedding_date_goal.kind).toBe("quarter");
+    expect(ob.data.couple.wedding_date_goal.target_year).toBe(2027);
+    expect(ob.data.couple.wedding_date_goal.target_quarter).toBeNull();
+  });
+
+  test("quarter goal with year + quarter round-trips both fields", async () => {
+    wipeAll();
+    const { token } = await freshUserNoCouple("quarter-full@weddly.test");
+
+    const ob = await req<{
+      couple: {
+        wedding_date_goal: {
+          kind: string;
+          target_year: number | null;
+          target_quarter: number | null;
+        };
+      };
+    }>(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date_goal: { kind: "quarter", target_year: 2027, target_quarter: 3 },
+      },
+      { token },
+    );
+    expect(ob.status).toBe(201);
+    expect(ob.data.couple.wedding_date_goal.target_year).toBe(2027);
+    expect(ob.data.couple.wedding_date_goal.target_quarter).toBe(3);
+  });
+
+  test("quarter goal without target_year is rejected", async () => {
+    wipeAll();
+    const { token } = await freshUserNoCouple("quarter-noyear@weddly.test");
+
+    const r = await req(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date_goal: { kind: "quarter", target_quarter: 2 },
+      },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("quarter goal with an out-of-range quarter (5) is rejected", async () => {
+    wipeAll();
+    const { token } = await freshUserNoCouple("quarter-outofrange@weddly.test");
+
+    const r = await req(
+      "POST",
+      "/api/couples/onboard",
+      {
+        bride_name: "Anna",
+        groom_name: "Bence",
+        wedding_date_goal: { kind: "quarter", target_year: 2027, target_quarter: 5 },
+      },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+
   test("legacy wedding_date scalar in malformed shape is rejected", async () => {
     wipeAll();
     const { token } = await freshUserNoCouple("date-malformed@weddly.test");

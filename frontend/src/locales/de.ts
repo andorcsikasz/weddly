@@ -1767,7 +1767,6 @@ const de: LocaleMessages = {
     step3_short: "Gäste",
     step4_short: "Budget",
     step5_short: "Land",
-    step6_short: "Einladen",
     bride_name_label: "Braut",
     groom_name_label: "Bräutigam",
     bride_name_placeholder: "Allie",
@@ -1789,9 +1788,6 @@ const de: LocaleMessages = {
       "Damit schlagen wir Ihnen keine Dienstleister vor, die in Ihrem Land nicht arbeiten.",
     country_placeholder: "Tippen Sie los…",
     country_required: "Wählen Sie ein Land.",
-    step6_title: "Ihre bessere Hälfte einladen?",
-    invite_help:
-      "Wir schicken eine Einladung, damit Sie sofort gemeinsam in diesem Arbeitsbereich planen können.",
     invite_email_label: "E-Mail des Partners",
     invite_email_placeholder: "name@example.com",
     invite_skip_hint:
@@ -1816,13 +1812,11 @@ const de: LocaleMessages = {
     all_set_continue: "Zur Übersicht",
     date_kind_question: "Wie sicher ist das Datum?",
     date_kind_exact: "Ein genauer Tag",
-    date_kind_month: "Ein bestimmter Monat",
-    date_kind_season: "Eine Jahreszeit",
-    date_kind_year: "Nur das Jahr",
+    date_kind_quarter: "Ungefähr",
     date_kind_tbd: "Noch unklar",
     date_year_label: "Zieljahr",
-    date_month_label: "Zielmonat",
-    date_season_label: "Ziel-Jahreszeit",
+    date_quarter_label: "Jahreszeit (optional)",
+    date_quarter_any: "Ganzes Jahr",
     date_kind_help_tbd:
       "Kein Problem, Sie können später alles festlegen. Wir planen vorerst nur ungefähr.",
     guest_kind_question: "Wie sicher ist die Gästezahl?",
@@ -1893,6 +1887,7 @@ const de: LocaleMessages = {
   goal: {
     date_tbd: "Datum offen",
     date_season: "{season} {year}",
+    date_quarter: "Q{quarter} {year}",
     count_exact_one: "~{n} Gast",
     count_exact_other: "~{n} Gäste",
     count_range: "{min}–{max} Gäste",
@@ -2744,7 +2739,6 @@ const de: LocaleMessages = {
     guest_page: "Gästeseite",
     wishlist: "Wunschliste",
     games: "Spiele",
-    markets: "Prognosen",
     group_planning: "Planen",
     group_executing: "Der große Tag",
     group_dreaming: "Inspiration & Erinnerungen",
@@ -4361,9 +4355,23 @@ const de: LocaleMessages = {
     received_cat_experience: "Erlebnis",
     received_cat_voucher: "Gutschein",
   },
+  games_hub: {
+    title: "Spiele",
+    subtitle:
+      "Zwei Wege, alle Gäste mitspielen zu lassen — sie steigen per Smartphone ein, ganz ohne Login oder App.",
+    quiz_card_title: "Live-Quiz",
+    quiz_card_cta: "Quiz öffnen",
+    quiz_status_empty: "Noch nicht erstellt",
+    quiz_status_ready: "Startbereit",
+    quiz_status_live: "Läuft live",
+    markets_card_cta: "Prognosen öffnen",
+    markets_status_draft: "Noch nicht gestartet",
+    markets_status_live: "Läuft live",
+    markets_status_ended: "Pausiert",
+  },
   quiz: {
     list: {
-      title: "Spiele",
+      title: "Quiz",
       subtitle:
         "Erstellen Sie ein Live-Quiz über sich und spielen Sie es gemeinsam mit den Gästen auf der Feier.",
       new_button: "Neues Quiz",

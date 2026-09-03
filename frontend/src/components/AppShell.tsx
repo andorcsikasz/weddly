@@ -34,7 +34,6 @@ import {
   ShieldCheck,
   Store,
   Sun,
-  TrendingUp,
   UserCog,
   Users,
   X,
@@ -232,24 +231,15 @@ const ITEMS: NavItem[] = [
     icon: <Globe size={18} />,
     group: "guest",
   },
-  // Live wedding quiz game — couple builds it, guests play from their phones
-  // with no login. Desktop + More-sheet only, same treatment as wishlist and
-  // the guest page above.
+  // Wēddly Games hub — couple builds a live quiz and/or a prediction
+  // markets board there, guests play from their phones with no login.
+  // Desktop + More-sheet only, same treatment as wishlist and the guest
+  // page above. Quiz and markets used to be two separate nav rows; both
+  // now live under this one hub (GamesHubPage) at /app/games.
   {
     to: "/app/games",
     labelKey: "nav.games",
     icon: <Gamepad2 size={18} />,
-    group: "guest",
-  },
-  // Live wedding prediction markets — sibling of the quiz game above under
-  // the same "no login for guests" posture, but its own join code and own
-  // page (a pari-mutuel points board has no per-round host console to
-  // share with the quiz's builder/host split). Own nav row for the same
-  // reason: two distinct things a couple sets up, not tabs of one.
-  {
-    to: "/app/markets",
-    labelKey: "nav.markets",
-    icon: <TrendingUp size={18} />,
     group: "guest",
   },
 ];
@@ -1257,13 +1247,13 @@ function SideLink({
    *  link, which the couple asked to stay visually "dark" / set apart from
    *  the rest of the rail. */
   darkActive?: boolean;
-  /** The couple has never opened this destination. Renders the row muted with
-   *  a small brass dot, which is the whole nudge: the rail reads as a map of
-   *  what is still unexplored, and a single visit clears it. Deliberately NOT
-   *  a disabled look — hover restores full ink, so it never reads as locked. */
+  /** The couple has never opened this destination. Renders the row muted,
+   *  which is the whole nudge: the rail reads as a map of what is still
+   *  unexplored, and a single visit clears it. Deliberately NOT a disabled
+   *  look — hover restores full ink, so it never reads as locked. */
   unexplored?: boolean;
-  /** Translated "not opened yet", appended to the accessible name so the dot
-   *  isn't a sighted-only signal. */
+  /** Translated "not opened yet", appended to the accessible name so the
+   *  muted state isn't a sighted-only signal. */
   unexploredLabel?: string;
 }) {
   // Where the hover label should sit, in viewport coordinates, or null when the
@@ -1347,25 +1337,6 @@ function SideLink({
       >
         {label}
       </span>
-      {/* Unexplored marker. Two placements, one state: a corner dot on the
-          icon while the rail is icon-only (tablet + collapsed laptop), and a
-          trailing dot at the end of the row once the label is out. */}
-      {unexplored && (
-        <>
-          <span
-            aria-hidden="true"
-            className={`absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300${
-              collapsed ? "" : " lg:hidden"
-            }`}
-          />
-          {!collapsed && (
-            <span
-              aria-hidden="true"
-              className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full bg-umber-400 lg:block dark:bg-umber-300"
-            />
-          )}
-        </>
-      )}
       {/* Hover label for the icon-only rail, mounted on <body> so no ancestor's
           overflow can clip it. The lg-expanded rail shows the real label, so the
           media query still hides this one there — same rule as before, it just

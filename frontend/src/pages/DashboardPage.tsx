@@ -1045,6 +1045,7 @@ export default function DashboardPage() {
                     target_year: Number(datePickerDraft.slice(0, 4)),
                     target_month: Number(datePickerDraft.slice(5, 7)),
                     target_season: null,
+                    target_quarter: null,
                   });
                   setDatePickerOpen(false);
                 } finally {
@@ -1812,6 +1813,7 @@ function DaysToGoTile({
         target_year: Number(ymd.slice(0, 4)),
         target_month: Number(ymd.slice(5, 7)),
         target_season: null,
+        target_quarter: null,
       });
     } finally {
       setSaving(false);

@@ -179,6 +179,7 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
       target_year: 2027,
       target_month: 6,
       target_season: null,
+      target_quarter: null,
     },
     wedding_date: "2027-06-12",
     previous_wedding_date: null,

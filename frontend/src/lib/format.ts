@@ -411,6 +411,11 @@ export function formatWeddingDateGoal(goal: WeddingDateGoal, ctx: GoalText): str
       year: goal.target_year,
     });
   }
+  if (goal.kind === "quarter" && goal.target_year) {
+    return goal.target_quarter
+      ? ctx.t("goal.date_quarter", { quarter: goal.target_quarter, year: goal.target_year })
+      : String(goal.target_year);
+  }
   if (goal.kind === "year" && goal.target_year) {
     return String(goal.target_year);
   }

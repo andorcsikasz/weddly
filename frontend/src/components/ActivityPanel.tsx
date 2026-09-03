@@ -74,6 +74,7 @@ function formatWeddingDateSide(side: Record<string, unknown>, locale: Locale, t:
   const year = asNumber(side.wedding_target_year);
   const month = asNumber(side.wedding_target_month);
   const season = asString(side.wedding_target_season);
+  const quarter = asNumber(side.wedding_target_quarter);
   if (kind === "tbd") return t("profile.activity_date_tbd");
   if (kind === "exact" && exact) return formatDate(exact, locale);
   if (kind === "month" && year !== null && month !== null) {
@@ -81,6 +82,9 @@ function formatWeddingDateSide(side: Record<string, unknown>, locale: Locale, t:
   }
   if (kind === "season" && year !== null && season) {
     return t("goal.date_season", { season: t(`season.${season}`), year });
+  }
+  if (kind === "quarter" && year !== null) {
+    return quarter !== null ? t("goal.date_quarter", { quarter, year }) : String(year);
   }
   if (kind === "year" && year !== null) return String(year);
   if (exact) return formatDate(exact, locale);

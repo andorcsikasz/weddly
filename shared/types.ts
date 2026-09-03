@@ -624,7 +624,7 @@ export type WeddingStyleTag =
  * yet. Each "goal" field is paired with a `kind` that says how certain the
  * couple is — the UI renders accordingly.
  */
-export type WeddingDateKind = "exact" | "month" | "season" | "year" | "tbd";
+export type WeddingDateKind = "exact" | "month" | "season" | "quarter" | "year" | "tbd";
 export type WeddingSeason = "spring" | "summer" | "fall" | "winter";
 export type GuestCountKind = "exact" | "range" | "tbd";
 export type BudgetKind = "exact" | "range" | "tbd";
@@ -639,12 +639,19 @@ export interface WeddingDateGoal {
   kind: WeddingDateKind;
   /** Filled for kind='exact'. ISO YYYY-MM-DD. */
   exact_date: string | null;
-  /** Filled for kind in {'exact','month','season','year'}. */
+  /** Filled for kind in {'exact','month','season','quarter','year'}. */
   target_year: number | null;
   /** 1..12. Filled for kind='month'. */
   target_month: number | null;
   /** Filled for kind='season'. */
   target_season: WeddingSeason | null;
+  /** 1..4, or null for "sometime that year" — the only field on this goal
+   *  that is genuinely optional even when its kind is active. Filled only for
+   *  kind='quarter'. This is the onboarding wizard's current approximate-date
+   *  shape (replaces the old month/season split, which forced a choice
+   *  neither hemisphere-neutral nor any more precise than a quarter); 'month'
+   *  and 'season' stay real kinds so pre-existing rows keep rendering. */
+  target_quarter: number | null;
 }
 
 export interface GuestCountGoal {

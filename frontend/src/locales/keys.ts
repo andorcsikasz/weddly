@@ -2264,7 +2264,6 @@ export interface LocaleMessages {
     step3_short: string;
     step4_short: string;
     step5_short: string;
-    step6_short: string;
     bride_name_label: string;
     groom_name_label: string;
     bride_name_placeholder: string;
@@ -2305,21 +2304,20 @@ export interface LocaleMessages {
     country_helper: string;
     country_placeholder: string;
     country_required: string;
-    step6_title: string;
-    invite_help: string;
     invite_email_label: string;
     invite_email_placeholder: string;
     invite_skip_hint: string;
     // ── Uncertainty: kind selectors and helper copy ───────────────────
     date_kind_question: string;
     date_kind_exact: string;
-    date_kind_month: string;
-    date_kind_season: string;
-    date_kind_year: string;
+    /** Replaces the old month/season/year trio: a year picker plus an
+     *  optional Q1–Q4 refinement, hemisphere-neutral unlike "a season". */
+    date_kind_quarter: string;
     date_kind_tbd: string;
     date_year_label: string;
-    date_month_label: string;
-    date_season_label: string;
+    date_quarter_label: string;
+    /** The quarter-picker's null state — "sometime that year". */
+    date_quarter_any: string;
     date_kind_help_tbd: string;
     guest_kind_question: string;
     guest_kind_exact: string;
@@ -2391,6 +2389,7 @@ export interface LocaleMessages {
   goal: {
     date_tbd: string;
     date_season: string;
+    date_quarter: string;
     count_exact_one: string;
     count_exact_other: string;
     count_range: string;
@@ -3371,12 +3370,11 @@ export interface LocaleMessages {
     /** Couple-curated wishlist / gift registry — sidebar + More-sheet entry
      *  sitting just above the guest-page link in the `guest` group. */
     wishlist: string;
-    /** Live wedding quiz game builder + host console — sidebar + More-sheet
-     *  entry sitting just below the guest-page link in the `guest` group. */
+    /** The Wēddly Games hub (/app/games) — sidebar + More-sheet entry sitting
+     *  just below the guest-page link in the `guest` group. Fans out to the
+     *  live quiz builder AND the prediction markets board; both used to have
+     *  their own top-level nav row before they were pulled under one hub. */
     games: string;
-    /** Live wedding prediction markets — sidebar + More-sheet entry sitting
-     *  next to `games` (its sibling feature) in the `guest` group. */
-    markets: string;
     /** Sidebar group headers that bundle the rail into the four phases
      *  of the wedding journey. `guest` is the read-only portal preview;
      *  the other three carry the couple from decisions → wedding-day ops
@@ -4985,8 +4983,28 @@ export interface LocaleMessages {
     received_cat_experience: string;
     received_cat_voucher: string;
   };
-  /** Live wedding quiz game — /app/games (list + builder), /app/games/:id/host
-   *  (the host console), and /play/:code (the guest's own no-login screen). */
+  /** The /app/games hub — the landing page couples reach from the `games`
+   *  nav row, presenting the two game types (`quiz` and `markets` below) as
+   *  their own cards rather than picking one for the nav row to point at. */
+  games_hub: {
+    title: string;
+    subtitle: string;
+    /** Card-level copy. The card body text reuses `quiz.list.subtitle` /
+     *  `markets.page_subtitle` directly rather than duplicating it here. */
+    quiz_card_title: string;
+    quiz_card_cta: string;
+    quiz_status_empty: string;
+    quiz_status_ready: string;
+    quiz_status_live: string;
+    markets_card_cta: string;
+    markets_status_draft: string;
+    markets_status_live: string;
+    markets_status_ended: string;
+  };
+  /** Live wedding quiz game — /app/games/quiz (list + builder),
+   *  /app/games/quiz/:id/host (the host console), and /play/:code (the
+   *  guest's own no-login screen). Nested under the /app/games hub
+   *  (`games_hub` above) alongside its sibling `markets`. */
   quiz: {
     list: {
       title: string;
@@ -5095,8 +5113,9 @@ export interface LocaleMessages {
     };
   };
   /** Live wedding prediction markets — couple-authenticated board + question
-   *  management at /app/markets. Sibling feature to `quiz`, sharing the
-   *  same "no login for guests" posture but its own join code and page. */
+   *  management at /app/games/markets. Sibling feature to `quiz`, sharing
+   *  the same "no login for guests" posture but its own join code and page,
+   *  both reached from the /app/games hub (`games_hub` above). */
   markets: {
     page_title: string;
     page_subtitle: string;

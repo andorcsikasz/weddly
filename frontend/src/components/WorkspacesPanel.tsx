@@ -310,6 +310,7 @@ function EditWorkspaceDialog({
               target_year: Number(weddingDate.slice(0, 4)),
               target_month: Number(weddingDate.slice(5, 7)),
               target_season: null,
+              target_quarter: null,
             }
           : {
               kind: "tbd" as const,
@@ -317,6 +318,7 @@ function EditWorkspaceDialog({
               target_year: null,
               target_month: null,
               target_season: null,
+              target_quarter: null,
             };
       await coupleApi.update({
         display_name: name,
@@ -492,6 +494,7 @@ function CreateWorkspaceDialog({
               target_year: Number(weddingDate.slice(0, 4)),
               target_month: Number(weddingDate.slice(5, 7)),
               target_season: null,
+              target_quarter: null,
             }
           : {
               kind: "tbd" as const,
@@ -499,6 +502,7 @@ function CreateWorkspaceDialog({
               target_year: null,
               target_month: null,
               target_season: null,
+              target_quarter: null,
             };
       const seedFrom = seedOn && activeCoupleId !== null ? activeCoupleId : null;
       const seedIds = seedOn ? Array.from(selectedGuestIds) : [];

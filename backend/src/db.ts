@@ -72,11 +72,15 @@ addColumnIfMissing("couples", "groom_name", "groom_name TEXT NOT NULL DEFAULT ''
 // "exact" answers; the *_kind columns plus structured period / range fields
 // hold the fuzzier shapes.
 //
-//   wedding_date_kind:      'exact' | 'month' | 'season' | 'year' | 'tbd'
-//   wedding_target_year:    integer (e.g. 2027). Filled for month/season/year/exact.
+//   wedding_date_kind:      'exact' | 'month' | 'season' | 'quarter' | 'year' | 'tbd'
+//   wedding_target_year:    integer (e.g. 2027). Filled for month/season/quarter/year/exact.
 //   wedding_target_month:   1..12. Filled when kind = 'month' or 'exact'.
 //   wedding_target_season:  'spring' | 'summer' | 'fall' | 'winter'.
 //                           Filled when kind = 'season'.
+//   wedding_target_quarter: 1..4, nullable even when kind = 'quarter' (null
+//                           means "sometime that year"). The onboarding
+//                           wizard's current approximate-date shape; 'month'
+//                           and 'season' are kept for pre-existing rows only.
 //   guest_count_kind:       'exact' | 'range' | 'tbd'
 //   target_guest_count_min/max: range bounds when kind = 'range'.
 //   budget_kind:            'exact' | 'range' | 'tbd'
@@ -89,6 +93,7 @@ addColumnIfMissing(
 addColumnIfMissing("couples", "wedding_target_year", "wedding_target_year INTEGER");
 addColumnIfMissing("couples", "wedding_target_month", "wedding_target_month INTEGER");
 addColumnIfMissing("couples", "wedding_target_season", "wedding_target_season TEXT");
+addColumnIfMissing("couples", "wedding_target_quarter", "wedding_target_quarter INTEGER");
 addColumnIfMissing("couples", "guest_count_kind", "guest_count_kind TEXT NOT NULL DEFAULT 'exact'");
 addColumnIfMissing("couples", "target_guest_count_min", "target_guest_count_min INTEGER");
 addColumnIfMissing("couples", "target_guest_count_max", "target_guest_count_max INTEGER");

@@ -233,6 +233,7 @@ export interface CoupleRow {
   wedding_target_year: number | null;
   wedding_target_month: number | null;
   wedding_target_season: string | null;
+  wedding_target_quarter: number | null;
   target_guest_count: number | null;
   guest_count_kind: string | null;
   target_guest_count_min: number | null;
@@ -383,6 +384,7 @@ const DATE_KINDS: ReadonlySet<WeddingDateKind> = new Set([
   "exact",
   "month",
   "season",
+  "quarter",
   "year",
   "tbd",
 ]);
@@ -437,12 +439,20 @@ function rowToDateGoal(row: CoupleRow): WeddingDateGoal {
     row.wedding_target_season && SEASONS.has(row.wedding_target_season as WeddingSeason)
       ? (row.wedding_target_season as WeddingSeason)
       : null;
+  const quarter =
+    row.wedding_target_quarter !== null &&
+    Number.isInteger(row.wedding_target_quarter) &&
+    row.wedding_target_quarter >= 1 &&
+    row.wedding_target_quarter <= 4
+      ? row.wedding_target_quarter
+      : null;
   return {
     kind,
     exact_date: kind === "exact" ? row.wedding_date : null,
     target_year: row.wedding_target_year,
     target_month: row.wedding_target_month,
     target_season: season,
+    target_quarter: quarter,
   };
 }
 

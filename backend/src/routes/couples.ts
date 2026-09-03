@@ -428,6 +428,7 @@ const VALID_DATE_KINDS: ReadonlySet<WeddingDateKind> = new Set([
   "exact",
   "month",
   "season",
+  "quarter",
   "year",
   "tbd",
 ]);
@@ -455,6 +456,7 @@ function parseWeddingDateGoal(body: OnboardBody): WeddingDateGoal {
       target_year: exact ? Number(exact.slice(0, 4)) : null,
       target_month: exact ? Number(exact.slice(5, 7)) : null,
       target_season: null,
+      target_quarter: null,
     };
   }
   const kindRaw = obj.kind;
@@ -463,7 +465,14 @@ function parseWeddingDateGoal(body: OnboardBody): WeddingDateGoal {
   }
   const kind = kindRaw as WeddingDateKind;
   if (kind === "tbd") {
-    return { kind, exact_date: null, target_year: null, target_month: null, target_season: null };
+    return {
+      kind,
+      exact_date: null,
+      target_year: null,
+      target_month: null,
+      target_season: null,
+      target_quarter: null,
+    };
   }
   if (kind === "exact") {
     const exact = parseWeddingDate(obj.exact_date);
@@ -474,6 +483,7 @@ function parseWeddingDateGoal(body: OnboardBody): WeddingDateGoal {
       target_year: Number(exact.slice(0, 4)),
       target_month: Number(exact.slice(5, 7)),
       target_season: null,
+      target_quarter: null,
     };
   }
   const year = parseOptionalInt(
@@ -488,7 +498,14 @@ function parseWeddingDateGoal(body: OnboardBody): WeddingDateGoal {
   if (kind === "month") {
     const month = parseOptionalInt(obj.target_month, "wedding_date_goal.target_month", 1, 12);
     if (month === null) throw new HttpError(400, "wedding_date_goal.target_month required");
-    return { kind, exact_date: null, target_year: year, target_month: month, target_season: null };
+    return {
+      kind,
+      exact_date: null,
+      target_year: year,
+      target_month: month,
+      target_season: null,
+      target_quarter: null,
+    };
   }
   if (kind === "season") {
     const seasonRaw = obj.target_season;
@@ -501,10 +518,31 @@ function parseWeddingDateGoal(body: OnboardBody): WeddingDateGoal {
       target_year: year,
       target_month: null,
       target_season: seasonRaw as WeddingSeason,
+      target_quarter: null,
+    };
+  }
+  if (kind === "quarter") {
+    // Unlike every other kind, the refining field is genuinely optional here:
+    // a couple who only knows the year picks no quarter at all.
+    const quarter = parseOptionalInt(obj.target_quarter, "wedding_date_goal.target_quarter", 1, 4);
+    return {
+      kind,
+      exact_date: null,
+      target_year: year,
+      target_month: null,
+      target_season: null,
+      target_quarter: quarter,
     };
   }
   // kind === 'year'
-  return { kind, exact_date: null, target_year: year, target_month: null, target_season: null };
+  return {
+    kind,
+    exact_date: null,
+    target_year: year,
+    target_month: null,
+    target_season: null,
+    target_quarter: null,
+  };
 }
 
 function parseGuestCountGoal(body: OnboardBody): GuestCountGoal {
@@ -646,13 +684,13 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
       .prepare(
         `INSERT INTO couples
         (partner_a_id, partner_b_id, display_name, bride_name, groom_name,
-         wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season,
+         wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season, wedding_target_quarter,
          target_guest_count, guest_count_kind, target_guest_count_min, target_guest_count_max,
          budget_ceiling_huf, budget_kind, budget_ceiling_min_huf, budget_ceiling_max_huf,
          location_lat, location_lng, location_radius_km, country,
          style_tags_json, currency, status, created_at, updated_at, onboarded_at)
        VALUES (?, NULL, ?, ?, ?,
-               ?, ?, ?, ?, ?,
+               ?, ?, ?, ?, ?, ?,
                ?, ?, ?, ?,
                ?, ?, ?, ?,
                ?, ?, ?, ?,
@@ -668,6 +706,7 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
         dateGoal.target_year,
         dateGoal.target_month,
         dateGoal.target_season,
+        dateGoal.target_quarter,
         guestGoal.exact,
         guestGoal.kind,
         guestGoal.min,
@@ -1831,6 +1870,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       { col: "wedding_target_year", val: goal.target_year },
       { col: "wedding_target_month", val: goal.target_month },
       { col: "wedding_target_season", val: goal.target_season },
+      { col: "wedding_target_quarter", val: goal.target_quarter },
     );
     auditEntries.push({
       action: "couple.wedding_date_update",
@@ -1840,6 +1880,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         wedding_target_year: couple.wedding_target_year,
         wedding_target_month: couple.wedding_target_month,
         wedding_target_season: couple.wedding_target_season,
+        wedding_target_quarter: couple.wedding_target_quarter,
       },
       after: {
         wedding_date: goal.exact_date,
@@ -1847,6 +1888,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         wedding_target_year: goal.target_year,
         wedding_target_month: goal.target_month,
         wedding_target_season: goal.target_season,
+        wedding_target_quarter: goal.target_quarter,
       },
     });
   }
@@ -3617,13 +3659,13 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
       .prepare(
         `INSERT INTO couples
         (partner_a_id, partner_b_id, display_name, bride_name, groom_name,
-         wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season,
+         wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season, wedding_target_quarter,
          target_guest_count, guest_count_kind, target_guest_count_min, target_guest_count_max,
          budget_ceiling_huf, budget_kind, budget_ceiling_min_huf, budget_ceiling_max_huf,
          location_lat, location_lng, location_radius_km, country,
          style_tags_json, currency, status, created_at, updated_at, onboarded_at)
        VALUES (?, NULL, ?, ?, ?,
-               ?, ?, ?, ?, ?,
+               ?, ?, ?, ?, ?, ?,
                ?, ?, ?, ?,
                ?, ?, ?, ?,
                NULL, NULL, NULL, ?,
@@ -3639,6 +3681,7 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
         dateGoal.target_year,
         dateGoal.target_month,
         dateGoal.target_season,
+        dateGoal.target_quarter,
         guestGoal.exact,
         guestGoal.kind,
         guestGoal.min,

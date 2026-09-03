@@ -63,6 +63,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
       target_year: 2027,
       target_month: 6,
       target_season: null,
+      target_quarter: null,
     },
     wedding_date: inDays(120),
     previous_wedding_date: null,
@@ -452,6 +453,7 @@ describe("<DashboardPage>", () => {
         target_year: 2027,
         target_month: 6,
         target_season: null,
+        target_quarter: null,
       },
     });
     globalThis.fetch = buildFetch({ couple });
@@ -517,6 +519,7 @@ describe("<DashboardPage>", () => {
         target_year: Number(today.slice(0, 4)),
         target_month: Number(today.slice(5, 7)),
         target_season: null,
+        target_quarter: null,
       },
     });
     globalThis.fetch = buildFetch({ couple });
@@ -539,6 +542,7 @@ describe("<DashboardPage>", () => {
         target_year: Number(today.slice(0, 4)),
         target_month: Number(today.slice(5, 7)),
         target_season: null,
+        target_quarter: null,
       },
     });
     globalThis.fetch = buildFetch({ couple, calls });

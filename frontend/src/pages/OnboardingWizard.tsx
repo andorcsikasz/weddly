@@ -1,9 +1,11 @@
 // 5-step wizard. Wedding planning starts uncertain — couples often have a
-// season ("Summer 2027") rather than a date, a guest range rather than a
-// number, and a vague budget. Each step lets them pick how certain they are
-// (the "kind") and only asks the fields that match. The final step
-// commits the wedding country so we can offer country-aware supplier
-// suggestions from day one.
+// year and roughly a quarter ("sometime Q3 2027") rather than a date, a
+// guest range rather than a number, and a vague budget. Each step lets them
+// pick how certain they are (the "kind") and only asks the fields that
+// match. The couple step also collects the partner's email inline — the
+// single best moment to ask, since the couple is already telling us who
+// they both are. The final step commits the wedding country so we can offer
+// country-aware supplier suggestions from day one.
 
 import type {
   BudgetGoal,
@@ -14,7 +16,6 @@ import type {
   GuestCountKind,
   WeddingDateGoal,
   WeddingDateKind,
-  WeddingSeason,
 } from "@shared/types";
 import { scaleFromEur } from "@shared/currency";
 import { checkRealName } from "@shared/real_names";
@@ -45,8 +46,6 @@ import { useDocumentMeta } from "../lib/seo";
 
 const DRAFT_KEY = "weddly.onboarding_draft";
 
-const SEASONS: WeddingSeason[] = ["spring", "summer", "fall", "winter"];
-
 // Sensible starting range per currency. HUF defaults to a typical Hungarian
 // wedding (4-6M Ft, ~€10-15k); EUR/USD use the rough conversion so switching
 // the unit re-bases the values instead of leaving "6 000 000 €" in the box.
@@ -74,7 +73,7 @@ function budgetDefaults(currency: Currency): BudgetDefaults {
 const TODAY = new Date();
 const MIN_YEAR = TODAY.getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => MIN_YEAR + i);
-const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
+const QUARTERS = [1, 2, 3, 4] as const;
 
 interface FormState {
   bride_name: string;
@@ -82,8 +81,9 @@ interface FormState {
   date_kind: WeddingDateKind;
   date_exact: string;
   date_year: string;
-  date_month: string;
-  date_season: WeddingSeason;
+  /** "" | "1" | "2" | "3" | "4" — empty means "sometime that year". Only
+   *  meaningful for date_kind='quarter'. */
+  date_quarter: string;
   guest_kind: GuestCountKind;
   guest_exact: string;
   guest_min: string;
@@ -96,19 +96,21 @@ interface FormState {
    *  couple via the onboard call; flips every money field after onboarding. */
   currency: Currency;
   /** ISO 3166-1 alpha-2 country code where the wedding will be held.
-   *  Picked on step 5 (country); empty string until the user commits a
+   *  Picked on the country step; empty string until the user commits a
    *  pick. Drives supplier region filtering after onboarding. */
   country: string;
-  /** Optional: the other half's email. Filled on the last (optional) step; when
+  /** Optional: the other half's email, asked right alongside the couple's
+   *  names on step 0 — the moment they're already telling us who's getting
+   *  married is the natural moment to ask who else should be in here. When
    *  present, an invite to this workspace is sent the moment onboarding
    *  completes. Empty = skip. */
   partner_email: string;
 }
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 
 /** Loose email shape — enough to gate the invite (the server validates for
- *  real). Empty is allowed: the invite step is optional. */
+ *  real). Empty is allowed: the partner's email is optional. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function partnerEmailValid(f: FormState): boolean {
   const v = f.partner_email.trim();
@@ -126,11 +128,10 @@ const STEP_TITLE =
 const DEFAULT_FORM: FormState = {
   bride_name: "",
   groom_name: "",
-  date_kind: "season",
+  date_kind: "quarter",
   date_exact: "",
   date_year: String(MIN_YEAR + 1),
-  date_month: "6",
-  date_season: "summer",
+  date_quarter: "",
   guest_kind: "range",
   guest_exact: "",
   guest_min: "60",
@@ -144,9 +145,13 @@ const DEFAULT_FORM: FormState = {
   partner_email: "",
 };
 
+/** Only 3 kinds ever come out of this wizard now: an exact day, a year with
+ *  an optional Q1–Q4 refinement, or "not sure yet". 'month'/'season'/'year'
+ *  stay valid `WeddingDateKind`s (pre-existing couples still carry them —
+ *  see `formatWeddingDateGoal`) but are no longer reachable from here:
+ *  'season' forced an odd choice that isn't even hemisphere-neutral, and a
+ *  bare 'year' is just 'quarter' with nothing picked. */
 function buildDateGoal(f: FormState): WeddingDateGoal {
-  const year = Number(f.date_year);
-  const month = Number(f.date_month);
   if (f.date_kind === "tbd") {
     return {
       kind: "tbd",
@@ -154,6 +159,7 @@ function buildDateGoal(f: FormState): WeddingDateGoal {
       target_year: null,
       target_month: null,
       target_season: null,
+      target_quarter: null,
     };
   }
   if (f.date_kind === "exact" && f.date_exact) {
@@ -163,32 +169,16 @@ function buildDateGoal(f: FormState): WeddingDateGoal {
       target_year: Number(f.date_exact.slice(0, 4)),
       target_month: Number(f.date_exact.slice(5, 7)),
       target_season: null,
-    };
-  }
-  if (f.date_kind === "month") {
-    return {
-      kind: "month",
-      exact_date: null,
-      target_year: year,
-      target_month: month,
-      target_season: null,
-    };
-  }
-  if (f.date_kind === "season") {
-    return {
-      kind: "season",
-      exact_date: null,
-      target_year: year,
-      target_month: null,
-      target_season: f.date_season,
+      target_quarter: null,
     };
   }
   return {
-    kind: "year",
+    kind: "quarter",
     exact_date: null,
-    target_year: year,
+    target_year: Number(f.date_year),
     target_month: null,
     target_season: null,
+    target_quarter: f.date_quarter ? Number(f.date_quarter) : null,
   };
 }
 
@@ -239,8 +229,10 @@ function isStepValid(step: number, f: FormState): boolean {
   if (step === 0) {
     // Non-empty is what enables the button; whether the names are REAL is
     // checked on the click instead (see `advance`), so the couple gets an
-    // explanation rather than a button that silently refuses to work.
-    return f.bride_name.trim().length > 0 && f.groom_name.trim().length > 0;
+    // explanation rather than a button that silently refuses to work. The
+    // partner's email lives on this same step now — never required, but a
+    // half-typed one still blocks Continue rather than being sent as-is.
+    return f.bride_name.trim().length > 0 && f.groom_name.trim().length > 0 && partnerEmailValid(f);
   }
   if (step === 1) {
     const goal = buildDateGoal(f);
@@ -253,9 +245,8 @@ function isStepValid(step: number, f: FormState): boolean {
         isPlausibleDateIso(goal.exact_date) &&
         goal.exact_date >= todayIso()
       );
-    if (goal.kind === "month") return !!goal.target_year && !!goal.target_month;
-    if (goal.kind === "season") return !!goal.target_year && !!goal.target_season;
-    if (goal.kind === "year") return !!goal.target_year;
+    // 'quarter': the year is required, the Q1–Q4 refinement is not.
+    if (goal.kind === "quarter") return !!goal.target_year;
     return true;
   }
   if (step === 2) {
@@ -271,16 +262,11 @@ function isStepValid(step: number, f: FormState): boolean {
       return b.min_huf !== null && b.max_huf !== null && b.min_huf > 0 && b.min_huf <= b.max_huf;
     return true;
   }
-  // Step 4 (the 5th, country): a known ISO code must be picked before
+  // Step 4 (the last one, country): a known ISO code must be picked before
   // the visitor can finish onboarding. Combobox commits the code only on
   // an explicit pick, so an empty string here means "no commit yet".
   if (step === 4) {
     return f.country.length === 2;
-  }
-  // Step 5 (the 6th, invite your other half): optional. Finish is enabled when
-  // the field is empty OR holds a plausible email — never on a half-typed one.
-  if (step === 5) {
-    return partnerEmailValid(f);
   }
   return true;
 }
@@ -527,418 +513,405 @@ export default function OnboardingWizard() {
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-umber-600">
             {step + 1} / {TOTAL_STEPS} · {t(`onboarding.step${step + 1}_short`)}
           </p>
-          <div className="mt-2 h-1.5 w-full rounded-full bg-paper-300">
+          <div className="mt-2 h-1.5 w-full rounded-full bg-paper-300 dark:bg-umber-800">
             <div
-              className="h-1.5 rounded-full bg-umber-900 transition-all"
+              className="h-1.5 rounded-full bg-blush-600 transition-[width] duration-500 ease-out dark:bg-blush-400"
               style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }}
             />
           </div>
         </div>
 
-        <div className="card animate-fade-in-up sm:p-8">
-          {step === 0 && (
-            <>
-              <h1 className={STEP_TITLE}>{t("onboarding.step1_title")}</h1>
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="bride_name" className="field-label">
-                    {t("onboarding.bride_name_label")}
-                  </label>
-                  <input
-                    id="bride_name"
-                    className="input"
-                    value={form.bride_name}
-                    onChange={(e) => update("bride_name", e.target.value)}
-                    onBlur={() => setNameErrorsShown(true)}
-                    aria-invalid={nameErrorsShown && brideVerdict !== null}
-                    aria-describedby={
-                      nameErrorsShown && brideVerdict ? "bride_name_error" : undefined
-                    }
-                    placeholder={t("onboarding.bride_name_placeholder")}
-                  />
-                  {nameErrorsShown && brideVerdict && (
-                    <p
-                      id="bride_name_error"
-                      className="mt-1.5 text-sm text-blush-700 dark:text-blush-300"
-                    >
-                      {t(realNameErrorKey(brideVerdict.reason))}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="groom_name" className="field-label">
-                    {t("onboarding.groom_name_label")}
-                  </label>
-                  <input
-                    id="groom_name"
-                    className="input"
-                    value={form.groom_name}
-                    onChange={(e) => update("groom_name", e.target.value)}
-                    onBlur={() => setNameErrorsShown(true)}
-                    aria-invalid={nameErrorsShown && groomVerdict !== null}
-                    aria-describedby={
-                      nameErrorsShown && groomVerdict ? "groom_name_error" : undefined
-                    }
-                    placeholder={t("onboarding.groom_name_placeholder")}
-                  />
-                  {nameErrorsShown && groomVerdict && (
-                    <p
-                      id="groom_name_error"
-                      className="mt-1.5 text-sm text-blush-700 dark:text-blush-300"
-                    >
-                      {t(realNameErrorKey(groomVerdict.reason))}
-                    </p>
-                  )}
-                </div>
-              </div>
-              {nameErrorsShown && (brideVerdict || groomVerdict) && (
-                <p className="mt-4 text-sm text-ink-500">{t("onboarding.real_names_why")}</p>
-              )}
-            </>
-          )}
-
-          {step === 1 && (
-            <>
-              <h1 className={STEP_TITLE}>{t("onboarding.step2_title")}</h1>
-              <div
-                className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-5"
-                role="group"
-                aria-label={t("onboarding.date_kind_question")}
-              >
-                {(["exact", "month", "season", "year", "tbd"] as WeddingDateKind[]).map((k) => (
-                  <KindButton
-                    key={k}
-                    active={form.date_kind === k}
-                    onClick={() => update("date_kind", k)}
-                    label={t(`onboarding.date_kind_${k}`)}
-                  />
-                ))}
-              </div>
-
-              {form.date_kind === "exact" && (
-                <div className="mt-6">
-                  <label htmlFor="wedding_date" className="field-label">
-                    {t("onboarding.wedding_date_label")}
-                  </label>
-                  <input
-                    id="wedding_date"
-                    type="date"
-                    min={todayIso()}
-                    aria-invalid={dateExactInvalid}
-                    className="input"
-                    value={form.date_exact}
-                    onChange={(e) => update("date_exact", e.target.value)}
-                  />
-                  {dateExactInvalid && (
-                    <p className="mt-1 text-xs text-blush-700 dark:text-blush-300" role="alert">
-                      {t("onboarding.date_past_error")}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {form.date_kind === "month" && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <YearSelect value={form.date_year} onChange={(v) => update("date_year", v)} />
-                  <MonthSelect
-                    value={form.date_month}
-                    onChange={(v) => update("date_month", v)}
-                    t={t}
-                  />
-                </div>
-              )}
-
-              {form.date_kind === "season" && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <YearSelect value={form.date_year} onChange={(v) => update("date_year", v)} />
+        <div className="card animate-fade-in-up overflow-hidden sm:p-8">
+          {/* `key={step}` remounts this wrapper on every step change, which
+           *  is what replays `animate-card-deal` — same idiom as the couple
+           *  cards elsewhere in the app. Scoped to just the question, not the
+           *  progress bar or the Back/Finish row below, so only the thing
+           *  that actually changed moves. */}
+          <div key={step} className="animate-card-deal">
+            {step === 0 && (
+              <>
+                <h1 className={STEP_TITLE}>{t("onboarding.step1_title")}</h1>
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="date_season" className="field-label">
-                      {t("onboarding.date_season_label")}
+                    <label htmlFor="bride_name" className="field-label">
+                      {t("onboarding.bride_name_label")}
                     </label>
-                    <select
-                      id="date_season"
+                    <input
+                      id="bride_name"
                       className="input"
-                      value={form.date_season}
-                      onChange={(e) => update("date_season", e.target.value as WeddingSeason)}
-                    >
-                      {SEASONS.map((s) => (
-                        <option key={s} value={s}>
-                          {t(`season.${s}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {form.date_kind === "year" && (
-                <div className="mt-6">
-                  <YearSelect value={form.date_year} onChange={(v) => update("date_year", v)} />
-                </div>
-              )}
-
-              {form.date_kind === "tbd" && (
-                <p className="mt-6 rounded-lg bg-paper-200 p-4 text-sm text-umber-700">
-                  {t("onboarding.date_kind_help_tbd")}
-                </p>
-              )}
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <h1 className={STEP_TITLE}>{t("onboarding.step3_title")}</h1>
-              <div
-                className="mt-8 grid grid-cols-3 gap-2"
-                role="group"
-                aria-label={t("onboarding.guest_kind_question")}
-              >
-                {(["exact", "range", "tbd"] as GuestCountKind[]).map((k) => (
-                  <KindButton
-                    key={k}
-                    active={form.guest_kind === k}
-                    onClick={() => update("guest_kind", k)}
-                    label={t(`onboarding.guest_kind_${k}`)}
-                  />
-                ))}
-              </div>
-
-              {form.guest_kind === "exact" && (
-                <div className="mt-6">
-                  <label htmlFor="guest_exact" className="field-label">
-                    {t("onboarding.target_guest_count_label")}
-                  </label>
-                  <input
-                    id="guest_exact"
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    max={10000}
-                    className="input"
-                    value={form.guest_exact}
-                    onChange={(e) => update("guest_exact", e.target.value)}
-                    placeholder="80"
-                  />
-                </div>
-              )}
-
-              {form.guest_kind === "range" && (
-                <>
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="guest_min" className="field-label">
-                        {t("onboarding.guest_min_label")}
-                      </label>
-                      <input
-                        id="guest_min"
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        max={10000}
-                        className="input"
-                        value={form.guest_min}
-                        onChange={(e) => update("guest_min", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="guest_max" className="field-label">
-                        {t("onboarding.guest_max_label")}
-                      </label>
-                      <input
-                        id="guest_max"
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        max={10000}
-                        className="input"
-                        value={form.guest_max}
-                        onChange={(e) => update("guest_max", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  {Number(form.guest_min) > 0 &&
-                    Number(form.guest_max) >= Number(form.guest_min) && (
-                      <p className="mt-3 text-sm text-umber-600">
-                        {t("goal.count_range", {
-                          min: formatNumber(Number(form.guest_min), locale),
-                          max: formatNumber(Number(form.guest_max), locale),
-                        })}
+                      value={form.bride_name}
+                      onChange={(e) => update("bride_name", e.target.value)}
+                      onBlur={() => setNameErrorsShown(true)}
+                      aria-invalid={nameErrorsShown && brideVerdict !== null}
+                      aria-describedby={
+                        nameErrorsShown && brideVerdict ? "bride_name_error" : undefined
+                      }
+                      placeholder={t("onboarding.bride_name_placeholder")}
+                    />
+                    {nameErrorsShown && brideVerdict && (
+                      <p
+                        id="bride_name_error"
+                        className="mt-1.5 text-sm text-blush-700 dark:text-blush-300"
+                      >
+                        {t(realNameErrorKey(brideVerdict.reason))}
                       </p>
                     )}
-                </>
-              )}
-            </>
-          )}
-
-          {step === 3 && (
-            <>
-              <h1 className={STEP_TITLE}>{t("onboarding.step4_title")}</h1>
-              {/* Currency picker — pinned above the budget inputs so the user
-               *  picks the unit before typing an amount. Defaults to HUF; flips
-               *  the preview formatting (and every money field after onboarding). */}
-              <div className="mt-8 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-umber-600">
-                  {t("onboarding.budget_currency_label")}
-                </span>
-                <CurrencySelect
-                  value={form.currency}
-                  onChange={setCurrency}
-                  label={t("onboarding.budget_currency_label")}
-                />
-              </div>
-
-              <div
-                className="mt-5 grid grid-cols-3 gap-2"
-                role="group"
-                aria-label={t("onboarding.budget_kind_question")}
-              >
-                {(["exact", "range", "tbd"] as BudgetKind[]).map((k) => (
-                  <KindButton
-                    key={k}
-                    active={form.budget_kind === k}
-                    onClick={() => update("budget_kind", k)}
-                    label={t(`onboarding.budget_kind_${k}`)}
-                  />
-                ))}
-              </div>
-
-              {form.budget_kind === "exact" && (
-                <div className="mt-6">
-                  <label htmlFor="budget_exact" className="field-label">
-                    {t("onboarding.budget_label")}
-                  </label>
-                  <div className="flex items-center gap-2">
+                  </div>
+                  <div>
+                    <label htmlFor="groom_name" className="field-label">
+                      {t("onboarding.groom_name_label")}
+                    </label>
                     <input
-                      id="budget_exact"
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="off"
-                      className="input flex-1"
-                      value={formatGroupedDigits(form.budget_exact, locale)}
-                      onChange={(e) => update("budget_exact", digitsOnly(e.target.value))}
-                      placeholder={formatGroupedDigits(
-                        budgetDefaults(form.currency).placeholder,
-                        locale,
-                      )}
+                      id="groom_name"
+                      className="input"
+                      value={form.groom_name}
+                      onChange={(e) => update("groom_name", e.target.value)}
+                      onBlur={() => setNameErrorsShown(true)}
+                      aria-invalid={nameErrorsShown && groomVerdict !== null}
+                      aria-describedby={
+                        nameErrorsShown && groomVerdict ? "groom_name_error" : undefined
+                      }
+                      placeholder={t("onboarding.groom_name_placeholder")}
                     />
-                    <span className="text-sm text-umber-600">
-                      {currencySymbol(form.currency, locale)}
-                    </span>
+                    {nameErrorsShown && groomVerdict && (
+                      <p
+                        id="groom_name_error"
+                        className="mt-1.5 text-sm text-blush-700 dark:text-blush-300"
+                      >
+                        {t(realNameErrorKey(groomVerdict.reason))}
+                      </p>
+                    )}
                   </div>
-                  {Number(form.budget_exact) > 0 && (
-                    <p className="mt-2 text-sm text-umber-600">
-                      {t("onboarding.budget_preview_label")}{" "}
-                      <span className="font-medium text-umber-800">
-                        {formatMoney(Number(form.budget_exact), form.currency, locale)}
-                      </span>
-                    </p>
-                  )}
                 </div>
-              )}
+                {nameErrorsShown && (brideVerdict || groomVerdict) && (
+                  <p className="mt-4 text-sm text-ink-500">{t("onboarding.real_names_why")}</p>
+                )}
+                <div className="mt-8 border-t border-paper-300 pt-6 dark:border-umber-700">
+                  <label className="field-label" htmlFor="onb-partner-email">
+                    {t("onboarding.invite_email_label")}
+                  </label>
+                  <input
+                    id="onb-partner-email"
+                    type="email"
+                    className="input"
+                    autoComplete="email"
+                    inputMode="email"
+                    placeholder={t("onboarding.invite_email_placeholder")}
+                    value={form.partner_email}
+                    onChange={(e) => update("partner_email", e.target.value)}
+                    aria-invalid={!partnerEmailValid(form)}
+                  />
+                  <p className="mt-2 text-sm text-umber-500 dark:text-umber-400">
+                    {t("onboarding.invite_skip_hint")}
+                  </p>
+                </div>
+              </>
+            )}
 
-              {form.budget_kind === "range" && (
-                <>
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="budget_min" className="field-label">
-                        {t("onboarding.budget_min_label")}
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          id="budget_min"
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="off"
-                          className="input flex-1"
-                          value={formatGroupedDigits(form.budget_min, locale)}
-                          onChange={(e) => update("budget_min", digitsOnly(e.target.value))}
+            {step === 1 && (
+              <>
+                <h1 className={STEP_TITLE}>{t("onboarding.step2_title")}</h1>
+                <div
+                  className="mt-8 grid grid-cols-3 gap-2"
+                  role="group"
+                  aria-label={t("onboarding.date_kind_question")}
+                >
+                  {(["exact", "quarter", "tbd"] as WeddingDateKind[]).map((k) => (
+                    <KindButton
+                      key={k}
+                      active={form.date_kind === k}
+                      onClick={() => update("date_kind", k)}
+                      label={t(`onboarding.date_kind_${k}`)}
+                    />
+                  ))}
+                </div>
+
+                {form.date_kind === "exact" && (
+                  <div className="mt-6 animate-fade-in-up">
+                    <label htmlFor="wedding_date" className="field-label">
+                      {t("onboarding.wedding_date_label")}
+                    </label>
+                    <input
+                      id="wedding_date"
+                      type="date"
+                      min={todayIso()}
+                      aria-invalid={dateExactInvalid}
+                      className="input"
+                      value={form.date_exact}
+                      onChange={(e) => update("date_exact", e.target.value)}
+                    />
+                    {dateExactInvalid && (
+                      <p className="mt-1 text-xs text-blush-700 dark:text-blush-300" role="alert">
+                        {t("onboarding.date_past_error")}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {form.date_kind === "quarter" && (
+                  <div className="mt-6 animate-fade-in-up">
+                    <YearSelect value={form.date_year} onChange={(v) => update("date_year", v)} />
+                    <div className="mt-4">
+                      <p className="field-label">{t("onboarding.date_quarter_label")}</p>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                        <KindButton
+                          active={form.date_quarter === ""}
+                          onClick={() => update("date_quarter", "")}
+                          label={t("onboarding.date_quarter_any")}
                         />
-                        <span className="text-sm text-umber-600">
-                          {currencySymbol(form.currency, locale)}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="budget_max" className="field-label">
-                        {t("onboarding.budget_max_label")}
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          id="budget_max"
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="off"
-                          className="input flex-1"
-                          value={formatGroupedDigits(form.budget_max, locale)}
-                          onChange={(e) => update("budget_max", digitsOnly(e.target.value))}
-                        />
-                        <span className="text-sm text-umber-600">
-                          {currencySymbol(form.currency, locale)}
-                        </span>
+                        {QUARTERS.map((q) => (
+                          <KindButton
+                            key={q}
+                            active={form.date_quarter === String(q)}
+                            onClick={() =>
+                              update(
+                                "date_quarter",
+                                form.date_quarter === String(q) ? "" : String(q),
+                              )
+                            }
+                            label={`Q${q}`}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
-                  {Number(form.budget_min) > 0 &&
-                    Number(form.budget_max) >= Number(form.budget_min) && (
-                      <p className="mt-3 text-sm text-umber-600">
+                )}
+
+                {form.date_kind === "tbd" && (
+                  <p className="mt-6 animate-fade-in-up rounded-lg bg-paper-200 p-4 text-sm text-umber-700 dark:bg-umber-800 dark:text-umber-200">
+                    {t("onboarding.date_kind_help_tbd")}
+                  </p>
+                )}
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <h1 className={STEP_TITLE}>{t("onboarding.step3_title")}</h1>
+                <div
+                  className="mt-8 grid grid-cols-3 gap-2"
+                  role="group"
+                  aria-label={t("onboarding.guest_kind_question")}
+                >
+                  {(["exact", "range", "tbd"] as GuestCountKind[]).map((k) => (
+                    <KindButton
+                      key={k}
+                      active={form.guest_kind === k}
+                      onClick={() => update("guest_kind", k)}
+                      label={t(`onboarding.guest_kind_${k}`)}
+                    />
+                  ))}
+                </div>
+
+                {form.guest_kind === "exact" && (
+                  <div className="mt-6">
+                    <label htmlFor="guest_exact" className="field-label">
+                      {t("onboarding.target_guest_count_label")}
+                    </label>
+                    <input
+                      id="guest_exact"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={10000}
+                      className="input"
+                      value={form.guest_exact}
+                      onChange={(e) => update("guest_exact", e.target.value)}
+                      placeholder="80"
+                    />
+                  </div>
+                )}
+
+                {form.guest_kind === "range" && (
+                  <>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="guest_min" className="field-label">
+                          {t("onboarding.guest_min_label")}
+                        </label>
+                        <input
+                          id="guest_min"
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={10000}
+                          className="input"
+                          value={form.guest_min}
+                          onChange={(e) => update("guest_min", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="guest_max" className="field-label">
+                          {t("onboarding.guest_max_label")}
+                        </label>
+                        <input
+                          id="guest_max"
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={10000}
+                          className="input"
+                          value={form.guest_max}
+                          onChange={(e) => update("guest_max", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    {Number(form.guest_min) > 0 &&
+                      Number(form.guest_max) >= Number(form.guest_min) && (
+                        <p className="mt-3 text-sm text-umber-600">
+                          {t("goal.count_range", {
+                            min: formatNumber(Number(form.guest_min), locale),
+                            max: formatNumber(Number(form.guest_max), locale),
+                          })}
+                        </p>
+                      )}
+                  </>
+                )}
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <h1 className={STEP_TITLE}>{t("onboarding.step4_title")}</h1>
+                {/* Currency picker — pinned above the budget inputs so the user
+                 *  picks the unit before typing an amount. Defaults to HUF; flips
+                 *  the preview formatting (and every money field after onboarding). */}
+                <div className="mt-8 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-medium uppercase tracking-wide text-umber-600">
+                    {t("onboarding.budget_currency_label")}
+                  </span>
+                  <CurrencySelect
+                    value={form.currency}
+                    onChange={setCurrency}
+                    label={t("onboarding.budget_currency_label")}
+                  />
+                </div>
+
+                <div
+                  className="mt-5 grid grid-cols-3 gap-2"
+                  role="group"
+                  aria-label={t("onboarding.budget_kind_question")}
+                >
+                  {(["exact", "range", "tbd"] as BudgetKind[]).map((k) => (
+                    <KindButton
+                      key={k}
+                      active={form.budget_kind === k}
+                      onClick={() => update("budget_kind", k)}
+                      label={t(`onboarding.budget_kind_${k}`)}
+                    />
+                  ))}
+                </div>
+
+                {form.budget_kind === "exact" && (
+                  <div className="mt-6">
+                    <label htmlFor="budget_exact" className="field-label">
+                      {t("onboarding.budget_label")}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="budget_exact"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        className="input flex-1"
+                        value={formatGroupedDigits(form.budget_exact, locale)}
+                        onChange={(e) => update("budget_exact", digitsOnly(e.target.value))}
+                        placeholder={formatGroupedDigits(
+                          budgetDefaults(form.currency).placeholder,
+                          locale,
+                        )}
+                      />
+                      <span className="text-sm text-umber-600">
+                        {currencySymbol(form.currency, locale)}
+                      </span>
+                    </div>
+                    {Number(form.budget_exact) > 0 && (
+                      <p className="mt-2 text-sm text-umber-600">
                         {t("onboarding.budget_preview_label")}{" "}
                         <span className="font-medium text-umber-800">
-                          {formatMoneyRange(
-                            Number(form.budget_min),
-                            Number(form.budget_max),
-                            form.currency,
-                            locale,
-                          )}
+                          {formatMoney(Number(form.budget_exact), form.currency, locale)}
                         </span>
                       </p>
                     )}
-                </>
-              )}
-            </>
-          )}
+                  </div>
+                )}
 
-          {step === 4 && (
-            <>
-              <h1 className={STEP_TITLE}>{t("onboarding.step5_title")}</h1>
-              <div className="mt-8">
-                <CountryCombobox
-                  value={form.country}
-                  onChange={(code) => update("country", code)}
-                  label={t("onboarding.country_label")}
-                  placeholder={t("onboarding.country_placeholder")}
-                  required
-                />
-              </div>
-            </>
-          )}
+                {form.budget_kind === "range" && (
+                  <>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="budget_min" className="field-label">
+                          {t("onboarding.budget_min_label")}
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            id="budget_min"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            className="input flex-1"
+                            value={formatGroupedDigits(form.budget_min, locale)}
+                            onChange={(e) => update("budget_min", digitsOnly(e.target.value))}
+                          />
+                          <span className="text-sm text-umber-600">
+                            {currencySymbol(form.currency, locale)}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="budget_max" className="field-label">
+                          {t("onboarding.budget_max_label")}
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            id="budget_max"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            className="input flex-1"
+                            value={formatGroupedDigits(form.budget_max, locale)}
+                            onChange={(e) => update("budget_max", digitsOnly(e.target.value))}
+                          />
+                          <span className="text-sm text-umber-600">
+                            {currencySymbol(form.currency, locale)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {Number(form.budget_min) > 0 &&
+                      Number(form.budget_max) >= Number(form.budget_min) && (
+                        <p className="mt-3 text-sm text-umber-600">
+                          {t("onboarding.budget_preview_label")}{" "}
+                          <span className="font-medium text-umber-800">
+                            {formatMoneyRange(
+                              Number(form.budget_min),
+                              Number(form.budget_max),
+                              form.currency,
+                              locale,
+                            )}
+                          </span>
+                        </p>
+                      )}
+                  </>
+                )}
+              </>
+            )}
 
-          {step === 5 && (
-            <>
-              <h1 className={STEP_TITLE}>{t("onboarding.step6_title")}</h1>
-              <p className="mt-3 text-base text-umber-600 dark:text-umber-300">
-                {t("onboarding.invite_help")}
-              </p>
-              <div className="mt-8">
-                <label className="field-label" htmlFor="onb-partner-email">
-                  {t("onboarding.invite_email_label")}
-                </label>
-                <input
-                  id="onb-partner-email"
-                  type="email"
-                  className="input"
-                  autoComplete="email"
-                  inputMode="email"
-                  placeholder={t("onboarding.invite_email_placeholder")}
-                  value={form.partner_email}
-                  onChange={(e) => update("partner_email", e.target.value)}
-                  aria-invalid={!partnerEmailValid(form)}
-                />
-                <p className="mt-2 text-sm text-umber-500 dark:text-umber-400">
-                  {t("onboarding.invite_skip_hint")}
-                </p>
-              </div>
-            </>
-          )}
+            {step === 4 && (
+              <>
+                <h1 className={STEP_TITLE}>{t("onboarding.step5_title")}</h1>
+                <div className="mt-8">
+                  <CountryCombobox
+                    value={form.country}
+                    onChange={(code) => update("country", code)}
+                    label={t("onboarding.country_label")}
+                    placeholder={t("onboarding.country_placeholder")}
+                    required
+                  />
+                </div>
+              </>
+            )}
+          </div>
 
           {error && (
             <div
@@ -962,13 +935,18 @@ export default function OnboardingWizard() {
               {t("common.back")}
             </button>
             {step < TOTAL_STEPS - 1 ? (
-              <button type="button" className="btn-primary" disabled={!stepValid} onClick={advance}>
+              <button
+                type="button"
+                className="btn-primary btn-lifted"
+                disabled={!stepValid}
+                onClick={advance}
+              >
                 {t("common.next")}
               </button>
             ) : (
               <button
                 type="submit"
-                className="btn-accent btn-lg"
+                className="btn-accent btn-lifted btn-lg"
                 disabled={submitting || !stepValid}
               >
                 {submitting ? t("onboarding.saving") : t("onboarding.finish")}
@@ -998,6 +976,7 @@ function buildDateGoalFromDateStr(dateStr: string): WeddingDateGoal {
       target_year: Number(dateStr.slice(0, 4)),
       target_month: Number(dateStr.slice(5, 7)),
       target_season: null,
+      target_quarter: null,
     };
   }
   return {
@@ -1006,6 +985,7 @@ function buildDateGoalFromDateStr(dateStr: string): WeddingDateGoal {
     target_year: null,
     target_month: null,
     target_season: null,
+    target_quarter: null,
   };
 }
 
@@ -1249,6 +1229,7 @@ function KindButton({
       onClick={onClick}
       className={[
         "min-h-tap rounded-xl border px-4 py-3 text-sm font-semibold transition",
+        "duration-150 active:scale-[0.97]",
         active
           ? "border-umber-900 bg-umber-900 text-paper-50 shadow-soft"
           : "border-paper-300 bg-paper-100 text-umber-800 hover:border-umber-500 hover:bg-paper-200 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100 dark:hover:border-umber-500",
@@ -1276,36 +1257,6 @@ function YearSelect({ value, onChange }: { value: string; onChange: (v: string) 
         {YEAR_OPTIONS.map((y) => (
           <option key={y} value={y}>
             {y}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function MonthSelect({
-  value,
-  onChange,
-  t,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  t: (path: string, vars?: Record<string, string | number>) => string;
-}) {
-  return (
-    <div>
-      <label htmlFor="date_month" className="field-label">
-        {t("onboarding.date_month_label")}
-      </label>
-      <select
-        id="date_month"
-        className="input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {MONTH_OPTIONS.map((m) => (
-          <option key={m} value={m}>
-            {t(`month.${m}`)}
           </option>
         ))}
       </select>
