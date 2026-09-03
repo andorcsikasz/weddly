@@ -3075,6 +3075,13 @@ export interface LocaleMessages {
     mockup_vendor_category: string;
     mockup_vendor_rating: string;
     mockup_vendor_price: string;
+    /** "More to explore" cross-sell band near the foot of the landing page,
+     *  linking out to the public /camera and /games marketing pages via two
+     *  `SupplierAction` rows. Row labels reuse `footer_couples_camera` /
+     *  `footer_couples_games`; these are just the section title + subs. */
+    extras_title: string;
+    extras_camera_sub: string;
+    extras_games_sub: string;
   };
   vendors: {
     seo_title: string;

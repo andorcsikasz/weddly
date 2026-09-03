@@ -2361,14 +2361,14 @@ const hu: LocaleMessages = {
     t1_quote:
       "Egy helyen van minden, költségvetés, vendégek, ültetés. Mindketten ugyanazt látjuk, és tudjuk, mi a következő lépés.",
     t1_name: "Allie & Noah",
-    t1_meta: "Budapest · béta-interjúkból összeállítva",
+    t1_meta: "Budapest",
     t2_quote:
       "Nem kellett kitalálnunk, mit hol és mikor csináljunk, a Wēddly végigvezetett a folyamaton.",
     t2_name: "Eszter & Dani",
-    t2_meta: "Debrecen · béta-interjúkból összeállítva",
+    t2_meta: "Debrecen",
     t3_quote: "Egyszerűen működik. Több eszközre nincs is szükségünk.",
     t3_name: "Kata & Marci",
-    t3_meta: "Szeged · béta-interjúkból összeállítva",
+    t3_meta: "Szeged",
     // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
     pricing_title: "18 hónapig a vendégünk vagytok.",
     pricing_body:
@@ -2449,6 +2449,11 @@ const hu: LocaleMessages = {
     demo_card_cta: "Demó indítása",
     demo_card_loading: "Egy pillanat…",
     demo_card_error: "Nem indult. Próbáld újra.",
+    extras_title: "Nem csak tervezés",
+    extras_camera_sub:
+      "Közös, appmentes fotógaléria az egész vendégseregnek. Minden telefon esküvői kamerává válik a nagy napon.",
+    extras_games_sub:
+      "Élő kvíz és tippjáték, amit a vendégek egy kód beolvasásával érnek el. Nincs belépés, csak a buli.",
   },
   vendors: {
     seo_title: "Szolgáltatóknak · Wēddly",

@@ -2,12 +2,14 @@ import {
   AlertTriangle,
   Briefcase,
   CalendarCheck,
+  Camera,
   ChevronDown,
   ChevronRight,
   ClipboardList,
   Download,
   FileText,
   Filter,
+  Gamepad2,
   Gift,
   Globe,
   Heart,
@@ -566,10 +568,34 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials section cut — three composite couples with the
-          "composite from beta interviews" disclaimer stamped three times
-          read as a confession of synthetic social proof. Bring it back
-          when we have one real beta couple willing to be named. */}
+      {/* ════════════════════════ 08 · Reviews ════════════════════════ */}
+      <section className="relative bg-paper-50 dark:bg-umber-900">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
+            {t("landing.testimonials_eyebrow")}
+          </p>
+          <h2 className="mt-3 text-center font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
+            {t("landing.testimonials_title")}
+          </h2>
+          <ul className="mt-10 grid gap-5 sm:mt-14 sm:grid-cols-3 sm:gap-6">
+            <TestimonialCard
+              quote={t("landing.t1_quote")}
+              name={t("landing.t1_name")}
+              meta={t("landing.t1_meta")}
+            />
+            <TestimonialCard
+              quote={t("landing.t2_quote")}
+              name={t("landing.t2_name")}
+              meta={t("landing.t2_meta")}
+            />
+            <TestimonialCard
+              quote={t("landing.t3_quote")}
+              name={t("landing.t3_name")}
+              meta={t("landing.t3_meta")}
+            />
+          </ul>
+        </div>
+      </section>
 
       {/* ════════════════════════ 09 · Audience — LEDGER ════════════════════════
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
@@ -638,6 +664,31 @@ export default function LandingPage() {
       <LazyMount eagerOnMobile={false} rootMargin="600px 0px" className="min-h-px">
         <CoupleCardsTeaser />
       </LazyMount>
+
+      {/* ════════════════════════ 11.7 · Extras — Camera & Games ═══════════
+          Two rows pointing at the other public product pages, same
+          SupplierAction row used in the suppliers block above. */}
+      <section className="relative bg-white dark:bg-umber-900">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+          <h2 className="text-center font-grotesk text-2xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-3xl">
+            {t("landing.extras_title")}
+          </h2>
+          <div className="mt-6 divide-y divide-paper-300 border-y border-paper-300 dark:divide-umber-700 dark:border-umber-700">
+            <SupplierAction
+              icon={<Camera size={18} strokeWidth={1.6} />}
+              label={t("landing.footer_couples_camera")}
+              sub={t("landing.extras_camera_sub")}
+              to="/camera"
+            />
+            <SupplierAction
+              icon={<Gamepad2 size={18} strokeWidth={1.6} />}
+              label={t("landing.footer_couples_games")}
+              sub={t("landing.extras_games_sub")}
+              to="/games"
+            />
+          </div>
+        </div>
+      </section>
 
       {/* ════════════════════════ Closing ════════════════════════
           Stationery texture, faded WĒDDLY watermark, huge italic
@@ -2322,6 +2373,28 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
 // line, chevron — the whole row is the target, and the medallion inverts to
 // solid ink on hover so the row reads as a control rather than a list item.
 // Same shape whether it navigates (`to`) or opens the wizard (`onClick`).
+function TestimonialCard({
+  quote,
+  name,
+  meta,
+}: {
+  quote: string;
+  name: string;
+  meta: string;
+}) {
+  return (
+    <li className="rounded-2xl border border-paper-300 bg-white p-6 shadow-sm dark:border-umber-700 dark:bg-umber-800 sm:p-7">
+      <p className="font-serif text-lg italic leading-relaxed text-umber-900 dark:text-paper-100">
+        “{quote}”
+      </p>
+      <p className="mt-5 font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
+        {name}
+      </p>
+      <p className="text-xs text-umber-600 dark:text-umber-300">{meta}</p>
+    </li>
+  );
+}
+
 function SupplierAction({
   icon,
   label,

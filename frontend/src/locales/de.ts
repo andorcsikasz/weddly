@@ -2403,14 +2403,14 @@ const de: LocaleMessages = {
     t1_quote:
       "Alles liegt an einem Ort, Budget, Gäste, Sitzplan. Wir sehen beide dieselbe Ansicht und wissen immer, was als Nächstes kommt.",
     t1_name: "Allie & Noah",
-    t1_meta: "Budapest · zusammengesetzt aus Beta-Interviews",
+    t1_meta: "Budapest",
     t2_quote:
       "Wir mussten uns die Reihenfolge nicht selbst ausdenken · Weddly hat uns durch den Prozess geführt.",
     t2_name: "Eszter & Dani",
-    t2_meta: "Debrecen · zusammengesetzt aus Beta-Interviews",
+    t2_meta: "Debrecen",
     t3_quote: "Es funktioniert einfach. Wir brauchen kein weiteres Werkzeug.",
     t3_name: "Kata & Marci",
-    t3_meta: "Szeged · zusammengesetzt aus Beta-Interviews",
+    t3_meta: "Szeged",
     pricing_title: "18 Monate lang sind Sie unser Gast.",
     pricing_body:
       "Kommen Sie vom ersten Kapitel an mit: die nächsten achtzehn Monate sind Sie unser Gast, alles freigeschaltet. Danach 7 € im Monat, mit zwei Wochen zum Ausprobieren und allen Funktionen.",
@@ -2490,6 +2490,11 @@ const de: LocaleMessages = {
     demo_card_cta: "Demo starten",
     demo_card_loading: "Einen Moment…",
     demo_card_error: "Nicht gestartet. Erneut versuchen.",
+    extras_title: "Mehr als nur Planung",
+    extras_camera_sub:
+      "Eine gemeinsame Fotogalerie ohne App für die ganze Hochzeitsgesellschaft. Jedes Handy wird zur Hochzeitskamera.",
+    extras_games_sub:
+      "Ein Live-Quiz und Vorhersagespiel, dem Gäste per Scan eines Codes beitreten. Kein Login, nur die Feier.",
   },
   vendors: {
     seo_title: "Für Dienstleister · Weddly",

@@ -2389,14 +2389,14 @@ const es: LocaleMessages = {
     t1_quote:
       "Todo vive en un solo lugar: presupuesto, invitados, mesas. Los dos vemos la misma vista y siempre sabemos qué toca ahora.",
     t1_name: "Allie y Noah",
-    t1_meta: "Budapest · composición de entrevistas de la beta",
+    t1_meta: "Budapest",
     t2_quote:
       "No tuvimos que averiguar el orden de las cosas · Weddly nos guio por todo el proceso.",
     t2_name: "Eszter y Dani",
-    t2_meta: "Debrecen · composición de entrevistas de la beta",
+    t2_meta: "Debrecen",
     t3_quote: "Simplemente funciona. No necesitamos otra herramienta.",
     t3_name: "Kata y Marci",
-    t3_meta: "Szeged · composición de entrevistas de la beta",
+    t3_meta: "Szeged",
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_title: "Sois nuestros invitados 18 meses.",
     pricing_body:
@@ -2479,6 +2479,11 @@ const es: LocaleMessages = {
     demo_card_cta: "Empezar la demo",
     demo_card_loading: "Un momento…",
     demo_card_error: "No arrancó. Inténtalo de nuevo.",
+    extras_title: "Más que solo planificación",
+    extras_camera_sub:
+      "Una galería de fotos compartida y sin aplicación para todos los invitados. Cada móvil se convierte en la cámara del día de la boda.",
+    extras_games_sub:
+      "Un cuestionario en vivo y un juego de predicciones al que los invitados se unen escaneando un código. Sin iniciar sesión, solo fiesta.",
   },
   vendors: {
     seo_title: "Para proveedores · Weddly",

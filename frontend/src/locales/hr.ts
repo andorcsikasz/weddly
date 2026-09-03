@@ -2352,13 +2352,13 @@ const hr: LocaleMessages = {
     t1_quote:
       "Sve je na jednom mjestu, proračun, gosti, raspored sjedenja. Oboje vidimo isto i uvijek znamo što je sljedeće.",
     t1_name: "Allie & Noah",
-    t1_meta: "Budimpešta · sastavljeno iz beta intervjua",
+    t1_meta: "Budimpešta",
     t2_quote: "Nismo morali smišljati redoslijed · Weddly nas je proveo kroz proces.",
     t2_name: "Eszter & Dani",
-    t2_meta: "Debrecin · sastavljeno iz beta intervjua",
+    t2_meta: "Debrecin",
     t3_quote: "Jednostavno radi. Ne treba nam drugi alat.",
     t3_name: "Kata & Marci",
-    t3_meta: "Segedin · sastavljeno iz beta intervjua",
+    t3_meta: "Segedin",
     pricing_title: "18 mjeseci ste naš gost.",
     pricing_body:
       "Krenite s nama od prvog poglavlja: sljedećih osamnaest mjeseci naš ste gost, sa svime otključanim. Nakon toga 7 € mjesečno, s dva tjedna za isprobavanje i svim funkcijama.",
@@ -2435,6 +2435,11 @@ const hr: LocaleMessages = {
     demo_card_cta: "Pokrenite demo",
     demo_card_loading: "Trenutak…",
     demo_card_error: "Nije krenulo. Pokušajte ponovno.",
+    extras_title: "Više od samog planiranja",
+    extras_camera_sub:
+      "Zajednička galerija fotografija bez aplikacije za sve uzvanike. Svaki mobitel postaje kamera vjenčanja.",
+    extras_games_sub:
+      "Kviz uživo i igra predviđanja kojoj se uzvanici pridružuju skeniranjem koda. Bez prijave, samo zabava.",
   },
   vendors: {
     seo_title: "Za dobavljače · Weddly",
