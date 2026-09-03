@@ -28,6 +28,7 @@ import {
   normalizeMealMenuInput,
 } from "@shared/meals";
 import {
+  ArrowDownAZ,
   ArrowUpDown,
   Atom,
   Baby,
@@ -36,8 +37,10 @@ import {
   Beef,
   Briefcase,
   Check,
+  CheckCircle2,
   ChevronDown,
   ClipboardCopy,
+  Clock,
   Cookie,
   Crown,
   Download,
@@ -74,6 +77,7 @@ import {
   User,
   UserPlus,
   Users,
+  UsersRound,
   Utensils,
   Wheat,
   X,
@@ -87,8 +91,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Dialog, Skeleton, useConfirm, useToast, ViewSelect } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { guestCountBaseline } from "../lib/budget";
 import {
@@ -101,7 +105,6 @@ import {
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
-import { LastUpdatedBy } from "../components/LastUpdatedBy";
 import {
   type SongEntry,
   parseSongRequests,
@@ -202,6 +205,15 @@ function slotLabel(
 // Guest-list sort axes. "default" preserves the server/household order (the
 // historic behavior); the rest are explicit user picks from the sort control.
 type SortKey = "default" | "name" | "added" | "rsvp" | "group";
+// One glyph per axis so the toolbar's sort control can collapse to an icon on
+// phones (ViewSelect's `compact` mode) and still say what "sorted by" means.
+const SORT_ICON: Record<SortKey, ReactNode> = {
+  default: <ArrowUpDown size={14} aria-hidden />,
+  name: <ArrowDownAZ size={14} aria-hidden />,
+  added: <Clock size={14} aria-hidden />,
+  rsvp: <CheckCircle2 size={14} aria-hidden />,
+  group: <UsersRound size={14} aria-hidden />,
+};
 // RSVP sort surfaces the actionable states first (pending, maybe) ahead of the
 // settled ones (yes, no) so "who do I still need to chase" floats to the top.
 const RSVP_SORT_ORDER: Record<RsvpStatus, number> = { pending: 0, maybe: 1, yes: 2, no: 3 };
@@ -1099,14 +1111,6 @@ export default function GuestsPage() {
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
           <div className="shrink-0">
             <h1 className="font-grotesk">{t("guests.title")}</h1>
-            <LastUpdatedBy actionPrefixes={["guest.", "household.", "rsvp."]} />
-            <Link
-              to="/app/media#film-participants"
-              className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-ink-600 underline decoration-ink-300 underline-offset-2 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
-            >
-              <Link2 size={12} aria-hidden />
-              {t("guests.photo_upload_guests_link")}
-            </Link>
           </div>
           {listableGuests.length > 0 ? (
             <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
@@ -5556,25 +5560,18 @@ function GuestFilterBar({
             )}
           </div>
         </div>
-        <div className="relative">
-          <select
-            className="h-9 w-auto appearance-none rounded-full border border-paper-300 bg-paper-50 pl-4 pr-9 text-sm font-medium text-ink-700 transition-colors hover:border-paper-400 focus:border-umber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-            value={sortKey}
-            onChange={(e) => onSetSort(e.target.value as SortKey)}
-            aria-label={t("guests.sort_label")}
-          >
-            {sortOptions.map((k) => (
-              <option key={k} value={k}>
-                {t(`guests.sort_${k}`)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={14}
-            aria-hidden
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-          />
-        </div>
+        <ViewSelect
+          value={sortKey}
+          options={sortOptions.map((k) => ({
+            value: k,
+            label: t(`guests.sort_${k}`),
+            icon: SORT_ICON[k],
+          }))}
+          onChange={onSetSort}
+          ariaLabel={t("guests.sort_label")}
+          compact
+          className="shrink-0"
+        />
         {/* Cards ↔ table lens. Two icon segments, mirrored to `?view=table`. */}
         <div
           role="group"
@@ -5612,11 +5609,13 @@ function GuestFilterBar({
         </div>
         <button
           type="button"
-          className="btn-outline"
+          className="btn-outline shrink-0 px-3"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
+          aria-label={t("guests.filters_button")}
         >
-          <Filter size={14} aria-hidden /> {t("guests.filters_button")}
+          <Filter size={14} aria-hidden />
+          <span className="hidden sm:inline">{t("guests.filters_button")}</span>
           {activeFilterCount > 0 && (
             <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-umber-900 px-1.5 text-xs text-paper-50 dark:bg-paper-100 dark:text-umber-900">
               {activeFilterCount}
