@@ -555,6 +555,7 @@ function isPrivateByTokenPath(pathname: string): boolean {
     pathname.startsWith("/verify-email/") ||
     pathname.startsWith("/photo-albums/") ||
     pathname.startsWith("/planner-activation/") ||
+    pathname.startsWith("/play/") ||
     isRsvpRoute(pathname)
   ) {
     return true;
@@ -623,6 +624,8 @@ function isKnownFrontendPath(pathname: string): boolean {
       path,
     ) ||
     /^\/planner\/activate\/[^/]+$/.test(path) ||
+    /^\/play\/markets\/[^/]+$/.test(path) ||
+    /^\/play\/[^/]+$/.test(path) ||
     /^\/rsvp\/[^/]+$/.test(path) ||
     /^\/g\/[^/]+\/[^/]+$/.test(path) ||
     /^\/w\/[^/]+\/[^/]+$/.test(path)
