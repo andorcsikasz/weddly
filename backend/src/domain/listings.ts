@@ -79,6 +79,10 @@ export interface ListingRow {
   content_hash: string | null;
   hero_image_url: string | null;
   hide_contact_public: number;
+  quarantined_at: number | null;
+  quarantine_reason: string | null;
+  image_rights_confirmed_at: number | null;
+  vendor_published_at: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -226,6 +230,10 @@ export function toListing(row: ListingRow): Listing {
     status: toListingStatus(row.status),
     hero_image_url: row.hero_image_url,
     hide_contact_public: row.hide_contact_public === 1,
+    quarantined_at: row.quarantined_at,
+    quarantine_reason: row.quarantine_reason,
+    image_rights_confirmed_at: row.image_rights_confirmed_at,
+    vendor_published_at: row.vendor_published_at,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };

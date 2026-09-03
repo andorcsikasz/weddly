@@ -1,4 +1,18 @@
 #!/usr/bin/env node
+//
+// DISABLED 2026-09-03 — bodalia.es disputes the crawl this script ran on
+// 2026-08-19 (425 profile pages, ~21:03-21:32 CEST). Kept in git for
+// provenance (see chore(vendors) "keep the international-directory research
+// trail") but refuses to execute: `lib/ssrf.ts`'s `isBlockedHostname` already
+// refuses any server-side fetch to bodalia.es, and this is the same guard at
+// the script level for anyone who runs it directly outside the app. Do not
+// remove this guard without the dispute being resolved.
+process.stderr.write(
+  "research_spain_bodalia.mjs is disabled: bodalia.es is on the disputed-source denylist " +
+    "(backend/src/lib/scrape_denylist.ts). See docs/spain-bodalia-candidates-2026-08-19.json " +
+    "for the prior run's output.\n",
+);
+process.exit(1);
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";

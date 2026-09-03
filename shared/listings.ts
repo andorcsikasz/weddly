@@ -105,6 +105,24 @@ export interface Listing {
    *  owning vendor can flip it; the phone is masked for anonymous visitors
    *  regardless. Logged-in couples always see the full details. */
   hide_contact_public: boolean;
+  /** Epoch ms the listing was pulled for a disputed-source review, or null.
+   *  Set once and never cleared, even after `vendor_published_at` — it's the
+   *  historical fact that this row was quarantined, not a live flag. Public
+   *  visibility while set is governed by `curated_supplier_overrides` /
+   *  `status`, not by this field directly. See domain/listing_quarantine.ts. */
+  quarantined_at: number | null;
+  /** Machine key for why, e.g. "source_dispute:bodalia.es". Null when never
+   *  quarantined. Not shown to couples; the vendor-facing copy is generic. */
+  quarantine_reason: string | null;
+  /** Set only by the vendor's own gated publish call after they've reviewed
+   *  the pre-existing content and either confirmed rights on it or replaced
+   *  it. Null on every listing that was never quarantined. */
+  image_rights_confirmed_at: number | null;
+  /** Set by that same gated publish call; its presence is what lets the
+   *  ordinary visibility toggle (routes/vendor_listing.ts handleSetVisibility)
+   *  re-publish this row again. Null on every listing that was never
+   *  quarantined, and on one still awaiting that review. */
+  vendor_published_at: number | null;
   created_at: number;
   updated_at: number;
 }

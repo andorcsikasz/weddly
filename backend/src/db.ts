@@ -2648,6 +2648,41 @@ export function getVisitorSystemUserId(): number {
 // Materialize at boot so the row exists before any request references it.
 getVisitorSystemUserId();
 
+// ── Source-dispute quarantine (2026-09) ─────────────────────────────────────
+//
+// A batch of curated listings can be scraped from a third-party source whose
+// right to be scraped is disputed after the fact (bodalia.es, 2026-08-19 —
+// see domain/listing_quarantine.ts). Quarantining a listing already hides it
+// via `curated_supplier_overrides` + `status='hidden'` (both pre-existing
+// levers); these four columns are the additional bookkeeping that makes the
+// suppression AUDITABLE and makes re-publication a gated, vendor-driven act
+// rather than the ordinary "flip the visibility switch back on" any claiming
+// vendor already has through routes/vendor_listing.ts.
+//
+//   quarantined_at            — when the row was pulled, never cleared (the
+//                                historical fact survives even after publish).
+//   quarantine_reason         — machine key, e.g. "source_dispute:bodalia.es".
+//   image_rights_confirmed_at — set only by the vendor's own gated publish
+//                                call (domain/listing_quarantine.ts), never by
+//                                the ordinary visibility toggle.
+//   vendor_published_at       — set by that same call; its presence is what
+//                                lets handleSetVisibility's ordinary re-publish
+//                                path work again for this one row.
+addColumnIfMissing("listings", "quarantined_at", "quarantined_at INTEGER");
+addColumnIfMissing("listings", "quarantine_reason", "quarantine_reason TEXT");
+addColumnIfMissing("listings", "image_rights_confirmed_at", "image_rights_confirmed_at INTEGER");
+addColumnIfMissing("listings", "vendor_published_at", "vendor_published_at INTEGER");
+// Snapshot of the disputed imagery AT THE MOMENT OF QUARANTINE, compared
+// against the live `hero_image_url` / `listing_photos.url` by
+// canPublishQuarantinedListing to tell "vendor replaced it" from "vendor
+// merely re-saved the listing". Works as a plain string/set comparison
+// because both upload paths already mint a new URL on every real upload
+// (hero carries a `?v=<ts>` cache-bust suffix; gallery keys are
+// `<ts>-<random>.<ext>`, "old URLs stay immutable" per their own comment) —
+// nothing else needs to change for this to be reliable.
+addColumnIfMissing("listings", "pre_quarantine_hero_url", "pre_quarantine_hero_url TEXT");
+addColumnIfMissing("listings", "pre_quarantine_photo_urls", "pre_quarantine_photo_urls TEXT");
+
 // ── Review-summary cold-start gate lowered to 1 (was 3, 2026-08-25) ────────
 // recomputeSupplierAggregate only writes avg_rating on the review write path,
 // so a supplier already sitting at 1-2 published reviews keeps the NULL an

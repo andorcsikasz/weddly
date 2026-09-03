@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+//
+// DISABLED 2026-09-03 — see research_spain_bodalia.mjs. Same denylisted host.
+process.stderr.write(
+  "retry_spain_bodalia.mjs is disabled: bodalia.es is on the disputed-source denylist " +
+    "(backend/src/lib/scrape_denylist.ts).\n",
+);
+process.exit(1);
 
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";

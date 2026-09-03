@@ -9,6 +9,7 @@
 // layer. Callers that follow redirects MUST re-check every hop.
 
 import { lookup } from "node:dns/promises";
+import { isDisputedSourceHost } from "./scrape_denylist";
 
 /** Reserved / non-routable IPv4 ranges we refuse to fetch from. */
 export function isBlockedIpv4(ip: string): boolean {
@@ -51,6 +52,7 @@ export function isBlockedHostname(host: string): boolean {
   const h = host.toLowerCase();
   if (h === "localhost" || h.endsWith(".localhost")) return true;
   if (h.endsWith(".local") || h.endsWith(".internal")) return true;
+  if (isDisputedSourceHost(h)) return true;
   return false;
 }
 

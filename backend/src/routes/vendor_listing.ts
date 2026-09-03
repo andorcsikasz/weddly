@@ -75,6 +75,12 @@ import {
   type ListingPatch,
 } from "../domain/listings";
 import { getVendorAccountByOwnerUserId } from "../domain/vendor_accounts";
+import {
+  canPublishQuarantinedListing,
+  getQuarantinePreview,
+  isUnderQuarantineReview,
+  publishQuarantinedListing,
+} from "../domain/listing_quarantine";
 import { getVendorSub, toVendorBilling } from "../domain/vendor_billing";
 import { emitVendorEvent } from "../domain/vendor_points";
 import { getUserById } from "../domain/users";
@@ -1083,7 +1089,12 @@ async function handleSetVisibility(ctx: Ctx): Promise<Response> {
         code: "listing_moderated",
       });
     }
-    if (row.status === "hidden") assertSelfPause(row.hidden_by_user_id, account.owner_user_id);
+    // Only the RE-PUBLISH direction needs to prove the hide was a self-pause
+    // — agreeing to stay hidden never overrides anyone's decision, so it must
+    // never 409 just because an admin (or a quarantine) was the one who hid it.
+    if (body.published && row.status === "hidden") {
+      assertSelfPause(row.hidden_by_user_id, account.owner_user_id);
+    }
     if (row.status !== nextStatus) {
       // setStatus mirrors into `listings` via syncListingFromCommunityId.
       setCommunityStatus(
@@ -1094,12 +1105,25 @@ async function handleSetVisibility(ctx: Ctx): Promise<Response> {
       );
     }
   } else if (listing.source === "curated") {
+    // A quarantined listing's override was set by an admin/system action for
+    // a source dispute (routes/vendor_listing.ts's own `handleSetVisibility`
+    // is the ONLY caller of `assertSelfPause`, so this check has to come
+    // first) — the ordinary "flip it back on" self-serve path must not be
+    // able to clear that override. See domain/listing_quarantine.ts.
+    if (body.published && isUnderQuarantineReview(listing)) {
+      throw new HttpError(409, "This listing needs your review before it can go live", {
+        code: "quarantine_review_required",
+      });
+    }
     const override = db
       .prepare(
         "SELECT status, hidden_by_user_id FROM curated_supplier_overrides WHERE supplier_id = ?",
       )
       .get(listing.id) as { status: string; hidden_by_user_id: number | null } | undefined;
-    if (override) assertSelfPause(override.hidden_by_user_id, account.owner_user_id);
+    // Same direction-only rule as the community branch above: only publishing
+    // has to prove the hide was a self-pause, not confirming it stays hidden.
+    if (body.published && override)
+      assertSelfPause(override.hidden_by_user_id, account.owner_user_id);
     if (body.published) {
       clearCuratedOverride(listing.id);
     } else {
@@ -1142,6 +1166,104 @@ async function handleSetVisibility(ctx: Ctx): Promise<Response> {
   return json(listingViewWithMedia(refreshed, account));
 }
 
+// ── Source-dispute quarantine review ────────────────────────────────────────
+//
+// A listing quarantined for a source dispute (domain/listing_quarantine.ts)
+// stays hidden after the vendor claims it, until they've reviewed the
+// pre-existing content, replaced any imagery of uncertain provenance, and
+// explicitly published. These three routes are the whole review flow; the
+// gate itself lives in the domain module so this file stays thin.
+
+interface QuarantineStatusView {
+  under_review: boolean;
+  can_publish: boolean;
+  blocked_reason: "no_new_image" | "not_claimed" | null;
+  hero_preview_url: string | null;
+  gallery_preview_urls: string[];
+}
+
+function quarantineStatusView(listing: Listing, vendorAccountId: number): QuarantineStatusView {
+  const underReview = isUnderQuarantineReview(listing);
+  if (!underReview) {
+    return {
+      under_review: false,
+      can_publish: false,
+      blocked_reason: null,
+      hero_preview_url: null,
+      gallery_preview_urls: [],
+    };
+  }
+  const gate = canPublishQuarantinedListing(listing, vendorAccountId);
+  const preview = getQuarantinePreview(listing.id);
+  const base = "/api/vendor/listing/me/quarantine-preview";
+  return {
+    under_review: true,
+    can_publish: gate.ok,
+    // `gate.reason` is never "not_quarantined" here — `underReview` above
+    // already established that, and `canPublishQuarantinedListing` checks
+    // the same condition first.
+    blocked_reason: gate.ok ? null : (gate.reason as "no_new_image" | "not_claimed"),
+    hero_preview_url: preview.heroEvidenceKey ? `${base}/hero` : null,
+    gallery_preview_urls: preview.galleryEvidenceKeys.map((_, i) => `${base}/gallery/${i}`),
+  };
+}
+
+function handleQuarantineStatus(ctx: Ctx): Response {
+  const { listing, account } = resolveVendorListing(ctx);
+  return json(quarantineStatusView(listing, account.id));
+}
+
+/** Streams one of the ORIGINAL (pre-replacement) images for the caller's own
+ *  quarantined listing. Deliberately not the public `/uploads/` route — see
+ *  the comment on domain/listing_quarantine.ts's `getQuarantinePreview`. */
+async function handleQuarantinePreviewHero(ctx: Ctx): Promise<Response> {
+  const { listing } = resolveVendorListing(ctx);
+  if (!isUnderQuarantineReview(listing)) throw new HttpError(404, "Nothing to preview");
+  const preview = getQuarantinePreview(listing.id);
+  if (!preview.heroEvidenceKey) throw new HttpError(404, "No original hero on file");
+  const res = await storage.serve(preview.heroEvidenceKey);
+  if (!res) throw new HttpError(404, "Original hero no longer available");
+  return res;
+}
+
+interface GalleryPreviewParams {
+  index?: string;
+}
+
+async function handleQuarantinePreviewGalleryItem(ctx: Ctx): Promise<Response> {
+  const { listing } = resolveVendorListing(ctx);
+  if (!isUnderQuarantineReview(listing)) throw new HttpError(404, "Nothing to preview");
+  const idx = Number((ctx.params as GalleryPreviewParams).index);
+  if (!Number.isInteger(idx) || idx < 0) throw new HttpError(400, "Invalid index");
+  const preview = getQuarantinePreview(listing.id);
+  const key = preview.galleryEvidenceKeys[idx];
+  if (!key) throw new HttpError(404, "No original photo at that index");
+  const res = await storage.serve(key);
+  if (!res) throw new HttpError(404, "Original photo no longer available");
+  return res;
+}
+
+/** The gated release: requires a fresh vendor-supplied image on every slot
+ *  the listing currently carries (or none at all). See
+ *  `canPublishQuarantinedListing` for exactly what "fresh" means. */
+function handlePublishQuarantineReview(ctx: Ctx): Response {
+  const { listing, account } = resolveVendorListing(ctx);
+  const gate = canPublishQuarantinedListing(listing, account.id);
+  if (!gate.ok) {
+    const message =
+      gate.reason === "no_new_image"
+        ? "Upload a new hero photo or gallery image before publishing — the existing ones came from a disputed source and can't go live as-is."
+        : gate.reason === "not_quarantined"
+          ? "This listing isn't under review."
+          : "This listing isn't claimed by your account.";
+    throw new HttpError(409, message, { code: gate.reason ?? "quarantine_blocked" });
+  }
+  publishQuarantinedListing(listing, account.owner_user_id);
+  const refreshed = getListingById(listing.id);
+  if (!refreshed) throw new HttpError(404, "Listing vanished mid-update");
+  return json(listingViewWithMedia(refreshed, account));
+}
+
 // ── Onboarding completion ──────────────────────────────────────────────────
 //
 // The self-serve signup wizard (frontend /vendor/onboarding) edits the listing
@@ -1179,6 +1301,13 @@ export function registerVendorListingRoutes(router: Router) {
   router.get("/api/vendor/listing/me", handleGetMe);
   router.patch("/api/vendor/listing/me", handlePatchMe);
   router.post("/api/vendor/listing/me/visibility", handleSetVisibility);
+  router.get("/api/vendor/listing/me/quarantine", handleQuarantineStatus);
+  router.get("/api/vendor/listing/me/quarantine-preview/hero", handleQuarantinePreviewHero);
+  router.get(
+    "/api/vendor/listing/me/quarantine-preview/gallery/:index",
+    handleQuarantinePreviewGalleryItem,
+  );
+  router.post("/api/vendor/listing/me/quarantine/publish", handlePublishQuarantineReview);
   router.post("/api/vendor/listing/me/hero", handleUploadHero);
   router.delete("/api/vendor/listing/me/hero", handleDeleteHero);
   router.post("/api/vendor/listing/me/photos", handleUploadPhoto);
