@@ -4929,6 +4929,8 @@ const hu: LocaleMessages = {
     amount_pair_title: "{actual} tényleges a(z) {planned} tervezettből",
     freeze_aria: "{category} kategória rögzítése",
     unfreeze_aria: "{category} kategória feloldása",
+    expand_category_aria: "{category} tételeinek megjelenítése",
+    collapse_category_aria: "{category} tételeinek elrejtése",
     open_table_aria: "{category} pontos összegének beírása a táblázatban",
     frozen_save_failed: "Ez a kategória rögzítve van. Oldd fel előbb.",
     show_actual_overlay: "Tényleges költés",

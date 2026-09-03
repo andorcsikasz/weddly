@@ -4892,6 +4892,8 @@ const en: LocaleMessages = {
     amount_pair_title: "{actual} spent of {planned} planned",
     freeze_aria: "Freeze {category} category",
     unfreeze_aria: "Unfreeze {category} category",
+    expand_category_aria: "Show {category} items",
+    collapse_category_aria: "Hide {category} items",
     open_table_aria: "Enter exact {category} amount in the table",
     frozen_save_failed: "This category is frozen. Unfreeze it first.",
     show_actual_overlay: "Actual spend",

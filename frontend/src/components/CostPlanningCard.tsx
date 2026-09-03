@@ -12,6 +12,7 @@ import {
   Cake,
   Camera,
   Car,
+  ChevronDown,
   Flower2,
   Gift,
   Heart,
@@ -37,6 +38,7 @@ import {
 import {
   type ComponentType,
   type CSSProperties,
+  Fragment,
   memo,
   useCallback,
   useEffect,
@@ -238,27 +240,32 @@ export function overCapTier(
 }
 
 /** Stable display order, grouped by what the couple is actually deciding
- *  about together — keeps related rows adjacent so scanning down the list
- *  feels less random than "biggest first". Clusters:
- *    1. hosting & food         (venue → cake)
- *    2. guest experience       (favours, stationery, transport)
+ *  about together (so related rows stay adjacent), with clusters themselves
+ *  ordered biggest-typical-spend first — the curated share ratios the
+ *  landing-page calculator uses (`DEMO_ROWS_HU`/`DEMO_ROWS_EU` in
+ *  InteractiveBudgetDemo.tsx) put food/drink and venue clearly first, then
+ *  photo+music+decor together outweighing favours/stationery/transport, which
+ *  is why cluster 2 and cluster 4 swapped places from the original purely-
+ *  topical grouping. Clusters:
+ *    1. hosting & food         (venue → cake)          — biggest fixed costs
+ *    2. atmosphere & memories  (photo, music, decor)    — usually next-biggest
  *    3. couple's appearance    (attire, hair & makeup, rings)
- *    4. atmosphere & memories  (photo, music, decor)
+ *    4. guest experience       (favours, stationery, transport) — smaller line items
  *    5. after-wedding & misc   (honeymoon, other) */
 const CATEGORY_ORDER: BudgetCategory[] = [
   "venue",
   "catering",
   "drinks",
   "cake_dessert",
-  "favours",
-  "stationery",
-  "transport",
-  "attire",
-  "hair_makeup",
-  "rings",
   "photo_video",
   "music_dj",
   "decor_floral",
+  "attire",
+  "hair_makeup",
+  "rings",
+  "favours",
+  "stationery",
+  "transport",
   "honeymoon",
   "other",
 ];
@@ -347,17 +354,22 @@ export function CostPlanningCard({
    *  the dashboard hides the toggle to keep the panel compact. */
   showActualToggle?: boolean;
   /** When set, the panel renders an "Új sor" affordance under the category
-   *  rows. Couples can add free-form line items (e.g. "Anyakönyvvezető",
-   *  "Egyházi szertartás") that show as their own row in the panel rather
-   *  than being lumped into Egyéb. Stored as `category="other"` lines with
-   *  a non-default label. `options.perGuest` opts the row into the same
-   *  headcount-driven rescale that built-in per-guest categories get;
-   *  `options.icon` is a slug from CUSTOM_ICON_CHOICES that renders in
-   *  place of the default MoreHorizontal glyph. */
+   *  rows (and, per-category, inside each row's expanded sub-item drawer —
+   *  see `expanded`/`onToggleExpand` on `CategoryRow`). Couples can add
+   *  free-form line items (e.g. "Anyakönyvvezető", "Egyházi szertartás", or
+   *  a named split of an existing category like "Fotós"/"Videós") that show
+   *  as their own row rather than being lumped into the blended total.
+   *  `options.perGuest` opts the row into the same headcount-driven rescale
+   *  that built-in per-guest categories get; `options.icon` is a slug from
+   *  CUSTOM_ICON_CHOICES that renders in place of the default MoreHorizontal
+   *  glyph. `category` defaults to `"other"` (the bottom-of-list affordance
+   *  never passes it) — a per-category drawer's add-form passes its own
+   *  category so the line lands in that bucket instead of Egyéb. */
   onAddCustomRow?: (
     label: string,
     plannedHuf: number,
     options?: { perGuest?: boolean; icon?: string | null },
+    category?: BudgetCategory,
   ) => void | Promise<void>;
   /** Commits a slider drag on a custom row. The lineId identifies the
    *  underlying BudgetLine — custom rows are not aggregated, so we edit by
@@ -458,18 +470,30 @@ export function CostPlanningCard({
   // gets a row (even with 0 planned) so the user can slide it up from zero.
   // Custom rows are excluded — they own their own row below the buckets so
   // we don't want them folded back into "Egyéb" here.
+  //
+  // `lines` is carried on the bucket too (not just the summed totals) so the
+  // expandable drawer below each row can render — and let the couple name —
+  // the individual lines making up the total, instead of only the blended
+  // number. A category with a booked supplier folded in becomes inspectable
+  // here for the first time, same reasoning as `sources` in BudgetPage's
+  // CategoryCell.
   const buckets = useMemo(() => {
-    const map = new Map<BudgetCategory, { planned: number; actual: number; paid: number }>();
+    const map = new Map<
+      BudgetCategory,
+      { planned: number; actual: number; paid: number; lines: BudgetLine[] }
+    >();
     for (const l of aggregatableLines) {
-      const cur = map.get(l.category) ?? { planned: 0, actual: 0, paid: 0 };
+      const cur = map.get(l.category) ?? { planned: 0, actual: 0, paid: 0, lines: [] };
+      cur.lines.push(l);
       map.set(l.category, {
         planned: cur.planned + l.planned_huf,
         actual: cur.actual + l.actual_huf,
         paid: cur.paid + l.paid_huf,
+        lines: cur.lines,
       });
     }
     return CATEGORY_ORDER.map((cat) => {
-      const v = map.get(cat) ?? { planned: 0, actual: 0, paid: 0 };
+      const v = map.get(cat) ?? { planned: 0, actual: 0, paid: 0, lines: [] };
       const isPerGuest = PER_GUEST_CATEGORIES.has(cat);
       const frozen = frozenCategories?.has(cat) ?? false;
       // Frozen categories opt out of per-guest scaling — the user has pinned
@@ -487,9 +511,26 @@ export function CostPlanningCard({
         plannedBaseline: liveBaseline,
         scales,
         frozen,
+        lines: v.lines,
       };
     });
   }, [aggregatableLines, factor, frozenCategories, categoryDrags]);
+
+  // Categories the couple has expanded to see/name the individual lines
+  // behind the blended total (see `buckets[].lines` above). Session-only,
+  // starts empty — every row collapses back to today's single-slider view
+  // by default, and expanding one category never affects the others.
+  const [expandedCategories, setExpandedCategories] = useState<Set<BudgetCategory>>(
+    () => new Set(),
+  );
+  const toggleExpanded = useCallback((category: BudgetCategory) => {
+    setExpandedCategories((cur) => {
+      const next = new Set(cur);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }, []);
 
   // Live custom-row totals — same drag-aware pattern as `buckets` so the
   // panel's grand total tracks slider movement, not just commits. Per-guest
@@ -804,34 +845,83 @@ export function CostPlanningCard({
        *  the same row visual here but route the click through and skip
        *  the slider input — no in-place drag. */}
       <ul className="mt-4 divide-y divide-paper-100 dark:divide-umber-700">
-        {buckets.map((b) => (
-          <CategoryRow
-            key={b.category}
-            category={b.category}
-            plannedBaseline={b.plannedBaseline}
-            actual={b.actual}
-            paid={b.paid}
-            scales={b.scales}
-            frozen={b.frozen}
-            // Per-guest categories receive the live headcount factor so the
-            // slider thumb tracks the count slider and a drag preserves the
-            // /fő unit price (not the baseline planned amount). Frozen rows
-            // pass `scales=false` so the factor is 1 — no rescale.
-            scaleFactor={b.scales ? factor : 1}
-            count={count}
-            widthAnchor={widthAnchor}
-            currency={currency}
-            supplierManaged={supplierManaged.has(b.category)}
-            onEditPlanned={onEditPlanned}
-            onToggleFreeze={onToggleFreeze}
-            onDrag={handleCategoryDrag}
-            onSettle={settleCategoryDrag}
-            amountLinkTo={amountLinkTo}
-            showActualOverlay={showActualOverlay && hasAnyActual}
-            highlighted={headcountChanged && b.scales}
-            linkTo={b.category === "honeymoon" ? "/app/honeymoon" : undefined}
-          />
-        ))}
+        {buckets.map((b) => {
+          const isHoneymoon = b.category === "honeymoon";
+          const isExpanded = expandedCategories.has(b.category);
+          const rowScaleFactor = b.scales ? factor : 1;
+          return (
+            <Fragment key={b.category}>
+              <CategoryRow
+                category={b.category}
+                plannedBaseline={b.plannedBaseline}
+                actual={b.actual}
+                paid={b.paid}
+                scales={b.scales}
+                frozen={b.frozen}
+                // Per-guest categories receive the live headcount factor so the
+                // slider thumb tracks the count slider and a drag preserves the
+                // /fő unit price (not the baseline planned amount). Frozen rows
+                // pass `scales=false` so the factor is 1 — no rescale.
+                scaleFactor={rowScaleFactor}
+                count={count}
+                widthAnchor={widthAnchor}
+                currency={currency}
+                supplierManaged={supplierManaged.has(b.category)}
+                onEditPlanned={onEditPlanned}
+                onToggleFreeze={onToggleFreeze}
+                onDrag={handleCategoryDrag}
+                onSettle={settleCategoryDrag}
+                amountLinkTo={amountLinkTo}
+                showActualOverlay={showActualOverlay && hasAnyActual}
+                highlighted={headcountChanged && b.scales}
+                linkTo={isHoneymoon ? "/app/honeymoon" : undefined}
+                // Honeymoon routes straight to its own sub-page — nothing to
+                // expand in place. Every other category (including "other",
+                // whose bucket only ever holds the anonymous default-labeled
+                // line — named "other" rows live in the standalone custom-row
+                // list below) can be split into named sub-items.
+                expandable={!isHoneymoon}
+                expanded={isExpanded}
+                onToggleExpand={toggleExpanded}
+              />
+              {/* Sub-item drawer — each of this category's own lines, editable
+               *  individually, plus an "add item" affordance. Reuses `CustomRow`
+               *  verbatim (it already only cares about a BudgetLine id, not its
+               *  category) so a named sub-item gets the exact same slider,
+               *  actual-overlay and delete treatment a standalone custom row
+               *  does. */}
+              {!isHoneymoon &&
+                isExpanded &&
+                b.lines.map((line) => {
+                  const liveBaseline = customDrags[line.id] ?? line.planned_huf;
+                  return (
+                    <CustomRow
+                      key={line.id}
+                      line={line}
+                      liveDisplay={Math.round(liveBaseline * rowScaleFactor)}
+                      scaleFactor={rowScaleFactor}
+                      count={count}
+                      widthAnchor={widthAnchor}
+                      currency={currency}
+                      onEditPlanned={onEditCustomRowPlanned}
+                      onRemove={onRemoveCustomRow}
+                      onDrag={handleCustomDrag}
+                      onSettle={settleCustomDrag}
+                      showActualOverlay={showActualOverlay && hasAnyActual}
+                    />
+                  );
+                })}
+              {!isHoneymoon && isExpanded && onAddCustomRow && (
+                <AddCustomRow
+                  onAdd={(label, plannedHuf, options) =>
+                    onAddCustomRow(label, plannedHuf, options, b.category)
+                  }
+                  showPerGuestToggle={false}
+                />
+              )}
+            </Fragment>
+          );
+        })}
         {/* Custom rows live in the same list so the grid template + dividers
          *  carry over. Each row owns its own slider tied to a specific
          *  BudgetLine.id rather than a category bucket. */}
@@ -957,6 +1047,9 @@ function CategoryRowInner({
   showActualOverlay = false,
   highlighted = false,
   linkTo,
+  expandable = false,
+  expanded = false,
+  onToggleExpand,
 }: {
   category: BudgetCategory;
   plannedBaseline: number;
@@ -1013,6 +1106,16 @@ function CategoryRowInner({
    *  sub-categories live on /app/honeymoon, so we route there instead of
    *  duplicating editing here. */
   linkTo?: string;
+  /** Whether this row may be expanded to reveal its individual lines. False
+   *  for honeymoon (no in-place drawer — see `linkTo`). */
+  expandable?: boolean;
+  /** Whether the sub-item drawer is currently open. The parent owns this —
+   *  it also has to render the drawer's rows, which live outside this
+   *  component so they can reuse the panel's `CustomRow`/drag-state plumbing
+   *  unchanged. */
+  expanded?: boolean;
+  /** Toggles the drawer. Parent identity-stable, category-keyed. */
+  onToggleExpand?: (category: BudgetCategory) => void;
 }) {
   const { t, locale } = useT();
   const Icon = CATEGORY_ICONS[category];
@@ -1148,10 +1251,36 @@ function CategoryRowInner({
     </>
   );
 
+  // Chevron — reveals/hides this category's own sub-item drawer (rendered
+  // by the parent panel, right after this row). Sits before the icon so the
+  // whole "is there more here" affordance reads left-to-right ahead of the
+  // category identity, same order a disclosure triangle always takes.
+  // Collapsed by default on every category (see `expandedCategories` in the
+  // parent) — this is purely additive, so a category nobody has split still
+  // looks exactly like it did before.
+  const expandTile = expandable ? (
+    <button
+      type="button"
+      onClick={() => onToggleExpand?.(category)}
+      aria-expanded={expanded}
+      aria-label={t(expanded ? "budget.collapse_category_aria" : "budget.expand_category_aria", {
+        category: categoryLabel,
+      })}
+      className="-ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-ink-400 transition hover:bg-paper-100 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+    >
+      <ChevronDown
+        size={13}
+        aria-hidden
+        className={`transition-transform ${expanded ? "" : "-rotate-90"}`}
+      />
+    </button>
+  ) : null;
+
   const leftTile = (
     <span
       className={`${ROW_LABEL_CELL} flex min-w-0 items-center gap-2 text-ink-700 dark:text-paper-100 ${frozenTint}`}
     >
+      {expandTile}
       {leftTileContent}
     </span>
   );
@@ -1616,12 +1745,19 @@ const CustomRow = memo(CustomRowInner);
  *  staying in-flow preserves the user's place in the list. */
 function AddCustomRow({
   onAdd,
+  showPerGuestToggle = true,
 }: {
   onAdd: (
     label: string,
     plannedHuf: number,
     options?: { perGuest?: boolean; icon?: string | null },
   ) => void | Promise<void>;
+  /** Hidden inside a category's own sub-item drawer — that category's
+   *  per-guest scaling already comes from `PER_GUEST_CATEGORIES`, so a
+   *  per-line toggle there would be a control that visibly does nothing.
+   *  Stays on for the bottom-of-list "other"/Egyéb affordance, where it's
+   *  the only thing that decides whether a custom row scales at all. */
+  showPerGuestToggle?: boolean;
 }) {
   const { t } = useT();
   const [expanded, setExpanded] = useState(false);
@@ -1773,17 +1909,19 @@ function AddCustomRow({
             );
           })}
         </div>
-        <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-ink-500 dark:text-umber-300">
-          <input
-            type="checkbox"
-            checked={perGuest}
-            disabled={saving}
-            onChange={(e) => setPerGuest(e.target.checked)}
-            className="h-3.5 w-3.5 cursor-pointer accent-blush-600 dark:accent-blush-400"
-          />
-          <Users size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
-          <span>{t("budget.custom_row_per_guest_toggle")}</span>
-        </label>
+        {showPerGuestToggle && (
+          <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-ink-500 dark:text-umber-300">
+            <input
+              type="checkbox"
+              checked={perGuest}
+              disabled={saving}
+              onChange={(e) => setPerGuest(e.target.checked)}
+              className="h-3.5 w-3.5 cursor-pointer accent-blush-600 dark:accent-blush-400"
+            />
+            <Users size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
+            <span>{t("budget.custom_row_per_guest_toggle")}</span>
+          </label>
+        )}
       </div>
       {error && (
         <p className="mt-1 text-[11px] text-blush-700 dark:text-blush-300" role="alert">

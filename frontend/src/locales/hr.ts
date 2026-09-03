@@ -4927,6 +4927,8 @@ const hr: LocaleMessages = {
     amount_pair_title: "{actual} potrošeno od planiranih {planned}",
     freeze_aria: "Zaključajte kategoriju {category}",
     unfreeze_aria: "Otključajte kategoriju {category}",
+    expand_category_aria: "Prikaži stavke kategorije {category}",
+    collapse_category_aria: "Sakrij stavke kategorije {category}",
     open_table_aria: "Upišite točan iznos za {category} u tablicu",
     frozen_save_failed: "Ova je kategorija zaključana. Najprije je otključajte.",
     show_actual_overlay: "Stvarna potrošnja",

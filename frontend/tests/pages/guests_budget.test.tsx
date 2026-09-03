@@ -1164,6 +1164,87 @@ describe("<BudgetPage>", () => {
     expect((postCall?.body as { category?: string }).category).toBe("other");
   });
 
+  // A category with two lines that don't share the category's own default
+  // label counts as "split" — the individual lines only render once the
+  // couple expands that category's own drawer, not by default.
+  it("a category split into named sub-items shows each one only once expanded, summed in the header", async () => {
+    installDefaultEndpoints({
+      lines: [
+        makeBudgetLine({
+          id: 61,
+          category: "photo_video",
+          label: "Photographer",
+          planned_huf: 300_000,
+        }),
+        makeBudgetLine({
+          id: 62,
+          category: "photo_video",
+          label: "Videographer",
+          planned_huf: 200_000,
+        }),
+      ],
+    });
+    renderBudget();
+    await waitFor(() => expect(screen.getAllByText("Photo & video").length).toBeGreaterThan(0));
+    expect(screen.queryByText("Photographer")).toBeNull();
+    expect(screen.queryByText("Videographer")).toBeNull();
+
+    // Desktop table row and mobile card share BudgetPage's own expand state
+    // (CostPlanningCard above has an independent one), so toggling either
+    // surface's chevron opens both at once — scope to the desktop `<tr>`
+    // specifically since it, unlike the mobile card, isn't also matched by
+    // a bare `[data-category="photo_video"]` selector.
+    const desktopRow = document.querySelector('tr[data-category="photo_video"]');
+    expect(desktopRow).not.toBeNull();
+    const expandBtn = within(desktopRow as HTMLElement).getByRole("button", {
+      name: /show photo & video items/i,
+    });
+    fireEvent.click(expandBtn);
+    await flush();
+
+    expect(screen.getAllByText("Photographer").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Videographer").length).toBeGreaterThan(0);
+    // The aggregate header (planned HufInput) still reads the sum. The
+    // harness pins locale to "en", so grouping is comma-separated.
+    const plannedInputs = screen.getAllByDisplayValue("500,000") as HTMLInputElement[];
+    expect(plannedInputs.length).toBeGreaterThan(0);
+  });
+
+  it("adding an item inside a category's own drawer POSTs that category, not 'other'", async () => {
+    const newLine = makeBudgetLine({
+      id: 9002,
+      category: "photo_video",
+      label: "Second shooter",
+      planned_huf: 100_000,
+    });
+    installDefaultEndpoints({ lines: [], snapshots: [] });
+    onPost((u) => u === "/api/budget/lines", { line: newLine });
+    renderBudget();
+    await waitFor(() => expect(screen.getAllByText("Photo & video").length).toBeGreaterThan(0));
+
+    const desktopRow = document.querySelector('tr[data-category="photo_video"]') as HTMLElement;
+    fireEvent.click(within(desktopRow).getByRole("button", { name: /show photo & video items/i }));
+    await flush();
+
+    // With no lines yet in the category, the drawer's "Add row" affordance is
+    // the very next table row — scoping to it (rather than picking by index
+    // among every "Add row" button on the page, several of which belong to
+    // other drawers or the bottom-of-table Egyéb affordance) is what proves
+    // THIS add-form is the one that fired.
+    const drawerAddRow = desktopRow.nextElementSibling as HTMLElement;
+    fireEvent.click(within(drawerAddRow).getByRole("button", { name: /^add row$/i }));
+    await flush();
+    fireEvent.change(within(drawerAddRow).getByPlaceholderText(/row name/i), {
+      target: { value: "Second shooter" },
+    });
+    fireEvent.click(within(drawerAddRow).getByRole("button", { name: /^add$/i }));
+    await flush(2);
+
+    const postCall = fetchCalls.find((c) => c.method === "POST" && c.url === "/api/budget/lines");
+    expect(postCall).toBeDefined();
+    expect((postCall?.body as { category?: string }).category).toBe("photo_video");
+  });
+
   it("deleting an aggregated row opens ConfirmDialog before issuing the DELETE", async () => {
     const line = makeBudgetLine({
       id: 5001,

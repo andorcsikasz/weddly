@@ -4985,6 +4985,8 @@ const es: LocaleMessages = {
     amount_pair_title: "{actual} gastado de {planned} previsto",
     freeze_aria: "Congelar la categoría {category}",
     unfreeze_aria: "Descongelar la categoría {category}",
+    expand_category_aria: "Mostrar los elementos de {category}",
+    collapse_category_aria: "Ocultar los elementos de {category}",
     open_table_aria: "Introducir el importe exacto de {category} en la tabla",
     frozen_save_failed: "Esta categoría está congelada. Descongélala primero.",
     show_actual_overlay: "Gasto real",

@@ -5032,6 +5032,8 @@ const de: LocaleMessages = {
     amount_pair_title: "{actual} ausgegeben von {planned} geplant",
     freeze_aria: "Kategorie {category} fixieren",
     unfreeze_aria: "Kategorie {category} lösen",
+    expand_category_aria: "Posten von {category} anzeigen",
+    collapse_category_aria: "Posten von {category} ausblenden",
     open_table_aria: "Genauen Betrag für {category} in der Tabelle eintragen",
     frozen_save_failed: "Diese Kategorie ist fixiert. Lösen Sie sie zuerst.",
     show_actual_overlay: "Tatsächliche Ausgaben",

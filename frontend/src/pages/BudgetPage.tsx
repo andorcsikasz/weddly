@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   BarChart3,
   Check,
+  ChevronDown,
   CircleCheck,
   Equal,
   ExternalLink,
@@ -35,6 +36,7 @@ import {
 import {
   type ChangeEvent,
   type FocusEvent,
+  Fragment,
   memo,
   // Aliased: the bare name would shadow the DOM `MouseEvent` this file also
   // relies on for its document-level `mousedown` listeners.
@@ -106,22 +108,23 @@ import { publish, subscribe } from "../lib/sync";
 // Honeymoon is intentionally absent — its lines are managed on /app/honeymoon
 // and shown as a single aggregated row in the table below.
 // Same grouping as CostPlanningCard.CATEGORY_ORDER so the two pages stay
-// aligned. Clusters: hosting/food → guest experience → couple appearance →
-// atmosphere → after-wedding.
+// aligned. Clusters: hosting/food → atmosphere & memories → couple appearance
+// → guest experience → after-wedding, with clusters themselves ordered
+// biggest-typical-spend first (see the full rationale on CATEGORY_ORDER).
 const CATEGORIES: BudgetCategory[] = [
   "venue",
   "catering",
   "drinks",
   "cake_dessert",
-  "favours",
-  "stationery",
-  "transport",
-  "attire",
-  "hair_makeup",
-  "rings",
   "photo_video",
   "music_dj",
   "decor_floral",
+  "attire",
+  "hair_makeup",
+  "rings",
+  "favours",
+  "stationery",
+  "transport",
   "honeymoon",
   "other",
 ];
@@ -204,6 +207,23 @@ export default function BudgetPage() {
   /** Snapshot id currently being restored — disables both action buttons on
    *  the affected card and shows an inline spinner. Null when idle. */
   const [restoringId, setRestoringId] = useState<number | null>(null);
+
+  /** Categories whose individual lines the couple has opened for inspection —
+   *  same session-only, starts-empty state as CostPlanningCard's own
+   *  `expandedCategories`, kept as a separate Set here since the table and
+   *  the cost-planning panel above it are independent UIs a couple can
+   *  collapse/expand without the other following. */
+  const [expandedCategories, setExpandedCategories] = useState<Set<BudgetCategory>>(
+    () => new Set(),
+  );
+  const toggleExpandedCategory = useCallback((category: BudgetCategory) => {
+    setExpandedCategories((cur) => {
+      const next = new Set(cur);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }, []);
 
   /** Serialises writes per row/category. Without it, two quick drags on the
    *  same slider PATCH concurrently and the server keeps whichever response
@@ -519,10 +539,15 @@ export default function BudgetPage() {
     label: string,
     plannedHuf: number,
     options?: { perGuest?: boolean; icon?: string | null },
+    // Defaults to "other" so the two pre-existing "Új sor" affordances
+    // (bottom of the desktop table, bottom of the mobile card list) don't
+    // need to change at all. A per-category sub-item drawer passes its own
+    // category so the line lands in that bucket instead of Egyéb.
+    category: BudgetCategory = "other",
   ) {
     try {
       const r = await budgetApi.createLine({
-        category: "other",
+        category,
         label,
         planned_huf: plannedHuf,
         actual_huf: 0,
@@ -532,7 +557,7 @@ export default function BudgetPage() {
       adoptRows([r.line], true);
       publish("budget:changed");
     } catch (e) {
-      handleSaveError(e, () => addCustomRow(label, plannedHuf, options));
+      handleSaveError(e, () => addCustomRow(label, plannedHuf, options, category));
     }
   }, []);
 
@@ -795,6 +820,20 @@ export default function BudgetPage() {
     (category: BudgetCategory, rawPlanned: number) => {
       const scales = PER_GUEST_CATEGORIES.has(category) && !frozenCategoriesSet.has(category);
       return scales ? Math.round(rawPlanned * factor) : rawPlanned;
+    },
+    [factor, frozenCategoriesSet],
+  );
+
+  /** Inverse of `scaledCategoryPlanned` — turn a user-typed DISPLAY amount on
+   *  one of a category's own sub-item rows (its expanded drawer) back into
+   *  the per-baseline value we persist. Scaling here rides the CATEGORY's
+   *  per-guest membership, not the line's own `per_guest` flag — a named
+   *  sub-item lives inside a real category bucket, whose scaling is already
+   *  category-driven everywhere else on this page. */
+  const unscaleCategoryPlanned = useCallback(
+    (category: BudgetCategory, displayValue: number) => {
+      const scales = PER_GUEST_CATEGORIES.has(category) && !frozenCategoriesSet.has(category);
+      return scales && factor > 0 ? Math.round(displayValue / factor) : displayValue;
     },
     [factor, frozenCategoriesSet],
   );
@@ -1180,30 +1219,65 @@ export default function BudgetPage() {
             const isFrozen = frozenCategoriesSet.has(cat);
             const editable = bucket?.editable ?? true;
             const canDelete = !isFrozen && linesForCat.length > 0 && editable;
+            const isExpanded = expandedCategories.has(cat);
             return (
-              <BudgetMobileCard
-                key={cat}
-                id={`cat-${cat}-mobile`}
-                category={cat}
-                planned={planned}
-                actual={actual}
-                paid={bucket?.paid ?? 0}
-                currency={currency}
-                locale={locale}
-                readOnlyPlanned={!editable}
-                readOnlyActual={!editable}
-                canDelete={canDelete}
-                sources={bucket?.sources ?? []}
-                scope={`cat:${cat}`}
-                documents={docsByScope.get(`cat:${cat}`) ?? []}
-                payments={paymentsByScope.get(`cat:${cat}`) ?? []}
-                onPlannedCommit={(v) => setAggregatedPlanned(cat, v)}
-                onActualCommit={(v) => setAggregatedActual(cat, v)}
-                onPaidCommit={(v) => setAggregatedPaid(cat, v)}
-                onDocsChanged={reloadDocuments}
-                onPaymentsChanged={reloadPayments}
-                onDelete={() => removeAllInCategory(cat)}
-              />
+              <Fragment key={cat}>
+                <BudgetMobileCard
+                  id={`cat-${cat}-mobile`}
+                  category={cat}
+                  planned={planned}
+                  actual={actual}
+                  paid={bucket?.paid ?? 0}
+                  currency={currency}
+                  locale={locale}
+                  readOnlyPlanned={!editable}
+                  readOnlyActual={!editable}
+                  canDelete={canDelete}
+                  sources={bucket?.sources ?? []}
+                  scope={`cat:${cat}`}
+                  documents={docsByScope.get(`cat:${cat}`) ?? []}
+                  payments={paymentsByScope.get(`cat:${cat}`) ?? []}
+                  onPlannedCommit={(v) => setAggregatedPlanned(cat, v)}
+                  onActualCommit={(v) => setAggregatedActual(cat, v)}
+                  onPaidCommit={(v) => setAggregatedPaid(cat, v)}
+                  onDocsChanged={reloadDocuments}
+                  onPaymentsChanged={reloadPayments}
+                  onDelete={() => removeAllInCategory(cat)}
+                  expanded={isExpanded}
+                  onToggleExpand={() => toggleExpandedCategory(cat)}
+                />
+                {/* Sub-item drawer — reuses BudgetMobileCustomCard verbatim
+                 *  (it only cares about a BudgetLine id, not its category),
+                 *  same as the desktop table's BudgetSubLineTr reuse. */}
+                {isExpanded &&
+                  linesForCat.map((line) => (
+                    <BudgetMobileCustomCard
+                      key={line.id}
+                      line={line}
+                      planned={scaledCategoryPlanned(cat, line.planned_huf)}
+                      currency={currency}
+                      locale={locale}
+                      scope={`line:${line.id}`}
+                      documents={docsByScope.get(`line:${line.id}`) ?? []}
+                      payments={paymentsByScope.get(`line:${line.id}`) ?? []}
+                      onPlannedCommit={(v) =>
+                        save(line, "planned_huf", unscaleCategoryPlanned(cat, v))
+                      }
+                      onActualCommit={(v) => save(line, "actual_huf", v)}
+                      onPaidCommit={(v) => save(line, "paid_huf", v)}
+                      onDocsChanged={reloadDocuments}
+                      onPaymentsChanged={reloadPayments}
+                      onDelete={() => removeLine(line.id)}
+                    />
+                  ))}
+                {isExpanded && (
+                  <AddCustomRowMobile
+                    onAdd={(label, plannedHuf, options) =>
+                      addCustomRow(label, plannedHuf, options, cat)
+                    }
+                  />
+                )}
+              </Fragment>
             );
           })}
           {lines
@@ -1274,75 +1348,127 @@ export default function BudgetPage() {
                 // so disable the inputs in that case.
                 const editable = bucket?.editable ?? true;
                 const canDelete = !isFrozen && linesForCat.length > 0 && editable;
+                const isExpanded = expandedCategories.has(cat);
                 return (
-                  <tr
-                    key={cat}
-                    id={`cat-${cat}`}
-                    data-category={cat}
-                    className="scroll-mt-24 border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60"
-                  >
-                    <td className="px-4 py-2 align-middle">
-                      <CategoryCell category={cat} sources={bucket?.sources ?? []} />
-                    </td>
-                    <td className="px-4 py-2 align-middle">
-                      <HufInput
-                        value={planned}
-                        onCommit={(v) => setAggregatedPlanned(cat, v)}
-                        readOnly={!editable}
-                        dataKey="planned"
-                        ariaLabel={t("budget.planned")}
-                      />
-                    </td>
-                    <td className="px-4 py-2 align-middle">
-                      <HufInput
-                        value={actual}
-                        onCommit={(v) => setAggregatedActual(cat, v)}
-                        readOnly={!editable}
-                        dataKey="actual"
-                        ariaLabel={t("budget.actual")}
-                        copySource={planned}
-                      />
-                    </td>
-                    <td className="px-4 py-2 align-middle">
-                      <PaidCell
-                        paid={bucket?.paid ?? 0}
-                        actual={actual}
-                        readOnly={!editable}
-                        scope={`cat:${cat}`}
-                        documents={docsByScope.get(`cat:${cat}`) ?? []}
-                        payments={paymentsByScope.get(`cat:${cat}`) ?? []}
-                        currency={currency}
-                        locale={locale}
-                        onCommitAmount={(v) => setAggregatedPaid(cat, v)}
-                        onDocsChanged={reloadDocuments}
-                        onPaymentsChanged={reloadPayments}
-                      />
-                    </td>
-                    <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
-                      {actual > 0 && delta !== 0 && (
-                        <span
-                          className={
-                            delta > 0
-                              ? "font-medium text-red-600 dark:text-red-400"
-                              : "font-medium text-emerald-600 dark:text-emerald-400"
-                          }
+                  <Fragment key={cat}>
+                    <tr
+                      id={`cat-${cat}`}
+                      data-category={cat}
+                      className="scroll-mt-24 border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60"
+                    >
+                      <td className="px-4 py-2 align-middle">
+                        <div className="flex items-start gap-1.5">
+                          {/* Chevron — reveals the category's own lines below
+                           *  it (see BudgetSubLineTr), collapsed by default so
+                           *  a category nobody has split still looks exactly
+                           *  like it did before this row grew a drawer. */}
+                          <button
+                            type="button"
+                            onClick={() => toggleExpandedCategory(cat)}
+                            aria-expanded={isExpanded}
+                            aria-label={t(
+                              isExpanded
+                                ? "budget.collapse_category_aria"
+                                : "budget.expand_category_aria",
+                              { category: t(`budget.cat.${cat}`) },
+                            )}
+                            className="-ml-1 mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-ink-400 transition hover:bg-paper-100 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                          >
+                            <ChevronDown
+                              size={13}
+                              aria-hidden
+                              className={`transition-transform ${isExpanded ? "" : "-rotate-90"}`}
+                            />
+                          </button>
+                          <CategoryCell category={cat} sources={bucket?.sources ?? []} />
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        <HufInput
+                          value={planned}
+                          onCommit={(v) => setAggregatedPlanned(cat, v)}
+                          readOnly={!editable}
+                          dataKey="planned"
+                          ariaLabel={t("budget.planned")}
+                        />
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        <HufInput
+                          value={actual}
+                          onCommit={(v) => setAggregatedActual(cat, v)}
+                          readOnly={!editable}
+                          dataKey="actual"
+                          ariaLabel={t("budget.actual")}
+                          copySource={planned}
+                        />
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        <PaidCell
+                          paid={bucket?.paid ?? 0}
+                          actual={actual}
+                          readOnly={!editable}
+                          scope={`cat:${cat}`}
+                          documents={docsByScope.get(`cat:${cat}`) ?? []}
+                          payments={paymentsByScope.get(`cat:${cat}`) ?? []}
+                          currency={currency}
+                          locale={locale}
+                          onCommitAmount={(v) => setAggregatedPaid(cat, v)}
+                          onDocsChanged={reloadDocuments}
+                          onPaymentsChanged={reloadPayments}
+                        />
+                      </td>
+                      <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
+                        {actual > 0 && delta !== 0 && (
+                          <span
+                            className={
+                              delta > 0
+                                ? "font-medium text-red-600 dark:text-red-400"
+                                : "font-medium text-emerald-600 dark:text-emerald-400"
+                            }
+                          >
+                            {formatMoney(delta, currency, locale)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right align-middle">
+                        <button
+                          type="button"
+                          className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-umber-300 dark:hover:text-blush-300"
+                          onClick={() => removeAllInCategory(cat)}
+                          disabled={!canDelete}
+                          aria-label={t("budget.delete")}
                         >
-                          {formatMoney(delta, currency, locale)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-2 py-2 text-right align-middle">
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-umber-300 dark:hover:text-blush-300"
-                        onClick={() => removeAllInCategory(cat)}
-                        disabled={!canDelete}
-                        aria-label={t("budget.delete")}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                    {/* Sub-item drawer — this category's own lines, editable
+                     *  individually, plus an "add item" row scoped to it. */}
+                    {isExpanded &&
+                      linesForCat.map((line) => (
+                        <BudgetSubLineTr
+                          key={line.id}
+                          line={line}
+                          scaledPlanned={scaledCategoryPlanned(cat, line.planned_huf)}
+                          unscalePlanned={(v) => unscaleCategoryPlanned(cat, v)}
+                          currency={currency}
+                          locale={locale}
+                          docsByScope={docsByScope}
+                          paymentsByScope={paymentsByScope}
+                          onSave={save}
+                          onDocsChanged={reloadDocuments}
+                          onPaymentsChanged={reloadPayments}
+                          onDelete={removeLine}
+                        />
+                      ))}
+                    {isExpanded && (
+                      <AddCustomRowTr
+                        onAdd={(label, plannedHuf, options) =>
+                          addCustomRow(label, plannedHuf, options, cat)
+                        }
+                      />
+                    )}
+                  </Fragment>
                 );
               })}
               {/* Custom rows — `category="other"` lines whose label diverges
@@ -1523,6 +1649,129 @@ export default function BudgetPage() {
 
       <IncomeSection currency={currency} totalSpentHuf={totalSpentHuf} />
     </>
+  );
+}
+
+/* ─── Per-category sub-item drawer ──────────────────────────────────── */
+
+/** One line inside a category's expanded sub-item drawer — visually the
+ *  same editable row shape as the standalone "other"/Egyéb custom rows
+ *  below the table (label, planned/actual/paid, delete), just indented
+ *  under its parent category so a category split into named items (e.g.
+ *  "Fotós" / "Videós" under "Fotó & videó") reads as detail of the row
+ *  above it rather than a peer category. `scaledPlanned`/`unscalePlanned`
+ *  come from the CATEGORY's own per-guest scaling (`scaledCategoryPlanned`/
+ *  `unscaleCategoryPlanned`) — a sub-item's `per_guest` column is unused
+ *  here, since it lives inside a real category bucket whose scaling is
+ *  already category-driven everywhere else on this page. */
+function BudgetSubLineTr({
+  line,
+  scaledPlanned,
+  unscalePlanned,
+  currency,
+  locale,
+  docsByScope,
+  paymentsByScope,
+  onSave,
+  onDocsChanged,
+  onPaymentsChanged,
+  onDelete,
+}: {
+  line: BudgetLine;
+  scaledPlanned: number;
+  unscalePlanned: (displayValue: number) => number;
+  currency: Currency;
+  locale: Locale;
+  docsByScope: Map<string, BudgetDocument[]>;
+  paymentsByScope: Map<string, BudgetPayment[]>;
+  onSave: (
+    line: BudgetLine,
+    key: "planned_huf" | "actual_huf" | "paid_huf",
+    val: number,
+  ) => Promise<boolean>;
+  onDocsChanged: () => void;
+  onPaymentsChanged: () => void;
+  onDelete: (id: number) => void;
+}) {
+  const { t } = useT();
+  const delta = line.actual_huf - scaledPlanned;
+  // Same rule as the "other" custom rows: a line mirroring a booked supplier
+  // is owned by that supplier's card, so its inputs go read-only with a link
+  // back rather than offering edits the server would 409.
+  const owned = isSupplierManagedLine(line);
+  return (
+    <tr
+      data-budget-line-id={line.id}
+      data-category="sub-item"
+      className="border-t border-paper-100 bg-paper-50/60 transition hover:bg-paper-100 dark:border-umber-800 dark:bg-umber-800/30 dark:hover:bg-umber-700/60"
+    >
+      <td className="py-2 pl-9 pr-4 align-middle">
+        <CustomRowLabel
+          icon={line.icon}
+          label={line.label}
+          href={owned ? `/app/suppliers/${line.couple_supplier_id ?? line.listing_id}` : null}
+        />
+      </td>
+      <td className="px-4 py-2 align-middle">
+        <HufInput
+          value={scaledPlanned}
+          onCommit={(v) => onSave(line, "planned_huf", unscalePlanned(v))}
+          readOnly={owned}
+          dataKey="planned"
+          ariaLabel={t("budget.planned")}
+        />
+      </td>
+      <td className="px-4 py-2 align-middle">
+        <HufInput
+          value={line.actual_huf}
+          onCommit={(v) => onSave(line, "actual_huf", v)}
+          readOnly={owned}
+          dataKey="actual"
+          ariaLabel={t("budget.actual")}
+          copySource={scaledPlanned}
+        />
+      </td>
+      <td className="px-4 py-2 align-middle">
+        <PaidCell
+          paid={line.paid_huf}
+          actual={line.actual_huf}
+          readOnly={owned}
+          scope={`line:${line.id}`}
+          documents={docsByScope.get(`line:${line.id}`) ?? []}
+          payments={paymentsByScope.get(`line:${line.id}`) ?? []}
+          currency={currency}
+          locale={locale}
+          onCommitAmount={(v) => onSave(line, "paid_huf", v)}
+          onDocsChanged={onDocsChanged}
+          onPaymentsChanged={onPaymentsChanged}
+        />
+      </td>
+      <td className="hidden px-4 py-2 text-center align-middle tabular-nums sm:table-cell">
+        {line.actual_huf > 0 && delta !== 0 && (
+          <span
+            className={
+              delta > 0
+                ? "font-medium text-red-600 dark:text-red-400"
+                : "font-medium text-emerald-600 dark:text-emerald-400"
+            }
+          >
+            {formatMoney(delta, currency, locale)}
+          </span>
+        )}
+      </td>
+      <td className="px-2 py-2 text-right align-middle">
+        {!owned && (
+          <button
+            type="button"
+            className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
+            onClick={() => onDelete(line.id)}
+            aria-label={t("budget.delete")}
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+      </td>
+    </tr>
   );
 }
 
@@ -2811,6 +3060,8 @@ function BudgetMobileCard({
   onPaymentsChanged,
   onDelete,
   sources = [],
+  expanded = false,
+  onToggleExpand,
 }: {
   id: string;
   category: BudgetCategory;
@@ -2835,13 +3086,39 @@ function BudgetMobileCard({
   onDocsChanged: () => void;
   onPaymentsChanged: () => void;
   onDelete: () => void;
+  /** Whether this category's own lines (see the sibling
+   *  BudgetMobileCustomCard cards rendered right after this one) are shown.
+   *  Mirrors the desktop table's per-category drawer — same collapsed-by-
+   *  default, session-only state. */
+  expanded?: boolean;
+  onToggleExpand?: () => void;
 }) {
   const { t } = useT();
   const delta = actual - planned;
   return (
     <article id={id} data-category={category} className="card scroll-mt-24 p-2.5">
       <header className="flex items-start justify-between gap-2">
-        <CategoryCell category={category} sources={sources} />
+        <div className="flex min-w-0 items-start gap-1.5">
+          {onToggleExpand && (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              aria-expanded={expanded}
+              aria-label={t(
+                expanded ? "budget.collapse_category_aria" : "budget.expand_category_aria",
+                { category: t(`budget.cat.${category}`) },
+              )}
+              className="-ml-1 mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-ink-400 transition hover:bg-paper-100 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            >
+              <ChevronDown
+                size={14}
+                aria-hidden
+                className={`transition-transform ${expanded ? "" : "-rotate-90"}`}
+              />
+            </button>
+          )}
+          <CategoryCell category={category} sources={sources} />
+        </div>
         {/* Delta + bin sit together on the header row so the bin never
          *  earns its own line at the bottom of the card — saving ~36 px
          *  of vertical per category × 13 categories. Icon-only on mobile
@@ -2959,8 +3236,12 @@ function BudgetMobileCustomCard({
   // Same rule as the desktop custom row: a supplier-mirrored line folded into
   // "other" is owned elsewhere and the server refuses every write to it.
   const owned = isSupplierManagedLine(line);
+  // Reused for a named sub-item inside any real category's drawer, not just
+  // Egyéb — the marker reflects the line's actual category rather than
+  // always claiming "other-custom".
+  const categoryMarker = line.category === "other" ? "other-custom" : `${line.category}-item`;
   return (
-    <article data-budget-line-id={line.id} data-category="other-custom" className="card p-2.5">
+    <article data-budget-line-id={line.id} data-category={categoryMarker} className="card p-2.5">
       <header className="flex items-start justify-between gap-2">
         <CustomRowLabel
           icon={line.icon}

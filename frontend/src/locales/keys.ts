@@ -5749,6 +5749,13 @@ export interface LocaleMessages {
     freeze_aria: string;
     /** Aria-label on the category toggle button when the row is frozen. */
     unfreeze_aria: string;
+    /** Aria-label on a category row's chevron when its sub-item drawer is
+     *  closed (clicking opens it). Used on both the cost-planning panel and
+     *  the budget table/mobile cards. */
+    expand_category_aria: string;
+    /** Aria-label on a category row's chevron when its sub-item drawer is
+     *  open (clicking closes it). */
+    collapse_category_aria: string;
     /** Aria-label on the per-row amount when it's a deep-link to the budget
      *  table for precise entry. */
     open_table_aria: string;

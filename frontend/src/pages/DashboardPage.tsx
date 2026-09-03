@@ -513,11 +513,15 @@ export default function DashboardPage() {
     label: string,
     plannedHuf: number,
     options?: { perGuest?: boolean; icon?: string | null },
+    // See BudgetPage's addCustomRow — same default so the dashboard's own
+    // bottom-of-list "Új sor" affordance is unaffected, while a per-category
+    // sub-item drawer opened here lands its line in the right bucket.
+    category: BudgetCategory = "other",
   ) {
     if (data === "loading" || data === null) return;
     try {
       const r = await budgetApi.createLine({
-        category: "other",
+        category,
         label,
         planned_huf: plannedHuf,
         actual_huf: 0,
