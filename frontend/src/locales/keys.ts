@@ -90,6 +90,8 @@ export interface LocaleMessages {
     planning_description: string;
     decisions_title: string;
     decisions_description: string;
+    markets_title: string;
+    markets_description: string;
     admin_suppliers_title: string;
     admin_suppliers_description: string;
     admin_feedback_title: string;
@@ -3362,6 +3364,12 @@ export interface LocaleMessages {
     /** Couple-curated wishlist / gift registry — sidebar + More-sheet entry
      *  sitting just above the guest-page link in the `guest` group. */
     wishlist: string;
+    /** Live wedding quiz game builder + host console — sidebar + More-sheet
+     *  entry sitting just below the guest-page link in the `guest` group. */
+    games: string;
+    /** Live wedding prediction markets — sidebar + More-sheet entry sitting
+     *  next to `games` (its sibling feature) in the `guest` group. */
+    markets: string;
     /** Sidebar group headers that bundle the rail into the four phases
      *  of the wedding journey. `guest` is the read-only portal preview;
      *  the other three carry the couple from decisions → wedding-day ops
@@ -4969,6 +4977,201 @@ export interface LocaleMessages {
     received_cat_money: string;
     received_cat_experience: string;
     received_cat_voucher: string;
+  };
+  /** Live wedding quiz game — /app/games (list + builder), /app/games/:id/host
+   *  (the host console), and /play/:code (the guest's own no-login screen). */
+  quiz: {
+    list: {
+      title: string;
+      subtitle: string;
+      new_button: string;
+      create_prompt_label: string;
+      create_placeholder: string;
+      create_submit: string;
+      create_cancel: string;
+      empty_title: string;
+      empty_body: string;
+      status_draft: string;
+      status_live: string;
+      status_ended: string;
+      slides_count: string;
+      edit_button: string;
+      host_button: string;
+      delete_confirm_title: string;
+      delete_confirm_body: string;
+    };
+    builder: {
+      prompt_label: string;
+      section_title_label: string;
+      subtitle_label: string;
+      /** Add-slide tile labels, one per QuizSlideKind. */
+      kind_mcq: string;
+      kind_binary: string;
+      kind_number: string;
+      kind_heatmap: string;
+      kind_section: string;
+      kind_story: string;
+      options_label: string;
+      option_placeholder: string;
+      mark_correct: string;
+      no_correct_answer: string;
+      min_label: string;
+      max_label: string;
+      step_label: string;
+      unit_label: string;
+      correct_value_label: string;
+      x_low_placeholder: string;
+      x_high_placeholder: string;
+      y_low_placeholder: string;
+      y_high_placeholder: string;
+      /** Seed text for a brand-new heatmap slide's axis labels — real,
+       *  immediately-editable content, not an empty-input placeholder hint
+       *  (the backend rejects a blank axis label on create). */
+      axis_default_low: string;
+      axis_default_high: string;
+      heatmap_target_hint: string;
+      time_limit_label: string;
+      untimed_placeholder: string;
+      points_label: string;
+      move_up: string;
+      move_down: string;
+      save: string;
+      saved: string;
+      empty_state: string;
+      go_live: string;
+      go_live_confirm_title: string;
+      go_live_confirm_body: string;
+      go_live_confirm_action: string;
+      open_host: string;
+      locked_banner: string;
+      delete_slide_confirm_title: string;
+    };
+    host: {
+      draft_body: string;
+      start_button: string;
+      join_code_label: string;
+      qr_alt: string;
+      lobby_hint: string;
+      no_players_yet: string;
+      begin_button: string;
+      answered_count: string;
+      reveal_button: string;
+      next_button: string;
+      end_button: string;
+      final_leaderboard_title: string;
+      reset_button: string;
+      reset_confirm_title: string;
+      reset_confirm_body: string;
+      reset_confirm_action: string;
+    };
+    play: {
+      join_kicker: string;
+      hosted_by: string;
+      name_label: string;
+      name_placeholder: string;
+      avatar_label: string;
+      join_button: string;
+      waiting_title: string;
+      waiting_body: string;
+      players_joined: string;
+      answer_locked_in: string;
+      correct_banner: string;
+      incorrect_banner: string;
+      correct_value: string;
+      no_correct_answer: string;
+      your_rank_score: string;
+      submit_answer: string;
+      ended_title: string;
+      your_rank: string;
+      not_found_title: string;
+      not_found_body: string;
+    };
+  };
+  /** Live wedding prediction markets — couple-authenticated board + question
+   *  management at /app/markets. Sibling feature to `quiz`, sharing the
+   *  same "no login for guests" posture but its own join code and page. */
+  markets: {
+    page_title: string;
+    page_subtitle: string;
+    status_draft: string;
+    status_live: string;
+    status_ended: string;
+    start_button: string;
+    end_button: string;
+    resume_button: string;
+    join_code_label: string;
+    share_link_label: string;
+    copy_link: string;
+    copied: string;
+    qr_alt: string;
+    add_question_title: string;
+    prompt_label: string;
+    prompt_placeholder: string;
+    closes_label: string;
+    add_button: string;
+    empty_title: string;
+    empty_body: string;
+    question_status_open: string;
+    question_status_closed: string;
+    question_status_resolved: string;
+    question_status_voided: string;
+    /** Receives `{yes}` + `{no}`, both point totals. */
+    pool_label: string;
+    /** Receives `{pct}`. */
+    probability_label: string;
+    resolve_yes: string;
+    resolve_no: string;
+    void_button: string;
+    void_confirm_title: string;
+    void_confirm_body: string;
+    delete_button: string;
+    delete_confirm_title: string;
+    delete_confirm_body: string;
+    leaderboard_title: string;
+    leaderboard_empty: string;
+    /** Receives `{balance}`. */
+    balance_pts: string;
+    /** Receives `{outcome}` ("Yes"/"No"). */
+    outcome_label: string;
+    save_error: string;
+  };
+  /** Live wedding prediction markets — public guest join/play at
+   *  /play/markets/:code. No account: a name + avatar picked at join time,
+   *  same posture as `quiz.play`. */
+  markets_play: {
+    join_kicker: string;
+    /** Receives `{name}` — the couple's display name. */
+    hosted_by: string;
+    name_label: string;
+    name_placeholder: string;
+    avatar_label: string;
+    join_button: string;
+    balance_label: string;
+    bet_yes: string;
+    bet_no: string;
+    stake_label: string;
+    estimated_return_label: string;
+    estimated_return_hint: string;
+    profit_label: string;
+    place_bet: string;
+    /** Receives `{stake}` + `{side}`. */
+    your_position: string;
+    /** Receives `{when}`. */
+    closes_in: string;
+    closed_note: string;
+    /** Receives `{outcome}`. */
+    resolved_note: string;
+    voided_note: string;
+    /** Receives `{payout}`. */
+    you_won: string;
+    you_lost: string;
+    leaderboard_title: string;
+    not_live_note: string;
+    ended_note: string;
+    not_found_title: string;
+    not_found_body: string;
+    insufficient_balance: string;
+    side_locked: string;
   };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {

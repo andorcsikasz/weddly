@@ -12,6 +12,7 @@ import {
   Coins,
   Compass,
   Flag,
+  Gamepad2,
   Gauge,
   Gift,
   Globe,
@@ -33,6 +34,7 @@ import {
   ShieldCheck,
   Store,
   Sun,
+  TrendingUp,
   UserCog,
   Users,
   X,
@@ -228,6 +230,26 @@ const ITEMS: NavItem[] = [
     to: "/app/guest-page",
     labelKey: "nav.guest_page",
     icon: <Globe size={18} />,
+    group: "guest",
+  },
+  // Live wedding quiz game — couple builds it, guests play from their phones
+  // with no login. Desktop + More-sheet only, same treatment as wishlist and
+  // the guest page above.
+  {
+    to: "/app/games",
+    labelKey: "nav.games",
+    icon: <Gamepad2 size={18} />,
+    group: "guest",
+  },
+  // Live wedding prediction markets — sibling of the quiz game above under
+  // the same "no login for guests" posture, but its own join code and own
+  // page (a pari-mutuel points board has no per-round host console to
+  // share with the quiz's builder/host split). Own nav row for the same
+  // reason: two distinct things a couple sets up, not tabs of one.
+  {
+    to: "/app/markets",
+    labelKey: "nav.markets",
+    icon: <TrendingUp size={18} />,
     group: "guest",
   },
 ];

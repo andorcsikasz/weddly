@@ -22,7 +22,6 @@ import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import QRCode from "qrcode";
 import type {
   FilmAccessCheck,
   FilmAesthetic,
@@ -46,6 +45,7 @@ import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails";
 import { HttpError, json, requireAuth, type Ctx, type Router } from "../lib/http";
 import { isUploadedHeif, type SniffedImageMime, sniffUploadedImage } from "../lib/image_sniff";
+import { generateQrPng, generateQrSvg } from "../lib/qrcode";
 import { rateLimit } from "../lib/rate_limit";
 
 // ─── constants ───────────────────────────────────────────────────────────────
@@ -1400,26 +1400,6 @@ async function handleCoupleUpload(ctx: Ctx): Promise<Response> {
   db.prepare("UPDATE photo_uploads SET file_path = ? WHERE id = ?").run(publicUrl, uploadRow.id);
 
   return json({ upload: { id: uploadRow.id, fileUrl: publicUrl } }, { status: 201 });
-}
-
-async function generateQrSvg(url: string): Promise<string> {
-  return QRCode.toString(url, {
-    type: "svg",
-    errorCorrectionLevel: "M",
-    margin: 2,
-    color: { dark: "#1a1a1a", light: "#ffffff" },
-  });
-}
-
-/** 1024px wide — big enough to print on a table card without a soft edge. */
-async function generateQrPng(url: string): Promise<Buffer> {
-  return QRCode.toBuffer(url, {
-    type: "png",
-    errorCorrectionLevel: "M",
-    margin: 2,
-    width: 1024,
-    color: { dark: "#1a1a1a", light: "#ffffff" },
-  });
 }
 
 // ─── registration ─────────────────────────────────────────────────────────────

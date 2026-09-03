@@ -1,0 +1,201 @@
+/* Live wedding quiz — guest-facing play screen. Same Kahoot-flavoured answer
+   palette + shape language as the public /games marketing preview
+   (GamesPage.css's .games-answer-*), lifted into its own scope so the two
+   pages can evolve independently — this is the real product, that one stays
+   a static teaser. Mobile-first: guests play this on their own phone. */
+
+.qz-page {
+  min-height: 100dvh;
+  background: #0c1019;
+  color: white;
+  font-family: "General Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.qz-avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.qz-avatar-choice {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 26px;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease;
+}
+.qz-avatar-choice.is-selected {
+  border-color: #45e39e;
+  background: rgba(69, 227, 158, 0.14);
+  transform: scale(1.06);
+}
+
+.qz-pin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.qz-pin span {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.qz-timer {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 50%;
+  background: #6d28d9;
+  box-shadow: 0 0 0 6px rgba(109, 40, 217, 0.28);
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.qz-answers-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 560px) {
+  .qz-answers-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.qz-answers-grid button {
+  display: flex;
+  min-height: 84px;
+  align-items: center;
+  gap: 16px;
+  border: 0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: white;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: left;
+  box-shadow: inset 0 -4px rgba(0, 0, 0, 0.18);
+  transition:
+    transform 120ms ease,
+    opacity 160ms ease,
+    filter 160ms ease;
+}
+.qz-answers-grid button:not(:disabled):active {
+  transform: scale(0.98);
+}
+.qz-answer-red {
+  background: #db2f42;
+}
+.qz-answer-blue {
+  background: #1769c2;
+}
+.qz-answer-yellow {
+  background: #d79e00;
+}
+.qz-answer-green {
+  background: #278b58;
+}
+.qz-answers-grid button.is-muted {
+  opacity: 0.28;
+  filter: grayscale(0.25);
+}
+.qz-answers-grid button.is-chosen {
+  outline: 4px solid white;
+  outline-offset: -7px;
+}
+.qz-shape {
+  display: block;
+  flex: 0 0 auto;
+}
+.qz-shape-triangle {
+  width: 0;
+  height: 0;
+  border-right: 11px solid transparent;
+  border-bottom: 19px solid white;
+  border-left: 11px solid transparent;
+}
+.qz-shape-diamond {
+  width: 17px;
+  height: 17px;
+  background: white;
+  rotate: 45deg;
+}
+.qz-shape-circle {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: white;
+}
+.qz-shape-square {
+  width: 18px;
+  height: 18px;
+  background: white;
+}
+
+.qz-heatmap-pad {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 12.5% 12.5%;
+  background-color: #161c29;
+  touch-action: none;
+  cursor: crosshair;
+}
+.qz-heatmap-dot {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #2388ff;
+  pointer-events: none;
+}
+.qz-heatmap-dot.is-target {
+  border-color: #111;
+  background: #45e39e;
+}
+.qz-heatmap-dot.is-mine {
+  background: #f6bf54;
+}
+
+.qz-toast {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  background: #121925;
+  padding: 10px 16px;
+  color: white;
+  font-size: 12px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.4);
+  transform: translateX(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qz-page * {
+    scroll-behavior: auto !important;
+  }
+}

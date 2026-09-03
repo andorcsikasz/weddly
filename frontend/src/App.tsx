@@ -37,6 +37,12 @@ const PlannersPage = lazyWithReload(() => import("./pages/PlannersPage"));
 const CameraPage = lazyWithReload(() => import("./pages/CameraPage"));
 const MarketingContentPage = lazyWithReload(() => import("./pages/MarketingContentPage"));
 const GamesPage = lazyWithReload(() => import("./pages/GamesPage"));
+const MarketsPage = lazyWithReload(() => import("./pages/MarketsPage"));
+const PlayMarketsPage = lazyWithReload(() => import("./pages/PlayMarketsPage"));
+const QuizListPage = lazyWithReload(() => import("./pages/quiz/QuizListPage"));
+const QuizBuilderPage = lazyWithReload(() => import("./pages/quiz/QuizBuilderPage"));
+const QuizHostPage = lazyWithReload(() => import("./pages/quiz/QuizHostPage"));
+const QuizPlayPage = lazyWithReload(() => import("./pages/quiz/QuizPlayPage"));
 
 // The four legal pages are the one exception to "public routes ship eagerly",
 // and they earn it by weight rather than by traffic. Each renders the HU and
@@ -985,6 +991,27 @@ export default function App() {
             </Page>
           }
         />
+        {/* Live quiz game — guests join with no login, scanning the host's QR
+         *  or the shared link. :code is the quiz's join code. */}
+        <Route
+          path="/play/:code"
+          element={
+            <Page>
+              <QuizPlayPage />
+            </Page>
+          }
+        />
+        {/* Live prediction markets — sibling of the quiz game above, same "no
+         *  login" guest posture, kept at its own /play/markets/:code path so
+         *  the two games' join codes can never collide. */}
+        <Route
+          path="/play/markets/:code"
+          element={
+            <Page>
+              <PlayMarketsPage />
+            </Page>
+          }
+        />
         <Route
           path="/rsvp/:code"
           element={
@@ -1210,6 +1237,42 @@ export default function App() {
             element={
               <Page>
                 <GuestPageEditorPage />
+              </Page>
+            }
+          />
+          <Route
+            path="games"
+            element={
+              <Page>
+                <QuizListPage />
+              </Page>
+            }
+          />
+          <Route
+            path="games/:quizId"
+            element={
+              <Page>
+                <QuizBuilderPage />
+              </Page>
+            }
+          />
+          <Route
+            path="games/:quizId/host"
+            element={
+              <Page>
+                <QuizHostPage />
+              </Page>
+            }
+          />
+          {/* Live prediction markets — sibling of the quiz game above, own
+           *  nav row and own path (not nested under /app/games) since a
+           *  pari-mutuel points board has no per-round host console to
+           *  share with the quiz's builder/host split. */}
+          <Route
+            path="markets"
+            element={
+              <Page>
+                <MarketsPage />
               </Page>
             }
           />

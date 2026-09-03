@@ -2742,3 +2742,136 @@ CREATE TABLE IF NOT EXISTS public_stat_boosts (
   updated_at INTEGER NOT NULL,
   updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- ── Live wedding quiz game ──────────────────────────────────────────────────
+-- A couple authors a Kahoot-style trivia quiz about themselves, hosts it live
+-- from /app/games/:id/host (QR + control), and guests join from their own
+-- phones with no login at /play/:code. `quiz_slides` is defined before
+-- `quizzes` so `quizzes.current_slide_id` can reference it.
+--
+-- STATE IS DERIVED, NEVER STORED for anything time-based (same rule as
+-- date_holds/booking_quotes): `phase_started_at` + a slide's `time_limit_s`
+-- is all a read needs to know whether answers are still open, so a question
+-- closing needs no cron. `phase` itself is stored because moving from
+-- 'active' to 'reveal' is a deliberate host action (presenter pacing), not a
+-- timer expiring — see shared/quiz.ts.
+CREATE TABLE IF NOT EXISTS quiz_slides (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  -- Forward reference to `quizzes`, defined below — SQLite resolves FK targets
+  -- lazily (enforced at DML time, not CREATE TABLE time), so table order here
+  -- is free to follow "the thing current_slide_id points at comes first".
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,                                   -- display order; re-sequenced on reorder/insert/delete
+  kind TEXT NOT NULL,                                          -- QuizSlideKind: mcq|binary|number|heatmap|section|story
+  prompt TEXT NOT NULL DEFAULT '',                             -- question text / section title / story body
+  subtitle TEXT,                                                -- section subtitle / story continuation line
+  time_limit_s INTEGER,                                        -- null = untimed, host advances manually
+  points_base INTEGER NOT NULL DEFAULT 1000,
+  config_json TEXT NOT NULL DEFAULT '{}',                      -- QuizSlideConfig: options+correct / min-max-correct / axis labels+target
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_quiz_slides_quiz ON quiz_slides(quiz_id, position);
+
+CREATE TABLE IF NOT EXISTS quizzes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  join_code TEXT NOT NULL,                                     -- short human code — /play/:code and the QR both point here
+  status TEXT NOT NULL DEFAULT 'draft',                        -- QuizStatus: draft|live|ended
+  current_slide_id INTEGER REFERENCES quiz_slides(id) ON DELETE SET NULL,
+  phase TEXT NOT NULL DEFAULT 'lobby',                         -- QuizPhase: lobby|active|reveal|ended
+  phase_started_at INTEGER,                                    -- server clock; anchors both the countdown and every reply-time score
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_quizzes_join_code ON quizzes(join_code);
+CREATE INDEX IF NOT EXISTS idx_quizzes_couple ON quizzes(couple_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS quiz_players (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  token TEXT NOT NULL,                                         -- server-minted on join, plain (not hashed) — a party game, not auth
+  name TEXT NOT NULL,
+  avatar TEXT NOT NULL,                                        -- the chosen character, stored as the raw emoji (QUIZ_AVATARS)
+  joined_at INTEGER NOT NULL,
+  last_seen_at INTEGER NOT NULL,
+  removed_at INTEGER                                           -- host can kick; soft delete, never hard
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_quiz_players_token ON quiz_players(quiz_id, token);
+CREATE INDEX IF NOT EXISTS idx_quiz_players_quiz ON quiz_players(quiz_id) WHERE removed_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS quiz_answers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slide_id INTEGER NOT NULL REFERENCES quiz_slides(id) ON DELETE CASCADE,
+  player_id INTEGER NOT NULL REFERENCES quiz_players(id) ON DELETE CASCADE,
+  value_json TEXT NOT NULL,                                    -- QuizAnswerValue: {optionIndex}|{value}|{x,y}
+  response_ms INTEGER NOT NULL,                                -- answered_at - phase_started_at, computed server-side only
+  correct INTEGER,                                             -- 1|0|NULL — NULL = unscored (story/section, or no correct answer set)
+  points_awarded INTEGER NOT NULL DEFAULT 0,
+  answered_at INTEGER NOT NULL,
+  UNIQUE(slide_id, player_id)                                  -- one answer per player per slide; backstops a client retry
+);
+CREATE INDEX IF NOT EXISTS idx_quiz_answers_slide ON quiz_answers(slide_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_answers_player ON quiz_answers(player_id);
+
+-- ── Live wedding prediction markets ─────────────────────────────────────────
+-- Sibling of the quiz game above, under the same "Wēddly Games" umbrella. A
+-- couple authors a set of Yes/No questions about their wedding, shares one
+-- board with guests via its own join code (no login), and the room bets
+-- points on the outcome. See shared/markets.ts for the full design rationale
+-- — pari-mutuel pooled betting (no house, can't go insolvent), status
+-- DERIVED from closes_at/outcome/voided_at rather than stored.
+CREATE TABLE IF NOT EXISTS market_boards (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  join_code TEXT NOT NULL,                                     -- short human code — /play/markets/:code and the guest link both point here
+  status TEXT NOT NULL DEFAULT 'draft',                        -- MarketBoardStatus: draft|live|ended
+  starting_balance INTEGER NOT NULL DEFAULT 500,                -- points a guest starts with on first join
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_market_boards_join_code ON market_boards(join_code);
+CREATE INDEX IF NOT EXISTS idx_market_boards_couple ON market_boards(couple_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS market_questions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  board_id INTEGER NOT NULL REFERENCES market_boards(id) ON DELETE CASCADE,
+  prompt TEXT NOT NULL,
+  closes_at INTEGER NOT NULL,                                  -- betting locks the instant `now` reaches this — see marketQuestionStatus
+  outcome TEXT,                                                -- MarketOutcome 'yes'|'no', NULL = not resolved yet
+  resolved_at INTEGER,
+  voided_at INTEGER,                                           -- couple pulled the question; every stake refunded, nobody wins or loses
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_market_questions_board ON market_questions(board_id, created_at ASC);
+
+CREATE TABLE IF NOT EXISTS market_players (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  board_id INTEGER NOT NULL REFERENCES market_boards(id) ON DELETE CASCADE,
+  token TEXT NOT NULL,                                         -- server-minted on join, plain (not hashed) — a party game, not auth, same posture as quiz_players.token
+  name TEXT NOT NULL,
+  avatar TEXT NOT NULL,                                        -- MARKET_AVATARS — the same cast as the quiz join screen
+  balance INTEGER NOT NULL,                                    -- starts at market_boards.starting_balance, moves only via a bet or a resolution/void credit
+  joined_at INTEGER NOT NULL,
+  last_seen_at INTEGER NOT NULL,
+  removed_at INTEGER                                           -- couple can kick; soft delete, never hard
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_market_players_token ON market_players(board_id, token);
+CREATE INDEX IF NOT EXISTS idx_market_players_board ON market_players(board_id) WHERE removed_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS market_positions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question_id INTEGER NOT NULL REFERENCES market_questions(id) ON DELETE CASCADE,
+  player_id INTEGER NOT NULL REFERENCES market_players(id) ON DELETE CASCADE,
+  side TEXT NOT NULL,                                          -- MarketSide 'yes'|'no' — fixed once placed, a top-up can only add to this same side
+  stake INTEGER NOT NULL,                                      -- cumulative points staked on this side of this question
+  payout INTEGER,                                              -- filled at resolve/void time — the TOTAL credited back, not profit
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(question_id, player_id)                                -- one position per player per question — see settleMarketQuestion
+);
+CREATE INDEX IF NOT EXISTS idx_market_positions_question ON market_positions(question_id);
+CREATE INDEX IF NOT EXISTS idx_market_positions_player ON market_positions(player_id);

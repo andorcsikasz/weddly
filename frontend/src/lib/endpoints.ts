@@ -125,6 +125,24 @@ import type {
   WishlistLinkPreview,
 } from "@shared/wishlist";
 import type {
+  QuizAnswerValue,
+  QuizDetail,
+  QuizHostState,
+  QuizPublicState,
+  QuizSlideConfig,
+  QuizSlideKind,
+  QuizSummary,
+} from "@shared/quiz";
+import type {
+  MarketBoardDetail,
+  MarketBoardSummary,
+  MarketLeaderboardEntry,
+  MarketOutcome,
+  MarketPublicState,
+  MarketQuestion,
+  MarketSide,
+} from "@shared/markets";
+import type {
   AdminCommunitySupplierReport,
   AdminListingPhotosResponse,
   AdminSupplierEditInput,
@@ -4551,4 +4569,202 @@ export const growthApi = {
     apiFetch<{ recorded: number }>("POST", "/api/growth/event", { kind, payload })
       .then(() => undefined)
       .catch(() => undefined),
+};
+
+// ─── Live wedding quiz game — couple-authenticated builder + host console ────
+
+export const quizApi = {
+  list: () => apiFetch<{ quizzes: QuizSummary[] }>("GET", "/api/quizzes"),
+  create: (title: string) => apiFetch<{ quiz: QuizDetail }>("POST", "/api/quizzes", { title }),
+  get: (id: number) => apiFetch<{ quiz: QuizDetail }>("GET", `/api/quizzes/${id}`),
+  rename: (id: number, title: string) =>
+    apiFetch<{ quiz: QuizDetail }>("PATCH", `/api/quizzes/${id}`, { title }),
+  remove: (id: number) => apiFetch<{ ok: boolean }>("DELETE", `/api/quizzes/${id}`),
+
+  addSlide: (
+    quizId: number,
+    input: {
+      kind: QuizSlideKind;
+      prompt: string;
+      subtitle?: string | null;
+      timeLimitS?: number | null;
+      config?: QuizSlideConfig;
+    },
+  ) => apiFetch<{ quiz: QuizDetail }>("POST", `/api/quizzes/${quizId}/slides`, input),
+  updateSlide: (
+    quizId: number,
+    slideId: number,
+    patch: Partial<{
+      prompt: string;
+      subtitle: string | null;
+      timeLimitS: number | null;
+      pointsBase: number;
+      config: QuizSlideConfig;
+    }>,
+  ) => apiFetch<{ quiz: QuizDetail }>("PATCH", `/api/quizzes/${quizId}/slides/${slideId}`, patch),
+  removeSlide: (quizId: number, slideId: number) =>
+    apiFetch<{ quiz: QuizDetail }>("DELETE", `/api/quizzes/${quizId}/slides/${slideId}`),
+  moveSlide: (quizId: number, slideId: number, direction: "up" | "down") =>
+    apiFetch<{ quiz: QuizDetail }>("POST", `/api/quizzes/${quizId}/slides/${slideId}/move`, {
+      direction,
+    }),
+
+  hostState: (quizId: number) =>
+    apiFetch<QuizHostState>("GET", `/api/quizzes/${quizId}/host-state`),
+  hostStart: (quizId: number) =>
+    apiFetch<QuizHostState>("POST", `/api/quizzes/${quizId}/host/start`, {}),
+  hostBeginSlide: (quizId: number, slideId: number | "next") =>
+    apiFetch<QuizHostState>("POST", `/api/quizzes/${quizId}/host/begin-slide`, { slideId }),
+  hostReveal: (quizId: number) =>
+    apiFetch<QuizHostState>("POST", `/api/quizzes/${quizId}/host/reveal`, {}),
+  hostEnd: (quizId: number) =>
+    apiFetch<QuizHostState>("POST", `/api/quizzes/${quizId}/host/end`, {}),
+  hostReset: (quizId: number) =>
+    apiFetch<{ quiz: QuizDetail }>("POST", `/api/quizzes/${quizId}/host/reset`, {}),
+
+  /** Auth-protected blob fetch, same pattern as budgetDocumentApi.fetchBlob —
+   *  the host console turns this into an object URL for the <img>. */
+  qrBlob: async (quizId: number, format: "png" | "svg" = "png"): Promise<Blob> => {
+    const token = getToken();
+    const res = await fetch(`/api/quizzes/${quizId}/qr${format === "svg" ? "?format=svg" : ""}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) throw new Error(`QR fetch failed: ${res.status}`);
+    return res.blob();
+  },
+};
+
+// ─── Live wedding quiz game — public, no-login guest join/play ───────────────
+
+const QUIZ_PLAYER_TOKEN_HEADER = "X-Quiz-Player-Token";
+
+export const quizPlayApi = {
+  lookup: (code: string, token: string | null) =>
+    apiFetch<QuizPublicState>("GET", `/api/play/${encodeURIComponent(code)}`, undefined, {
+      headers: token ? { [QUIZ_PLAYER_TOKEN_HEADER]: token } : undefined,
+    }),
+  join: (code: string, name: string, avatar: string, existingToken: string | null) =>
+    apiFetch<{
+      player: { id: number; name: string; avatar: string };
+      token: string;
+      state: QuizPublicState;
+    }>(
+      "POST",
+      `/api/play/${encodeURIComponent(code)}/join`,
+      { name, avatar },
+      { headers: existingToken ? { [QUIZ_PLAYER_TOKEN_HEADER]: existingToken } : undefined },
+    ),
+  state: (code: string, token: string) =>
+    apiFetch<QuizPublicState>("GET", `/api/play/${encodeURIComponent(code)}/state`, undefined, {
+      headers: { [QUIZ_PLAYER_TOKEN_HEADER]: token },
+    }),
+  answer: (code: string, token: string, slideId: number, value: QuizAnswerValue) =>
+    apiFetch<{ correct: boolean | null; points: number; myTotal: number }>(
+      "POST",
+      `/api/play/${encodeURIComponent(code)}/answer`,
+      { slideId, value },
+      { headers: { [QUIZ_PLAYER_TOKEN_HEADER]: token } },
+    ),
+};
+
+// ─── Live wedding prediction markets — couple-authenticated board control ───
+
+export const marketsApi = {
+  list: () => apiFetch<{ boards: MarketBoardSummary[] }>("GET", "/api/markets"),
+  create: (title: string) =>
+    apiFetch<{ board: MarketBoardDetail }>("POST", "/api/markets", { title }),
+  get: (id: number) => apiFetch<{ board: MarketBoardDetail }>("GET", `/api/markets/${id}`),
+  rename: (id: number, title: string) =>
+    apiFetch<{ board: MarketBoardSummary }>("PATCH", `/api/markets/${id}`, { title }),
+  remove: (id: number) => apiFetch<{ ok: boolean }>("DELETE", `/api/markets/${id}`),
+  start: (id: number) =>
+    apiFetch<{ board: MarketBoardDetail }>("POST", `/api/markets/${id}/start`, {}),
+  end: (id: number) => apiFetch<{ board: MarketBoardDetail }>("POST", `/api/markets/${id}/end`, {}),
+  leaderboard: (id: number) =>
+    apiFetch<{ leaderboard: MarketLeaderboardEntry[] }>("GET", `/api/markets/${id}/leaderboard`),
+
+  addQuestion: (id: number, prompt: string, closesAt: number) =>
+    apiFetch<{ board: MarketBoardDetail }>("POST", `/api/markets/${id}/questions`, {
+      prompt,
+      closesAt,
+    }),
+  updateQuestion: (id: number, questionId: number, patch: { prompt?: string; closesAt?: number }) =>
+    apiFetch<{ board: MarketBoardDetail }>(
+      "PATCH",
+      `/api/markets/${id}/questions/${questionId}`,
+      patch,
+    ),
+  removeQuestion: (id: number, questionId: number) =>
+    apiFetch<{ board: MarketBoardDetail }>("DELETE", `/api/markets/${id}/questions/${questionId}`),
+  resolveQuestion: (id: number, questionId: number, outcome: MarketOutcome) =>
+    apiFetch<{ question: MarketQuestion }>(
+      "POST",
+      `/api/markets/${id}/questions/${questionId}/resolve`,
+      {
+        outcome,
+      },
+    ),
+  voidQuestion: (id: number, questionId: number) =>
+    apiFetch<{ question: MarketQuestion }>(
+      "POST",
+      `/api/markets/${id}/questions/${questionId}/void`,
+      {},
+    ),
+
+  /** Auth-protected blob fetch, same pattern as quizApi.qrBlob — the board
+   *  management page turns this into an object URL for the <img>. */
+  qrBlob: async (id: number, format: "png" | "svg" = "png"): Promise<Blob> => {
+    const token = getToken();
+    const res = await fetch(`/api/markets/${id}/qr${format === "svg" ? "?format=svg" : ""}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) throw new Error(`QR fetch failed: ${res.status}`);
+    return res.blob();
+  },
+};
+
+// ─── Live wedding prediction markets — public, no-login guest join/play ─────
+
+const MARKET_PLAYER_TOKEN_HEADER = "X-Market-Player-Token";
+
+export const marketsPlayApi = {
+  lookup: (code: string, token: string | null) =>
+    apiFetch<MarketPublicState>("GET", `/api/play/markets/${encodeURIComponent(code)}`, undefined, {
+      headers: token ? { [MARKET_PLAYER_TOKEN_HEADER]: token } : undefined,
+    }),
+  join: (code: string, name: string, avatar: string, existingToken: string | null) =>
+    apiFetch<{
+      player: { id: number; name: string; avatar: string; balance: number };
+      token: string;
+      state: MarketPublicState;
+    }>(
+      "POST",
+      `/api/play/markets/${encodeURIComponent(code)}/join`,
+      { name, avatar },
+      { headers: existingToken ? { [MARKET_PLAYER_TOKEN_HEADER]: existingToken } : undefined },
+    ),
+  state: (code: string, token: string) =>
+    apiFetch<MarketPublicState>(
+      "GET",
+      `/api/play/markets/${encodeURIComponent(code)}/state`,
+      undefined,
+      {
+        headers: { [MARKET_PLAYER_TOKEN_HEADER]: token },
+      },
+    ),
+  bet: (code: string, token: string, questionId: number, side: MarketSide, stake: number) =>
+    apiFetch<{
+      result: { side: MarketSide; stake: number; totalStakeOnSide: number; balance: number };
+      state: MarketPublicState;
+    }>(
+      "POST",
+      `/api/play/markets/${encodeURIComponent(code)}/questions/${questionId}/bet`,
+      { side, stake },
+      { headers: { [MARKET_PLAYER_TOKEN_HEADER]: token } },
+    ),
+  previewPayout: (code: string, questionId: number, side: MarketSide, stake: number) =>
+    apiFetch<{ estimatedPayout: number }>(
+      "GET",
+      `/api/play/markets/${encodeURIComponent(code)}/questions/${questionId}/preview?side=${side}&stake=${stake}`,
+    ),
 };

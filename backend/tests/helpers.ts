@@ -316,6 +316,20 @@ export function wipeAll(): void {
     "couple_card_feedback",
     "couple_card_suggestions",
     "content_notices",
+    // Prediction markets — cascade off couples, but delete explicitly (child
+    // before parent) so a leaked board/question can't bleed a join_code or a
+    // leaderboard balance into the next test.
+    "market_positions",
+    "market_players",
+    "market_questions",
+    "market_boards",
+    // Live wedding quiz game — cascade off couples, but delete explicitly
+    // (child before parent) so a leaked player/answer can't bleed a join_code
+    // or a leaderboard score into the next test.
+    "quiz_answers",
+    "quiz_players",
+    "quiz_slides",
+    "quizzes",
     // users MUST come before couples — users.couple_id REFERENCES couples(id)
     // with no CASCADE, so deleting couples first FK-fails (silently swallowed
     // by the try/catch below) and leaves stale rows that bleed into the next
