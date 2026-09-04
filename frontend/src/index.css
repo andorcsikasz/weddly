@@ -1368,9 +1368,16 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
      interactive rectangle. */
   .range-fill-touch {
     height: 44px;
+    background-color: transparent;
     background-position: center;
     background-repeat: no-repeat;
     background-size: 100% 6px;
+  }
+  /* `html.dark .range-fill` (above) re-sets the `background` shorthand, which
+     outranks a bare `.range-fill-touch` class on specificity alone — without
+     this the dark-mode touch rail painted a solid umber block again. */
+  html.dark .range-fill-touch {
+    background-color: transparent;
   }
   @media (min-width: 640px) {
     .range-fill-touch {

@@ -28,8 +28,11 @@ type Props = {
   onChange: (next: Currency) => void;
   /** Accessible name for the control (visually hidden). */
   label: string;
-  /** `compact` trims the trigger for inline page headers. */
-  size?: "default" | "compact";
+  /** `compact` trims the trigger for inline page headers. `icon` drops the
+   *  border, code and chevron entirely — just the glyph, sized to sit flush
+   *  beside other icon-only affordances (e.g. the budget page's actual-spend
+   *  toggle) rather than reading as its own pill. */
+  size?: "default" | "compact" | "icon";
 };
 
 export function CurrencySelect({ value, onChange, label, size = "default" }: Props) {
@@ -141,20 +144,28 @@ export function CurrencySelect({ value, onChange, label, size = "default" }: Pro
         aria-activedescendant={activeId}
         aria-label={`${label}: ${currencyName(value, locale)}`}
         onClick={() => setOpen((o) => !o)}
-        className={`inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-paper-50 font-medium text-ink-900 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:hover:bg-umber-700 ${
-          size === "compact"
-            ? "min-h-[44px] px-3 text-sm sm:min-h-0 sm:px-2.5 sm:py-1 sm:text-xs"
-            : "min-h-[44px] px-4 text-sm"
-        }`}
+        className={
+          size === "icon"
+            ? "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-200 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            : `inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-paper-50 font-medium text-ink-900 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:hover:bg-umber-700 ${
+                size === "compact"
+                  ? "min-h-[44px] px-3 text-sm sm:min-h-0 sm:px-2.5 sm:py-1 sm:text-xs"
+                  : "min-h-[44px] px-4 text-sm"
+              }`
+        }
       >
         <span aria-hidden="true">{currencySymbol(value, locale)}</span>
-        <span className="tabular-nums text-ink-500 dark:text-umber-300" aria-hidden="true">
-          {value}
-        </span>
-        <ChevronDown
-          className={`h-3.5 w-3.5 text-ink-400 transition-transform dark:text-umber-400 ${open ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        />
+        {size !== "icon" && (
+          <>
+            <span className="tabular-nums text-ink-500 dark:text-umber-300" aria-hidden="true">
+              {value}
+            </span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-ink-400 transition-transform dark:text-umber-400 ${open ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            />
+          </>
+        )}
       </button>
 
       {open && (

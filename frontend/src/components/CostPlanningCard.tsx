@@ -40,6 +40,7 @@ import {
   type CSSProperties,
   Fragment,
   memo,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -295,6 +296,7 @@ export function CostPlanningCard({
   onAddCustomRow,
   onEditCustomRowPlanned,
   onRemoveCustomRow,
+  currencySelector,
 }: {
   lines: BudgetLine[];
   baseline: number;
@@ -377,6 +379,11 @@ export function CostPlanningCard({
   onEditCustomRowPlanned?: (lineId: number, plannedHuf: number) => void | Promise<void>;
   /** Removes a custom row. Parent should confirm before calling. */
   onRemoveCustomRow?: (lineId: number) => void | Promise<void>;
+  /** Rendered at the top-right of the card, beside the actual-spend toggle
+   *  and the cap pill — e.g. an icon-only `<CurrencySelect>`. Optional so
+   *  embedders without a currency picker of their own (the dashboard) don't
+   *  reserve space for one. */
+  currencySelector?: ReactNode;
 }) {
   const { t, locale } = useT();
   // Second-layer overlay: each category row renders a thin red bar under the
@@ -630,70 +637,66 @@ export function CostPlanningCard({
   const hasAnyActual = totalActual > 0;
 
   return (
-    <section className="card p-4">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
-          {t("budget.cost_planning_headline")}
-        </p>
-        <div className="flex items-center gap-3">
-          {showActualToggle && hasAnyActual && (
-            // Icon-only toggle for the actual-overlay. The receipt glyph signals
-            // "actual paid spend"; the red ring when active picks up the overlay's
-            // red stroke colour so they read as a single affordance. Title +
-            // aria-label keep the action discoverable for keyboard and SR users.
-            // Hidden until at least one row has an actual amount — otherwise
-            // toggling does nothing visible and the icon reads as a dead chip.
-            <button
-              type="button"
-              onClick={() => setShowActualOverlay((v) => !v)}
-              aria-pressed={showActualOverlay}
-              aria-label={t(
-                showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay",
-              )}
-              title={t(
-                showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay",
-              )}
-              className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 ${
-                showActualOverlay
-                  ? "border-red-500 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-400/60 dark:bg-red-400/15 dark:text-red-300 dark:hover:bg-red-400/25"
-                  : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
-              }`}
-            >
-              <Receipt size={14} aria-hidden />
-            </button>
-          )}
-          {cap !== null &&
-            (tier === "safe" ? (
-              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
-                <ArrowDown size={12} className="self-center" aria-hidden />
-                {t("budget.under_by", { amount: formatMoney(underAmount, currency, locale) })}
-              </span>
-            ) : tier === "soft" ? (
-              // 0–5 % over: calm amber dot, no blush pill — well within the
-              // noise floor of cap accuracy, so the warning is muted on purpose.
-              // Copy still includes the exact overage amount so the couple can
-              // see the actual gap, not a vague "a touch over" hand-wave.
-              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
-                <span
-                  className="inline-block h-2 w-2 self-center rounded-full bg-amber-500 dark:bg-amber-400"
-                  aria-hidden="true"
-                />
-                {t("cost_planning.overcap_medium_label", {
-                  amount: formatMoney(overage, currency, locale),
-                })}
-              </span>
-            ) : (
-              // medium (5–20 %) + serious (>20 %): same blush pill; the serious
-              // tier adds an action link below the card total. Keeping the pill
-              // shape stable across tiers preserves the visual anchor.
-              <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700 dark:text-blush-300">
-                <ArrowUp size={12} className="self-center" aria-hidden />
-                {t("cost_planning.overcap_medium_label", {
-                  amount: formatMoney(overage, currency, locale),
-                })}
-              </span>
-            ))}
-        </div>
+    <section className="card p-4" aria-label={t("budget.cost_planning_headline")}>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {showActualToggle && hasAnyActual && (
+          // Icon-only toggle for the actual-overlay. The receipt glyph signals
+          // "actual paid spend"; the red ring when active picks up the overlay's
+          // red stroke colour so they read as a single affordance. Title +
+          // aria-label keep the action discoverable for keyboard and SR users.
+          // Hidden until at least one row has an actual amount — otherwise
+          // toggling does nothing visible and the icon reads as a dead chip.
+          <button
+            type="button"
+            onClick={() => setShowActualOverlay((v) => !v)}
+            aria-pressed={showActualOverlay}
+            aria-label={t(
+              showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay",
+            )}
+            title={t(
+              showActualOverlay ? "budget.hide_actual_overlay" : "budget.show_actual_overlay",
+            )}
+            className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 ${
+              showActualOverlay
+                ? "border-red-500 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-400/60 dark:bg-red-400/15 dark:text-red-300 dark:hover:bg-red-400/25"
+                : "border-paper-300 text-ink-500 hover:border-paper-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
+            }`}
+          >
+            <Receipt size={14} aria-hidden />
+          </button>
+        )}
+        {cap !== null &&
+          (tier === "safe" ? (
+            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
+              <ArrowDown size={12} className="self-center" aria-hidden />
+              {t("budget.under_by", { amount: formatMoney(underAmount, currency, locale) })}
+            </span>
+          ) : tier === "soft" ? (
+            // 0–5 % over: calm amber dot, no blush pill — well within the
+            // noise floor of cap accuracy, so the warning is muted on purpose.
+            // Copy still includes the exact overage amount so the couple can
+            // see the actual gap, not a vague "a touch over" hand-wave.
+            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
+              <span
+                className="inline-block h-2 w-2 self-center rounded-full bg-amber-500 dark:bg-amber-400"
+                aria-hidden="true"
+              />
+              {t("cost_planning.overcap_medium_label", {
+                amount: formatMoney(overage, currency, locale),
+              })}
+            </span>
+          ) : (
+            // medium (5–20 %) + serious (>20 %): same blush pill; the serious
+            // tier adds an action link below the card total. Keeping the pill
+            // shape stable across tiers preserves the visual anchor.
+            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700 dark:text-blush-300">
+              <ArrowUp size={12} className="self-center" aria-hidden />
+              {t("cost_planning.overcap_medium_label", {
+                amount: formatMoney(overage, currency, locale),
+              })}
+            </span>
+          ))}
+        {currencySelector}
       </div>
 
       {/* Big centred live count — number large, "vendég" small below. On

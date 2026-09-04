@@ -58,7 +58,6 @@ import {
 import { CurrencySelect } from "../components/CurrencySelect";
 import { IncomeSection } from "../components/IncomeSection";
 import { InfoHint } from "../components/InfoHint";
-import { LastUpdatedBy } from "../components/LastUpdatedBy";
 import { PaymentsDuePanel } from "../components/PaymentsDuePanel";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -1130,25 +1129,9 @@ export default function BudgetPage() {
 
   return (
     <>
-      <header
-        data-tour-target="budget-header"
-        className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2"
-      >
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="font-grotesk">{t("budget.title")}</h1>
-            <InfoHint text={t("budget.sub")} />
-          </div>
-          <LastUpdatedBy actionPrefixes={["budget.", "couple.planning_count"]} />
-        </div>
-        <div className="shrink-0">
-          <CurrencySelect
-            value={currency}
-            onChange={saveCurrency}
-            label={t("profile.budget_currency_label")}
-            size="compact"
-          />
-        </div>
+      <header data-tour-target="budget-header" className="mb-4 flex items-center gap-2">
+        <h1 className="font-grotesk">{t("budget.title")}</h1>
+        <InfoHint text={t("budget.sub")} />
       </header>
 
       <PaymentsDuePanel
@@ -1182,6 +1165,14 @@ export default function BudgetPage() {
         onAddCustomRow={addCustomRow}
         onEditCustomRowPlanned={setCustomRowPlanned}
         onRemoveCustomRow={removeCustomRow}
+        currencySelector={
+          <CurrencySelect
+            value={currency}
+            onChange={saveCurrency}
+            label={t("profile.budget_currency_label")}
+            size="icon"
+          />
+        }
       />
 
       <section data-tour-target="budget-lines" className="mt-8">
