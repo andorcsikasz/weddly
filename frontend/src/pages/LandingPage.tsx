@@ -48,6 +48,7 @@ const SeatingMockup = lazyWithReload(() =>
 const SubmitSupplierModal = lazyWithReload(() =>
   import("../components/SubmitSupplierModal").then((m) => ({ default: m.SubmitSupplierModal })),
 );
+import { CoupleMonogram } from "../components/CoupleMonogram";
 import { DemoLaunchButton } from "../components/DemoLaunchButton";
 import { NewsletterCapture } from "../components/NewsletterCapture";
 import { VendorSearchBar } from "../components/VendorSearchBar";
@@ -270,7 +271,7 @@ export default function LandingPage() {
           <div className="mx-auto flex min-h-[calc(75svh+5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-end sm:px-6 sm:pb-24 lg:pb-28">
             <div className="grid items-start gap-8 lg:items-center lg:gap-14">
               <div>
-                <h1 className="font-grotesk text-4xl font-bold leading-[1.1] tracking-tight text-paper-50 sm:text-5xl lg:text-6xl">
+                <h1 className="hidden font-grotesk text-4xl font-bold leading-[1.1] tracking-tight text-paper-50 sm:block sm:text-5xl lg:text-6xl">
                   {t("landing.hero_title")}
                 </h1>
                 {/* Signup + demo sit side by side: sign up, or look around
@@ -569,15 +570,12 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════ 08 · Reviews ════════════════════════ */}
-      <section className="relative bg-paper-50 dark:bg-umber-900">
+      <section className="relative overflow-hidden bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
-            {t("landing.testimonials_eyebrow")}
-          </p>
-          <h2 className="mt-3 text-center font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="text-center font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
             {t("landing.testimonials_title")}
           </h2>
-          <ul className="mt-10 grid gap-5 sm:mt-14 sm:grid-cols-3 sm:gap-6">
+          <ul className="mt-12 grid gap-5 sm:mt-16 sm:grid-cols-3 sm:gap-6">
             <TestimonialCard
               quote={t("landing.t1_quote")}
               name={t("landing.t1_name")}
@@ -2383,14 +2381,25 @@ function TestimonialCard({
   meta: string;
 }) {
   return (
-    <li className="rounded-2xl border border-paper-300 bg-white p-6 shadow-sm dark:border-umber-700 dark:bg-umber-800 sm:p-7">
-      <p className="font-serif text-lg italic leading-relaxed text-umber-900 dark:text-paper-100">
-        “{quote}”
+    <li className="group relative rounded-2xl border border-paper-300 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blush-300 hover:shadow-[0_24px_48px_-24px_rgba(191,74,48,0.35)] dark:border-umber-700 dark:bg-umber-800 dark:hover:border-blush-700 sm:p-8">
+      <span
+        aria-hidden="true"
+        className="block font-serif text-6xl italic leading-none text-blush-200 transition-colors group-hover:text-blush-400 dark:text-umber-600 dark:group-hover:text-blush-600"
+      >
+        “
+      </span>
+      <p className="-mt-4 font-serif text-lg italic leading-relaxed text-umber-900 dark:text-paper-100">
+        {quote}
       </p>
-      <p className="mt-5 font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
-        {name}
-      </p>
-      <p className="text-xs text-umber-600 dark:text-umber-300">{meta}</p>
+      <div className="mt-6 flex items-center gap-3 border-t border-paper-200 pt-5 dark:border-umber-700">
+        <CoupleMonogram name={name} size="md" />
+        <div className="min-w-0">
+          <p className="truncate font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
+            {name}
+          </p>
+          <p className="text-xs text-umber-600 dark:text-umber-300">{meta}</p>
+        </div>
+      </div>
     </li>
   );
 }

@@ -56,6 +56,18 @@ export interface MarketQuestion {
   status: MarketQuestionStatus;
   /** Derived from `pool` — see `marketProbability`. */
   probability: number;
+  /** The probability's own history, oldest first — one tick recorded at
+   *  question creation (always 50, pool 0/0, see `createQuestion`) and one
+   *  more on every bet (see `placeBet`), so a chart always starts flat at
+   *  the 50/50 coin-flip and bends toward whichever side the room backs.
+   *  Capped server-side (`questionPriceHistory`) — a display trend, not a
+   *  full audit ledger. */
+  priceHistory: MarketPriceTick[];
+}
+
+export interface MarketPriceTick {
+  at: UnixMs;
+  probability: number;
 }
 
 export interface MarketPlayer {
@@ -97,6 +109,11 @@ export interface MyMarketPosition {
   /** Set once the question resolves/voids — the TOTAL credited back, not
    *  profit. Null while the question is still open or closed-but-unresolved. */
   payout: number | null;
+  /** Live mark-to-market: `payout` once settled (the real, final number),
+   *  otherwise `currentPositionValue` against the CURRENT pool — an
+   *  estimate that moves as the room keeps betting, same caveat as
+   *  `estimatedPayout`. Never a promise, always a "right now". */
+  currentValue: number;
 }
 
 export interface MarketPublicState {
@@ -174,6 +191,23 @@ export function estimatedPayout(pool: MarketPool, side: MarketSide, stake: numbe
   const after: MarketPool = { ...pool, [side]: pool[side] + stake };
   const sidePool = after[side];
   const totalPool = after.yes + after.no;
+  if (sidePool <= 0) return stake;
+  return Math.round(stake * (totalPool / sidePool));
+}
+
+/** Same ratio as `estimatedPayout`, for a stake that's ALREADY sitting in
+ *  `pool` rather than one about to be added — the live "what is my existing
+ *  position worth right now" number a guest's bet slip shows next to their
+ *  stake as the room keeps betting after them. Every other guest's stake
+ *  re-weights everyone's estimate the same way theirs does; nobody's
+ *  position is priced differently from anyone else's on the same side, so
+ *  there is no spread between what two guests on the same side could
+ *  claim their stake is "worth" — the one structural precondition for
+ *  arbitrage — for this pari-mutuel pool to ever open up. */
+export function currentPositionValue(pool: MarketPool, side: MarketSide, stake: number): number {
+  if (stake <= 0) return 0;
+  const sidePool = pool[side];
+  const totalPool = pool.yes + pool.no;
   if (sidePool <= 0) return stake;
   return Math.round(stake * (totalPool / sidePool));
 }

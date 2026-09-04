@@ -14,6 +14,7 @@ import { useT } from "../../lib/i18n";
 import { fireConfetti } from "../../lib/confetti";
 import { useQuizPoll } from "../../lib/quizPoll";
 import {
+  quizRoundPosition,
   quizTimeRemainingMs,
   quizSlideIsAnswerable,
   type QuizBinaryConfig,
@@ -21,6 +22,8 @@ import {
   type QuizHostState,
   type QuizMcqConfig,
   type QuizNumberConfig,
+  type QuizRoundPosition,
+  type QuizSlide,
 } from "@shared/quiz";
 import { HeatmapPad } from "./HeatmapPad";
 import "./QuizPlay.css";
@@ -37,6 +40,22 @@ export default function QuizHostPage() {
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [celebrated, setCelebrated] = useState(false);
+  // Fetched once (not polled) purely to know where the ROUND boundaries are
+  // — the host-state poll only ever carries the one currentSlide, and slide
+  // editing is locked for the whole time a quiz is live anyway, so this list
+  // can't go stale under the host's feet mid-session.
+  const [slides, setSlides] = useState<QuizSlide[] | null>(null);
+
+  useEffect(() => {
+    if (!Number.isFinite(quizId)) return;
+    quizApi
+      .get(quizId)
+      .then((r) => setSlides(r.quiz.slides))
+      .catch(() => setSlides(null));
+  }, [quizId]);
+
+  const roundInfo: QuizRoundPosition | null =
+    slides && state?.currentSlide ? quizRoundPosition(slides, state.currentSlide.position) : null;
 
   useEffect(() => {
     if (!Number.isFinite(quizId)) return;
@@ -111,6 +130,10 @@ export default function QuizHostPage() {
           </span>
         </header>
 
+        {(state.phase === "active" || state.phase === "reveal") && (
+          <RoundTracker roundInfo={roundInfo} />
+        )}
+
         {state.quiz.status === "draft" && (
           <DraftView onStart={() => run(() => quizApi.hostStart(quizId))} busy={busy} />
         )}
@@ -128,6 +151,7 @@ export default function QuizHostPage() {
           <ActiveView
             state={state}
             now={now}
+            roundInfo={roundInfo}
             onReveal={() => run(() => quizApi.hostReveal(quizId))}
             onNext={() => run(() => quizApi.hostBeginSlide(quizId, "next"))}
             busy={busy}
@@ -215,15 +239,76 @@ function LobbyView({
   );
 }
 
+/** Slim step tracker across the top of the live view — only worth showing
+ *  once the quiz actually has more than one round (see `quizRoundPosition`'s
+ *  own comment for why a quiz with no section slides is "1 of 1", which this
+ *  suppresses rather than render as a pointless single dot). */
+function RoundTracker({ roundInfo }: { roundInfo: QuizRoundPosition | null }) {
+  const { t } = useT();
+  if (!roundInfo || roundInfo.totalRounds <= 1) return null;
+  return (
+    <div className="mb-4 flex items-center justify-center gap-2">
+      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/40">
+        {t("quiz.host.round_progress", {
+          current: String(roundInfo.round),
+          total: String(roundInfo.totalRounds),
+        })}
+      </span>
+      <span className="flex items-center gap-1.5" aria-hidden="true">
+        {Array.from({ length: roundInfo.totalRounds }, (_, i) => i + 1).map((n) => (
+          <span
+            key={n}
+            className={`h-1.5 rounded-full transition-all ${
+              n === roundInfo.round ? "w-5 bg-[#a78bfa]" : "w-1.5 bg-white/20"
+            }`}
+          />
+        ))}
+      </span>
+    </div>
+  );
+}
+
+/** The Kahoot-style "ROUND 2: FIRSTS" title card a `section` slide gets
+ *  instead of the generic question layout — a couple built this as a
+ *  deliberate transition beat between clusters of questions, and it read as
+ *  just another (answerless, timerless) question before this. */
+function SectionView({
+  slide,
+  roundInfo,
+  onNext,
+  busy,
+}: {
+  slide: QuizSlide;
+  roundInfo: QuizRoundPosition | null;
+  onNext: () => void;
+  busy: boolean;
+}) {
+  const { t } = useT();
+  return (
+    <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#4c1d95]/60 via-white/5 to-white/5 p-10 text-center sm:p-14">
+      {roundInfo && (
+        <p className="text-6xl font-bold text-[#a78bfa] sm:text-7xl">{roundInfo.round}</p>
+      )}
+      <h2 className="mt-4 font-grotesk text-3xl text-white sm:text-4xl">{slide.prompt}</h2>
+      {slide.subtitle && <p className="mt-3 text-lg text-white/60">{slide.subtitle}</p>}
+      <button type="button" className="btn-primary mt-9" onClick={onNext} disabled={busy}>
+        {t("quiz.host.next_button")} <ArrowRight size={16} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
 function ActiveView({
   state,
   now,
+  roundInfo,
   onReveal,
   onNext,
   busy,
 }: {
   state: QuizHostState;
   now: number;
+  roundInfo: QuizRoundPosition | null;
   onReveal: () => void;
   onNext: () => void;
   busy: boolean;
@@ -231,6 +316,9 @@ function ActiveView({
   const { t } = useT();
   const slide = state.currentSlide;
   if (!slide) return null;
+  if (slide.kind === "section") {
+    return <SectionView slide={slide} roundInfo={roundInfo} onNext={onNext} busy={busy} />;
+  }
   const answerable = quizSlideIsAnswerable(slide.kind);
   const remainingMs = quizTimeRemainingMs(
     { phase: state.phase, phase_started_at: state.phaseStartedAt, time_limit_s: slide.timeLimitS },

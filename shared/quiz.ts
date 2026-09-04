@@ -203,6 +203,36 @@ export function quizSlideIsAnswerable(kind: QuizSlideKind): boolean {
   return kind === "mcq" || kind === "binary" || kind === "number" || kind === "heatmap";
 }
 
+export interface QuizRoundPosition {
+  round: number;
+  totalRounds: number;
+}
+
+/** Which "round" a slide sits in, where a round is a cluster of slides
+ *  opened by its own `section` title card — the couple's own "Round 2:
+ *  Firsts" divider, not anything the backend tracks as a separate concept
+ *  (there is no `rounds` table; a round is just slides between one section
+ *  slide and the next). Feeds the host console's step tracker so a couple
+ *  presenting a long quiz can see "Round 2 of 4" the way a Kahoot host
+ *  would, without the backend having to know rounds exist at all.
+ *
+ *  A quiz authored with no section slides is one implicit round, not zero —
+ *  the common case (a short quiz, no dividers) should show nothing louder
+ *  than "Round 1 of 1", which callers should just suppress instead of
+ *  special-casing here. */
+export function quizRoundPosition(
+  slides: readonly Pick<QuizSlide, "kind" | "position">[],
+  slidePosition: number,
+): QuizRoundPosition {
+  const sectionPositions = slides
+    .filter((s) => s.kind === "section")
+    .map((s) => s.position)
+    .sort((a, b) => a - b);
+  const totalRounds = Math.max(1, sectionPositions.length);
+  const passed = sectionPositions.filter((pos) => pos <= slidePosition).length;
+  return { round: Math.max(1, passed), totalRounds };
+}
+
 export const QUIZ_DEFAULT_POINTS = 1000;
 export const QUIZ_DEFAULT_TIME_LIMIT_S = 20;
 export const QUIZ_NUMBER_DEFAULT_TOLERANCE_FRACTION = 0.05;

@@ -6,6 +6,7 @@
 
 import { randomBytes } from "node:crypto";
 import {
+  currentPositionValue,
   estimatedPayout,
   MARKET_MAX_STAKE,
   MARKET_MIN_STAKE,
@@ -24,6 +25,7 @@ import {
   getQuestionScoped,
   normalizeJoinCode,
   questionPool,
+  recordPriceTick,
   toMarketQuestion,
   type MarketBoardRow,
   type MarketPlayerRow,
@@ -142,6 +144,11 @@ export function getPublicState(
         side: row.side,
         stake: row.stake,
         payout: row.payout,
+        // Real, final number once settled; a live mark-to-market estimate
+        // against the CURRENT pool otherwise — see `currentValue` on
+        // `MyMarketPosition` in shared/markets.ts.
+        currentValue:
+          row.payout ?? currentPositionValue(questionPool(row.question_id), row.side, row.stake),
       }))
     : [];
 
@@ -253,6 +260,9 @@ export function placeBet(
          VALUES (?, ?, ?, ?, ?, ?)`,
       ).run(questionId, player.id, side, stake, ts, ts);
     }
+    // Same transaction as the pool write above — see recordPriceTick's own
+    // comment for why a tick can never exist without its bet or vice versa.
+    recordPriceTick(questionId, questionPool(questionId), ts);
   });
   tx();
 

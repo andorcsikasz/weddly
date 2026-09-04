@@ -24,6 +24,7 @@ import {
   type MarketPlayer,
   type MarketPool,
   type MarketPosition,
+  type MarketPriceTick,
   type MarketQuestion,
 } from "@shared/markets";
 import { db, now } from "../db";
@@ -90,6 +91,34 @@ export function questionPool(questionId: number): MarketPool {
   return pool;
 }
 
+// A display trend, not a full audit ledger — see the schema.sql comment on
+// market_price_ticks. Capped well past anything a wedding-scale board could
+// realistically produce (one tick per bet), so a busy board's chart is
+// still complete, not just recent.
+const PRICE_HISTORY_LIMIT = 300;
+
+export function questionPriceHistory(questionId: number): MarketPriceTick[] {
+  const rows = db
+    .prepare(
+      `SELECT probability, at FROM market_price_ticks
+        WHERE question_id = ? ORDER BY at ASC LIMIT ?`,
+    )
+    .all(questionId, PRICE_HISTORY_LIMIT) as { probability: number; at: number }[];
+  return rows.map((r) => ({ at: r.at, probability: r.probability }));
+}
+
+/** Records where the probability stands right now — called inside the SAME
+ *  transaction as whatever just moved `pool` (question creation, a bet), so
+ *  a tick can never exist without the write that produced it or vice versa.
+ *  See `MarketPriceTick` in shared/markets.ts for why this table exists at
+ *  all instead of deriving history from market_positions. */
+export function recordPriceTick(questionId: number, pool: MarketPool, at: number): void {
+  db.prepare(
+    `INSERT INTO market_price_ticks (question_id, probability, pool_yes, pool_no, at)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).run(questionId, marketProbability(pool), pool.yes, pool.no, at);
+}
+
 export function toMarketQuestion(row: MarketQuestionRow): MarketQuestion {
   const pool = questionPool(row.id);
   return {
@@ -108,6 +137,7 @@ export function toMarketQuestion(row: MarketQuestionRow): MarketQuestion {
       now(),
     ),
     probability: marketProbability(pool),
+    priceHistory: questionPriceHistory(row.id),
   };
 }
 
@@ -302,17 +332,26 @@ export function endBoard(board: MarketBoardRow): MarketBoardRow {
     .get(now(), board.id) as MarketBoardRow;
 }
 
+/** The initial tick (always 50/0/0, stamped at creation) is what guarantees
+ *  a question's chart always starts flat at the coin-flip line — without it
+ *  a question that opens strongly one-sided would chart as starting there,
+ *  which isn't what happened; nobody had bet yet. */
 export function createQuestion(
   boardId: number,
   input: { prompt: string; closesAt: number },
 ): MarketQuestionRow {
   const ts = now();
-  return db
-    .prepare(
-      `INSERT INTO market_questions (board_id, prompt, closes_at, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?) RETURNING *`,
-    )
-    .get(boardId, input.prompt, input.closesAt, ts, ts) as MarketQuestionRow;
+  const tx = db.transaction(() => {
+    const row = db
+      .prepare(
+        `INSERT INTO market_questions (board_id, prompt, closes_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?) RETURNING *`,
+      )
+      .get(boardId, input.prompt, input.closesAt, ts, ts) as MarketQuestionRow;
+    recordPriceTick(row.id, { yes: 0, no: 0 }, ts);
+    return row;
+  });
+  return tx();
 }
 
 /** The prompt is locked the instant a single bet exists — rewording a

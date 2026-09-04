@@ -362,8 +362,9 @@ describe("<DashboardPage>", () => {
     globalThis.fetch = buildFetch({});
     renderPage("dashboard");
 
-    // The "Days to go" label is the KPI tile heading; presence is enough.
-    await waitFor(() => expect(screen.getByText(/days to go/i)).toBeInTheDocument());
+    // The "Days to go" label is dropped visually (icon-only tile per the
+    // Uber-like minimal-copy direction) and lives on the tile's aria-label.
+    await waitFor(() => expect(screen.getByLabelText(/days to go/i)).toBeInTheDocument());
   });
 
   it("shows the guest list KPI count derived from /api/guests", async () => {
@@ -375,7 +376,7 @@ describe("<DashboardPage>", () => {
     globalThis.fetch = buildFetch({ guests });
     renderPage("dashboard");
 
-    await waitFor(() => expect(screen.getByText(/rsvps in/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText(/rsvps in/i)).toBeInTheDocument());
     // The headline counts replies against the real invite list (not the
     // onboarding target and not only the guests who answered yes).
     expect(screen.getByText(/of 3 invited replied/i)).toBeInTheDocument();
@@ -386,7 +387,7 @@ describe("<DashboardPage>", () => {
     globalThis.fetch = buildFetch({ budgetLines: lines });
     renderPage("dashboard");
 
-    await waitFor(() => expect(screen.getByText(/^Spent$/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText(/^Spent$/i)).toBeInTheDocument());
     // The cap is rendered as a clickable inline edit button — "of" is the
     // unit connector text. Multiple "of" strings exist elsewhere (e.g. the
     // RSVP "of N confirmed" line) so we scope to the cap edit button by
@@ -399,7 +400,7 @@ describe("<DashboardPage>", () => {
     renderPage("dashboard");
 
     // The 4th KPI tile is the ROI tile when guest target > 10.
-    await waitFor(() => expect(screen.getByText(/cost \/ guest/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText(/cost \/ guest/i)).toBeInTheDocument());
   });
 
   it("renders the outstanding setup nudges in the upcoming-tasks card", async () => {

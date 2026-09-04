@@ -75,6 +75,7 @@ import {
   subscribeCostPlanningCount,
   writeCostPlanningCount,
 } from "../lib/cost_planning";
+import { greetingKeyFor } from "../lib/greeting";
 import {
   budgetApi,
   coupleApi,
@@ -858,12 +859,14 @@ export default function DashboardPage() {
        *  request is still pending — links to settings/workspace to approve.
        *  Hidden when there's no pending planner-initiated request. */}
       <PlannerApprovalBanner />
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-grotesk text-3xl sm:text-4xl break-words hyphens-auto">
-            {couple.display_name}
-          </h1>
-        </div>
+      {/* Greeting — time-of-day (+ holiday) aware, recomputed on every render
+          so a couple who leaves the tab open into the evening isn't still
+          told good morning. Shares the picker with the vendor dashboard
+          (`lib/greeting.ts`); only the i18n namespace differs. */}
+      <header className="mb-6">
+        <h1 className="break-words font-grotesk text-3xl font-semibold leading-[1.05] tracking-[-0.02em] text-ink-900 hyphens-auto sm:text-4xl dark:text-paper-50">
+          {t(`dashboard.greeting.${greetingKeyFor()}`, { name: couple.display_name })}
+        </h1>
       </header>
 
       {/* ── Invite partner: stays mounted until partner B actually joins
@@ -1177,7 +1180,7 @@ export default function DashboardPage() {
       {!dayOfMode && (
         <section
           data-tour-target="dashboard-kpi"
-          className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4"
+          className="mb-6 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4"
         >
           {weddingPast ? (
             <PastWeddingTile
@@ -1196,6 +1199,7 @@ export default function DashboardPage() {
           <KpiTile
             label={t("dashboard.kpi_guests_label")}
             icon={<Users size={16} aria-hidden="true" />}
+            tone="sage"
             value={formatNumber(respondedCount, locale)}
             unit={
               guestDenominator > 0
@@ -1309,6 +1313,7 @@ export default function DashboardPage() {
             <KpiTile
               label={t("dashboard.kpi_total_spend_label")}
               icon={<Coins size={16} aria-hidden="true" />}
+              tone="ink"
               value={totalActual > 0 ? formatMoney(totalActual, currency, locale) : "-"}
               unit={
                 totalActual > 0
@@ -1324,6 +1329,7 @@ export default function DashboardPage() {
             <KpiTile
               label={t("dashboard.kpi_roi_label")}
               icon={<Coins size={16} aria-hidden="true" />}
+              tone="ink"
               value={
                 roiPlanned !== null
                   ? `${formatHufCompact(roiPlanned, locale)} ${currencySymbol(currency, locale)}`
@@ -1492,9 +1498,33 @@ export default function DashboardPage() {
   );
 }
 
+/** Colour identity per KPI tile — the accent lives on the icon chip only, so
+ *  four otherwise-identical white cards read apart at a glance without any
+ *  of them competing for "the" brand accent. */
+type TileTone = "blush" | "sage" | "amber" | "ink";
+
+const TILE_TONE_CLASSES: Record<TileTone, string> = {
+  blush: "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300",
+  sage: "bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300",
+  amber: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
+  ink: "bg-ink-100 text-ink-700 dark:bg-ink-500/20 dark:text-ink-200",
+};
+
+function TileIcon({ tone, children }: { tone: TileTone; children: ReactNode }) {
+  return (
+    <span
+      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${TILE_TONE_CLASSES[tone]}`}
+      aria-hidden="true"
+    >
+      {children}
+    </span>
+  );
+}
+
 function KpiTile({
   label,
   icon,
+  tone,
   value,
   unit,
   progress,
@@ -1505,6 +1535,7 @@ function KpiTile({
 }: {
   label: string;
   icon: ReactNode;
+  tone: TileTone;
   value: string;
   unit: string;
   progress?: number | null;
@@ -1514,31 +1545,18 @@ function KpiTile({
   breakdown?: ReactNode;
 }) {
   return (
-    <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
-        <span className="text-ink-400 dark:text-umber-400">{icon}</span>
-        {label}
-        {onToggle && (
-          <button
-            type="button"
-            onClick={onToggle}
-            className={`ml-auto flex items-center justify-center rounded p-0.5 transition-colors ${
-              expanded
-                ? "text-umber-600 dark:text-umber-300"
-                : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
-            }`}
-            aria-label={expanded ? "Hide RSVP breakdown" : "Show RSVP breakdown"}
-            aria-pressed={expanded}
-          >
-            <BarChart2 size={13} />
-          </button>
-        )}
-      </div>
+    <div
+      role="group"
+      aria-label={label}
+      title={label}
+      className="card flex items-start gap-3 p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
+    >
+      <TileIcon tone={tone}>{icon}</TileIcon>
       {/* Collapsed: just value + unit (+ optional bar) → a tighter box so the
           bar-less tiles don't leave a white gap. Only grow to fit the taller
           breakdown when it's actually expanded. */}
       <div
-        className={`mt-2 overflow-hidden ${expanded && breakdown ? "h-[4.5rem]" : "h-[3.75rem]"}`}
+        className={`min-w-0 flex-1 overflow-hidden ${expanded && breakdown ? "h-[4.5rem]" : "h-[3.75rem]"}`}
       >
         {expanded && breakdown ? (
           breakdown
@@ -1563,6 +1581,21 @@ function KpiTile({
           </>
         )}
       </div>
+      {onToggle && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className={`shrink-0 flex items-center justify-center rounded p-1 transition-colors ${
+            expanded
+              ? "text-umber-600 dark:text-umber-300"
+              : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
+          }`}
+          aria-label={expanded ? "Hide RSVP breakdown" : "Show RSVP breakdown"}
+          aria-pressed={expanded}
+        >
+          <BarChart2 size={14} />
+        </button>
+      )}
     </div>
   );
 }
@@ -1636,114 +1669,120 @@ function BudgetKpiTile({
   }
 
   return (
-    <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
-        <Wallet size={13} aria-hidden="true" />
-        {label}
-        {topSpend.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setChartOpen((v) => !v)}
-            className={`ml-auto flex items-center justify-center rounded p-0.5 transition-colors ${
-              chartOpen
-                ? "text-umber-600 dark:text-umber-300"
-                : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
-            }`}
-            aria-label={chartOpen ? "Hide breakdown" : "Show breakdown"}
-            aria-pressed={chartOpen}
-          >
-            <BarChart2 size={13} />
-          </button>
+    <div
+      role="group"
+      aria-label={label}
+      title={label}
+      className="card flex items-start gap-3 p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
+    >
+      <TileIcon tone="amber">
+        <Wallet size={16} aria-hidden="true" />
+      </TileIcon>
+      <div className="min-w-0 flex-1">
+        {chartOpen ? (
+          <div className="h-[4.5rem] overflow-hidden">
+            <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+              {topSpend.map(([cat, v]) => (
+                <div
+                  key={cat}
+                  className="h-full bg-ink-700 odd:opacity-60 even:opacity-90 dark:bg-paper-100"
+                  style={{ width: `${Math.round((v / maxSpend) * 100)}%` }}
+                />
+              ))}
+            </div>
+            <div className="mt-2 flex flex-col gap-0.5">
+              {topSpend.map(([cat, v]) => {
+                const Icon = CATEGORY_ICONS[cat];
+                return (
+                  <Link
+                    key={cat}
+                    to="/app/budget"
+                    className="flex min-w-0 items-center justify-between rounded px-1 py-0.5 text-xs transition hover:bg-paper-100 dark:hover:bg-umber-700/60"
+                  >
+                    <span className="flex min-w-0 flex-1 items-center gap-1.5 text-umber-800 dark:text-paper-100">
+                      {Icon && <Icon size={10} aria-hidden className="shrink-0 opacity-60" />}
+                      <span className="truncate">{t(`budget.cat.${cat}`)}</span>
+                    </span>
+                    <span className="shrink-0 pl-1 font-semibold tabular-nums text-umber-900 dark:text-paper-50">
+                      {formatHufCompact(v, locale)} {currencySymbol(currency, locale)}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
+              {formatMoney(totalActual, currency, locale)}
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1 text-xs font-medium text-ink-400 dark:text-umber-400">
+              {cap === null ? (
+                <span>{t("dashboard.kpi_budget_no_cap")}</span>
+              ) : editing ? (
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  autoFocus
+                  disabled={saving}
+                  value={draft}
+                  onFocus={(e) => e.currentTarget.select()}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    setDraft(digits === "" ? "" : formatNumber(Number(digits), locale));
+                  }}
+                  onBlur={commit}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+                    else if (e.key === "Escape") setEditing(false);
+                  }}
+                  aria-label={t("dashboard.kpi_budget_edit_aria")}
+                  className="stat-num w-32 rounded border border-blush-500 bg-white px-1 py-1 text-center text-base font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 sm:py-0.5 sm:text-xs dark:bg-umber-800 dark:text-paper-50"
+                />
+              ) : (
+                <>
+                  <span>{t("dashboard.kpi_budget_unit_connector")}</span>
+                  <button
+                    type="button"
+                    onClick={() => toast.info(t("dashboard.kpi_budget_edit_hint"))}
+                    onDoubleClick={startEdit}
+                    title={t("dashboard.kpi_budget_edit_hint")}
+                    aria-label={t("dashboard.kpi_budget_edit_aria")}
+                    className="stat-num cursor-pointer underline decoration-dotted decoration-ink-400 underline-offset-4 transition hover:text-ink-900 hover:decoration-ink-700 dark:hover:text-paper-50 dark:hover:decoration-paper-100"
+                  >
+                    {formatMoney(cap, currency, locale)}
+                  </button>
+                </>
+              )}
+            </div>
+            {progress !== null && (
+              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    progressOver ? "bg-blush-700 dark:bg-blush-400" : "bg-ink-700 dark:bg-paper-100"
+                  }`}
+                  style={{ width: `${Math.max(2, progress)}%` }}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
-      {chartOpen ? (
-        <div className="mt-2 h-[4.5rem] overflow-hidden">
-          <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-            {topSpend.map(([cat, v]) => (
-              <div
-                key={cat}
-                className="h-full bg-ink-700 odd:opacity-60 even:opacity-90 dark:bg-paper-100"
-                style={{ width: `${Math.round((v / maxSpend) * 100)}%` }}
-              />
-            ))}
-          </div>
-          <div className="mt-2 flex flex-col gap-0.5">
-            {topSpend.map(([cat, v]) => {
-              const Icon = CATEGORY_ICONS[cat];
-              return (
-                <Link
-                  key={cat}
-                  to="/app/budget"
-                  className="flex min-w-0 items-center justify-between rounded px-1 py-0.5 text-xs transition hover:bg-paper-100 dark:hover:bg-umber-700/60"
-                >
-                  <span className="flex min-w-0 flex-1 items-center gap-1.5 text-umber-800 dark:text-paper-100">
-                    {Icon && <Icon size={10} aria-hidden className="shrink-0 opacity-60" />}
-                    <span className="truncate">{t(`budget.cat.${cat}`)}</span>
-                  </span>
-                  <span className="shrink-0 pl-1 font-semibold tabular-nums text-umber-900 dark:text-paper-50">
-                    {formatHufCompact(v, locale)} {currencySymbol(currency, locale)}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="stat-num mt-2 font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
-            {formatMoney(totalActual, currency, locale)}
-          </div>
-          <div className="mt-1.5 flex items-baseline gap-1 text-xs font-medium text-ink-400 dark:text-umber-400">
-            {cap === null ? (
-              <span>{t("dashboard.kpi_budget_no_cap")}</span>
-            ) : editing ? (
-              <input
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                autoFocus
-                disabled={saving}
-                value={draft}
-                onFocus={(e) => e.currentTarget.select()}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, "");
-                  setDraft(digits === "" ? "" : formatNumber(Number(digits), locale));
-                }}
-                onBlur={commit}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
-                  else if (e.key === "Escape") setEditing(false);
-                }}
-                aria-label={t("dashboard.kpi_budget_edit_aria")}
-                className="stat-num w-32 rounded border border-blush-500 bg-white px-1 py-1 text-center text-base font-semibold text-ink-900 focus:outline-none focus:ring-2 focus:ring-blush-100 sm:py-0.5 sm:text-xs dark:bg-umber-800 dark:text-paper-50"
-              />
-            ) : (
-              <>
-                <span>{t("dashboard.kpi_budget_unit_connector")}</span>
-                <button
-                  type="button"
-                  onClick={() => toast.info(t("dashboard.kpi_budget_edit_hint"))}
-                  onDoubleClick={startEdit}
-                  title={t("dashboard.kpi_budget_edit_hint")}
-                  aria-label={t("dashboard.kpi_budget_edit_aria")}
-                  className="stat-num cursor-pointer underline decoration-dotted decoration-ink-400 underline-offset-4 transition hover:text-ink-900 hover:decoration-ink-700 dark:hover:text-paper-50 dark:hover:decoration-paper-100"
-                >
-                  {formatMoney(cap, currency, locale)}
-                </button>
-              </>
-            )}
-          </div>
-          {progress !== null && (
-            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-              <div
-                className={`h-full rounded-full transition-all ${
-                  progressOver ? "bg-blush-700 dark:bg-blush-400" : "bg-ink-700 dark:bg-paper-100"
-                }`}
-                style={{ width: `${Math.max(2, progress)}%` }}
-              />
-            </div>
-          )}
-        </>
+      {topSpend.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setChartOpen((v) => !v)}
+          className={`shrink-0 flex items-center justify-center rounded p-1 transition-colors ${
+            chartOpen
+              ? "text-umber-600 dark:text-umber-300"
+              : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
+          }`}
+          aria-label={chartOpen ? "Hide breakdown" : "Show breakdown"}
+          aria-pressed={chartOpen}
+        >
+          <BarChart2 size={14} />
+        </button>
       )}
     </div>
   );
@@ -1824,28 +1863,15 @@ function DaysToGoTile({
   return (
     <div
       ref={wrapperRef}
-      className="card relative p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
+      role="group"
+      aria-label={label}
+      title={label}
+      className="card relative flex items-start gap-3 p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
     >
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
-        <CalendarHeart size={13} aria-hidden="true" />
-        {label}
-        {planningPct !== null && (
-          <button
-            type="button"
-            onClick={() => setChartOpen((v) => !v)}
-            className={`ml-auto flex items-center justify-center rounded p-0.5 transition-colors ${
-              chartOpen
-                ? "text-umber-600 dark:text-umber-300"
-                : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
-            }`}
-            aria-label={chartOpen ? "Hide timeline" : "Show timeline"}
-            aria-pressed={chartOpen}
-          >
-            <BarChart2 size={13} />
-          </button>
-        )}
-      </div>
-      <div className={`mt-2 overflow-hidden ${chartOpen ? "h-[4.5rem]" : "h-[3.75rem]"}`}>
+      <TileIcon tone="blush">
+        <CalendarHeart size={16} aria-hidden="true" />
+      </TileIcon>
+      <div className={`min-w-0 flex-1 overflow-hidden ${chartOpen ? "h-[4.5rem]" : "h-[3.75rem]"}`}>
         {chartOpen && planningPct !== null ? (
           <div>
             <div className="h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
@@ -1859,8 +1885,10 @@ function DaysToGoTile({
                 {planningPct}%
               </div>
               <div className="mt-1.5 text-xs font-medium text-ink-400 dark:text-umber-400">
-                {formatNumber(daysElapsed, locale)} nap eltelt ·{" "}
-                {days !== null ? formatNumber(days, locale) : "-"} hátra
+                {t("dashboard.kpi_days_elapsed_progress", {
+                  elapsed: formatNumber(daysElapsed, locale),
+                  left: days !== null ? formatNumber(days, locale) : "-",
+                })}
               </div>
             </div>
           </div>
@@ -1871,7 +1899,7 @@ function DaysToGoTile({
             disabled={saving}
             title={t("dashboard.kpi_days_edit_hint")}
             aria-label={t("dashboard.kpi_days_edit_hint")}
-            className="-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-left transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
+            className="-my-1 block w-full rounded-lg py-1 text-left transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
           >
             <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
               {days !== null ? formatNumber(days, locale) : "-"}
@@ -1884,6 +1912,21 @@ function DaysToGoTile({
           </button>
         )}
       </div>
+      {planningPct !== null && (
+        <button
+          type="button"
+          onClick={() => setChartOpen((v) => !v)}
+          className={`shrink-0 flex items-center justify-center rounded p-1 transition-colors ${
+            chartOpen
+              ? "text-umber-600 dark:text-umber-300"
+              : "text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
+          }`}
+          aria-label={chartOpen ? "Hide timeline" : "Show timeline"}
+          aria-pressed={chartOpen}
+        >
+          <BarChart2 size={14} />
+        </button>
+      )}
       {!chartOpen && editing && (
         <CalendarPicker
           value={goal.exact_date ?? null}

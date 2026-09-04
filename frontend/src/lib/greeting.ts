@@ -1,4 +1,7 @@
-// Which greeting the vendor dashboard opens with.
+// Which greeting a dashboard opens with. Shared by the vendor dashboard
+// (`vendor.dashboard.greeting.*`) and the couple dashboard
+// (`dashboard.greeting.*`) — only the i18n namespace each caller reads from
+// differs; the picker below has no notion of which audience it's for.
 //
 // "Welcome, {name}" is the same sentence at 6am on a Tuesday and on Christmas
 // morning, which is another way of saying it isn't addressed to anybody. This
@@ -20,7 +23,8 @@
 //   3. It is computed from the DEVICE clock on purpose. The vendor's own
 //      evening is the one that matters, and the server has no idea what it is.
 
-/** The i18n key suffix under `vendor.dashboard.greeting.*`. */
+/** The i18n key suffix under `vendor.dashboard.greeting.*` or
+ *  `dashboard.greeting.*`, depending on the caller. */
 export type GreetingKey =
   | "early"
   | "morning"

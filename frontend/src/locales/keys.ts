@@ -2420,6 +2420,23 @@ export interface LocaleMessages {
     title: string;
     wedding_in_days: string;
     couple_label: string;
+    /** Time-of-day (+ holiday) greeting rendered as the dashboard's own H1,
+     *  addressing the couple by their display name. Mirrors
+     *  `vendor.dashboard.greeting.*` — `lib/greeting.ts`'s picker is shared by
+     *  both dashboards, only the i18n namespace differs. */
+    greeting: {
+      early: string;
+      morning: string;
+      midday: string;
+      afternoon: string;
+      early_evening: string;
+      evening: string;
+      night: string;
+      christmas: string;
+      new_year: string;
+      valentines: string;
+      easter: string;
+    };
     invite_partner: string;
     invite_partner_help: string;
     partner_linked: string;
@@ -2485,6 +2502,9 @@ export interface LocaleMessages {
     kpi_days_unit: string;
     kpi_days_tbd: string;
     kpi_days_edit_hint: string;
+    /** "{elapsed} days elapsed · {left} to go" — the days-to-go tile's own
+     *  chart-toggle breakdown. */
+    kpi_days_elapsed_progress: string;
     kpi_guests_label: string;
     kpi_guests_unit: string;
     kpi_guests_planned: string;
@@ -2965,7 +2985,6 @@ export interface LocaleMessages {
     block_seating_bullet_1: string;
     block_seating_bullet_2: string;
     block_seating_bullet_3: string;
-    testimonials_eyebrow: string;
     testimonials_title: string;
     t1_quote: string;
     t1_name: string;
@@ -5088,6 +5107,10 @@ export interface LocaleMessages {
       reset_confirm_title: string;
       reset_confirm_body: string;
       reset_confirm_action: string;
+      /** Receives `{current}` + `{total}` round numbers. Shown in the host
+       *  console's step tracker whenever the quiz has at least one `section`
+       *  slide. */
+      round_progress: string;
     };
     play: {
       join_kicker: string;
@@ -5160,6 +5183,17 @@ export interface LocaleMessages {
     /** Receives `{outcome}` ("Yes"/"No"). */
     outcome_label: string;
     save_error: string;
+    /** Stat-strip label — count of questions still open for betting. */
+    stat_open_questions: string;
+    /** Stat-strip label — sum of every pool.yes + pool.no on the board. */
+    stat_total_staked: string;
+    /** Stat-strip label — guests who have joined the board. */
+    stat_guests: string;
+    /** Receives `{when}`, a pre-formatted date/time string. */
+    closes_at_label: string;
+    /** aria-label for the per-question probability trend chart, shared by
+     *  the couple's board manager and the guest play screen. */
+    chart_alt: string;
   };
   /** Live wedding prediction markets — public guest join/play at
    *  /play/markets/:code. No account: a name + avatar picked at join time,
@@ -5182,6 +5216,10 @@ export interface LocaleMessages {
     place_bet: string;
     /** Receives `{stake}` + `{side}`. */
     your_position: string;
+    /** Receives `{value}` — the position's live mark-to-market estimate
+     *  (`currentPositionValue` in shared/markets.ts), shown only while the
+     *  question is still open. */
+    position_value: string;
     /** Receives `{when}`. */
     closes_in: string;
     closed_note: string;

@@ -95,6 +95,10 @@ describe("markets: board + question CRUD", () => {
     expect(board.questions[0]!.id).toBe(questionId);
     expect(board.questions[0]!.status).toBe("open");
     expect(board.questions[0]!.probability).toBe(50); // no bets yet — coin flip default
+    // The chart always starts flat at the coin flip — one tick, seeded at
+    // question creation, before anybody has bet.
+    expect(board.questions[0]!.priceHistory).toHaveLength(1);
+    expect(board.questions[0]!.priceHistory[0]!.probability).toBe(50);
   });
 
   test("a couple cannot manage another couple's board", async () => {
@@ -141,6 +145,63 @@ describe("markets: guest join + betting", () => {
     expect(bet.data.state.questions[0]!.pool).toEqual({ yes: 100, no: 0 });
     expect(bet.data.state.questions[0]!.probability).toBe(100);
     expect(bet.data.state.myBalance).toBe(400);
+
+    // The bet added a second tick (creation + this bet) reflecting the new
+    // probability, in the same transaction as the pool write.
+    const history = bet.data.state.questions[0]!.priceHistory;
+    expect(history).toHaveLength(2);
+    expect(history[0]!.probability).toBe(50);
+    expect(history[1]!.probability).toBe(100);
+
+    // A live position, not yet settled, values at the current pool ratio —
+    // Alice is the only YES stake against an empty NO pool, so her whole
+    // stake is "worth" itself right now (nothing to redistribute yet).
+    const myPosition = bet.data.state.myPositions.find((p) => p.questionId === questionId);
+    expect(myPosition?.payout).toBeNull();
+    expect(myPosition?.currentValue).toBe(100);
+  });
+
+  test("a live position's estimated value re-weights as the other side bets", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("markets-mark-to-market@weddly.test");
+    const { board, questionId } = await createLiveBoard(token);
+
+    const alice = await joinAs(board.joinCode, "Alice");
+    await req<BetResp>(
+      "POST",
+      `/api/play/markets/${board.joinCode}/questions/${questionId}/bet`,
+      { side: "yes", stake: 100 },
+      { headers: { "X-Market-Player-Token": alice.token } },
+    );
+
+    // Bob backs NO for the same amount — pool is now 100/100, so Alice's
+    // 100 on YES is worth her stake back plus her share of Bob's losing
+    // pool if YES wins: 100 * (200/100) = 200. Nobody placed a second bet,
+    // so this is purely the OTHER side's stake re-weighting hers — the
+    // "goal is to be reactive" behaviour, not something Alice did herself.
+    const bob = await joinAs(board.joinCode, "Bob");
+    const bobBet = await req<BetResp>(
+      "POST",
+      `/api/play/markets/${board.joinCode}/questions/${questionId}/bet`,
+      { side: "no", stake: 100 },
+      { headers: { "X-Market-Player-Token": bob.token } },
+    );
+    expect(bobBet.status).toBe(200);
+    expect(bobBet.data.state.questions[0]!.probability).toBe(50);
+    expect(bobBet.data.state.questions[0]!.priceHistory).toHaveLength(3);
+
+    const aliceState = await req<MarketPublicState>(
+      "GET",
+      `/api/play/markets/${board.joinCode}/state`,
+      undefined,
+      { headers: { "X-Market-Player-Token": alice.token } },
+    );
+    const aliceNow = aliceState.data.myPositions.find((p) => p.questionId === questionId);
+    expect(aliceNow?.currentValue).toBe(200);
+
+    // Symmetric for Bob on the other side of the same 50/50 pool.
+    const bobNow = bobBet.data.state.myPositions.find((p) => p.questionId === questionId);
+    expect(bobNow?.currentValue).toBe(200);
   });
 
   test("topping up adds to the same side; switching sides is rejected", async () => {

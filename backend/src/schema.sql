@@ -2875,3 +2875,20 @@ CREATE TABLE IF NOT EXISTS market_positions (
 );
 CREATE INDEX IF NOT EXISTS idx_market_positions_question ON market_positions(question_id);
 CREATE INDEX IF NOT EXISTS idx_market_positions_player ON market_positions(player_id);
+
+-- Append-only probability history — one row at question creation (always
+-- 50/0/0, see createQuestion) and one more per bet (see placeBet), both
+-- inside the same transaction as the write that moved the pool. This is
+-- what lets the couple's board manager and a guest's own screen draw a
+-- live "reactive" trend chart (shared/markets.ts's MarketPriceTick) without
+-- reconstructing history from market_positions, which only keeps each
+-- player's CURRENT cumulative stake, not the sequence of bets that built it.
+CREATE TABLE IF NOT EXISTS market_price_ticks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question_id INTEGER NOT NULL REFERENCES market_questions(id) ON DELETE CASCADE,
+  probability INTEGER NOT NULL,
+  pool_yes INTEGER NOT NULL,
+  pool_no INTEGER NOT NULL,
+  at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_market_price_ticks_question ON market_price_ticks(question_id, at ASC);

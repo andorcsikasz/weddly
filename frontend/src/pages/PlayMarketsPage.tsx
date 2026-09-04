@@ -23,6 +23,7 @@ import {
 import { Coins, Lock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { MarketMiniChart } from "../components/MarketMiniChart";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { marketsPlayApi } from "../lib/endpoints";
@@ -184,6 +185,13 @@ function QuestionRow({
           style={{ width: `${question.probability}%` }}
         />
       </div>
+      <div className="mt-2 h-8">
+        <MarketMiniChart
+          ticks={question.priceHistory}
+          stroke="#2f9c52"
+          ariaLabel={t("markets.chart_alt")}
+        />
+      </div>
 
       {myPosition && (
         <p className="mt-2 text-xs text-ink-600 dark:text-umber-200">
@@ -191,6 +199,11 @@ function QuestionRow({
             stake: String(myPosition.stake),
             side: t(`markets_play.bet_${myPosition.side}`),
           })}
+          {question.status === "open" && (
+            <span className="ml-1.5 font-medium text-sage-700 dark:text-sage-300">
+              {t("markets_play.position_value", { value: String(myPosition.currentValue) })}
+            </span>
+          )}
         </p>
       )}
 
