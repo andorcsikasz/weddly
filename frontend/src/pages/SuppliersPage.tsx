@@ -1675,8 +1675,11 @@ export default function SuppliersPage() {
               chips, the chain. Nothing was dropped — country, price and guest
               count moved into the "Szűrők" dialog, which carries a count badge
               so a filter can never be on without being visible. */}
-          <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2">
+          <header className="mb-3 flex flex-wrap items-center justify-end gap-3 sm:mb-4 sm:justify-between">
+            {/* The title repeats what the nav already says and cost a whole
+                row on a phone; kept for a11y/SEO via sr-only rather than
+                dropped outright. */}
+            <div className="flex min-w-0 items-center gap-2 sr-only sm:not-sr-only sm:static">
               <h1 className="font-grotesk">{t("suppliers.title")}</h1>
               <InfoHint text={t("suppliers.sub")} />
             </div>
@@ -1729,14 +1732,20 @@ export default function SuppliersPage() {
             </div>
           </header>
 
-          {/* The search surface. Two fields, both tall enough to be the thing
-              you reach for first: what you're after, and where. */}
+          {/* The search surface: one pill, two fields. Used to be two full
+              rows stacked on mobile (free text, then city) — merged into a
+              single bar with a divider so a phone spends one field's worth
+              of height instead of two. Both fields keep their own behaviour
+              (the free-text box still suggests towns; the city field still
+              commits to the exact/nearby `city` param and shows its own
+              "+N km" badge) — the border/shadow/focus ring just moved from
+              each input onto the shared pill. */}
           <div
             data-tour-target="vendors-search"
-            className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center"
+            className="mb-3 flex h-12 items-center rounded-full border border-paper-300 bg-white shadow-soft transition focus-within:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-paper-200"
           >
             <Combobox
-              className="min-w-0 flex-1"
+              className="h-full min-w-0 flex-1"
               value={query}
               onChange={setQuery}
               onSelect={onSearchSuggestion}
@@ -1745,10 +1754,11 @@ export default function SuppliersPage() {
               placeholder={t("suppliers.search_placeholder")}
               leadingIcon={Search}
               onClear={() => setQuery("")}
-              inputClassName="h-12 w-full rounded-full border border-paper-300 bg-white pl-10 pr-9 text-[15px] text-ink-900 shadow-soft transition placeholder:text-ink-400 hover:border-ink-300 focus:border-ink-900 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-paper-200"
+              inputClassName="h-full w-full bg-transparent pl-10 pr-9 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300"
             />
+            <span className="h-6 w-px shrink-0 bg-paper-300 dark:bg-umber-700" aria-hidden="true" />
             <Combobox
-              className="w-full sm:w-64"
+              className="h-full w-28 shrink-0 sm:w-56"
               value={cityInput}
               onChange={(v) => {
                 setCityInput(v);
@@ -1767,11 +1777,13 @@ export default function SuppliersPage() {
                 setCityInput("");
               }}
               suffix={
-                cityNearbyKm != null
-                  ? t("suppliers.nearby_plus_km", { km: cityNearbyKm })
-                  : undefined
+                cityNearbyKm != null ? (
+                  <span className="hidden sm:inline">
+                    {t("suppliers.nearby_plus_km", { km: cityNearbyKm })}
+                  </span>
+                ) : undefined
               }
-              inputClassName="h-12 w-full rounded-full border border-paper-300 bg-white pl-10 pr-20 text-[15px] text-ink-900 shadow-soft transition placeholder:text-ink-400 hover:border-ink-300 focus:border-ink-900 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-paper-200"
+              inputClassName="h-full w-full bg-transparent pl-8 pr-6 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300 sm:pr-20"
             />
           </div>
 
@@ -3276,22 +3288,27 @@ function ChainStep({
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const allDone = progress !== undefined && progress.done > 0 && progress.done >= progress.total;
-  // Every step keeps its label, its count and its width, whatever state it is
-  // in. A resolved step used to shrink to an icon-only pill when it was not the
-  // active one, which cost twice: the pill was an unlabelled button (the name
-  // only existed in a tooltip a touch user never sees), and because the
-  // condition read `!active`, CLICKING a step re-laid out the whole row: the
-  // step you left shrank, the step you opened grew, and every step to the right
-  // of them slid under the cursor. A second click then landed on a different
-  // category from the one it was aimed at, which is a hazard on a row whose
-  // whole job is deciding what the couple is looking at. "Done" is already said
-  // by the sage fill and the full row of progress bars; it does not also need
-  // to be said by taking the name away.
+  // A resolved-and-inactive step collapses to its icon alone. An earlier pass
+  // tried this for every non-active step regardless of state and reverted it:
+  // the condition was bare `!active`, so EVERY click swapped which step was
+  // expanded and which was collapsed, sliding the whole row under the user's
+  // thumb before a second tap could land. Gating on `allDone` instead makes
+  // the collapse track the couple's own progress rather than their last tap —
+  // a step only shrinks once every sub-category in it is actually settled,
+  // which happens once and rarely reverses, so the row stays put while
+  // browsing. Tapping a collapsed step still re-expands it (the accessible
+  // name has to go somewhere), which is why the label keeps a real
+  // `aria-label` + `title` in this state rather than disappearing outright.
+  const collapsed = allDone && !active;
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex items-center justify-center rounded-full border px-3.5 pt-[5px] pb-2.5 text-sm transition-colors duration-300 ease-out ${
+      aria-label={collapsed ? (count !== undefined ? `${label} · ${count}` : label) : undefined}
+      title={collapsed ? label : undefined}
+      className={`group relative flex items-center justify-center rounded-full border text-sm transition-[color,background-color,border-color,padding] duration-300 ease-out ${
+        collapsed ? "px-2.5 py-2" : "px-3.5 pt-[5px] pb-2.5"
+      } ${
         active
           ? "border-transparent stationery-coffee text-paper-50"
           : allDone
@@ -3311,24 +3328,28 @@ function ChainStep({
             {icon}
           </span>
         )}
-        <span className="flex h-5 items-center font-medium lowercase leading-none transition-colors duration-300 ease-out">
-          {label}
-        </span>
-        {count !== undefined && (
-          <span
-            className={`flex h-5 items-center font-medium tabular-nums leading-none transition-colors duration-300 ease-out ${
-              active
-                ? "text-paper-50/70"
-                : allDone
-                  ? "text-white/75"
-                  : "text-ink-400 dark:text-umber-300"
-            }`}
-          >
-            {count}
-          </span>
+        {!collapsed && (
+          <>
+            <span className="flex h-5 items-center font-medium lowercase leading-none transition-colors duration-300 ease-out">
+              {label}
+            </span>
+            {count !== undefined && (
+              <span
+                className={`flex h-5 items-center font-medium tabular-nums leading-none transition-colors duration-300 ease-out ${
+                  active
+                    ? "text-paper-50/70"
+                    : allDone
+                      ? "text-white/75"
+                      : "text-ink-400 dark:text-umber-300"
+                }`}
+              >
+                {count}
+              </span>
+            )}
+          </>
         )}
       </span>
-      {progress !== undefined && progress.total > 0 && (
+      {!collapsed && progress !== undefined && progress.total > 0 && (
         <span
           className="absolute inset-x-0 bottom-1.5 flex items-center justify-center gap-[3px]"
           aria-label={t("suppliers.chain_progress_aria", {
