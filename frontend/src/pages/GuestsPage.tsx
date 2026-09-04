@@ -4330,7 +4330,11 @@ function GroupIcon({ group }: { group: GuestGroupTag }) {
  *  icon + label as a button; the actual dropdown is a transparent native
  *  <select> overlaying the chip — that side-steps positioning + z-index
  *  inside the card's overflow-clipped container, and gets keyboard support
- *  for free. */
+ *  for free. Below `md` the card stacks (see the header's own comment on the
+ *  metadata block), and the label used to keep the chip wide enough to push
+ *  itself onto its own row under the household code; the label there is
+ *  icon + chevron only, same collapse the sort/filter toolbar controls use,
+ *  so the code and the category share one line. */
 function HouseholdGroupChip({
   value,
   onChange,
@@ -4344,7 +4348,7 @@ function HouseholdGroupChip({
       className={`relative inline-flex items-center gap-1.5 rounded-xl border px-2 py-1 text-xs font-medium transition-colors ${GROUP_TAG_TONE[value]}`}
     >
       <GroupIcon group={value} />
-      <span className="truncate">{t(`guests.group_${value}`)}</span>
+      <span className="hidden truncate md:inline">{t(`guests.group_${value}`)}</span>
       <ChevronDown size={12} aria-hidden className="opacity-70" />
       <select
         value={value}
@@ -4366,10 +4370,10 @@ function HouseholdGroupChip({
  *  in the RSVP form". When ON, the public RSVP form for this household
  *  shows the "needs accommodation?" checkbox (gated on
  *  `view.rsvp_offers_accommodation`); when OFF, the question is hidden.
- *  Renders as a Bed icon button — a clearly-green, ringed pill when on, and a
- *  barely-there faded icon (revealing on hover) when off — so the household
- *  card header doubles as a quick at-a-glance map of which families have been
- *  offered lodging. */
+ *  Renders as a Bed icon button — a clearly-green, ringed pill when on, and
+ *  the same Bed glyph crossed out with an X when off, both drawn in the one
+ *  neutral gray — so "not offered" reads at a glance instead of needing a
+ *  hover to notice the icon is even there. */
 function AccommodationToggle({
   on,
   onChange,
@@ -4391,10 +4395,13 @@ function AccommodationToggle({
       className={
         on
           ? "btn-ghost btn-sm text-sage-700 ring-1 ring-inset ring-sage-300 dark:text-sage-200 dark:ring-sage-400/40"
-          : "btn-ghost btn-sm text-ink-300 opacity-40 transition-opacity hover:opacity-100 dark:text-umber-400"
+          : "btn-ghost btn-sm text-ink-300 dark:text-umber-500"
       }
     >
-      <Bed size={14} aria-hidden />
+      <span className="relative inline-flex h-[14px] w-[14px]">
+        <Bed size={14} aria-hidden className="absolute inset-0" />
+        {!on && <X size={14} aria-hidden className="absolute inset-0" />}
+      </span>
     </button>
   );
 }
