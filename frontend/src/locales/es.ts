@@ -4329,15 +4329,8 @@ const es: LocaleMessages = {
     title: "Juegos",
     subtitle:
       "Dos formas de que todo el mundo juegue — los invitados se unen desde el móvil, sin iniciar sesión ni instalar nada.",
-    quiz_card_title: "Cuestionario en directo",
-    quiz_card_cta: "Abrir cuestionario",
-    quiz_status_empty: "Aún no creado",
-    quiz_status_ready: "Listo para empezar",
-    quiz_status_live: "En directo",
-    markets_card_cta: "Abrir pronósticos",
-    markets_status_draft: "Aún no iniciado",
-    markets_status_live: "En directo",
-    markets_status_ended: "En pausa",
+    quiz_card_title: "Kahoot x Weddly",
+    markets_card_title: "Polymarket x Weddly",
   },
   quiz: {
     list: {

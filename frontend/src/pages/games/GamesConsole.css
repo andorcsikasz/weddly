@@ -35,11 +35,10 @@
 .gc-tile {
   position: relative;
   display: flex;
-  flex-direction: column;
   overflow: hidden;
   border-radius: 24px;
-  padding: 28px;
-  min-height: 260px;
+  padding: 32px;
+  min-height: 150px;
   isolation: isolate;
   transition:
     transform 160ms ease,
@@ -48,19 +47,22 @@
 .gc-tile:hover {
   transform: translateY(-3px);
 }
+/* Kahoot's own purple, official primary #46178f, lifted toward a brighter
+   violet at the glow corner. */
 .gc-tile-quiz {
-  background: radial-gradient(120% 140% at 100% 0%, #7c3aed 0%, #4c1d95 46%, #1e1140 100%);
-  box-shadow: 0 20px 60px -20px rgba(124, 58, 237, 0.55);
+  background: radial-gradient(120% 140% at 100% 0%, #8b3dff 0%, #46178f 46%, #1b0b3a 100%);
+  box-shadow: 0 20px 60px -20px rgba(139, 61, 255, 0.55);
 }
 .gc-tile-quiz:hover {
-  box-shadow: 0 24px 70px -16px rgba(124, 58, 237, 0.7);
+  box-shadow: 0 24px 70px -16px rgba(139, 61, 255, 0.7);
 }
+/* Polymarket's own blue, official primary #1652f0. */
 .gc-tile-markets {
-  background: radial-gradient(120% 140% at 100% 0%, #2388ff 0%, #1350a8 46%, #0b1f42 100%);
-  box-shadow: 0 20px 60px -20px rgba(35, 136, 255, 0.5);
+  background: radial-gradient(120% 140% at 100% 0%, #4c86ff 0%, #1652f0 46%, #081a4d 100%);
+  box-shadow: 0 20px 60px -20px rgba(22, 82, 240, 0.5);
 }
 .gc-tile-markets:hover {
-  box-shadow: 0 24px 70px -16px rgba(35, 136, 255, 0.65);
+  box-shadow: 0 24px 70px -16px rgba(22, 82, 240, 0.65);
 }
 .gc-tile-glow {
   position: absolute;
@@ -81,17 +83,6 @@
   opacity: 0.5;
   pointer-events: none;
 }
-.gc-tile-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(4px);
-}
-
 /* Four little kahoot shapes scattered top-right of the quiz tile — same
    shape language as .qz-shape / .games-shape, purely decorative. */
 .gc-shape {
@@ -121,47 +112,6 @@
   width: 13px;
   height: 13px;
   background: rgba(255, 255, 255, 0.35);
-}
-
-.gc-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  padding: 5px 11px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  background: rgba(255, 255, 255, 0.14);
-  color: white;
-  backdrop-filter: blur(4px);
-}
-.gc-status-pill.is-live {
-  background: white;
-  color: #111;
-}
-.gc-live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #45e39e;
-  box-shadow: 0 0 0 0 rgba(69, 227, 158, 0.6);
-  animation: gc-pulse 1.8s infinite;
-}
-.gc-status-pill.is-live .gc-live-dot {
-  background: #16a34a;
-  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);
-}
-@keyframes gc-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(69, 227, 158, 0.55);
-  }
-  70% {
-    box-shadow: 0 0 0 7px rgba(69, 227, 158, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(69, 227, 158, 0);
-  }
 }
 
 /* ── Predictions board (Polymarket-flavoured) ────────────────────────────── */
@@ -270,8 +220,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gc-tile,
-  .gc-live-dot {
+  .gc-tile {
     animation: none !important;
     transition: none !important;
   }

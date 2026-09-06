@@ -5008,17 +5008,12 @@ export interface LocaleMessages {
   games_hub: {
     title: string;
     subtitle: string;
-    /** Card-level copy. The card body text reuses `quiz.list.subtitle` /
-     *  `markets.page_subtitle` directly rather than duplicating it here. */
+    /** The two tiles carry nothing but a brand name — no icon, no status,
+     *  no description — set against that game's own brand colour (Kahoot
+     *  purple / Polymarket blue in GamesConsole.css). Not translated: a
+     *  brand pairing reads the same in every locale. */
     quiz_card_title: string;
-    quiz_card_cta: string;
-    quiz_status_empty: string;
-    quiz_status_ready: string;
-    quiz_status_live: string;
-    markets_card_cta: string;
-    markets_status_draft: string;
-    markets_status_live: string;
-    markets_status_ended: string;
+    markets_card_title: string;
   };
   /** Live wedding quiz game — /app/games/quiz (list + builder),
    *  /app/games/quiz/:id/host (the host console), and /play/:code (the

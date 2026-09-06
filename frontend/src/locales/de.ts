@@ -4372,15 +4372,8 @@ const de: LocaleMessages = {
     title: "Spiele",
     subtitle:
       "Zwei Wege, alle Gäste mitspielen zu lassen — sie steigen per Smartphone ein, ganz ohne Login oder App.",
-    quiz_card_title: "Live-Quiz",
-    quiz_card_cta: "Quiz öffnen",
-    quiz_status_empty: "Noch nicht erstellt",
-    quiz_status_ready: "Startbereit",
-    quiz_status_live: "Läuft live",
-    markets_card_cta: "Prognosen öffnen",
-    markets_status_draft: "Noch nicht gestartet",
-    markets_status_live: "Läuft live",
-    markets_status_ended: "Pausiert",
+    quiz_card_title: "Kahoot x Weddly",
+    markets_card_title: "Polymarket x Weddly",
   },
   quiz: {
     list: {
