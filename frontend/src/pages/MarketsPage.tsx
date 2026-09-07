@@ -109,9 +109,9 @@ function QuestionCard({
       <div className="mt-3 flex items-center gap-4">
         <span className="w-14 shrink-0 text-2xl font-bold tabular-nums text-white">
           {total > 0 ? question.probability : "–"}
-          {total > 0 && <span className="text-sm font-semibold text-white/50">%</span>}
+          {total > 0 && <span className="text-sm font-semibold text-white/60">%</span>}
         </span>
-        <div className="h-9 flex-1">
+        <div className="h-16 min-w-0 flex-1">
           <MarketMiniChart
             ticks={question.priceHistory}
             stroke="#2388ff"
@@ -125,7 +125,7 @@ function QuestionCard({
           <div className="gc-split-bar-yes" style={{ width: `${yesWidth}%` }} />
           <div className="gc-split-bar-no" style={{ width: `${noWidth}%` }} />
         </div>
-        <div className="mt-1.5 flex items-center justify-between text-xs text-white/50">
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-white/60">
           <span>
             {t("markets.pool_label", {
               yes: String(question.pool.yes),
@@ -161,7 +161,7 @@ function QuestionCard({
         {(question.status === "open" || question.status === "closed") && (
           <button
             type="button"
-            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
+            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
             onClick={onVoid}
           >
             <X size={13} aria-hidden="true" /> {t("markets.void_button")}
@@ -170,7 +170,7 @@ function QuestionCard({
         {question.status === "open" && total === 0 && (
           <button
             type="button"
-            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
+            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
             onClick={onDelete}
           >
             <Trash2 size={13} aria-hidden="true" /> {t("markets.delete_button")}
@@ -189,7 +189,7 @@ function StatCard({ icon, value, label }: { icon: ReactNode; value: number; labe
       </span>
       <div>
         <p className="text-lg font-bold leading-none tabular-nums text-white">{value}</p>
-        <p className="mt-1 text-xs text-white/50">{label}</p>
+        <p className="mt-1 text-xs text-white/60">{label}</p>
       </div>
     </div>
   );
@@ -369,10 +369,7 @@ export default function MarketsPage() {
     return (
       <div className="gc-page min-h-screen px-4 pb-16 pt-8 sm:px-6 sm:pt-10 lg:px-8 xl:px-10">
         <div className="mx-auto w-full max-w-3xl">
-          <Link
-            to="/app/games"
-            className="mb-3 inline-flex items-center gap-1 text-sm text-white/50 hover:text-white"
-          >
+          <Link to="/app/games" className="gc-link mb-3 text-sm">
             <ChevronLeft size={14} aria-hidden /> {t("games_hub.title")}
           </Link>
           <h1 className="font-grotesk text-3xl text-white sm:text-4xl">
@@ -389,17 +386,14 @@ export default function MarketsPage() {
   return (
     <div className="gc-page min-h-screen px-4 pb-16 pt-8 sm:px-6 sm:pt-10 lg:px-8 xl:px-10">
       <div className="mx-auto w-full max-w-3xl">
-        <Link
-          to="/app/games"
-          className="mb-3 inline-flex items-center gap-1 text-sm text-white/50 hover:text-white"
-        >
+        <Link to="/app/games" className="gc-link mb-3 text-sm">
           <ChevronLeft size={14} aria-hidden /> {t("games_hub.title")}
         </Link>
         <header className="mb-5">
           <h1 className="font-grotesk text-3xl text-white sm:text-4xl">
             {t("markets.page_title")}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-white/55">{t("markets.page_subtitle")}</p>
+          <p className="mt-1 max-w-2xl text-sm text-white/65">{t("markets.page_subtitle")}</p>
         </header>
 
         <section className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
@@ -408,14 +402,10 @@ export default function MarketsPage() {
               <p className="gc-pin">
                 <span>{t("markets.join_code_label")}</span> {board.joinCode}
               </p>
-              <p className="mt-1.5 text-sm text-white/55">{t(`markets.status_${board.status}`)}</p>
+              <p className="mt-1.5 text-sm text-white/65">{t(`markets.status_${board.status}`)}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                className="btn-outline btn-sm border-white/15 bg-white/5 text-white hover:bg-white/10"
-                onClick={copyLink}
-              >
+              <button type="button" className="gc-btn gc-btn-outline gc-btn-sm" onClick={copyLink}>
                 {copied ? (
                   <Check size={14} aria-hidden="true" />
                 ) : (
@@ -423,15 +413,15 @@ export default function MarketsPage() {
                 )}
                 {t("markets.copy_link")}
               </button>
-              <button
-                type="button"
-                className="btn-outline btn-sm border-white/15 bg-white/5 text-white hover:bg-white/10"
-                onClick={openQr}
-              >
+              <button type="button" className="gc-btn gc-btn-outline gc-btn-sm" onClick={openQr}>
                 <QrCode size={14} aria-hidden="true" />
                 QR
               </button>
-              <button type="button" className="btn-primary btn-sm" onClick={toggleLive}>
+              <button
+                type="button"
+                className="gc-btn gc-btn-primary gc-btn-sm"
+                onClick={toggleLive}
+              >
                 {board.status === "live" ? (
                   <>
                     <Pause size={14} aria-hidden="true" /> {t("markets.end_button")}
@@ -469,7 +459,7 @@ export default function MarketsPage() {
               />
               <button
                 type="button"
-                className="btn-outline btn-sm mt-4 border-white/15 bg-white/5 text-white hover:bg-white/10"
+                className="gc-btn gc-btn-outline gc-btn-sm mt-4"
                 onClick={() => setQrOpen(false)}
               >
                 {t("common.dismiss")}
@@ -498,7 +488,7 @@ export default function MarketsPage() {
 
         <section className="mb-6">
           {board.questions.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-white/50">
+            <p className="rounded-2xl border border-dashed border-white/20 p-6 text-center text-sm text-white/60">
               {t("markets.empty_title")} — {t("markets.empty_body")}
             </p>
           ) : (
@@ -521,10 +511,7 @@ export default function MarketsPage() {
           <h2 className="font-grotesk text-lg text-white">{t("markets.add_question_title")}</h2>
           <div className="mt-3 space-y-3">
             <div>
-              <label
-                htmlFor="markets-prompt"
-                className="mb-1 block text-xs font-medium text-white/55"
-              >
+              <label htmlFor="markets-prompt" className="gc-label mb-1">
                 {t("markets.prompt_label")}
               </label>
               <input
@@ -537,10 +524,7 @@ export default function MarketsPage() {
               />
             </div>
             <div>
-              <label
-                htmlFor="markets-closes-at"
-                className="mb-1 block text-xs font-medium text-white/55"
-              >
+              <label htmlFor="markets-closes-at" className="gc-label mb-1">
                 {t("markets.closes_label")}
               </label>
               <input
@@ -553,7 +537,7 @@ export default function MarketsPage() {
             </div>
             <button
               type="button"
-              className="btn-primary btn-sm"
+              className="gc-btn gc-btn-primary gc-btn-sm"
               disabled={!prompt.trim() || !closesAt || submitting}
               onClick={addQuestion}
             >
@@ -565,7 +549,7 @@ export default function MarketsPage() {
         <section>
           <h2 className="font-grotesk text-lg text-white">{t("markets.leaderboard_title")}</h2>
           {leaderboard.length === 0 ? (
-            <p className="mt-2 text-sm text-white/50">{t("markets.leaderboard_empty")}</p>
+            <p className="mt-2 text-sm text-white/60">{t("markets.leaderboard_empty")}</p>
           ) : (
             <ol className="mt-2 space-y-1.5">
               {leaderboard.map((entry) => (

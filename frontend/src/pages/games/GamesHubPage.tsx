@@ -7,8 +7,9 @@
 // app shell — same #0c1019 canvas as the public /games teaser and the live
 // quiz host screen, so walking from this hub into either game feels like
 // one product instead of a plain nav page bolted onto two flashy ones. Each
-// tile carries a heading in Space Grotesk, a short description, and an
-// arrow CTA — minimal cool panels against the game's own brand colour.
+// tile carries a kicker chip, a heading in Space Grotesk, a short
+// description and a pill CTA, composed on a deep panel that only tints with
+// the game's own brand colour — restrained, so the white copy stays solid.
 
 import { ArrowRight, Gamepad2, Sparkles, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -62,11 +63,13 @@ function GameTile({
   kicker: string;
   cta: string;
 }) {
+  const accent = tone === "quiz" ? "#8b3dff" : "#1652f0";
   return (
     <Link to={to} className={`gc-tile gc-tile-${tone} group`}>
+      <span className="gc-tile-glow" style={{ color: accent }} aria-hidden="true" />
       {tone === "quiz" ? <ShapeCluster /> : <SparkDeco />}
-      <div className="relative z-10">
-        <span className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-white/50">
+      <div className="gc-tile-content">
+        <span className="gc-kicker">
           {tone === "quiz" ? (
             <Gamepad2 size={14} aria-hidden />
           ) : (
@@ -75,14 +78,10 @@ function GameTile({
           {kicker}
         </span>
         <h2 className="font-space text-2xl font-bold text-white sm:text-3xl">{title}</h2>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-white/60">{description}</p>
-        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white/80 transition-colors group-hover:text-white">
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-white/70">{description}</p>
+        <span className="gc-tile-cta">
           {cta}
-          <ArrowRight
-            size={16}
-            className="transition-transform group-hover:translate-x-0.5"
-            aria-hidden
-          />
+          <ArrowRight size={15} className="gc-arrow" aria-hidden />
         </span>
       </div>
     </Link>
@@ -102,7 +101,7 @@ export default function GamesHubPage() {
           <h1 className="mt-4 font-space text-3xl font-bold text-white sm:text-4xl">
             {t("games_hub.title")}
           </h1>
-          <p className="mt-3 max-w-xl text-base text-white/55">{t("games_hub.subtitle")}</p>
+          <p className="mt-3 max-w-xl text-base text-white/70">{t("games_hub.subtitle")}</p>
         </header>
 
         <div className="flex flex-col gap-5">

@@ -1,34 +1,184 @@
 /* Shared dark "console" chrome for the couple-authoring side of Wēddly
-   Games — the hub (GamesHubPage) and the predictions board manager
-   (MarketsPage). Same #0c1019 canvas + Kahoot/Polymarket colour language as
-   the public /games teaser (GamesPage.css) and the live quiz host/play
-   screens (QuizPlay.css), so the whole product line reads as one place —
+   Games — the hub (GamesHubPage), the predictions board manager
+   (MarketsPage) and the quiz authoring pages (QuizListPage /
+   QuizBuilderPage). Same #0c1019 canvas as the public /games teaser and the
+   live quiz host/play screens, so the whole product line reads as one place —
    just scoped under its own `gc-` prefix so this authoring layer can evolve
-   independently of the guest-facing pages. Most surfaces (cards, buttons)
-   lean on plain Tailwind white/5–white/10 utilities inline, matching
-   QuizHostPage; this file only carries what utilities can't express:
-   gradients, the decorative shape/chart motifs, and a couple of animations. */
+   independently of the guest-facing pages.
+
+   Voice: calm and clean. Text never hides in the brand gradients — the
+   tiles and panels sit on a very dark canvas and carry solid, readable
+   white, while the brand colours (Kahoot purple / Polymarket blue) appear
+   as restrained tints, chips and radial glows rather than full-bleed
+   washes. Headings are Space Grotesk (`font-space`), body is Inter (the
+   app default). Generalized primitives below (`.gc-card`, `.gc-btn*`,
+   `.gc-label`, `.gc-pill*`) are shared by every page in the console. */
 
 .gc-page {
   min-height: 100%;
-  background: #0c1019;
+  background:
+    radial-gradient(1100px 520px at 82% -12%, rgba(124, 92, 255, 0.07), transparent 62%),
+    radial-gradient(900px 460px at 8% 108%, rgba(35, 136, 255, 0.05), transparent 60%),
+    #0c1019;
   color: white;
 }
+
+/* ── Shared primitives ──────────────────────────────────────────────────── */
 
 .gc-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.07);
   padding: 5px 12px;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.gc-card {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.gc-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.gc-input {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 10px 14px;
+  font-size: 16px;
+  color: white;
+  color-scheme: dark;
+}
+.gc-input::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+.gc-input:focus {
+  outline: none;
+  border-color: rgba(124, 92, 255, 0.7);
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.2);
+}
+
+.gc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition:
+    filter 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
+}
+.gc-btn:active {
+  transform: scale(0.98);
+}
+.gc-btn[disabled] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.gc-btn-primary {
+  background: #7c5cff;
+  color: white;
+}
+.gc-btn-primary:hover {
+  filter: brightness(1.1);
+}
+.gc-btn-outline {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+}
+.gc-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+.gc-btn-ghost {
+  color: rgba(255, 255, 255, 0.55);
+}
+.gc-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+.gc-btn-sm {
+  min-height: 36px;
+  padding: 7px 14px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+.gc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(255, 255, 255, 0.62);
+  transition: color 120ms ease;
+}
+.gc-link:hover {
+  color: white;
+}
+
+.gc-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+.gc-pill-live {
+  border-color: rgba(69, 227, 158, 0.35);
+  background: rgba(69, 227, 158, 0.13);
+  color: #6ff0b7;
+}
+.gc-pill-ended {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.62);
+}
+.gc-pill-draft {
+  border-color: rgba(246, 191, 84, 0.32);
+  background: rgba(246, 191, 84, 0.12);
+  color: #ffd98a;
+}
+
+.gc-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── Hub header ─────────────────────────────────────────────────────────── */
+
+.gc-hub-heading {
+  font-family: "Space Grotesk", "Helvetica Neue", Helvetica, "Inter", Arial, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: white;
 }
 
 /* ── Hub game-select tiles ─────────────────────────────────────────────── */
@@ -39,79 +189,146 @@
   flex-direction: column;
   justify-content: flex-end;
   overflow: hidden;
-  border-radius: 16px;
-  padding: 28px 32px;
-  min-height: 180px;
+  border-radius: 22px;
+  padding: 36px 40px;
+  min-height: 240px;
   isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   transition:
-    transform 160ms ease,
-    box-shadow 160ms ease;
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 .gc-tile:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
-/* Kahoot's own purple, official primary #46178f — cooler, more restrained. */
+/* Kahoot's own purple — restrained tint over the deep base, not a wash. */
 .gc-tile-quiz {
-  background: linear-gradient(135deg, #1a1033 0%, #2d1a54 40%, #46178f 100%);
-  border: 1px solid rgba(139, 61, 255, 0.2);
-  box-shadow: 0 8px 32px -8px rgba(70, 23, 143, 0.4);
+  background:
+    radial-gradient(130% 190% at 100% 0%, rgba(139, 61, 255, 0.3), rgba(70, 23, 143, 0.12) 46%, transparent 72%),
+    linear-gradient(160deg, #1a1e2c 0%, #14161f 100%);
+  border-color: rgba(139, 61, 255, 0.32);
 }
 .gc-tile-quiz:hover {
-  border-color: rgba(139, 61, 255, 0.35);
-  box-shadow: 0 12px 40px -8px rgba(70, 23, 143, 0.55);
+  border-color: rgba(139, 61, 255, 0.55);
+  box-shadow: 0 26px 60px -22px rgba(139, 61, 255, 0.4);
 }
-/* Polymarket's own blue, official primary #1652f0 — cooler, more restrained. */
+/* Polymarket's own blue — same restrained treatment. */
 .gc-tile-markets {
-  background: linear-gradient(135deg, #0a1628 0%, #0f2847 40%, #1652f0 100%);
-  border: 1px solid rgba(22, 82, 240, 0.2);
-  box-shadow: 0 8px 32px -8px rgba(22, 82, 240, 0.35);
+  background:
+    radial-gradient(130% 190% at 100% 0%, rgba(35, 136, 255, 0.28), rgba(22, 82, 240, 0.12) 46%, transparent 72%),
+    linear-gradient(160deg, #15202f 0%, #13161f 100%);
+  border-color: rgba(22, 82, 240, 0.34);
 }
 .gc-tile-markets:hover {
-  border-color: rgba(22, 82, 240, 0.35);
-  box-shadow: 0 12px 40px -8px rgba(22, 82, 240, 0.5);
+  border-color: rgba(35, 136, 255, 0.55);
+  box-shadow: 0 26px 60px -22px rgba(22, 82, 240, 0.42);
 }
 .gc-tile-glow {
-  display: none;
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  filter: blur(46px);
+  background: currentColor;
+  width: 240px;
+  height: 240px;
+  top: -90px;
+  right: -70px;
+  opacity: 0.14;
 }
 .gc-tile-deco {
   position: absolute;
   z-index: -1;
   inset: 0;
-  opacity: 0.4;
+  opacity: 0.32;
   pointer-events: none;
 }
 /* Four little kahoot shapes scattered top-right of the quiz tile — same
    shape language as .qz-shape / .games-shape, purely decorative. */
 .gc-shape {
   position: absolute;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 .gc-shape-triangle {
   width: 0;
   height: 0;
   border-left: 9px solid transparent;
   border-right: 9px solid transparent;
-  border-bottom: 15px solid rgba(255, 255, 255, 0.45);
+  border-bottom: 15px solid rgba(255, 255, 255, 0.55);
 }
 .gc-shape-diamond {
   width: 14px;
   height: 14px;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.4);
   rotate: 45deg;
 }
 .gc-shape-circle {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.45);
 }
 .gc-shape-square {
   width: 13px;
   height: 13px;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.gc-tile-content {
+  position: relative;
+  z-index: 1;
+}
+.gc-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+.gc-tile-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+.gc-tile:hover .gc-tile-cta,
+.group:hover .gc-tile-cta {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+.gc-tile-cta .gc-arrow {
+  transition: transform 140ms ease;
+}
+.gc-tile:hover .gc-arrow,
+.group:hover .gc-arrow {
+  transform: translateX(3px);
 }
 
 /* ── Predictions board (Polymarket-flavoured) ────────────────────────────── */
+
+.gc-market-card {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
 
 .gc-pin {
   display: inline-flex;
@@ -124,17 +341,16 @@
   color: white;
 }
 .gc-pin span {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .gc-split-bar {
   display: flex;
-  height: 8px;
+  height: 10px;
   width: 100%;
   overflow: hidden;
   border-radius: 999px;
@@ -170,7 +386,7 @@
 }
 .gc-outcome-btn-yes {
   background: rgba(69, 227, 158, 0.16);
-  border-color: rgba(69, 227, 158, 0.4);
+  border-color: rgba(69, 227, 158, 0.42);
   color: #6ff0b7;
 }
 .gc-outcome-btn-yes:hover {
@@ -178,32 +394,11 @@
 }
 .gc-outcome-btn-no {
   background: rgba(219, 47, 66, 0.16);
-  border-color: rgba(219, 47, 66, 0.4);
+  border-color: rgba(219, 47, 66, 0.42);
   color: #f3899a;
 }
 .gc-outcome-btn-no:hover {
   filter: brightness(1.15);
-}
-
-.gc-input {
-  display: block;
-  width: 100%;
-  min-height: 44px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 10px 14px;
-  font-size: 16px;
-  color: white;
-  color-scheme: dark;
-}
-.gc-input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
-}
-.gc-input:focus {
-  outline: none;
-  border-color: rgba(35, 136, 255, 0.6);
-  box-shadow: 0 0 0 3px rgba(35, 136, 255, 0.18);
 }
 
 .gc-leaderboard-row {
@@ -215,9 +410,17 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 10px 14px;
 }
+.gc-leaderboard-row + .gc-leaderboard-row {
+  margin-top: 6px;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .gc-tile {
+  .gc-tile,
+  .gc-btn,
+  .gc-outcome-btn,
+  .gc-split-bar-yes,
+  .gc-split-bar-no,
+  .gc-arrow {
     animation: none !important;
     transition: none !important;
   }

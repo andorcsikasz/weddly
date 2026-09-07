@@ -37,7 +37,7 @@ export function MarketMiniChart({
           stroke={stroke}
           strokeWidth="2"
           strokeDasharray="3 3"
-          opacity="0.35"
+          opacity="0.5"
         />
       </svg>
     );
@@ -51,7 +51,10 @@ export function MarketMiniChart({
     y: h - (t.probability / 100) * h,
   }));
   const points = coords.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const area = `0,${h} ${points} ${w},${h}`;
   const end = coords[coords.length - 1]!;
+
+  const gradId = `mchart-${stroke.replace(/[^a-zA-Z0-9]/g, "")}`;
 
   return (
     <svg
@@ -61,6 +64,13 @@ export function MarketMiniChart({
       aria-label={ariaLabel}
       preserveAspectRatio="none"
     >
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.32" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={area} fill={`url(#${gradId})`} />
       <polyline
         points={points}
         fill="none"
@@ -70,7 +80,15 @@ export function MarketMiniChart({
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
       />
-      <circle cx={end.x} cy={end.y} r="2.6" fill={stroke} vectorEffect="non-scaling-stroke" />
+      <circle
+        cx={end.x}
+        cy={end.y}
+        r="4.5"
+        fill={stroke}
+        opacity="0.22"
+        vectorEffect="non-scaling-stroke"
+      />
+      <circle cx={end.x} cy={end.y} r="2.4" fill={stroke} vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }

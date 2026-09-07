@@ -3,18 +3,22 @@
 // on the right. Locked once the quiz goes live — see requireEditable on the
 // backend; the same rule is mirrored here so the couple sees why, not just a
 // 400 on save.
+//
+// Dark "console" chrome (GamesConsole.css), same #0c1019 canvas as the hub,
+// the quiz library and the live host screen — the couple moves from list to
+// builder to host without ever leaving the games product family.
 
 import {
   ArrowDown,
   ArrowUp,
   BarChart3,
   Check,
+  ChevronLeft,
   ChevronRight,
   Gamepad2,
   Grid3x3,
   Hash,
   Play,
-  Plus,
   ScrollText,
   ToggleLeft,
   Trash2,
@@ -35,6 +39,7 @@ import type {
   QuizSlideKind,
 } from "@shared/quiz";
 import { HeatmapPad } from "./HeatmapPad";
+import "../games/GamesConsole.css";
 
 const KIND_ICON: Record<QuizSlideKind, typeof Grid3x3> = {
   mcq: Grid3x3,
@@ -201,141 +206,146 @@ export default function QuizBuilderPage() {
 
   if (!quiz) {
     return (
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 xl:px-10">
-        <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
+      <div className="gc-page min-h-screen px-4 pb-16 pt-8 sm:px-6 sm:pt-10 lg:px-8 xl:px-10">
+        <p className="text-sm text-white/60">{t("common.loading")}</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 xl:px-10">
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <input
-          className="min-w-0 flex-1 border-0 bg-transparent font-grotesk text-2xl text-ink-900 focus:outline-none focus:ring-0 dark:text-paper-50"
-          defaultValue={quiz.title}
-          disabled={locked}
-          onBlur={(e) => handleRename(e.target.value)}
-        />
-        {quiz.status === "draft" && (
-          <button
-            type="button"
-            className="btn-primary shrink-0"
-            onClick={handleGoLive}
-            disabled={quiz.slideCount === 0}
-          >
-            <Play size={16} aria-hidden /> {t("quiz.builder.go_live")}
-          </button>
-        )}
-        {quiz.status !== "draft" && (
-          <Link to={`/app/games/quiz/${quiz.id}/host`} className="btn-primary shrink-0">
-            <Gamepad2 size={16} aria-hidden /> {t("quiz.builder.open_host")}
+    <div className="gc-page min-h-screen px-4 pb-16 pt-8 sm:px-6 sm:pt-10 lg:px-8 xl:px-10">
+      <div className="mx-auto max-w-5xl">
+        <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <Link to="/app/games/quiz" className="gc-link text-sm">
+            <ChevronLeft size={14} aria-hidden /> {t("quiz.list.title")}
           </Link>
+          <input
+            className="min-w-0 flex-1 border-0 bg-transparent font-space text-2xl font-bold text-white focus:outline-none focus:ring-0"
+            defaultValue={quiz.title}
+            disabled={locked}
+            onBlur={(e) => handleRename(e.target.value)}
+          />
+          {quiz.status === "draft" && (
+            <button
+              type="button"
+              className="gc-btn gc-btn-primary shrink-0"
+              onClick={handleGoLive}
+              disabled={quiz.slideCount === 0}
+            >
+              <Play size={16} aria-hidden /> {t("quiz.builder.go_live")}
+            </button>
+          )}
+          {quiz.status !== "draft" && (
+            <Link to={`/app/games/quiz/${quiz.id}/host`} className="gc-btn gc-btn-primary shrink-0">
+              <Gamepad2 size={16} aria-hidden /> {t("quiz.builder.open_host")}
+            </Link>
+          )}
+        </header>
+
+        {locked && (
+          <div className="mb-4 rounded-xl border border-[#f6bf54]/30 bg-[#f6bf54]/10 px-4 py-3 text-sm text-[#ffd98a]">
+            {t("quiz.builder.locked_banner")}
+          </div>
         )}
-      </header>
 
-      {locked && (
-        <div className="mb-4 rounded-lg border border-blush-300 bg-blush-50 px-4 py-3 text-sm text-blush-800 dark:border-blush-700 dark:bg-blush-900/30 dark:text-blush-200">
-          {t("quiz.builder.locked_banner")}
-        </div>
-      )}
-
-      <div className="grid gap-6 md:grid-cols-[280px_1fr]">
-        <div>
-          <ul className="space-y-1.5">
-            {quiz.slides.map((slide, index) => {
-              const Icon = KIND_ICON[slide.kind];
-              return (
-                <li
-                  key={slide.id}
-                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-sm ${
-                    selectedId === slide.id
-                      ? "border-ink-600 bg-paper-100 dark:border-blush-400 dark:bg-umber-800"
-                      : "border-paper-300 bg-white dark:border-umber-700 dark:bg-umber-900"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                    onClick={() => setSelectedId(slide.id)}
-                  >
-                    <Icon
-                      size={15}
-                      className="shrink-0 text-ink-500 dark:text-umber-300"
-                      aria-hidden
-                    />
-                    <span className="truncate text-ink-900 dark:text-paper-50">
-                      {slide.prompt || t(`quiz.builder.kind_${slide.kind}`)}
-                    </span>
-                  </button>
-                  {!locked && (
-                    <div className="flex shrink-0 items-center gap-0.5">
-                      <button
-                        type="button"
-                        className="rounded p-1 text-ink-400 hover:bg-paper-200 disabled:opacity-30 dark:hover:bg-umber-700"
-                        disabled={index === 0}
-                        onClick={() => handleMove(slide.id, "up")}
-                        aria-label={t("quiz.builder.move_up")}
-                      >
-                        <ArrowUp size={13} />
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded p-1 text-ink-400 hover:bg-paper-200 disabled:opacity-30 dark:hover:bg-umber-700"
-                        disabled={index === quiz.slides.length - 1}
-                        onClick={() => handleMove(slide.id, "down")}
-                        aria-label={t("quiz.builder.move_down")}
-                      >
-                        <ArrowDown size={13} />
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded p-1 text-blush-600 hover:bg-blush-50 dark:hover:bg-blush-900/30"
-                        onClick={() => handleDeleteSlide(slide.id)}
-                        aria-label={t("common.delete")}
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-
-          {!locked && (
-            <div className="mt-3 grid grid-cols-3 gap-1.5">
-              {(Object.keys(KIND_ICON) as QuizSlideKind[]).map((kind) => {
-                const Icon = KIND_ICON[kind];
+        <div className="grid gap-6 md:grid-cols-[280px_1fr]">
+          <div>
+            <ul className="space-y-1.5">
+              {quiz.slides.map((slide, index) => {
+                const Icon = KIND_ICON[slide.kind];
                 return (
-                  <button
-                    key={kind}
-                    type="button"
-                    className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-paper-300 py-2.5 text-[11px] text-ink-600 hover:border-ink-400 hover:bg-paper-50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-800"
-                    onClick={() => handleAddSlide(kind)}
+                  <li
+                    key={slide.id}
+                    className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 text-sm ${
+                      selectedId === slide.id
+                        ? "border-[#7c5cff]/60 bg-[#7c5cff]/15"
+                        : "border-white/10 bg-white/5"
+                    }`}
                   >
-                    <Icon size={16} aria-hidden />
-                    {t(`quiz.builder.kind_${kind}`)}
-                  </button>
+                    <button
+                      type="button"
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      onClick={() => setSelectedId(slide.id)}
+                    >
+                      <Icon
+                        size={15}
+                        className={`shrink-0 ${selectedId === slide.id ? "text-white" : "text-white/60"}`}
+                        aria-hidden
+                      />
+                      <span className="truncate text-white">
+                        {slide.prompt || t(`quiz.builder.kind_${slide.kind}`)}
+                      </span>
+                    </button>
+                    {!locked && (
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          className="rounded p-1 text-white/45 hover:bg-white/10 hover:text-white disabled:opacity-30"
+                          disabled={index === 0}
+                          onClick={() => handleMove(slide.id, "up")}
+                          aria-label={t("quiz.builder.move_up")}
+                        >
+                          <ArrowUp size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded p-1 text-white/45 hover:bg-white/10 hover:text-white disabled:opacity-30"
+                          disabled={index === quiz.slides.length - 1}
+                          onClick={() => handleMove(slide.id, "down")}
+                          aria-label={t("quiz.builder.move_down")}
+                        >
+                          <ArrowDown size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded p-1 text-[#f3899a] hover:bg-[#db2f42]/20 hover:text-[#ffb3bf]"
+                          onClick={() => handleDeleteSlide(slide.id)}
+                          aria-label={t("common.delete")}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
+                  </li>
                 );
               })}
-            </div>
-          )}
-        </div>
+            </ul>
 
-        <div>
-          {selected ? (
-            <SlideEditor
-              key={selected.id}
-              slide={selected}
-              locked={locked}
-              busy={busy}
-              onSave={(patch) => handleSaveSlide(selected.id, patch)}
-            />
-          ) : (
-            <div className="card p-8 text-center text-sm text-ink-500 dark:text-umber-300">
-              {t("quiz.builder.empty_state")}
-            </div>
-          )}
+            {!locked && (
+              <div className="mt-3 grid grid-cols-3 gap-1.5">
+                {(Object.keys(KIND_ICON) as QuizSlideKind[]).map((kind) => {
+                  const Icon = KIND_ICON[kind];
+                  return (
+                    <button
+                      key={kind}
+                      type="button"
+                      className="flex flex-col items-center gap-1 rounded-xl border border-dashed border-white/20 py-2.5 text-[11px] text-white/60 hover:border-white/40 hover:bg-white/5 hover:text-white"
+                      onClick={() => handleAddSlide(kind)}
+                    >
+                      <Icon size={16} aria-hidden />
+                      {t(`quiz.builder.kind_${kind}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div>
+            {selected ? (
+              <SlideEditor
+                key={selected.id}
+                slide={selected}
+                locked={locked}
+                busy={busy}
+                onSave={(patch) => handleSaveSlide(selected.id, patch)}
+              />
+            ) : (
+              <div className="gc-card p-8 text-center text-sm text-white/60">
+                {t("quiz.builder.empty_state")}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -381,16 +391,16 @@ function SlideEditor({
   }
 
   return (
-    <div className="card space-y-4">
+    <div className="gc-card space-y-4 p-5">
       <div>
-        <label className="field-label" htmlFor="slide-prompt">
+        <label className="gc-label" htmlFor="slide-prompt">
           {slide.kind === "section"
             ? t("quiz.builder.section_title_label")
             : t("quiz.builder.prompt_label")}
         </label>
         <textarea
           id="slide-prompt"
-          className="input min-h-[4.5rem]"
+          className="gc-input min-h-[4.5rem]"
           disabled={locked}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -400,12 +410,12 @@ function SlideEditor({
 
       {(slide.kind === "section" || slide.kind === "story") && (
         <div>
-          <label className="field-label" htmlFor="slide-subtitle">
+          <label className="gc-label" htmlFor="slide-subtitle">
             {t("quiz.builder.subtitle_label")}
           </label>
           <textarea
             id="slide-subtitle"
-            className="input min-h-[3rem]"
+            className="gc-input min-h-[3rem]"
             disabled={locked}
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
@@ -439,13 +449,13 @@ function SlideEditor({
       {answerable && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="field-label" htmlFor="slide-time-limit">
+            <label className="gc-label" htmlFor="slide-time-limit">
               {t("quiz.builder.time_limit_label")}
             </label>
             <input
               id="slide-time-limit"
               type="number"
-              className="input"
+              className="gc-input"
               disabled={locked}
               min={5}
               max={300}
@@ -455,13 +465,13 @@ function SlideEditor({
             />
           </div>
           <div>
-            <label className="field-label" htmlFor="slide-points">
+            <label className="gc-label" htmlFor="slide-points">
               {t("quiz.builder.points_label")}
             </label>
             <input
               id="slide-points"
               type="number"
-              className="input"
+              className="gc-input"
               disabled={locked}
               min={100}
               max={5000}
@@ -474,7 +484,7 @@ function SlideEditor({
       )}
 
       {!locked && (
-        <button type="button" className="btn-primary" onClick={save} disabled={busy}>
+        <button type="button" className="gc-btn gc-btn-primary" onClick={save} disabled={busy}>
           <Check size={16} aria-hidden /> {t("quiz.builder.save")}
         </button>
       )}
@@ -502,20 +512,21 @@ function McqEditor({
 
   return (
     <div>
-      <span className="field-label">{t("quiz.builder.options_label")}</span>
+      <span className="gc-label">{t("quiz.builder.options_label")}</span>
       <div className="space-y-2">
         {options.map((opt, i) => (
           <div key={i} className="flex items-center gap-2">
             <input
               type="radio"
               name="correct-index"
+              className="accent-[#7c5cff]"
               checked={config.correctIndex === i}
               disabled={locked}
               onChange={() => onChange({ ...config, correctIndex: i })}
               aria-label={t("quiz.builder.mark_correct")}
             />
             <input
-              className="input"
+              className="gc-input"
               disabled={locked}
               value={opt}
               onChange={(e) => setOption(i, e.target.value)}
@@ -527,7 +538,7 @@ function McqEditor({
       </div>
       <button
         type="button"
-        className="mt-2 text-xs text-ink-500 underline dark:text-umber-300"
+        className="mt-2 text-xs text-white/60 underline hover:text-white"
         disabled={locked}
         onClick={() => onChange({ ...config, correctIndex: null })}
       >
@@ -550,39 +561,39 @@ function NumberEditor({
   return (
     <div className="grid grid-cols-2 gap-3">
       <div>
-        <label className="field-label">{t("quiz.builder.min_label")}</label>
+        <label className="gc-label">{t("quiz.builder.min_label")}</label>
         <input
           type="number"
-          className="input"
+          className="gc-input"
           disabled={locked}
           value={config.min}
           onChange={(e) => onChange({ ...config, min: Number(e.target.value) })}
         />
       </div>
       <div>
-        <label className="field-label">{t("quiz.builder.max_label")}</label>
+        <label className="gc-label">{t("quiz.builder.max_label")}</label>
         <input
           type="number"
-          className="input"
+          className="gc-input"
           disabled={locked}
           value={config.max}
           onChange={(e) => onChange({ ...config, max: Number(e.target.value) })}
         />
       </div>
       <div>
-        <label className="field-label">{t("quiz.builder.step_label")}</label>
+        <label className="gc-label">{t("quiz.builder.step_label")}</label>
         <input
           type="number"
-          className="input"
+          className="gc-input"
           disabled={locked}
           value={config.step}
           onChange={(e) => onChange({ ...config, step: Number(e.target.value) })}
         />
       </div>
       <div>
-        <label className="field-label">{t("quiz.builder.unit_label")}</label>
+        <label className="gc-label">{t("quiz.builder.unit_label")}</label>
         <input
-          className="input"
+          className="gc-input"
           disabled={locked}
           value={config.unit ?? ""}
           maxLength={20}
@@ -590,10 +601,10 @@ function NumberEditor({
         />
       </div>
       <div className="col-span-2">
-        <label className="field-label">{t("quiz.builder.correct_value_label")}</label>
+        <label className="gc-label">{t("quiz.builder.correct_value_label")}</label>
         <input
           type="number"
-          className="input"
+          className="gc-input"
           disabled={locked}
           value={config.correctValue ?? ""}
           placeholder={t("quiz.builder.no_correct_answer")}
@@ -623,28 +634,28 @@ function HeatmapEditor({
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <input
-          className="input"
+          className="gc-input"
           disabled={locked}
           value={config.xLabel[0]}
           placeholder={t("quiz.builder.x_low_placeholder")}
           onChange={(e) => onChange({ ...config, xLabel: [e.target.value, config.xLabel[1]] })}
         />
         <input
-          className="input"
+          className="gc-input"
           disabled={locked}
           value={config.xLabel[1]}
           placeholder={t("quiz.builder.x_high_placeholder")}
           onChange={(e) => onChange({ ...config, xLabel: [config.xLabel[0], e.target.value] })}
         />
         <input
-          className="input"
+          className="gc-input"
           disabled={locked}
           value={config.yLabel[0]}
           placeholder={t("quiz.builder.y_low_placeholder")}
           onChange={(e) => onChange({ ...config, yLabel: [e.target.value, config.yLabel[1]] })}
         />
         <input
-          className="input"
+          className="gc-input"
           disabled={locked}
           value={config.yLabel[1]}
           placeholder={t("quiz.builder.y_high_placeholder")}
@@ -660,11 +671,11 @@ function HeatmapEditor({
           onPick={(p) => onChange({ ...config, target: p })}
         />
       </div>
-      <div className="flex items-center justify-between text-xs text-ink-500 dark:text-umber-300">
+      <div className="flex items-center justify-between text-xs text-white/60">
         <span>{t("quiz.builder.heatmap_target_hint")}</span>
         <button
           type="button"
-          className="underline"
+          className="underline hover:text-white"
           disabled={locked}
           onClick={() => onChange({ ...config, target: null })}
         >
