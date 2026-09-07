@@ -943,10 +943,12 @@ export default function PlanningPage() {
     <>
       <div>
         <header className="mb-4">
-          <h1 className="text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
+          {/* The page name repeats what the nav already says; only a sr-only
+              copy stays for screen readers and heading structure. */}
+          <h1 className="sr-only text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
             {t("planning.title")}
           </h1>
-          <PlanningRouteLinks className="mt-3" />
+          <PlanningRouteLinks />
         </header>
 
         {/* Tabs and the per-tab actions share one row to keep the header

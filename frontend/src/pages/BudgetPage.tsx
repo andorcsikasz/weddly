@@ -57,7 +57,7 @@ import {
 } from "../components/CostPlanningCard";
 import { CurrencySelect } from "../components/CurrencySelect";
 import { IncomeSection } from "../components/IncomeSection";
-import { InfoHint } from "../components/InfoHint";
+
 import { PaymentsDuePanel } from "../components/PaymentsDuePanel";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -1131,10 +1131,9 @@ export default function BudgetPage() {
 
   return (
     <>
-      <header data-tour-target="budget-header" className="mb-4 flex items-center gap-2">
-        <h1 className="font-grotesk">{t("budget.title")}</h1>
-        <InfoHint text={t("budget.sub")} />
-      </header>
+      {/* The page name repeats what the nav already says; only a sr-only copy
+          stays for screen readers and heading structure. */}
+      <h1 className="sr-only font-grotesk">{t("budget.title")}</h1>
 
       <PaymentsDuePanel
         suppliers={coupleSuppliers}
