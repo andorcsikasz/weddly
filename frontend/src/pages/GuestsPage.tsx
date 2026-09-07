@@ -1332,6 +1332,7 @@ export default function GuestsPage() {
             guests={filteredFlatGuests}
             households={households}
             mealMenu={couple?.meal_menu ?? null}
+            mealEnabled={households.some((h) => h.rsvp_collects_meal)}
             sortKey={sortKey}
             onSetSort={setSort}
             onUpdateGuest={onInlineUpdateGuest}
@@ -2021,9 +2022,11 @@ function EmailCell({
  *  auto-creates a household-of-one). */
 function GuestTableNewRow({
   households,
+  mealEnabled,
   onCreateGuest,
 }: {
   households: Household[];
+  mealEnabled: boolean;
   onCreateGuest: (body: GuestUpsert) => Promise<boolean>;
 }) {
   const { t } = useT();
@@ -2147,7 +2150,7 @@ function GuestTableNewRow({
       {/* RSVP / meal / dietary / accommodation / invite are meaningless until
           the guest exists; quiet placeholders keep the columns aligned. */}
       <td className={placeholderCell}>–</td>
-      <td className={placeholderCell}>–</td>
+      {mealEnabled && <td className={placeholderCell}>–</td>}
       <td className={placeholderCell}>–</td>
       <td className={`${placeholderCell} text-center`}>–</td>
       <td className={`${placeholderCell} text-center`}>–</td>
@@ -2178,6 +2181,7 @@ function GuestTable({
   guests,
   households,
   mealMenu,
+  mealEnabled,
   sortKey,
   onSetSort,
   onUpdateGuest,
@@ -2192,6 +2196,10 @@ function GuestTable({
   guests: Guest[];
   households: Household[];
   mealMenu: MealMenu | null;
+  /** Show the meal-choice column? Mirrors the per-household `rsvp_collects_meal`
+   *  gates the RSVP form itself reads: when no household collects meals the
+   *  column is empty editorial noise, so the whole column vanishes. */
+  mealEnabled: boolean;
   sortKey: SortKey;
   onSetSort: (k: SortKey) => void;
   onUpdateGuest: (g: Guest, patch: Partial<Guest>) => void | Promise<void>;
@@ -2249,9 +2257,11 @@ function GuestTable({
             <th className={th} scope="col">
               {sortableHeader("rsvp", t("guests.table_col_rsvp"))}
             </th>
-            <th className={th} scope="col">
-              {t("guests.table_col_meal")}
-            </th>
+            {mealEnabled && (
+              <th className={th} scope="col">
+                {t("guests.table_col_meal")}
+              </th>
+            )}
             <th className={th} scope="col">
               {t("guests.table_col_dietary")}
             </th>
@@ -2276,6 +2286,7 @@ function GuestTable({
               }
               households={households}
               mealMenu={mealMenu}
+              mealEnabled={mealEnabled}
               onUpdateGuest={onUpdateGuest}
               onChangeGroup={onChangeGroup}
               onChangeHousehold={onChangeHousehold}
@@ -2287,7 +2298,11 @@ function GuestTable({
           ))}
           {/* Always-present blank row so a guest can be added inline without
               opening the drawer. */}
-          <GuestTableNewRow households={households} onCreateGuest={onCreateGuest} />
+          <GuestTableNewRow
+            households={households}
+            mealEnabled={mealEnabled}
+            onCreateGuest={onCreateGuest}
+          />
         </tbody>
       </table>
     </div>
@@ -2299,6 +2314,7 @@ function GuestTableRow({
   householdLabel,
   households,
   mealMenu,
+  mealEnabled,
   onUpdateGuest,
   onChangeGroup,
   onChangeHousehold,
@@ -2311,6 +2327,7 @@ function GuestTableRow({
   householdLabel: string | null;
   households: Household[];
   mealMenu: MealMenu | null;
+  mealEnabled: boolean;
   onUpdateGuest: (g: Guest, patch: Partial<Guest>) => void | Promise<void>;
   onChangeGroup: (g: Guest, tag: GuestGroupTag) => void | Promise<void>;
   onChangeHousehold: (
@@ -2401,25 +2418,27 @@ function GuestTableRow({
           ))}
         </CellSelect>
       </td>
-      <td className={CELL}>
-        <CellSelect
-          value={g.meal_choice ?? ""}
-          ariaLabel={t("guests.table_col_meal")}
-          onChange={(v) =>
-            void onUpdateGuest(g, { meal_choice: v === "" ? null : (v as MealSlotKey) })
-          }
-        >
-          <option value="">{t("guests.table_meal_unset")}</option>
-          {mealSlots(mealMenu)
-            .map((c) => ({ c, label: slotLabel(mealMenu, c, t) }))
-            .filter((o) => o.label)
-            .map((o) => (
-              <option key={o.c} value={o.c}>
-                {o.label}
-              </option>
-            ))}
-        </CellSelect>
-      </td>
+      {mealEnabled && (
+        <td className={CELL}>
+          <CellSelect
+            value={g.meal_choice ?? ""}
+            ariaLabel={t("guests.table_col_meal")}
+            onChange={(v) =>
+              void onUpdateGuest(g, { meal_choice: v === "" ? null : (v as MealSlotKey) })
+            }
+          >
+            <option value="">{t("guests.table_meal_unset")}</option>
+            {mealSlots(mealMenu)
+              .map((c) => ({ c, label: slotLabel(mealMenu, c, t) }))
+              .filter((o) => o.label)
+              .map((o) => (
+                <option key={o.c} value={o.c}>
+                  {o.label}
+                </option>
+              ))}
+          </CellSelect>
+        </td>
+      )}
       <td className={CELL}>
         <span className="flex items-center gap-1.5">
           <MealIcons meal={null} dietary={g.dietary} />
