@@ -91,7 +91,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookedSupplierCard } from "../components/BookedSupplierCard";
 import { CakeDrinksCalculator } from "../components/CakeDrinksCalculator";
-import { InfoHint } from "../components/InfoHint";
+
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { OutreachInbox } from "../components/OutreachInbox";
 import { PlannerCard } from "../components/PlannerDirectoryRail";
@@ -99,7 +99,7 @@ import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SupplierCountryFilter } from "../components/SupplierCountryFilter";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
-import { Button, Dialog, Skeleton, SmartImage, useToast } from "../components/ui";
+import { Button, Dialog, Skeleton, SmartImage, useConfirm, useToast } from "../components/ui";
 import {
   hydrateCostPlanningCount,
   readCostPlanningCount,
@@ -311,9 +311,10 @@ export default function SuppliersPage() {
   // namesake. Empty until the couple loads.
   const [coupleCountry, setCoupleCountry] = useState("");
   // The set of countries the curated catalogue covers (with counts), from the
-  // list response. Feeds the country picker's option list. The full catalogue
-  // is fetched once and the country filter is applied client-side (like price /
-  // city / guests), so switching country is instant and shareable via the URL.
+  // list response. Feeds the country picker's option list. Every `/api/suppliers`
+  // response carries this regardless of the `country` scope it was fetched
+  // with, so the picker's option list is complete even when `items` itself
+  // holds only one country's slice (see `reloadDirectory` below).
   const [availableCountries, setAvailableCountries] = useState<SupplierCountryCount[]>([]);
   // The full HU settlement gazetteer is lazy-loaded (it's ~100 KB of data that
   // no other page needs). `gazetteerReady` flips once it's registered so the
@@ -359,6 +360,7 @@ export default function SuppliersPage() {
   const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
   const { user } = useAuth();
   const toast = useToast();
+  const confirm = useConfirm();
   const [highlightId, setHighlightId] = useState<string | null>(null);
   // Couple shortlist ("saved" star). Server-side + shared between partners via
   // the supplier_saved store; starts empty and hydrates once we know the couple.
@@ -679,6 +681,35 @@ export default function SuppliersPage() {
     setParams(p, { replace: true });
   }
 
+  // Which country scope `items` currently reflects: a specific ISO code, "all"
+  // for the full catalogue, or `undefined` for "whatever the backend resolved
+  // as the couple's default". Lets `reloadDirectory` below skip a re-fetch
+  // when the scope hasn't actually changed (e.g. an unrelated `?guests=`
+  // edit also touches `params`).
+  const loadedCountryRef = useRef<string | undefined>(undefined);
+
+  // Fetch just one country's slice and swap it into `items`. Every response
+  // still carries the full `countries` breakdown (see `availableCountries`
+  // above), so the picker never needs the catalogue itself to render its
+  // options. Exported as a function rather than baked into a `useEffect` on
+  // `params` because only two user actions ever change the scope — the country
+  // picker and the "show every marked" escape hatch — and both already know
+  // the target scope at the moment they fire.
+  const reloadDirectory = useCallback((country: string | undefined) => {
+    loadedCountryRef.current = country;
+    return supplierApi
+      .list(undefined, country)
+      .then((dir) => {
+        setItems(dir.suppliers);
+        setAvailableCountries(dir.countries);
+        return dir;
+      })
+      .catch((e) => {
+        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+        throw e;
+      });
+  }, []);
+
   // Optimistic vote: flip the card immediately, roll back if the server says no.
   const onVote = useCallback(async (supplierId: string, nextVote: -1 | 0 | 1) => {
     setItems((prev) =>
@@ -697,22 +728,38 @@ export default function SuppliersPage() {
       );
     } catch {
       // Reload from server on failure so we don't carry stale optimistic state.
-      // Full catalogue (`country=all`) to match the client-side scoping model.
+      // Same scope that's already on screen — a vote hiccup is not the couple
+      // asking to see every other country too.
       supplierApi
-        .list(undefined, "all")
+        .list(undefined, loadedCountryRef.current)
         .then((r) => setItems(r.suppliers))
         .catch(() => undefined);
     }
   }, []);
 
   useEffect(() => {
-    // Fetch the FULL catalogue (`country=all`) once and scope by country on the
-    // client, so switching the country picker is instant, keeps the chain
-    // counts + map in sync, and is shareable via `?country=`. The Vendégszám
-    // default prefers the live cost-planning slider value from /app/budget
-    // (kept in localStorage) over the static onboarding target, so the two
-    // pages stay in sync without round-trips.
-    Promise.all([supplierApi.list(undefined, "all"), coupleSupplierApi.list(), coupleApi.current()])
+    // Fetch only the scope the URL asks for — an explicit `?country=` (a code,
+    // or "all"), else `undefined` so the backend resolves the couple's own
+    // country. That country-sized slice is what the couple almost always
+    // wants, and it is what makes the initial paint fast: fetching the WHOLE
+    // multi-country catalogue by default (the previous behaviour) was cheap
+    // when the curated directory was ~1,000 rows, but it grew past 7,000 with
+    // the August 2026 international expansion, and shipping every row of that
+    // to every couple on every load — most of whom never touch the country
+    // picker — is what made this page load "darabosan" (choppily). Switching
+    // countries now costs a small re-fetch (`reloadDirectory`, wired into the
+    // picker and "show every marked") instead of being instant, which is the
+    // right trade against paying that fetch on every visit.
+    const initialCountry = params.get("country") ?? undefined;
+    loadedCountryRef.current = initialCountry;
+    // The Vendégszám default prefers the live cost-planning slider value from
+    // /app/budget (kept in localStorage) over the static onboarding target, so
+    // the two pages stay in sync without round-trips.
+    Promise.all([
+      supplierApi.list(undefined, initialCountry),
+      coupleSupplierApi.list(),
+      coupleApi.current(),
+    ])
       .then(([dir, mine, couple]) => {
         setItems(dir.suppliers);
         setAvailableCountries(dir.countries);
@@ -833,12 +880,21 @@ export default function SuppliersPage() {
       // Un-picking the venue wipes the couple-row copy that Kulcsinfó, the
       // public guest page and the run sheet all read (see backend
       // domain/venue_sync.ts) — a bigger, more consequential action than
-      // un-booking any other vendor, so it goes through the guest page's own
-      // "remove venue" flow (with its warning about what disappears) instead
-      // of a silent one-click un-save here. Picking a venue is unaffected.
+      // un-booking any other vendor, so it asks for confirmation right here
+      // instead of a silent one-click un-save. Picking a venue is unaffected.
       if (isPicked && cat === "venue") {
-        toast.info(t("suppliers.venue_unpick_redirect"));
-        navigate("/app/guest-page?edit=venue_manage");
+        void (async () => {
+          const ok = await confirm({
+            title: t("venue_picker.remove_confirm_title"),
+            body: t("venue_picker.remove_confirm_body"),
+            confirmLabel: t("venue_picker.remove_confirm_action"),
+            cancelLabel: t("common.cancel"),
+            destructive: true,
+          });
+          if (!ok) return;
+          const next = setSelection(coupleId, cat, null);
+          setSelectionState(next);
+        })();
         return;
       }
       const next = setSelection(coupleId, cat, isPicked ? null : supplier.id);
@@ -851,7 +907,7 @@ export default function SuppliersPage() {
         celebrateSelection(cat, selection, next);
       }
     },
-    [coupleId, selection, toast, t, navigate],
+    [coupleId, selection, confirm, toast, t],
   );
 
   // Adopt a directory listing instead of minting a private "Saját" copy of it.
@@ -1675,14 +1731,10 @@ export default function SuppliersPage() {
               chips, the chain. Nothing was dropped — country, price and guest
               count moved into the "Szűrők" dialog, which carries a count badge
               so a filter can never be on without being visible. */}
-          <header className="mb-3 flex flex-wrap items-center justify-end gap-3 sm:mb-4 sm:justify-between">
-            {/* The title repeats what the nav already says and cost a whole
-                row on a phone; kept for a11y/SEO via sr-only rather than
-                dropped outright. */}
-            <div className="flex min-w-0 items-center gap-2 sr-only sm:not-sr-only sm:static">
-              <h1 className="font-grotesk">{t("suppliers.title")}</h1>
-              <InfoHint text={t("suppliers.sub")} />
-            </div>
+          <header className="mb-3 flex flex-wrap items-center justify-end gap-3 sm:mb-4">
+            {/* The page name repeats what the nav already says; only a sr-only
+                copy stays for screen readers and heading structure. */}
+            <h1 className="sr-only font-grotesk">{t("suppliers.title")}</h1>
             <div className="flex items-center gap-2">
               {/* Icon-only view switch: three glyphs, one filled. The words
                   ride in the tooltip + aria-label — at three modes the icons

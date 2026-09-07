@@ -329,24 +329,28 @@ export default function SupplierDetailPage() {
   const pickCategory = detail?.category ?? null;
   const isPicked =
     pickCategory !== null && savedKey !== null && selection[pickCategory] === savedKey;
-  const togglePicked = useCallback(() => {
+  const togglePicked = useCallback(async () => {
     if (coupleId === null) {
       toast.info(t("suppliers.save_no_couple"));
       return;
     }
     if (pickCategory === null || savedKey === null) return;
-    // Un-picking the venue here would silently wipe the couple-row copy
-    // Kulcsinfó/the public guest page/the run sheet read (venue_sync.ts on
-    // the backend) with no warning about what disappears — that flow lives
-    // on the guest page's own "remove venue" dialog instead. Picking one is
-    // unaffected.
+    // Un-picking the venue here wipes the couple-row copy Kulcsinfó/the
+    // public guest page/the run sheet read (venue_sync.ts on the backend)
+    // with no warning about what disappears, so it asks for confirmation right
+    // here instead of a silent one-click un-save.
     if (isPicked && pickCategory === "venue") {
-      toast.info(t("suppliers.venue_unpick_redirect"));
-      navigate("/app/guest-page?edit=venue_manage");
-      return;
+      const ok = await confirm({
+        title: t("venue_picker.remove_confirm_title"),
+        body: t("venue_picker.remove_confirm_body"),
+        confirmLabel: t("venue_picker.remove_confirm_action"),
+        cancelLabel: t("common.cancel"),
+        destructive: true,
+      });
+      if (!ok) return;
     }
     setSelectionState(setSelection(coupleId, pickCategory, isPicked ? null : savedKey));
-  }, [coupleId, isPicked, pickCategory, savedKey, t, toast, navigate]);
+  }, [coupleId, isPicked, pickCategory, savedKey, t, toast, confirm]);
 
   // Outreach compose modal — opens with the current supplier pre-attached
   // so the user can write a tailored inquiry without re-picking a vendor.
