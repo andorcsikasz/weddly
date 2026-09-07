@@ -5880,6 +5880,18 @@ export interface LocaleMessages {
       rings: string;
       other: string;
     };
+    subcategory_quick_add: string;
+    /** Default per-category subcategory quick-add labels, resolved on a slug —
+     *  e.g. `budget.subcat.photo_video.photo`. Only the five split categories
+     *  have entries (see `BUDGET_SUBCATEGORIES` in shared/types.ts); the rest
+     *  offer no suggestions, just the manual "Új sor". */
+    subcat: {
+      photo_video: { photo: string; video: string };
+      music_dj: { dj: string; live_music: string };
+      decor_floral: { decor: string; flowers: string };
+      attire: { bride: string; groom: string };
+      hair_makeup: { hair: string; makeup: string };
+    };
   };
   /** DIY supplier modal surfaces specific to Loop C₂'s "Already paid" flow.
    *  Kept separate from `suppliers.diy_modal_*` so the snapshot UI loop and
@@ -6487,7 +6499,6 @@ export interface LocaleMessages {
     save_aria: string;
     unsave_aria: string;
     save_no_couple: string;
-    venue_unpick_redirect: string;
     saved_filter: string;
     /** Per-category "this is our pick" selection — one card per sub-category. */
     pick_aria: string;
@@ -7725,6 +7736,21 @@ export interface LocaleMessages {
     last_active_minutes: string;
     last_active_hours: string;
     last_active_days: string;
+    /** Cumulative "time spent in the app" column, next to `last_active` under
+     *  the created-at date (workspace = sum across both partners; the
+     *  per-user chip on orphan/demo rows = that one account). Fed by
+     *  `POST /api/activity/heartbeat` (see domain/activity.ts) — a fixed
+     *  server-side increment per accepted ping while the tab is foreground,
+     *  never a client-reported duration. `total_time_*` renders the value
+     *  via formatActiveDuration; `total_time_tooltip` explains the metric on
+     *  hover since it sits right next to the unrelated last-active stamp. */
+    table_workspace_total_time: string;
+    total_time_tooltip: string;
+    total_time_none: string;
+    total_time_under_minute: string;
+    total_time_minutes: string;
+    total_time_hm: string;
+    total_time_dh: string;
     workspace_solo_member: string;
     /** Admin-triggered nudge on solo workspaces: small Mail icon button next
      *  to the "Solo member" badge that emails the lone partner a reminder

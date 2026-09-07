@@ -7,7 +7,7 @@
 // straight away and re-merge the server rows once they land. That split is
 // load-bearing — see the comment on `LinePlan`.
 
-import type { BudgetCategory, BudgetLine } from "@shared/types";
+import { BUDGET_SUBCATEGORIES, type BudgetCategory, type BudgetLine } from "@shared/types";
 import { budgetApi } from "./endpoints";
 
 /** The three money fields a category edit can bulk-apply. */
@@ -264,6 +264,31 @@ export function mergeLines(prev: BudgetLine[], next: BudgetLine[]): BudgetLine[]
   const known = new Set(prev.map((l) => l.id));
   for (const l of next) if (!known.has(l.id)) merged.push(l);
   return merged;
+}
+
+/** True when a line is the aggregate category's own storage row rather than a
+ *  real sub-item: the row `planCategoryPlanned` / `planCategoryActual`
+ *  auto-create when a category owns no writable lines, labelled with the
+ *  category's own localized name. The sub-item drawers hide these so a
+ *  "Fotó & videó" line never reads as one of its own subcategories — the
+ *  amount it carries is still visible and editable on the category's aggregate
+ *  row itself. */
+export function isCategoryHolderLine(line: BudgetLine, categoryLabel: string): boolean {
+  return line.label === categoryLabel;
+}
+
+/** Quick-add suggestions for a category's sub-item drawer — the defined sets
+ *  (Fotó/Videó, DJ/Élőzene, Dekor/Virág, …). A category with no entry has none
+ *  (`BUDGET_SUBCATEGORIES` goes to `[]`): its drawer offers only the manual
+ *  "Új sor". Suggestions are NEVER auto-created — clicking one is what makes a
+ *  real line, and until then the empty drawer just shows the prompt. */
+export function budgetSubcategorySuggestions(
+  category: BudgetCategory,
+  t: (path: string, vars?: Record<string, string | number>) => string,
+): { slug: string; label: string }[] {
+  const slugs = BUDGET_SUBCATEGORIES[category];
+  if (!slugs) return [];
+  return slugs.map((slug) => ({ slug, label: t(`budget.subcat.${category}.${slug}`) }));
 }
 
 /** Plan + commit + merge in one call, for the blocking flows (freeze /

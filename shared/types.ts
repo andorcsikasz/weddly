@@ -453,6 +453,11 @@ export interface AdminUserActivity {
    *  faded counter so the admin knows this user has been flagged before
    *  even if there's no live flag right now. */
   prior_flag_count: number;
+  /** Lifetime sum of POST /api/activity/heartbeat credits (ACTIVITY_HEARTBEAT_INTERVAL_S
+   *  per accepted call — see domain/activity.ts). Server-authoritative, never a
+   *  client-reported duration. 0 for an account that has never loaded the
+   *  app since this shipped, same as every other counter here. */
+  total_active_seconds: number;
 }
 
 /** Unread-style counts the admin sidebar shows as a small red index next
@@ -590,6 +595,9 @@ export interface AdminCoupleView {
    *  sage Mail+Check state on the workspace row so a refresh doesn't
    *  re-arm the button. */
   invite_partner_reminded_at: UnixMs | null;
+  /** SUM of every member's `total_active_seconds` — the workspace's combined
+   *  time-in-app, both partners together. */
+  total_active_seconds: number;
   /** Subscription / billing snapshot — lets the admin see who's free
    *  (founding / trial) vs paying vs lapsed, and act on it. */
   billing: CoupleBilling;
@@ -1944,6 +1952,21 @@ export const DEFAULT_BUDGET_SPLIT: Record<BudgetCategory, number> = {
   favours: 0.01,
   rings: 0.02,
   other: 0.0,
+};
+
+/** Default subcategory quick-adds for a budget category's sub-item drawer. The
+ *  slug is the i18n key segment resolved as `budget.subcat.<category>.<slug>`.
+ *  Deliberately NEVER auto-created: a category edit on a line-less category
+ *  still makes the single aggregate row (see `planCategoryPlanned`), and a
+ *  suggestion becomes a real line only when the couple clicks it. A category
+ *  absent from this map has no subcategories — its drawer offers just the
+ *  manual "Új sor". */
+export const BUDGET_SUBCATEGORIES: Partial<Record<BudgetCategory, readonly string[]>> = {
+  photo_video: ["photo", "video"],
+  music_dj: ["dj", "live_music"],
+  decor_floral: ["decor", "flowers"],
+  attire: ["bride", "groom"],
+  hair_makeup: ["hair", "makeup"],
 };
 
 // ─── Planning items (Tervezés page: Feladatok / Ötletek / Programterv) ──────

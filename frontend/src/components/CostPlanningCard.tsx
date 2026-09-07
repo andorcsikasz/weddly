@@ -48,7 +48,12 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { isSupplierManagedLine, supplierManagedCategories } from "../lib/budget";
+import {
+  budgetSubcategorySuggestions,
+  isCategoryHolderLine,
+  isSupplierManagedLine,
+  supplierManagedCategories,
+} from "../lib/budget";
 import type { CostPlanningSaveStatus } from "../lib/cost_planning";
 import { formatMoney, formatNumber, moneySliderStep } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -852,6 +857,16 @@ export function CostPlanningCard({
           const isHoneymoon = b.category === "honeymoon";
           const isExpanded = expandedCategories.has(b.category);
           const rowScaleFactor = b.scales ? factor : 1;
+          // The category's own localized name identifies its anonymous storage
+          // row (auto-created by the aggregate edit when the category owned no
+          // lines). That row IS the aggregate — showing it inside the drawer
+          // made the category read as one of its own subcategories.
+          const categoryLabel = t(`budget.cat.${b.category}`);
+          const subLines = b.lines.filter((l) => !isCategoryHolderLine(l, categoryLabel));
+          // Offer the defined subcategories (Fotó/Videó, …) as quick-add chips
+          // only while the drawer holds no real sub-items — once the couple has
+          // split the category, the promise of defaults is spent.
+          const suggestions = budgetSubcategorySuggestions(b.category, t);
           return (
             <Fragment key={b.category}>
               <CategoryRow
@@ -887,40 +902,66 @@ export function CostPlanningCard({
                 expanded={isExpanded}
                 onToggleExpand={toggleExpanded}
               />
-              {/* Sub-item drawer — each of this category's own lines, editable
-               *  individually, plus an "add item" affordance. Reuses `CustomRow`
-               *  verbatim (it already only cares about a BudgetLine id, not its
-               *  category) so a named sub-item gets the exact same slider,
-               *  actual-overlay and delete treatment a standalone custom row
-               *  does. */}
-              {!isHoneymoon &&
-                isExpanded &&
-                b.lines.map((line) => {
-                  const liveBaseline = customDrags[line.id] ?? line.planned_huf;
-                  return (
-                    <CustomRow
-                      key={line.id}
-                      line={line}
-                      liveDisplay={Math.round(liveBaseline * rowScaleFactor)}
-                      scaleFactor={rowScaleFactor}
-                      count={count}
-                      widthAnchor={widthAnchor}
-                      currency={currency}
-                      onEditPlanned={onEditCustomRowPlanned}
-                      onRemove={onRemoveCustomRow}
-                      onDrag={handleCustomDrag}
-                      onSettle={settleCustomDrag}
-                      showActualOverlay={showActualOverlay && hasAnyActual}
+              {/* Sub-item drawer — each of this category's real sub-items,
+               *  editable individually, plus (while the drawer holds none) the
+               *  defined subcategory quick-adds and an "add item" affordance.
+               *  Reuses `CustomRow` verbatim (it already only cares about a
+               *  BudgetLine id, not its category) so a named sub-item gets the
+               *  exact same slider, actual-overlay and delete treatment a
+               *  standalone custom row does. The count row the aggregate edit
+               *  auto-creates is filtered out above (`subLines`) — labelled
+               *  with the category's own name, it IS the aggregate, not an
+               *  item to split it into. */}
+              {!isHoneymoon && isExpanded && (
+                <>
+                  {subLines.map((line) => {
+                    const liveBaseline = customDrags[line.id] ?? line.planned_huf;
+                    return (
+                      <CustomRow
+                        key={line.id}
+                        line={line}
+                        liveDisplay={Math.round(liveBaseline * rowScaleFactor)}
+                        scaleFactor={rowScaleFactor}
+                        count={count}
+                        widthAnchor={widthAnchor}
+                        currency={currency}
+                        onEditPlanned={onEditCustomRowPlanned}
+                        onRemove={onRemoveCustomRow}
+                        onDrag={handleCustomDrag}
+                        onSettle={settleCustomDrag}
+                        showActualOverlay={showActualOverlay && hasAnyActual}
+                      />
+                    );
+                  })}
+                  {onAddCustomRow && suggestions.length > 0 && subLines.length === 0 && (
+                    <li className="py-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+                          {t("budget.subcategory_quick_add")}
+                        </span>
+                        {suggestions.map((s) => (
+                          <button
+                            key={s.slug}
+                            type="button"
+                            onClick={() => onAddCustomRow(s.label, 0, {}, b.category)}
+                            aria-label={`${t("budget.subcategory_quick_add")} ${s.label}`}
+                            className="inline-flex items-center gap-1 rounded-md border border-dashed border-paper-300 px-2 py-0.5 text-xs text-ink-500 transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-blush-500 dark:hover:text-blush-300"
+                          >
+                            <Plus size={12} aria-hidden /> {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </li>
+                  )}
+                  {onAddCustomRow && (
+                    <AddCustomRow
+                      onAdd={(label, plannedHuf, options) =>
+                        onAddCustomRow(label, plannedHuf, options, b.category)
+                      }
+                      showPerGuestToggle={false}
                     />
-                  );
-                })}
-              {!isHoneymoon && isExpanded && onAddCustomRow && (
-                <AddCustomRow
-                  onAdd={(label, plannedHuf, options) =>
-                    onAddCustomRow(label, plannedHuf, options, b.category)
-                  }
-                  showPerGuestToggle={false}
-                />
+                  )}
+                </>
               )}
             </Fragment>
           );

@@ -1227,18 +1227,26 @@ describe("<BudgetPage>", () => {
     fireEvent.click(within(desktopRow).getByRole("button", { name: /show photo & video items/i }));
     await flush();
 
-    // With no lines yet in the category, the drawer's "Add row" affordance is
-    // the very next table row — scoping to it (rather than picking by index
-    // among every "Add row" button on the page, several of which belong to
-    // other drawers or the bottom-of-table Egyéb affordance) is what proves
-    // THIS add-form is the one that fired.
-    const drawerAddRow = desktopRow.nextElementSibling as HTMLElement;
-    fireEvent.click(within(drawerAddRow).getByRole("button", { name: /^add row$/i }));
+    // With no lines yet in the category, the drawer first shows the defined
+    // subcategory quick-adds (a suggestion row), then the "Add row" form is
+    // the table row right beneath it. Sweep the siblings until we hit the
+    // form row — scoping to it (rather than picking by index among every
+    // "Add row" button on the page, several of which belong to other drawers
+    // or the bottom-of-table Egyéb affordance) is what proves THIS add-form
+    // is the one that fired.
+    let drawerAddRow = desktopRow.nextElementSibling as HTMLElement | null;
+    while (drawerAddRow && !within(drawerAddRow).queryByRole("button", { name: /^add row$/i })) {
+      drawerAddRow = drawerAddRow.nextElementSibling as HTMLElement | null;
+    }
+    expect(drawerAddRow).not.toBeNull();
+    fireEvent.click(
+      within(drawerAddRow as HTMLElement).getByRole("button", { name: /^add row$/i }),
+    );
     await flush();
-    fireEvent.change(within(drawerAddRow).getByPlaceholderText(/row name/i), {
+    fireEvent.change(within(drawerAddRow as HTMLElement).getByPlaceholderText(/row name/i), {
       target: { value: "Second shooter" },
     });
-    fireEvent.click(within(drawerAddRow).getByRole("button", { name: /^add$/i }));
+    fireEvent.click(within(drawerAddRow as HTMLElement).getByRole("button", { name: /^add$/i }));
     await flush(2);
 
     const postCall = fetchCalls.find((c) => c.method === "POST" && c.url === "/api/budget/lines");

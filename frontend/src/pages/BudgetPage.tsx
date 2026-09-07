@@ -63,10 +63,12 @@ import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
   amountBody,
+  budgetSubcategorySuggestions,
   commitLinePlan,
   createBudgetWriteQueue,
   guestCountBaseline,
   guestCountBounds,
+  isCategoryHolderLine,
   isNoopPlan,
   isSupplierManagedLine,
   mergeLines,
@@ -1340,6 +1342,17 @@ export default function BudgetPage() {
                 const editable = bucket?.editable ?? true;
                 const canDelete = !isFrozen && linesForCat.length > 0 && editable;
                 const isExpanded = expandedCategories.has(cat);
+                // The category's own localized name identifies its anonymous
+                // storage row (auto-created by the aggregate edit when the
+                // category owned no lines). That row IS the aggregate — showing
+                // it in the drawer made the category read as one of its own
+                // subcategories.
+                const categoryLabel = t(`budget.cat.${cat}`);
+                const subLines = linesForCat.filter((l) => !isCategoryHolderLine(l, categoryLabel));
+                // Offer the defined subcategories (Fotó/Videó, …) as quick-add
+                // chips only while the drawer holds no real sub-items — once
+                // the couple has split the category, the promise is spent.
+                const subcategorySuggestions = budgetSubcategorySuggestions(cat, t);
                 return (
                   <Fragment key={cat}>
                     <tr
@@ -1433,10 +1446,13 @@ export default function BudgetPage() {
                         </button>
                       </td>
                     </tr>
-                    {/* Sub-item drawer — this category's own lines, editable
-                     *  individually, plus an "add item" row scoped to it. */}
+                    {/* Sub-item drawer — this category's real sub-items, editable
+                     *  individually, plus (while it holds none) the defined
+                     *  subcategory quick-adds and an "add item" row scoped to
+                     *  it. The category's own aggregate row is filtered out
+                     *  (`subLines`). */}
                     {isExpanded &&
-                      linesForCat.map((line) => (
+                      subLines.map((line) => (
                         <BudgetSubLineTr
                           key={line.id}
                           line={line}
@@ -1452,6 +1468,28 @@ export default function BudgetPage() {
                           onDelete={removeLine}
                         />
                       ))}
+                    {isExpanded && subcategorySuggestions.length > 0 && subLines.length === 0 && (
+                      <tr className="border-t border-paper-200 dark:border-umber-700">
+                        <td colSpan={6} className="px-4 py-2">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+                              {t("budget.subcategory_quick_add")}
+                            </span>
+                            {subcategorySuggestions.map((s) => (
+                              <button
+                                key={s.slug}
+                                type="button"
+                                onClick={() => addCustomRow(s.label, 0, {}, cat)}
+                                aria-label={`${t("budget.subcategory_quick_add")} ${s.label}`}
+                                className="inline-flex items-center gap-1 rounded-md border border-dashed border-paper-300 px-2 py-0.5 text-xs text-ink-500 transition hover:border-blush-300 hover:text-blush-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-blush-500 dark:hover:text-blush-300"
+                              >
+                                <Plus size={12} aria-hidden /> {s.label}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                     {isExpanded && (
                       <AddCustomRowTr
                         onAdd={(label, plannedHuf, options) =>

@@ -8,7 +8,9 @@
 import type { BudgetCategory, BudgetLine } from "@shared/types";
 import { describe, expect, it } from "bun:test";
 import {
+  budgetSubcategorySuggestions,
   createBudgetWriteQueue,
+  isCategoryHolderLine,
   isNoopPlan,
   mergeLines,
   planCategoryPaid,
@@ -217,5 +219,52 @@ describe("createBudgetWriteQueue", () => {
     await expect(failed).rejects.toThrow("boom");
     const after = await queue.run("cat:venue", async () => "ok");
     expect(after.result).toBe("ok");
+  });
+});
+
+describe("isCategoryHolderLine", () => {
+  const t = (path: string) => `T[${path}]`;
+
+  it("hides a line labelled with the category's own localized name", () => {
+    // The row `planCategoryPlanned` auto-creates when a category owns no lines
+    // is labelled "Photo & video" (the localized category name) — it IS the
+    // aggregate, not a sub-item, so the drawers must not show it.
+    const holder = { ...line(1, "photo_video", 400_000), label: t("budget.cat.photo_video") };
+    expect(isCategoryHolderLine(holder, t("budget.cat.photo_video"))).toBe(true);
+  });
+
+  it("keeps real named sub-items and the aggregate's own slug labels", () => {
+    const named = { ...line(1, "photo_video", 100_000), label: "Fotó" };
+    expect(isCategoryHolderLine(named, "Photo & video")).toBe(false);
+    // Legacy rows store the slug as their label — never the category name.
+    expect(isCategoryHolderLine(line(2, "photo_video", 300_000), "Photo & video")).toBe(false);
+  });
+
+  it("does not hide a line because its label equals ANOTHER category's name", () => {
+    // A row labelled "Venue" sitting inside photo_video is a real sub-item
+    // (misnamed by the couple), never identity with the photo_video holder.
+    const cross = { ...line(3, "photo_video", 200_000), label: "Venue" };
+    expect(isCategoryHolderLine(cross, "Photo & video")).toBe(false);
+    expect(isCategoryHolderLine(cross, "Venue")).toBe(true);
+  });
+});
+
+describe("budgetSubcategorySuggestions", () => {
+  const t = (path: string, vars?: Record<string, string | number>) => `T[${path}]`;
+
+  it("resolves the five defined sets to their localized labels", () => {
+    expect(budgetSubcategorySuggestions("photo_video", t)).toEqual([
+      { slug: "photo", label: "T[budget.subcat.photo_video.photo]" },
+      { slug: "video", label: "T[budget.subcat.photo_video.video]" },
+    ]);
+    expect(budgetSubcategorySuggestions("attire", t)).toEqual([
+      { slug: "bride", label: "T[budget.subcat.attire.bride]" },
+      { slug: "groom", label: "T[budget.subcat.attire.groom]" },
+    ]);
+  });
+
+  it("offers nothing for a category with no defined subcategories", () => {
+    expect(budgetSubcategorySuggestions("venue", t)).toEqual([]);
+    expect(budgetSubcategorySuggestions("other", t)).toEqual([]);
   });
 });

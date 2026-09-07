@@ -56,6 +56,7 @@ function setup({
   showActualToggle = false,
   onEditCustomRowPlanned,
   onRemoveCustomRow,
+  onAddCustomRow,
 }: {
   lines: BudgetLine[];
   count?: number;
@@ -72,6 +73,12 @@ function setup({
    *  render read-only, which is the dashboard's shape. */
   onEditCustomRowPlanned?: (lineId: number, planned: number) => void;
   onRemoveCustomRow?: (lineId: number) => void;
+  onAddCustomRow?: (
+    label: string,
+    plannedHuf: number,
+    options?: { perGuest?: boolean; icon?: string | null },
+    category?: BudgetCategory,
+  ) => void;
 }) {
   return render(
     <MemoryRouter>
@@ -92,6 +99,7 @@ function setup({
           showActualToggle={showActualToggle}
           onEditCustomRowPlanned={onEditCustomRowPlanned}
           onRemoveCustomRow={onRemoveCustomRow}
+          onAddCustomRow={onAddCustomRow}
         />
       </I18nProvider>
     </MemoryRouter>,
@@ -478,5 +486,64 @@ describe("<CostPlanningCard> actual-spend overlay", () => {
       lines: [line(1, "venue", 300_000, 200_000, 0)],
     });
     expect(overlayBackground(container)).not.toContain("--range-paid-amount");
+  });
+});
+
+describe("<CostPlanningCard> sub-item drawer", () => {
+  function expand(category: BudgetCategory) {
+    const catLabel = tCatLabel(category);
+    fireEvent.click(screen.getByRole("button", { name: `Show ${catLabel} items` }));
+  }
+
+  function tCatLabel(category: BudgetCategory): string {
+    switch (category) {
+      case "photo_video":
+        return "Photo & video";
+      case "venue":
+        return "Venue";
+      case "other":
+        return "Other";
+      default:
+        return category;
+    }
+  }
+
+  it("offers the defined subcategories as quick-adds while the category owns no sub-items", () => {
+    const onAddCustomRow = mock((..._args: unknown[]) => {});
+    setup({ lines: [], onAddCustomRow });
+    expand("photo_video");
+
+    // Clicking a chip creates the real line via the same add-row path the
+    // form uses — amount 0, explicitly scoped to this category.
+    fireEvent.click(screen.getByRole("button", { name: "Quick add: Photo" }));
+    expect(onAddCustomRow).toHaveBeenCalledWith("Photo", 0, {}, "photo_video");
+    fireEvent.click(screen.getByRole("button", { name: "Quick add: Video" }));
+    expect(onAddCustomRow).toHaveBeenCalledWith("Video", 0, {}, "photo_video");
+  });
+
+  it("offers no suggestions for a category with none defined", () => {
+    setup({ lines: [], onAddCustomRow: mock(() => {}) });
+    expand("venue");
+    expect(screen.queryByText("Quick add:")).not.toBeInTheDocument();
+    // The manual affordance is still there — suggestions supplement it.
+    expect(screen.getAllByRole("button", { name: /Add row/i }).length).toBeGreaterThan(0);
+  });
+
+  it("hides the category's own anonymous hold-over row, and stops suggesting once a real sub-item exists", () => {
+    // Auto-created by the aggregate edit on a line-less category and labelled
+    // with the category's own localized name — it IS the aggregate, so it must
+    // not read as one of its own subcategories.
+    const holder = { ...line(1, "photo_video", 300_000), label: "Photo & video" };
+    const real = { ...line(2, "photo_video", 100_000), label: "Fotó" };
+    setup({ lines: [holder, real], onAddCustomRow: mock(() => {}) });
+    expand("photo_video");
+
+    // Only the real sub-item renders inside the drawer; the category's own
+    // "Photo & video" label appears exactly once (the aggregate row), i.e. the
+    // hold-over row is not repeated as one of its own subcategories.
+    expect(screen.getByText("Fotó")).toBeInTheDocument();
+    expect(screen.getAllByText("Photo & video")).toHaveLength(1);
+    // A category the couple has already split is past its quick-adds.
+    expect(screen.queryByText("Quick add:")).not.toBeInTheDocument();
   });
 });
