@@ -848,7 +848,7 @@ function MoneySection({
               </span>
             </div>
           )}
-          <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
             <KpiTile
               label={t("admin.analytics_money_couples_with_budget_short")}
               value={formatNumber(m.couples_with_budget, locale)}
@@ -869,6 +869,16 @@ function MoneySection({
             <KpiTile
               label={t("admin.analytics_money_median_ceiling")}
               value={formatHuf(m.budget_ceiling_huf.median, locale)}
+            />
+            <KpiTile
+              label={t("admin.analytics_money_avg_planned_per_head")}
+              value={formatHuf(m.planned_per_head.avg, locale)}
+              sub={t("admin.analytics_money_per_head_denom")}
+            />
+            <KpiTile
+              label={t("admin.analytics_money_avg_actual_per_head")}
+              value={formatHuf(m.actual_per_head.avg, locale)}
+              sub={t("admin.analytics_money_per_head_denom")}
             />
           </div>
 
@@ -977,6 +987,12 @@ function PerCategoryTable({
             <th className="py-1 pr-2">{t("admin.analytics_money_col_category")}</th>
             <th className="py-1 pl-2 text-right">{t("admin.analytics_money_col_avg_planned")}</th>
             <th className="py-1 pl-2 text-right">{t("admin.analytics_money_col_avg_actual")}</th>
+            <th className="py-1 pl-2 text-right text-neutral-500 dark:text-umber-300">
+              {t("admin.analytics_money_col_avg_planned_per_head")}
+            </th>
+            <th className="py-1 pl-2 text-right text-neutral-500 dark:text-umber-300">
+              {t("admin.analytics_money_col_avg_actual_per_head")}
+            </th>
             <th className="py-1 pl-2 text-right">
               {t("admin.analytics_money_col_couples_with_data")}
             </th>
@@ -993,6 +1009,12 @@ function PerCategoryTable({
               </td>
               <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                 {formatHuf(row.avg_actual, locale)}
+              </td>
+              <td className="stat-num py-1 pl-2 text-right text-neutral-500 dark:text-umber-300">
+                {formatHuf(row.avg_planned_per_head, locale)}
+              </td>
+              <td className="stat-num py-1 pl-2 text-right text-neutral-500 dark:text-umber-300">
+                {formatHuf(row.avg_actual_per_head, locale)}
               </td>
               <td className="stat-num py-1 pl-2 text-right text-neutral-700 dark:text-paper-100">
                 {formatNumber(row.couples_with_data, locale)}

@@ -330,6 +330,7 @@ export function wipeAll(): void {
     "quiz_players",
     "quiz_slides",
     "quizzes",
+    "user_activity_daily",
     // users MUST come before couples — users.couple_id REFERENCES couples(id)
     // with no CASCADE, so deleting couples first FK-fails (silently swallowed
     // by the try/catch below) and leaves stale rows that bleed into the next

@@ -1,6 +1,6 @@
 import type { SubscriptionStatus } from "@shared/billing";
 import type { AdminCoupleView, AdminEmailLogEntry, AdminUserView } from "@shared/types";
-import { formatLastActive, intlLocale } from "../lib/format";
+import { formatActiveDuration, formatLastActive, intlLocale } from "../lib/format";
 import {
   Bird,
   Briefcase,
@@ -297,7 +297,8 @@ export default function AdminUsersPage() {
     | "members"
     | "wedding_date"
     | "created_at"
-    | "last_seen_at";
+    | "last_seen_at"
+    | "total_active_seconds";
   const [sortKey, setSortKey] = useState<WorkspaceSortKey>("id");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -335,6 +336,8 @@ export default function AdminUsersPage() {
           const bTs = b.last_seen_at ?? 0;
           return (aTs - bTs) * sign;
         }
+        case "total_active_seconds":
+          return (a.total_active_seconds - b.total_active_seconds) * sign;
         default:
           return 0;
       }
@@ -1129,6 +1132,15 @@ export default function AdminUsersPage() {
               {formatLastActive(u.last_seen_at, locale, t)}
             </span>
           )}
+          {opts.showLastActive && (
+            <span
+              className="text-[11px] text-neutral-500 dark:text-umber-300"
+              title={t("admin.total_time_tooltip")}
+            >
+              {t("admin.table_workspace_total_time")}:{" "}
+              {formatActiveDuration(u.activity.total_active_seconds, t)}
+            </span>
+          )}
         </div>
         {u.is_beta_tester && (
           <div>
@@ -1465,6 +1477,12 @@ export default function AdminUsersPage() {
             <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
               {formatLastActive(c.last_seen_at, locale, t)}
             </div>
+            <div
+              className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80"
+              title={t("admin.total_time_tooltip")}
+            >
+              {formatActiveDuration(c.total_active_seconds, t)}
+            </div>
           </div>
           <div>
             {members.length === 0 ? null : (
@@ -1515,6 +1533,12 @@ export default function AdminUsersPage() {
             <span>{formatDate(c.created_at, locale)}</span>
             <span className="text-neutral-500/70 dark:text-umber-300/80">
               {formatLastActive(c.last_seen_at, locale, t)}
+            </span>
+            <span
+              className="text-neutral-500/70 dark:text-umber-300/80"
+              title={t("admin.total_time_tooltip")}
+            >
+              {formatActiveDuration(c.total_active_seconds, t)}
             </span>
           </div>
         </div>
@@ -1740,6 +1764,14 @@ export default function AdminUsersPage() {
         <div className="mt-0.5">
           <SortBtn col="last_seen_at" className="text-neutral-500/70 dark:text-umber-300/80">
             {t("admin.table_workspace_last_active")}
+          </SortBtn>
+        </div>
+        <div className="mt-0.5">
+          <SortBtn
+            col="total_active_seconds"
+            className="text-neutral-500/70 dark:text-umber-300/80"
+          >
+            {t("admin.table_workspace_total_time")}
           </SortBtn>
         </div>
       </div>

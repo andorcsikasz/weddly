@@ -15,6 +15,7 @@ import {
 import { clearDemoSessionFlag } from "./demoSession";
 import { authApi } from "./endpoints";
 import { useT } from "./i18n";
+import { useActivityHeartbeat } from "./useActivityHeartbeat";
 
 const LOCALE_STORAGE_KEY = "weddly.locale";
 
@@ -42,6 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // modal so the user can resume without losing typed state.
   const [reauthReason, setReauthReason] = useState<"expired" | "admin" | null>(null);
   const { locale, setLocale: setI18nLocale } = useT();
+
+  // One heartbeat loop for the whole app, regardless of which shell the
+  // account lands in (couple /app, /vendor, planner) — AuthProvider is the
+  // one thing all three share. See useActivityHeartbeat.ts.
+  useActivityHeartbeat(Boolean(user) && !loading);
 
   // Sync the server-stored `user.locale` into the in-memory i18n state
   // exactly once per login — but only if this device hasn't explicitly

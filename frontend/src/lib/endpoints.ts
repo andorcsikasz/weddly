@@ -4768,3 +4768,9 @@ export const marketsPlayApi = {
       `/api/play/markets/${encodeURIComponent(code)}/questions/${questionId}/preview?side=${side}&stake=${stake}`,
     ),
 };
+
+/** "Still here" ping feeding the admin's per-user total-active-time metric —
+ *  see useActivityHeartbeat.ts for the call cadence. */
+export const activityApi = {
+  heartbeat: () => apiFetch<{ ok: true }>("POST", "/api/activity/heartbeat", {}),
+};

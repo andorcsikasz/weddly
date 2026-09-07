@@ -8581,6 +8581,12 @@ export interface LocaleMessages {
     analytics_money_avg_budget: string;
     analytics_money_avg_planned: string;
     analytics_money_avg_actual: string;
+    /** Per-head (target guest count) KPI tiles — "avg planned / guest". */
+    analytics_money_avg_planned_per_head: string;
+    analytics_money_avg_actual_per_head: string;
+    /** Sub-line on the per-head tiles: they cover couples that set a target
+     *  headcount, since money without a headcount cannot be normalised. */
+    analytics_money_per_head_denom: string;
     /** "median X · range Y–Z" sub-line under each KPI. */
     analytics_money_sub_distribution: string;
     /** Per-category table. */
@@ -8588,6 +8594,9 @@ export interface LocaleMessages {
     analytics_money_col_category: string;
     analytics_money_col_avg_planned: string;
     analytics_money_col_avg_actual: string;
+    /** Per-head columns in the per-category table. */
+    analytics_money_col_avg_planned_per_head: string;
+    analytics_money_col_avg_actual_per_head: string;
     analytics_money_col_couples_with_data: string;
     /** Budget histogram chart. */
     analytics_money_histogram_title: string;

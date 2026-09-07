@@ -13,6 +13,7 @@ import type {
 } from "@shared/types";
 import { CONFIG } from "../config";
 import { db, VISITOR_SYSTEM_USER_EMAIL } from "../db";
+import { totalActiveSecondsByUserId, totalActiveSecondsForCouple } from "../domain/activity";
 import { grantFreeAccess, revokeFreeAccess } from "../domain/billing";
 import { sendKind } from "../domain/emails";
 import { reserveAdminEmailSend } from "../domain/emails/admin_dedupe";
@@ -64,6 +65,7 @@ const EMPTY_ACTIVITY: AdminUserActivity = {
   feedback_count: 0,
   feedback_last_at: null,
   prior_flag_count: 0,
+  total_active_seconds: 0,
 };
 
 /** One pass over the engagement tables, keyed by user_id. Used by the admin
@@ -117,6 +119,10 @@ function activityByUserId(): Map<number, AdminUserActivity> {
   for (const r of flagRows) {
     const a = ensure(r.user_id);
     a.prior_flag_count = r.n;
+  }
+
+  for (const [userId, total] of totalActiveSecondsByUserId()) {
+    ensure(userId).total_active_seconds = total;
   }
 
   return out;
@@ -364,6 +370,7 @@ function toAdminCouple(
     demo_feature_counts: featureCounts,
     demo_total_events: totalEvents,
     invite_partner_reminded_at: row.invite_partner_reminded_at ?? null,
+    total_active_seconds: totalActiveSecondsForCouple(c.id),
     billing: c.billing,
     wedding_date: row.wedding_date ?? null,
     pause: c.status === "paused" ? pauseDetailFor(c.id) : null,

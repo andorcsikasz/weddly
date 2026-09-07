@@ -74,6 +74,7 @@ import { registerPlannerEventsRoutes } from "./routes/planner_events";
 import { registerPlannerPointsRoutes } from "./routes/planner_points";
 import { registerPlannerActivationRoutes } from "./routes/planner_activation";
 import { registerPlannerAccountRoutes } from "./routes/planner_account";
+import { registerActivityRoutes } from "./routes/activity";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAuthAppleRoutes } from "./routes/auth_apple";
 import { registerAuthGoogleRoutes } from "./routes/auth_google";
@@ -275,6 +276,7 @@ backfillLegacyBookingNotes();
 
 const router = new Router();
 registerHealthRoutes(router);
+registerActivityRoutes(router);
 registerAuthRoutes(router);
 registerAuthGoogleRoutes(router);
 registerAuthAppleRoutes(router);

@@ -136,11 +136,25 @@ function moneyAnalytics(audience: AnalyticsAudience): AdminMoneyAnalytics {
   // excludes demo / admin / test / archived / deleting; toggles add them back.
   const couples = db
     .prepare(
-      `SELECT id, budget_ceiling_huf FROM couples WHERE ${coupleAudienceSql("couples", audience)}`,
+      `SELECT id, budget_ceiling_huf, target_guest_count FROM couples WHERE ${coupleAudienceSql("couples", audience)}`,
     )
-    .all() as { id: number; budget_ceiling_huf: number | null }[];
+    .all() as {
+    id: number;
+    budget_ceiling_huf: number | null;
+    target_guest_count: number | null;
+  }[];
 
   const coupleIds = new Set(couples.map((c) => c.id));
+
+  // The per-head denominator. A couple's money ÷ its OWN guest count is the
+  // honest "Ft per head"; couples with no or zero target headcount are left
+  // out of every per-head figure (numerator AND denominator), because their
+  // money cannot be normalised.
+  const guestsByCouple = new Map<number, number>();
+  for (const c of couples) {
+    const guests = c.target_guest_count ?? 0;
+    if (guests > 0) guestsByCouple.set(c.id, guests);
+  }
 
   // Per-couple budget totals + per-category buckets, grouped server-side.
   // We pull only `budget_lines` rows whose couple_id is part of the active
@@ -158,7 +172,16 @@ function moneyAnalytics(audience: AnalyticsAudience): AdminMoneyAnalytics {
   // category (denominator for couples_with_data).
   const perCat = new Map<
     string,
-    { planned_sum: number; actual_sum: number; couples: Set<number> }
+    {
+      planned_sum: number;
+      actual_sum: number;
+      couples: Set<number>;
+      // Per-couple subtotals within the category — the denominators for the
+      // per-head averages, which must be computed couple-by-couple (each
+      // couple's share ÷ its own guest count) rather than on the sums.
+      plannedByCouple: Map<number, number>;
+      actualByCouple: Map<number, number>;
+    }
   >();
 
   for (const line of lineRows) {
@@ -173,12 +196,26 @@ function moneyAnalytics(audience: AnalyticsAudience): AdminMoneyAnalytics {
 
     let bucket = perCat.get(line.category);
     if (!bucket) {
-      bucket = { planned_sum: 0, actual_sum: 0, couples: new Set() };
+      bucket = {
+        planned_sum: 0,
+        actual_sum: 0,
+        couples: new Set(),
+        plannedByCouple: new Map(),
+        actualByCouple: new Map(),
+      };
       perCat.set(line.category, bucket);
     }
     bucket.planned_sum += line.planned_huf;
     bucket.actual_sum += line.actual_huf;
     bucket.couples.add(line.couple_id);
+    bucket.plannedByCouple.set(
+      line.couple_id,
+      (bucket.plannedByCouple.get(line.couple_id) ?? 0) + line.planned_huf,
+    );
+    bucket.actualByCouple.set(
+      line.couple_id,
+      (bucket.actualByCouple.get(line.couple_id) ?? 0) + line.actual_huf,
+    );
   }
 
   // couples_with_budget = ceiling set OR ≥1 budget_lines row. A couple with
@@ -201,6 +238,19 @@ function moneyAnalytics(audience: AnalyticsAudience): AdminMoneyAnalytics {
     .map((c) => actualByCouple.get(c.id))
     .filter((v): v is number => v !== undefined);
 
+  // Per-head values: per-couple total ÷ that couple's guests. A couple is
+  // excluded when its headcount is unknown, however much money it carries.
+  const plannedPerHeadValues: number[] = [];
+  const actualPerHeadValues: number[] = [];
+  for (const c of couples) {
+    const guests = guestsByCouple.get(c.id);
+    if (!guests) continue;
+    const planned = plannedByCouple.get(c.id);
+    if (planned !== undefined) plannedPerHeadValues.push(planned / guests);
+    const actual = actualByCouple.get(c.id);
+    if (actual !== undefined) actualPerHeadValues.push(actual / guests);
+  }
+
   const perCategory = BUDGET_CATEGORIES.map((category) => {
     const bucket = perCat.get(category);
     if (!bucket || bucket.couples.size === 0) {
@@ -208,14 +258,41 @@ function moneyAnalytics(audience: AnalyticsAudience): AdminMoneyAnalytics {
         category,
         avg_planned: 0,
         avg_actual: 0,
+        avg_planned_per_head: 0,
+        avg_actual_per_head: 0,
         couples_with_data: 0,
       };
     }
     const n = bucket.couples.size;
+    // Mean over couples of (category share ÷ that couple's guests), NOT the
+    // category sum ÷ total guests: the first treats couples equally, which is
+    // what every other per-couple mean on this surface does.
+    let plannedPerHeadSum = 0;
+    let plannedPerHeadCount = 0;
+    for (const [coupleId, planned] of bucket.plannedByCouple) {
+      const guests = guestsByCouple.get(coupleId);
+      if (guests) {
+        plannedPerHeadSum += planned / guests;
+        plannedPerHeadCount += 1;
+      }
+    }
+    let actualPerHeadSum = 0;
+    let actualPerHeadCount = 0;
+    for (const [coupleId, actual] of bucket.actualByCouple) {
+      const guests = guestsByCouple.get(coupleId);
+      if (guests) {
+        actualPerHeadSum += actual / guests;
+        actualPerHeadCount += 1;
+      }
+    }
     return {
       category,
       avg_planned: Math.round(bucket.planned_sum / n),
       avg_actual: Math.round(bucket.actual_sum / n),
+      avg_planned_per_head:
+        plannedPerHeadCount > 0 ? Math.round(plannedPerHeadSum / plannedPerHeadCount) : 0,
+      avg_actual_per_head:
+        actualPerHeadCount > 0 ? Math.round(actualPerHeadSum / actualPerHeadCount) : 0,
       couples_with_data: n,
     };
   });
@@ -271,6 +348,8 @@ function moneyAnalytics(audience: AnalyticsAudience): AdminMoneyAnalytics {
     budget_ceiling_huf: quantiles(ceilingValues),
     planned_huf: quantiles(plannedValues),
     actual_huf: quantiles(actualValues),
+    planned_per_head: quantiles(plannedPerHeadValues),
+    actual_per_head: quantiles(actualPerHeadValues),
     per_category: perCategory,
     budget_histogram: histogram,
     cost_histogram: costHistogram,

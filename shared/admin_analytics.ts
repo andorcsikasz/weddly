@@ -56,6 +56,14 @@ export interface AdminMoneyAnalytics {
   planned_huf: AdminAnalyticsStats;
   /** Same shape as planned, but over `actual_huf`. */
   actual_huf: AdminAnalyticsStats;
+  /** Per-head (target guest count) stats: each couple's total planned cost
+   *  ÷ its OWN `target_guest_count`, then stats across couples. Couples
+   *  without a positive guest count are excluded from BOTH sides of every
+   *  figure — their money cannot be normalised per head. */
+  planned_per_head: AdminAnalyticsStats;
+  /** Same shape as planned_per_head, but over per-couple total actual cost.
+   *  Couples without a positive guest count are excluded the same way. */
+  actual_per_head: AdminAnalyticsStats;
   /** Per-budget-category averages. `couples_with_data` is the denominator
    *  for the category — categories with 0 are still returned with zeros so
    *  the UI can render the full 11-row table without conditional gaps. */
@@ -63,6 +71,13 @@ export interface AdminMoneyAnalytics {
     category: BudgetCategory;
     avg_planned: number;
     avg_actual: number;
+    /** Mean over couples (with a positive target guest count) of the
+     *  category's planned share ÷ that couple's guests. 0 when no such
+     *  couple exists — a couple's money is never normalised per head if its
+     *  headcount is unknown. */
+    avg_planned_per_head: number;
+    /** Same normalisation as avg_planned_per_head, over `actual_huf`. */
+    avg_actual_per_head: number;
     couples_with_data: number;
   }>;
   /** Right-anchored histogram of `budget_ceiling_huf` for a quick visual.

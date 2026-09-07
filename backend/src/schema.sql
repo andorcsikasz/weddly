@@ -2892,3 +2892,18 @@ CREATE TABLE IF NOT EXISTS market_price_ticks (
   at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_market_price_ticks_question ON market_price_ticks(question_id, at ASC);
+
+-- Cumulative "time actually spent in the app" per user per UTC day, fed by
+-- one fixed-size increment per POST /api/activity/heartbeat (see
+-- domain/activity.ts) rather than a client-reported duration, so a user
+-- can't inflate their own total by lying about elapsed time — the server is
+-- the only clock. The day bucket (not one running total) is what lets the
+-- admin analytics draw a trend, not just a lifetime number.
+CREATE TABLE IF NOT EXISTS user_activity_daily (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day TEXT NOT NULL,                                           -- YYYY-MM-DD, UTC
+  active_seconds INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, day)
+);
+CREATE INDEX IF NOT EXISTS idx_user_activity_daily_user ON user_activity_daily(user_id);

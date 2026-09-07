@@ -2120,7 +2120,14 @@ describe("admin analytics", () => {
       budget_ceiling_huf: { count: number; sum: number };
       planned_huf: { count: number; sum: number };
       actual_huf: { count: number; sum: number };
-      per_category: Array<{ category: string; avg_planned: number; couples_with_data: number }>;
+      planned_per_head: { count: number; avg: number };
+      actual_per_head: { count: number; avg: number };
+      per_category: Array<{
+        category: string;
+        avg_planned: number;
+        avg_planned_per_head: number;
+        couples_with_data: number;
+      }>;
       budget_histogram: Array<{ bucket_max_huf: number; count: number }>;
       cost_histogram: Array<{ bucket_max_huf: number; count: number }>;
     }>("GET", "/api/admin/analytics/money", undefined, { token: adminToken });
@@ -2130,11 +2137,17 @@ describe("admin analytics", () => {
     expect(r.data.budget_ceiling_huf.count).toBe(0);
     expect(r.data.planned_huf.count).toBe(0);
     expect(r.data.actual_huf.count).toBe(0);
+    // Per-head reads start zeroed like every other window.
+    expect(r.data.planned_per_head.count).toBe(0);
+    expect(r.data.planned_per_head.avg).toBe(0);
+    expect(r.data.actual_per_head.count).toBe(0);
+    expect(r.data.actual_per_head.avg).toBe(0);
     // Per-category scaffold always returns the full 15-row table even when empty.
     expect(r.data.per_category.length).toBe(15);
     for (const c of r.data.per_category) {
       expect(c.couples_with_data).toBe(0);
       expect(c.avg_planned).toBe(0);
+      expect(c.avg_planned_per_head).toBe(0);
     }
     // Both histograms return the 0-bucket + the 6 size buckets, all zeroed.
     expect(r.data.budget_histogram.length).toBe(7);
@@ -2185,6 +2198,65 @@ describe("admin analytics", () => {
     // Both histograms cover the same couple universe, so their bars sum equally.
     const total = (h: Array<{ count: number }>) => h.reduce((s, b) => s + b.count, 0);
     expect(total(r.data.cost_histogram)).toBe(total(r.data.budget_histogram));
+  });
+
+  test("money — per-head stats divide each couple's money by its OWN guest count", async () => {
+    const adminToken = await bootstrapAdmin();
+    // bootstrapCouple seeds target_guest_count=80 + a 5M ceiling. Give it real
+    // lines (venue planned+actual, catering planned only) to pin the division.
+    const { coupleId: aCouple } = await bootstrapCouple("perhead-a@weddly.test");
+    // A second couple with a DIFFERENT guest count so the cross-couple mean is
+    // not degenerate.
+    const { coupleId: bCouple } = await bootstrapCouple("perhead-b@weddly.test");
+    db.prepare("UPDATE couples SET target_guest_count = 40 WHERE id = ?").run(bCouple);
+    const ts = now();
+    for (const [coupleId, category, planned, actual] of [
+      [aCouple, "venue", 3_000_000, 1_600_000],
+      [aCouple, "catering", 2_000_000, 0],
+      [bCouple, "venue", 1_000_000, 0],
+    ] as const) {
+      db.prepare(
+        `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(coupleId, category, category, planned, actual, ts, ts);
+    }
+
+    const r = await req<{
+      planned_per_head: { count: number; avg: number };
+      actual_per_head: { count: number; avg: number };
+      per_category: Array<{
+        category: string;
+        avg_planned_per_head: number;
+        avg_actual_per_head: number;
+      }>;
+    }>("GET", "/api/admin/analytics/money", undefined, { token: adminToken });
+    expect(r.status).toBe(200);
+    // Couple A: 5M / 80, 1.6M / 80. Couple B: 1M / 40. Mean of the per-couple
+    // ratios — couples count equally, exactly like every other per-couple mean.
+    expect(r.data.planned_per_head.count).toBe(2);
+    expect(r.data.planned_per_head.avg).toBe(43_750);
+    expect(r.data.actual_per_head.count).toBe(2);
+    expect(r.data.actual_per_head.avg).toBe(10_000);
+    // Per-category halves of the same arithmetic.
+    const venue = r.data.per_category.find((c) => c.category === "venue");
+    const catering = r.data.per_category.find((c) => c.category === "catering");
+    expect(venue?.avg_planned_per_head).toBe(31_250);
+    expect(venue?.avg_actual_per_head).toBe(10_000);
+    expect(catering?.avg_planned_per_head).toBe(25_000);
+    expect(catering?.avg_actual_per_head).toBe(0);
+
+    // A couple whose headcount is unknown drops out of BOTH sides: its money is
+    // real, but it cannot be normalised per head.
+    db.prepare("UPDATE couples SET target_guest_count = NULL WHERE id = ?").run(bCouple);
+    const r2 = await req<{
+      planned_per_head: { count: number; avg: number };
+      per_category: Array<{ category: string; avg_planned_per_head: number }>;
+    }>("GET", "/api/admin/analytics/money", undefined, { token: adminToken });
+    expect(r2.data.planned_per_head.count).toBe(1);
+    expect(r2.data.planned_per_head.avg).toBe(62_500);
+    expect(r2.data.per_category.find((c) => c.category === "venue")?.avg_planned_per_head).toBe(
+      37_500,
+    );
   });
 
   test("activity — empty: registered=0, signups.total=0", async () => {

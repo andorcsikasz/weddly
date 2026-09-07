@@ -366,6 +366,30 @@ export function formatLastActive(
   }).format(new Date(unixMs));
 }
 
+/**
+ * Cumulative "time spent in the app" ladder for the admin's per-user/per-
+ * workspace total (`AdminUserActivity.total_active_seconds`,
+ * `AdminCoupleView.total_active_seconds`). Seconds in, a compact duration
+ * out — "-" at zero (nobody has sent a heartbeat yet, e.g. a pre-launch
+ * account), then minutes, then hours+minutes, then days+hours once it
+ * crosses a full day.
+ */
+export function formatActiveDuration(
+  totalSeconds: number,
+  t: (k: string, vars?: Record<string, string | number>) => string,
+): string {
+  if (totalSeconds <= 0) return t("admin.total_time_none");
+  if (totalSeconds < 60) return t("admin.total_time_under_minute");
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  if (totalMinutes < 60) return t("admin.total_time_minutes", { n: totalMinutes });
+  const totalHours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (totalHours < 24) return t("admin.total_time_hm", { h: totalHours, m: minutes });
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  return t("admin.total_time_dh", { d: days, h: hours });
+}
+
 const MONTH_FORMATTER = (locale: Locale) =>
   new Intl.DateTimeFormat(intlLocale(locale), { month: "long", year: "numeric" });
 
