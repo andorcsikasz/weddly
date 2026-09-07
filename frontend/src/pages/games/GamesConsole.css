@@ -23,6 +23,7 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
   padding: 5px 12px;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -35,52 +36,48 @@
 .gc-tile {
   position: relative;
   display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   overflow: hidden;
-  border-radius: 24px;
-  padding: 32px;
-  min-height: 150px;
+  border-radius: 16px;
+  padding: 28px 32px;
+  min-height: 180px;
   isolation: isolate;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease;
 }
 .gc-tile:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
-/* Kahoot's own purple, official primary #46178f, lifted toward a brighter
-   violet at the glow corner. */
+/* Kahoot's own purple, official primary #46178f — cooler, more restrained. */
 .gc-tile-quiz {
-  background: radial-gradient(120% 140% at 100% 0%, #8b3dff 0%, #46178f 46%, #1b0b3a 100%);
-  box-shadow: 0 20px 60px -20px rgba(139, 61, 255, 0.55);
+  background: linear-gradient(135deg, #1a1033 0%, #2d1a54 40%, #46178f 100%);
+  border: 1px solid rgba(139, 61, 255, 0.2);
+  box-shadow: 0 8px 32px -8px rgba(70, 23, 143, 0.4);
 }
 .gc-tile-quiz:hover {
-  box-shadow: 0 24px 70px -16px rgba(139, 61, 255, 0.7);
+  border-color: rgba(139, 61, 255, 0.35);
+  box-shadow: 0 12px 40px -8px rgba(70, 23, 143, 0.55);
 }
-/* Polymarket's own blue, official primary #1652f0. */
+/* Polymarket's own blue, official primary #1652f0 — cooler, more restrained. */
 .gc-tile-markets {
-  background: radial-gradient(120% 140% at 100% 0%, #4c86ff 0%, #1652f0 46%, #081a4d 100%);
-  box-shadow: 0 20px 60px -20px rgba(22, 82, 240, 0.5);
+  background: linear-gradient(135deg, #0a1628 0%, #0f2847 40%, #1652f0 100%);
+  border: 1px solid rgba(22, 82, 240, 0.2);
+  box-shadow: 0 8px 32px -8px rgba(22, 82, 240, 0.35);
 }
 .gc-tile-markets:hover {
-  box-shadow: 0 24px 70px -16px rgba(22, 82, 240, 0.65);
+  border-color: rgba(22, 82, 240, 0.35);
+  box-shadow: 0 12px 40px -8px rgba(22, 82, 240, 0.5);
 }
 .gc-tile-glow {
-  position: absolute;
-  z-index: -1;
-  border-radius: 999px;
-  filter: blur(38px);
-  opacity: 0.55;
-  background: rgba(255, 255, 255, 0.35);
-  width: 160px;
-  height: 160px;
-  top: -60px;
-  right: -50px;
+  display: none;
 }
 .gc-tile-deco {
   position: absolute;
   z-index: -1;
   inset: 0;
-  opacity: 0.5;
+  opacity: 0.4;
   pointer-events: none;
 }
 /* Four little kahoot shapes scattered top-right of the quiz tile — same
@@ -94,24 +91,24 @@
   height: 0;
   border-left: 9px solid transparent;
   border-right: 9px solid transparent;
-  border-bottom: 15px solid rgba(255, 255, 255, 0.55);
+  border-bottom: 15px solid rgba(255, 255, 255, 0.45);
 }
 .gc-shape-diamond {
   width: 14px;
   height: 14px;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.3);
   rotate: 45deg;
 }
 .gc-shape-circle {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.35);
 }
 .gc-shape-square {
   width: 13px;
   height: 13px;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* ── Predictions board (Polymarket-flavoured) ────────────────────────────── */
@@ -127,7 +124,7 @@
   color: white;
 }
 .gc-pin span {
-  font-family: "General Sans", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;

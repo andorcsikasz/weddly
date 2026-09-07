@@ -4280,8 +4280,15 @@ const hr: LocaleMessages = {
     title: "Igre",
     subtitle:
       "Dva načina da svi gosti igraju — pridružuju se s mobitela, bez prijave i instaliranja aplikacije.",
+    cta: "Otvori igru",
+    quiz_kicker: "Kviz",
     quiz_card_title: "Kahoot x Weddly",
+    quiz_card_description:
+      "Napravite osobni kviz o vašoj priči — gosti odgovaraju s mobitela i bore se za vrh ljestvice.",
+    markets_kicker: "Tabla predviđanja",
     markets_card_title: "Polymarket x Weddly",
+    markets_card_description:
+      "Neka gosti pogađaju o večeri — tko prvi plače, dokle traje zabava, što mladenka misli o torti.",
   },
   quiz: {
     list: {

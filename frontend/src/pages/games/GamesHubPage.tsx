@@ -7,11 +7,10 @@
 // app shell — same #0c1019 canvas as the public /games teaser and the live
 // quiz host screen, so walking from this hub into either game feels like
 // one product instead of a plain nav page bolted onto two flashy ones. Each
-// tile is deliberately bare — no icon, no copy, no status pill — just the
-// game's own brand name set in white against that game's own brand colour:
-// Kahoot's purple for the quiz, Polymarket's blue for the predictions board.
+// tile carries a heading in Space Grotesk, a short description, and an
+// arrow CTA — minimal cool panels against the game's own brand colour.
 
-import { Gamepad2, Sparkles } from "lucide-react";
+import { ArrowRight, Gamepad2, Sparkles, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useT } from "../../lib/i18n";
 import "./GamesConsole.css";
@@ -39,8 +38,8 @@ function SparkDeco() {
       <polyline
         points="0,46 24,40 48,44 72,26 96,30 120,14 144,20 160,8"
         fill="none"
-        stroke="rgba(255,255,255,0.4)"
-        strokeWidth="3"
+        stroke="rgba(255,255,255,0.3)"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -52,16 +51,40 @@ function GameTile({
   to,
   tone,
   title,
+  description,
+  kicker,
+  cta,
 }: {
   to: string;
   tone: "quiz" | "markets";
   title: string;
+  description: string;
+  kicker: string;
+  cta: string;
 }) {
   return (
-    <Link to={to} className={`gc-tile gc-tile-${tone} group flex items-center`}>
-      <span className="gc-tile-glow" aria-hidden="true" />
+    <Link to={to} className={`gc-tile gc-tile-${tone} group`}>
       {tone === "quiz" ? <ShapeCluster /> : <SparkDeco />}
-      <h2 className="relative z-10 font-grotesk text-3xl text-white sm:text-4xl">{title}</h2>
+      <div className="relative z-10">
+        <span className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-white/50">
+          {tone === "quiz" ? (
+            <Gamepad2 size={14} aria-hidden />
+          ) : (
+            <TrendingUp size={14} aria-hidden />
+          )}
+          {kicker}
+        </span>
+        <h2 className="font-space text-2xl font-bold text-white sm:text-3xl">{title}</h2>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-white/60">{description}</p>
+        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white/80 transition-colors group-hover:text-white">
+          {cta}
+          <ArrowRight
+            size={16}
+            className="transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
+        </span>
+      </div>
     </Link>
   );
 }
@@ -72,22 +95,32 @@ export default function GamesHubPage() {
   return (
     <div className="gc-page min-h-screen px-4 pb-16 pt-8 sm:px-6 sm:pt-10 lg:px-8 xl:px-10">
       <div className="mx-auto w-full max-w-5xl">
-        <header className="mb-10">
+        <header className="mb-12">
           <span className="gc-eyebrow">
             <Sparkles size={12} aria-hidden /> Wēddly Games
           </span>
-          <h1 className="mt-4 flex items-center gap-2.5 font-grotesk text-3xl text-white sm:text-4xl">
-            <Gamepad2 size={30} aria-hidden /> {t("games_hub.title")}
+          <h1 className="mt-4 font-space text-3xl font-bold text-white sm:text-4xl">
+            {t("games_hub.title")}
           </h1>
-          <p className="mt-2 max-w-xl text-white/60">{t("games_hub.subtitle")}</p>
+          <p className="mt-3 max-w-xl text-base text-white/55">{t("games_hub.subtitle")}</p>
         </header>
 
         <div className="flex flex-col gap-5">
-          <GameTile to="/app/games/quiz" tone="quiz" title={t("games_hub.quiz_card_title")} />
+          <GameTile
+            to="/app/games/quiz"
+            tone="quiz"
+            title={t("games_hub.quiz_card_title")}
+            description={t("games_hub.quiz_card_description")}
+            kicker={t("games_hub.quiz_kicker")}
+            cta={t("games_hub.cta")}
+          />
           <GameTile
             to="/app/games/markets"
             tone="markets"
             title={t("games_hub.markets_card_title")}
+            description={t("games_hub.markets_card_description")}
+            kicker={t("games_hub.markets_kicker")}
+            cta={t("games_hub.cta")}
           />
         </div>
       </div>

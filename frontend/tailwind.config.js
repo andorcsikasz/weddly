@@ -311,6 +311,17 @@ export default {
           "system-ui",
           "sans-serif",
         ],
+        // Geometric sans for the games console — Space Grotesk leads,
+        // system grotesques are fallbacks for the swap window only.
+        space: [
+          '"Space Grotesk"',
+          '"Helvetica Neue"',
+          "Helvetica",
+          "Inter",
+          "Arial",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       boxShadow: {
         soft: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",

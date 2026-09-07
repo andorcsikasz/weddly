@@ -4247,8 +4247,15 @@ const en: LocaleMessages = {
     title: "Games",
     subtitle:
       "Two ways to get the whole room playing — guests join from their phone, no login or app required.",
+    cta: "Open game",
+    quiz_kicker: "Trivia quiz",
     quiz_card_title: "Kahoot x Weddly",
+    quiz_card_description:
+      "Build a personalised quiz about your story — guests answer from their phones and race to the top of the leaderboard.",
+    markets_kicker: "Prediction board",
     markets_card_title: "Polymarket x Weddly",
+    markets_card_description:
+      "Let guests bet on the night — who cries first, how late the party runs, what the bride thinks of the cake.",
   },
   quiz: {
     list: {

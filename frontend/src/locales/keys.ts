@@ -5008,12 +5008,16 @@ export interface LocaleMessages {
   games_hub: {
     title: string;
     subtitle: string;
-    /** The two tiles carry nothing but a brand name — no icon, no status,
-     *  no description — set against that game's own brand colour (Kahoot
-     *  purple / Polymarket blue in GamesConsole.css). Not translated: a
-     *  brand pairing reads the same in every locale. */
+    cta: string;
+    /** The two tiles carry a kicker, a brand name, a short description and
+     *  an arrow CTA against that game's own brand colour (Kahoot purple /
+     *  Polymarket blue in GamesConsole.css). */
+    quiz_kicker: string;
     quiz_card_title: string;
+    quiz_card_description: string;
+    markets_kicker: string;
     markets_card_title: string;
+    markets_card_description: string;
   };
   /** Live wedding quiz game — /app/games/quiz (list + builder),
    *  /app/games/quiz/:id/host (the host console), and /play/:code (the

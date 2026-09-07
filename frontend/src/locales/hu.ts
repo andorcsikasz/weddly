@@ -4279,8 +4279,15 @@ const hu: LocaleMessages = {
     title: "Játékok",
     subtitle:
       "Kétféleképp hozhatjátok játékba a vendégeket — telefonról csatlakoznak, bejelentkezés és appletöltés nélkül.",
+    cta: "Játék megnyitása",
+    quiz_kicker: "Kvíz",
     quiz_card_title: "Kahoot x Weddly",
+    quiz_card_description:
+      "Készítsetek személyes kvízt a történetetekről — a vendégek a telefonjukról válaszolnak, és a ranglista tetejéért versenyeznek.",
+    markets_kicker: "Tippjáték",
     markets_card_title: "Polymarket x Weddly",
+    markets_card_description:
+      "Hadd tippeljenek a vendégek az estére — ki sír előbb, meddig tart a buli, és mit szól a menyasszony a tortához.",
   },
   quiz: {
     list: {

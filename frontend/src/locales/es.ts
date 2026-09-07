@@ -4329,8 +4329,15 @@ const es: LocaleMessages = {
     title: "Juegos",
     subtitle:
       "Dos formas de que todo el mundo juegue — los invitados se unen desde el móvil, sin iniciar sesión ni instalar nada.",
+    cta: "Abrir juego",
+    quiz_kicker: "Quiz de trivia",
     quiz_card_title: "Kahoot x Weddly",
+    quiz_card_description:
+      "Crea un quiz personalizado sobre vuestra historia — los invitados responden desde el móvil y compiten por el primer puesto.",
+    markets_kicker: "Panel de predicciones",
     markets_card_title: "Polymarket x Weddly",
+    markets_card_description:
+      "Deja que los invitados apuesten por la noche — quién llora primero, hasta cuándo dura la fiesta, qué opina la novia de la tarta.",
   },
   quiz: {
     list: {

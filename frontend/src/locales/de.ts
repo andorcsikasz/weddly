@@ -4372,8 +4372,15 @@ const de: LocaleMessages = {
     title: "Spiele",
     subtitle:
       "Zwei Wege, alle Gäste mitspielen zu lassen — sie steigen per Smartphone ein, ganz ohne Login oder App.",
+    cta: "Spiel öffnen",
+    quiz_kicker: "Quiz",
     quiz_card_title: "Kahoot x Weddly",
+    quiz_card_description:
+      "Erstellt ein persönliches Quiz über eure Geschichte — die Gäste antworten vom Handy und kämpfen um den ersten Platz.",
+    markets_kicker: "Tippspiel",
     markets_card_title: "Polymarket x Weddly",
+    markets_card_description:
+      "Lasst die Gäste auf den Abend wetten — wer zuerst weint, wie lange die Party dauert und was die Braut von der Torte hält.",
   },
   quiz: {
     list: {
