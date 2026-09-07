@@ -27,6 +27,7 @@ import {
   LayoutDashboard,
   LogOut,
   MessageCircle,
+  MessageSquare,
   Moon,
   MoreHorizontal,
   PanelLeftClose,
@@ -42,6 +43,7 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import type { VendorClientView } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { useAuth } from "../lib/auth";
 import {
@@ -49,6 +51,7 @@ import {
   VENDOR_STATS_STALE_EVENT,
   vendorBillingApi,
   vendorAccountApi,
+  vendorClientsApi,
   vendorListingApi,
   vendorStatsApi,
 } from "../lib/endpoints";
@@ -255,6 +258,139 @@ function VendorNotificationBell({
               <span>{t("vendor.notif.new_reviews", { count: String(newReviews) })}</span>
             </Link>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Header message/outreach icon + dropdown. Two sections in one panel:
+ *  "Beszélgetések" — the couple ↔ vendor threads, and "Megkeresések" — the
+ *  outreach explainer. The couple-facing OutreachInbox owns the "send to up to
+ *  5 vendors" wording; here the vendor sees how replies and unclaimed listings
+ *  behave, so the panel is a source of truth rather than a separate definition.
+ *  Sits at the front of the header action cluster so the vendor's own
+ *  correspondence is one tap from any surface, the same way the bell is. */
+function VendorMessagesPanel({ unreadMessages }: { unreadMessages: number }) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const [clients, setClients] = useState<VendorClientView[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // Load the client rows the first time the panel opens, so the conversation
+  // list is fresh rather than a stale snapshot taken at mount.
+  useEffect(() => {
+    if (!open || loaded) return;
+    let cancelled = false;
+    vendorClientsApi
+      .list()
+      .then(({ clients: rows }) => {
+        if (cancelled) return;
+        setClients(rows);
+        setLoaded(true);
+      })
+      .catch(() => {
+        /* best-effort: the panel just shows the outreach note */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, loaded]);
+
+  function toggleOpen() {
+    setOpen((v) => !v);
+  }
+
+  const conversations = clients.filter((c) => c.unread_count > 0);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={toggleOpen}
+        className={`relative ${HEADER_ICON_BTN}`}
+        aria-label={t("vendor.messages.aria")}
+        title={t("vendor.messages.heading")}
+      >
+        <MessageSquare size={18} aria-hidden="true" />
+        {unreadMessages > 0 && (
+          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-steel-700 dark:ring-steel-900">
+            {unreadMessages > 99 ? "99+" : unreadMessages}
+          </span>
+        )}
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-1rem)] origin-top-right rounded-2xl border border-paper-300 bg-white p-2 font-grotesk shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
+            {t("vendor.messages.heading")}
+          </p>
+          <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
+
+          {conversations.length === 0 && (
+            <p className="px-3 py-2 text-sm text-ink-500 dark:text-umber-300">
+              {t("vendor.messages.no_unread")}
+            </p>
+          )}
+          {conversations.map((c) => (
+            <Link
+              key={c.id}
+              to={`/vendor/clients/${c.id}`}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              <MessageCircle
+                size={15}
+                className="shrink-0 text-ink-400 dark:text-paper-400"
+                aria-hidden="true"
+              />
+              <span className="flex-1 truncate">{c.couple_display_name}</span>
+              <span className="shrink-0 rounded-full bg-blush-500 px-1.5 text-[10px] font-semibold leading-[1.4] text-white">
+                {c.unread_count}
+              </span>
+            </Link>
+          ))}
+
+          <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
+
+          <p className="px-3 py-2 text-sm text-ink-700 dark:text-paper-100">
+            {t("vendor.messages.reply_note")}
+          </p>
+          <Link
+            to="/vendor/clients"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <Inbox
+              size={15}
+              className="shrink-0 text-ink-400 dark:text-paper-400"
+              aria-hidden="true"
+            />
+            <span>{t("vendor.messages.view_clients")}</span>
+          </Link>
         </div>
       )}
     </div>
@@ -853,6 +989,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
             {/* Below lg the compact chip replaces the full rail card so the
                 reward UI never competes with client content. */}
             <VendorPointsChip points={points} className="lg:hidden" />
+            <VendorMessagesPanel unreadMessages={unreadMessages} />
             <VendorNotificationBell
               newInquiries={newInquiries}
               upcomingWeek={upcomingWeek}

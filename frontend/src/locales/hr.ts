@@ -795,6 +795,14 @@ const hr: LocaleMessages = {
       new_reviews: "{count} novih recenzija",
       unread_messages: "{count} nepročitanih poruka",
     },
+    messages: {
+      aria: "Poruke i upiti",
+      heading: "Poruke",
+      no_unread: "Nema nepročitanih razgovora.",
+      reply_note:
+        "Odgovor dobavljača Weddlyja pojavljuje se u Razgovorima. Profil koji još nitko nije preuzeo odgovara izravno na tvoju osobnu adresu e-pošte.",
+      view_clients: "Prikaži sve poruke",
+    },
     setup: {
       panel_title: "Postavljanje oglasa · {pct}%",
       step_cover: "Naslovna fotografija",

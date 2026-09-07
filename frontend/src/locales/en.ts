@@ -772,6 +772,14 @@ const en: LocaleMessages = {
       new_reviews: "{count} new reviews",
       unread_messages: "{count} unread messages",
     },
+    messages: {
+      aria: "Messages and outreach",
+      heading: "Messages",
+      no_unread: "No unread conversations.",
+      reply_note:
+        "A Weddly vendor's reply appears under Conversations. A listing nobody has claimed yet replies straight to your own email.",
+      view_clients: "View all messages",
+    },
     setup: {
       panel_title: "Listing setup · {pct}%",
       step_cover: "Cover photo",

@@ -799,6 +799,14 @@ const es: LocaleMessages = {
       new_reviews: "{count} reseñas nuevas",
       unread_messages: "{count} mensajes sin leer",
     },
+    messages: {
+      aria: "Mensajes y consultas",
+      heading: "Mensajes",
+      no_unread: "No hay conversaciones sin leer.",
+      reply_note:
+        "La respuesta de un proveedor de Weddly aparece en Conversaciones. Un perfil que nadie ha reclamado aún responde directamente a tu propio correo electrónico.",
+      view_clients: "Ver todos los mensajes",
+    },
     setup: {
       panel_title: "Configuración de la ficha · {pct}%",
       step_cover: "Foto de portada",

@@ -1090,6 +1090,16 @@ export interface LocaleMessages {
       /** Receives `{count}` (unread couple messages across every thread). */
       unread_messages: string;
     };
+    /** Header message + outreach panel: the couple ↔ vendor threads with unread
+     *  cues, plus the explainer of how replies arrive (in-app vs to the
+     *  vendor's own email for unclaimed listings). */
+    messages: {
+      aria: string;
+      heading: string;
+      no_unread: string;
+      reply_note: string;
+      view_clients: string;
+    };
     /** Listing-setup checklist. Each `step_*` suffix matches a
      *  `VendorListingStepKey` in shared/vendor_clients.ts AND the
      *  `#vendor-section-<key>` anchor on the listing editor, so the three stay

@@ -816,6 +816,14 @@ const de: LocaleMessages = {
       new_reviews: "{count} neue Bewertungen",
       unread_messages: "{count} ungelesene Nachrichten",
     },
+    messages: {
+      aria: "Nachrichten und Anfragen",
+      heading: "Nachrichten",
+      no_unread: "Keine ungelesenen Unterhaltungen.",
+      reply_note:
+        "Die Antwort eines Weddly-Anbieters erscheint unter „Unterhaltungen“. Ein noch nicht beanspruchtes Profil antwortet direkt auf deine eigene E-Mail-Adresse.",
+      view_clients: "Alle Nachrichten ansehen",
+    },
     setup: {
       panel_title: "Eintrag einrichten · {pct} %",
       step_cover: "Titelbild",

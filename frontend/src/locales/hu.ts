@@ -777,6 +777,14 @@ const hu: LocaleMessages = {
       new_reviews: "{count} új vélemény",
       unread_messages: "{count} olvasatlan üzenet",
     },
+    messages: {
+      aria: "Üzenetek és megkeresések",
+      heading: "Üzenetek",
+      no_unread: "Nincs olvasatlan beszélgetés.",
+      reply_note:
+        "A Weddlys szolgáltatók válasza a Beszélgetések fülön jelenik meg. A még nem igényelt profilok közvetlenül a saját e-mail címedre válaszolnak.",
+      view_clients: "Összes üzenet megtekintése",
+    },
     setup: {
       panel_title: "Hirdetés beállítása · {pct}%",
       step_cover: "Borítókép",
