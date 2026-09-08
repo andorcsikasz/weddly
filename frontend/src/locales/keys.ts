@@ -169,12 +169,6 @@ export interface LocaleMessages {
     email_setting_off: string;
     email_setting_overdue: string;
     email_setting_overdue_due_soon: string;
-    /** Dashboard "how are you doing" card. */
-    dash_title: string;
-    dash_on_track: string;
-    dash_overdue: string;
-    dash_due_soon: string;
-    dash_cta: string;
     settings_title: string;
     settings_method_label: string;
     settings_method_inapp: string;

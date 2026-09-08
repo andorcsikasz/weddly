@@ -52,7 +52,6 @@ import {
 import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { PlannerApprovalBanner } from "../components/PlannerApprovalBanner";
-import { TimelineStatusCard } from "../components/TimelineStatusCard";
 import { KeyInfoCard } from "../components/KeyInfoCard";
 import { RateVendorsCard } from "../components/RateVendorsCard";
 import { UpcomingTasksCard } from "../components/UpcomingTasksCard";
@@ -1171,10 +1170,6 @@ export default function DashboardPage() {
         dietary !== null &&
         dietary.counted_guests > 0 && <CatererSummaryCard dietary={dietary} />}
 
-      {/* Proactive-timeline nudge — only renders when something's overdue or
-          due soon, so an on-track couple sees no clutter. */}
-      {!dayOfMode && !weddingPast && <TimelineStatusCard />}
-
       {/* ── KPI tiles — hidden in day-of mode; the DayOfPanel above
           surfaces a compact stat row instead. ──────────────────────── */}
       {!dayOfMode && (
@@ -1504,9 +1499,12 @@ export default function DashboardPage() {
 type TileTone = "blush" | "sage" | "amber" | "ink";
 
 const TILE_TONE_CLASSES: Record<TileTone, string> = {
-  blush: "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300",
-  sage: "bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300",
-  amber: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
+  // Icons stay a single mono colour across every tile (owner direction) — the
+  // named tones below still exist so callers compile, but every one resolves to
+  // the same neutral chip rather than a per-tile accent.
+  blush: "bg-ink-100 text-ink-700 dark:bg-ink-500/20 dark:text-ink-200",
+  sage: "bg-ink-100 text-ink-700 dark:bg-ink-500/20 dark:text-ink-200",
+  amber: "bg-ink-100 text-ink-700 dark:bg-ink-500/20 dark:text-ink-200",
   ink: "bg-ink-100 text-ink-700 dark:bg-ink-500/20 dark:text-ink-200",
 };
 
@@ -1549,7 +1547,7 @@ function KpiTile({
       role="group"
       aria-label={label}
       title={label}
-      className="card flex items-start gap-3 p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
+      className="card flex items-center gap-3 p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
     >
       <TileIcon tone={tone}>{icon}</TileIcon>
       {/* Collapsed: just value + unit (+ optional bar) → a tighter box so the
@@ -1673,7 +1671,7 @@ function BudgetKpiTile({
       role="group"
       aria-label={label}
       title={label}
-      className="card flex items-start gap-3 p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
+      className="card flex items-center gap-3 p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
     >
       <TileIcon tone="amber">
         <Wallet size={16} aria-hidden="true" />
@@ -1866,7 +1864,9 @@ function DaysToGoTile({
       role="group"
       aria-label={label}
       title={label}
-      className="card relative flex items-start gap-3 p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
+      className={`card relative flex gap-3 p-3 sm:p-4 !border-ink-700 dark:!border-paper-100 ${
+        editing ? "items-start" : "items-center"
+      }`}
     >
       <TileIcon tone="blush">
         <CalendarHeart size={16} aria-hidden="true" />

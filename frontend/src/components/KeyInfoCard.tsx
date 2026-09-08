@@ -424,7 +424,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
               open ? "pointer-events-none opacity-0" : "opacity-100"
             }`}
           >
-            <span className="inline-block h-4 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
+            <span
+              className="inline-block h-4 w-0.5 rounded-full bg-ink-700 dark:bg-paper-100"
+              aria-hidden="true"
+            />
             {t("dashboard.keyinfo_title")}
           </h2>
           <span aria-hidden="true" className={headerIconClass(open)}>
@@ -489,7 +492,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                           {t("dashboard.keyinfo_venue_label")}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <span className="block truncate text-sm font-semibold leading-tight text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300">
+                          <span className="block truncate text-sm font-semibold leading-tight text-ink-900 transition-colors group-hover:text-ink-700 dark:text-paper-50 dark:group-hover:text-paper-100">
                             {venue.name}
                           </span>
                           {linkedDir?.source === "claimed" && (
@@ -509,7 +512,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                           href={`tel:${venue.phone.replace(/\s+/g, "")}`}
                           title={venue.phone}
                           aria-label={`${t("dashboard.keyinfo_call")} ${venue.phone}`}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush-600 text-white transition-colors hover:bg-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-ink-900 text-white transition-colors hover:bg-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
                         >
                           <Phone size={15} aria-hidden="true" />
                         </a>
@@ -532,7 +535,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                           }}
                           aria-label={t("dashboard.keyinfo_add_phone")}
                           title={t("dashboard.keyinfo_add_phone")}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-paper-300 text-ink-400 transition-colors hover:border-blush-400 hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-blush-400 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-paper-300 text-ink-400 transition-colors hover:border-ink-700 hover:text-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-paper-200 dark:hover:text-paper-100 dark:focus-visible:ring-paper-100"
                         >
                           <Plus size={15} aria-hidden="true" />
                         </button>
@@ -542,7 +545,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                 ) : (
                   <Link
                     to="/app/vendors"
-                    className="flex items-center gap-3 rounded-2xl border border-dashed border-paper-300 px-4 py-2 text-sm text-ink-600 transition-colors hover:border-blush-300 hover:bg-paper-100/50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-900/40"
+                    className="flex items-center gap-3 rounded-2xl border border-dashed border-paper-300 px-4 py-2 text-sm text-ink-600 transition-colors hover:border-ink-700 hover:bg-paper-100/50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-900/40"
                   >
                     <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-umber-200">
                       <MapPin size={16} aria-hidden="true" />
@@ -606,7 +609,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                           </span>
                           <span className="pointer-events-none min-w-0 flex-1">
                             <span className="flex items-center gap-1.5">
-                              <span className="block truncate text-sm font-medium leading-tight text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300">
+                              <span className="block truncate text-sm font-medium leading-tight text-ink-900 transition-colors group-hover:text-ink-700 dark:text-paper-50 dark:group-hover:text-paper-100">
                                 {c.name}
                               </span>
                               {c.verified && (
@@ -627,7 +630,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                               href={`tel:${c.phone.replace(/\s+/g, "")}`}
                               title={c.phone}
                               aria-label={`${t("dashboard.keyinfo_call")} ${c.phone}`}
-                              className="relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
+                              className="relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-ink-900 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
                             >
                               <Phone size={14} aria-hidden="true" />
                             </a>
@@ -660,7 +663,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                               }}
                               aria-label={t("dashboard.keyinfo_add_phone")}
                               title={t("dashboard.keyinfo_add_phone")}
-                              className="relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-paper-300 text-ink-400 transition-colors hover:border-blush-400 hover:text-blush-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-blush-400 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
+                              className="relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-paper-300 text-ink-400 transition-colors hover:border-ink-700 hover:text-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-600 dark:text-umber-300 dark:hover:border-paper-200 dark:hover:text-paper-100 dark:focus-visible:ring-paper-100"
                             >
                               <Plus size={14} aria-hidden="true" />
                             </button>
@@ -761,7 +764,7 @@ function CallPill({ phone }: { phone: string }) {
       href={`tel:${phone.replace(/\s+/g, "")}`}
       title={phone}
       aria-label={`${t("dashboard.keyinfo_call")} ${phone}`}
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-ink-900 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
     >
       <Phone size={14} aria-hidden="true" />
     </a>
@@ -815,7 +818,7 @@ function PhoneEditor({
         disabled={saving || !value.trim()}
         aria-label={saveLabel}
         title={saveLabel}
-        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blush-600 text-white transition-colors hover:bg-blush-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink-900 text-white transition-colors hover:bg-ink-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
       >
         <Check size={14} aria-hidden="true" />
       </button>
