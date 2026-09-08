@@ -23,6 +23,16 @@
   color: white;
 }
 
+/* The app shell's warm-text retint (index.css) recolours every h1/h2 inside
+   [data-app-shell] to umber-900 — nearly black, and it is UNLAYERED so it
+   outranks the Tailwind `text-white` utility those headings carry. On this
+   deliberately dark canvas that paints the hub title and every card heading
+   as dark-on-dark. The console is "solid, readable white" by design, so its
+   headings always ride the page white, in both themes. */
+.gc-page :is(h1, h2) {
+  color: white !important;
+}
+
 /* ── Shared primitives ──────────────────────────────────────────────────── */
 
 .gc-eyebrow {
