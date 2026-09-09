@@ -304,6 +304,14 @@ function DashboardLegacyRedirect() {
   return <Navigate to={{ pathname: "/app", hash }} replace />;
 }
 
+/** Legacy `/app/messages/:bookingId` deep links (every backend mail into a
+ *  thread) now live under the vendors page. Preserve the thread id through the
+ *  move so an old email click still lands on the right conversation. */
+function LegacyMessagesThreadRedirect() {
+  const { bookingId } = useParams<{ bookingId: string }>();
+  return <Navigate to={`/app/vendors/messages/${bookingId}`} replace />;
+}
+
 /** Visible unsubscribe links in lifecycle emails point at
  *  `/unsubscribe/<token>`. In production the backend router serves that path
  *  directly (before the SPA fallback); this route only exists so the dev
@@ -1177,32 +1185,39 @@ export default function App() {
               </Page>
             }
           />
+          {/* The couple's half of the vendor conversations, plus what they sent,
+          live UNDER /app/vendors — reached from the message button in the
+          suppliers top row, so the couple meets messages where they meet the
+          directory. Two paths, one page: the tabbed list, or one thread. Being
+          nested means `matchNavDestination` still credits the Szolgáltatók rail
+          row, so messages needs no sidebar entry of its own. */}
+          <Route
+            path="vendors/messages"
+            element={
+              <Page>
+                <MessagesPage />
+              </Page>
+            }
+          />
+          <Route
+            path="vendors/messages/:bookingId"
+            element={
+              <Page>
+                <MessagesPage />
+              </Page>
+            }
+          />
           <Route path="suppliers" element={<Navigate to="/app/vendors" replace />} />
-          {/* The outreach inbox is now the second tab of /app/messages — it and
-            the vendor replies are one surface. The old destination redirects
-            rather than 404s: it is in the rail's visited history, in bookmarks,
-            and in a couple of code comments. (It also still lives as a section
-            at the bottom of /app/vendors, where a couple meets it while
-            shortlisting.) */}
-          <Route path="outreach" element={<Navigate to="/app/messages?tab=outreach" replace />} />
-          {/* The couple's half of the vendor conversations, plus what they sent.
-            Two paths, one page: the tabbed list, or one thread. */}
+          {/* The outreach inbox is the second tab of /app/vendors/messages — it
+          and the vendor replies are one surface. The old destinations redirect
+          rather than 404: they are in the rail's visited history, in bookmarks,
+          in code comments, and in every backend mail link into a thread. */}
           <Route
-            path="messages"
-            element={
-              <Page>
-                <MessagesPage />
-              </Page>
-            }
+            path="outreach"
+            element={<Navigate to="/app/vendors/messages?tab=outreach" replace />}
           />
-          <Route
-            path="messages/:bookingId"
-            element={
-              <Page>
-                <MessagesPage />
-              </Page>
-            }
-          />
+          <Route path="messages" element={<Navigate to="/app/vendors/messages" replace />} />
+          <Route path="messages/:bookingId" element={<LegacyMessagesThreadRedirect />} />
           <Route
             path="planning"
             element={

@@ -1,4 +1,7 @@
-// /app/messages: everything the couple and a vendor say to each other.
+// /app/vendors/messages: everything the couple and a vendor say to each other.
+// Reached from the message button in the /app/vendors top row, so messages sit
+// where the vendor was shortlisted (voice of the conversation starts there;
+// this is where it comes back).
 //
 // The conversations half is the surface the outreach email has been promising
 // since v1 ("it is in their Weddly inbox"): until then a couple could send an
@@ -11,7 +14,9 @@
 // inboxes a given vendor conversation lived in, and the outreach row was
 // additionally earned at three sent messages, so the rail changed shape under
 // them. Both are now tabs here, `?tab=outreach` deep-links the second one, and
-// /app/outreach redirects to it.
+// /app/outreach redirects to it. Legacy /app/messages[</:bookingId>] links
+// from email redirect here; the /app/messages rail row is gone, so the vendors
+// rail row (nav.suppliers) stays highlighted while this page is open.
 //
 // Three states, one screen: the thread list, one thread with a back link, or
 // the outreach history. A two-pane layout would buy nothing, most couples have
@@ -95,7 +100,7 @@ function ThreadList() {
                 invalid HTML, so the content is pointer-transparent and the one
                 thing that isn't the thread opts back in. */}
             <Link
-              to={`/app/messages/${thread.booking_id}`}
+              to={`/app/vendors/messages/${thread.booking_id}`}
               aria-label={t("messages.open_thread_aria", { name: thread.vendor_name })}
               className="absolute inset-0 rounded-2xl"
             />
@@ -280,7 +285,7 @@ function ThreadView({ bookingId }: { bookingId: number }) {
         if (!cancelled) {
           setLoading(false);
           toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-          navigate("/app/messages", { replace: true });
+          navigate("/app/vendors/messages", { replace: true });
         }
       });
     return () => {
@@ -339,7 +344,7 @@ function ThreadView({ bookingId }: { bookingId: number }) {
   return (
     <div className="space-y-4">
       <Link
-        to="/app/messages"
+        to="/app/vendors/messages"
         className="inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900 dark:text-paper-300 dark:hover:text-paper-50"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -442,7 +447,7 @@ export default function MessagesPage() {
               );
             })}
           </nav>
-          {tab === "outreach" ? <OutreachInbox variant="tab" /> : <ThreadList />}
+          {tab === "outreach" ? <OutreachInbox /> : <ThreadList />}
         </>
       )}
     </div>

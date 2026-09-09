@@ -3226,8 +3226,8 @@ export const vendorPointsApi = {
 /** Vendor billing snapshot + derived FREE/PRO plan + per-feature flags, plus
  *  the freemium money path (Stripe-hosted card setup / checkout / portal). */
 /** Couple ↔ vendor message threads. One thread per booking; the vendor reaches
- *  it from their client card, the couple from /app/messages. Sending is PRO on
- *  the vendor side (403 `vendor_pro_required`), reading is not. */
+ *  it from their client card, the couple from /app/vendors/messages. Sending
+ *  is PRO on the vendor side (403 `vendor_pro_required`), reading is not. */
 export const bookingMessagesApi = {
   vendorThread: (bookingId: number) =>
     apiFetch<{ thread: BookingThread; unread: number }>(

@@ -76,7 +76,7 @@ export function notifyCoupleOfVendorMessage(args: {
     couple_id: booking.couple_id,
     kind: "vendor_message",
     data: { vendorName: args.vendorName },
-    link: `/app/messages/${booking.id}`,
+    link: `/app/vendors/messages/${booking.id}`,
   });
 
   const owner = coupleOwner(booking.couple_id);
@@ -87,7 +87,7 @@ export function notifyCoupleOfVendorMessage(args: {
       vendorName: args.vendorName,
       bodyText: args.body,
       attachmentCount: args.attachmentCount,
-      threadUrl: `/app/messages/${booking.id}`,
+      threadUrl: `/app/vendors/messages/${booking.id}`,
     },
     { user: owner, couple_id: booking.couple_id },
   ).catch((e) => log.error("booking_message.couple_mail_failed", e, { booking_id: booking.id }));
@@ -146,7 +146,7 @@ export function notifyCoupleOfVendorQuote(args: {
     couple_id: booking.couple_id,
     kind: "vendor_quote",
     data: { vendorName: args.vendorName, title: quote.title },
-    link: `/app/messages/${booking.id}`,
+    link: `/app/vendors/messages/${booking.id}`,
   });
 
   const owner = coupleOwner(booking.couple_id);

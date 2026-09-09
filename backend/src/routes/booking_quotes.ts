@@ -72,7 +72,7 @@ function formatQuoteMoney(amount: number, currency: Currency): string {
 }
 
 function quoteUrlForCouple(bookingId: number): string {
-  return `${CONFIG.frontendBaseUrl}/app/messages/${bookingId}`;
+  return `${CONFIG.frontendBaseUrl}/app/vendors/messages/${bookingId}`;
 }
 
 function quoteUrlForVendor(bookingId: number): string {

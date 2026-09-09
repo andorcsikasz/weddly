@@ -594,7 +594,7 @@ async function sendAcknowledgement(
     couple_id: booking.couple_id,
     kind: "vendor_message",
     data: { vendorName: listing.name },
-    link: `/app/messages/${booking.id}`,
+    link: `/app/vendors/messages/${booking.id}`,
   });
 
   const result = await sendKind(
@@ -602,7 +602,7 @@ async function sendAcknowledgement(
     {
       vendorName: listing.name,
       bodyText: text,
-      threadUrl: `/app/messages/${booking.id}`,
+      threadUrl: `/app/vendors/messages/${booking.id}`,
     },
     { user: owner, couple_id: booking.couple_id },
   );

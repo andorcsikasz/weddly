@@ -5,6 +5,7 @@ import {
   Bed,
   CalendarClock,
   Camera,
+  ChevronDown,
   ChevronsLeft,
   BookOpen,
   ChevronsRight,
@@ -70,19 +71,24 @@ import { Wordmark } from "./Wordmark";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { CollaborationActivityProvider } from "./CollaborationActivity";
 
-/** `group` partitions the sidebar into four logical phases of the wedding
- *  journey, with a thin section header between each:
+/** `group` partitions the sidebar into five logical sections of the wedding
+ *  journey, rail top → bottom:
  *   - `default` (Áttekintés alone) — the entry point, no header above it.
  *   - `planning` — the data & decision surfaces (guests, money, vendors,
  *     tasks, gantt). What the couple touches every week.
  *   - `executing` — wedding-day operations: the run-of-show, seating
  *     chart, and the accommodation/transfer board.
+ *   - `guest` — the couple-curated surfaces confirmed guests see (wishlist,
+ *     guest page, games). Deliberately collapsed by default so the rail
+ *     opens on the planning trio.
  *   - `dreaming` — pre-wedding inspiration (moodboard) + post-wedding
  *     follow-up (honeymoon, photo gallery). Time-ordered so it reads as a
- *     before-and-after bookend around the day itself.
- *   - `guest` — the read-only "Vendégoldal" portal preview. Lives at the
- *     bottom because it's not a couple-planning surface; it's what
- *     RSVP-yes guests see at /g/:slug/:code. */
+ *     before-and-after bookend around the day itself. Collapsed by default
+ *     like `guest`.
+ *
+ *  Every group except `default` is independently collapsible (see
+ *  `sectionCollapsed`): its header toggles the group's rows on the
+ *  expanded rail, and the choice persists in localStorage. */
 type NavGroup = "default" | "planning" | "executing" | "dreaming" | "guest";
 
 type NavItem = {
@@ -124,20 +130,12 @@ const ITEMS: NavItem[] = [
     icon: <Store size={18} />,
     group: "planning",
   },
-  // ONE row for everything the couple and a vendor say to each other: the
-  // replies (threads) and the sent history (outreach campaigns) are two tabs of
-  // /app/messages, not two rail rows. They were split, and the split asked the
-  // couple to know which of two inboxes a given conversation lived in — while
-  // the outreach half was additionally EARNED, so the rail changed shape under
-  // them. Composing still starts where a vendor is shortlisted (/app/vendors,
-  // the vendor's own page); this is where it comes back. No tabKey on purpose —
-  // the phone bottom bar keeps its core flows and this shows in the More sheet.
-  {
-    to: "/app/messages",
-    labelKey: "nav.messages",
-    icon: <MessageCircle size={18} />,
-    group: "planning",
-  },
+  // Messages have no rail row of their own: the couple's half of the vendor
+  // conversations (threads + sent history) lives UNDER /app/vendors, behind the
+  // message button in the suppliers top row, so messages stay where the vendor
+  // was shortlisted. Landing there keeps the Szolgáltatók rail row highlighted
+  // (`matchNavDestination` derives the key from ITEMS). Legacy `/app/messages`
+  // deep links from mail redirect to /app/vendors/messages.
   // Free-form planning surface — desktop-only so the mobile bottom nav stays
   // at the 5 core flows. Two tabs inside: tasks + ideas. The wedding-day
   // run-of-show lives on its own page at /app/schedule (richer model + PDF).
@@ -178,38 +176,6 @@ const ITEMS: NavItem[] = [
     icon: <Bed size={18} />,
     group: "executing",
   },
-  // ── Dreaming + follow-up ──────────────────────────────────────────
-  // Time-ordered: Moodboard (pre-wedding inspiration) → Nászút (the
-  // immediate post-wedding trip) → Képek (photos that arrive after).
-  {
-    to: "/app/moodboard",
-    labelKey: "nav.moodboard",
-    icon: <ImageIcon size={18} />,
-    group: "dreaming",
-  },
-  // Curated visual identity — sits in the inspiration cluster next to the
-  // moodboard (inspiration → concrete design system). Desktop sidebar +
-  // More-sheet only (no tabKey), so the mobile bottom nav stays at 5 items.
-  {
-    to: "/app/design",
-    labelKey: "nav.design",
-    icon: <Palette size={18} />,
-    group: "dreaming",
-  },
-  // Post-wedding "follow-up" entries — desktop sidebar only; bottom mobile
-  // nav stays at 5 items via `slice(0, 5)` further down.
-  {
-    to: "/app/honeymoon",
-    labelKey: "nav.honeymoon",
-    icon: <Plane size={18} />,
-    group: "dreaming",
-  },
-  {
-    to: "/app/media",
-    labelKey: "nav.media",
-    icon: <Camera size={18} />,
-    group: "dreaming",
-  },
   // ── Guest-facing area ──────────────────────────────────────────────
   // Single merged "Vendégoldal / Guest page" surface. Replaces the older
   // split between the public wedding-site editor and the read-only post-
@@ -241,6 +207,38 @@ const ITEMS: NavItem[] = [
     labelKey: "nav.games",
     icon: <Gamepad2 size={18} />,
     group: "guest",
+  },
+  // ── Dreaming + follow-up ──────────────────────────────────────────
+  // Time-ordered: Moodboard (pre-wedding inspiration) → Nászút (the
+  // immediate post-wedding trip) → Képek (photos that arrive after).
+  {
+    to: "/app/moodboard",
+    labelKey: "nav.moodboard",
+    icon: <ImageIcon size={18} />,
+    group: "dreaming",
+  },
+  // Curated visual identity — sits in the inspiration cluster next to the
+  // moodboard (inspiration → concrete design system). Desktop sidebar +
+  // More-sheet only (no tabKey), so the mobile bottom nav stays at 5 items.
+  {
+    to: "/app/design",
+    labelKey: "nav.design",
+    icon: <Palette size={18} />,
+    group: "dreaming",
+  },
+  // Post-wedding "follow-up" entries — desktop sidebar only; bottom mobile
+  // nav stays at 5 items via `slice(0, 5)` further down.
+  {
+    to: "/app/honeymoon",
+    labelKey: "nav.honeymoon",
+    icon: <Plane size={18} />,
+    group: "dreaming",
+  },
+  {
+    to: "/app/media",
+    labelKey: "nav.media",
+    icon: <Camera size={18} />,
+    group: "dreaming",
   },
 ];
 
@@ -609,6 +607,49 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [sidebarCollapsed]);
 
+  // ── Per-section collapse ─────────────────────────────────────────────
+  // Each sidebar section (plan / the day / for guests / inspiration &
+  // memories) can be independently collapsed so the rail opens on the
+  // planning trio. Persisted to localStorage like `sidebarCollapsed`.
+  // "For guests" and "Inspiration & memories" ship collapsed by default —
+  // the couple expands them when (and only when) they want them.
+  const DEFAULT_COLLAPSED_SECTIONS: Record<NavGroup, boolean> = {
+    default: false,
+    planning: false,
+    executing: false,
+    guest: true,
+    dreaming: true,
+  };
+  const [sectionCollapsed, setSectionCollapsed] = useState<Record<NavGroup, boolean>>(() => {
+    if (typeof window === "undefined") return DEFAULT_COLLAPSED_SECTIONS;
+    try {
+      const raw = window.localStorage.getItem("weddly.sidebar.sections");
+      if (!raw) return DEFAULT_COLLAPSED_SECTIONS;
+      const parsed = JSON.parse(raw) as Partial<Record<NavGroup, boolean>>;
+      return { ...DEFAULT_COLLAPSED_SECTIONS, ...parsed };
+    } catch {
+      return DEFAULT_COLLAPSED_SECTIONS;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("weddly.sidebar.sections", JSON.stringify(sectionCollapsed));
+    } catch {
+      /* localStorage blocked — preference just won't persist */
+    }
+  }, [sectionCollapsed]);
+  // Landing on a page inside a collapsed section auto-expands it, so a deep
+  // link or a direct URL never hides the row the couple is standing on. The
+  // dependency list is deliberately `location.pathname` only: a manual
+  // collapse of the group the user is currently inside stays collapsed.
+  useEffect(() => {
+    const destination = matchNavDestination(location.pathname);
+    if (!destination) return;
+    const activeGroup = (ITEMS.find((i) => i.to === destination) ?? null)?.group;
+    if (!activeGroup || activeGroup === "default") return;
+    setSectionCollapsed((cur) => (cur[activeGroup] ? { ...cur, [activeGroup]: false } : cur));
+  }, [location.pathname]);
+
   // ── Workspace handoff cleanup ────────────────────────────────────────
   // When the user signs out, wipe every `weddly.*` localStorage key so
   // the next person on this device doesn't inherit the previous tenant's
@@ -872,7 +913,7 @@ export function AppShell({ children }: { children: ReactNode }) {
          *     applies at lg+ — below that the rail is icon-only regardless.
          */}
         <aside
-          className={`hidden shrink-0 transition-[width] duration-300 ease-in-out md:flex md:w-14 ${
+          className={`hidden shrink-0 bg-gradient-to-t from-blush-100 via-paper-100 to-paper-50 transition-[width] duration-300 ease-in-out dark:from-umber-800 dark:via-umber-900 dark:to-umber-950 md:flex md:w-14 ${
             sidebarCollapsed ? "lg:w-14" : "lg:w-56"
           }`}
         >
@@ -986,32 +1027,46 @@ export function AppShell({ children }: { children: ReactNode }) {
               ) : (
                 <nav className="flex flex-col gap-0">
                   {(() => {
-                    // Render items in stable order, injecting a small section
-                    // header (or, when collapsed, a thin divider) whenever the
-                    // `group` field flips. The first item lives in `default` so
-                    // no header sits above the dashboard.
-                    let lastGroup: NavGroup = "default";
-                    return displayItems.map((item) => {
-                      const itemGroup: NavGroup = (item as NavItem).group ?? "default";
-                      const showHeader = itemGroup !== lastGroup && itemGroup !== "default";
-                      lastGroup = itemGroup;
+                    // Render items as five sections (group), each headed by a
+                    // toggleable SidebarGroupHeader. `default` (the dashboard)
+                    // has no header — it is the entry point. A section whose
+                    // header is collapsed hides its rows; the header itself
+                    // stays put (fixed height, same place in both rail
+                    // states), so toggling never reflows the icons beneath.
+                    const sections: { group: NavGroup; items: NavItem[] }[] = [];
+                    for (const item of displayItems) {
+                      const group: NavGroup = (item as NavItem).group ?? "default";
+                      const last = sections[sections.length - 1];
+                      if (last && last.group === group) last.items.push(item as NavItem);
+                      else sections.push({ group, items: [item as NavItem] });
+                    }
+                    return sections.map(({ group, items }) => {
+                      const open = !sectionCollapsed[group];
                       return (
-                        <div key={item.to}>
-                          {showHeader && (
+                        <div key={group}>
+                          {group !== "default" && (
                             <SidebarGroupHeader
-                              label={t(`nav.group_${itemGroup}`)}
+                              label={t(`nav.group_${group}`)}
                               collapsed={sidebarCollapsed}
+                              isOpen={open}
+                              onToggle={() =>
+                                setSectionCollapsed((cur) => ({ ...cur, [group]: !cur[group] }))
+                              }
                             />
                           )}
-                          <SideLink
-                            to={item.to}
-                            icon={item.icon}
-                            label={t(item.labelKey)}
-                            collapsed={sidebarCollapsed}
-                            darkActive={itemGroup === "guest"}
-                            unexplored={isUnexplored(item.to)}
-                            unexploredLabel={t("nav.unexplored")}
-                          />
+                          {open &&
+                            items.map((item) => (
+                              <SideLink
+                                key={item.to}
+                                to={item.to}
+                                icon={item.icon}
+                                label={t(item.labelKey)}
+                                collapsed={sidebarCollapsed}
+                                darkActive={group === "guest"}
+                                unexplored={isUnexplored(item.to)}
+                                unexploredLabel={t("nav.unexplored")}
+                              />
+                            ))}
                         </div>
                       );
                     });
@@ -1142,15 +1197,30 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-/** Section divider that sits between sidebar groups. Renders a label
- *  flanked by two thin hairlines when the rail is expanded, and a single
- *  centered hairline (no text) when it's collapsed — so the visual break
- *  is preserved without overflowing the narrow rail.
+/** Section divider that sits between sidebar groups — also the toggle that
+ *  expands / collapses the group's rows. Renders a label flanked by two thin
+ *  hairlines (with a chevron) when the rail is expanded, and a single
+ *  centered hairline (no text) when it's collapsed — so the visual break is
+ *  preserved without overflowing the narrow rail. In the icon-only rail the
+ *  hairline is still a button, so a section the couple collapsed stays
+ *  re-openable at any width.
  *
  *  `collapsed` reflects the user's laptop-level preference; at md (tablet)
  *  the rail is forced icon-only regardless, so the labelled header is
- *  hidden via `lg:flex` and a hairline is shown via `md:block lg:hidden`. */
-function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: boolean }) {
+ *  hidden via `lg:flex` and a hairline is shown via `md:block lg:hidden`.
+ *  `isOpen` / `onToggle` drive the per-section collapse (see
+ *  `sectionCollapsed` in AppShell). */
+function SidebarGroupHeader({
+  label,
+  collapsed,
+  isOpen,
+  onToggle,
+}: {
+  label: string;
+  collapsed?: boolean;
+  isOpen?: boolean;
+  onToggle?: () => void;
+}) {
   // Fixed-height (h-6) row in every state — labelled when the laptop rail is
   // expanded, a centred hairline at tablet / when collapsed. Because a section
   // break takes the same vertical space either way, every icon below it lands
@@ -1161,18 +1231,44 @@ function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: b
     // parent nav uses `gap-0`). The fixed `h-6` keeps an icon landing on the
     // same row whether the rail is expanded or collapsed, and the tightened
     // rhythm lets all 15 links + 4 headers fit one desktop screen unscrolled.
-    <div className="relative mt-1 flex h-6 items-center px-2">
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={!onToggle}
+      aria-expanded={isOpen}
+      aria-label={label}
+      title={label}
+      className={`group/hdr relative mt-1 flex h-6 w-full items-center px-2 ${
+        onToggle ? "cursor-pointer rounded-lg transition-colors" : "cursor-default"
+      }`}
+    >
       {/* Labelled header — fully-expanded laptop rail only. Absolutely
           overlaid on the hairline so the two crossfade (opacity) as the rail
           toggles, in sync with the width tween, instead of swapping instantly. */}
       <div
-        className={`pointer-events-none absolute inset-x-2 hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-ink-500 transition-opacity duration-300 ease-in-out lg:flex dark:text-umber-300 ${
+        className={`pointer-events-none absolute inset-x-2 hidden items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300 ${
           collapsed ? "opacity-0" : "opacity-100"
         }`}
       >
-        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+        <span
+          className="h-px flex-1 bg-paper-300 transition-colors group-hover/hdr:bg-umber-300 dark:bg-umber-700 dark:group-hover/hdr:bg-umber-500"
+          aria-hidden
+        />
         <span className="whitespace-nowrap">{label}</span>
-        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
+        {onToggle && (
+          <span
+            aria-hidden="true"
+            className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center text-ink-400 transition-colors group-hover/hdr:text-blush-600 ${
+              isOpen ? "" : "-rotate-90"
+            }`}
+          >
+            <ChevronDown size={11} strokeWidth={2.5} />
+          </span>
+        )}
+        <span
+          className="h-px flex-1 bg-paper-300 transition-colors group-hover/hdr:bg-umber-300 dark:bg-umber-700 dark:group-hover/hdr:bg-umber-500"
+          aria-hidden
+        />
       </div>
       {/* Hairline — tablet (icon-only) always, and laptop when collapsed;
           fades out at lg+ when the labelled header takes over. */}
@@ -1182,7 +1278,7 @@ function SidebarGroupHeader({ label, collapsed }: { label: string; collapsed?: b
         }`}
         aria-hidden
       />
-    </div>
+    </button>
   );
 }
 

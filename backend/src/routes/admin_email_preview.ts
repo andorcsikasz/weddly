@@ -482,13 +482,13 @@ const STUBS: KindPayload = {
     bodyText:
       "Szia! Igen, június 20. szabad nálunk.\nCsatoltam az árajánlatot, és szívesen egyeztetünk telefonon is.",
     attachmentCount: 1,
-    threadUrl: "/app/messages/188",
+    threadUrl: "/app/vendors/messages/188",
   },
   vendor_auto_reply: {
     vendorName: "Magyar Fotó Stúdió",
     bodyText:
       "Köszönjük a megkeresést! Általában 24 órán belül válaszolunk, addig is nézzetek körül a portfóliónkban.",
-    threadUrl: "/app/messages/188",
+    threadUrl: "/app/vendors/messages/188",
   },
   vendor_lead_reminder: {
     coupleName: "Mia & Lucas",
@@ -511,7 +511,7 @@ const STUBS: KindPayload = {
     title: "Teljes napos fotózás",
     totalText: "620 000 Ft",
     validUntil: "2026-09-30",
-    quoteUrl: "/app/messages/188",
+    quoteUrl: "/app/vendors/messages/188",
   },
   quote_response: {
     coupleName: "Mia & Lucas",

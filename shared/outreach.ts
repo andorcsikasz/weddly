@@ -4,7 +4,7 @@
 // WHERE THE REPLY GOES depends on whether anyone owns the listing, and
 // `delivery` is what says which happened. A CLAIMED listing gets a real
 // `supplier_bookings` row, so the vendor answers in their own client list and
-// the couple reads it as an ordinary two-way thread at /app/messages/:id
+// the couple reads it as an ordinary two-way thread at /app/vendors/messages/:id
 // (shipped 2026-07-30). An UNCLAIMED one is mail and nothing more: the message
 // carries the couple's address as Reply-To, so the vendor's answer lands in
 // their personal inbox and Weddly never sees it. One undifferentiated "Sent"
@@ -55,7 +55,7 @@ export interface OutreachMessage {
   /** The `supplier_bookings` row this inquiry became, or null when it was mail
    *  and nothing more. `delivery` is this same fact as a word; the id is what
    *  lets the sent-history row open the conversation it started, at
-   *  /app/messages/:booking_id. */
+   *  /app/vendors/messages/:booking_id. */
   booking_id: number | null;
   created_at: number;
 }

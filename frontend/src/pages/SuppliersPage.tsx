@@ -65,6 +65,7 @@ import {
   Loader2,
   Mail,
   MapPin,
+  MessageSquare,
   PartyPopper,
   Pencil,
   Phone,
@@ -93,7 +94,6 @@ import { BookedSupplierCard } from "../components/BookedSupplierCard";
 import { CakeDrinksCalculator } from "../components/CakeDrinksCalculator";
 
 import { DiyEntryModal } from "../components/DiyEntryModal";
-import { OutreachInbox } from "../components/OutreachInbox";
 import { PlannerCard } from "../components/PlannerDirectoryRail";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SupplierCountryFilter } from "../components/SupplierCountryFilter";
@@ -107,6 +107,7 @@ import {
 } from "../lib/cost_planning";
 import {
   budgetApi,
+  bookingMessagesApi,
   coupleApi,
   couplePlannerApi,
   coupleSupplierApi,
@@ -361,6 +362,23 @@ export default function SuppliersPage() {
   const { user } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
+  // Unread vendor replies across every thread, summed for the message button's
+  // badge. The threads endpoint is the same one the messages page lists; a
+  // reply a couple has actually opened stops counting here on the next load.
+  const [unreadCount, setUnreadCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    bookingMessagesApi
+      .coupleThreads()
+      .then(({ threads }) => {
+        if (cancelled) return;
+        setUnreadCount(threads.reduce((sum, th) => sum + (th.unread_count ?? 0), 0));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   // Couple shortlist ("saved" star). Server-side + shared between partners via
   // the supplier_saved store; starts empty and hydrates once we know the couple.
@@ -1736,6 +1754,25 @@ export default function SuppliersPage() {
                 copy stays for screen readers and heading structure. */}
             <h1 className="sr-only font-grotesk">{t("suppliers.title")}</h1>
             <div className="flex items-center gap-2">
+              {/* Messages lives under this page (one row in the top control
+                  band), so the couple meets their vendor conversations where
+                  they shortlisted the vendor. The blush dot carries the sum of
+                  unseen vendor replies; the pill is a plain link — there is no
+                  need for state to change its look server-side. */}
+              <Link
+                to="/app/vendors/messages"
+                aria-label={t("nav.messages")}
+                title={t("nav.messages")}
+                className="relative inline-flex h-10 items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 text-sm font-medium text-ink-800 transition hover:border-ink-900 hover:text-ink-900 sm:px-4 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50"
+              >
+                <MessageSquare size={15} aria-hidden />
+                <span className="hidden sm:inline">{t("nav.messages")}</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-paper-50 dark:ring-umber-800">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Link>
               {/* Icon-only view switch: three glyphs, one filled. The words
                   ride in the tooltip + aria-label — at three modes the icons
                   are unambiguous and the labels were the widest thing in the
@@ -3061,13 +3098,6 @@ export default function SuppliersPage() {
           )}
         </div>
       </div>
-
-      {/* Outreach Inbox — the "shop → message" flow lives on the same
-          page as the directory so couples can shortlist + reach out
-          without leaving. The same component is the Megkeresések tab of
-          /app/messages, which is where the rail points; /app/outreach
-          redirects there. */}
-      <OutreachInbox />
 
       {/* The scoping filters that used to sit in a boxed row above the chain.
           They belong together (all three narrow WHICH catalogue you're

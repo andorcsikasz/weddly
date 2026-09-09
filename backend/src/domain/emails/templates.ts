@@ -931,7 +931,7 @@ export interface VendorMessagePayload {
    *  authenticated download route, never attached to the mail (the mailer has
    *  no attachment support and these are contracts). */
   attachmentCount: number;
-  /** App-relative path to the thread, e.g. /app/messages/188. */
+  /** App-relative path to the thread, e.g. /app/vendors/messages/188. */
   threadUrl: string;
 }
 
@@ -988,7 +988,7 @@ export interface VendorQuotePayload {
   /** ISO YYYY-MM-DD, or null for an offer with no deadline. Rendered as-is:
    *  a date the vendor typed is unambiguous in both languages. */
   validUntil: string | null;
-  /** App-relative path to the offer, e.g. /app/messages/188. */
+  /** App-relative path to the offer, e.g. /app/vendors/messages/188. */
   quoteUrl: string;
 }
 
