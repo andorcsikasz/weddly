@@ -2181,6 +2181,33 @@ export default function SuppliersPage() {
                     <span className="lowercase">{t("suppliers.not_needed_toggle")}</span>
                   </button>
                 )}
+                {/* The way out of the settled-category collapse. Only meaningful
+                    once the couple is looking at one concrete sub-category (a
+                    settled main category with nothing chosen underneath it has
+                    no single card to be hiding siblings under), so it rides the
+                    same row as its two neighbours rather than floating above the
+                    grid for every view. */}
+                {activeCat && settledHiddenCount + plannersHiddenCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSettledSiblings((v) => !v)}
+                    aria-pressed={showSettledSiblings}
+                    className={`${ACTION_CHIP} ${showSettledSiblings ? ACTION_CHIP_ON : ACTION_CHIP_IDLE}`}
+                  >
+                    {showSettledSiblings ? (
+                      <EyeOff size={13} aria-hidden />
+                    ) : (
+                      <Eye size={13} aria-hidden />
+                    )}
+                    <span className="lowercase">
+                      {showSettledSiblings
+                        ? t("suppliers.settled_collapse")
+                        : t("suppliers.settled_show_all", {
+                            n: settledHiddenCount + plannersHiddenCount,
+                          })}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -2351,36 +2378,6 @@ export default function SuppliersPage() {
                 ))}
               </div>
             </section>
-          )}
-
-          {/* The way out of the settled-category collapse. Without it a couple
-          who books a venue and then wants to change their mind is looking at a
-          one-card directory with nothing to explain it, and a couple who ruled
-          a sub-category out is looking at an empty one. Rendered above the grid
-          and the map, since both are collapsed, and its count covers the planner
-          strip above it, which "magam szervezem" empties the same way. */}
-          {settledHiddenCount + plannersHiddenCount > 0 && (
-            <div className="mb-3">
-              <button
-                type="button"
-                onClick={() => setShowSettledSiblings((v) => !v)}
-                aria-pressed={showSettledSiblings}
-                className={`${ACTION_CHIP} ${showSettledSiblings ? ACTION_CHIP_ON : ACTION_CHIP_IDLE}`}
-              >
-                {showSettledSiblings ? (
-                  <EyeOff size={13} aria-hidden />
-                ) : (
-                  <Eye size={13} aria-hidden />
-                )}
-                <span className="lowercase">
-                  {showSettledSiblings
-                    ? t("suppliers.settled_collapse")
-                    : t("suppliers.settled_show_all", {
-                        n: settledHiddenCount + plannersHiddenCount,
-                      })}
-                </span>
-              </button>
-            </div>
           )}
 
           {viewMode === "map" ? (
