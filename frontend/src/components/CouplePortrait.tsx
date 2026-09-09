@@ -1,8 +1,10 @@
-// Refined couple-portrait avatar used in testimonials. Each variant has its
-// own palette plus distinct hair shapes so the testimonials read as different
-// people. Extracted from mockups.tsx (where it lived unused) into its own
-// small module so the landing page can import it eagerly without dragging the
-// heavy below-the-fold mockup SVGs into the eager payload.
+// Refined couple-portrait avatar meant for testimonials. Each variant has its
+// own palette plus distinct hair shapes so three of these would read as three
+// different people. Extracted out of mockups.tsx, where it also lived unused,
+// into its own small module — that way, WHEN it's wired into a testimonial
+// card, the landing page can import just this rather than dragging in the
+// heavy below-the-fold mockup SVGs. Still unused today (LandingPage's
+// TestimonialCard renders CoupleMonogram); nothing imports this yet.
 //
 // All colours are design tokens: colour groups are wrapped in `<g
 // className="text-…">` and inner shapes use `currentColor`.

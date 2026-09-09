@@ -2,9 +2,10 @@
  * Inline-SVG product mockups for the public surface. These are
  * stylised renderings of the actual app — dashboard, budget, guest
  * list, seating canvas, vendor listing — used as feature illustrations
- * on the landing and vendors pages. (The testimonials' couple-portrait
- * avatars live in CouplePortrait.tsx so the landing can import them
- * eagerly without pulling this heavy module into the eager payload.)
+ * on the landing and vendors pages. (A couple-portrait avatar meant for the
+ * testimonials block lives in CouplePortrait.tsx, kept out of this module so
+ * the landing could import it eagerly without pulling in this heavy one —
+ * it isn't wired into a testimonial card yet.)
  *
  * All colours come from design tokens: each colour group is wrapped in
  * a `<g className="text-…">` and inner shapes use `currentColor`. SVG

@@ -639,10 +639,25 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [sectionCollapsed]);
   // Landing on a page inside a collapsed section auto-expands it, so a deep
-  // link or a direct URL never hides the row the couple is standing on. The
+  // link or a direct URL never hides the row the user is standing on. The
   // dependency list is deliberately `location.pathname` only: a manual
   // collapse of the group the user is currently inside stays collapsed.
+  // Admin routes share the same `sectionCollapsed` bucket under their own
+  // group names (inbox/accounts/manage/insights — see `AdminNavGroup`), so
+  // they need their own lookup: `matchNavDestination` only ever walks the
+  // couple-facing `ITEMS`, and never matches an `/app/admin/*` path.
   useEffect(() => {
+    if (location.pathname.startsWith("/app/admin")) {
+      const active = ADMIN_ITEMS.find(
+        (i) => location.pathname === i.to || location.pathname.startsWith(`${i.to}/`),
+      );
+      const activeGroup = active?.group;
+      if (!activeGroup) return;
+      setSectionCollapsed((cur) =>
+        cur[activeGroup as NavGroup] ? { ...cur, [activeGroup]: false } : cur,
+      );
+      return;
+    }
     const destination = matchNavDestination(location.pathname);
     if (!destination) return;
     const activeGroup = (ITEMS.find((i) => i.to === destination) ?? null)?.group;
