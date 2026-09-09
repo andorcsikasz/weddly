@@ -2408,6 +2408,8 @@ const de: LocaleMessages = {
     block_guests_bullet_3: "CSV-Export, jederzeit",
     block_guests_bullet_4: "Auf Ihrer eigenen Hochzeitsseite geteilt",
     block_guests_cta: "Ich bin Gast",
+    block_guests_games_label: "Spiele für Gäste",
+    block_guests_camera_label: "Gästekamera",
     block_seating_eyebrow: "Sitzplan",
     block_seating_title: "Ziehen.\nÄndern.\nDrucken.",
     block_seating_body:

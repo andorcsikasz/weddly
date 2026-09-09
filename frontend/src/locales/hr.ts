@@ -2358,6 +2358,8 @@ const hr: LocaleMessages = {
     block_guests_bullet_3: "CSV izvoz, kad god",
     block_guests_bullet_4: "Podijeljeno na vašoj stranici vjenčanja",
     block_guests_cta: "Ja sam gost",
+    block_guests_games_label: "Igre za goste",
+    block_guests_camera_label: "Kamera za goste",
     block_seating_eyebrow: "Raspored sjedenja",
     block_seating_title: "Povucite.\nPromijenite.\nIspišite.",
     block_seating_body:

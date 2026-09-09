@@ -509,6 +509,22 @@ export default function LandingPage() {
                 </IconRow>
                 <IconRow icon={<Globe size={16} />}>{t("landing.block_guests_bullet_4")}</IconRow>
               </ul>
+              {/* The guest-facing extras ride on the same block: one tap takes a
+                  guest to the games console, the other to the shared POV camera.
+                  Card buttons, not text links, so the two reads as actions rather
+                  than footnotes to the RSVP copy above them. */}
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <GuestExtraLink
+                  icon={<Gamepad2 size={18} strokeWidth={1.7} />}
+                  label={t("landing.block_guests_games_label")}
+                  to="/games"
+                />
+                <GuestExtraLink
+                  icon={<Camera size={18} strokeWidth={1.7} />}
+                  label={t("landing.block_guests_camera_label")}
+                  to="/camera"
+                />
+              </div>
               {/* A guest who mislaid their invite link searches the couple's
                   wedding and lands here, not on their own RSVP page. /rsvp is
                   the lookup that gets them there, and this block is where they
@@ -2428,6 +2444,36 @@ function TestimonialCard({
         </div>
       </div>
     </li>
+  );
+}
+
+function GuestExtraLink({
+  icon,
+  label,
+  to,
+}: {
+  icon: ReactNode;
+  label: string;
+  to: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="group flex min-w-0 items-center gap-3 rounded-2xl border border-paper-300 bg-white px-4 py-3 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-umber-400 hover:shadow-elevated dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-500"
+    >
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 text-umber-800 transition-colors group-hover:border-umber-900 group-hover:bg-umber-900 group-hover:text-paper-50 dark:border-umber-700 dark:text-paper-100 dark:group-hover:border-paper-200 dark:group-hover:bg-paper-50 dark:group-hover:text-umber-900">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1 font-grotesk text-sm font-semibold leading-snug text-umber-900 dark:text-paper-50">
+        {label}
+      </span>
+      <ChevronRight
+        size={16}
+        strokeWidth={2}
+        aria-hidden
+        className="shrink-0 text-umber-400 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-umber-300"
+      />
+    </Link>
   );
 }
 

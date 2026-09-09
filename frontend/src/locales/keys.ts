@@ -2983,6 +2983,10 @@ export interface LocaleMessages {
      *  invite link ends up on the landing page, and /rsvp is the lookup
      *  that gets them to their own page. */
     block_guests_cta: string;
+    /** Card-button labels on the RSVP block for the two guest-facing extras:
+     *  the games console (/games) and the shared POV camera (/camera). */
+    block_guests_games_label: string;
+    block_guests_camera_label: string;
     block_seating_eyebrow: string;
     block_seating_title: string;
     block_seating_body: string;

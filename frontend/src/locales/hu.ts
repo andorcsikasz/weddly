@@ -2366,6 +2366,8 @@ const hu: LocaleMessages = {
     block_guests_bullet_3: "CSV export, bármikor",
     block_guests_bullet_4: "Saját esküvői oldalatokon megosztva",
     block_guests_cta: "Vendég vagyok",
+    block_guests_games_label: "Esküvői játékok",
+    block_guests_camera_label: "Vendégkamera",
     block_seating_eyebrow: "Ültetés",
     block_seating_title: "Húzd a helyére.\nMódosítsd.\nNyomtasd ki.",
     block_seating_body:
