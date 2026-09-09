@@ -259,7 +259,10 @@ export default {
         ticket: {
           ink: "#101B38",
           paper: "#FFFEFA",
-          border: "#DCE7F5",
+          // Bumped from #DCE7F5 — that pale a blue nearly disappeared against
+          // the #FFFEFA paper, which is what made the perforation read as
+          // "weak" rather than restrained.
+          border: "#AECBEA",
         },
         // Chart: warm "low-cortisol" categorical palette for the budget
         // distribution donut + legend (see SpendingCharts). Deliberately

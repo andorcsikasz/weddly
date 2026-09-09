@@ -1023,8 +1023,22 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .ticket-stub {
     position: relative;
     border: 1px solid theme("colors.ticket.border");
-    border-top-width: 2px;
-    border-top-style: dashed;
+    border-top-width: 0;
+    /* Tight, high-frequency dash pattern for the mobile tear line — a native
+       `border-top: dashed` renders far too few, too-long dashes on a thin
+       border to read as perforated. 6px on/6px off via the background instead
+       of the border gives an even, closely-spaced "- - - -" regardless of
+       browser dash rendering. */
+    background-image: repeating-linear-gradient(
+      to right,
+      theme("colors.ticket.border") 0,
+      theme("colors.ticket.border") 6px,
+      transparent 6px,
+      transparent 12px
+    );
+    background-size: 100% 2px;
+    background-position: top left;
+    background-repeat: no-repeat;
     box-shadow: theme("boxShadow.ticket");
     transition:
       transform 150ms ease,
@@ -1042,8 +1056,8 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   @media (min-width: 1024px) {
     .ticket-stub {
+      background-image: none;
       border-top-width: 1px;
-      border-top-style: solid;
       border-left-width: 0;
     }
   }
@@ -1057,7 +1071,20 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     top: 14px;
     bottom: 14px;
     left: 0;
-    border-left: 2px dashed theme("colors.ticket.border");
+    width: 2px;
+    /* Purely decorative — never the click target, and never lets its own
+       hit-box compete with the button that contains it. */
+    pointer-events: none;
+    /* Same tight repeating-gradient dash as the mobile top edge — a native
+       `border-left: dashed` reads far too sparse/weak on a thin line. 6px
+       on/6px off keeps the tear line dense along the whole seam. */
+    background-image: repeating-linear-gradient(
+      to bottom,
+      theme("colors.ticket.border") 0,
+      theme("colors.ticket.border") 6px,
+      transparent 6px,
+      transparent 12px
+    );
   }
   html.dark .ticket-perforation {
     --ticket-punch: theme("colors.umber.900");
