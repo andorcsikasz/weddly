@@ -1055,6 +1055,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                       if (last && last.group === group) last.items.push(item as NavItem);
                       else sections.push({ group, items: [item as NavItem] });
                     }
+                    // One top-to-bottom counter for the rail-expand label
+                    // stagger: each row's label waits a beat longer than the
+                    // one above it, so the labels walk in instead of popping
+                    // at once (see `labelDelay` in `SideLink`).
+                    let labelCursor = 0;
                     return sections.map(({ group, items }) => {
                       const open = !sectionCollapsed[group];
                       return (
@@ -1069,19 +1074,50 @@ export function AppShell({ children }: { children: ReactNode }) {
                               }
                             />
                           )}
-                          {open &&
-                            items.map((item) => (
-                              <SideLink
-                                key={item.to}
-                                to={item.to}
-                                icon={item.icon}
-                                label={t(item.labelKey)}
-                                collapsed={sidebarCollapsed}
-                                darkActive={group === "guest"}
-                                unexplored={isUnexplored(item.to)}
-                                unexploredLabel={t("nav.unexplored")}
-                              />
-                            ))}
+                          {/* Section rows stay MOUNTED so toggling can animate
+                              instead of snapping. `grid-template-rows` tweens
+                              the height (0fr ↔ 1fr) while the body fades; the
+                              rows inside cascade in on open via per-row delay.
+                              The delay is dropped on close so they recede
+                              together. `aria-hidden` + pointer-events keep a
+                              closed section out of reach for keyboard + SR. */}
+                          <div
+                            className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+                              open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                            }`}
+                            aria-hidden={!open}
+                          >
+                            <div className={`min-h-0 ${open ? "" : "pointer-events-none"}`}>
+                              <div className="flex flex-col">
+                                {items.map((item, i) => {
+                                  const delay = Math.min(labelCursor * 10, 120);
+                                  labelCursor += 1;
+                                  return (
+                                    <div
+                                      key={item.to}
+                                      className={`transition-[opacity,transform] duration-300 ease-in-out ${
+                                        open
+                                          ? "translate-y-0 opacity-100"
+                                          : "translate-y-1 opacity-0"
+                                      }`}
+                                      style={open ? { transitionDelay: `${i * 25}ms` } : undefined}
+                                    >
+                                      <SideLink
+                                        to={item.to}
+                                        icon={item.icon}
+                                        label={t(item.labelKey)}
+                                        collapsed={sidebarCollapsed}
+                                        labelDelay={delay}
+                                        darkActive={group === "guest"}
+                                        unexplored={isUnexplored(item.to)}
+                                        unexploredLabel={t("nav.unexplored")}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       );
                     });
@@ -1261,7 +1297,7 @@ function SidebarGroupHeader({
           overlaid on the hairline so the two crossfade (opacity) as the rail
           toggles, in sync with the width tween, instead of swapping instantly. */}
       <div
-        className={`pointer-events-none absolute inset-x-2 hidden items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 lg:flex dark:text-umber-300 ${
+        className={`pointer-events-none absolute inset-x-2 hidden items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 transition-opacity duration-300 ease-in-out lg:flex dark:text-umber-300 ${
           collapsed ? "opacity-0" : "opacity-100"
         }`}
       >
@@ -1273,7 +1309,7 @@ function SidebarGroupHeader({
         {onToggle && (
           <span
             aria-hidden="true"
-            className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center text-ink-400 transition-colors group-hover/hdr:text-blush-600 ${
+            className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center text-ink-400 transition-[color,transform] duration-200 group-hover/hdr:text-blush-600 ${
               isOpen ? "" : "-rotate-90"
             }`}
           >
@@ -1345,6 +1381,7 @@ function SideLink({
   icon,
   label,
   collapsed,
+  labelDelay,
   darkActive,
   unexplored,
   unexploredLabel,
@@ -1353,6 +1390,10 @@ function SideLink({
   icon: ReactNode;
   label: string;
   collapsed?: boolean;
+  /** ms this row's label waits before animating on rail expand — the stagger
+   *  that walks labels in top-to-bottom. A collapse always retracts at 0ms so
+   *  the whole rail recedes together. */
+  labelDelay?: number;
   /** Keep the cold near-black ink pill (`stationery-dark`) on the active row
    *  instead of the warm-coffee landing pill. Used only by the Guest page
    *  link, which the couple asked to stay visually "dark" / set apart from
@@ -1442,6 +1483,7 @@ function SideLink({
           icon-only there). The `overflow-hidden` clips the text as it shrinks;
           `whitespace-nowrap` keeps it on one line while it collapses. */}
       <span
+        style={{ transitionDelay: `${collapsed ? 0 : (labelDelay ?? 0)}ms` }}
         className={`hidden overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-in-out lg:inline-block ${
           collapsed ? "lg:max-w-0 lg:opacity-0" : "lg:ml-3 lg:max-w-[10rem] lg:opacity-100"
         }`}
