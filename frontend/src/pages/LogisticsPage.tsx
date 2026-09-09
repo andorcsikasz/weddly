@@ -613,7 +613,7 @@ export default function LogisticsPage() {
   return (
     <>
       <header className="mb-6 flex items-center gap-2">
-        <h1 className="font-grotesk">{t("logistics.title")}</h1>
+        <h1 className="sr-only font-grotesk">{t("logistics.title")}</h1>
         <InfoHint text={t("logistics.sub")} />
       </header>
 

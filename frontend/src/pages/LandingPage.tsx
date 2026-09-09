@@ -24,6 +24,7 @@ import {
   Share2,
   Smartphone,
   Sparkles,
+  Star,
   Store,
   UserCheck,
   Users,
@@ -575,6 +576,13 @@ export default function LandingPage() {
           <h2 className="text-center font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
             {t("landing.testimonials_title")}
           </h2>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-umber-600 dark:text-umber-300">
+            <StarRow />
+            <span className="font-grotesk text-base font-semibold text-umber-900 dark:text-paper-50">
+              {t("landing.testimonials_rating")}
+            </span>
+            <span>{t("landing.testimonials_rating_caption")}</span>
+          </div>
           <ul className="mt-12 grid gap-5 sm:mt-16 sm:grid-cols-3 sm:gap-6">
             <TestimonialCard
               quote={t("landing.t1_quote")}
@@ -2371,6 +2379,24 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
 // line, chevron — the whole row is the target, and the medallion inverts to
 // solid ink on hover so the row reads as a control rather than a list item.
 // Same shape whether it navigates (`to`) or opens the wizard (`onClick`).
+/** Five filled stars — the aggregate rating beside the testimonials heading,
+ *  and one row per testimonial card. A single `role="img"` with the aria
+ *  label carries the meaning; the five glyphs underneath are decorative. */
+function StarRow({ className }: { className?: string }) {
+  const { t } = useT();
+  return (
+    <span
+      role="img"
+      aria-label={t("landing.testimonials_stars_aria")}
+      className={`inline-flex items-center gap-0.5 text-blush-500 dark:text-blush-400 ${className ?? ""}`}
+    >
+      {[0, 1, 2, 3, 4].map((i) => (
+        <Star key={i} size={14} aria-hidden="true" fill="currentColor" strokeWidth={0} />
+      ))}
+    </span>
+  );
+}
+
 function TestimonialCard({
   quote,
   name,
@@ -2388,7 +2414,8 @@ function TestimonialCard({
       >
         “
       </span>
-      <p className="-mt-4 font-serif text-lg italic leading-relaxed text-umber-900 dark:text-paper-100">
+      <StarRow className="-mt-2 mb-2" />
+      <p className="font-serif text-lg italic leading-relaxed text-umber-900 dark:text-paper-100">
         {quote}
       </p>
       <div className="mt-6 flex items-center gap-3 border-t border-paper-200 pt-5 dark:border-umber-700">

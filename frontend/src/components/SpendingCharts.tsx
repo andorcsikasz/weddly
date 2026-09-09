@@ -3,7 +3,10 @@
 // chart library — see CLAUDE.md "What NOT to do"). Everything is computed from
 // the budget `lines` already loaded on the dashboard, so there's no extra
 // fetch. Colours come from tailwind tokens via `stroke-*` / `bg-*` utilities,
-// never raw hex.
+// never raw hex. The arcs draw themselves in clockwise on mount (CSS
+// `stroke-dasharray` transition) and the figures fade up behind them, so a
+// number the couple is actually about to read never sits there before its
+// ring does.
 
 import { RotateCcw } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
@@ -34,9 +37,11 @@ interface Segment {
 }
 
 /** Generic SVG donut. Draws a muted track, then one arc per segment laid out
- *  clockwise from 12 o'clock. `total` overrides the denominator (for a
- *  progress ring where the remainder shouldn't be drawn); otherwise it's the
- *  sum of segment values. `children` render centred over the hole. */
+ *  clockwise from 12 o'clock, sweeping itself in on mount (see the `drawn`
+ *  state + per-segment `stroke-dasharray` transition). `total` overrides the
+ *  denominator (for a progress ring where the remainder shouldn't be drawn);
+ *  otherwise it's the sum of segment values. `children` render centred over
+ *  the hole. */
 function Donut({
   segments,
   total,
@@ -58,6 +63,14 @@ function Donut({
   children?: ReactNode;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
+  // Starts as a zero-length dash; the effect flips to the final length right
+  // after mount so the CSS transition below sweeps every arc clockwise into
+  // place. A re-render with new values transitions again, which is the
+  // "something moved" signal the overview wants from its money.
+  const [drawn, setDrawn] = useState(false);
+  useEffect(() => {
+    setDrawn(true);
+  }, []);
   const r = (100 - thickness) / 2;
   const circumference = 2 * Math.PI * r;
   const denom = total ?? segments.reduce((s, x) => s + Math.max(0, x.value), 0);
@@ -82,7 +95,7 @@ function Donut({
           className="stroke-paper-200 dark:stroke-umber-700"
         />
         {denom > 0 &&
-          segments.map((seg) => {
+          segments.map((seg, i) => {
             const drawable = Math.max(0, Math.min(seg.value, cap - offset));
             const len = (drawable / denom) * circumference;
             const el = (
@@ -94,13 +107,14 @@ function Donut({
                 fill="none"
                 strokeWidth={thickness}
                 strokeLinecap={rounded ? "round" : "butt"}
-                strokeDasharray={`${len} ${circumference - len}`}
+                strokeDasharray={drawn ? `${len} ${circumference - len}` : `0 ${circumference}`}
                 strokeDashoffset={-offset}
+                style={{
+                  transition: `${seg.label ? "opacity 180ms ease-out, " : ""}stroke-dasharray 900ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 90}ms`,
+                }}
                 className={`${seg.colorClass} ${
                   seg.label
-                    ? `cursor-pointer transition-opacity ${
-                        hovered && hovered !== seg.key ? "opacity-40" : "opacity-100"
-                      }`
+                    ? `cursor-pointer ${hovered && hovered !== seg.key ? "opacity-40" : "opacity-100"}`
                     : ""
                 }`}
                 onMouseEnter={seg.label ? () => setHovered(seg.key) : undefined}
@@ -120,8 +134,11 @@ function Donut({
             fill="none"
             strokeWidth={thickness}
             strokeLinecap="round"
-            strokeDasharray={`${overLen} ${circumference - overLen}`}
+            strokeDasharray={drawn ? `${overLen} ${circumference - overLen}` : `0 ${circumference}`}
             strokeDashoffset={0}
+            style={{
+              transition: `stroke-dasharray 900ms cubic-bezier(0.22, 1, 0.36, 1) ${segments.length * 90 + 150}ms`,
+            }}
             className={overflow?.colorClass}
           />
         ) : null}
@@ -167,18 +184,22 @@ const CATEGORY_ORDER: BudgetCategory[] = [
   "other",
 ];
 
-/** Warm "low-cortisol" categorical palette for the breakdown slices (see the
- *  `chart` tokens in tailwind.config). Each entry pairs the SVG `stroke-*` with
- *  the matching legend `bg-*` swatch. Ordered so no two browns sit adjacent on
- *  the ring; the 7th colour catches the grouped "Other" bucket. */
+/** Cool categorical palette for the distribution slices. A warm terracotta
+ *  slice reads straight as the blush CTA accent sat on the same page, and that
+ *  is exactly the tint a money chart must not borrow — these are the cool
+ *  half of the design tokens (steel / sage / eucalyptus / ink / moss), tuned
+ *  to stay distinguishable on the light paper card and the dark umber surface.
+ *  Each entry pairs the SVG `stroke-*` with the matching legend `bg-*` swatch.
+ *  Ordered so no two hues sit adjacent on the ring; the 7th colour catches the
+ *  grouped "Other" bucket. */
 const SLICE_PALETTE: Array<{ stroke: string; dot: string }> = [
-  { stroke: "stroke-chart-terracotta", dot: "bg-chart-terracotta" },
-  { stroke: "stroke-chart-sage", dot: "bg-chart-sage" },
-  { stroke: "stroke-chart-taupe", dot: "bg-chart-taupe" },
-  { stroke: "stroke-chart-rose", dot: "bg-chart-rose" },
-  { stroke: "stroke-chart-olive", dot: "bg-chart-olive" },
-  { stroke: "stroke-chart-ochre", dot: "bg-chart-ochre" },
-  { stroke: "stroke-chart-sand", dot: "bg-chart-sand" },
+  { stroke: "stroke-steel-500", dot: "bg-steel-500" },
+  { stroke: "stroke-sage-400", dot: "bg-sage-400" },
+  { stroke: "stroke-eucalyptus-500", dot: "bg-eucalyptus-500" },
+  { stroke: "stroke-steel-300", dot: "bg-steel-300" },
+  { stroke: "stroke-ink-400", dot: "bg-ink-400" },
+  { stroke: "stroke-moss-500", dot: "bg-moss-500" },
+  { stroke: "stroke-steel-200", dot: "bg-steel-200" },
 ];
 
 const MAX_SLICES = 6; // top N categories; the rest collapse into "Other".
@@ -336,7 +357,10 @@ function StatRow({
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-umber-800 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50">
+    <section
+      className="flex h-full flex-col rounded-2xl border border-umber-800 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50"
+      style={{ animation: "fadeInUp 280ms ease-out 140ms backwards" }}
+    >
       <h3 className="mb-4 font-grotesk text-sm font-medium tracking-tight text-ink-700 dark:text-paper-100">
         {title}
       </h3>
@@ -399,7 +423,10 @@ function FlipCard({
 }) {
   const [flipped, setFlipped] = useState(false);
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-umber-800 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50">
+    <section
+      className="flex h-full flex-col rounded-2xl border border-umber-800 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-800/50"
+      style={{ animation: "fadeInUp 280ms ease-out backwards" }}
+    >
       <CardHeader
         title={flipped ? backTitle : frontTitle}
         flipped={flipped}
@@ -530,10 +557,16 @@ export function SpendingCharts({
                       : undefined
                   }
                 >
-                  <span className="font-grotesk text-2xl font-semibold tracking-tight tabular-nums text-ink-900 dark:text-paper-50">
+                  <span
+                    className="font-grotesk text-2xl font-semibold tracking-tight tabular-nums text-ink-900 dark:text-paper-50"
+                    style={{ animation: "fadeInUp 280ms ease-out 380ms backwards" }}
+                  >
                     {paidPct}%
                   </span>
-                  <span className="text-[11px] text-ink-500 dark:text-umber-300">
+                  <span
+                    className="text-[11px] text-ink-500 dark:text-umber-300"
+                    style={{ animation: "fadeInUp 280ms ease-out 460ms backwards" }}
+                  >
                     {t("dashboard.charts.paid_center")}
                   </span>
                 </Donut>
@@ -599,10 +632,16 @@ export function SpendingCharts({
                       valueLabel: `${pcts[i] ?? 0}% · ${formatHufCompact(s.amount, locale)}`,
                     }))}
                   >
-                    <span className="text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                    <span
+                      className="text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50"
+                      style={{ animation: "fadeInUp 280ms ease-out 380ms backwards" }}
+                    >
                       {formatHufCompact(total, locale)}
                     </span>
-                    <span className="text-[11px] text-ink-500 dark:text-umber-300">
+                    <span
+                      className="text-[11px] text-ink-500 dark:text-umber-300"
+                      style={{ animation: "fadeInUp 280ms ease-out 460ms backwards" }}
+                    >
                       {t("dashboard.charts.planned_label")}
                     </span>
                   </Donut>
@@ -611,7 +650,13 @@ export function SpendingCharts({
                       const pct = pcts[i] ?? 0;
                       const Icon = CATEGORY_ICONS[s.key as BudgetCategory] ?? CATEGORY_ICONS.other;
                       return (
-                        <li key={s.key} className="flex items-center gap-2 text-xs">
+                        <li
+                          key={s.key}
+                          className="flex items-center gap-2 text-xs"
+                          style={{
+                            animation: `fadeInUp 280ms ease-out ${180 + Math.min(i, 6) * 60}ms backwards`,
+                          }}
+                        >
                           <span
                             aria-hidden
                             className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`}

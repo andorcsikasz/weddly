@@ -1923,6 +1923,22 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     opacity: 1;
   }
 }
+/* Small settle-in used by staggered lists and dashboard chart figures
+   (see SpendingCharts.tsx, ActivityPanel.tsx) — applied inline with a
+   per-item delay and `backwards` fill so each row/number starts from this
+   state rather than popping in. Honoured by the global reduced-motion
+   clamp above (animation-duration forced near-zero for every element,
+   inline styles included). */
+@keyframes fadeInUp {
+  from {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 /* Success check "pop" — a spring-ish scale + settle so the green tick lands
    with a beat when the success card first mounts. Pairs with the confetti. */
 @keyframes check-pop {

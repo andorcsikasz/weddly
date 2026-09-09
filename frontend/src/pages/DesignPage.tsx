@@ -1353,7 +1353,7 @@ export default function DesignPage() {
     <>
       <header className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h1 className="font-grotesk font-semibold tracking-tight">{t("design.title")}</h1>
+          <h1 className="sr-only font-grotesk">{t("design.title")}</h1>
           <InfoHint text={t("design.hint")} />
         </div>
         {/* Ambient save status (replaces the per-save success toast). Announced

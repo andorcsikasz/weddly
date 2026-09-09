@@ -2402,6 +2402,9 @@ const es: LocaleMessages = {
     block_seating_bullet_2: "Avisos de conflicto en el lienzo",
     block_seating_bullet_3: "PDF listo para imprimir · A4 · A6 · A3",
     testimonials_title: "Parejas que han usado Weddly para planear",
+    testimonials_rating: "4.9",
+    testimonials_rating_caption: "valoración media de las parejas que planifican con Weddly",
+    testimonials_stars_aria: "5 de 5 estrellas",
     t1_quote:
       "Todo vive en un solo lugar: presupuesto, invitados, mesas. Los dos vemos la misma vista y siempre sabemos qué toca ahora.",
     t1_name: "Allie y Noah",

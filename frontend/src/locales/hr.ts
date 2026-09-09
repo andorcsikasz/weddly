@@ -2366,6 +2366,9 @@ const hr: LocaleMessages = {
     block_seating_bullet_2: "Upozorenja o sukobima na platnu",
     block_seating_bullet_3: "PDF spreman za tisak · A4 · A6 · A3",
     testimonials_title: "Parovi koji su planirali s Weddlyjem",
+    testimonials_rating: "4,9",
+    testimonials_rating_caption: "prosječna ocjena parova koji planiraju s Weddlyjem",
+    testimonials_stars_aria: "5 od 5 zvjezdica",
     t1_quote:
       "Sve je na jednom mjestu, proračun, gosti, raspored sjedenja. Oboje vidimo isto i uvijek znamo što je sljedeće.",
     t1_name: "Allie & Noah",

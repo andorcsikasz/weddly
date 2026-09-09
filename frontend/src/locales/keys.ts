@@ -120,7 +120,7 @@ export interface LocaleMessages {
     guest_page_description: string;
     wedding_site_title: string;
     wedding_site_description: string;
-    /** The couple's side of the vendor conversations (/app/messages). */
+    /** The couple's side of the vendor conversations (/app/vendors/messages). */
     messages_title: string;
     messages_description: string;
   };
@@ -2196,8 +2196,8 @@ export interface LocaleMessages {
     automated: string;
     automated_hint: string;
   };
-  /** /app/messages — the couple's thread list, a single thread, and (second
-   *  tab) the outreach history that used to live at /app/outreach. */
+  /** /app/vendors/messages — the couple's thread list, a single thread, and
+   *  (second tab) the outreach history that used to live at /app/outreach. */
   messages: {
     page_title: string;
     page_body: string;
@@ -2990,6 +2990,12 @@ export interface LocaleMessages {
     block_seating_bullet_2: string;
     block_seating_bullet_3: string;
     testimonials_title: string;
+    /** Numeric rating shown beside the star row under the testimonials title. */
+    testimonials_rating: string;
+    /** Supporting line under the numeric rating ("from couples who ..."). */
+    testimonials_rating_caption: string;
+    /** Screen-reader label for the five-star rating row on a testimonial. */
+    testimonials_stars_aria: string;
     t1_quote: string;
     t1_name: string;
     t1_meta: string;
@@ -3370,9 +3376,9 @@ export interface LocaleMessages {
     /** Day-of run-of-show timeline page — sidebar only. */
     schedule: string;
     suppliers: string;
-    /** Vendor conversations AND the outreach the couple sent — one rail row,
-     *  two tabs of /app/messages. Always carried: one inquiry is enough for a
-     *  vendor to write back. */
+    /** Vendor conversations AND the outreach the couple sent — no rail row of its
+     *  own; the /app/vendors top-row button opens /app/vendors/messages, two
+     *  tabs. Always carried: one inquiry is enough for a vendor to write back. */
     messages: string;
     /** Free-form planning surface (tasks / ideas / wedding-day schedule). */
     planning: string;

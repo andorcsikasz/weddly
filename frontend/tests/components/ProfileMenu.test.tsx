@@ -99,13 +99,18 @@ describe("<ProfileMenu>", () => {
     await waitFor(() => {
       expect(view.container.querySelectorAll(".bg-sage-500")).toHaveLength(2);
     });
-    expect(view.container.querySelectorAll(".bg-sage-500.right-0")).toHaveLength(2);
+    // The green dot itself no longer carries `right-0` (that class lives on
+    // its outer ping wrapper), so assert the position via each dot's
+    // closest positioner.
+    for (const dot of view.container.querySelectorAll(".bg-sage-500")) {
+      expect(dot.closest(".right-0")).not.toBeNull();
+    }
     expect(view.container.querySelector(".bg-sage-500.left-0")).not.toBeInTheDocument();
 
     view.unmount();
   });
 
-  it("keeps an inactive partner muted while the current working profile is green", async () => {
+  it("renders only the current working profile green; an inactive partner gets no dot at all", async () => {
     const { view } = renderMenu({
       full_name: "Csaba Antal",
       email: "csaba@example.test",
@@ -113,9 +118,11 @@ describe("<ProfileMenu>", () => {
     });
 
     await waitFor(() => {
-      expect(view.container.querySelectorAll(".bg-sage-500.right-0")).toHaveLength(1);
-      expect(view.container.querySelector(".bg-umber-400.right-0")).toBeInTheDocument();
+      expect(view.container.querySelectorAll(".bg-sage-500")).toHaveLength(1);
     });
+    // Offline renders nothing, not a muted dot — a grey mark on the avatar
+    // read as a state nobody defined (user direction: only green means it).
+    expect(view.container.querySelector(".bg-umber-400")).not.toBeInTheDocument();
 
     view.unmount();
   });

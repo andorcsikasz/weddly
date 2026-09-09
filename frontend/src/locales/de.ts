@@ -2416,6 +2416,9 @@ const de: LocaleMessages = {
     block_seating_bullet_2: "Konfliktwarnungen direkt auf der Fläche",
     block_seating_bullet_3: "Druckfertiges PDF · A4 · A6 · A3",
     testimonials_title: "Paare, die mit Weddly geplant haben",
+    testimonials_rating: "4,9",
+    testimonials_rating_caption: "durchschnittliche Bewertung von Paaren, die mit Weddly planen",
+    testimonials_stars_aria: "5 von 5 Sternen",
     t1_quote:
       "Alles liegt an einem Ort, Budget, Gäste, Sitzplan. Wir sehen beide dieselbe Ansicht und wissen immer, was als Nächstes kommt.",
     t1_name: "Allie & Noah",

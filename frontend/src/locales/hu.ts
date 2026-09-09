@@ -2374,6 +2374,9 @@ const hu: LocaleMessages = {
     block_seating_bullet_2: "Ütközésjelzés az ültetési vásznon",
     block_seating_bullet_3: "Nyomtatásra kész PDF · A4 · A6 · A3",
     testimonials_title: "Párok, akik már a Wēddlyvel tervezték az esküvőjüket",
+    testimonials_rating: "4,9",
+    testimonials_rating_caption: "a Wēddlyvel tervező párok átlagos értékelése",
+    testimonials_stars_aria: "5 csillagból 5",
     t1_quote:
       "Egy helyen van minden, költségvetés, vendégek, ültetés. Mindketten ugyanazt látjuk, és tudjuk, mi a következő lépés.",
     t1_name: "Allie & Noah",

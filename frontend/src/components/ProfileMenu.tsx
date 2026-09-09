@@ -206,11 +206,7 @@ export function ProfileMenu({
                 title={`${partner?.full_name ?? ""} · ${t(`profile.partner_status_${partner?.status ?? "joined"}`)}`}
               >
                 {partnerInitials}
-                <span
-                  className={`absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full border-2 border-paper-50 dark:border-umber-800 ${
-                    partner?.status === "active" ? "bg-sage-500" : "bg-umber-400"
-                  }`}
-                />
+                <PresenceDot online={partner?.status === "active"} />
               </span>
             )}
             <span
@@ -222,11 +218,7 @@ export function ProfileMenu({
               }`}
             >
               {initials}
-              <span
-                className={`absolute bottom-0 right-0 z-10 h-3 w-3 rounded-full border-2 border-paper-50 dark:border-umber-800 ${
-                  locallyActive ? "bg-sage-500" : "bg-umber-400"
-                }`}
-              />
+              <PresenceDot online={locallyActive} />
             </span>
           </span>
           <ChevronDownIcon />
@@ -390,6 +382,23 @@ export function ProfileMenu({
         </div>
       )}
     </div>
+  );
+}
+
+/** Green "actively working" presence dot. Pings softly while the person is
+ *  online; renders nothing at all when they aren't. There used to be a muted
+ *  umber dot for "present but idle", but offline is a state nobody defined —
+ *  only green means it now. Border keeps the dot legible where the avatar
+ *  circle meets the page. */
+function PresenceDot({ online }: { online: boolean }) {
+  if (!online) return null;
+  return (
+    <span className="absolute bottom-0 right-0 z-10" aria-hidden="true">
+      <span className="relative flex h-3 w-3">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage-400 opacity-60" />
+        <span className="relative inline-flex h-3 w-3 rounded-full border-2 border-paper-50 bg-sage-500 dark:border-umber-800" />
+      </span>
+    </span>
   );
 }
 

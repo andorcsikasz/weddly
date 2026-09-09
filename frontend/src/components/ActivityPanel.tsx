@@ -368,18 +368,18 @@ export function ActivityPanel({
           {attributed > 0 && (
             <span className="mt-2.5 block">
               <span className="flex h-1 overflow-hidden rounded-full">
-                <span className="bg-blush-500 dark:bg-blush-400" style={{ width: `${selfPct}%` }} />
+                <span
+                  className="bg-eucalyptus-500 dark:bg-eucalyptus-400"
+                  style={{ width: `${selfPct}%` }}
+                />
                 {partnerCount > 0 && (
-                  <span
-                    className="bg-umber-300 dark:bg-umber-500"
-                    style={{ width: `${partnerPct}%` }}
-                  />
+                  <span className="bg-ink-300" style={{ width: `${partnerPct}%` }} />
                 )}
               </span>
               <span className="mt-1.5 flex gap-3 text-[10px] text-ink-500 dark:text-ink-300">
                 <span>
                   <span
-                    className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-blush-500 dark:bg-blush-400"
+                    className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-eucalyptus-500 dark:bg-eucalyptus-400"
                     aria-hidden
                   />
                   {t("profile.activity_actor_you")} {selfPct}%
@@ -387,7 +387,7 @@ export function ActivityPanel({
                 {partnerCount > 0 && (
                   <span>
                     <span
-                      className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-umber-300 dark:bg-umber-500"
+                      className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-ink-300"
                       aria-hidden
                     />
                     {partnerName} {partnerPct}%
@@ -413,18 +413,34 @@ export function ActivityPanel({
           </p>
         ) : (
           <ul id="activity-panel-body" className="divide-y divide-paper-300 dark:divide-ink-800">
-            {entries.map((e) => {
+            {entries.map((e, i) => {
               const actorIsSelf = e.actor_id !== null && e.actor_id === currentUserId;
               const actorName = actorIsSelf
                 ? t("profile.activity_actor_you")
                 : (e.actor_full_name ?? t("profile.activity_actor_unknown"));
               const phrase = renderActivityEntry(e, t, locale, currency);
+              // The row's leading dot mirrors the contribution-split colours so
+              // the legend above and the rows below can't tell two stories.
+              const actorDot = actorIsSelf
+                ? "bg-eucalyptus-500 dark:bg-eucalyptus-400"
+                : e.actor_id === null
+                  ? "bg-paper-300 dark:bg-ink-600"
+                  : "bg-ink-300";
               return (
                 <li
                   key={e.id}
                   className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-6 py-3 text-sm"
+                  style={{
+                    animation: `fadeInUp 280ms ease-out ${Math.min(i, 8) * 40}ms backwards`,
+                  }}
                 >
-                  <span className="font-medium text-ink-900 dark:text-paper-50">{actorName}</span>
+                  <span className="flex items-baseline gap-1.5">
+                    <span
+                      aria-hidden
+                      className={`h-1.5 w-1.5 shrink-0 self-center rounded-full ${actorDot}`}
+                    />
+                    <span className="font-medium text-ink-900 dark:text-paper-50">{actorName}</span>
+                  </span>
                   <span className="text-ink-600 dark:text-paper-200">{phrase}</span>
                   <span className="ml-auto font-mono text-xs text-ink-400 dark:text-ink-300">
                     {relativeTime(e.created_at, locale, t)}

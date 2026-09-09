@@ -1421,6 +1421,7 @@ export default function GuestsPage() {
                         coupleSlug={couple?.slug ?? null}
                         collapsed={collapsedHouseholds.has(hh.id)}
                         onToggleCollapsed={() => toggleHouseholdCollapsed(hh.id)}
+                        hideGroupChip
                         highlightGuest={predicateActive ? matchesGuestPredicates : undefined}
                         onCopyShare={() => {
                           void copyShare(couple?.slug ?? null, hh.code);
@@ -2555,6 +2556,7 @@ function HouseholdCard({
   onToggleAccommodation,
   onToggleGuestInvited,
   onPrintPlaceCard,
+  hideGroupChip = false,
 }: {
   household: Household;
   members: Guest[];
@@ -2565,6 +2567,9 @@ function HouseholdCard({
   /** Arms the parent wrapper's `draggable` on grip press so the rest of the
    *  card (rename input, action buttons) stays interactive. */
   onGripPointerDown?: () => void;
+  /** When the card sits under a group section header that already shows the
+   *  group name, hide the redundant group chip inside the card. */
+  hideGroupChip?: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   /** When a guest-level filter (RSVP / invited / accommodation) is active
@@ -2665,12 +2670,14 @@ function HouseholdCard({
               <span className="shrink-0 font-mono text-sm text-ink-900 tracking-[0.2em] dark:text-paper-50 md:col-start-4 md:row-start-1 md:text-base md:tracking-[0.3em]">
                 {household.code}
               </span>
-              <div className="min-w-0 max-w-full md:col-start-2 md:row-start-1">
-                <HouseholdGroupChip
-                  value={household.group_tag}
-                  onChange={(g) => onChangeGroup(household.id, g)}
-                />
-              </div>
+              {!hideGroupChip && (
+                <div className="min-w-0 max-w-full md:col-start-2 md:row-start-1">
+                  <HouseholdGroupChip
+                    value={household.group_tag}
+                    onChange={(g) => onChangeGroup(household.id, g)}
+                  />
+                </div>
+              )}
             </div>
           )}
           {!isHosts && coupleSlug && (
