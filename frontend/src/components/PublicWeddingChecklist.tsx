@@ -153,17 +153,14 @@ export function PublicWeddingChecklist({
             <h2 className="font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 sm:text-3xl lg:text-4xl dark:text-paper-50">
               {t("landing.checklist_demo_title")}
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-umber-700 sm:text-base dark:text-umber-300">
-              {t("landing.checklist_demo_subtitle")}
-            </p>
           </div>
         )}
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:gap-0">
           {teaser ? (
             <Link
               to={toolHref}
-              className="group rounded-2xl bg-neutral-950 p-5 text-white transition-shadow hover:shadow-pop sm:p-6 dark:bg-black"
+              className="group rounded-2xl bg-neutral-950 p-5 text-white transition-shadow hover:shadow-pop sm:p-6 lg:flex-1 lg:rounded-r-none dark:bg-black"
             >
               <StatCardBody t={t} done={done} total={total} percent={percent} />
               <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 transition-colors group-hover:text-white">
@@ -172,22 +169,31 @@ export function PublicWeddingChecklist({
               </p>
             </Link>
           ) : (
-            <div className="rounded-2xl bg-neutral-950 p-5 text-white sm:p-6 dark:bg-black">
+            <div className="rounded-2xl bg-neutral-950 p-5 text-white sm:p-6 lg:flex-1 lg:rounded-r-none dark:bg-black">
               <StatCardBody t={t} done={done} total={total} percent={percent} />
             </div>
           )}
+          {/* Tear-off stub: the black card is the ticket body, this is the
+              detachable PDF control glued to its right edge (see .ticket-stub
+              in index.css for the perforation + punch-hole treatment). */}
           <button
             type="button"
             onClick={downloadPdf}
             disabled={downloading}
-            className="btn-outline btn-lifted inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap disabled:opacity-60"
+            aria-label={t("landing.checklist_demo_download")}
+            className="ticket-stub flex min-h-14 w-full shrink-0 items-center justify-center rounded-2xl bg-ticket-paper px-5 py-4 text-ticket-ink disabled:opacity-60 lg:w-28 lg:rounded-l-none lg:px-2 lg:py-6"
           >
-            {downloading ? (
-              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <Download size={16} aria-hidden="true" />
-            )}
-            {t("landing.checklist_demo_download")}
+            <span aria-hidden="true" className="ticket-perforation hidden lg:block" />
+            <span className="flex items-center justify-center gap-2 lg:h-full lg:flex-col lg:gap-3">
+              {downloading ? (
+                <Loader2 size={16} className="shrink-0 animate-spin" aria-hidden="true" />
+              ) : (
+                <Download size={16} className="shrink-0" aria-hidden="true" />
+              )}
+              <span className="ticket-stub-label text-sm font-semibold lg:text-xs lg:font-semibold lg:uppercase lg:tracking-[0.14em]">
+                {t("landing.checklist_demo_download")}
+              </span>
+            </span>
           </button>
         </div>
 

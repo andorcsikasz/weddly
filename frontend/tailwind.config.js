@@ -248,6 +248,19 @@ export default {
           // cream page background (e.g. the card-position counter).
           ink: "#1e3a8a",
         },
+        // Ticket — the torn-ticket-stub PDF download control on the public
+        // checklist's black progress card (PublicWeddingChecklist). Exact
+        // values per design spec: `ink` is the stub's own dark navy (distinct
+        // from the app-wide `ink` ramp, which tops out lighter at ink-900
+        // #101830), `paper` is a warmer, brighter ivory than paper-50
+        // (#fbfaf5) so the stub reads as a separate stock from the page
+        // behind it, and `border` is a restrained pale blue for the stub's
+        // outline — never used as a fill.
+        ticket: {
+          ink: "#101B38",
+          paper: "#FFFEFA",
+          border: "#DCE7F5",
+        },
         // Chart: warm "low-cortisol" categorical palette for the budget
         // distribution donut + legend (see SpendingCharts). Deliberately
         // softer and more editorial than the blush/sage/ink utility tokens,
@@ -334,6 +347,11 @@ export default {
         // rgba(16,24,48,..), which reads blue when it falls on the warm
         // .stationery surfaces under a design proof card. umber-800 based.
         warm: "0 1px 2px 0 rgba(37, 28, 20, 0.05), 0 8px 20px -6px rgba(37, 28, 20, 0.18)",
+        // Ticket stub's own offset shadow — warm beige, deliberately
+        // restrained (an actual paper stub casts a soft, short shadow, not
+        // a dramatic drop). `ticket-hover` only deepens it slightly.
+        ticket: "2px 3px 0 0 rgba(205, 176, 138, 0.30)",
+        "ticket-hover": "3px 5px 0 0 rgba(205, 176, 138, 0.42)",
       },
       spacing: {
         // 44px — minimum interactive tap target (WCAG / iOS HIG).

@@ -1013,6 +1013,86 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     @apply min-h-tap font-grotesk font-semibold tracking-wide;
   }
 
+  /* Tear-off ticket stub — the PDF download control on the public checklist's
+     black progress card (PublicWeddingChecklist). The card is the "ticket
+     body"; this is the perforated stub attached to its right edge, so the
+     border only runs solid where the stub is NOT touching the card, and the
+     shared edge gets a dashed border + two punch-hole notches instead. Below
+     `lg` the two are stacked (no side to attach), so the stub falls back to
+     an ordinary full-width bar with a dashed TOP edge — its own tear line. */
+  .ticket-stub {
+    position: relative;
+    border: 1px solid theme("colors.ticket.border");
+    border-top-width: 2px;
+    border-top-style: dashed;
+    box-shadow: theme("boxShadow.ticket");
+    transition:
+      transform 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .ticket-stub:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: theme("boxShadow.ticket-hover");
+  }
+  /* Outline (not box-shadow) so the focus ring survives the shadow stack —
+     same reasoning as .btn-lifted:focus-visible above. */
+  .ticket-stub:focus-visible {
+    outline: 2px solid theme("colors.ticket.ink");
+    outline-offset: 2px;
+  }
+  @media (min-width: 1024px) {
+    .ticket-stub {
+      border-top-width: 1px;
+      border-top-style: solid;
+      border-left-width: 0;
+    }
+  }
+  /* Punch-hole notches at the top and bottom of the perforation, coloured to
+     match the page behind the ticket so they read as bites taken out of both
+     halves rather than dots drawn on top. Hidden below `lg` (`.ticket-stub`
+     has no vertical seam there — see the component markup). */
+  .ticket-perforation {
+    --ticket-punch: theme("colors.paper.50");
+    position: absolute;
+    top: 14px;
+    bottom: 14px;
+    left: 0;
+    border-left: 2px dashed theme("colors.ticket.border");
+  }
+  html.dark .ticket-perforation {
+    --ticket-punch: theme("colors.umber.900");
+  }
+  .ticket-perforation::before,
+  .ticket-perforation::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 15px;
+    height: 15px;
+    border-radius: 9999px;
+    background: var(--ticket-punch);
+    transform: translateX(-50%);
+  }
+  .ticket-perforation::before {
+    top: -7.5px;
+  }
+  .ticket-perforation::after {
+    bottom: -7.5px;
+  }
+  /* Vertical label — flat + horizontal below `lg` (mobile stub is a
+     horizontal bar), rotated onto the stub's spine from `lg` up. `rotate
+     (180deg)` on top of `vertical-rl` reads bottom-to-top, the usual
+     ticket-stub / book-spine convention. */
+  .ticket-stub-label {
+    writing-mode: horizontal-tb;
+  }
+  @media (min-width: 1024px) {
+    .ticket-stub-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+  }
+
   /* ── Landing hero ──────────────────────────────────────────────────────
      Hex values = paper-50 (#fbfaf5) / umber-900 (#3a3324) tokens. */
 
