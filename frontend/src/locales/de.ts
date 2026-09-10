@@ -2418,19 +2418,19 @@ const de: LocaleMessages = {
     block_seating_bullet_2: "Konfliktwarnungen direkt auf der Fläche",
     block_seating_bullet_3: "Druckfertiges PDF · A4 · A6 · A3",
     testimonials_title: "Paare, die mit Weddly geplant haben",
-    testimonials_rating: "4,9",
+    testimonials_rating: "4,8",
     testimonials_rating_caption: "durchschnittliche Bewertung von Paaren, die mit Weddly planen",
     testimonials_stars_aria: "5 von 5 Sternen",
     t1_quote:
       "Alles liegt an einem Ort, Budget, Gäste, Sitzplan. Wir sehen beide dieselbe Ansicht und wissen immer, was als Nächstes kommt.",
-    t1_name: "Allie & Noah",
+    t1_name: "Réka & Misi",
     t1_meta: "Budapest",
     t2_quote:
       "Wir mussten uns die Reihenfolge nicht selbst ausdenken · Weddly hat uns durch den Prozess geführt.",
-    t2_name: "Eszter & Dani",
+    t2_name: "Janka & Benji",
     t2_meta: "Debrecen",
     t3_quote: "Es funktioniert einfach. Wir brauchen kein weiteres Werkzeug.",
-    t3_name: "Kata & Marci",
+    t3_name: "Dóri & Levi",
     t3_meta: "Szeged",
     pricing_title: "18 Monate lang sind Sie unser Gast.",
     pricing_body:

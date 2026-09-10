@@ -2404,19 +2404,19 @@ const es: LocaleMessages = {
     block_seating_bullet_2: "Avisos de conflicto en el lienzo",
     block_seating_bullet_3: "PDF listo para imprimir · A4 · A6 · A3",
     testimonials_title: "Parejas que han usado Weddly para planear",
-    testimonials_rating: "4.9",
+    testimonials_rating: "4.8",
     testimonials_rating_caption: "valoración media de las parejas que planifican con Weddly",
     testimonials_stars_aria: "5 de 5 estrellas",
     t1_quote:
       "Todo vive en un solo lugar: presupuesto, invitados, mesas. Los dos vemos la misma vista y siempre sabemos qué toca ahora.",
-    t1_name: "Allie y Noah",
+    t1_name: "Réka y Misi",
     t1_meta: "Budapest",
     t2_quote:
       "No tuvimos que averiguar el orden de las cosas · Weddly nos guio por todo el proceso.",
-    t2_name: "Eszter y Dani",
+    t2_name: "Janka y Benji",
     t2_meta: "Debrecen",
     t3_quote: "Simplemente funciona. No necesitamos otra herramienta.",
-    t3_name: "Kata y Marci",
+    t3_name: "Dóri y Levi",
     t3_meta: "Szeged",
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_title: "Sois nuestros invitados 18 meses.",

@@ -589,17 +589,27 @@ export default function LandingPage() {
       {/* ════════════════════════ 08 · Reviews ════════════════════════ */}
       <section className="relative overflow-hidden bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <h2 className="text-center font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
-            {t("landing.testimonials_title")}
-          </h2>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-umber-600 dark:text-umber-300">
-            <StarRow />
-            <span className="font-grotesk text-base font-semibold text-umber-900 dark:text-paper-50">
-              {t("landing.testimonials_rating")}
-            </span>
-            <span>{t("landing.testimonials_rating_caption")}</span>
+          <div className="flex flex-col items-center text-center">
+            <h2 className="max-w-2xl font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
+              {t("landing.testimonials_title")}
+            </h2>
+            <div className="mt-6 flex items-center gap-2.5">
+              <span className="font-grotesk text-6xl font-bold tracking-tight text-umber-900 dark:text-paper-50">
+                {t("landing.testimonials_rating")}
+              </span>
+              <Star
+                size={44}
+                aria-hidden="true"
+                fill="currentColor"
+                strokeWidth={0}
+                className="text-umber-900 dark:text-paper-50"
+              />
+            </div>
+            <p className="mt-3 text-sm font-medium text-umber-600 dark:text-umber-300">
+              {t("landing.testimonials_rating_caption")}
+            </p>
           </div>
-          <ul className="mt-12 grid gap-5 sm:mt-16 sm:grid-cols-3 sm:gap-6">
+          <ul className="mt-10 grid gap-5 sm:grid-cols-3 sm:gap-6">
             <TestimonialCard
               quote={t("landing.t1_quote")}
               name={t("landing.t1_name")}

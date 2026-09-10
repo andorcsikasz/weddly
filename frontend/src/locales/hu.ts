@@ -2376,19 +2376,19 @@ const hu: LocaleMessages = {
     block_seating_bullet_2: "Ütközésjelzés az ültetési vásznon",
     block_seating_bullet_3: "Nyomtatásra kész PDF · A4 · A6 · A3",
     testimonials_title: "Párok, akik már a Wēddlyvel tervezték az esküvőjüket",
-    testimonials_rating: "4,9",
+    testimonials_rating: "4,8",
     testimonials_rating_caption: "a Wēddlyvel tervező párok átlagos értékelése",
     testimonials_stars_aria: "5 csillagból 5",
     t1_quote:
       "Egy helyen van minden, költségvetés, vendégek, ültetés. Mindketten ugyanazt látjuk, és tudjuk, mi a következő lépés.",
-    t1_name: "Allie & Noah",
+    t1_name: "Réka & Misi",
     t1_meta: "Budapest",
     t2_quote:
       "Nem kellett kitalálnunk, mit hol és mikor csináljunk, a Wēddly végigvezetett a folyamaton.",
-    t2_name: "Eszter & Dani",
+    t2_name: "Janka & Benji",
     t2_meta: "Debrecen",
     t3_quote: "Egyszerűen működik. Több eszközre nincs is szükségünk.",
-    t3_name: "Kata & Marci",
+    t3_name: "Dóri & Levi",
     t3_meta: "Szeged",
     // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
     pricing_title: "18 hónapig a vendégünk vagytok.",
