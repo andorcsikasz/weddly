@@ -269,6 +269,29 @@ db.exec(
 db.exec(
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_planning_checklist_template ON planning_items(couple_id, checklist_template_id) WHERE checklist_template_id IS NOT NULL",
 );
+
+// "Choose your wedding date" reads as open (and eventually overdue) work on
+// any couple who approved it before this auto-complete rule existed, even
+// though every one of them has a wedding_date on file — the whole rest of
+// the checklist computes its own due dates from it. New rows self-complete
+// at creation and on every date edit (`autoCompleteChooseDateItem` in
+// domain/wedding_checklist.ts); this is the one-time catch-up for rows that
+// predate that. Idempotent — a no-op once every such row is done.
+backfillChooseDateChecklistItem();
+function backfillChooseDateChecklistItem(): void {
+  const result = db
+    .prepare(
+      `UPDATE planning_items SET done = 1, updated_at = ?
+        WHERE checklist_template_id = 'choose-date' AND done = 0
+          AND couple_id IN (SELECT id FROM couples WHERE wedding_date IS NOT NULL)`,
+    )
+    .run(now());
+  if (result.changes > 0) {
+    console.log(
+      `[db.backfill] auto-completed ${result.changes} "choose your wedding date" checklist item(s) for couples with a date already set`,
+    );
+  }
+}
 // Idea triage on kind='idea' rows. `idea_status` is the maybe-pile sorting
 // ('doing' | 'maybe' | 'skip', see shared IdeaStatus); `idea_tag` is a loose
 // category ('program' | 'decor' | 'surprise' | 'keepsake' | 'experience').

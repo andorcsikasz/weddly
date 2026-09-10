@@ -7,6 +7,15 @@ import type { ConditionTag } from "./planning_prompts";
 import type { UiLocale } from "./locales";
 import { timelineDatesFor } from "./planning_timeline";
 
+// Choosing the date is the one checklist step the couple has usually already
+// taken by the time they open this tab — `couples.wedding_date` records it
+// directly, onboarding asks for it up front, and every other section's due
+// date is computed FROM it. Auto-completing this id (see
+// `backend/src/domain/wedding_checklist.ts`) is what keeps that redundant:
+// a couple who already picked a date should never see this row as an open
+// task, let alone an overdue one.
+export const CHOOSE_DATE_TEMPLATE_ID = "choose-date";
+
 export type ChecklistSectionId =
   | "m12_18"
   | "m9_12"

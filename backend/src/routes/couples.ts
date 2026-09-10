@@ -112,6 +112,7 @@ import { linkPlannerInvitationsForCouple } from "../domain/planner_invitations";
 import { ensurePartnerGuests, listGuestsByCouple, renamePartnerGuest } from "../domain/guests";
 import { renderSeatingChartPdf } from "../domain/pdf";
 import { purgeOneCouple } from "../domain/purge";
+import { autoCompleteChooseDateItem } from "../domain/wedding_checklist";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
 import { getUserById, normaliseLocale, toUser, type UserRow } from "../domain/users";
 import {
@@ -2643,6 +2644,17 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
 
   const refreshed = getCoupleById(couple.id);
   if (!refreshed) throw new HttpError(500, "Couple vanished after update");
+
+  // A date just landed (or changed) — if the couple already approved the
+  // checklist's own "choose your wedding date" task, this is the moment it
+  // stops being open work. See `autoCompleteChooseDateItem` for why this
+  // never runs the other way when the date is cleared back to TBD.
+  if (
+    (body.wedding_date_goal !== undefined || body.wedding_date !== undefined) &&
+    refreshed.wedding_date
+  ) {
+    autoCompleteChooseDateItem(couple.id);
+  }
 
   // Fan out per-field audit rows. Each cluster gets its own action so
   // partner B sees "Anna changed the wedding date" + "Anna updated the

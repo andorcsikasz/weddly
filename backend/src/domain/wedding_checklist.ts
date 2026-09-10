@@ -5,7 +5,11 @@
 import { isUiLocale, type UiLocale } from "@shared/locales";
 import { toIsoDate } from "@shared/planning_timeline";
 import type { PlanningItem } from "@shared/types";
-import { checklistItemById, isChecklistTemplateId } from "@shared/wedding_checklist";
+import {
+  CHOOSE_DATE_TEMPLATE_ID,
+  checklistItemById,
+  isChecklistTemplateId,
+} from "@shared/wedding_checklist";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { HttpError } from "../lib/http";
@@ -61,14 +65,25 @@ export function addChecklistItem(
       knownTitles.has(entry.title),
   );
 
+  // Choosing the date is usually already done by the time this row is
+  // materialized — the couple typed it at onboarding, or edits it from the
+  // dashboard, and every other section's due date is computed from it. Land
+  // it pre-ticked rather than making the couple re-confirm a decision the
+  // rest of the app already treats as settled.
+  const initialDone = templateId === CHOOSE_DATE_TEMPLATE_ID && Boolean(weddingDate);
+
   const ts = now();
   let id: number;
   if (reusable) {
     // Never clobber a date the couple (or another wand) already set on the
-    // row being adopted — only fill the gap.
+    // row being adopted — only fill the gap. `done` only ever moves 0 → 1
+    // here, never back, so a task the couple already unchecked stays that way.
     db.prepare(
-      "UPDATE planning_items SET checklist_template_id = ?, due_date = COALESCE(due_date, ?), updated_at = ? WHERE id = ? AND couple_id = ? AND checklist_template_id IS NULL",
-    ).run(templateId, resolvedDueDate, ts, reusable.id, coupleId);
+      `UPDATE planning_items
+         SET checklist_template_id = ?, due_date = COALESCE(due_date, ?),
+             done = CASE WHEN ? THEN 1 ELSE done END, updated_at = ?
+       WHERE id = ? AND couple_id = ? AND checklist_template_id IS NULL`,
+    ).run(templateId, resolvedDueDate, initialDone ? 1 : 0, ts, reusable.id, coupleId);
     id = reusable.id;
   } else {
     const position = existing.reduce((max, entry) => Math.max(max, entry.position), -1) + 1;
@@ -78,12 +93,13 @@ export function addChecklistItem(
           (couple_id, kind, topic, title, body, done, due_date, scheduled_time, assignee,
            suggested_by_user_id, start_date, supplier_id, priority, position,
            checklist_template_id, created_at, updated_at)
-         VALUES (?, 'task', 'wedding', ?, NULL, 0, ?, NULL, NULL,
+         VALUES (?, 'task', 'wedding', ?, NULL, ?, ?, NULL, NULL,
            NULL, ?, NULL, 0, ?, ?, ?, ?)`,
       )
       .run(
         coupleId,
         template.title,
+        initialDone ? 1 : 0,
         resolvedDueDate,
         resolvedDueDate,
         position,
@@ -109,4 +125,16 @@ export function addChecklistItem(
   markCoupleCalendarDirty(coupleId);
 
   return { item, created: true };
+}
+
+/** Ticks the couple's own "choose your wedding date" task the moment they
+ *  set (or change) an exact date — called from the couple PATCH handler
+ *  right after `wedding_date` lands, so a task added back when the date was
+ *  still TBD doesn't sit there stale and eventually read as overdue. A no-op
+ *  when the item was never approved, or is already done; never un-ticks —
+ *  clearing the date back to TBD leaves a manually-confirmed choice alone. */
+export function autoCompleteChooseDateItem(coupleId: number): void {
+  db.prepare(
+    "UPDATE planning_items SET done = 1, updated_at = ? WHERE couple_id = ? AND checklist_template_id = ? AND done = 0",
+  ).run(now(), coupleId, CHOOSE_DATE_TEMPLATE_ID);
 }

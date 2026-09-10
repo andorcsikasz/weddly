@@ -3,7 +3,7 @@ import "../setup";
 import type { PlanningItem } from "@shared/types";
 import { PDFDocument } from "pdf-lib";
 import { beforeEach, describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 type AddResponse = { item: PlanningItem; created: boolean };
 
@@ -50,6 +50,62 @@ describe("wedding checklist", () => {
     expect(
       list.data.items.filter((entry) => entry.checklist_template_id === "book-venue"),
     ).toHaveLength(1);
+  });
+
+  test("lands 'choose your wedding date' pre-ticked when the couple already has an exact date", async () => {
+    const { token } = await bootstrapCouple(); // onboards with wedding_date: "2026-09-12"
+    const added = await req<AddResponse>(
+      "POST",
+      "/api/planning/checklist/items",
+      { template_id: "choose-date", locale: "en" },
+      { token },
+    );
+    expect(added.status).toBe(200);
+    expect(added.data.created).toBe(true);
+    expect(added.data.item.done).toBe(true);
+  });
+
+  test("leaves 'choose your wedding date' open with no exact date yet, then ticks it once one is set", async () => {
+    const reg = await registerAndVerify({
+      email: "tbd-date@weddly.test",
+      password: "supersafe123",
+      full_name: "Owner",
+    });
+    const onboard = await req(
+      "POST",
+      "/api/couples/onboard",
+      {
+        display_name: "Mia & Lucas",
+        wedding_date_goal: { kind: "tbd" },
+        target_guest_count: 80,
+        budget_ceiling_huf: 5_000_000,
+        style_tags: [],
+      },
+      { token: reg.data.token },
+    );
+    expect(onboard.status).toBe(201);
+
+    const added = await req<AddResponse>(
+      "POST",
+      "/api/planning/checklist/items",
+      { template_id: "choose-date", locale: "en" },
+      { token: reg.data.token },
+    );
+    expect(added.data.item.done).toBe(false);
+
+    const patched = await req(
+      "PATCH",
+      "/api/couples/current",
+      { wedding_date_goal: { kind: "exact", exact_date: "2027-05-01" } },
+      { token: reg.data.token },
+    );
+    expect(patched.status).toBe(200);
+
+    const list = await req<{ items: PlanningItem[] }>("GET", "/api/planning", undefined, {
+      token: reg.data.token,
+    });
+    const dateTask = list.data.items.find((entry) => entry.checklist_template_id === "choose-date");
+    expect(dateTask?.done).toBe(true);
   });
 
   test("reuses an equivalent existing template task instead of creating a duplicate", async () => {
