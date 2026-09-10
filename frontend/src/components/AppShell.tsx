@@ -844,76 +844,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       )}
-      <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
-          {/* When signed in, the wordmark routes to the in-app dashboard so
-              users don't get punted to the marketing landing (which reads as
-              "I got logged out"). Signed-out viewers (rare here, but safe)
-              still get /. */}
-          <div className="flex items-center gap-3">
-            <Link
-              to={user ? "/app" : "/"}
-              className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
-            >
-              <Wordmark size="sm" />
-            </Link>
-            {/* Workspace chip sits inline with the wordmark so the active
-             *  event (Allie & Noah) is the second thing the user reads
-             *  after the brand. Hidden when signed-out. */}
-            {user && <WorkspaceSwitcher />}
-          </div>
-          {/* Header icon row — every button is a 44×44 square so tap targets
-              line up with the avatar pill and stay HIG-compliant on mobile.
-              gap-1 is plenty between square buttons; gap-2 made the row
-              spread out beyond the wordmark on narrow viewports. */}
-          <div className="flex items-center gap-1">
-            {/* Feedback now lives in the ProfileMenu dropdown for everyone
-             *  (passed down via `onOpenFeedback` below). Language stays inline
-             *  on tablet+ where the header has horizontal room, and drops into
-             *  the dropdown on phones via `sm:inline-flex`. */}
-            {user && !inAdminView && (
-              <button
-                type="button"
-                className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-                onClick={() => setTourOpen(true)}
-                aria-label={t("tour.aria_label")}
-                title={t("tour.aria_label")}
-              >
-                <Compass size={18} aria-hidden="true" />
-              </button>
-            )}
-            <LocaleSwitcher
-              className="hidden sm:block"
-              buttonClassName="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-            />
-            {user && <NotificationBell />}
-            <button
-              type="button"
-              className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 min-[360px]:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
-              title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
-            >
-              {theme === "dark" ? (
-                <Sun size={18} aria-hidden="true" />
-              ) : (
-                <Moon size={18} aria-hidden="true" />
-              )}
-            </button>
-            <ProfileMenu
-              theme={theme}
-              onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
-              onOpenFeedback={() => setFeedbackOpen(true)}
-              onOpenShare={() => {
-                setShareSource("profile_dropdown");
-                setShareOpen(true);
-              }}
-            />
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto flex max-w-7xl gap-4 px-4 pb-28 pt-6 sm:px-6 sm:pb-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+      <div className="flex">
         {/*
          * Sidebar visibility:
          *   - Phone (<768px): hidden — bottom-nav is the spatial nav.
@@ -926,12 +857,38 @@ export function AppShell({ children }: { children: ReactNode }) {
          *     space to the right of the content), or stays `w-14` when
          *     the user has explicitly collapsed it. `sidebarCollapsed` only
          *     applies at lg+ — below that the rail is icon-only regardless.
+         *
+         * The rail is permanently dark — independent of the app's own
+         * light/dark toggle — which is what lets its coloring run unbroken
+         * from the viewport's top-left corner. It's `sticky top-0 h-screen`
+         * (rather than the header's separate sticky bar) so the wordmark
+         * and nav both stay pinned to the viewport as the page scrolls. The
+         * gradient and every nav row/toggle color below is the value that
+         * used to apply only under `dark:` before this — folded to
+         * unconditional now that the rail no longer follows the toggle.
          */}
         <aside
-          className={`hidden shrink-0 bg-gradient-to-t from-blush-100 via-paper-100 to-paper-50 transition-[width] duration-300 ease-in-out dark:from-umber-800 dark:via-umber-900 dark:to-umber-950 md:flex md:w-14 ${
+          className={`hidden shrink-0 sticky top-0 h-screen flex-col bg-gradient-to-t from-umber-800 via-umber-900 to-umber-950 transition-[width] duration-300 ease-in-out md:flex md:w-14 ${
             sidebarCollapsed ? "lg:w-14" : "lg:w-56"
           }`}
         >
+          {/* Brand mark — lives at the top of the rail (the header no longer
+              carries it) so the dark coloring reaches the page's true
+              top-left corner instead of starting below a separate light
+              header strip. Hidden at md (icon-only tablet rail) and when
+              collapsed at lg+: the wide-tracked wordmark has no icon-only
+              fallback, so it disappears the same way every nav label does in
+              those states rather than clipping mid-letter. */}
+          <div className="flex h-[68px] shrink-0 items-center overflow-hidden border-b border-umber-800 px-4">
+            <Link
+              to={user ? "/app" : "/"}
+              className={`hidden items-center text-paper-50 transition-colors hover:text-blush-300 ${
+                sidebarCollapsed ? "" : "lg:inline-flex"
+              }`}
+            >
+              <Wordmark size="sm" />
+            </Link>
+          </div>
           {/* Bound the rail to the viewport so the full nav (15 links + 4
               section headers) is reachable in one screen — it scrolls inside
               itself on short laptops instead of running off the bottom. The
@@ -943,16 +900,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               shrinks to its content width and the toggle crowds the
               "Áttekintés" label. Kept off at md so the tablet icon rail stays
               content-width/centered. */}
-          {/* Sticky rail wrapper — bounds the nav to the viewport (it scrolls
-              inside the inner box below on short laptops). It has NO overflow of
-              its own, so the floating collapse toggle can hang in the top-right
-              corner without the scroll box's thin scrollbar / overflow clip
-              eating its border (the old bug: the toggle lived inside the
-              overflow-y-auto box and the scrollbar clipped its right + top
-              edge). `sticky` also makes this the containing block that pins the
-              absolute toggle; `lg:w-full` fills the expanded rail so the toggle
-              keeps a stable offset from the right edge. */}
-          <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] min-h-0 flex-col lg:w-full">
+          {/* Positioning wrapper — the aside itself is now the sticky,
+              viewport-height element (above), so this only needs `relative`:
+              it's the containing block that pins the floating collapse
+              toggle below, and `flex-1 min-h-0` fills the rest of the rail's
+              height under the brand-mark row. */}
+          <div className="relative flex min-h-0 flex-1 flex-col lg:w-full">
             {/* Collapse toggle — same affordance in both couple and admin
                 views. When expanded it floats over the first row's right side
                 (absolute, out of flow) so it stops reserving a whole row — the
@@ -978,7 +931,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-label={t(sidebarCollapsed ? "nav.sidebar_expand" : "nav.sidebar_collapse")}
                 title={t(sidebarCollapsed ? "nav.sidebar_expand" : "nav.sidebar_collapse")}
                 aria-expanded={!sidebarCollapsed}
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-umber-200 bg-paper-50/95 text-umber-500 shadow-sm backdrop-blur-sm transition-colors hover:border-umber-300 hover:bg-paper-100 hover:text-umber-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 focus-visible:ring-offset-1 dark:border-umber-700 dark:bg-umber-800/95 dark:text-paper-300 dark:hover:border-umber-600 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-400"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-umber-700 bg-umber-800/95 text-paper-300 shadow-sm backdrop-blur-sm transition-colors hover:border-umber-600 hover:bg-umber-700 hover:text-paper-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-paper-400 focus-visible:ring-offset-1"
               >
                 {sidebarCollapsed ? (
                   <ChevronsRight size={12} aria-hidden="true" />
@@ -998,7 +951,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     Hidden at md (icon-only) and at lg+ when the user has
                     collapsed the rail, matching SidebarGroupHeader behaviour. */}
                   {!sidebarCollapsed && (
-                    <div className="hidden items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-950 lg:flex dark:text-neutral-300">
+                    <div className="hidden items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-300 lg:flex">
                       <ShieldCheck size={11} aria-hidden="true" />
                       {t("admin.nav_label")}
                     </div>
@@ -1127,19 +1080,82 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </aside>
-        <main
-          id="main-content"
-          ref={mainRef}
-          tabIndex={-1}
-          data-admin-shell={inAdminView ? "true" : undefined}
-          /* Couple workspace marker — scopes the warm espresso text palette
-             override in index.css (ink/navy → umber) so it never touches the
-             admin shell, auth, or public pages. */
-          data-app-shell={inAdminView ? undefined : "true"}
-          className="flex-1 min-w-0 focus:outline-none"
-        >
-          {children}
-        </main>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
+            <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+              {/* The wordmark now lives at the top of the sidebar rail
+                  (above) so its dark coloring reaches the page's true
+                  top-left corner. The workspace chip is what's left on this
+                  side. */}
+              <div className="flex items-center gap-3">{user && <WorkspaceSwitcher />}</div>
+              {/* Header icon row — every button is a 44×44 square so tap targets
+                  line up with the avatar pill and stay HIG-compliant on mobile.
+                  gap-1 is plenty between square buttons; gap-2 made the row
+                  spread out beyond the wordmark on narrow viewports. */}
+              <div className="flex items-center gap-1">
+                {/* Feedback now lives in the ProfileMenu dropdown for everyone
+                 *  (passed down via `onOpenFeedback` below). Language stays inline
+                 *  on tablet+ where the header has horizontal room, and drops into
+                 *  the dropdown on phones via `sm:inline-flex`. */}
+                {user && !inAdminView && (
+                  <button
+                    type="button"
+                    className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+                    onClick={() => setTourOpen(true)}
+                    aria-label={t("tour.aria_label")}
+                    title={t("tour.aria_label")}
+                  >
+                    <Compass size={18} aria-hidden="true" />
+                  </button>
+                )}
+                <LocaleSwitcher
+                  className="hidden sm:block"
+                  buttonClassName="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+                />
+                {user && <NotificationBell />}
+                <button
+                  type="button"
+                  className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 min-[360px]:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+                  title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
+                >
+                  {theme === "dark" ? (
+                    <Sun size={18} aria-hidden="true" />
+                  ) : (
+                    <Moon size={18} aria-hidden="true" />
+                  )}
+                </button>
+                <ProfileMenu
+                  theme={theme}
+                  onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  onOpenFeedback={() => setFeedbackOpen(true)}
+                  onOpenShare={() => {
+                    setShareSource("profile_dropdown");
+                    setShareOpen(true);
+                  }}
+                />
+              </div>
+            </div>
+          </header>
+
+          <div className="mx-auto flex w-full max-w-7xl gap-4 px-4 pb-28 pt-6 sm:px-6 sm:pb-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+            <main
+              id="main-content"
+              ref={mainRef}
+              tabIndex={-1}
+              data-admin-shell={inAdminView ? "true" : undefined}
+              /* Couple workspace marker — scopes the warm espresso text palette
+                 override in index.css (ink/navy → umber) so it never touches the
+                 admin shell, auth, or public pages. */
+              data-app-shell={inAdminView ? undefined : "true"}
+              className="flex-1 min-w-0 focus:outline-none"
+            >
+              {children}
+            </main>
+          </div>
+        </div>
       </div>
 
       {/* Phone bottom nav — 4 tabKey-flagged items + "More" button that
@@ -1297,12 +1313,12 @@ function SidebarGroupHeader({
           overlaid on the hairline so the two crossfade (opacity) as the rail
           toggles, in sync with the width tween, instead of swapping instantly. */}
       <div
-        className={`pointer-events-none absolute inset-x-2 hidden items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500 transition-opacity duration-300 ease-in-out lg:flex dark:text-umber-300 ${
+        className={`pointer-events-none absolute inset-x-2 hidden items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-umber-300 transition-opacity duration-300 ease-in-out lg:flex ${
           collapsed ? "opacity-0" : "opacity-100"
         }`}
       >
         <span
-          className="h-px flex-1 bg-paper-300 transition-colors group-hover/hdr:bg-umber-300 dark:bg-umber-700 dark:group-hover/hdr:bg-umber-500"
+          className="h-px flex-1 bg-umber-700 transition-colors group-hover/hdr:bg-umber-500"
           aria-hidden
         />
         <span className="whitespace-nowrap">{label}</span>
@@ -1317,14 +1333,14 @@ function SidebarGroupHeader({
           </span>
         )}
         <span
-          className="h-px flex-1 bg-paper-300 transition-colors group-hover/hdr:bg-umber-300 dark:bg-umber-700 dark:group-hover/hdr:bg-umber-500"
+          className="h-px flex-1 bg-umber-700 transition-colors group-hover/hdr:bg-umber-500"
           aria-hidden
         />
       </div>
       {/* Hairline — tablet (icon-only) always, and laptop when collapsed;
           fades out at lg+ when the labelled header takes over. */}
       <div
-        className={`h-px w-full bg-paper-300 transition-opacity duration-300 ease-in-out dark:bg-umber-700 ${
+        className={`h-px w-full bg-umber-700 transition-opacity duration-300 ease-in-out ${
           collapsed ? "" : "lg:opacity-0"
         }`}
         aria-hidden
@@ -1353,9 +1369,13 @@ function AdminSidebarGroupHeader({
   // couple SidebarGroupHeader.
   return (
     <div className="flex h-7 items-center px-2">
-      {/* `.eyebrow` subhead — fully-expanded rail only. */}
+      {/* `.eyebrow` subhead — fully-expanded rail only. The rail is
+          permanently dark, so `.eyebrow`'s own light-mode color
+          (`text-ink-500`) is overridden here to the tone it already used
+          under `dark:` — a plain utility class wins over the `@apply`'d
+          one regardless of the app's own light/dark toggle. */}
       {!collapsed && (
-        <div className="eyebrow hidden w-full lg:block" aria-hidden>
+        <div className="eyebrow hidden w-full text-umber-300 lg:block" aria-hidden>
           {label}
         </div>
       )}
@@ -1363,9 +1383,7 @@ function AdminSidebarGroupHeader({
           "Admin" eyebrow already provides the visual break. */}
       {!isFirst && (
         <div
-          className={`h-px w-full bg-neutral-200/50 dark:bg-neutral-800/40 ${
-            collapsed ? "" : "lg:hidden"
-          }`}
+          className={`h-px w-full bg-neutral-800/40 ${collapsed ? "" : "lg:hidden"}`}
           aria-hidden
         />
       )}
@@ -1457,9 +1475,15 @@ function SideLink({
       }}
       onMouseLeave={() => setTip(null)}
       className={({ isActive }) => {
+        // `stationery-coffee-rail` (index.css) is `stationery-coffee`'s
+        // permanently-dark-rail cousin: `stationery-coffee` itself renders
+        // near-black `umber-900` in light mode, which would vanish into the
+        // rail's own `umber-900/950` background now that the rail no longer
+        // follows the app's light/dark toggle — the raised `umber-600` tone
+        // it otherwise only got under `dark:` is what has to show always.
         const active = darkActive
           ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
-          : "stationery-coffee text-paper-50 dark:text-paper-50";
+          : "stationery-coffee-rail text-paper-50";
         // Collapsed rows stay the fixed `w-9` icon square (base shape); at lg+
         // every row fills the rail so hover + active share one box size.
         const width = collapsed ? "" : "lg:w-auto";
@@ -1467,8 +1491,8 @@ function SideLink({
         // and come forward on hover, so the muting reads as "not been here"
         // rather than "not available".
         const idle = unexplored
-          ? "text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-paper-200/50 dark:hover:bg-umber-800 dark:hover:text-paper-200"
-          : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800";
+          ? "text-paper-200/50 hover:bg-umber-800 hover:text-paper-200"
+          : "text-paper-200 hover:bg-umber-800";
         // `relative` still anchors the unexplored dot; the hover label is
         // portalled and no longer needs a hover group here.
         return `relative flex items-center rounded-xl text-sm transition-colors ${shape} ${width} ${
@@ -1549,9 +1573,7 @@ function AdminSideLink({
       aria-label={label}
       className={({ isActive }) =>
         `flex items-center rounded-xl text-sm transition-colors ${shape} ${
-          isActive
-            ? "bg-neutral-950 text-white dark:bg-neutral-700"
-            : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
+          isActive ? "bg-neutral-700 text-white" : "text-paper-200 hover:bg-umber-800"
         }`
       }
     >

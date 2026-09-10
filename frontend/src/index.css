@@ -1836,6 +1836,22 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     );
   }
 
+  /* Sidebar-rail-only cousin of `.stationery-coffee`: the rail (AppShell)
+     is permanently dark now, independent of `html.dark`, so the active pill
+     always needs the raised `umber-600` tone `.stationery-coffee` otherwise
+     only gets under `html.dark` — `umber-900` would vanish into the rail's
+     own `umber-900/950` background in light mode. */
+  .stationery-coffee-rail {
+    background-color: theme("colors.umber.600");
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(246, 242, 231, 0.08) 0,
+      rgba(246, 242, 231, 0.08) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
+
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
