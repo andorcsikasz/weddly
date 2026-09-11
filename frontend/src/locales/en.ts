@@ -2340,13 +2340,11 @@ const en: LocaleMessages = {
     block_guests_title: "One link per guest.",
     block_guests_body:
       "Each guest gets a personal RSVP page with their name pre-filled. They reply on their phone in under a minute; you see status, meal choice and song requests in the same list.",
-    block_guests_bullet_1: "One link, one minute, by phone",
-    block_guests_bullet_2: "Filter by status, meal, plus-one",
-    block_guests_bullet_3: "CSV export, any time",
-    block_guests_bullet_4: "Shared on your own wedding site",
+    block_guests_item_1: "Online RSVP",
+    block_guests_item_2: "Website to keep your guests updated",
+    block_guests_item_3: "Games to play",
+    block_guests_item_4: "Guest POV Camera",
     block_guests_cta: "I'm a guest",
-    block_guests_games_label: "Games to play",
-    block_guests_camera_label: "Guest POV Camera",
     block_seating_eyebrow: "Seating",
     block_seating_title: "Drag it.\nChange it.\nPrint it.",
     block_seating_body:

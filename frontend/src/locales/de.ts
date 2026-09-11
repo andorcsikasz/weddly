@@ -2403,13 +2403,11 @@ const de: LocaleMessages = {
     block_guests_title: "Ein Link pro Gast.",
     block_guests_body:
       "Jeder Gast bekommt eine eigene RSVP-Seite, Name schon eingetragen. Geantwortet wird am Handy in unter einer Minute, und Sie sehen Status, Essenswahl und Musikwünsche in derselben Liste.",
-    block_guests_bullet_1: "Ein Link, eine Minute, am Handy",
-    block_guests_bullet_2: "Filter nach Status, Essen, Begleitung",
-    block_guests_bullet_3: "CSV-Export, jederzeit",
-    block_guests_bullet_4: "Auf Ihrer eigenen Hochzeitsseite geteilt",
+    block_guests_item_1: "Online-RSVP",
+    block_guests_item_2: "Website für deine Gäste",
+    block_guests_item_3: "Spiele für Gäste",
+    block_guests_item_4: "Gästekamera",
     block_guests_cta: "Ich bin Gast",
-    block_guests_games_label: "Spiele für Gäste",
-    block_guests_camera_label: "Gästekamera",
     block_seating_eyebrow: "Sitzplan",
     block_seating_title: "Ziehen.\nÄndern.\nDrucken.",
     block_seating_body:

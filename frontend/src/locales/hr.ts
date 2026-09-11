@@ -2353,13 +2353,11 @@ const hr: LocaleMessages = {
     block_guests_title: "Jedna poveznica po gostu.",
     block_guests_body:
       "Svaki gost dobiva vlastitu RSVP stranicu s već upisanim imenom. Odgovaraju s mobitela u manje od minute, a vi u istom popisu vidite status, izbor jela i želje za pjesme.",
-    block_guests_bullet_1: "Jedna poveznica, jedna minuta, s mobitela",
-    block_guests_bullet_2: "Filtar po statusu, jelu i pratnji",
-    block_guests_bullet_3: "CSV izvoz, kad god",
-    block_guests_bullet_4: "Podijeljeno na vašoj stranici vjenčanja",
+    block_guests_item_1: "Online potvrde dolaska",
+    block_guests_item_2: "Web stranica za goste",
+    block_guests_item_3: "Igre za goste",
+    block_guests_item_4: "Kamera za goste",
     block_guests_cta: "Ja sam gost",
-    block_guests_games_label: "Igre za goste",
-    block_guests_camera_label: "Kamera za goste",
     block_seating_eyebrow: "Raspored sjedenja",
     block_seating_title: "Povucite.\nPromijenite.\nIspišite.",
     block_seating_body:

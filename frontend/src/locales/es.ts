@@ -2389,13 +2389,11 @@ const es: LocaleMessages = {
     block_guests_title: "Un enlace por invitado.",
     block_guests_body:
       "Cada invitado recibe su propia página de confirmación con el nombre ya puesto. Responden desde el móvil en menos de un minuto; tú ves el estado, la elección de menú y las canciones que piden, todo en la misma lista.",
-    block_guests_bullet_1: "Un enlace, un minuto, desde el móvil",
-    block_guests_bullet_2: "Filtra por estado, menú y acompañante",
-    block_guests_bullet_3: "Exportación CSV, cuando quieras",
-    block_guests_bullet_4: "Compartido en tu propia web de boda",
+    block_guests_item_1: "RSVP online",
+    block_guests_item_2: "Web para tus invitados",
+    block_guests_item_3: "Juegos para los invitados",
+    block_guests_item_4: "Cámara de los invitados",
     block_guests_cta: "Soy invitado",
-    block_guests_games_label: "Juegos para los invitados",
-    block_guests_camera_label: "Cámara de los invitados",
     block_seating_eyebrow: "Mesas",
     block_seating_title: "Arrástralo.\nCámbialo.\nImprímelo.",
     block_seating_body:

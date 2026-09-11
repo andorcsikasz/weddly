@@ -6,9 +6,7 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
-  Download,
   FileText,
-  Filter,
   Gamepad2,
   Gift,
   Globe,
@@ -22,7 +20,6 @@ import {
   Plus,
   Printer,
   Share2,
-  Smartphone,
   Sparkles,
   Star,
   Store,
@@ -499,29 +496,29 @@ export default function LandingPage() {
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
-              <ul className="mt-7 space-y-1">
-                <IconRow icon={<Smartphone size={16} />}>
-                  {t("landing.block_guests_bullet_1")}
-                </IconRow>
-                <IconRow icon={<Filter size={16} />}>{t("landing.block_guests_bullet_2")}</IconRow>
-                <IconRow icon={<Download size={16} />}>
-                  {t("landing.block_guests_bullet_3")}
-                </IconRow>
-                <IconRow icon={<Globe size={16} />}>{t("landing.block_guests_bullet_4")}</IconRow>
-              </ul>
-              {/* The guest-facing extras ride on the same block: one tap takes a
-                  guest to the games console, the other to the shared POV camera.
-                  Card buttons, not text links, so the two reads as actions rather
-                  than footnotes to the RSVP copy above them. */}
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <GuestExtraLink
+              {/* The four guest-facing surfaces as a 2×2 grid of CTA cards:
+                  the RSVP lookup, the couple's own wedding website, the guest
+                  games console and the shared POV camera. Games + camera are
+                  real links; RSVP + website are descriptive tiles, because the
+                  RSVP action is the CTA right below and each couple's site
+                  lives at their own /w/:slug, not on the landing page. */}
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                <GuestSurfaceCard
+                  icon={<UserCheck size={18} strokeWidth={1.7} />}
+                  label={t("landing.block_guests_item_1")}
+                />
+                <GuestSurfaceCard
+                  icon={<Globe size={18} strokeWidth={1.7} />}
+                  label={t("landing.block_guests_item_2")}
+                />
+                <GuestSurfaceCard
                   icon={<Gamepad2 size={18} strokeWidth={1.7} />}
-                  label={t("landing.block_guests_games_label")}
+                  label={t("landing.block_guests_item_3")}
                   to="/games"
                 />
-                <GuestExtraLink
+                <GuestSurfaceCard
                   icon={<Camera size={18} strokeWidth={1.7} />}
-                  label={t("landing.block_guests_camera_label")}
+                  label={t("landing.block_guests_item_4")}
                   to="/camera"
                 />
               </div>
@@ -2457,33 +2454,41 @@ function TestimonialCard({
   );
 }
 
-function GuestExtraLink({
+function GuestSurfaceCard({
   icon,
   label,
   to,
 }: {
   icon: ReactNode;
   label: string;
-  to: string;
+  to?: string;
 }) {
-  return (
-    <Link
-      to={to}
-      className="group flex min-w-0 items-center gap-3 rounded-2xl border border-paper-300 bg-white px-4 py-3 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-umber-400 hover:shadow-elevated dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-500"
-    >
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 text-umber-800 transition-colors group-hover:border-umber-900 group-hover:bg-umber-900 group-hover:text-paper-50 dark:border-umber-700 dark:text-paper-100 dark:group-hover:border-paper-200 dark:group-hover:bg-paper-50 dark:group-hover:text-umber-900">
+  const className =
+    "group flex min-w-0 items-center gap-3 rounded-2xl border border-paper-300 bg-white px-4 py-3.5 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-blush-300 hover:shadow-elevated dark:border-umber-700 dark:bg-umber-800 dark:hover:border-blush-700 sm:px-5";
+  const inner = (
+    <>
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-blush-600 transition-colors group-hover:border-blush-200 group-hover:bg-blush-100 group-hover:text-blush-800 dark:border-umber-700 dark:bg-umber-900 dark:text-blush-400 dark:group-hover:border-blush-950 dark:group-hover:bg-blush-950 dark:group-hover:text-blush-300">
         {icon}
       </span>
       <span className="min-w-0 flex-1 font-grotesk text-sm font-semibold leading-snug text-umber-900 dark:text-paper-50">
         {label}
       </span>
-      <ChevronRight
-        size={16}
-        strokeWidth={2}
-        aria-hidden
-        className="shrink-0 text-umber-400 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-umber-300"
-      />
+      {to && (
+        <ChevronRight
+          size={16}
+          strokeWidth={2}
+          aria-hidden
+          className="shrink-0 text-blush-400 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-blush-500"
+        />
+      )}
+    </>
+  );
+  return to ? (
+    <Link to={to} className={className}>
+      {inner}
     </Link>
+  ) : (
+    <div className={className}>{inner}</div>
   );
 }
 

@@ -2361,13 +2361,11 @@ const hu: LocaleMessages = {
     block_guests_title: "Minden vendégnek saját link.",
     block_guests_body:
       "Minden vendég saját RSVP oldalt kap, a nevével előre kitöltve. Telefonon, egy perc alatt válaszolnak; ti pedig egy listában látjátok az állapotot, étrendet és dalkéréseket.",
-    block_guests_bullet_1: "Egy link, egy perc, mobilról",
-    block_guests_bullet_2: "Szűrés válasz, étrend és kísérő szerint",
-    block_guests_bullet_3: "CSV export, bármikor",
-    block_guests_bullet_4: "Saját esküvői oldalatokon megosztva",
+    block_guests_item_1: "Online RSVP",
+    block_guests_item_2: "Esküvői oldal a vendégeknek",
+    block_guests_item_3: "Esküvői játékok",
+    block_guests_item_4: "Vendégkamera",
     block_guests_cta: "Vendég vagyok",
-    block_guests_games_label: "Esküvői játékok",
-    block_guests_camera_label: "Vendégkamera",
     block_seating_eyebrow: "Ültetés",
     block_seating_title: "Húzd a helyére.\nMódosítsd.\nNyomtasd ki.",
     block_seating_body:
