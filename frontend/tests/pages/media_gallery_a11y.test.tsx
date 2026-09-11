@@ -42,9 +42,22 @@ beforeEach(() => {
   localStorage.setItem("weddly.locale", "en");
 });
 
+function openGallery() {
+  fireEvent.click(screen.getByRole("button", { name: "Show photos" }));
+}
+
 describe("MediaPage FilmGallery accessibility", () => {
+  it("is collapsed by default and expands on the toggle", () => {
+    renderGallery(2);
+
+    expect(screen.queryByAltText(/Photo 1, uploaded by You/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show photos" }));
+    expect(screen.getByAltText(/Photo 1, uploaded by You, 10 Aug 2026/i)).toBeInTheDocument();
+  });
+
   it("gives content images contextual alt text and exposes contributor metadata", () => {
     renderGallery(2);
+    openGallery();
 
     expect(screen.getByRole("heading", { level: 3, name: "The film" })).toBeInTheDocument();
     expect(screen.getByAltText(/Photo 1, uploaded by You, 10 Aug 2026/i)).toBeInTheDocument();
@@ -56,6 +69,7 @@ describe("MediaPage FilmGallery accessibility", () => {
   it("deletes a photo from the lightbox after the couple confirms", async () => {
     const onDeletePhoto = mock(async () => {});
     renderGallery(2, onDeletePhoto);
+    openGallery();
 
     fireEvent.click(screen.getByRole("button", { name: /Photo 1, uploaded by You, 10 Aug 2026/i }));
     const dialog = screen.getByRole("dialog", { name: "Photo viewer" });
@@ -71,6 +85,7 @@ describe("MediaPage FilmGallery accessibility", () => {
   it("keeps a photo when the couple cancels the delete confirmation", async () => {
     const onDeletePhoto = mock(async () => {});
     renderGallery(2, onDeletePhoto);
+    openGallery();
 
     fireEvent.click(screen.getByRole("button", { name: /Photo 1, uploaded by You, 10 Aug 2026/i }));
     const dialog = screen.getByRole("dialog", { name: "Photo viewer" });
@@ -88,6 +103,7 @@ describe("MediaPage FilmGallery accessibility", () => {
 
   it("can expand and collapse the thumbnail preview", () => {
     renderGallery(13);
+    openGallery();
 
     expect(screen.getAllByRole("img")).toHaveLength(12);
     fireEvent.click(screen.getByRole("button", { name: "Show all 13" }));
@@ -111,6 +127,7 @@ describe("MediaPage FilmGallery accessibility", () => {
     Element.prototype.getClientRects = () => [new DOMRect()] as unknown as DOMRectList;
     try {
       renderGallery(2);
+      openGallery();
       const opener = screen.getByRole("button", {
         name: /Photo 1, uploaded by You, 10 Aug 2026/i,
       });

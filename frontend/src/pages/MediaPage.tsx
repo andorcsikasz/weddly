@@ -478,10 +478,10 @@ function Lightbox({
       className="fixed inset-0 z-[60] flex flex-col bg-black/95 backdrop-blur-sm"
     >
       <div className="flex items-center gap-2 px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
-        <span className="flex-1 truncate font-grotesk text-[15px] font-bold text-white">
+        <span className="flex-1 truncate font-space text-[15px] font-bold text-white">
           {contributor}
         </span>
-        <span className="shrink-0 font-grotesk text-[13px] font-medium tabular-nums text-white/45">
+        <span className="shrink-0 font-space text-[13px] font-medium tabular-nums text-white/45">
           {index + 1}/{uploads.length}
         </span>
         <a
@@ -562,6 +562,10 @@ export function FilmGallery({
   const toast = useToast();
   const confirm = useConfirm();
   const [showAll, setShowAll] = useState(false);
+  // The made pictures default to a collapsed accordion — the couple's album
+  // is the payoff of the film, but the dashboard shouldn't start scrolled
+  // past its own header every visit. Tapping the row opens it.
+  const [collapsed, setCollapsed] = useState(true);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const galleryId = useId();
@@ -601,86 +605,103 @@ export function FilmGallery({
 
   return (
     <div className="border-t border-paper-200 px-4 pb-4 pt-3">
-      <div className="mb-2 flex items-center justify-between gap-2 px-1">
-        <h3 className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-600">
-          {t("media.gallery_title")}
-        </h3>
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        aria-expanded={!collapsed}
+        aria-controls={galleryId}
+        aria-label={collapsed ? t("media.gallery_show") : t("media.gallery_hide")}
+        className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl px-1 py-1 text-left transition-colors hover:bg-paper-50"
+      >
+        <span className="flex items-center gap-1.5">
+          <ChevronRight
+            size={14}
+            aria-hidden="true"
+            className={`shrink-0 text-umber-500 transition-transform ${collapsed ? "" : "rotate-90"}`}
+          />
+          <h3 className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-600">
+            {t("media.gallery_title")}
+          </h3>
+        </span>
         {uploads.length > 0 && (
-          <span className="font-grotesk text-[13px] font-bold tabular-nums text-umber-900">
+          <span className="font-space text-[13px] font-bold tabular-nums text-umber-900">
             {uploads.length}
           </span>
         )}
-      </div>
+      </button>
 
-      {loading ? (
-        <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="aspect-square animate-pulse rounded-xl bg-paper-100" />
-          ))}
-        </div>
-      ) : uploads.length === 0 ? (
-        <p className="px-1 py-3 text-[15px] font-medium text-umber-600">
-          {t("media.gallery_empty")}
-        </p>
-      ) : (
-        <>
-          <ul id={galleryId} className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
-            {visible.map((u, i) => {
-              const contributor =
-                u.source === "couple"
-                  ? t("media.gallery_from_you")
-                  : (u.guestName ?? t("media.film_anonymous"));
-              const uploaded = galleryDate(u.uploadedAt, locale);
-              const photoLabel = t("media.gallery_photo_alt", {
-                n: i + 1,
-                name: contributor,
-                date: uploaded,
-              });
-              return (
-                <li key={u.id}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenIndex(i)}
-                    aria-label={photoLabel}
-                    className="group relative block aspect-square w-full overflow-hidden rounded-xl bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-umber-700 focus-visible:ring-offset-2"
-                  >
-                    <img
-                      src={u.fileUrl}
-                      alt={photoLabel}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 group-focus-visible:scale-105"
-                      style={{ filter: shotFilter(u, aesthetic) }}
-                    />
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-x-0 bottom-0 translate-y-1 bg-gradient-to-t from-black/85 via-black/60 to-transparent px-2 pb-2 pt-7 text-left opacity-0 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
-                    >
-                      <span className="block truncate font-grotesk text-[11px] font-semibold text-white">
-                        {contributor}
-                      </span>
-                      <span className="block truncate font-grotesk text-[10px] text-white/80">
-                        {uploaded}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {uploads.length > GALLERY_PREVIEW && (
-            <button
-              type="button"
-              onClick={() => setShowAll((currentValue) => !currentValue)}
-              aria-expanded={showAll}
-              aria-controls={galleryId}
-              className="mt-2 w-full rounded-2xl border border-paper-300 py-3 font-grotesk text-[14px] font-semibold text-umber-700 transition-colors hover:bg-paper-50"
-            >
-              {showAll
-                ? t("media.gallery_show_less")
-                : t("media.gallery_show_all").replace("{{n}}", String(uploads.length))}
-            </button>
+      {!collapsed && (
+        <div id={galleryId}>
+          {loading ? (
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="aspect-square animate-pulse rounded-xl bg-paper-100" />
+              ))}
+            </div>
+          ) : uploads.length === 0 ? (
+            <p className="px-1 py-3 text-[15px] font-medium text-umber-600">
+              {t("media.gallery_empty")}
+            </p>
+          ) : (
+            <>
+              <ul className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                {visible.map((u, i) => {
+                  const contributor =
+                    u.source === "couple"
+                      ? t("media.gallery_from_you")
+                      : (u.guestName ?? t("media.film_anonymous"));
+                  const uploaded = galleryDate(u.uploadedAt, locale);
+                  const photoLabel = t("media.gallery_photo_alt", {
+                    n: i + 1,
+                    name: contributor,
+                    date: uploaded,
+                  });
+                  return (
+                    <li key={u.id}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenIndex(i)}
+                        aria-label={photoLabel}
+                        className="group relative block aspect-square w-full overflow-hidden rounded-xl bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-umber-700 focus-visible:ring-offset-2"
+                      >
+                        <img
+                          src={u.fileUrl}
+                          alt={photoLabel}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 group-focus-visible:scale-105"
+                          style={{ filter: shotFilter(u, aesthetic) }}
+                        />
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-x-0 bottom-0 translate-y-1 bg-gradient-to-t from-black/85 via-black/60 to-transparent px-2 pb-2 pt-7 text-left opacity-0 transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
+                        >
+                          <span className="block truncate font-space text-[11px] font-semibold text-white">
+                            {contributor}
+                          </span>
+                          <span className="block truncate font-space text-[10px] text-white/80">
+                            {uploaded}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {uploads.length > GALLERY_PREVIEW && (
+                <button
+                  type="button"
+                  onClick={() => setShowAll((currentValue) => !currentValue)}
+                  aria-expanded={showAll}
+                  className="mt-2 w-full rounded-2xl border border-paper-300 py-3 font-space text-[14px] font-semibold text-umber-700 transition-colors hover:bg-paper-50"
+                >
+                  {showAll
+                    ? t("media.gallery_show_less")
+                    : t("media.gallery_show_all").replace("{{n}}", String(uploads.length))}
+                </button>
+              )}
+            </>
           )}
-        </>
+        </div>
       )}
 
       {/* The full film, not the preview slice — `visible` is a prefix of
@@ -811,7 +832,7 @@ function FilmModal({
       footer={
         <div className="flex items-center justify-between gap-2">
           {!isEdit && (
-            <span className="flex items-center gap-1 font-grotesk text-[13px] font-semibold text-sage-700">
+            <span className="flex items-center gap-1 font-space text-[13px] font-semibold text-sage-700">
               <Check size={13} aria-hidden="true" />
               {includedGuestCap} {t("media.film_stat_people")} · {t("media.film_price_free")}
             </span>
@@ -849,7 +870,7 @@ function FilmModal({
             maxLength={200}
             placeholder={t("media.film_settings_name_placeholder")}
             aria-label={t("media.film_settings_name")}
-            className="input w-full rounded-2xl px-4 py-3.5 font-grotesk font-medium"
+            className="input w-full rounded-2xl px-4 py-3.5 font-space font-medium"
           />
           {isPlaceholderTitle(title) && (
             <div className="mt-2 flex items-start gap-2.5 rounded-2xl bg-amber-50 px-3.5 py-2.5 dark:bg-amber-400/10">
@@ -913,7 +934,7 @@ function FilmModal({
                 max={500}
                 value={shots}
                 onChange={(e) => setShots(e.target.value)}
-                className="input w-20 rounded-xl px-3 text-right font-grotesk text-sm font-semibold tabular-nums"
+                className="input w-20 rounded-xl px-3 text-right font-space text-sm font-semibold tabular-nums"
               />
               <span className="text-xs text-umber-600 dark:text-paper-300">
                 / {t("media.film_per_person")}
@@ -924,7 +945,7 @@ function FilmModal({
                 {t("media.film_settings_cap")}
               </span>
               <span className="text-right">
-                <span className="block font-grotesk text-sm font-semibold text-umber-700 dark:text-paper-200">
+                <span className="block font-space text-sm font-semibold text-umber-700 dark:text-paper-200">
                   {album?.guestCap ?? includedGuestCap} {t("media.film_stat_people")}
                 </span>
                 {!isEdit && !access?.free && (
@@ -1408,10 +1429,11 @@ export default function MediaPage() {
         coverPhoto={coverPhoto}
         onCreate={() => setShowFilmModal(true)}
         onShare={() => setShowShare(true)}
+        headingFont="space"
       />
 
-      {/* ── Photographer gallery card (top) ───────────────────────── */}
-      <div className="order-3 mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft">
+      {/* ── Photographer gallery card (first) ─────────────────────── */}
+      <div className="order-2 mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft">
         {/* ── Photographer row ──────────────────────────────────────── */}
         <div ref={photographerRowRef}>
           <h2 className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-600">
@@ -1565,7 +1587,7 @@ export default function MediaPage() {
 
       {/* ── Wedding film dashboard ────────────────────────────────── */}
       <div
-        className={`order-2 mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft ${album ? "" : "hidden"}`}
+        className={`order-3 mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft ${album ? "" : "hidden"}`}
       >
         {album ? (
           <>
@@ -1573,7 +1595,7 @@ export default function MediaPage() {
               {/* ── Stats row ─────────────────────────────────────────── */}
               <div className="grid grid-cols-3 border-b border-paper-200">
                 <div className="flex flex-col items-center gap-1 py-5 text-center">
-                  <span className="font-grotesk text-[28px] font-bold leading-none tabular-nums text-umber-900">
+                  <span className="font-space text-[28px] font-bold leading-none tabular-nums text-umber-900">
                     {album.photoCount.toLocaleString()}
                   </span>
                   <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-umber-600">
@@ -1582,7 +1604,7 @@ export default function MediaPage() {
                 </div>
                 <div className="flex flex-col items-center gap-1 border-x border-paper-200 py-5 text-center">
                   <span
-                    className="flex min-h-7 items-center font-grotesk text-[28px] font-bold leading-none tabular-nums text-umber-900"
+                    className="flex min-h-7 items-center font-space text-[28px] font-bold leading-none tabular-nums text-umber-900"
                     aria-label={filmExpired ? t("media.film_stat_closed") : undefined}
                   >
                     {filmExpired ? <Lock size={24} aria-hidden="true" /> : (countdownStr ?? "--")}
@@ -1606,7 +1628,7 @@ export default function MediaPage() {
                   aria-controls="film-participants"
                   className="flex flex-col items-center gap-1 py-5 text-center transition-colors hover:bg-paper-50"
                 >
-                  <span className="font-grotesk text-[28px] font-bold leading-none tabular-nums text-umber-900">
+                  <span className="font-space text-[28px] font-bold leading-none tabular-nums text-umber-900">
                     {album.participantCount}
                   </span>
                   <span className="flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-umber-600">
@@ -1786,7 +1808,7 @@ export default function MediaPage() {
                     type="button"
                     onClick={handleUpgradeFilm}
                     disabled={filmAccess?.checkoutEnabled === false}
-                    className="shrink-0 rounded-xl bg-amber-800 px-3.5 py-2 font-grotesk text-[13px] font-semibold text-white transition-colors hover:bg-amber-900"
+                    className="shrink-0 rounded-xl bg-amber-800 px-3.5 py-2 font-space text-[13px] font-semibold text-white transition-colors hover:bg-amber-900"
                   >
                     {filmAccess?.checkoutEnabled === false
                       ? t("media.film_upgrade_unavailable")
@@ -2004,7 +2026,7 @@ export default function MediaPage() {
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-umber-700 bg-umber-900">
                   <Film size={22} className="text-umber-400" aria-hidden="true" />
                 </div>
-                <h2 className="font-grotesk text-2xl font-semibold text-paper-50 sm:text-3xl">
+                <h2 className="font-space text-2xl font-semibold text-paper-50 sm:text-3xl">
                   {t("media.film_empty_title")}
                 </h2>
                 <button
@@ -2025,7 +2047,7 @@ export default function MediaPage() {
                 { n: "3", title: t("media.film_how_3_title"), body: t("media.film_how_3_body") },
               ].map((s) => (
                 <div key={s.n} className="px-4 py-3">
-                  <span className="font-grotesk text-xs font-bold text-umber-600">{s.n}</span>
+                  <span className="font-space text-xs font-bold text-umber-600">{s.n}</span>
                   <p className="mt-1.5 text-xs font-semibold text-umber-700">{s.title}</p>
                   <p className="mt-1 text-xs leading-relaxed text-umber-500">{s.body}</p>
                 </div>

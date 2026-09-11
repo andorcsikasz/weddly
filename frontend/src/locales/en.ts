@@ -3469,6 +3469,8 @@ const en: LocaleMessages = {
     film_upgrade_cta: "Unlock 200",
     film_upgrade_unavailable: "Upgrade unavailable",
     gallery_title: "The film",
+    gallery_show: "Show photos",
+    gallery_hide: "Hide photos",
     gallery_empty: "Nothing yet. First shot lands here.",
     gallery_show_all: "Show all {{n}}",
     gallery_show_less: "Show fewer",

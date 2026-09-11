@@ -3494,6 +3494,8 @@ const hu: LocaleMessages = {
     film_upgrade_cta: "200-ra fel",
     film_upgrade_unavailable: "A bővítés most nem elérhető",
     gallery_title: "A film",
+    gallery_show: "Fotók megmutatása",
+    gallery_hide: "Fotók elrejtése",
     gallery_empty: "Még üres. Az első kép ide kerül.",
     gallery_show_all: "Mind a {{n}}",
     gallery_show_less: "Kevesebb mutatása",

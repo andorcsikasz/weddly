@@ -3541,6 +3541,8 @@ const de: LocaleMessages = {
     film_upgrade_cta: "200 freischalten",
     film_upgrade_unavailable: "Erweiterung derzeit nicht verfügbar",
     gallery_title: "Der Film",
+    gallery_show: "Fotos anzeigen",
+    gallery_hide: "Fotos ausblenden",
     gallery_empty: "Noch nichts da. Die erste Aufnahme landet hier.",
     gallery_show_all: "Alle {{n}} anzeigen",
     gallery_show_less: "Weniger anzeigen",

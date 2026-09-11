@@ -3470,6 +3470,8 @@ const hr: LocaleMessages = {
     film_upgrade_cta: "Otključajte 200",
     film_upgrade_unavailable: "Nadogradnja trenutačno nije dostupna",
     gallery_title: "Film",
+    gallery_show: "Prikaži fotografije",
+    gallery_hide: "Sakrij fotografije",
     gallery_empty: "Još ništa. Prvi snimak stiže ovamo.",
     gallery_show_all: "Prikaži svih {{n}}",
     gallery_show_less: "Prikaži manje",

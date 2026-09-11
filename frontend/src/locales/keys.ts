@@ -4100,6 +4100,10 @@ export interface LocaleMessages {
     film_upgrade_unavailable: string;
     /** The couple's own view of the film — bypasses the guest reveal lock. */
     gallery_title: string;
+    /** Accordion on the couple's own made pictures — collapsed by default so
+     *  the dashboard never opens scrolled past its own header. */
+    gallery_show: string;
+    gallery_hide: string;
     gallery_empty: string;
     gallery_show_all: string;
     gallery_show_less: string;

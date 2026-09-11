@@ -3534,6 +3534,8 @@ const es: LocaleMessages = {
     film_upgrade_cta: "Ampliar a 200",
     film_upgrade_unavailable: "Ampliación no disponible por ahora",
     gallery_title: "La película",
+    gallery_show: "Mostrar fotos",
+    gallery_hide: "Ocultar fotos",
     gallery_empty: "Todavía nada. La primera foto aparecerá aquí.",
     gallery_show_all: "Ver las {{n}}",
     gallery_show_less: "Ver menos",

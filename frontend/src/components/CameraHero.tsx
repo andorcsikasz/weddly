@@ -89,15 +89,22 @@ export function CameraHero({
   coverPhoto: string;
   onCreate: () => void;
   onShare: () => void;
-  /** Dashboard keeps the workspace's Cormorant italic heading (the default);
-   *  the public /camera landing page passes "grotesk" so the hero title
-   *  matches the single display font the rest of that page uses. */
-  headingFont?: "serif" | "grotesk";
+  /** Dashboard keeps the workspace's display voice (default: the Cormorant
+   *  italic heading); /app/media passes "space" so its headline matches the
+   *  Space Grotesk display font of the /app/games console; the public
+   *  /camera landing page passes "grotesk" so the hero title matches the
+   *  single display font the rest of that page uses. */
+  headingFont?: "serif" | "grotesk" | "space";
 }) {
   const { t } = useT();
   const hasFilm = album !== null;
   const filmName = album?.title || coupleName || t("media.film_settings_unnamed");
-  const headingFontClass = headingFont === "grotesk" ? "font-grotesk" : "font-serif";
+  const headingFontClass =
+    headingFont === "grotesk"
+      ? "font-grotesk"
+      : headingFont === "space"
+        ? "font-space"
+        : "font-serif";
 
   return (
     <section className="relative order-1 isolate overflow-hidden rounded-[2rem] bg-umber-950 text-paper-50 shadow-soft">
