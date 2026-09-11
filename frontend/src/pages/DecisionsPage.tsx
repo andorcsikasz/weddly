@@ -111,7 +111,7 @@ export default function DecisionsPage() {
   return (
     <div>
       <header className="mb-4">
-        <h1 className="text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
+        <h1 className="sr-only font-grotesk text-3xl text-ink-900 sm:text-4xl dark:text-paper-50">
           {t("planning.tab_decisions")}
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-ink-600 dark:text-umber-200">

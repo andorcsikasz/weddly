@@ -405,7 +405,7 @@ export default function MessagesPage() {
   return (
     <div className="animate-fade-in">
       <header className="mb-4">
-        <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+        <h1 className="sr-only font-grotesk text-2xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
           {t("messages.page_title")}
         </h1>
         <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">{t("messages.page_body")}</p>

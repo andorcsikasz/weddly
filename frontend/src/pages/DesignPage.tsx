@@ -76,7 +76,6 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { InfoHint } from "../components/InfoHint";
 import { LookBar } from "../components/design/LookBar";
 import { PhotoDock } from "../components/design/PhotoDock";
 import { PrintShelf } from "../components/design/PrintShelf";
@@ -1351,11 +1350,8 @@ export default function DesignPage() {
 
   return (
     <>
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="sr-only font-grotesk">{t("design.title")}</h1>
-          <InfoHint text={t("design.hint")} />
-        </div>
+      <header className="mb-4 flex items-center justify-end gap-3">
+        <h1 className="sr-only font-grotesk">{t("design.title")}</h1>
         {/* Ambient save status (replaces the per-save success toast). Announced
             politely: only the settled "Saved" transition updates the text. */}
         <p

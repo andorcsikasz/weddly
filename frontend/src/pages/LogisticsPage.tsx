@@ -53,7 +53,6 @@ import {
   X,
 } from "lucide-react";
 import { type DragEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { InfoHint } from "../components/InfoHint";
 import { MoneyInput } from "../components/MoneyInput";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -612,10 +611,7 @@ export default function LogisticsPage() {
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <>
-      <header className="mb-6 flex items-center gap-2">
-        <h1 className="sr-only font-grotesk">{t("logistics.title")}</h1>
-        <InfoHint text={t("logistics.sub")} />
-      </header>
+      <h1 className="sr-only font-grotesk">{t("logistics.title")}</h1>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <div>

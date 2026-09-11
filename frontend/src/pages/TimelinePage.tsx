@@ -352,9 +352,7 @@ export default function TimelinePage() {
         <header>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-              <h1 className="text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
-                {t("timeline.title")}
-              </h1>
+              <h1 className="sr-only">{t("timeline.title")}</h1>
               <Link
                 to="/app/planning"
                 aria-label={t("planning.title")}

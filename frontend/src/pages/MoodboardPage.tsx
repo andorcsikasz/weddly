@@ -13,7 +13,6 @@
 import type { MoodboardPin, MoodboardState } from "@shared/types";
 import { AlertTriangle, ExternalLink, ImagePlus, Lock, Trash2, UploadCloud } from "lucide-react";
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
-import { InfoHint } from "../components/InfoHint";
 import { Skeleton, SmartImage, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { moodboardApi } from "../lib/endpoints";
@@ -361,10 +360,7 @@ export default function MoodboardPage() {
       />
 
       <header className="mb-6 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="font-grotesk">{t("moodboard.title")}</h1>
-          <InfoHint text={t("moodboard.sub")} />
-        </div>
+        <h1 className="sr-only font-grotesk">{t("moodboard.title")}</h1>
 
         {state && !choosing && (
           <div className="card ml-auto flex w-full flex-nowrap items-center justify-between gap-2 border-2 border-ink-700 p-2.5 sm:w-auto sm:gap-3 sm:px-5 sm:py-2 dark:border-paper-100">

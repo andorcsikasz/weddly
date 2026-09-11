@@ -1666,7 +1666,7 @@ export default function SeatingPage() {
       {/* Single toolbar row: title (left) → tabs (flex-1) → icon strip + add table (right) */}
       <div className="seating-toolbar mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="shrink-0">
-          <h1 className="font-grotesk">{t("seating.title")}</h1>
+          <h1 className="sr-only font-grotesk">{t("seating.title")}</h1>
           <LastUpdatedBy actionPrefixes={["table.", "seat.", "conflict."]} />
         </div>
 

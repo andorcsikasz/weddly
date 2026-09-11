@@ -1459,12 +1459,9 @@ export default function WishlistEditorPage() {
       <header className="mb-7">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
           <div className="min-w-0">
-            <span className="flex items-start gap-1">
-              <h1 className="sr-only font-grotesk font-bold tracking-[-0.03em]">
-                {t("wishlist_editor.title")}
-              </h1>
-              <InfoHint text={t("wishlist_editor.subtitle")} className="mt-1.5" />
-            </span>
+            <h1 className="sr-only font-grotesk font-bold tracking-[-0.03em]">
+              {t("wishlist_editor.title")}
+            </h1>
             {metaBits.length > 0 && (
               <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[0.9375rem] tabular-nums text-ink-500 dark:text-umber-300">
                 {metaBits.map((bit, i) => (

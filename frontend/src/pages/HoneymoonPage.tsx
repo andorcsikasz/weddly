@@ -56,7 +56,6 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import {
   HONEYMOON_EXTRA_TASKS,
@@ -814,7 +813,6 @@ export default function HoneymoonPage() {
               the info hint, same pattern as the page title. */}
           <div className="flex items-center gap-2">
             <h2 className="font-grotesk">{t("honeymoon.costs_title")}</h2>
-            <InfoHint text={t("honeymoon.costs_sub")} />
           </div>
           {honeymoonLines.length > 0 && (
             <PresetChips

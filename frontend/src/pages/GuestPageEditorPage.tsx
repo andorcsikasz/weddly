@@ -48,7 +48,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
 import { SupplierNameAutocomplete } from "../components/SupplierNameAutocomplete";
-import { InfoHint } from "../components/InfoHint";
 import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
 import type { VenueLocationValue } from "../components/VenueLocationPicker";
 import { alreadyListedName, ApiError } from "../lib/api";
@@ -1467,10 +1466,9 @@ export default function GuestPageEditorPage() {
           (the public URL) one reach away. */}
       <header className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-grotesk font-semibold tracking-tight">
+          <h1 className="sr-only font-grotesk font-semibold tracking-tight">
             {t("guest_page_editor.title")}
           </h1>
-          <InfoHint text={t("guest_page_editor.subtitle")} />
           {/* Publish state badge next to the title so the couple always knows,
               at a glance, whether guests can see the page (audit 5c). */}
           <span

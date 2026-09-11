@@ -55,7 +55,6 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { InfoHint } from "../components/InfoHint";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { PlanningRouteLinks } from "../components/PlanningRouteLinks";
 import { ApiError } from "../lib/api";
@@ -391,11 +390,7 @@ export default function SchedulePage() {
 
   return (
     <>
-      <header className="mb-3 flex flex-wrap items-end justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="font-grotesk">{t("schedule.title")}</h1>
-          <InfoHint text={t("schedule.sub")} />
-        </div>
+      <header className="mb-3 flex flex-wrap items-center justify-end gap-3">
         <div
           data-tour-target="schedule-toolbar"
           className="inline-flex items-stretch overflow-hidden rounded-xl border border-paper-300 shadow-sm dark:border-umber-600"
