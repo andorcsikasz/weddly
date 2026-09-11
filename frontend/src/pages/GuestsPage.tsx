@@ -60,6 +60,7 @@ import {
   Mail,
   MessageSquareQuote,
   Milk,
+  Minus,
   MoreHorizontal,
   Nut,
   Pencil,
@@ -177,6 +178,30 @@ const GROUP_TAG_DOT: Record<GuestGroupTag, string> = {
   shared_friends: "bg-teal-500",
   work: "bg-slate-500",
   other: "bg-stone-500",
+};
+
+/** RSVP chip tones, the table's twin of the card view's `RsvpBadge`: "yes"
+ *  pops in emerald, "maybe" is amber (a declared answer, unlike pending), and
+ *  "pending" stays a dashed neutral. Kept away from the group tones above the
+ *  same way emerald/blush/amber already are, so one colour never means a group
+ *  and a status at once. */
+const RSVP_TONE: Record<RsvpStatus, string> = {
+  yes: "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-300",
+  no: "border-blush-200 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300",
+  maybe:
+    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/15 dark:text-amber-300",
+  pending:
+    "border-dashed border-paper-300 bg-paper-100 text-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-400",
+};
+
+/** One lucide glyph per status for the RSVP chip + menu. The same icons as the
+ *  couple-facing RSVP vocabulary: check = coming, ban = declined, minus =
+ *  tentative, clock = still waiting. */
+const RSVP_GLYPH: Record<RsvpStatus, ReactNode> = {
+  yes: <Check size={13} aria-hidden />,
+  no: <Ban size={13} aria-hidden />,
+  maybe: <Minus size={13} aria-hidden />,
+  pending: <Clock size={13} aria-hidden />,
 };
 
 /** Every slot this couple offers, in render order: the six canonical ones and
@@ -1110,7 +1135,7 @@ export default function GuestsPage() {
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
           <div className="shrink-0">
-            <h1 className="font-grotesk">{t("guests.title")}</h1>
+            <h1 className="sr-only font-grotesk">{t("guests.title")}</h1>
           </div>
           {listableGuests.length > 0 ? (
             <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
@@ -1752,7 +1777,11 @@ function SearchResults({
  *  `border-collapse` on the `<table>` renders one crisp grid line between
  *  every cell instead of the old hover-only "card row" look. */
 const CELL = "border border-paper-200 px-2.5 py-1.5 align-middle dark:border-umber-700";
-const CELL_HEAD = `${CELL} bg-paper-100/80 text-left text-[11px] font-semibold uppercase tracking-widest text-ink-400 dark:bg-umber-800/70 dark:text-umber-500`;
+/** Column header. Alignment is NOT baked in: the Name column stays left and
+ *  every other header is centred (a `text-center` in the same class would
+ *  race whichever Tailwind emits last), so the caller adds `text-left` /
+ *  `text-center` to the specific <th>. */
+const CELL_HEAD = `${CELL} bg-paper-100/80 text-[11px] font-semibold uppercase tracking-widest text-ink-400 dark:bg-umber-800/70 dark:text-umber-500`;
 
 /** Shared look for every inline editor living inside a cell (text input or
  *  <select>): flat and borderless at rest, and a real ring around the whole
@@ -1939,12 +1968,7 @@ function HouseholdCell({
               e.currentTarget.blur();
             }
           }}
-          className={`${CELL_FIELD} cursor-text pr-6`}
-        />
-        <ChevronDown
-          size={12}
-          aria-hidden
-          className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+          className={`${CELL_FIELD} cursor-text pr-2`}
         />
       </span>
       {householdId != null && (
@@ -2124,34 +2148,18 @@ function GuestTableNewRow({
                 void commit();
               }
             }}
-            className={`${CELL_FIELD} pr-6`}
-          />
-          <ChevronDown
-            size={12}
-            aria-hidden
-            className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+            className={`${CELL_FIELD} pr-2`}
           />
         </span>
       </td>
-      <td className={CELL}>
-        <CellSelect
-          value={group}
-          ariaLabel={t("guests.table_col_group")}
-          onChange={(v) => setGroup(v as GuestGroupTag)}
-          className="min-w-[11rem]"
-        >
-          {GROUPS.map((gr) => (
-            <option key={gr} value={gr}>
-              {t(`guests.group_${gr}`)}
-            </option>
-          ))}
-        </CellSelect>
+      <td className={`${CELL} text-center`}>
+        <GroupCellChip value={group} onChange={setGroup} ariaLabel={t("guests.table_col_group")} />
       </td>
       {/* RSVP / meal / dietary / accommodation / invite are meaningless until
           the guest exists; quiet placeholders keep the columns aligned. */}
-      <td className={placeholderCell}>–</td>
-      {mealEnabled && <td className={placeholderCell}>–</td>}
-      <td className={placeholderCell}>–</td>
+      <td className={`${placeholderCell} text-center`}>–</td>
+      {mealEnabled && <td className={`${placeholderCell} text-center`}>–</td>}
+      <td className={`${placeholderCell} text-center`}>–</td>
       <td className={`${placeholderCell} text-center`}>–</td>
       <td className={`${placeholderCell} text-center`}>–</td>
       <td className={CELL}>
@@ -2169,6 +2177,161 @@ function GuestTableNewRow({
         </span>
       </td>
     </tr>
+  );
+}
+
+/** Inline RSVP editor for the table: a coloured icon pill showing the current
+ *  status (the same tones the card view's badge uses) that opens a short
+ *  status menu on hover, tap or keyboard. The menu is positioned as `fixed`
+ *  off the button's rect because the table lives in an `overflow-x-auto`
+ *  clipped container — an absolutely positioned menu would be cut off at the
+ *  container's edge for the columns the table scrolls under. */
+function RsvpPicker({
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  value: RsvpStatus;
+  onChange: (s: RsvpStatus) => void;
+  ariaLabel: string;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  // Menu footprint used for flipping below/above the trigger.
+  const MENU_W = 184;
+  const MENU_H = 172;
+
+  const openMenu = useCallback(() => {
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const roomBelow = window.innerHeight - rect.bottom;
+    setPos({
+      left: Math.max(8, Math.min(rect.right - MENU_W, window.innerWidth - MENU_W - 8)),
+      top: roomBelow >= MENU_H ? rect.bottom + 6 : Math.max(8, rect.top - MENU_H - 6),
+    });
+    setOpen(true);
+  }, []);
+
+  // Close on outside tap and on Escape (returning focus to the trigger), the
+  // same contract ViewSelect uses for its menus.
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = () => setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      setOpen(false);
+      btnRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <span
+      ref={wrapRef}
+      className="relative inline-flex"
+      onMouseEnter={openMenu}
+      onMouseLeave={(e) => {
+        // Moving into the fixed menu (a DOM child sitting outside the span's
+        // box) must not count as leaving — that would close it before the
+        // pointer reaches an option.
+        if (e.relatedTarget instanceof Node && wrapRef.current?.contains(e.relatedTarget)) {
+          return;
+        }
+        setOpen(false);
+      }}
+    >
+      <button
+        ref={btnRef}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`${ariaLabel}: ${t(`guests.rsvp_${value}`)}`}
+        onClick={() => (open ? setOpen(false) : openMenu())}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${RSVP_TONE[value]}`}
+      >
+        {RSVP_GLYPH[value]}
+        <span>{t(`guests.rsvp_${value}`)}</span>
+      </button>
+      {open && pos && (
+        <div
+          role="menu"
+          aria-label={ariaLabel}
+          style={{ left: pos.left, top: pos.top }}
+          className="fixed z-50 w-[184px] rounded-xl border border-paper-300 bg-white p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          {(["pending", "yes", "maybe", "no"] as RsvpStatus[]).map((s) => (
+            <button
+              key={s}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onChange(s);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs font-medium transition-colors ${
+                s === value
+                  ? RSVP_TONE[s]
+                  : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+              }`}
+            >
+              {RSVP_GLYPH[s]}
+              <span>{t(`guests.rsvp_${s}`)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  );
+}
+
+/** Inline group editor for the table, wearing the same coloured chip as the
+ *  household cards on /app/guests (GROUP_TAG_TONE + GroupIcon) so the two
+ *  surfaces of the guest list can't tell two stories about one group. The
+ *  actual picker is a transparent native <select> overlaying the chip — the
+ *  same pattern HouseholdGroupChip uses — so it survives the table's
+ *  overflow-clipped container and keeps keyboard support for free. */
+function GroupCellChip({
+  value,
+  onChange,
+  ariaLabel,
+  title,
+}: {
+  value: GuestGroupTag;
+  onChange: (g: GuestGroupTag) => void;
+  ariaLabel: string;
+  title?: string;
+}) {
+  const { t } = useT();
+  return (
+    <span
+      title={title}
+      className={`relative inline-flex min-w-[11rem] max-w-full items-center justify-center gap-1.5 rounded-xl border px-2 py-1 text-xs font-medium transition-colors ${GROUP_TAG_TONE[value]}`}
+    >
+      <GroupIcon group={value} />
+      <span className="min-w-0 truncate">{t(`guests.group_${value}`)}</span>
+      <ChevronDown size={12} aria-hidden className="shrink-0 opacity-70" />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as GuestGroupTag)}
+        aria-label={ariaLabel}
+        className="absolute inset-0 cursor-pointer opacity-0"
+      >
+        {GROUPS.map((gr) => (
+          <option key={gr} value={gr}>
+            {t(`guests.group_${gr}`)}
+          </option>
+        ))}
+      </select>
+    </span>
   );
 }
 
@@ -2242,27 +2405,27 @@ function GuestTable({
       <table className="w-full min-w-[920px] border-collapse text-sm">
         <thead>
           <tr>
-            <th className={th} scope="col">
+            <th className={`${th} text-left`} scope="col">
               {sortableHeader("name", t("guests.table_col_name"))}
             </th>
-            <th className={th} scope="col">
+            <th className={`${th} text-center`} scope="col">
               {t("guests.email")}
             </th>
-            <th className={th} scope="col">
+            <th className={`${th} text-center`} scope="col">
               {t("guests.table_col_household")}
             </th>
-            <th className={th} scope="col">
+            <th className={`${th} text-center`} scope="col">
               {sortableHeader("group", t("guests.table_col_group"))}
             </th>
-            <th className={th} scope="col">
+            <th className={`${th} text-center`} scope="col">
               {sortableHeader("rsvp", t("guests.table_col_rsvp"))}
             </th>
             {mealEnabled && (
-              <th className={th} scope="col">
+              <th className={`${th} text-center`} scope="col">
                 {t("guests.table_col_meal")}
               </th>
             )}
-            <th className={th} scope="col">
+            <th className={`${th} text-center`} scope="col">
               {t("guests.table_col_dietary")}
             </th>
             <th className={`${th} text-center`} scope="col">
@@ -2277,10 +2440,13 @@ function GuestTable({
           </tr>
         </thead>
         <tbody>
-          {guests.map((g) => (
+          {guests.map((g, i) => (
             <GuestTableRow
               key={g.id}
               guest={g}
+              /* Alternating row tint, Excel-style, so the eye can track one
+                 row across the grid on wide screens. */
+              zebra={i % 2 === 1}
               householdLabel={
                 g.household_id != null ? (householdLabelById.get(g.household_id) ?? null) : null
               }
@@ -2311,6 +2477,7 @@ function GuestTable({
 
 function GuestTableRow({
   guest: g,
+  zebra = false,
   householdLabel,
   households,
   mealMenu,
@@ -2324,6 +2491,7 @@ function GuestTableRow({
   onToggleGuestInvited,
 }: {
   guest: Guest;
+  zebra?: boolean;
   householdLabel: string | null;
   households: Household[];
   mealMenu: MealMenu | null;
@@ -2350,7 +2518,11 @@ function GuestTableRow({
   }
 
   return (
-    <tr className="transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-800/40">
+    <tr
+      className={`transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-800/40 ${
+        zebra ? "bg-paper-100/40 dark:bg-umber-800/25" : ""
+      }`}
+    >
       <td className={`${CELL} max-w-[16rem]`}>
         <span className="flex items-center gap-1.5">
           <PartnerRoleIcon role={g.partner_role} />
@@ -2381,51 +2553,32 @@ function GuestTableRow({
           />
         )}
       </td>
-      <td className={CELL}>
-        {/* Group is household-canonical on the backend, so this select edits
+      <td className={`${CELL} text-center`}>
+        {/* Group is household-canonical on the backend, so this chip edits
             the whole household's tag (title says so), not just this row. */}
-        <CellSelect
+        <GroupCellChip
           value={g.group_tag}
+          onChange={(v) => void onChangeGroup(g, v)}
           ariaLabel={t("guests.table_col_group")}
           title={g.household_id != null ? t("guests.table_group_household_hint") : undefined}
-          onChange={(v) => void onChangeGroup(g, v as GuestGroupTag)}
-          className="min-w-[11rem]"
-        >
-          {GROUPS.map((gr) => (
-            <option key={gr} value={gr}>
-              {t(`guests.group_${gr}`)}
-            </option>
-          ))}
-        </CellSelect>
+        />
       </td>
-      <td className={CELL}>
-        <CellSelect
+      <td className={`${CELL} text-center`}>
+        <RsvpPicker
           value={g.rsvp_status}
+          onChange={(v) => void onUpdateGuest(g, { rsvp_status: v })}
           ariaLabel={t("guests.table_col_rsvp")}
-          onChange={(v) => void onUpdateGuest(g, { rsvp_status: v as RsvpStatus })}
-          className={
-            g.rsvp_status === "yes"
-              ? "[&>select]:font-medium [&>select]:text-emerald-700 dark:[&>select]:text-emerald-300"
-              : g.rsvp_status === "no"
-                ? "[&>select]:text-ink-400 dark:[&>select]:text-umber-400"
-                : ""
-          }
-        >
-          {(["pending", "yes", "maybe", "no"] as RsvpStatus[]).map((s) => (
-            <option key={s} value={s}>
-              {t(`guests.rsvp_${s}`)}
-            </option>
-          ))}
-        </CellSelect>
+        />
       </td>
       {mealEnabled && (
-        <td className={CELL}>
+        <td className={`${CELL} text-center`}>
           <CellSelect
             value={g.meal_choice ?? ""}
             ariaLabel={t("guests.table_col_meal")}
             onChange={(v) =>
               void onUpdateGuest(g, { meal_choice: v === "" ? null : (v as MealSlotKey) })
             }
+            className="[&>select]:text-center"
           >
             <option value="">{t("guests.table_meal_unset")}</option>
             {mealSlots(mealMenu)
@@ -2439,8 +2592,8 @@ function GuestTableRow({
           </CellSelect>
         </td>
       )}
-      <td className={CELL}>
-        <span className="flex items-center gap-1.5">
+      <td className={`${CELL} text-center`}>
+        <span className="flex items-center justify-center gap-1.5">
           <MealIcons meal={null} dietary={g.dietary} />
           {/* Toggle-select: value stays "", the visible summary lives in the
               hidden placeholder option, and picking an allergen flips it. */}
@@ -3036,9 +3189,9 @@ function RsvpBadge({ status }: { status: RsvpStatus }) {
     status === "yes"
       ? "inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-300"
       : status === "no"
-        ? "badge-ink"
+        ? "inline-flex items-center rounded-full border border-blush-200 bg-blush-50 px-2 py-0.5 text-xs font-medium text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
         : status === "maybe"
-          ? "badge-paper"
+          ? "inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/15 dark:text-amber-300"
           : "badge-paper border border-dashed border-paper-300 dark:border-umber-700";
   const label =
     status === "yes"

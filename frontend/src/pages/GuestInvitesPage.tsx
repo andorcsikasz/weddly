@@ -36,6 +36,7 @@ import {
   useToast,
 } from "../components/ui";
 import { InfoHint } from "../components/InfoHint";
+import { MoneyInput } from "../components/MoneyInput";
 import { coupleApi, guestApi, guestMessageApi } from "../lib/endpoints";
 import { formatMoney, formatTimestamp } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -64,6 +65,14 @@ const AUDIENCE_ICON: Record<GuestMessageAudience, LucideIcon> = {
   all: Users,
   pending: Clock3,
   confirmed: CheckCheck,
+};
+
+/** One glyph per broadcast template, so the history rows carry the same
+ *  visual anchor as the composer cards they came from. */
+const TEMPLATE_ICON: Record<GuestMessageTemplate, LucideIcon> = {
+  invite: Mail,
+  major_update: Megaphone,
+  pre_wedding_info: CalendarClock,
 };
 
 /** How many people each audience would actually reach. Mirrors the server's
@@ -582,15 +591,14 @@ function PreWeddingCard({
               />
               {tipManual && (
                 <>
-                  <input
+                  <MoneyInput
                     id="gi_tip_override"
-                    type="number"
-                    min={0}
+                    locale={locale}
                     className="input h-9 min-w-[7rem] flex-1 py-1"
                     aria-label={t("guest_invites.envelope_tip_amount_label")}
                     title={t("guest_invites.envelope_tip_amount_label")}
                     value={overrideInput}
-                    onChange={(e) => setOverrideInput(e.target.value)}
+                    onChange={setOverrideInput}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleSaveOverride();
                     }}
@@ -679,13 +687,15 @@ function KpiTile({
 
 /** RSVP as a coloured badge instead of plain text — colour + label together
  *  (never colour alone), matching the badge language the guest list itself
- *  uses. "Maybe" gets its own tone rather than sharing pending's, since a
- *  declared "talán" is a different fact from silence. */
+ *  uses: yes = emerald (attending), no = blush (declined), maybe = amber
+ *  (declared tentative), pending = dashed neutral (no word yet). Sage is kept
+ *  for the channel chips in the per-guest rows, where it means "invited/done" —
+ *  one tone never means a status and a channel at once. */
 function RsvpStatusBadge({ status }: { status: RsvpStatus }) {
   const { t } = useT();
   const cls =
     status === "yes"
-      ? "border-sage-200 bg-sage-100 text-sage-700 dark:border-sage-400/30 dark:bg-sage-900/30 dark:text-sage-300"
+      ? "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-900/30 dark:text-emerald-300"
       : status === "no"
         ? "border-blush-200 bg-blush-50 text-blush-700 dark:border-blush-400/30 dark:bg-blush-900/30 dark:text-blush-300"
         : status === "maybe"
@@ -950,13 +960,13 @@ export default function GuestInvitesPage() {
                   icon={Users}
                   label={t("guest_invites.guests_section_title")}
                   value={stats.total}
-                  breakdown={`${stats.adults} ${t("guest_invites.stat_adults").toLowerCase()} · ${stats.children} ${t("guest_invites.stat_children").toLowerCase()} · ${stats.babies} ${t("guest_invites.stat_babies").toLowerCase()}`}
+                  breakdown={`${stats.adults} ${t("guest_invites.stat_adults")} · ${stats.children} ${t("guest_invites.stat_children")} · ${stats.babies} ${t("guest_invites.stat_babies")}`}
                 />
                 <KpiTile
                   icon={Send}
                   label={t("guest_invites.channel_section_title")}
                   value={stats.total - stats.notInvited}
-                  breakdown={`${stats.online} ${t("guest_invites.invited_online").toLowerCase()} · ${stats.physical} ${t("guest_invites.invited_physical").toLowerCase()}`}
+                  breakdown={`${stats.online} ${t("guest_invites.invited_online")} · ${stats.physical} ${t("guest_invites.invited_physical")} · ${stats.both} ${t("guest_invites.invited_both")}`}
                   alert={
                     stats.notInvited > 0
                       ? t("guest_invites.not_invited_alert", { count: stats.notInvited })
@@ -967,7 +977,7 @@ export default function GuestInvitesPage() {
                   icon={CheckCheck}
                   label={t("guest_invites.rsvp_title")}
                   value={stats.yes}
-                  breakdown={`${stats.no} ${t("guest_invites.rsvp_no").toLowerCase()} · ${stats.maybe} ${t("guest_invites.rsvp_maybe").toLowerCase()}`}
+                  breakdown={`${stats.no} ${t("guest_invites.rsvp_no")} · ${stats.maybe} ${t("guest_invites.rsvp_maybe")}`}
                   alert={
                     stats.pending > 0
                       ? t("guest_invites.pending_alert", { count: stats.pending })
@@ -1011,13 +1021,29 @@ export default function GuestInvitesPage() {
               {/* Per-guest list */}
               <div className="mt-3 overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
                 {eligible.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-sm text-umber-500 dark:text-umber-400">
-                    {t("guest_invites.table_empty")}
-                  </p>
+                  <div className="flex flex-col items-center gap-2 px-4 py-10">
+                    <Users
+                      size={20}
+                      aria-hidden="true"
+                      className="text-umber-300 dark:text-umber-600"
+                      strokeWidth={1.5}
+                    />
+                    <p className="text-sm text-umber-500 dark:text-umber-400">
+                      {t("guest_invites.table_empty")}
+                    </p>
+                  </div>
                 ) : visibleGuests.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-sm text-umber-500 dark:text-umber-400">
-                    {t("guest_invites.list_empty_filtered")}
-                  </p>
+                  <div className="flex flex-col items-center gap-2 px-4 py-10">
+                    <Search
+                      size={20}
+                      aria-hidden="true"
+                      className="text-umber-300 dark:text-umber-600"
+                      strokeWidth={1.5}
+                    />
+                    <p className="text-sm text-umber-500 dark:text-umber-400">
+                      {t("guest_invites.list_empty_filtered")}
+                    </p>
+                  </div>
                 ) : (
                   <ul className="divide-y divide-paper-200 dark:divide-umber-800">
                     {visibleGuests.map((g) => {
@@ -1087,62 +1113,83 @@ export default function GuestInvitesPage() {
                 {t("guest_invites.broadcasts_title")}
               </h3>
               {messages.length === 0 ? (
-                <p className="mt-3 rounded-xl border border-paper-300 px-4 py-8 text-center text-sm text-umber-500 dark:border-umber-700 dark:text-umber-400">
-                  {t("guest_invites.broadcasts_empty")}
-                </p>
+                <div className="mt-3 flex flex-col items-center gap-2 rounded-xl border border-paper-300 px-4 py-10 dark:border-umber-700">
+                  <Megaphone
+                    size={20}
+                    aria-hidden="true"
+                    className="text-umber-300 dark:text-umber-600"
+                    strokeWidth={1.5}
+                  />
+                  <p className="text-sm text-umber-500 dark:text-umber-400">
+                    {t("guest_invites.broadcasts_empty")}
+                  </p>
+                </div>
               ) : (
                 <ul className="mt-3 flex flex-col gap-2">
-                  {messages.map((m) => (
-                    <li
-                      key={m.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-paper-300 bg-paper-50 px-4 py-3 dark:border-umber-700 dark:bg-umber-900"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-medium text-umber-900 dark:text-paper-50">
-                          {t(`guest_invites.template_${m.template}`)}
-                        </p>
-                        <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
-                          {t(`guest_invites.audience_${m.audience}`)}
-                          {" · "}
-                          {t("guest_invites.recipients", { count: m.recipient_count })}
-                          {" · "}
-                          {m.status === "scheduled" && m.scheduled_at !== null
-                            ? t("guest_invites.scheduled_for", {
-                                date: formatTimestamp(m.scheduled_at, locale),
-                              })
-                            : m.sent_at !== null
-                              ? t("guest_invites.sent_on", {
-                                  date: formatTimestamp(m.sent_at, locale),
-                                })
-                              : t(`guest_invites.status_${m.status}`)}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-3">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                            m.status === "sent"
-                              ? "bg-sage-100 text-sage-700 dark:bg-sage-900/40 dark:text-sage-300"
-                              : m.status === "failed"
-                                ? "bg-blush-100 text-blush-700 dark:bg-blush-900/40 dark:text-blush-300"
-                                : "bg-paper-200 text-umber-600 dark:bg-umber-800 dark:text-umber-300"
-                          }`}
-                        >
-                          {t(`guest_invites.status_${m.status}`)}
-                        </span>
-                        {m.status === "scheduled" && (
-                          <button
-                            type="button"
-                            aria-label={t("guest_invites.cancel_confirm_yes")}
-                            title={t("guest_invites.cancel_button")}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-umber-500 transition-colors hover:bg-paper-200 hover:text-umber-900 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50"
-                            onClick={() => void handleCancel(m.id)}
+                  {messages.map((m) => {
+                    const Icon = TEMPLATE_ICON[m.template];
+                    return (
+                      <li
+                        key={m.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-paper-300 bg-paper-50 px-4 py-3 dark:border-umber-700 dark:bg-umber-900"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span
+                            aria-hidden="true"
+                            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-paper-200 text-umber-600 dark:bg-umber-800 dark:text-umber-200"
                           >
-                            <X size={16} aria-hidden="true" />
-                          </button>
-                        )}
-                      </div>
-                    </li>
-                  ))}
+                            <Icon size={16} strokeWidth={1.5} />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="font-medium text-umber-900 dark:text-paper-50">
+                              {t(`guest_invites.template_${m.template}`)}
+                            </p>
+                            <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
+                              {t(`guest_invites.audience_${m.audience}`)}
+                              {" · "}
+                              {t("guest_invites.recipients", { count: m.recipient_count })}
+                              {" · "}
+                              {m.status === "scheduled" && m.scheduled_at !== null
+                                ? t("guest_invites.scheduled_for", {
+                                    date: formatTimestamp(m.scheduled_at, locale),
+                                  })
+                                : m.sent_at !== null
+                                  ? t("guest_invites.sent_on", {
+                                      date: formatTimestamp(m.sent_at, locale),
+                                    })
+                                  : t(`guest_invites.status_${m.status}`)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-3">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              m.status === "sent"
+                                ? "bg-sage-100 text-sage-700 dark:bg-sage-900/40 dark:text-sage-300"
+                                : m.status === "failed"
+                                  ? "bg-blush-100 text-blush-700 dark:bg-blush-900/40 dark:text-blush-300"
+                                  : m.status === "scheduled"
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                                    : "bg-paper-200 text-umber-600 dark:bg-umber-800 dark:text-umber-300"
+                            }`}
+                          >
+                            {t(`guest_invites.status_${m.status}`)}
+                          </span>
+                          {m.status === "scheduled" && (
+                            <button
+                              type="button"
+                              aria-label={t("guest_invites.cancel_button")}
+                              title={t("guest_invites.cancel_button")}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-umber-500 transition-colors hover:bg-paper-200 hover:text-umber-900 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+                              onClick={() => void handleCancel(m.id)}
+                            >
+                              <X size={16} aria-hidden="true" />
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </section>
