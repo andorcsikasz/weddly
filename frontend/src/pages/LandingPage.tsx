@@ -3,7 +3,6 @@ import {
   Briefcase,
   CalendarCheck,
   Camera,
-  ChevronDown,
   ChevronRight,
   ClipboardList,
   FileText,
@@ -17,7 +16,6 @@ import {
   Mail,
   Pause,
   Percent,
-  Plus,
   Printer,
   Share2,
   Sparkles,
@@ -46,9 +44,7 @@ const SeatingMockup = lazyWithReload(() =>
 const SubmitSupplierModal = lazyWithReload(() =>
   import("../components/SubmitSupplierModal").then((m) => ({ default: m.SubmitSupplierModal })),
 );
-import { CoupleMonogram } from "../components/CoupleMonogram";
 import { DemoLaunchButton } from "../components/DemoLaunchButton";
-import { NewsletterCapture } from "../components/NewsletterCapture";
 import { VendorSearchBar } from "../components/VendorSearchBar";
 import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicWeddingChecklist } from "../components/PublicWeddingChecklist";
@@ -56,11 +52,10 @@ import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useToast } from "../components/ui";
 import { publicStatsApi } from "../lib/endpoints";
 import { currencySymbol, formatNumber, intlLocale, localeCurrency } from "../lib/format";
-import { contentLocale, type Locale, useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
-import { SEO_FAQ } from "@shared/seo_faq";
 import { toolPathFor } from "@shared/tool_faq";
 // Every price the deck quotes comes from the billing contract, so the landing
 // page and Stripe cannot tell a visitor two different numbers.
@@ -181,15 +176,6 @@ export default function LandingPage() {
       document.documentElement.classList.remove("landing-hero-active");
     };
   }, []);
-  // Single source of truth (shared/seo_faq.ts) — same array also feeds the
-  // FAQPage JSON-LD in seo_ssr.ts, so they can't drift.
-  const faqEntries = SEO_FAQ[contentLocale(locale)];
-  // Show the first few, reveal the rest behind a "+" so the section stays
-  // short. All entries are always in the DOM's JSON-LD (built separately), so
-  // this only affects the visible cards, not indexing.
-  const [faqOpen, setFaqOpen] = useState(false);
-  const FAQ_VISIBLE = 5;
-
   // Capture the `?ref=<source>` query param once on mount. Only the
   // values we expect — `rsvp`, `site` (from /w/:slug footers), `share` —
   // make it into sessionStorage; anything else is dropped so a hostile
@@ -749,43 +735,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ════════════════════════ 12 · FAQ ════════════════════════
-          Anchored as the last section per product call: questions answer
-          doubts left over after the emotional closing CTA, and the
-          FAQPage JSON-LD near the bottom of the document still indexes
-          fine. Tight max-w-2xl, italic question-mark headline scaled
-          down so the section doesn't dominate vertically on small
-          viewports. */}
-      <section className="relative bg-paper-50 dark:bg-umber-900">
-        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
-          <h2 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:whitespace-nowrap sm:text-4xl">
-            {t("landing.faq_title")}
-          </h2>
-          <div className="mt-6 space-y-2 sm:mt-8">
-            {(faqOpen ? faqEntries : faqEntries.slice(0, FAQ_VISIBLE)).map((entry) => (
-              <FaqCard key={entry.q} q={entry.q} a={entry.a} cta={entry.cta} />
-            ))}
-          </div>
-          {!faqOpen && faqEntries.length > FAQ_VISIBLE && (
-            <div className="mt-3 flex justify-center">
-              {/* Icon-only on purpose: the "+N more questions" label was
-                  restating what a plus under a truncated list already says. */}
-              <button
-                type="button"
-                onClick={() => setFaqOpen(true)}
-                aria-label={t("landing.faq_show_more", { n: faqEntries.length - FAQ_VISIBLE })}
-                title={t("landing.faq_show_more", { n: faqEntries.length - FAQ_VISIBLE })}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
-              >
-                <Plus size={18} aria-hidden />
-              </button>
-            </div>
-          )}
-          <div className="mt-10">
-            <NewsletterCapture source="landing" />
-          </div>
-        </div>
-      </section>
       <MobileStickySignup />
     </PublicShell>
   );
@@ -2402,24 +2351,13 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
 // line, chevron — the whole row is the target, and the medallion inverts to
 // solid ink on hover so the row reads as a control rather than a list item.
 // Same shape whether it navigates (`to`) or opens the wizard (`onClick`).
-/** Five filled stars — the aggregate rating beside the testimonials heading,
- *  and one row per testimonial card. A single `role="img"` with the aria
- *  label carries the meaning; the five glyphs underneath are decorative. */
-function StarRow({ className }: { className?: string }) {
-  const { t } = useT();
-  return (
-    <span
-      role="img"
-      aria-label={t("landing.testimonials_stars_aria")}
-      className={`inline-flex items-center gap-0.5 text-blush-500 dark:text-blush-400 ${className ?? ""}`}
-    >
-      {[0, 1, 2, 3, 4].map((i) => (
-        <Star key={i} size={14} aria-hidden="true" fill="currentColor" strokeWidth={0} />
-      ))}
-    </span>
-  );
-}
-
+/** Five filled stars — one row at the top of each testimonial card. A single
+ *  `role="img"` with the aria label carries the meaning; the five glyphs
+ *  underneath are decorative. */
+/** A single compact testimonial: the couple and their city on the left, the
+ *  "5" rating top-right, then the quote. Deliberately no card chrome beyond a
+ *  hairline border — the old blush quote-glyph, hover lift, monogram-plus-divider
+ *  and five-star row read as decoration stacked on decoration. */
 function TestimonialCard({
   quote,
   name,
@@ -2429,27 +2367,28 @@ function TestimonialCard({
   name: string;
   meta: string;
 }) {
+  const { t } = useT();
   return (
-    <li className="group relative rounded-2xl border border-paper-300 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blush-300 hover:shadow-[0_24px_48px_-24px_rgba(191,74,48,0.35)] dark:border-umber-700 dark:bg-umber-800 dark:hover:border-blush-700 sm:p-8">
-      <span
-        aria-hidden="true"
-        className="block font-serif text-6xl italic leading-none text-blush-200 transition-colors group-hover:text-blush-400 dark:text-umber-600 dark:group-hover:text-blush-600"
-      >
-        “
-      </span>
-      <StarRow className="-mt-2 mb-2" />
-      <p className="font-serif text-lg italic leading-relaxed text-umber-900 dark:text-paper-100">
-        {quote}
-      </p>
-      <div className="mt-6 flex items-center gap-3 border-t border-paper-200 pt-5 dark:border-umber-700">
-        <CoupleMonogram name={name} size="md" />
-        <div className="min-w-0">
-          <p className="truncate font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
+    <li className="flex flex-col rounded-2xl border border-paper-300 bg-white p-5 dark:border-umber-700 dark:bg-umber-800 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <footer>
+          <p className="font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
             {name}
           </p>
-          <p className="text-xs text-umber-600 dark:text-umber-300">{meta}</p>
-        </div>
+          <p className="mt-0.5 text-sm text-umber-600 dark:text-umber-300">{meta}</p>
+        </footer>
+        <span
+          role="img"
+          aria-label={t("landing.testimonials_stars_aria")}
+          className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-umber-900 dark:text-paper-50"
+        >
+          5
+          <Star size={14} aria-hidden="true" fill="currentColor" strokeWidth={0} />
+        </span>
       </div>
+      <p className="mt-3 font-grotesk text-base font-medium leading-snug text-umber-900 dark:text-paper-100">
+        {quote}
+      </p>
     </li>
   );
 }
@@ -2599,42 +2538,5 @@ function AudienceRow({
     <button type="button" onClick={onClick} className={className}>
       {inner}
     </button>
-  );
-}
-
-function FaqCard({
-  q,
-  a,
-  cta,
-}: { q: string; a: ReactNode; cta?: { href: string; label: string } }) {
-  return (
-    <details className="group rounded-xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-4 py-3 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-5 sm:py-3.5">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left">
-        <span className="font-grotesk text-base font-medium text-umber-900 dark:text-paper-50 sm:text-lg">
-          {q}
-        </span>
-        <ChevronDown
-          size={16}
-          className="shrink-0 text-umber-700 dark:text-umber-300 transition-transform group-open:rotate-180"
-        />
-      </summary>
-      <p className="mt-2.5 font-grotesk text-sm leading-relaxed text-umber-700 dark:text-umber-200">
-        {a}
-      </p>
-      {cta && (
-        <Link
-          to={cta.href}
-          className="group/faq mt-2.5 inline-flex items-center gap-1.5 pb-1 font-grotesk text-sm font-medium text-umber-800 transition-colors hover:text-umber-500 dark:text-paper-200 dark:hover:text-umber-300"
-        >
-          <span>{cta.label}</span>
-          <span
-            aria-hidden
-            className="transition-transform duration-200 group-hover/faq:translate-x-0.5"
-          >
-            →
-          </span>
-        </Link>
-      )}
-    </details>
   );
 }

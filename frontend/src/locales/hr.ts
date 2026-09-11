@@ -2204,8 +2204,6 @@ const hr: LocaleMessages = {
     checklist_demo_convert_dismiss: "Možda kasnije",
     checklist_demo_convert_cta: "Spremi moj napredak",
     checklist_demo_open_link: "Otvori cijeli popis",
-    faq_title: "Pitanja koja ćete vjerojatno postaviti",
-    faq_show_more: "+{n} dodatnih pitanja",
     closing_title: "Dvije minute\ni sve je spremno.",
     closing_body:
       "Tijekom otvorene bete sve je vaše, a radni prostor možete pauzirati kad god život postane gust.",
@@ -2472,15 +2470,6 @@ const hr: LocaleMessages = {
     hero_title: "Budite na jedan klik.",
     closing_title: "Sljedeća sezona vjenčanja odlučuje se sada.",
     closing_cta: "Rezervirajte svoje mjesto",
-    benefits_heading: "Brze rezervacije. Veći doseg. Profil koji se ocjenjuje. Tako dolazi rast.",
-    benefit_1_title: "Online još danas, ne za mjesece",
-    benefit_1_body: "Vaš profil postaje vidljiv isti dan. Plaćate tek nakon tri stvarna upita.",
-    benefit_2_title: "Ne gubite se u beskrajnom popisu",
-    benefit_2_body:
-      "Parovi vide samo pažljivo odabrane pružatelje usluga koji im odgovaraju, i pišu izravno vama.",
-    benefit_3_title: "Recenzije dovode sljedeći par",
-    benefit_3_body:
-      "Svako završeno vjenčanje postaje recenzija. Odatle vaš profil raste sam od sebe.",
     form_title: "Prijavite se na listu čekanja",
     form_business_label: "Naziv tvrtke",
     form_email_label: "E-pošta",
@@ -2950,6 +2939,7 @@ const hr: LocaleMessages = {
       section_count: "{done} / {total}",
       section_suggestions: "{count} prijedloga",
       section_complete: "Odjeljak dovršen",
+      completed_section: "Dovršeno · {count}",
       download: "Preuzmi PDF",
       download_options: "Postavke PDF-a",
       download_title: "Preuzmi popis",

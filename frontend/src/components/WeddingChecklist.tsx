@@ -124,6 +124,13 @@ export function WeddingChecklist({
   const [includeOwners, setIncludeOwners] = useState(false);
   const [remainingOnly, setRemainingOnly] = useState(false);
   const demoProgressApplied = useRef(false);
+  // Items that were just ticked: they wait ~4 s before collapsing into the
+  // section's compact "completed" block at the bottom, so the checked state
+  // is visible before the row leaves the active list.
+  const [pendingCollapse, setPendingCollapse] = useState<Set<string>>(() => new Set());
+  const [collapsing, setCollapsing] = useState<Set<string>>(() => new Set());
+  const collapseTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const collapseAnimTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => setPdfLocale(locale), [locale]);
 
@@ -165,6 +172,13 @@ export function WeddingChecklist({
     const applicableIds = new Set(applicable.map((entry) => entry.id));
     void applyStashedDemoProgress(applicableIds, taskByTemplateId, locale, onItemsChange);
   }, [applicable, taskByTemplateId, locale, onItemsChange]);
+
+  useEffect(() => {
+    return () => {
+      for (const timer of collapseTimersRef.current.values()) clearTimeout(timer);
+      for (const timer of collapseAnimTimersRef.current.values()) clearTimeout(timer);
+    };
+  }, []);
 
   async function addItem(template: (typeof applicable)[number]) {
     if (addingIds.has(template.id)) return;
@@ -230,6 +244,34 @@ export function WeddingChecklist({
   async function toggle(task: PlanningItem) {
     if (savingIds.has(task.id)) return;
     const nextDone = !task.done;
+    const tid = task.checklist_template_id;
+
+    // Un-completing (or a failed save) cancels any pending collapse animation.
+    const cancelCollapse = () => {
+      if (!tid) return;
+      const t1 = collapseTimersRef.current.get(tid);
+      const t2 = collapseAnimTimersRef.current.get(tid);
+      if (t1) {
+        clearTimeout(t1);
+        collapseTimersRef.current.delete(tid);
+      }
+      if (t2) {
+        clearTimeout(t2);
+        collapseAnimTimersRef.current.delete(tid);
+      }
+      setPendingCollapse((prev) => {
+        const next = new Set(prev);
+        next.delete(tid);
+        return next;
+      });
+      setCollapsing((prev) => {
+        const next = new Set(prev);
+        next.delete(tid);
+        return next;
+      });
+    };
+    if (!nextDone) cancelCollapse();
+
     const previous = task;
     setSavingIds((current) => new Set(current).add(task.id));
     onItemsChange((current) =>
@@ -240,7 +282,33 @@ export function WeddingChecklist({
       onItemsChange((current) =>
         current.map((entry) => (entry.id === task.id ? result.item : entry)),
       );
+
+      // Completing: keep the row in place, then after ~4 s collapse it out of
+      // the active list and let it settle into the section's compact block.
+      if (nextDone && tid) {
+        setPendingCollapse((prev) => new Set(prev).add(tid));
+        const timer = setTimeout(() => {
+          setPendingCollapse((prev) => {
+            const next = new Set(prev);
+            next.delete(tid);
+            return next;
+          });
+          setCollapsing((prev) => new Set(prev).add(tid));
+          const animTimer = setTimeout(() => {
+            setCollapsing((prev) => {
+              const next = new Set(prev);
+              next.delete(tid);
+              return next;
+            });
+            collapseAnimTimersRef.current.delete(tid);
+          }, 500);
+          collapseAnimTimersRef.current.set(tid, animTimer);
+          collapseTimersRef.current.delete(tid);
+        }, 4000);
+        collapseTimersRef.current.set(tid, timer);
+      }
     } catch {
+      cancelCollapse();
       onItemsChange((current) => current.map((entry) => (entry.id === task.id ? previous : entry)));
       toast.error(t("planning.checklist.save_error"));
     } finally {
@@ -478,17 +546,57 @@ export function WeddingChecklist({
 
         <div className="grid items-start gap-4 md:grid-cols-2" data-checklist-layout="two-column">
           {sections.map((section) => {
-            const rows = section.items.flatMap((template): ChecklistRow[] => {
-              const task = taskByTemplateId.get(template.id) ?? null;
-              if (task) {
-                if (filter === "todo" && task.done) return [];
-                if (filter === "done" && !task.done) return [];
-                return [{ template, task }];
-              }
-              if (filter === "all") return [{ template, task: null }];
-              return [];
-            });
+            // Recently-ticked items stay in the active list (in place) until
+            // their 4 s delay elapses and the collapse animation is done.
+            const rows = section.items.flatMap(
+              (template, originalIndex): (ChecklistRow & { originalIndex: number })[] => {
+                const task = taskByTemplateId.get(template.id) ?? null;
+                if (task) {
+                  if (
+                    filter === "todo" &&
+                    task.done &&
+                    !pendingCollapse.has(template.id) &&
+                    !collapsing.has(template.id)
+                  )
+                    return [];
+                  if (filter === "done" && !task.done) return [];
+                  return [{ template, task, originalIndex }];
+                }
+                if (filter === "all") return [{ template, task: null, originalIndex }];
+                return [];
+              },
+            );
             if (rows.length === 0) return null;
+
+            // Order: active/pending items first (in catalog order), then
+            // waiting-to-collapse, then animating-out, then settled
+            // completed items as a compact block at the bottom.
+            const sorted = [...rows].sort((a, b) => {
+              const group = (r: (typeof rows)[number]): number => {
+                if (!r.task) return 0;
+                if (!r.task.done) return 0;
+                if (pendingCollapse.has(r.template.id)) return 1;
+                if (collapsing.has(r.template.id)) return 2;
+                return 3;
+              };
+              const gA = group(a);
+              const gB = group(b);
+              if (gA !== gB) return gA - gB;
+              return a.originalIndex - b.originalIndex;
+            });
+            const activeRows = sorted.filter(
+              (r) =>
+                !r.task?.done ||
+                pendingCollapse.has(r.template.id) ||
+                collapsing.has(r.template.id),
+            );
+            const completedRows = sorted.filter(
+              (r) =>
+                r.task?.done &&
+                !pendingCollapse.has(r.template.id) &&
+                !collapsing.has(r.template.id),
+            );
+
             const sectionAdded = section.items.filter((entry) => taskByTemplateId.has(entry.id));
             const sectionDone = sectionAdded.filter(
               (entry) => taskByTemplateId.get(entry.id)?.done,
@@ -520,75 +628,89 @@ export function WeddingChecklist({
                   </span>
                 </div>
                 <ul className="divide-y divide-ink-900/10 dark:divide-paper-50/10">
-                  {rows.map(({ template, task }) => {
+                  {activeRows.map(({ template, task }) => {
                     const status = task ? timelineStatus(task.due_date, task.done, today) : null;
+                    const isPendingCollapse = pendingCollapse.has(template.id);
+                    const isCollapsing = collapsing.has(template.id);
                     return task ? (
                       <li
                         key={template.id}
-                        className="group flex min-w-0 items-start gap-3 px-4 py-4 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025]"
+                        className={`grid transition-all duration-500 ease-out motion-reduce:transition-none ${isCollapsing ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr]"}`}
                       >
-                        <label className="inline-flex shrink-0 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={task.done}
-                            onChange={() => toggle(task)}
-                            disabled={savingIds.has(task.id)}
-                            aria-label={
-                              task.done ? t("planning.mark_undone") : t("planning.mark_done")
-                            }
-                            className="peer sr-only"
-                          />
-                          <span
-                            aria-hidden="true"
-                            className={`inline-flex h-6 w-6 items-center justify-center rounded-sm border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-neutral-950 peer-focus-visible:ring-offset-2 peer-disabled:cursor-wait peer-disabled:opacity-60 dark:peer-focus-visible:ring-paper-100 ${task.done ? "border-neutral-950 bg-neutral-950 text-white dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900" : "border-ink-400 bg-paper-50 text-transparent group-hover:border-ink-900 dark:border-umber-300 dark:bg-umber-800 dark:group-hover:border-paper-100"}`}
+                        <div className="overflow-hidden">
+                          <div
+                            className={`group flex min-w-0 items-start gap-3 px-4 py-4 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025] ${isCollapsing ? "pointer-events-none" : ""}`}
                           >
-                            {savingIds.has(task.id) ? (
-                              <Loader2
-                                size={13}
-                                className="animate-spin text-ink-500"
-                                aria-hidden="true"
+                            <label className="inline-flex shrink-0 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={task.done}
+                                onChange={() => toggle(task)}
+                                disabled={savingIds.has(task.id)}
+                                aria-label={
+                                  task.done ? t("planning.mark_undone") : t("planning.mark_done")
+                                }
+                                className="peer sr-only"
                               />
-                            ) : (
-                              <Check size={14} strokeWidth={2.5} aria-hidden="true" />
-                            )}
-                          </span>
-                        </label>
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className={`break-words text-sm font-medium leading-5 ${task.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
-                          >
-                            {template.title}
-                          </p>
-                          {(task.due_date || task.assignee) && (
-                            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
-                              {task.due_date && (
-                                <span className="inline-flex items-center gap-1">
-                                  <CalendarDays size={12} aria-hidden="true" />
-                                  {t("planning.checklist.due_date", {
-                                    date: formatShortDate(task.due_date, locale),
-                                  })}
-                                </span>
-                              )}
-                              {status === "overdue" && (
-                                <span className="inline-flex shrink-0 items-center rounded-full bg-blush-500 px-2 py-0.5 text-[11px] font-medium text-paper-50">
-                                  {t("planning.status_overdue")}
-                                </span>
-                              )}
-                              {status === "due_soon" && (
-                                <span className="inline-flex shrink-0 items-center rounded-full bg-blush-50 px-2 py-0.5 text-[11px] font-medium text-blush-700 ring-1 ring-blush-200 dark:bg-blush-400/15 dark:text-blush-300 dark:ring-blush-400/30">
-                                  {t("planning.status_due_soon")}
-                                </span>
-                              )}
-                              {task.assignee && (
-                                <span className="inline-flex min-w-0 items-center gap-1">
-                                  <UserRound size={12} className="shrink-0" aria-hidden="true" />
-                                  <span className="break-words">
-                                    {t("planning.checklist.owner", { name: task.assignee })}
-                                  </span>
-                                </span>
-                              )}
+                              <span
+                                aria-hidden="true"
+                                className={`inline-flex h-6 w-6 items-center justify-center rounded-sm border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-neutral-950 peer-focus-visible:ring-offset-2 peer-disabled:cursor-wait peer-disabled:opacity-60 dark:peer-focus-visible:ring-paper-100 ${task.done ? "border-neutral-950 bg-neutral-950 text-white dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900" : "border-ink-400 bg-paper-50 text-transparent group-hover:border-ink-900 dark:border-umber-300 dark:bg-umber-800 dark:group-hover:border-paper-100"}`}
+                              >
+                                {savingIds.has(task.id) ? (
+                                  <Loader2
+                                    size={13}
+                                    className="animate-spin text-ink-500"
+                                    aria-hidden="true"
+                                  />
+                                ) : (
+                                  <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                                )}
+                              </span>
+                            </label>
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className={`break-words text-sm font-medium leading-5 ${task.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
+                              >
+                                {template.title}
+                              </p>
+                              {!isPendingCollapse &&
+                                !isCollapsing &&
+                                (task.due_date || task.assignee) && (
+                                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                                    {task.due_date && (
+                                      <span className="inline-flex items-center gap-1">
+                                        <CalendarDays size={12} aria-hidden="true" />
+                                        {t("planning.checklist.due_date", {
+                                          date: formatShortDate(task.due_date, locale),
+                                        })}
+                                      </span>
+                                    )}
+                                    {status === "overdue" && (
+                                      <span className="inline-flex shrink-0 items-center rounded-full bg-blush-500 px-2 py-0.5 text-[11px] font-medium text-paper-50">
+                                        {t("planning.status_overdue")}
+                                      </span>
+                                    )}
+                                    {status === "due_soon" && (
+                                      <span className="inline-flex shrink-0 items-center rounded-full bg-blush-50 px-2 py-0.5 text-[11px] font-medium text-blush-700 ring-1 ring-blush-200 dark:bg-blush-400/15 dark:text-blush-300 dark:ring-blush-400/30">
+                                        {t("planning.status_due_soon")}
+                                      </span>
+                                    )}
+                                    {task.assignee && (
+                                      <span className="inline-flex min-w-0 items-center gap-1">
+                                        <UserRound
+                                          size={12}
+                                          className="shrink-0"
+                                          aria-hidden="true"
+                                        />
+                                        <span className="break-words">
+                                          {t("planning.checklist.owner", { name: task.assignee })}
+                                        </span>
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </li>
                     ) : (
@@ -632,6 +754,56 @@ export function WeddingChecklist({
                       </li>
                     );
                   })}
+                  {completedRows.length > 0 && (
+                    <>
+                      <li
+                        className="flex items-center gap-2 bg-ink-900/[0.02] px-4 py-2 sm:px-5 dark:bg-paper-50/[0.02]"
+                        aria-hidden="true"
+                      >
+                        <div className="h-px flex-1 bg-ink-900/10 dark:bg-paper-50/10" />
+                        <span className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
+                          {t("planning.checklist.completed_section", {
+                            count: completedRows.length,
+                          })}
+                        </span>
+                        <div className="h-px flex-1 bg-ink-900/10 dark:bg-paper-50/10" />
+                      </li>
+                      {completedRows.map(({ template, task }) => (
+                        <li
+                          key={template.id}
+                          className="group flex items-center gap-2.5 px-4 py-2.5 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025]"
+                        >
+                          <label className="inline-flex shrink-0 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked
+                              onChange={() => task && toggle(task)}
+                              disabled={task ? savingIds.has(task.id) : undefined}
+                              aria-label={t("planning.mark_undone")}
+                              className="peer sr-only"
+                            />
+                            <span
+                              aria-hidden="true"
+                              className="inline-flex h-5 w-5 items-center justify-center rounded-sm border-2 border-neutral-950 bg-neutral-950 text-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-neutral-950 peer-focus-visible:ring-offset-2 peer-disabled:cursor-wait peer-disabled:opacity-60 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900 dark:peer-focus-visible:ring-paper-100"
+                            >
+                              {task && savingIds.has(task.id) ? (
+                                <Loader2
+                                  size={11}
+                                  className="animate-spin text-ink-500"
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <Check size={12} strokeWidth={2.5} aria-hidden="true" />
+                              )}
+                            </span>
+                          </label>
+                          <span className="break-words text-sm text-ink-400 line-through dark:text-umber-300">
+                            {template.title}
+                          </span>
+                        </li>
+                      ))}
+                    </>
+                  )}
                 </ul>
               </section>
             );

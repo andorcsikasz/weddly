@@ -2795,12 +2795,6 @@ export interface LocaleMessages {
     demo_card_cta: string;
     demo_card_loading: string;
     demo_card_error: string;
-    faq_title: string;
-    /** "+N more questions" button that reveals the collapsed landing FAQ items. */
-    faq_show_more: string;
-    // FAQ Q&A pairs moved to shared/seo_faq.ts so the visible landing FAQ
-    // and the FAQPage JSON-LD share a single source. Only faq_title (the
-    // section heading) lives here.
     closing_title: string;
     closing_body: string;
     // ── Soft-Modern redesign additions ───────────────────────────────
@@ -3136,16 +3130,6 @@ export interface LocaleMessages {
      *  same "couples choose here" claim said twice. */
     closing_title: string;
     closing_cta: string;
-    /** Kicker line above the benefit grid: the whole speed → reach → reviews
-     *  → growth chain in one sentence, so the three cards below read as its
-     *  proof rather than three unrelated facts. */
-    benefits_heading: string;
-    benefit_1_title: string;
-    benefit_1_body: string;
-    benefit_2_title: string;
-    benefit_2_body: string;
-    benefit_3_title: string;
-    benefit_3_body: string;
     form_title: string;
     form_business_label: string;
     form_email_label: string;
@@ -3706,6 +3690,7 @@ export interface LocaleMessages {
       section_count: string;
       section_suggestions: string;
       section_complete: string;
+      completed_section: string;
       download: string;
       download_options: string;
       download_title: string;

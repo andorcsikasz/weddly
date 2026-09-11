@@ -2186,10 +2186,6 @@ const en: LocaleMessages = {
     checklist_demo_convert_dismiss: "Maybe later",
     checklist_demo_convert_cta: "Save my progress",
     checklist_demo_open_link: "Open the full checklist",
-    faq_title: "Questions you'll probably ask",
-    faq_show_more: "+{n} more questions",
-    // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
-    // FAQPage JSON-LD).
     closing_title: "Two minutes\nto set up.",
     closing_body:
       "Yours throughout the open beta, with the freedom to pause the workspace whenever life gets busy.",
@@ -2463,16 +2459,6 @@ const en: LocaleMessages = {
     hero_title: "Be one click away.",
     closing_title: "Next wedding season is being decided now.",
     closing_cta: "Take your spot",
-    benefits_heading:
-      "Fast bookings. Wider reach. A reviewable profile. That's how growth happens.",
-    benefit_1_title: "Live today, not months from now",
-    benefit_1_body: "Your profile goes live the same day. You only pay after three real inquiries.",
-    benefit_2_title: "You won't disappear into an endless list",
-    benefit_2_body:
-      "Couples only see hand-picked vendors who fit them, and they write straight to you.",
-    benefit_3_title: "Reviews bring the next couple",
-    benefit_3_body:
-      "Every finished wedding becomes a review. From there, your profile grows on its own.",
     form_title: "Join the waitlist",
     form_business_label: "Business name",
     form_email_label: "Email",
@@ -2952,6 +2938,7 @@ const en: LocaleMessages = {
       section_count: "{done} / {total}",
       section_suggestions: "{count} suggestions",
       section_complete: "Section complete",
+      completed_section: "Completed · {count}",
       download: "Download PDF",
       download_options: "PDF options",
       download_title: "Download checklist",

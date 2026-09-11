@@ -2202,10 +2202,6 @@ const hu: LocaleMessages = {
     checklist_demo_convert_dismiss: "Most nem",
     checklist_demo_convert_cta: "Mentsük el a haladást",
     checklist_demo_open_link: "Nyisd meg a teljes listát",
-    faq_title: "Gyakori kérdések",
-    faq_show_more: "+{n} további kérdés",
-    // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
-    // FAQPage JSON-LD).
     closing_title: "Két perc, és\nminden a helyére kerül.",
     closing_body:
       "A nyílt béta alatt szabadon használhatjátok, és bármikor szüneteltethetitek a felületeteket. Ahol abbahagytátok, ott folytatjátok.",
@@ -2485,15 +2481,6 @@ const hu: LocaleMessages = {
     hero_title: "Egy kattintásra a pároktól.",
     closing_title: "A következő esküvői szezon most dől el.",
     closing_cta: "Foglald le a helyed",
-    benefits_heading:
-      "Gyors foglalások. Nagyobb elérés. Több értékelés.\nÍgy növekszik a vállalkozásod.",
-    benefit_1_title: "Élesben ma, nem hónapok múlva",
-    benefit_1_body: "A profilod aznap élesedik. Fizetni csak három valódi megkeresés után kell.",
-    benefit_2_title: "Nem egy végtelen listában tűnsz el",
-    benefit_2_body:
-      "A párok csak a hozzájuk illő, gondosan válogatott szolgáltatókat látják, és egyenesen neked írnak.",
-    benefit_3_title: "Az értékelések hozzák a következő párt",
-    benefit_3_body: "Minden lezárt esküvő egy értékelés. Onnantól a profilod magától növekszik.",
     form_title: "Iratkozzatok fel",
     form_business_label: "Vállalkozás neve",
     form_email_label: "E-mail",
@@ -2973,6 +2960,7 @@ const hu: LocaleMessages = {
       section_count: "{done} / {total}",
       section_suggestions: "{count} javaslat",
       section_complete: "Szakasz kész",
+      completed_section: "Teljesítve · {count}",
       download: "PDF letöltése",
       download_options: "PDF beállításai",
       download_title: "Ellenőrzőlista letöltése",

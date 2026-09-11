@@ -1,7 +1,7 @@
 // Single source of truth for the per-tool FAQ copy on the /tools/* (HU:
 // /eszkozok/*) landing pages.
 //
-// Used in two places, exactly like shared/seo_faq.ts does for the landing FAQ:
+// Used in two places:
 //   1. backend/src/lib/seo_ssr.ts → emits these verbatim as the FAQPage
 //      JSON-LD on each tool path. Googlebot needs the SAME Q/A strings that
 //      appear on the visible page; divergence is treated as cloaking and can

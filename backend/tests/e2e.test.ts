@@ -11061,7 +11061,6 @@ import {
   renderRobotsTxt,
   renderSitemapXml,
 } from "../src/lib/seo_ssr";
-import { SEO_FAQ } from "../../shared/seo_faq";
 import { toolPathFor } from "../../shared/tool_faq";
 
 async function fetchWithHost(path: string, host: string | null): Promise<Response> {
@@ -11255,7 +11254,7 @@ describe("seo: renderIndexHtml meta injection", () => {
     expect(rootTypes).toContain("Organization");
     expect(rootTypes).toContain("WebSite");
     expect(rootTypes).toContain("SoftwareApplication");
-    expect(rootTypes).toContain("FAQPage");
+    expect(rootTypes).not.toContain("FAQPage");
 
     const sub = render("weddly.hu", "/about");
     const subTypes = [...sub.matchAll(/"@type":"([A-Za-z]+)"/g)].map((m) => m[1]);
@@ -11263,13 +11262,6 @@ describe("seo: renderIndexHtml meta injection", () => {
     expect(subTypes).toContain("WebSite");
     expect(subTypes).not.toContain("SoftwareApplication");
     expect(subTypes).not.toContain("FAQPage");
-  });
-
-  test("FAQPage JSON-LD enumerates the EN SEO_FAQ entries", () => {
-    const enRoot = render("weddly.hu", "/");
-    for (const entry of SEO_FAQ.en) {
-      expect(enRoot).toContain(JSON.stringify(entry.q).slice(1, -1));
-    }
   });
 
   test("template without SEO sentinels still flips the lang attribute", () => {

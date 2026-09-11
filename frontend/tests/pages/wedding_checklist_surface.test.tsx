@@ -4,6 +4,7 @@ import { checklistSections } from "@shared/wedding_checklist";
 import type { PlanningItem } from "@shared/types";
 import { describe, expect, it } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { AppProviders } from "@/components/ui/AppProviders";
 import { WeddingChecklist } from "@/components/WeddingChecklist";
 import { todayIso } from "@/lib/format";
@@ -41,6 +42,42 @@ function checklistTask(
     idea_tag: null,
     created_at: id,
     updated_at: id,
+  };
+}
+
+/** Mirrors the page's real wiring: onItemsChange applies the updater, so the
+ *  optimistic check state (and the ticked item's collapse flow) actually
+ *  happens against live React state rather than a no-op callback. */
+function ChecklistHarness({ initial }: { initial: PlanningItem[] }) {
+  const [items, setItems] = useState(initial);
+  return (
+    <WeddingChecklist
+      items={items}
+      onItemsChange={(updater) => setItems(updater(items))}
+      weddingDate="2027-08-15"
+      profile={{}}
+    />
+  );
+}
+
+/** Answers PATCH /api/planning/:id with the toggle the UI requested, so the
+ *  real toggle() path (optimistic flip → save → 4 s wait → collapse) runs
+ *  end to end. Returns a restore function. */
+function mockPlanningUpdate(task: PlanningItem) {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url.includes("/api/planning/") && init?.method === "PATCH") {
+      const body = JSON.parse(String(init.body)) as { done: boolean };
+      return new Response(JSON.stringify({ item: { ...task, done: body.done } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({}), { status: 200 });
+  }) as typeof fetch;
+  return () => {
+    globalThis.fetch = realFetch;
   };
 }
 
@@ -232,4 +269,80 @@ describe("Wedding checklist Planning surface", () => {
       globalThis.fetch = realFetch;
     }
   });
+
+  it("keeps a just-ticked item in place, then collapses it into the section's compact completed block", async () => {
+    localStorage.setItem("weddly.locale", "en");
+    const sections = checklistSections("en", "2027-08-15");
+    const first = sections[0]?.items[0];
+    if (!first) throw new Error("Checklist fixture is incomplete");
+    const task = checklistTask(1, first.id, first.title, false);
+    const restore = mockPlanningUpdate(task);
+
+    try {
+      render(
+        <I18nProvider>
+          <AppProviders>
+            <ChecklistHarness initial={[task]} />
+          </AppProviders>
+        </I18nProvider>,
+      );
+
+      fireEvent.click(screen.getByRole("checkbox", { name: "Mark done" }));
+      await waitFor(() =>
+        expect(screen.getByRole("checkbox", { name: "Mark not done" })).toBeChecked(),
+      );
+
+      // Still in place for the delay window — the row has not left the
+      // active list and no completed block exists yet.
+      expect(screen.getByRole("checkbox", { name: "Mark not done" })).toBeInTheDocument();
+      expect(screen.queryByText("Completed · 1")).toBeNull();
+
+      // Once the wait + collapse animation finish, the item settles into
+      // the section-bottom completed block with its divider.
+      await waitFor(() => expect(screen.getByText("Completed · 1")).toBeInTheDocument(), {
+        timeout: 8000,
+      });
+      expect(screen.getAllByRole("checkbox")).toHaveLength(1);
+      expect(screen.getByText(first.title)).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  }, 20000);
+
+  it("un-completing a pending item cancels its collapse and keeps it in the active list", async () => {
+    localStorage.setItem("weddly.locale", "en");
+    const sections = checklistSections("en", "2027-08-15");
+    const first = sections[0]?.items[0];
+    if (!first) throw new Error("Checklist fixture is incomplete");
+    const task = checklistTask(1, first.id, first.title, false);
+    const restore = mockPlanningUpdate(task);
+
+    try {
+      render(
+        <I18nProvider>
+          <AppProviders>
+            <ChecklistHarness initial={[task]} />
+          </AppProviders>
+        </I18nProvider>,
+      );
+
+      fireEvent.click(screen.getByRole("checkbox", { name: "Mark done" }));
+      await waitFor(() =>
+        expect(screen.getByRole("checkbox", { name: "Mark not done" })).toBeChecked(),
+      );
+      // Back to todo while still in the pending-collapse window.
+      fireEvent.click(screen.getByRole("checkbox", { name: "Mark not done" }));
+      await waitFor(() =>
+        expect(screen.getByRole("checkbox", { name: "Mark done" })).not.toBeChecked(),
+      );
+
+      // Give the 4 s collapse timer room to fire: it must have been
+      // cancelled, so the row never leaves and no completed block forms.
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      expect(screen.queryByText("Completed · 1")).toBeNull();
+      expect(screen.getByRole("checkbox", { name: "Mark done" })).not.toBeChecked();
+    } finally {
+      restore();
+    }
+  }, 20000);
 });

@@ -6,8 +6,8 @@ import { TOOL_FAQ } from "@shared/tool_faq";
 
 // JSON-LD coverage for the GEO/rich-result schema added after the May 2026
 // audit: Article + BreadcrumbList on blog posts, WebApplication +
-// BreadcrumbList on tool pages, plus the existing root SoftwareApplication +
-// FAQPage. All SSR-injected so an AI/HTML-first crawl reads them pre-hydration.
+// BreadcrumbList on tool pages, plus the existing root SoftwareApplication.
+// All SSR-injected so an AI/HTML-first crawl reads them pre-hydration.
 
 const TEMPLATE = `<!doctype html>
 <html lang="hu">
@@ -143,16 +143,20 @@ describe("seo json-ld: tool page", () => {
   });
 
   test("a non-tool public page emits no FAQPage", () => {
-    // Guards the branch: only the tool paths and the landing get one.
+    // Guards the branch: only the tool paths get one now — the landing's FAQ
+    // section was removed, so its FAQPage is gone too.
     expect(byType(render("/about", "hu"), "FAQPage")).toBeUndefined();
   });
 });
 
 describe("seo json-ld: root regression", () => {
-  test("landing still emits SoftwareApplication + FAQPage", () => {
+  test("landing emits SoftwareApplication and no FAQPage", () => {
     const blocks = render("/", "hu");
     expect(byType(blocks, "SoftwareApplication")).toBeDefined();
-    expect(byType(blocks, "FAQPage")).toBeDefined();
+    // The landing FAQ section is gone, so the FAQPage that mirrored it must
+    // be gone too — a JSON-LD block for questions the page no longer shows
+    // is the crawled-vs-rendered mismatch that reads as cloaking.
+    expect(byType(blocks, "FAQPage")).toBeUndefined();
     // ...and NOT an Article or WebApplication.
     expect(byType(blocks, "Article")).toBeUndefined();
     expect(byType(blocks, "WebApplication")).toBeUndefined();

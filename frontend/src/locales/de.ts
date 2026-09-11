@@ -2253,8 +2253,6 @@ const de: LocaleMessages = {
     checklist_demo_convert_dismiss: "Vielleicht später",
     checklist_demo_convert_cta: "Fortschritt speichern",
     checklist_demo_open_link: "Vollständige Checkliste öffnen",
-    faq_title: "Fragen, die Sie wahrscheinlich stellen",
-    faq_show_more: "+{n} weitere Fragen",
     closing_title: "In zwei Minuten\neingerichtet.",
     closing_body:
       "Während der offenen Beta gehört es Ihnen, und Sie können den Arbeitsbereich jederzeit pausieren, wenn das Leben dazwischenkommt.",
@@ -2526,17 +2524,6 @@ const de: LocaleMessages = {
     hero_title: "Nur einen Klick entfernt.",
     closing_title: "Die nächste Hochzeitssaison entscheidet sich jetzt.",
     closing_cta: "Sichern Sie sich Ihren Platz",
-    benefits_heading:
-      "Schnelle Buchungen. Mehr Reichweite. Ein Profil mit Bewertungen. So entsteht Wachstum.",
-    benefit_1_title: "Heute online, nicht erst in Monaten",
-    benefit_1_body:
-      "Ihr Profil ist noch am selben Tag sichtbar. Sie zahlen erst nach drei echten Anfragen.",
-    benefit_2_title: "Sie verschwinden nicht in einer endlosen Liste",
-    benefit_2_body:
-      "Paare sehen nur sorgfältig ausgewählte Anbieter, die zu ihnen passen, und schreiben Ihnen direkt.",
-    benefit_3_title: "Bewertungen bringen das nächste Paar",
-    benefit_3_body:
-      "Jede abgeschlossene Hochzeit wird zu einer Bewertung. Von da an wächst Ihr Profil von selbst.",
     form_title: "Auf die Warteliste",
     form_business_label: "Name des Betriebs",
     form_email_label: "E-Mail",
@@ -3014,6 +3001,7 @@ const de: LocaleMessages = {
       section_count: "{done} / {total}",
       section_suggestions: "{count} Vorschläge",
       section_complete: "Abschnitt erledigt",
+      completed_section: "Erledigt · {count}",
       download: "PDF herunterladen",
       download_options: "PDF-Einstellungen",
       download_title: "Checkliste herunterladen",

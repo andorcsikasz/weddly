@@ -18,7 +18,7 @@ import { fileURLToPath, URL } from "node:url";
 import en from "../src/locales/en";
 import hu from "../src/locales/hu";
 import type { LocaleMessages } from "../src/locales/keys";
-import { SEO_FAQ, type SeoFaqLocale } from "../../shared/seo_faq";
+import type { SeoFaqLocale } from "../../shared/seo_faq";
 
 const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
 const INDEX_HTML = `${DIST}index.html`;
@@ -87,9 +87,6 @@ interface LandingCopy {
   // Pricing
   pricing_title: string;
   pricing_body: string;
-  // FAQ heading only — Q&A pairs come from shared/seo_faq.ts so the SSR'd
-  // body matches the FAQPage JSON-LD verbatim.
-  faq_title: string;
   // Footer / nav
   footer_couples: string;
   footer_couples_signup: string;
@@ -107,7 +104,6 @@ interface LandingCopy {
 function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
   const l = L.landing as unknown as LandingCopy;
   const rsvpHref = "/rsvp";
-  const faq = SEO_FAQ[locale];
   // Semantic, link-rich, headings-rich HTML. Each section uses the same
   // headline copy that the React landing renders, so a crawler's text-content
   // diff between SSR + JS pass stays trivial.
@@ -151,12 +147,6 @@ function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
     `<section aria-labelledby="pricing-heading">`,
     `  <h2 id="pricing-heading">${escape(l.pricing_title)}</h2>`,
     `  <p>${escape(l.pricing_body)}</p>`,
-    `</section>`,
-    `<section aria-labelledby="faq-heading">`,
-    `  <h2 id="faq-heading">${escape(l.faq_title)}</h2>`,
-    `  <dl>`,
-    ...faq.map((entry) => `    <dt>${escape(entry.q)}</dt><dd>${escape(entry.a)}</dd>`),
-    `  </dl>`,
     `</section>`,
     `<footer aria-label="${escape(locale === "hu" ? "Oldaltérkép" : "Sitemap")}">`,
     `  <nav><h3>${escape(l.footer_couples)}</h3><ul>`,

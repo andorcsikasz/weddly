@@ -2232,10 +2232,6 @@ const es: LocaleMessages = {
     checklist_demo_convert_dismiss: "Quizá más tarde",
     checklist_demo_convert_cta: "Guardar mi progreso",
     checklist_demo_open_link: "Abrir la lista completa",
-    faq_title: "Las preguntas que seguramente te harás",
-    faq_show_more: "+{n} preguntas más",
-    // FAQ Q&A pairs in shared/seo_faq.ts (single source for visible FAQ +
-    // FAQPage JSON-LD).
     closing_title: "Dos minutos\npara empezar.",
     closing_body:
       "Vuestro durante toda la beta abierta, con la libertad de pausar tu espacio siempre que la vida te tenga liado.",
@@ -2515,17 +2511,6 @@ const es: LocaleMessages = {
     hero_title: "A un clic de distancia.",
     closing_title: "La próxima temporada de bodas se decide ahora.",
     closing_cta: "Reserva tu plaza",
-    benefits_heading:
-      "Reservas rápidas. Más alcance. Un perfil que se puede valorar. Así llega el crecimiento.",
-    benefit_1_title: "En marcha hoy, no dentro de meses",
-    benefit_1_body:
-      "Tu perfil se publica el mismo día. Solo pagas después de tres solicitudes reales.",
-    benefit_2_title: "No te pierdes en una lista interminable",
-    benefit_2_body:
-      "Las parejas solo ven proveedores seleccionados a mano que encajan con ellas, y te escriben directamente a ti.",
-    benefit_3_title: "Las reseñas traen a la siguiente pareja",
-    benefit_3_body:
-      "Cada boda terminada se convierte en una reseña. A partir de ahí, tu perfil crece solo.",
     form_title: "Únete a la lista de espera",
     form_business_label: "Nombre del negocio",
     form_email_label: "Correo electrónico",
@@ -3010,6 +2995,7 @@ const es: LocaleMessages = {
       section_count: "{done} / {total}",
       section_suggestions: "{count} sugerencias",
       section_complete: "Sección completa",
+      completed_section: "Completadas · {count}",
       download: "Descargar PDF",
       download_options: "Opciones del PDF",
       download_title: "Descargar lista",

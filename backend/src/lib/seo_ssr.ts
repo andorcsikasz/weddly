@@ -23,7 +23,6 @@ import {
   marketingPageForPath,
   type MarketingPage,
 } from "../../../shared/marketing_pages";
-import { SEO_FAQ } from "../../../shared/seo_faq";
 import {
   enPathFor,
   huPathFor,
@@ -903,15 +902,6 @@ function buildJsonLd(opts: {
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
       url: origin,
-    });
-    blocks.push({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: SEO_FAQ[pairLocale].map((entry) => ({
-        "@type": "Question",
-        name: entry.q,
-        acceptedAnswer: { "@type": "Answer", text: entry.a },
-      })),
     });
   } else {
     const marketingPage = marketingPageForPath(path);
