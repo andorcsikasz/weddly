@@ -1260,6 +1260,7 @@ export default function BudgetPage() {
                       onDocsChanged={reloadDocuments}
                       onPaymentsChanged={reloadPayments}
                       onDelete={() => removeLine(line.id)}
+                      nested
                     />
                   ))}
                 {isExpanded && (
@@ -3242,6 +3243,7 @@ function BudgetMobileCustomCard({
   onDocsChanged,
   onPaymentsChanged,
   onDelete,
+  nested = false,
 }: {
   line: BudgetLine;
   /** Headcount-scaled planned amount to display — matches the desktop table
@@ -3258,6 +3260,11 @@ function BudgetMobileCustomCard({
   onDocsChanged: () => void;
   onPaymentsChanged: () => void;
   onDelete: () => void;
+  /** True when this card sits inside an expanded category's own drawer
+   *  (as opposed to a standalone "other" line at the bottom of the list) —
+   *  the small left offset is what reads as "detail of the card above it"
+   *  on mobile, matching the desktop table's indented BudgetSubLineTr. */
+  nested?: boolean;
 }) {
   const { t } = useT();
   const delta = line.actual_huf - planned;
@@ -3269,7 +3276,11 @@ function BudgetMobileCustomCard({
   // always claiming "other-custom".
   const categoryMarker = line.category === "other" ? "other-custom" : `${line.category}-item`;
   return (
-    <article data-budget-line-id={line.id} data-category={categoryMarker} className="card p-2.5">
+    <article
+      data-budget-line-id={line.id}
+      data-category={categoryMarker}
+      className={`card p-2.5 ${nested ? "ml-2" : ""}`}
+    >
       <header className="flex items-start justify-between gap-2">
         <CustomRowLabel
           icon={line.icon}
