@@ -29,6 +29,17 @@ async function bootstrapAdmin(): Promise<string> {
 // A real couple onboarded WITH style tags — style_tags is only writable at
 // onboarding (it's not in the PATCH allowlist), so bootstrapCouple's empty
 // default can't exercise the style-adoption rollup.
+//
+// The wedding date must stay in the future relative to whenever this test
+// actually runs: the lead-time-by-cohort rollup drops any wedding date that
+// has already passed ("so the median reflects forward planning, not
+// back-dated test rows" — see admin_analytics.ts), so a hardcoded calendar
+// date quietly stops exercising this test the moment it lapses into the
+// past instead of failing loudly at the point of rot.
+function futureWeddingDate(): string {
+  return new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 async function bootstrapCoupleWithStyle(email: string): Promise<{ token: string }> {
   const reg = await registerAndVerify({
     email,
@@ -41,7 +52,7 @@ async function bootstrapCoupleWithStyle(email: string): Promise<{ token: string 
     "/api/couples/onboard",
     {
       display_name: "Mia & Lucas",
-      wedding_date: "2026-09-12",
+      wedding_date: futureWeddingDate(),
       target_guest_count: 80,
       budget_ceiling_huf: 5_000_000,
       style_tags: ["rustic", "boho"],

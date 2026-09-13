@@ -6,6 +6,15 @@ import { bootstrapCouple, req, wipeAll } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
+// Explicit reveal_at rather than leaving it to derive from the couple's
+// wedding_date: bootstrapCouple's wedding date is a fixed calendar date many
+// other suites assert on by exact value, so it can't be kept in the future,
+// and every test below that wants a "before reveal" album depends on this
+// one actually being locked when it's created.
+function farFutureRevealAt(): number {
+  return Date.now() + 30 * 24 * 60 * 60 * 1000;
+}
+
 // Wipe film-specific tables — they are not in wipeAll because they're newer.
 function wipeFilm(): void {
   for (const t of ["film_devices", "photo_uploads", "photo_albums"]) {
@@ -47,7 +56,12 @@ describe("photo-albums API", () => {
     }>(
       "POST",
       "/api/photo-albums",
-      { title: "Our Film", shots_per_guest: 5, film_aesthetic: "natural" },
+      {
+        title: "Our Film",
+        shots_per_guest: 5,
+        film_aesthetic: "natural",
+        reveal_at: farFutureRevealAt(),
+      },
       { token },
     );
     expect(r.status).toBe(201);
@@ -498,7 +512,7 @@ async function createAlbum(token: string): Promise<string> {
   const r = await req<{ album: { uploadToken: string } }>(
     "POST",
     "/api/photo-albums",
-    { title: "Film", film_aesthetic: "natural" },
+    { title: "Film", film_aesthetic: "natural", reveal_at: farFutureRevealAt() },
     { token },
   );
   return r.data.album.uploadToken;
