@@ -482,40 +482,30 @@ export default function LandingPage() {
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
-              {/* The four guest-facing surfaces as a 2×2 grid of CTA cards:
-                  the RSVP lookup, the couple's own wedding website, the guest
-                  games console and the shared POV camera. Games + camera are
-                  real links; RSVP + website are descriptive tiles, because the
-                  RSVP action is the CTA right below and each couple's site
-                  lives at their own /w/:slug, not on the landing page. */}
-              <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                <GuestSurfaceCard
-                  icon={<UserCheck size={18} strokeWidth={1.7} />}
-                  label={t("landing.block_guests_item_1")}
-                />
-                <GuestSurfaceCard
-                  icon={<Globe size={18} strokeWidth={1.7} />}
-                  label={t("landing.block_guests_item_2")}
-                />
-                <GuestSurfaceCard
-                  icon={<Gamepad2 size={18} strokeWidth={1.7} />}
-                  label={t("landing.block_guests_item_3")}
-                  to="/games"
-                />
-                <GuestSurfaceCard
-                  icon={<Camera size={18} strokeWidth={1.7} />}
-                  label={t("landing.block_guests_item_4")}
-                  to="/camera"
-                />
+              <ul className="mt-7 space-y-1">
+                <IconRow icon={<UserCheck size={16} />}>{t("landing.block_guests_item_1")}</IconRow>
+                <IconRow icon={<Globe size={16} />}>{t("landing.block_guests_item_2")}</IconRow>
+                <IconRow icon={<Gamepad2 size={16} />}>{t("landing.block_guests_item_3")}</IconRow>
+                <IconRow icon={<Camera size={16} />}>{t("landing.block_guests_item_4")}</IconRow>
+              </ul>
+              {/* Three CTAs: a guest who mislaid their invite link searches
+                  the couple's wedding and lands on /rsvp, the lookup that
+                  gets them there. Games and camera are public, no-login
+                  surfaces, so they get their own buttons right beside it
+                  rather than sitting mute inside the bullet list above.
+                  Outline, not primary: the page's one loud ask stays
+                  "register". */}
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/rsvp" className="btn-outline btn-lifted btn-landing inline-flex">
+                  {t("landing.block_guests_cta")}
+                </Link>
+                <Link to="/games" className="btn-outline btn-lifted btn-landing inline-flex">
+                  {t("landing.footer_couples_games")}
+                </Link>
+                <Link to="/camera" className="btn-outline btn-lifted btn-landing inline-flex">
+                  {t("landing.footer_couples_camera")}
+                </Link>
               </div>
-              {/* A guest who mislaid their invite link searches the couple's
-                  wedding and lands here, not on their own RSVP page. /rsvp is
-                  the lookup that gets them there, and this block is where they
-                  are already reading about that link. Outline, not primary:
-                  the page's one loud ask stays "register". */}
-              <Link to="/rsvp" className="btn-outline btn-lifted btn-landing mt-8 inline-flex">
-                {t("landing.block_guests_cta")}
-              </Link>
             </div>
             <div>
               {/* Decorative: the heading and bullets carry the meaning, so this
@@ -2390,44 +2380,6 @@ function TestimonialCard({
         {quote}
       </p>
     </li>
-  );
-}
-
-function GuestSurfaceCard({
-  icon,
-  label,
-  to,
-}: {
-  icon: ReactNode;
-  label: string;
-  to?: string;
-}) {
-  const className =
-    "group flex min-w-0 items-center gap-3 rounded-2xl border border-paper-300 bg-white px-4 py-3.5 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-blush-300 hover:shadow-elevated dark:border-umber-700 dark:bg-umber-800 dark:hover:border-blush-700 sm:px-5";
-  const inner = (
-    <>
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-blush-600 transition-colors group-hover:border-blush-200 group-hover:bg-blush-100 group-hover:text-blush-800 dark:border-umber-700 dark:bg-umber-900 dark:text-blush-400 dark:group-hover:border-blush-950 dark:group-hover:bg-blush-950 dark:group-hover:text-blush-300">
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1 font-grotesk text-sm font-semibold leading-snug text-umber-900 dark:text-paper-50">
-        {label}
-      </span>
-      {to && (
-        <ChevronRight
-          size={16}
-          strokeWidth={2}
-          aria-hidden
-          className="shrink-0 text-blush-400 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-blush-500"
-        />
-      )}
-    </>
-  );
-  return to ? (
-    <Link to={to} className={className}>
-      {inner}
-    </Link>
-  ) : (
-    <div className={className}>{inner}</div>
   );
 }
 
