@@ -1059,11 +1059,44 @@ addColumnIfMissing("couples", "cover_position_y", "cover_position_y INTEGER NOT 
 // with the focal point above: the couple drags to reposition + zooms in to crop
 // tighter. Stored INTEGER; the guest page scales the image from the focal point.
 addColumnIfMissing("couples", "cover_scale", "cover_scale INTEGER NOT NULL DEFAULT 100");
+// Cover band height override, percent (100 = the existing fixed aspect-ratio
+// classes, 50-200 = shorter/taller). NULL (the default for every couple until
+// they touch the slider) means "no override" — the guest page keeps its
+// current responsive aspect-[3/4]/aspect-[21/9] classes exactly as before,
+// which a NOT NULL DEFAULT 100 could not express (100 would force ONE ratio
+// on every breakpoint, flattening the mobile crop the day this shipped).
+addColumnIfMissing("couples", "cover_height", "cover_height INTEGER");
 // Two OPTIONAL fixed-slot photos on the public wedding site (slot 1 renders
 // after the welcome band, slot 2 before the RSVP ask). Uploaded via
 // POST /api/couples/current/site-photo/:slot; stores the /uploads/... URL.
 addColumnIfMissing("couples", "site_image_1_url", "site_image_1_url TEXT");
 addColumnIfMissing("couples", "site_image_2_url", "site_image_2_url TEXT");
+// Focal point + height override for the two slot photos, same shape as the
+// cover's own columns above (position defaults to centred so it changes
+// nothing about box shape; height stays NULL until touched for the same
+// responsive-classes reason as cover_height).
+addColumnIfMissing(
+  "couples",
+  "site_image_1_position_x",
+  "site_image_1_position_x INTEGER NOT NULL DEFAULT 50",
+);
+addColumnIfMissing(
+  "couples",
+  "site_image_1_position_y",
+  "site_image_1_position_y INTEGER NOT NULL DEFAULT 50",
+);
+addColumnIfMissing("couples", "site_image_1_height", "site_image_1_height INTEGER");
+addColumnIfMissing(
+  "couples",
+  "site_image_2_position_x",
+  "site_image_2_position_x INTEGER NOT NULL DEFAULT 50",
+);
+addColumnIfMissing(
+  "couples",
+  "site_image_2_position_y",
+  "site_image_2_position_y INTEGER NOT NULL DEFAULT 50",
+);
+addColumnIfMissing("couples", "site_image_2_height", "site_image_2_height INTEGER");
 
 // Moodboard source state. Every couple defaults to 'preset' — a curated
 // Pinterest board rendered automatically so /app/moodboard is never blank.

@@ -4430,6 +4430,9 @@ export interface LocaleMessages {
       cover_adjust: string;
       cover_adjust_hint: string;
       cover_zoom: string;
+      /** Band-height slider label (sr-only) — cover and both photo slots share
+       *  the one adjuster component, so one key covers all three. */
+      band_height: string;
       photo_art: {
         reception_pergola: string;
         reception_candlelit: string;
@@ -4770,6 +4773,10 @@ export interface LocaleMessages {
     intro_suggestion_4: string;
     intro_suggestion_5: string;
     intro_suggestion_applied: string;
+    /** Bold/italic toolbar shared by every free-text field on the guest page
+     *  (welcome note + the "Good to know" fields). */
+    format_bold_label: string;
+    format_italic_label: string;
     /** "Good to know" editor field — parking, getting there, accommodation. */
     useful_info_label: string;
     useful_info_placeholder: string;

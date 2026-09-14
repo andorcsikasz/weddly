@@ -307,11 +307,22 @@ export interface CoupleRow {
   cover_position_y: number;
   /** Cover-photo zoom (percent, 100 = fit, up to 300). */
   cover_scale: number;
+  /** Cover band height override, percent (100 = current fixed aspect-ratio
+   *  classes, 50-200 = shorter/taller). Null = no override. */
+  cover_height: number | null;
   /** Optional fixed-slot photos on the public site (uploaded /uploads/... URLs,
    *  slot 1 after the welcome band, slot 2 before the RSVP ask). Null = slot
    *  empty, the band simply doesn't render. */
   site_image_1_url: string | null;
+  /** Slot 1 focal point (object-position %, 0..100, 50 = centred) + height
+   *  override, same shape as the cover's own fields above. */
+  site_image_1_position_x: number;
+  site_image_1_position_y: number;
+  site_image_1_height: number | null;
   site_image_2_url: string | null;
+  site_image_2_position_x: number;
+  site_image_2_position_y: number;
+  site_image_2_height: number | null;
   /** Moodboard source: 'preset' (curated default board), 'pinterest' (own
    *  board link in moodboard_url) or 'upload' (rows in moodboard_images).
    *  Defaults to 'preset' so /app/moodboard is never blank. */
@@ -612,8 +623,15 @@ export function toCouple(row: CoupleRow): Couple {
     cover_position_x: row.cover_position_x ?? 50,
     cover_position_y: row.cover_position_y ?? 50,
     cover_scale: row.cover_scale ?? 100,
+    cover_height: row.cover_height ?? null,
     site_image_1_url: row.site_image_1_url ?? null,
+    site_image_1_position_x: row.site_image_1_position_x ?? 50,
+    site_image_1_position_y: row.site_image_1_position_y ?? 50,
+    site_image_1_height: row.site_image_1_height ?? null,
     site_image_2_url: row.site_image_2_url ?? null,
+    site_image_2_position_x: row.site_image_2_position_x ?? 50,
+    site_image_2_position_y: row.site_image_2_position_y ?? 50,
+    site_image_2_height: row.site_image_2_height ?? null,
     guest_page_intro: row.guest_page_intro,
     useful_info: row.useful_info,
     post_rsvp_content: row.post_rsvp_content,

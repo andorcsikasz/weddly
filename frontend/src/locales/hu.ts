@@ -3764,6 +3764,7 @@ const hu: LocaleMessages = {
       cover_adjust: "Igazítás",
       cover_adjust_hint: "Húzd a képet a pozicionáláshoz",
       cover_zoom: "Nagyítás",
+      band_height: "Magasság",
       photo_art: {
         reception_pergola: "Kerti fogadás",
         reception_candlelit: "Gyertyafényes vacsora",
@@ -4066,6 +4067,11 @@ const hu: LocaleMessages = {
     intro_suggestion_5:
       "Köszönjük, hogy szeretetetekkel és jelenlétetekkel részesei vagytok a mi napunknak.",
     intro_suggestion_applied: "Szöveg hozzáadva, szerkeszd az alábbi mezőben.",
+    // Bold/italic toolbar shared by every szabad szöveges mező a vendégoldalon
+    // (üdvözlő szöveg + a Hasznos infók mezők): **félkövér** / *dőlt* jelölők,
+    // amiket a vendégoldal már meg is jelenít.
+    format_bold_label: "Félkövér",
+    format_italic_label: "Dőlt",
     useful_info_label: "Hasznos infók",
     useful_info_placeholder: "Parkolás: ...\nMegközelítés: ...\nSzállás: ...",
     // The fields carry greyed examples; this line is the only place that

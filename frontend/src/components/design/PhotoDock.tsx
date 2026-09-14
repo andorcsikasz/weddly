@@ -28,6 +28,11 @@ import { Button } from "../ui";
 import { Dialog } from "../ui/Dialog";
 import { CoverPositioner } from "./CoverPositioner";
 
+/** One photo slot's saved focal point + height, and the setter for it. Both
+ *  optional slots share this shape with the cover (minus zoom — see
+ *  CoverPositioner's `showZoom`). */
+type SlotAdjust = { x: number; y: number; height: number | null };
+
 export function PhotoDock({
   slot1Url,
   slot2Url,
@@ -42,7 +47,11 @@ export function PhotoDock({
   coverPositionX,
   coverPositionY,
   coverScale,
+  coverHeight,
   onCoverReposition,
+  slot1Adjust,
+  slot2Adjust,
+  onSlotReposition,
   coverBusy,
   busySlot,
   readOnly,
@@ -61,22 +70,40 @@ export function PhotoDock({
   coverPositionX: number;
   coverPositionY: number;
   coverScale: number;
-  /** Persist a new focal point + zoom (from the Adjust dialog). */
-  onCoverReposition: (x: number, y: number, scale: number) => void;
+  /** Band height override, percent (null = the page's default aspect ratio). */
+  coverHeight: number | null;
+  /** Persist a new focal point + zoom + height (from the Adjust dialog). */
+  onCoverReposition: (x: number, y: number, scale: number, height: number | null) => void;
+  /** Focal point + height for the two optional photo slots. */
+  slot1Adjust: SlotAdjust;
+  slot2Adjust: SlotAdjust;
+  onSlotReposition: (slot: 1 | 2, x: number, y: number, height: number | null) => void;
   coverBusy: boolean;
   busySlot: 1 | 2 | null;
   readOnly: boolean;
 }) {
   const { t } = useT();
   const [galleryFor, setGalleryFor] = useState<1 | 2 | null>(null);
-  // Adjust dialog: a local draft so dragging/zooming previews live and only the
-  // Save button persists (Cancel discards).
-  const [adjusting, setAdjusting] = useState(false);
-  const [draft, setDraft] = useState({ x: 50, y: 50, scale: 100 });
+  // Adjust dialog: shared by the cover and both slots (only the cover shows
+  // the zoom row). A local draft so dragging/zooming/resizing previews live
+  // and only the Save button persists (Cancel discards).
+  const [adjustTarget, setAdjustTarget] = useState<"cover" | 1 | 2 | null>(null);
+  const [draft, setDraft] = useState({ x: 50, y: 50, scale: 100, height: 100 });
   const filter = treatment === "grayscale" ? "grayscale(1)" : "none";
   // The treatment only exists once it has something to act on. A cover photo
   // counts: it is the biggest image on the guest page.
   const hasAnyPhoto = Boolean(coverUrl || slot1Url || slot2Url);
+
+  const adjustUrl = adjustTarget === "cover" ? coverUrl : adjustTarget === 1 ? slot1Url : slot2Url;
+
+  function saveAdjust() {
+    if (adjustTarget === "cover") {
+      onCoverReposition(draft.x, draft.y, draft.scale, draft.height);
+    } else if (adjustTarget === 1 || adjustTarget === 2) {
+      onSlotReposition(adjustTarget, draft.x, draft.y, draft.height);
+    }
+    setAdjustTarget(null);
+  }
 
   return (
     <section>
@@ -157,13 +184,19 @@ export function PhotoDock({
                 />
               </label>
             </div>
-            {/* Adjust (drag + zoom). Seeds the draft from the saved values. */}
+            {/* Adjust (drag + zoom + height). Seeds the draft from the saved
+                values. */}
             {!readOnly && (
               <button
                 type="button"
                 onClick={() => {
-                  setDraft({ x: coverPositionX, y: coverPositionY, scale: coverScale });
-                  setAdjusting(true);
+                  setDraft({
+                    x: coverPositionX,
+                    y: coverPositionY,
+                    scale: coverScale,
+                    height: coverHeight ?? 100,
+                  });
+                  setAdjustTarget("cover");
                 }}
                 disabled={coverBusy}
                 aria-label={t("design.web.cover_adjust")}
@@ -223,6 +256,7 @@ export function PhotoDock({
       <div className="grid grid-cols-2 gap-3">
         {([1, 2] as const).map((slot) => {
           const url = slot === 1 ? slot1Url : slot2Url;
+          const adjust = slot === 1 ? slot1Adjust : slot2Adjust;
           const busy = busySlot === slot;
           return (
             <div key={slot} className="relative">
@@ -232,8 +266,30 @@ export function PhotoDock({
                     src={url}
                     alt={t("design.web.photo_slot", { n: slot })}
                     className="aspect-[16/10] w-full rounded-xl border border-paper-300 object-cover dark:border-umber-700"
-                    style={{ filter }}
+                    style={{ objectPosition: `${adjust.x}% ${adjust.y}%`, filter }}
                   />
+                  {/* Adjust (drag + height) — no zoom for the optional slots,
+                      only reposition + resize. */}
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraft({
+                          x: adjust.x,
+                          y: adjust.y,
+                          scale: 100,
+                          height: adjust.height ?? 100,
+                        });
+                        setAdjustTarget(slot);
+                      }}
+                      disabled={busy}
+                      aria-label={t("design.web.cover_adjust")}
+                      title={t("design.web.cover_adjust")}
+                      className="absolute -left-1.5 -top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft transition hover:text-ink-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:focus-visible:ring-paper-100"
+                    >
+                      <Move size={12} aria-hidden />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => onRemove(slot)}
@@ -298,39 +354,35 @@ export function PhotoDock({
         })}
       </div>
 
-      {/* Adjust the cover in-frame: drag to reposition + zoom. Draft-then-Save
-          so Cancel discards. */}
+      {/* Adjust a photo: drag to reposition + resize the band (+ zoom, cover
+          only). Draft-then-Save so Cancel discards. Shared by the cover and
+          both optional slots — only `adjustTarget` changes what gets saved. */}
       <Dialog
-        open={adjusting}
-        onClose={() => setAdjusting(false)}
+        open={adjustTarget !== null}
+        onClose={() => setAdjustTarget(null)}
         role="dialog"
         size="lg"
         title={t("design.web.cover_adjust")}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAdjusting(false)}>
+            <Button variant="ghost" onClick={() => setAdjustTarget(null)}>
               {t("common.cancel")}
             </Button>
-            <Button
-              onClick={() => {
-                onCoverReposition(draft.x, draft.y, draft.scale);
-                setAdjusting(false);
-              }}
-            >
-              {t("common.save")}
-            </Button>
+            <Button onClick={saveAdjust}>{t("common.save")}</Button>
           </>
         }
       >
-        {coverUrl && (
+        {adjustUrl && (
           <CoverPositioner
-            src={coverUrl}
+            src={adjustUrl}
             x={draft.x}
             y={draft.y}
             scale={draft.scale}
+            showZoom={adjustTarget === "cover"}
+            height={draft.height}
             filter={filter}
-            onChange={(x, y, scale) => setDraft({ x, y, scale })}
-            onCommit={(x, y, scale) => setDraft({ x, y, scale })}
+            onChange={(x, y, scale, height) => setDraft({ x, y, scale, height })}
+            onCommit={(x, y, scale, height) => setDraft({ x, y, scale, height })}
             hint={t("design.web.cover_adjust_hint")}
           />
         )}

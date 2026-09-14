@@ -3804,6 +3804,7 @@ const es: LocaleMessages = {
       cover_adjust: "Ajustar",
       cover_adjust_hint: "Arrastra para recolocar",
       cover_zoom: "Zoom",
+      band_height: "Altura",
       photo_art: {
         reception_pergola: "Recepción en el jardín",
         reception_candlelit: "Cena a la luz de las velas",
@@ -4112,6 +4113,8 @@ const es: LocaleMessages = {
       "Estamos agradecidos de que tu presencia haga aún más bonito el día de nuestra boda.",
     intro_suggestion_5: "Gracias por formar parte de nuestro día con tu cariño y tu presencia.",
     intro_suggestion_applied: "Sugerencia aplicada, puedes editarla en el área de texto de abajo.",
+    format_bold_label: "Negrita",
+    format_italic_label: "Cursiva",
     useful_info_label: "Conviene saber",
     useful_info_placeholder: "Aparcamiento: ...\nCómo llegar: ...\nAlojamiento: ...",
     // The fields carry greyed examples; this line is the only place that

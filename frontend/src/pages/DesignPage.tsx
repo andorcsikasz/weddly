@@ -1153,14 +1153,39 @@ export default function DesignPage() {
     }
   }
 
-  // Persist the cover focal point + zoom the couple set in the Adjust dialog.
-  async function repositionCover(x: number, y: number, scale: number) {
+  // Persist the cover focal point + zoom + height the couple set in the
+  // Adjust dialog.
+  async function repositionCover(x: number, y: number, scale: number, height: number | null) {
     try {
       const r = await coupleApi.update({
         cover_position_x: x,
         cover_position_y: y,
         cover_scale: scale,
+        cover_height: height ?? 100,
       });
+      setCouple(r.couple);
+    } catch {
+      toast.error(t("design.save_error"));
+    }
+  }
+
+  // Persist a photo slot's focal point + height from the same Adjust dialog
+  // (no zoom for the optional slots — see CoverPositioner's `showZoom`).
+  async function repositionSitePhoto(slot: 1 | 2, x: number, y: number, height: number | null) {
+    try {
+      const r = await coupleApi.update(
+        slot === 1
+          ? {
+              site_image_1_position_x: x,
+              site_image_1_position_y: y,
+              site_image_1_height: height ?? 100,
+            }
+          : {
+              site_image_2_position_x: x,
+              site_image_2_position_y: y,
+              site_image_2_height: height ?? 100,
+            },
+      );
       setCouple(r.couple);
     } catch {
       toast.error(t("design.save_error"));
@@ -1282,8 +1307,15 @@ export default function DesignPage() {
             cover_position_x: couple.cover_position_x,
             cover_position_y: couple.cover_position_y,
             cover_scale: couple.cover_scale,
+            cover_height: couple.cover_height,
             site_image_1_url: couple.site_image_1_url,
+            site_image_1_position_x: couple.site_image_1_position_x,
+            site_image_1_position_y: couple.site_image_1_position_y,
+            site_image_1_height: couple.site_image_1_height,
             site_image_2_url: couple.site_image_2_url,
+            site_image_2_position_x: couple.site_image_2_position_x,
+            site_image_2_position_y: couple.site_image_2_position_y,
+            site_image_2_height: couple.site_image_2_height,
             guest_page_intro: couple.guest_page_intro,
             useful_info: couple.useful_info,
             menu_card: menuCard,
@@ -1463,7 +1495,19 @@ export default function DesignPage() {
                     coverPositionX={couple?.cover_position_x ?? 50}
                     coverPositionY={couple?.cover_position_y ?? 50}
                     coverScale={couple?.cover_scale ?? 100}
-                    onCoverReposition={(x, y, s) => void repositionCover(x, y, s)}
+                    coverHeight={couple?.cover_height ?? null}
+                    onCoverReposition={(x, y, s, h) => void repositionCover(x, y, s, h)}
+                    slot1Adjust={{
+                      x: couple?.site_image_1_position_x ?? 50,
+                      y: couple?.site_image_1_position_y ?? 50,
+                      height: couple?.site_image_1_height ?? null,
+                    }}
+                    slot2Adjust={{
+                      x: couple?.site_image_2_position_x ?? 50,
+                      y: couple?.site_image_2_position_y ?? 50,
+                      height: couple?.site_image_2_height ?? null,
+                    }}
+                    onSlotReposition={(slot, x, y, h) => void repositionSitePhoto(slot, x, y, h)}
                     coverBusy={coverBusy}
                     busySlot={photoBusy}
                     readOnly={readOnly}

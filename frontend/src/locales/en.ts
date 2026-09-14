@@ -3738,6 +3738,7 @@ const en: LocaleMessages = {
       cover_adjust: "Adjust",
       cover_adjust_hint: "Drag to reposition",
       cover_zoom: "Zoom",
+      band_height: "Height",
       photo_art: {
         reception_pergola: "Garden reception",
         reception_candlelit: "Candlelit dinner",
@@ -4038,6 +4039,11 @@ const en: LocaleMessages = {
       "We're grateful that your presence makes our wedding day even more beautiful.",
     intro_suggestion_5: "Thank you for being part of our day with your love and your presence.",
     intro_suggestion_applied: "Suggestion applied, you can edit it in the text area below.",
+    // Bold/italic toolbar shared by every free-text field on the guest page
+    // (welcome note + the "Good to know" fields): plain **bold**/*italic*
+    // markers, rendered back on the guest page.
+    format_bold_label: "Bold",
+    format_italic_label: "Italic",
     useful_info_label: "Good to know",
     useful_info_placeholder: "Parking: ...\nGetting there: ...\nAccommodation: ...",
     // The fields carry greyed examples; this line is the only place that

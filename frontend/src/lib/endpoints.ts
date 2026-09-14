@@ -886,6 +886,18 @@ export const coupleApi = {
     cover_position_y?: number;
     /** Cover-photo zoom (percent, 100 = fit-to-frame, up to 300). */
     cover_scale?: number;
+    /** Cover band height override, percent (100 = the fixed aspect-ratio
+     *  classes every couple starts with, 50-200 = shorter/taller). */
+    cover_height?: number;
+    /** Slot-photo focal point + height override, same shape as the cover's
+     *  own fields above (no zoom — the optional slots only reposition and
+     *  resize). */
+    site_image_1_position_x?: number;
+    site_image_1_position_y?: number;
+    site_image_1_height?: number;
+    site_image_2_position_x?: number;
+    site_image_2_position_y?: number;
+    site_image_2_height?: number;
     /** Pre-RSVP welcome block on the merged Vendégoldal (markdown,
      *  ≤4000 chars). Empty string clears the column. */
     guest_page_intro?: string | null;

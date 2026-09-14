@@ -25,7 +25,6 @@ import {
   Loader2,
   Lock,
   MessageCircle,
-  Move,
   Palette,
   Plus,
   RefreshCcw,
@@ -46,6 +45,7 @@ import {
 } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
+import { CoverPositioner } from "../components/design/CoverPositioner";
 import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
 import { SupplierNameAutocomplete } from "../components/SupplierNameAutocomplete";
 import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
@@ -64,6 +64,7 @@ import {
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
+import { FormatToolbar } from "../lib/richtext";
 import { setSelection } from "../lib/supplier_selection";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -550,88 +551,6 @@ function AddVenueForm({
   );
 }
 
-/** Drag-to-reposition control for the cover photo. The hero crops the cover to
- *  a wide band, so the couple drags the photo inside this same-shape frame to
- *  choose the focal point. `x`/`y` are object-position percentages (0..100);
- *  `onChange` fires live during the drag (updates the preview), `onCommit` fires
- *  on release (persists). Dragging the photo right reveals its left edge, so a
- *  rightward drag lowers object-position-x — the natural "move the photo" feel. */
-function CoverPositioner({
-  src,
-  x,
-  y,
-  onChange,
-  onCommit,
-  hint,
-}: {
-  src: string;
-  x: number;
-  y: number;
-  onChange: (x: number, y: number) => void;
-  onCommit: (x: number, y: number) => void;
-  hint: string;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ sx: number; sy: number; px: number; py: number } | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
-
-  function nextFrom(e: { clientX: number; clientY: number }): [number, number] | null {
-    const el = ref.current;
-    const d = drag.current;
-    if (!el || !d) return null;
-    const rect = el.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return null;
-    const dxPct = ((e.clientX - d.sx) / rect.width) * 100;
-    const dyPct = ((e.clientY - d.sy) / rect.height) * 100;
-    return [clamp(d.px - dxPct), clamp(d.py - dyPct)];
-  }
-
-  return (
-    <div className="mt-2">
-      <div
-        ref={ref}
-        className={`relative w-full select-none overflow-hidden rounded-lg border border-paper-300 dark:border-umber-700 ${
-          dragging ? "cursor-grabbing" : "cursor-grab"
-        }`}
-        style={{ aspectRatio: "21 / 9", touchAction: "none" }}
-        onPointerDown={(e) => {
-          ref.current?.setPointerCapture(e.pointerId);
-          drag.current = { sx: e.clientX, sy: e.clientY, px: x, py: y };
-          setDragging(true);
-        }}
-        onPointerMove={(e) => {
-          if (!drag.current) return;
-          const n = nextFrom(e);
-          if (n) onChange(n[0], n[1]);
-        }}
-        onPointerUp={(e) => {
-          const n = nextFrom(e);
-          ref.current?.releasePointerCapture(e.pointerId);
-          drag.current = null;
-          setDragging(false);
-          if (n) {
-            onChange(n[0], n[1]);
-            onCommit(n[0], n[1]);
-          }
-        }}
-      >
-        <img
-          src={src}
-          alt=""
-          draggable={false}
-          className="pointer-events-none h-full w-full object-cover"
-          style={{ objectPosition: `${x}% ${y}%` }}
-        />
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-gradient-to-t from-black/55 to-transparent px-2 py-1.5 text-[11px] font-medium text-white">
-          <Move size={12} aria-hidden />
-          {hint}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 /** Turns the greyed example in a field into real, editable text.
  *
  *  Icon-only, and only while the field is empty: the placeholder already shows
@@ -703,11 +622,14 @@ export default function GuestPageEditorPage() {
   // `exact` goal server-side, which also updates the dashboard.
   const [weddingDate, setWeddingDate] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
-  // Cover focal point (object-position %, 0..100). Adjusted by dragging the
-  // cover in the positioner below; persisted separately from the debounced
-  // text auto-save (a drag commits on release).
+  // Cover focal point (object-position %, 0..100) + zoom (100..300) + band
+  // height override (50..200, null = the page's fixed aspect-ratio classes).
+  // Adjusted by dragging/sliding in the positioner below; persisted separately
+  // from the debounced text auto-save (a drag/slide commits on release).
   const [coverPositionX, setCoverPositionX] = useState(50);
   const [coverPositionY, setCoverPositionY] = useState(50);
+  const [coverScale, setCoverScale] = useState(100);
+  const [coverHeight, setCoverHeight] = useState<number | null>(null);
   const [guestPageIntro, setGuestPageIntro] = useState("");
   // "Good to know" is edited as pre-made labelled rows (+ a free-form rest),
   // but still persisted into the single `useful_info` text column.
@@ -750,6 +672,10 @@ export default function GuestPageEditorPage() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverDragOver, setCoverDragOver] = useState(false);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
+  // Bold/italic toolbar targets for the "Good to know" fields — one ref per
+  // labelled row, keyed the same as usefulFields, plus the free-form textarea.
+  const usefulFieldRefs = useRef<Partial<Record<UsefulInfoKey, HTMLInputElement | null>>>({});
+  const usefulOtherRef = useRef<HTMLTextAreaElement>(null);
   // Which structured field is being edited in a modal sheet (click-to-edit on
   // the preview opens these instead of scrolling to a form). null = closed.
   const [editPanel, setEditPanel] = useState<
@@ -852,6 +778,8 @@ export default function GuestPageEditorPage() {
           setCoverImageUrl(cR.couple.cover_image_url ?? "");
           setCoverPositionX(cR.couple.cover_position_x ?? 50);
           setCoverPositionY(cR.couple.cover_position_y ?? 50);
+          setCoverScale(cR.couple.cover_scale ?? 100);
+          setCoverHeight(cR.couple.cover_height ?? null);
           setGuestPageIntro(cR.couple.guest_page_intro ?? "");
           {
             const parsed = parseUsefulInfo(cR.couple.useful_info ?? "");
@@ -1348,12 +1276,25 @@ export default function GuestPageEditorPage() {
         cover_image_url: coverImageUrl.trim() === "" ? null : coverImageUrl.trim(),
         cover_position_x: coverPositionX,
         cover_position_y: coverPositionY,
+        cover_scale: coverScale,
+        cover_height: coverHeight,
         guest_page_intro: guestPageIntro.trim() === "" ? null : guestPageIntro,
         useful_info: usefulInfoText.trim() === "" ? null : usefulInfoText,
         // Read-only here: the menu is edited on the Design page's print tab,
         // beside the card it also feeds. The preview still shows it so this
         // editor is not lying about what the page contains.
         menu_card: couple?.menu_card ?? null,
+        // Read-only here too: the slot photos are edited on /app/design, beside
+        // the upload/preset picker. Carried through so this preview matches
+        // what the real guest page renders instead of silently omitting them.
+        site_image_1_url: couple.site_image_1_url ?? null,
+        site_image_1_position_x: couple.site_image_1_position_x ?? 50,
+        site_image_1_position_y: couple.site_image_1_position_y ?? 50,
+        site_image_1_height: couple.site_image_1_height ?? null,
+        site_image_2_url: couple.site_image_2_url ?? null,
+        site_image_2_position_x: couple.site_image_2_position_x ?? 50,
+        site_image_2_position_y: couple.site_image_2_position_y ?? 50,
+        site_image_2_height: couple.site_image_2_height ?? null,
         location_lat: couple.location_lat,
         location_lng: couple.location_lng,
         location_radius_km: couple.location_radius_km,
@@ -2000,13 +1941,22 @@ export default function GuestPageEditorPage() {
               src={coverTrimmed}
               x={coverPositionX}
               y={coverPositionY}
-              onChange={(nx, ny) => {
+              scale={coverScale}
+              height={coverHeight ?? 100}
+              onChange={(nx, ny, ns, nh) => {
                 setCoverPositionX(nx);
                 setCoverPositionY(ny);
+                setCoverScale(ns);
+                setCoverHeight(nh);
               }}
-              onCommit={(nx, ny) => {
+              onCommit={(nx, ny, ns, nh) => {
                 void coupleApi
-                  .update({ cover_position_x: nx, cover_position_y: ny })
+                  .update({
+                    cover_position_x: nx,
+                    cover_position_y: ny,
+                    cover_scale: ns,
+                    cover_height: nh,
+                  })
                   .catch(() => undefined);
               }}
               hint={t("wedding_site_editor.cover_position_hint")}
@@ -2046,11 +1996,26 @@ export default function GuestPageEditorPage() {
               >
                 {t(f.labelKey)}
               </label>
+              <FormatToolbar
+                fieldRef={{
+                  get current() {
+                    return usefulFieldRefs.current[f.key] ?? null;
+                  },
+                }}
+                value={usefulFields[f.key]}
+                onChange={(next) => setUsefulFields((prev) => ({ ...prev, [f.key]: next }))}
+                boldLabel={t("guest_page_editor.format_bold_label")}
+                italicLabel={t("guest_page_editor.format_italic_label")}
+                className="shrink-0"
+              />
               <div className="relative flex-1">
                 <input
+                  ref={(el) => {
+                    usefulFieldRefs.current[f.key] = el;
+                  }}
                   id={`guest-page-useful-${f.key}`}
                   type="text"
-                  className="input w-full pr-9"
+                  className="input w-full pr-9 placeholder:text-ink-400 dark:placeholder:text-umber-400"
                   value={usefulFields[f.key]}
                   onChange={(e) =>
                     setUsefulFields((prev) => ({ ...prev, [f.key]: e.target.value }))
@@ -2072,16 +2037,26 @@ export default function GuestPageEditorPage() {
             </div>
           ))}
           <div className="mt-1">
-            <label
-              htmlFor="guest-page-useful-other"
-              className="mb-1 block text-sm text-ink-600 dark:text-umber-200"
-            >
-              {t("guest_page_editor.useful_field_other_label")}
-            </label>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label
+                htmlFor="guest-page-useful-other"
+                className="block text-sm text-ink-600 dark:text-umber-200"
+              >
+                {t("guest_page_editor.useful_field_other_label")}
+              </label>
+              <FormatToolbar
+                fieldRef={usefulOtherRef}
+                value={usefulOther}
+                onChange={setUsefulOther}
+                boldLabel={t("guest_page_editor.format_bold_label")}
+                italicLabel={t("guest_page_editor.format_italic_label")}
+              />
+            </div>
             <div className="relative">
               <textarea
+                ref={usefulOtherRef}
                 id="guest-page-useful-other"
-                className="input w-full pr-9"
+                className="input w-full pr-9 placeholder:text-ink-400 dark:placeholder:text-umber-400"
                 rows={3}
                 value={usefulOther}
                 onChange={(e) => setUsefulOther(e.target.value)}

@@ -272,6 +272,17 @@ interface OnboardBody {
   cover_position_y?: unknown;
   /** Cover-photo zoom, 100–300 percent (100 = fit-to-frame). */
   cover_scale?: unknown;
+  /** Cover band height override, 50–200 percent (100 = the fixed aspect-ratio
+   *  classes every couple starts with). */
+  cover_height?: unknown;
+  /** Focal point + height override for the two optional photo slots, same
+   *  shape as the cover's own fields above (no zoom). */
+  site_image_1_position_x?: unknown;
+  site_image_1_position_y?: unknown;
+  site_image_1_height?: unknown;
+  site_image_2_position_x?: unknown;
+  site_image_2_position_y?: unknown;
+  site_image_2_height?: unknown;
 }
 
 function parseCurrency(raw: unknown): Currency | null {
@@ -1617,6 +1628,18 @@ function parseCoverScale(raw: unknown): number {
   return Math.round(n);
 }
 
+/** Photo-band height override, 50–200 % (100 = the page's fixed aspect-ratio
+ *  classes). Shared by the cover and both optional photo slots — mirrors
+ *  BAND_HEIGHT_MIN/MAX in components/design/CoverPositioner.tsx. */
+function parseBandHeight(raw: unknown, field: string): number {
+  if (raw === null || raw === undefined) throw new HttpError(400, `${field} is required`);
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (Number.isNaN(n) || n < 50 || n > 200) {
+    throw new HttpError(400, `${field} must be between 50 and 200`);
+  }
+  return Math.round(n);
+}
+
 /** A single photo-share URL slot on the Photos page. Empty string / null →
  *  null (clears the slot). Mirrors parseCoverImageUrl: explicit http(s) scheme
  *  required, length capped, the normalized href stored. */
@@ -1720,6 +1743,13 @@ const GUEST_PAGE_ADDON_FIELDS: ReadonlySet<string> = new Set([
   "cover_position_x",
   "cover_position_y",
   "cover_scale",
+  "cover_height",
+  "site_image_1_position_x",
+  "site_image_1_position_y",
+  "site_image_1_height",
+  "site_image_2_position_x",
+  "site_image_2_position_y",
+  "site_image_2_height",
   "guest_page_intro",
   "useful_info",
   "post_rsvp_content",
@@ -2313,6 +2343,59 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   if (body.cover_scale !== undefined) {
     const next = parseCoverScale(body.cover_scale);
     if (next !== couple.cover_scale) updates.push({ col: "cover_scale", val: next });
+  }
+
+  if (body.cover_height !== undefined) {
+    const next = parseBandHeight(body.cover_height, "cover_height");
+    if (next !== couple.cover_height) updates.push({ col: "cover_height", val: next });
+  }
+
+  if (body.site_image_1_position_x !== undefined || body.site_image_1_position_y !== undefined) {
+    const nextX =
+      body.site_image_1_position_x !== undefined
+        ? parseCoverPosition(body.site_image_1_position_x, "site_image_1_position_x")
+        : couple.site_image_1_position_x;
+    const nextY =
+      body.site_image_1_position_y !== undefined
+        ? parseCoverPosition(body.site_image_1_position_y, "site_image_1_position_y")
+        : couple.site_image_1_position_y;
+    if (nextX !== couple.site_image_1_position_x) {
+      updates.push({ col: "site_image_1_position_x", val: nextX });
+    }
+    if (nextY !== couple.site_image_1_position_y) {
+      updates.push({ col: "site_image_1_position_y", val: nextY });
+    }
+  }
+
+  if (body.site_image_1_height !== undefined) {
+    const next = parseBandHeight(body.site_image_1_height, "site_image_1_height");
+    if (next !== couple.site_image_1_height) {
+      updates.push({ col: "site_image_1_height", val: next });
+    }
+  }
+
+  if (body.site_image_2_position_x !== undefined || body.site_image_2_position_y !== undefined) {
+    const nextX =
+      body.site_image_2_position_x !== undefined
+        ? parseCoverPosition(body.site_image_2_position_x, "site_image_2_position_x")
+        : couple.site_image_2_position_x;
+    const nextY =
+      body.site_image_2_position_y !== undefined
+        ? parseCoverPosition(body.site_image_2_position_y, "site_image_2_position_y")
+        : couple.site_image_2_position_y;
+    if (nextX !== couple.site_image_2_position_x) {
+      updates.push({ col: "site_image_2_position_x", val: nextX });
+    }
+    if (nextY !== couple.site_image_2_position_y) {
+      updates.push({ col: "site_image_2_position_y", val: nextY });
+    }
+  }
+
+  if (body.site_image_2_height !== undefined) {
+    const next = parseBandHeight(body.site_image_2_height, "site_image_2_height");
+    if (next !== couple.site_image_2_height) {
+      updates.push({ col: "site_image_2_height", val: next });
+    }
   }
 
   if (body.guest_page_intro !== undefined) {

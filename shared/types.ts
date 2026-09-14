@@ -966,13 +966,25 @@ export interface Couple {
   /** Cover-photo zoom (percent, 100 = fit-to-frame, up to 300). Optional; the
    *  render site defaults to 100. */
   cover_scale?: number;
+  /** Cover band height override, percent (100 = the fixed aspect-ratio classes
+   *  every couple starts with, 50-200 = shorter/taller). Null/absent = no
+   *  override. */
+  cover_height?: number | null;
   /** Optional fixed-slot photos on the public wedding site — slot 1 renders
    *  after the welcome band, slot 2 before the RSVP ask. Uploaded via
    *  POST /api/couples/current/site-photo/:slot. Optional (server always
    *  populates; absent in legacy test fixtures) — absent and null both mean
    *  "slot empty". */
   site_image_1_url?: string | null;
+  /** Slot photo focal point + height override, same shape as the cover's own
+   *  fields above. Optional; the render site defaults position to 50/50. */
+  site_image_1_position_x?: number;
+  site_image_1_position_y?: number;
+  site_image_1_height?: number | null;
   site_image_2_url?: string | null;
+  site_image_2_position_x?: number;
+  site_image_2_position_y?: number;
+  site_image_2_height?: number | null;
   /** Pre-RSVP welcome block on the merged Vendégoldal (`/w/:slug`).
    *  Visible at every tier of the public endpoint. Null when unset. */
   guest_page_intro: string | null;

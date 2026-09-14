@@ -3758,6 +3758,7 @@ const hr: LocaleMessages = {
       cover_adjust: "Prilagodi",
       cover_adjust_hint: "Povucite za pomicanje",
       cover_zoom: "Zumiranje",
+      band_height: "Visina",
       photo_art: {
         reception_pergola: "Vrtni domjenak",
         reception_candlelit: "Večera uz svijeće",
@@ -4077,6 +4078,8 @@ const hr: LocaleMessages = {
     intro_suggestion_4: "Zahvalni smo što svojom prisutnošću naš dan vjenčanja činite još ljepšim.",
     intro_suggestion_5: "Hvala vam što ste svojom ljubavlju i prisutnošću dio našeg dana.",
     intro_suggestion_applied: "Prijedlog je dodan, možete ga urediti u polju ispod.",
+    format_bold_label: "Podebljano",
+    format_italic_label: "Kurziv",
     useful_info_label: "Dobro je znati",
     useful_info_placeholder: "Parkiranje: ...\nDolazak: ...\nSmještaj: ...",
     useful_info_hint: "Sivi je tekst samo primjer. Napišite svoj.",

@@ -3826,6 +3826,7 @@ const de: LocaleMessages = {
       cover_adjust: "Anpassen",
       cover_adjust_hint: "Zum Verschieben ziehen",
       cover_zoom: "Zoom",
+      band_height: "Höhe",
       photo_art: {
         reception_pergola: "Gartenempfang",
         reception_candlelit: "Dinner bei Kerzenschein",
@@ -4155,6 +4156,8 @@ const de: LocaleMessages = {
     intro_suggestion_5:
       "Danke, dass ihr mit eurer Liebe und eurer Anwesenheit Teil unseres Tages seid.",
     intro_suggestion_applied: "Vorschlag übernommen, Sie können ihn im Feld unten bearbeiten.",
+    format_bold_label: "Fett",
+    format_italic_label: "Kursiv",
     useful_info_label: "Gut zu wissen",
     useful_info_placeholder: "Parken: ...\nAnfahrt: ...\nUnterkunft: ...",
     useful_info_hint: "Der graue Text ist nur ein Beispiel. Schreiben Sie ihn um.",

@@ -39,6 +39,8 @@ import { formatDate, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { mapPinUrl } from "../lib/map_link";
+import { FormatToolbar, renderFormatted } from "../lib/richtext";
+import { bandAspectRatio } from "./design/CoverPositioner";
 import { GuestWishlistCard } from "./GuestWishlistCard";
 import { OrnamentDivider, headingTreatmentCss } from "./ornaments";
 import { WeddingCountdown } from "./WeddingCountdown";
@@ -310,11 +312,16 @@ function Ghost({
  *  the static text, with a faint editable affordance on hover); clicking swaps
  *  in an auto-styled input/textarea that inherits the same typography. Commits
  *  on blur and on Enter (single-line) / Cmd+Enter (multiline); Escape cancels.
- *  Empty value shows a muted placeholder so an unfilled field is still clickable. */
+ *  Empty value shows a muted placeholder so an unfilled field is still clickable.
+ *
+ *  `formatting` (multiline only) adds a Bold/Italic toolbar above the field —
+ *  see lib/richtext for the `**bold**`/`*italic*` marker scheme, shared with
+ *  the non-inline render path below and the "Good to know" editor fields. */
 function InlineText({
   value,
   onCommit,
   multiline = false,
+  formatting = false,
   className = "",
   style,
   placeholder,
@@ -323,6 +330,7 @@ function InlineText({
   value: string;
   onCommit: (next: string) => void;
   multiline?: boolean;
+  formatting?: boolean;
   className?: string;
   style?: CSSProperties;
   placeholder?: string;
@@ -369,7 +377,7 @@ function InlineText({
         commit();
       }
     };
-    return multiline ? (
+    const field = multiline ? (
       <textarea
         ref={fieldRef}
         rows={3}
@@ -394,6 +402,20 @@ function InlineText({
         aria-label={ariaLabel}
       />
     );
+    if (!multiline || !formatting) return field;
+    return (
+      <div>
+        <FormatToolbar
+          fieldRef={fieldRef}
+          value={draft}
+          onChange={setDraft}
+          boldLabel={t("guest_page_editor.format_bold_label")}
+          italicLabel={t("guest_page_editor.format_italic_label")}
+          className="mb-1 justify-center"
+        />
+        {field}
+      </div>
+    );
   }
 
   const empty = value.trim() === "";
@@ -412,7 +434,13 @@ function InlineText({
       className={`${className} inline-edit-text block cursor-text rounded-md transition`}
       style={style}
     >
-      {empty ? <span style={{ opacity: 0.5 }}>{placeholder}</span> : value}
+      {empty ? (
+        <span style={{ opacity: 0.5 }}>{placeholder}</span>
+      ) : formatting ? (
+        renderFormatted(value)
+      ) : (
+        value
+      )}
     </span>
   );
 }
@@ -647,8 +675,18 @@ export function WeddingSiteView({
 
   // Optional fixed-slot photos: full-bleed editorial image bands, honouring the
   // photo treatment (grayscale cross-fades with the cover). Empty slot = no
-  // band; the slots are managed on /app/design.
-  const siteImageBand = (url: string | null | undefined) =>
+  // band; the slots (+ focal point + height) are managed on /app/design.
+  // `height` null keeps the fixed responsive aspect classes exactly as before
+  // (mobile 3/2, desktop 21/9); a couple who has touched the height slider
+  // gets ONE aspect ratio across every breakpoint instead — the same trade the
+  // cover height override makes below, for the same reason (a per-breakpoint
+  // custom ratio has no meaningful "50-200%" to name).
+  const siteImageBand = (
+    url: string | null | undefined,
+    x: number | undefined,
+    y: number | undefined,
+    height: number | null | undefined,
+  ) =>
     url ? (
       <section className="w-full">
         <img
@@ -656,7 +694,12 @@ export function WeddingSiteView({
           alt=""
           loading="lazy"
           className="aspect-[3/2] max-h-[70vh] w-full object-cover sm:aspect-[21/9]"
-          style={{ filter: imgFilter, transition: "filter 400ms ease" }}
+          style={{
+            objectPosition: `${x ?? 50}% ${y ?? 50}%`,
+            ...(height != null ? { aspectRatio: bandAspectRatio(height) } : {}),
+            filter: imgFilter,
+            transition: "filter 400ms ease",
+          }}
         />
       </section>
     ) : null;
@@ -692,6 +735,9 @@ export function WeddingSiteView({
                   objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
                   transform: `scale(${Math.max(1, (view.cover_scale ?? 100) / 100)})`,
                   transformOrigin: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
+                  ...(view.cover_height != null
+                    ? { aspectRatio: bandAspectRatio(view.cover_height) }
+                    : {}),
                   filter: imgFilter,
                   transition: "filter 400ms ease",
                 }}
@@ -892,6 +938,7 @@ export function WeddingSiteView({
                 value={view.guest_page_intro ?? ""}
                 onCommit={inlineEdit.intro}
                 multiline
+                formatting
                 className="whitespace-pre-line text-center text-lg leading-relaxed"
                 style={{ opacity: 0.92 }}
                 placeholder={t("wedding_site.welcome_placeholder")}
@@ -920,7 +967,7 @@ export function WeddingSiteView({
               className="whitespace-pre-line text-center text-lg leading-relaxed"
               style={{ opacity: 0.92 }}
             >
-              {view.guest_page_intro}
+              {renderFormatted(view.guest_page_intro ?? "")}
             </p>
           )}
         </Band>
@@ -937,7 +984,12 @@ export function WeddingSiteView({
       ) : null}
 
       {/* ── Optional photo slot 1 — full-bleed band after the welcome note. ── */}
-      {siteImageBand(view.site_image_1_url)}
+      {siteImageBand(
+        view.site_image_1_url,
+        view.site_image_1_position_x,
+        view.site_image_1_position_y,
+        view.site_image_1_height,
+      )}
 
       {/* ── Invited tier — personal hello + member list (live page only). ── */}
       {!isPreview && showInvitedExtras && household && (
@@ -1241,7 +1293,7 @@ export function WeddingSiteView({
             className="mt-4 whitespace-pre-line text-base leading-relaxed"
             style={{ opacity: 0.92 }}
           >
-            {view.useful_info}
+            {renderFormatted(view.useful_info ?? "")}
           </p>
         </Band>
       ) : isPreview ? (
@@ -1363,7 +1415,12 @@ export function WeddingSiteView({
       )}
 
       {/* ── Optional photo slot 2 — full-bleed band before the RSVP ask. ── */}
-      {siteImageBand(view.site_image_2_url)}
+      {siteImageBand(
+        view.site_image_2_url,
+        view.site_image_2_position_x,
+        view.site_image_2_position_y,
+        view.site_image_2_height,
+      )}
 
       {/* ── RSVP CTA — generic at the public tier, personal at invited. ─── */}
       {(isPreview || !showConfirmedExtras) && (

@@ -66,6 +66,10 @@ export interface PublicWeddingWebsiteView {
   /** Cover-photo zoom (percent, 100 = fit-to-frame, up to 300). Optional;
    *  defaults to 100 at render. */
   cover_scale?: number;
+  /** Cover band height override, percent (100 = the fixed aspect-ratio classes
+   *  every couple starts with, 50-200 = shorter/taller). Null/absent = no
+   *  override, keep the responsive classes. */
+  cover_height?: number | null;
   /** Optional fixed-slot photos: slot 1 renders as a full-bleed band after the
    *  welcome section, slot 2 before the RSVP ask. Visible at every tier.
    *  Optional so existing fixture literals keep compiling; absent and null
@@ -80,7 +84,15 @@ export interface PublicWeddingWebsiteView {
    *  presentation content, not a detail that has to be earned by RSVPing. */
   menu_card?: MenuCard | null;
   site_image_1_url?: string | null;
+  /** Slot photo focal point + height override, same shape as the cover's own
+   *  fields above. Optional; position defaults to 50/50 at render. */
+  site_image_1_position_x?: number;
+  site_image_1_position_y?: number;
+  site_image_1_height?: number | null;
   site_image_2_url?: string | null;
+  site_image_2_position_x?: number;
+  site_image_2_position_y?: number;
+  site_image_2_height?: number | null;
   /** Pre-RSVP welcome block (markdown). Visible at every tier — the
    *  couple authors this for "anyone with the link". Null when unset. */
   guest_page_intro: string | null;

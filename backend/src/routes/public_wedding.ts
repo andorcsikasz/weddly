@@ -136,13 +136,20 @@ function buildView(
     cover_position_x: couple.cover_position_x,
     cover_position_y: couple.cover_position_y,
     cover_scale: couple.cover_scale,
+    cover_height: couple.cover_height,
     // Optional fixed-slot photos — presentation content, visible at every tier.
     // The same menu the A5 card prints. Ungated on purpose: what is being
     // served is presentation content, like the schedule, not something a guest
     // has to RSVP to earn.
     menu_card: parseMenuCard(couple.menu_card),
     site_image_1_url: couple.site_image_1_url,
+    site_image_1_position_x: couple.site_image_1_position_x,
+    site_image_1_position_y: couple.site_image_1_position_y,
+    site_image_1_height: couple.site_image_1_height,
     site_image_2_url: couple.site_image_2_url,
+    site_image_2_position_x: couple.site_image_2_position_x,
+    site_image_2_position_y: couple.site_image_2_position_y,
+    site_image_2_height: couple.site_image_2_height,
     guest_page_intro: couple.guest_page_intro,
     useful_info: couple.useful_info,
     // Exact venue pin — confirmed tier, or the couple's explicit public-map
