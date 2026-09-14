@@ -103,6 +103,20 @@ interface WeekLayout {
 const MAX_LANES = 3;
 const LANE_HEIGHT_PX = 22; // 20px bar + 2px gap
 const HEADER_OFFSET_PX = 24; // space reserved at the top of a cell for the date number
+const ROW_BOTTOM_PADDING_PX = 8; // breathing room below the last bar/overflow pill
+
+/** How tall a week row needs to be to fit its own bars + "+N more" pill
+ *  without spilling into the row below. Rows with few/no tasks return a
+ *  small value on purpose — the `minmax(_, 1fr)` track this feeds still
+ *  shares leftover height equally, this only guarantees a floor. */
+function rowContentHeightPx(layout: WeekLayout | undefined): number {
+  if (!layout) return HEADER_OFFSET_PX;
+  const lanesUsed = layout.bars.reduce((max, bar) => Math.max(max, bar.lane + 1), 0);
+  const hasOverflow = layout.overflow.some((list) => list.length > 0);
+  const barsHeight =
+    Math.min(lanesUsed, MAX_LANES) * LANE_HEIGHT_PX + (hasOverflow ? LANE_HEIGHT_PX : 0);
+  return HEADER_OFFSET_PX + barsHeight + ROW_BOTTOM_PADDING_PX;
+}
 
 /** Sort key for stable lane assignment — earlier start first, then longer
  *  span first (so wider bars get the lower lanes), then id as a tiebreaker. */
@@ -205,16 +219,14 @@ export default function MonthView({
 
   const layouts = weeks.map((w) => packIntoLanes(w, tasks));
 
-  // Tailwind needs literal class names — predeclare the grid-rows variants
-  // we expect (4–6 weeks covers every real month).
-  const gridRowsClass =
-    weekCount === 4
-      ? "grid-rows-4"
-      : weekCount === 5
-        ? "grid-rows-5"
-        : weekCount === 6
-          ? "grid-rows-6"
-          : "grid-rows-5";
+  // Equal-fraction rows (`minmax(0, 1fr)`) can't grow for content — a grid
+  // track's fixed 0 minimum wins over a child's CSS min-height, so a busy
+  // week's bars/overflow pill would render past the row's own box instead
+  // of pushing it taller. Each row's minimum is its own content height, so
+  // a quiet week still shares space evenly while a busy one gets room.
+  const gridTemplateRows = layouts
+    .map((layout) => `minmax(${rowContentHeightPx(layout)}px, 1fr)`)
+    .join(" ");
 
   return (
     <div className="flex h-full flex-col">
@@ -239,7 +251,7 @@ export default function MonthView({
       </div>
 
       {/* Week rows */}
-      <div className={`grid flex-1 ${gridRowsClass}`}>
+      <div className="grid flex-1" style={{ gridTemplateRows }}>
         {weeks.map((weekStart, weekIdx) => {
           const layout = layouts[weekIdx];
           return (
