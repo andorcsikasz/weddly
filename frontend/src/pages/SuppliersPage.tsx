@@ -165,6 +165,16 @@ import { CATEGORY_ICON, GROUP_ICON } from "../lib/category_icons";
  *  when one of these food/drink categories is the active filter. */
 const CALC_CATEGORIES = new Set<SupplierCategory>(["cake_dessert", "bar_drinks", "catering"]);
 
+/** The grid/list/map view switch. Rendered twice — beside the search bar from
+ *  sm: up, and inside the mobile chip row below it, where the search row has
+ *  no space left for it — so the three modes live in one place rather than
+ *  drifting apart across the two copies. */
+const VIEW_MODES = [
+  { mode: "grid", icon: LayoutGrid, label: "view_grid" },
+  { mode: "line", icon: List, label: "view_line" },
+  { mode: "map", icon: MapIcon, label: "view_map" },
+] as const;
+
 /** The sub-category row's right-hand action chips ("már foglaltam", "csinálom
  *  magam", "nem kell", plus the calculator). One shared shape so the three ways
  *  of settling a category read as peers on a single line, instead of a chip, a
@@ -1742,84 +1752,15 @@ export default function SuppliersPage() {
       <div>
         <div className="min-w-0">
           {/* Chrome, rebuilt 2026-07-27 to read like a marketplace app rather
-              than a control panel. It used to be four stacked bands: title +
-              actions, five fields, a boxed row of ORSZÁG/ÁRSZINT/VENDÉGSZÁM/
-              HITELESÍTETT, then the chain. That is a lot of apparatus to scroll
-              past before the first supplier. Now: a search surface, one line of
-              chips, the chain. Nothing was dropped — country, price and guest
+              than a control panel, then again 2026-09-14 to fold the button
+              row into the search bar's own line — a header row that held
+              nothing but three right-aligned icons was mostly empty space
+              above the fold. Nothing was dropped — country, price and guest
               count moved into the "Szűrők" dialog, which carries a count badge
               so a filter can never be on without being visible. */}
-          <header className="mb-3 flex flex-wrap items-center justify-end gap-3 sm:mb-4">
-            {/* The page name repeats what the nav already says; only a sr-only
-                copy stays for screen readers and heading structure. */}
-            <h1 className="sr-only font-grotesk">{t("suppliers.title")}</h1>
-            <div className="flex items-center gap-2">
-              {/* Messages lives under this page (one row in the top control
-                  band), so the couple meets their vendor conversations where
-                  they shortlisted the vendor. The blush dot carries the sum of
-                  unseen vendor replies; the pill is a plain link — there is no
-                  need for state to change its look server-side. */}
-              <Link
-                to="/app/vendors/messages"
-                aria-label={t("nav.messages")}
-                title={t("nav.messages")}
-                className="relative inline-flex h-10 items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 text-sm font-medium text-ink-800 transition hover:border-ink-900 hover:text-ink-900 sm:px-4 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50"
-              >
-                <MessageSquare size={15} aria-hidden />
-                <span className="hidden sm:inline">{t("nav.messages")}</span>
-                {unreadCount > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-paper-50 dark:ring-umber-800">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </Link>
-              {/* Icon-only view switch: three glyphs, one filled. The words
-                  ride in the tooltip + aria-label — at three modes the icons
-                  are unambiguous and the labels were the widest thing in the
-                  row. */}
-              <div
-                role="group"
-                aria-label={t("suppliers.view_label")}
-                className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800"
-              >
-                {(
-                  [
-                    { mode: "grid", icon: LayoutGrid, label: "view_grid" },
-                    { mode: "line", icon: List, label: "view_line" },
-                    { mode: "map", icon: MapIcon, label: "view_map" },
-                  ] as const
-                ).map(({ mode, icon: VIcon, label }) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setViewMode(mode)}
-                    aria-pressed={viewMode === mode}
-                    aria-label={t(`suppliers.${label}`)}
-                    title={t(`suppliers.${label}`)}
-                    className={
-                      viewMode === mode
-                        ? "inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                        : "inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-                    }
-                  >
-                    <VIcon size={15} aria-hidden />
-                  </button>
-                ))}
-              </div>
-              {/* The label hides on a phone, so the accessible name has to be
-                  carried explicitly — otherwise it degrades to a bare "+". */}
-              <button
-                type="button"
-                onClick={() => setSubmitOpen(true)}
-                aria-label={t("suppliers.drop_your_own")}
-                title={t("suppliers.drop_your_own")}
-                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 text-sm font-medium text-ink-800 transition hover:border-ink-900 hover:text-ink-900 sm:px-4 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50"
-              >
-                <Plus size={15} aria-hidden />
-                <span className="hidden sm:inline">{t("suppliers.drop_your_own")}</span>
-              </button>
-            </div>
-          </header>
+          {/* The page name repeats what the nav already says; only a sr-only
+              copy stays for screen readers and heading structure. */}
+          <h1 className="sr-only font-grotesk">{t("suppliers.title")}</h1>
 
           {/* The search surface: one pill, two fields. Used to be two full
               rows stacked on mobile (free text, then city) — merged into a
@@ -1828,52 +1769,123 @@ export default function SuppliersPage() {
               (the free-text box still suggests towns; the city field still
               commits to the exact/nearby `city` param and shows its own
               "+N km" badge) — the border/shadow/focus ring just moved from
-              each input onto the shared pill. */}
-          <div
-            data-tour-target="vendors-search"
-            className="mb-3 flex h-12 items-center rounded-full border border-paper-300 bg-white shadow-soft transition focus-within:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-paper-200"
-          >
-            <Combobox
-              className="h-full min-w-0 flex-1"
-              value={query}
-              onChange={setQuery}
-              onSelect={onSearchSuggestion}
-              options={searchSuggestions}
-              ariaLabel={t("suppliers.search_label")}
-              placeholder={t("suppliers.search_placeholder")}
-              leadingIcon={Search}
-              onClear={() => setQuery("")}
-              inputClassName="h-full w-full bg-transparent pl-10 pr-9 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300"
-            />
-            <span className="h-6 w-px shrink-0 bg-paper-300 dark:bg-umber-700" aria-hidden="true" />
-            <Combobox
-              className="h-full w-28 shrink-0 sm:w-56"
-              value={cityInput}
-              onChange={(v) => {
-                setCityInput(v);
-                if (v.trim() === "") setCityFilter("");
-              }}
-              onSelect={(opt) => {
-                setCityFilter(opt.id);
-                setCityInput(opt.label);
-              }}
-              options={cityOptions}
-              ariaLabel={t("suppliers.city_label")}
-              placeholder={t("suppliers.city_all")}
-              leadingIcon={MapPin}
-              onClear={() => {
-                setCityFilter("");
-                setCityInput("");
-              }}
-              suffix={
-                cityNearbyKm != null ? (
-                  <span className="hidden sm:inline">
-                    {t("suppliers.nearby_plus_km", { km: cityNearbyKm })}
-                  </span>
-                ) : undefined
-              }
-              inputClassName="h-full w-full bg-transparent pl-8 pr-6 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300 sm:pr-20"
-            />
+              each input onto the shared pill.
+
+              Messages, the view switch and "Recommend a supplier" now ride
+              the same line: on a phone there is only room for the search
+              bar plus one icon, so the view switch and Recommend drop down
+              into the chip row below (`sm:hidden` there, `hidden sm:*` here)
+              rather than squeezing the search field down to nothing. Messages
+              stays icon-only at every width — sharing this row is what the
+              text label could no longer afford. */}
+          <div className="mb-3 flex items-center gap-2 sm:gap-3">
+            <div
+              data-tour-target="vendors-search"
+              className="flex h-12 min-w-0 flex-1 items-center rounded-full border border-paper-300 bg-white shadow-soft transition focus-within:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-paper-200"
+            >
+              <Combobox
+                className="h-full min-w-0 flex-1"
+                value={query}
+                onChange={setQuery}
+                onSelect={onSearchSuggestion}
+                options={searchSuggestions}
+                ariaLabel={t("suppliers.search_label")}
+                placeholder={t("suppliers.search_placeholder")}
+                leadingIcon={Search}
+                onClear={() => setQuery("")}
+                inputClassName="h-full w-full bg-transparent pl-10 pr-9 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300"
+              />
+              <span
+                className="h-6 w-px shrink-0 bg-paper-300 dark:bg-umber-700"
+                aria-hidden="true"
+              />
+              <Combobox
+                className="h-full w-24 shrink-0 sm:w-56"
+                value={cityInput}
+                onChange={(v) => {
+                  setCityInput(v);
+                  if (v.trim() === "") setCityFilter("");
+                }}
+                onSelect={(opt) => {
+                  setCityFilter(opt.id);
+                  setCityInput(opt.label);
+                }}
+                options={cityOptions}
+                ariaLabel={t("suppliers.city_label")}
+                placeholder={t("suppliers.city_all")}
+                leadingIcon={MapPin}
+                onClear={() => {
+                  setCityFilter("");
+                  setCityInput("");
+                }}
+                suffix={
+                  cityNearbyKm != null ? (
+                    <span className="hidden sm:inline">
+                      {t("suppliers.nearby_plus_km", { km: cityNearbyKm })}
+                    </span>
+                  ) : undefined
+                }
+                inputClassName="h-full w-full bg-transparent pl-8 pr-6 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300 sm:pr-20"
+              />
+            </div>
+
+            {/* Messages lives under this page (one row in the top control
+                band), so the couple meets their vendor conversations where
+                they shortlisted the vendor. The blush dot carries the sum of
+                unseen vendor replies; the pill is a plain link — there is no
+                need for state to change its look server-side. */}
+            <Link
+              to="/app/vendors/messages"
+              aria-label={t("nav.messages")}
+              title={t("nav.messages")}
+              className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50"
+            >
+              <MessageSquare size={16} aria-hidden />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-paper-50 dark:ring-umber-800">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Icon-only view switch: three glyphs, one filled. The words
+                ride in the tooltip + aria-label. Shown here from sm: up only
+                — below that it moves into the chip row. */}
+            <div
+              role="group"
+              aria-label={t("suppliers.view_label")}
+              className="hidden shrink-0 items-center gap-1 rounded-full border border-paper-300 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800 sm:inline-flex"
+            >
+              {VIEW_MODES.map(({ mode, icon: VIcon, label }) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setViewMode(mode)}
+                  aria-pressed={viewMode === mode}
+                  aria-label={t(`suppliers.${label}`)}
+                  title={t(`suppliers.${label}`)}
+                  className={
+                    viewMode === mode
+                      ? "inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                      : "inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+                  }
+                >
+                  <VIcon size={15} aria-hidden />
+                </button>
+              ))}
+            </div>
+            {/* Icon-only at every width, same reasoning as Messages above.
+                Shown here from sm: up only — below that it moves into the
+                chip row. */}
+            <button
+              type="button"
+              onClick={() => setSubmitOpen(true)}
+              aria-label={t("suppliers.drop_your_own")}
+              title={t("suppliers.drop_your_own")}
+              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50 sm:inline-flex"
+            >
+              <Plus size={16} aria-hidden />
+            </button>
           </div>
 
           {/* One line of chips. Everything here is one tap from a decision:
@@ -1881,6 +1893,41 @@ export default function SuppliersPage() {
               controls live behind the first chip. Scrolls sideways on a phone
               rather than wrapping into a second and third row. */}
           <div className="mb-3 -mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+            {/* The view switch and "Recommend a supplier" live here below
+                sm: — see the search row above, where they sit instead once
+                there is room beside it. */}
+            <div
+              role="group"
+              aria-label={t("suppliers.view_label")}
+              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-paper-300 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800 sm:hidden"
+            >
+              {VIEW_MODES.map(({ mode, icon: VIcon, label }) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setViewMode(mode)}
+                  aria-pressed={viewMode === mode}
+                  aria-label={t(`suppliers.${label}`)}
+                  title={t(`suppliers.${label}`)}
+                  className={
+                    viewMode === mode
+                      ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                      : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+                  }
+                >
+                  <VIcon size={14} aria-hidden />
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setSubmitOpen(true)}
+              aria-label={t("suppliers.drop_your_own")}
+              title={t("suppliers.drop_your_own")}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-paper-300 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200 sm:hidden"
+            >
+              <Plus size={15} aria-hidden />
+            </button>
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
