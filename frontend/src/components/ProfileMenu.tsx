@@ -6,7 +6,9 @@ import { type CouplePartnerView, PROFILE_ACTIVE_WINDOW_MS } from "@shared/types"
 import { toolPathFor } from "@shared/tool_faq";
 import {
   ArrowLeftRight,
+  Bell,
   Check,
+  Compass,
   Home,
   Languages,
   Layers,
@@ -34,15 +36,33 @@ import { LOCALE_NAMES, LOCALES, useT } from "../lib/i18n";
  *  couple's voice ("we're planning our wedding with Weddly"), so putting the
  *  entry in the vendor or planner dropdown would hand those users a script
  *  that isn't theirs. Unlike the automatic popup, this entry has no limit —
- *  it opens the modal however many times it's clicked. */
+ *  it opens the modal however many times it's clicked.
+ *
+ *  `onOpenNotifications` / `notificationsUnread` and `onOpenTour` surface the
+ *  header's bell and compass here once AppShell has demoted them (see the
+ *  visibility rules in `NotificationBell` and `lib/headerIconIdle.ts`) — same
+ *  idea as the feedback/share rows above, just for icons that only sometimes
+ *  live in the header. `languageInHeader` tells the language list below
+ *  whether the header already shows an inline switcher (tablet+, once the
+ *  couple has explicitly picked a language): when it does, this list stays
+ *  mobile-only exactly as before; when nothing in the header covers it, the
+ *  list shows at every width since this dropdown is the only place left. */
 export function ProfileMenu({
   onOpenFeedback,
   onOpenShare,
+  onOpenNotifications,
+  notificationsUnread,
+  onOpenTour,
+  languageInHeader = true,
   theme,
   onToggleTheme,
 }: {
   onOpenFeedback?: () => void;
   onOpenShare?: () => void;
+  onOpenNotifications?: () => void;
+  notificationsUnread?: number;
+  onOpenTour?: () => void;
+  languageInHeader?: boolean;
   theme?: "light" | "dark";
   onToggleTheme?: () => void;
 } = {}) {
@@ -267,8 +287,45 @@ export function ProfileMenu({
           </Link>
           {/* Divider: everything above is navigation, everything below is an
            *  action taken from here. */}
-          {(onOpenShare || onOpenFeedback) && (
+          {(onOpenShare || onOpenFeedback || onOpenNotifications || onOpenTour) && (
             <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
+          )}
+          {/* Bell and compass only appear here once AppShell has demoted them
+           *  out of the header (see `languageInHeader` note above for why
+           *  language works differently) — grouped first since they're the
+           *  ones a couple is used to finding up top. */}
+          {onOpenNotifications && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onOpenNotifications();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              <Bell size={16} aria-hidden="true" />
+              <span>{t("notifications.title")}</span>
+              {!!notificationsUnread && (
+                <span className="ml-auto inline-flex min-w-[18px] items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-semibold leading-4 text-paper-50">
+                  {notificationsUnread > 9 ? "9+" : notificationsUnread}
+                </span>
+              )}
+            </button>
+          )}
+          {onOpenTour && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onOpenTour();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              <Compass size={16} aria-hidden="true" />
+              <span>{t("tour.aria_label")}</span>
+            </button>
           )}
           {onOpenShare && (
             <button
@@ -302,9 +359,12 @@ export function ProfileMenu({
               <span>{t("landing.nav_feedback")}</span>
             </button>
           )}
-          {/* Mobile: list the languages so the user PICKS one, instead of the
-              old blind cycle (which got confusing with a third language). */}
-          <div className="sm:hidden">
+          {/* List the languages so the user PICKS one, instead of the old
+              blind cycle (which got confusing with a third language). Mobile
+              always lands here (the header never has room for the inline
+              switcher); tablet+ only falls back here when nothing in the
+              header covers language at all — see `languageInHeader`. */}
+          <div className={languageInHeader ? "sm:hidden" : ""}>
             <p className="flex items-center gap-2 px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
               <Languages size={14} aria-hidden="true" />
               {t("nav.switch_language")}

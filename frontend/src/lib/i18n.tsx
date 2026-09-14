@@ -123,6 +123,18 @@ function detectInitial(): Locale {
   return isUiLocale(shellLocale) ? shellLocale : "en";
 }
 
+/** Whether the person has ever explicitly picked a language, as opposed to
+ *  landing on whatever the host/browser defaulted to. Drives the header's
+ *  language icon: a couple who never touched the switcher gets it tucked
+ *  into the profile menu instead of a permanent header slot. */
+export function hasExplicitLocale(): boolean {
+  try {
+    return isUiLocale(localStorage.getItem(STORAGE_KEY));
+  } catch {
+    return false;
+  }
+}
+
 /** What the user sees when a key resolves in NO tree, not even EN.
  *
  *  `keys.ts` is a type every locale must satisfy, so a statically written key

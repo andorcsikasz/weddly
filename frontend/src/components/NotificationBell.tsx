@@ -297,13 +297,33 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
 
 const SURVEY_POPUP_KEY = "weddly.survey_popup_shown";
 
-export function NotificationBell() {
+/** `headerVisible` swaps only whether the circular trigger renders in the
+ *  header — the feed keeps polling and the panel stays mountable either way,
+ *  so a couple demoted to the profile menu still gets promoted back the
+ *  moment something new arrives. `open`/`onOpenChange` are controlled so the
+ *  profile menu's "Notifications" row (rendered nowhere near this component)
+ *  can open the same panel; omit them to fall back to internal state.
+ *  `onUnreadChange` reports the live count so AppShell can decide, on each
+ *  render, whether the header slot or the profile menu owns the trigger. */
+export function NotificationBell({
+  headerVisible = true,
+  open: openProp,
+  onOpenChange,
+  onUnreadChange,
+}: {
+  headerVisible?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onUnreadChange?: (unread: number) => void;
+} = {}) {
   const { t } = useT();
   const navigate = useNavigate();
   const label = useLabel();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = openProp ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [surveyOpen, setSurveyOpen] = useState(false);
@@ -312,6 +332,10 @@ export function NotificationBell() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [panelPosition, setPanelPosition] = useState({ top: 72, right: 12 });
+
+  useEffect(() => {
+    onUnreadChange?.(unread);
+  }, [unread, onUnreadChange]);
 
   useEffect(() => {
     cancelled.current = false;
@@ -457,25 +481,30 @@ export function NotificationBell() {
         preface={t("notifications.feedback_survey_intro")}
       />
       <div className="relative" ref={menuRef}>
-        <button
-          ref={triggerRef}
-          type="button"
-          onClick={toggleOpen}
-          aria-label={t("notifications.aria_label")}
-          title={t("notifications.title")}
-          aria-expanded={open}
-          className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-        >
-          <Bell size={18} aria-hidden="true" />
-          {unread > 0 && (
-            <span
-              className="absolute right-1.5 top-1.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-semibold leading-4 text-paper-50"
-              aria-hidden="true"
-            >
-              {unread > 9 ? "9+" : unread}
-            </span>
-          )}
-        </button>
+        {/* When demoted (nothing unread), the profile menu's own
+         *  "Notifications" row opens this same panel via the controlled
+         *  `open` prop — no trigger renders here at all. */}
+        {headerVisible && (
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={toggleOpen}
+            aria-label={t("notifications.aria_label")}
+            title={t("notifications.title")}
+            aria-expanded={open}
+            className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+          >
+            <Bell size={18} aria-hidden="true" />
+            {unread > 0 && (
+              <span
+                className="absolute right-1.5 top-1.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-semibold leading-4 text-paper-50"
+                aria-hidden="true"
+              >
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </button>
+        )}
 
         {open &&
           createPortal(

@@ -46,7 +46,8 @@ import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { isCurrentSessionDemo } from "../lib/demoSession";
 import { adminUserApi, authApi, plannerApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { useCompassVisibility } from "../lib/headerIconIdle";
+import { hasExplicitLocale, useT } from "../lib/i18n";
 import {
   adoptShareUser,
   markSharePromptSeenLocally,
@@ -492,6 +493,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   // view uses the same sheet for its secondary items.
   const [moreOpen, setMoreOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  // ── Header icon decluttering ──────────────────────────────────────────
+  // Bell, language and compass each have their own rule for when they earn a
+  // permanent header slot vs. living inside the profile menu instead — see
+  // NotificationBell's `headerVisible` prop and lib/headerIconIdle.ts.
+  // `notifUnread` starts `null` (unknown) rather than 0 so the bell defaults
+  // to the header slot until the first poll actually confirms there's
+  // nothing new — hiding a real badge during that first round-trip would be
+  // worse than a one-tick-late demotion.
+  const [notifUnread, setNotifUnread] = useState<number | null>(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const showBell = notifUnread === null || notifUnread > 0;
+  const showLanguage = hasExplicitLocale();
+  const { visible: showCompass, markUsed: markCompassUsed } = useCompassVisibility();
   // Share-Weddly prompt. `shareSource` decides the analytics dimension AND
   // whether the trigger counters mean anything, so it's state rather than a
   // constant on the component.
@@ -862,13 +876,19 @@ export function AppShell({ children }: { children: ReactNode }) {
          * light/dark toggle — which is what lets its coloring run unbroken
          * from the viewport's top-left corner. It's `sticky top-0 h-screen`
          * (rather than the header's separate sticky bar) so the wordmark
-         * and nav both stay pinned to the viewport as the page scrolls. The
-         * gradient and every nav row/toggle color below is the value that
-         * used to apply only under `dark:` before this — folded to
-         * unconditional now that the rail no longer follows the toggle.
+         * and nav both stay pinned to the viewport as the page scrolls. Every
+         * nav row/toggle color below is the value that used to apply only
+         * under `dark:` before this — folded to unconditional now that the
+         * rail no longer follows the toggle.
+         *
+         * Flat `umber-950`, not a gradient: the earlier `umber-800 → 950`
+         * wash read as warm brown near the top rather than black. `rounded-r`
+         * softens the two corners that actually show (the rail is flush with
+         * the viewport's left/top/bottom edges, so only the seam against the
+         * content pane is ever visible).
          */}
         <aside
-          className={`hidden shrink-0 sticky top-0 h-screen flex-col bg-gradient-to-t from-umber-800 via-umber-900 to-umber-950 transition-[width] duration-300 ease-in-out md:flex md:w-14 ${
+          className={`hidden shrink-0 sticky top-0 h-screen flex-col rounded-r-2xl bg-umber-950 transition-[width] duration-300 ease-in-out md:flex md:w-14 ${
             sidebarCollapsed ? "lg:w-14" : "lg:w-56"
           }`}
         >
@@ -1061,7 +1081,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                                         label={t(item.labelKey)}
                                         collapsed={sidebarCollapsed}
                                         labelDelay={delay}
-                                        darkActive={group === "guest"}
                                         unexplored={isUnexplored(item.to)}
                                         unexploredLabel={t("nav.unexplored")}
                                       />
@@ -1095,25 +1114,42 @@ export function AppShell({ children }: { children: ReactNode }) {
                   spread out beyond the wordmark on narrow viewports. */}
               <div className="flex items-center gap-1">
                 {/* Feedback now lives in the ProfileMenu dropdown for everyone
-                 *  (passed down via `onOpenFeedback` below). Language stays inline
-                 *  on tablet+ where the header has horizontal room, and drops into
-                 *  the dropdown on phones via `sm:inline-flex`. */}
-                {user && !inAdminView && (
+                 *  (passed down via `onOpenFeedback` below). Compass, language
+                 *  and the bell each fall back into the dropdown on their own
+                 *  terms instead — see `showCompass`/`showLanguage`/`showBell`
+                 *  above and the matching `onOpenTour`/`languageInHeader`/
+                 *  `onOpenNotifications` props passed to ProfileMenu below. */}
+                {user && !inAdminView && showCompass && (
                   <button
                     type="button"
                     className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-                    onClick={() => setTourOpen(true)}
+                    onClick={() => {
+                      markCompassUsed();
+                      setTourOpen(true);
+                    }}
                     aria-label={t("tour.aria_label")}
                     title={t("tour.aria_label")}
                   >
                     <Compass size={18} aria-hidden="true" />
                   </button>
                 )}
-                <LocaleSwitcher
-                  className="hidden sm:block"
-                  buttonClassName="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-                />
-                {user && <NotificationBell />}
+                {showLanguage && (
+                  <LocaleSwitcher
+                    className="hidden sm:block"
+                    buttonClassName="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+                  />
+                )}
+                {/* Always mounted while signed in so the unread poll keeps
+                 *  running — `headerVisible` only swaps whether its own
+                 *  trigger renders here vs. the profile menu owning it. */}
+                {user && (
+                  <NotificationBell
+                    headerVisible={showBell}
+                    open={notifOpen}
+                    onOpenChange={setNotifOpen}
+                    onUnreadChange={setNotifUnread}
+                  />
+                )}
                 <button
                   type="button"
                   className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 min-[360px]:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
@@ -1135,6 +1171,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                     setShareSource("profile_dropdown");
                     setShareOpen(true);
                   }}
+                  onOpenNotifications={user && !showBell ? () => setNotifOpen(true) : undefined}
+                  notificationsUnread={notifUnread ?? undefined}
+                  onOpenTour={
+                    user && !inAdminView && !showCompass
+                      ? () => {
+                          markCompassUsed();
+                          setTourOpen(true);
+                        }
+                      : undefined
+                  }
+                  languageInHeader={showLanguage}
                 />
               </div>
             </div>
@@ -1400,7 +1447,6 @@ function SideLink({
   label,
   collapsed,
   labelDelay,
-  darkActive,
   unexplored,
   unexploredLabel,
 }: {
@@ -1412,11 +1458,6 @@ function SideLink({
    *  that walks labels in top-to-bottom. A collapse always retracts at 0ms so
    *  the whole rail recedes together. */
   labelDelay?: number;
-  /** Keep the cold near-black ink pill (`stationery-dark`) on the active row
-   *  instead of the warm-coffee landing pill. Used only by the Guest page
-   *  link, which the couple asked to stay visually "dark" / set apart from
-   *  the rest of the rail. */
-  darkActive?: boolean;
   /** The couple has never opened this destination. Renders the row muted,
    *  which is the whole nudge: the rail reads as a map of what is still
    *  unexplored, and a single visit clears it. Deliberately NOT a disabled
@@ -1461,9 +1502,13 @@ function SideLink({
   // `lg:mx-2` insets the pill box by the same 8px the section dividers use
   // (`inset-x-2`), so the dark header, every hover row, and the group hairlines
   // share one left edge.
+  // `mx-auto` centers the fixed w-9 icon square inside the wider rail track
+  // (md tablet, and lg when collapsed) — without it the row hugs the rail's
+  // left edge instead of sitting under the centered collapse toggle above.
+  // `lg:mx-2` overrides it back to a fixed inset once the rail is expanded.
   const shape = collapsed
-    ? "h-8 w-9 justify-center"
-    : "h-8 w-9 justify-center lg:mx-2 lg:justify-start lg:px-3";
+    ? "h-8 w-9 mx-auto justify-center"
+    : "h-8 w-9 mx-auto justify-center lg:mx-2 lg:justify-start lg:px-3";
   return (
     <NavLink
       to={to}
@@ -1481,9 +1526,12 @@ function SideLink({
         // rail's own `umber-900/950` background now that the rail no longer
         // follows the app's light/dark toggle — the raised `umber-600` tone
         // it otherwise only got under `dark:` is what has to show always.
-        const active = darkActive
-          ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
-          : "stationery-coffee-rail text-paper-50";
+        // Every row shares this one active color — the guest group (wishlist,
+        // guest page, games) used to break off into a colder `stationery-dark`
+        // pill (blush in `dark:`) to read as "set apart"; the rail reads more
+        // like one system now that every section answers "you are here" the
+        // same way.
+        const active = "stationery-coffee-rail text-paper-50";
         // Collapsed rows stay the fixed `w-9` icon square (base shape); at lg+
         // every row fills the rail so hover + active share one box size.
         const width = collapsed ? "" : "lg:w-auto";
@@ -1562,8 +1610,8 @@ function AdminSideLink({
   badgeCount?: number;
 }) {
   const shape = collapsed
-    ? "h-8 w-9 justify-center"
-    : "h-8 w-9 justify-center lg:mx-2 lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
+    ? "h-8 w-9 mx-auto justify-center"
+    : "h-8 w-9 mx-auto justify-center lg:mx-2 lg:w-auto lg:justify-start lg:gap-3 lg:px-3";
   return (
     <NavLink
       to={to}
