@@ -156,11 +156,11 @@ export function PublicWeddingChecklist({
           </div>
         )}
 
-        <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:gap-0">
+        <div className="mt-8 flex flex-col lg:flex-row">
           {teaser ? (
             <Link
               to={toolHref}
-              className="group rounded-2xl bg-neutral-950 p-5 text-white transition-shadow hover:shadow-pop sm:p-6 lg:flex-1 lg:rounded-r-none dark:bg-black"
+              className="group rounded-tl-2xl rounded-tr-2xl rounded-bl-none rounded-br-none bg-neutral-950 p-5 text-white transition-shadow hover:shadow-pop sm:p-6 lg:flex-1 lg:rounded-tr-none lg:rounded-bl-2xl dark:bg-black"
             >
               <StatCardBody t={t} done={done} total={total} percent={percent} />
               <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 transition-colors group-hover:text-white">
@@ -169,19 +169,22 @@ export function PublicWeddingChecklist({
               </p>
             </Link>
           ) : (
-            <div className="rounded-2xl bg-neutral-950 p-5 text-white sm:p-6 lg:flex-1 lg:rounded-r-none dark:bg-black">
+            <div className="rounded-tl-2xl rounded-tr-2xl rounded-bl-none rounded-br-none bg-neutral-950 p-5 text-white sm:p-6 lg:flex-1 lg:rounded-tr-none lg:rounded-bl-2xl dark:bg-black">
               <StatCardBody t={t} done={done} total={total} percent={percent} />
             </div>
           )}
           {/* Tear-off stub: the black card is the ticket body, this is the
-              detachable PDF control glued to its right edge (see .ticket-stub
-              in index.css for the perforation + punch-hole treatment). */}
+              detachable PDF control glued directly to its edge (bottom below
+              `lg`, right edge from `lg` up) — no gap between them, so the
+              dashed border reads as the tear line rather than floating free
+              (see .ticket-stub in index.css for the perforation + punch-hole
+              treatment). */}
           <button
             type="button"
             onClick={downloadPdf}
             disabled={downloading}
             aria-label={t("landing.checklist_demo_download")}
-            className="ticket-stub flex min-h-14 w-full shrink-0 items-center justify-center rounded-2xl bg-ticket-paper px-5 py-4 text-ticket-ink disabled:opacity-60 lg:w-28 lg:rounded-l-none lg:px-2 lg:py-6"
+            className="ticket-stub flex min-h-14 w-full shrink-0 items-center justify-center rounded-tl-none rounded-tr-none rounded-bl-2xl rounded-br-2xl bg-ticket-paper px-5 py-4 text-ticket-ink disabled:opacity-60 lg:w-28 lg:rounded-bl-none lg:rounded-tr-2xl lg:px-2 lg:py-6"
           >
             <span aria-hidden="true" className="ticket-perforation hidden lg:block" />
             <span className="flex items-center justify-center gap-2 lg:h-full lg:flex-col lg:gap-3">
