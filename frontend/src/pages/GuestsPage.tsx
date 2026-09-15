@@ -387,6 +387,7 @@ export default function GuestsPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [mealsOpen, setMealsOpen] = useState(false);
+  const [checkinExpanded, setCheckinExpanded] = useState(false);
   const [orphanFixing, setOrphanFixing] = useState(false);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   // ── Search state ────────────────────────────────────────────────────
@@ -1189,6 +1190,17 @@ export default function GuestsPage() {
             <p className="text-sm text-ink-500 dark:text-umber-300">{listableGuests.length}</p>
           )}
         </div>
+        {couple && (
+          // Fills the empty gap between the stat counters and the toolbar
+          // instead of sitting on its own full-width row below the header.
+          <div className="order-last min-w-[12rem] flex-1 basis-64 sm:order-none">
+            <CheckinTrigger
+              couple={couple}
+              expanded={checkinExpanded}
+              onToggle={() => setCheckinExpanded((v) => !v)}
+            />
+          </div>
+        )}
         <div className="flex flex-wrap gap-2 sm:ml-auto">
           {/* Icon-only segmented group: collapsed to icons, each expands its
               label on hover (max-width + opacity transition) and surfaces a
@@ -1263,7 +1275,11 @@ export default function GuestsPage() {
         </div>
       </div>
 
-      {couple && <CheckinPill couple={couple} onSaved={(c) => setCouple(c)} />}
+      {couple && checkinExpanded && (
+        <div className="mb-4">
+          <CheckinPanel couple={couple} />
+        </div>
+      )}
 
       {/* ── Search + stackable filters + sort ───────────────────────────
           One toolbar drives search, the expandable filter panel (RSVP, side
@@ -3046,15 +3062,60 @@ function CollapseAllButton({
 }
 
 /**
- * Compact "Check-in: ANDORSARI · + 8-character code" pill at the top of
- * /app/guests. Collapsed by default — first-time visitors get the airport
- * concept at a glance without the page being top-heavy. Click expands the
- * panel for slug edit + URL hint + the household-grouping reminder.
+ * Compact "Check-in: ANDORSARI · + 8-character code" trigger, sized to sit
+ * inline in the header row (between the stat counters and the toolbar)
+ * rather than on its own full-width row. Collapsed by default — first-time
+ * visitors get the airport concept at a glance without the page being
+ * top-heavy. Click expands `CheckinPanel` below the header for slug display
+ * + URL hint + the household-grouping reminder.
  */
-function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => void }) {
+function CheckinTrigger({
+  couple,
+  expanded,
+  onToggle,
+}: {
+  couple: Couple;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const { t } = useT();
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      aria-label={expanded ? t("guests.checkin_pill_hide") : t("guests.checkin_pill_show")}
+      className="flex w-full min-w-0 items-center gap-3 rounded-lg border border-paper-300 bg-paper-100/40 px-3 py-2 text-left transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-700/60 dark:hover:bg-umber-700"
+    >
+      <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        {t("guests.checkin_pill_lead")}
+      </span>
+      <span className="shrink-0 font-mono text-base uppercase tracking-[0.3em] text-ink-900 dark:text-paper-50">
+        {couple.slug ?? "-"}
+      </span>
+      <span className="hidden truncate text-sm text-ink-600 dark:text-umber-200 lg:inline">
+        {t("guests.checkin_pill_suffix")}
+      </span>
+      <ChevronDown
+        size={16}
+        aria-hidden
+        className={
+          expanded
+            ? "ml-auto shrink-0 rotate-180 text-ink-700 transition-transform dark:text-paper-100"
+            : "ml-auto shrink-0 text-ink-500 transition-transform dark:text-umber-300"
+        }
+      />
+    </button>
+  );
+}
+
+/** The expanded detail card `CheckinTrigger` opens: the shareable check-in
+ *  URL + the household-grouping reminder. Rendered full-width below the
+ *  header row, since the trigger itself now lives in a width-constrained
+ *  slot between the stats and the toolbar. */
+function CheckinPanel({ couple }: { couple: Couple }) {
   const { t } = useT();
   const toast = useToast();
-  const [expanded, setExpanded] = useState(false);
   // General check-in link: the couple identifier pre-filled, no household code.
   // The couple can open it to preview, or share it so guests land straight on
   // /rsvp with the couple field done and only their own code left to type.
@@ -3079,99 +3140,66 @@ function CheckinPill({ couple }: { couple: Couple; onSaved: (next: Couple) => vo
   // for back-compat / future "rename with full confirm" UI.
 
   return (
-    <div className="mb-4 overflow-hidden rounded-2xl border border-paper-300 bg-paper-100/40 dark:border-umber-700 dark:bg-umber-700/60">
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-        aria-label={expanded ? t("guests.checkin_pill_hide") : t("guests.checkin_pill_show")}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-700"
-      >
-        <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-          {t("guests.checkin_pill_lead")}
-        </span>
-        <span className="font-mono text-base uppercase tracking-[0.3em] text-ink-900 dark:text-paper-50">
-          {couple.slug ?? "-"}
-        </span>
-        <span className="text-sm text-ink-600 hidden sm:inline dark:text-umber-200">
-          {t("guests.checkin_pill_suffix")}
-        </span>
-        <ChevronDown
-          size={16}
-          aria-hidden
-          className={
-            expanded
-              ? "ml-auto rotate-180 text-ink-700 transition-transform dark:text-paper-100"
-              : "ml-auto text-ink-500 transition-transform dark:text-umber-300"
-          }
-        />
-      </button>
+    <div className="overflow-hidden rounded-2xl border border-paper-300 bg-paper-100/40 px-4 py-4 dark:border-umber-700 dark:bg-umber-700/60">
+      {generalUrl ? (
+        // One focused card: the shareable link is the whole point here.
+        // The identifier rides along as a locked chip (its rationale on
+        // hover) instead of a second, redundant block.
+        <div className="rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {t("guests.checkin_open_title")}
+            </p>
+            <span
+              title={t("guests.couple_slug_help_locked")}
+              className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 font-mono text-xs uppercase tracking-[0.2em] text-ink-700 dark:bg-umber-700 dark:text-paper-100"
+            >
+              <Lock size={11} aria-hidden /> {couple.slug ?? "-"}
+            </span>
+          </div>
 
-      {expanded && (
-        <div className="border-t border-paper-300 px-4 py-4 dark:border-umber-700">
-          {generalUrl ? (
-            // One focused card: the shareable link is the whole point here.
-            // The identifier rides along as a locked chip (its rationale on
-            // hover) instead of a second, redundant block.
-            <div className="rounded-xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                  {t("guests.checkin_open_title")}
-                </p>
-                <span
-                  title={t("guests.couple_slug_help_locked")}
-                  className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 font-mono text-xs uppercase tracking-[0.2em] text-ink-700 dark:bg-umber-700 dark:text-paper-100"
-                >
-                  <Lock size={11} aria-hidden /> {couple.slug ?? "-"}
-                </span>
-              </div>
-
-              {/* The link reads as a real input field: a bordered well with an
+          {/* The link reads as a real input field: a bordered well with an
                   inline copy affordance on the right, the way every "share
                   link" surface does it. On desktop the whole control collapses
                   to a single row so it stays compact; it stacks only on mobile. */}
-              <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-stretch">
-                <div className="flex min-w-0 flex-1 items-center rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 dark:border-umber-600 dark:bg-umber-700/50">
-                  <span className="truncate font-mono text-sm text-ink-900 dark:text-paper-50">
-                    {generalUrl.replace(/^https?:\/\//, "")}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={copyGeneralLink}
-                  aria-label={t("guests.checkin_copy_link")}
-                  title={t("guests.checkin_copy_link")}
-                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-paper-300 px-3 text-sm text-ink-600 transition-colors hover:bg-paper-100 dark:border-umber-600 dark:text-umber-200 dark:hover:bg-umber-700 sm:h-auto sm:w-9 sm:px-0"
-                >
-                  <ClipboardCopy size={15} aria-hidden="true" />
-                  <span className="sm:hidden">{t("guests.checkin_copy_link")}</span>
-                </button>
-                <a
-                  href={generalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-outline btn-sm shrink-0 justify-center sm:w-auto"
-                >
-                  <Link2 size={14} aria-hidden="true" /> {t("guests.checkin_open_rsvp")}
-                </a>
-              </div>
-
-              <p className="mt-2.5 text-xs text-ink-500 dark:text-umber-300">
-                {t("guests.checkin_open_help")}
-              </p>
+          <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <div className="flex min-w-0 flex-1 items-center rounded-lg border border-paper-300 bg-paper-100/60 px-3 py-2 dark:border-umber-600 dark:bg-umber-700/50">
+              <span className="truncate font-mono text-sm text-ink-900 dark:text-paper-50">
+                {generalUrl.replace(/^https?:\/\//, "")}
+              </span>
             </div>
-          ) : (
-            <p className="text-xs text-ink-500 dark:text-umber-300">
-              {t("guests.couple_slug_help")}
-            </p>
-          )}
+            <button
+              type="button"
+              onClick={copyGeneralLink}
+              aria-label={t("guests.checkin_copy_link")}
+              title={t("guests.checkin_copy_link")}
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-paper-300 px-3 text-sm text-ink-600 transition-colors hover:bg-paper-100 dark:border-umber-600 dark:text-umber-200 dark:hover:bg-umber-700 sm:h-auto sm:w-9 sm:px-0"
+            >
+              <ClipboardCopy size={15} aria-hidden="true" />
+              <span className="sm:hidden">{t("guests.checkin_copy_link")}</span>
+            </button>
+            <a
+              href={generalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-outline btn-sm shrink-0 justify-center sm:w-auto"
+            >
+              <Link2 size={14} aria-hidden="true" /> {t("guests.checkin_open_rsvp")}
+            </a>
+          </div>
 
-          <p className="mt-3 flex items-start gap-1.5 text-xs text-ink-500 dark:text-umber-300">
-            <Users size={13} aria-hidden className="mt-0.5 shrink-0" />
-            <span>{t("guests.household_section_help")}</span>
+          <p className="mt-2.5 text-xs text-ink-500 dark:text-umber-300">
+            {t("guests.checkin_open_help")}
           </p>
         </div>
+      ) : (
+        <p className="text-xs text-ink-500 dark:text-umber-300">{t("guests.couple_slug_help")}</p>
       )}
+
+      <p className="mt-3 flex items-start gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+        <Users size={13} aria-hidden className="mt-0.5 shrink-0" />
+        <span>{t("guests.household_section_help")}</span>
+      </p>
     </div>
   );
 }
