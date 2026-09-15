@@ -92,6 +92,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast, ViewSelect } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -1477,6 +1478,7 @@ export default function GuestsPage() {
                         onToggleAccommodation={onToggleHouseholdAccommodation}
                         onToggleGuestInvited={onToggleGuestInvited}
                         onPrintPlaceCard={onPrintPlaceCard}
+                        onUpdateGuest={onInlineUpdateGuest}
                       />
                     ))}
                   </div>
@@ -1569,6 +1571,7 @@ export default function GuestsPage() {
                   onToggleAccommodation={onToggleHouseholdAccommodation}
                   onToggleGuestInvited={onToggleGuestInvited}
                   onPrintPlaceCard={onPrintPlaceCard}
+                  onUpdateGuest={onInlineUpdateGuest}
                 />
               </div>
             ),
@@ -2196,12 +2199,20 @@ function GuestTableNewRow({
   );
 }
 
-/** Inline RSVP editor for the table: a coloured icon pill showing the current
- *  status (the same tones the card view's badge uses) that opens a short
- *  status menu on hover, tap or keyboard. The menu is positioned as `fixed`
- *  off the button's rect because the table lives in an `overflow-x-auto`
- *  clipped container — an absolutely positioned menu would be cut off at the
- *  container's edge for the columns the table scrolls under. */
+/** Inline RSVP editor: a coloured icon pill showing the current status (the
+ *  same tones the card view's badge uses) that opens a short status menu on
+ *  hover, tap or keyboard. Used both in the table (which lives in an
+ *  `overflow-x-auto` clipped container) and in each household card's member
+ *  row (which lives inside a `content-visibility: auto` card, applied there
+ *  purely for scroll perf on long guest lists). The menu is portaled to
+ *  `document.body` rather than rendered as a plain sibling: `fixed`
+ *  positioning is computed in VIEWPORT coordinates (`getBoundingClientRect` /
+ *  `window.innerHeight`), but `content-visibility: auto` forces its element
+ *  to be a containing block for `fixed` descendants regardless of visibility
+ *  state (a used-value effect the `contain` CSS property never reports) — so
+ *  a plain nested menu rendered inside a household card's DOM landed hundreds
+ *  of pixels below the viewport, open but invisible, on every card past the
+ *  first few. A portal sidesteps any such ancestor entirely. */
 function RsvpPicker({
   value,
   onChange,
@@ -2216,6 +2227,9 @@ function RsvpPicker({
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const wrapRef = useRef<HTMLSpanElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  // The portaled menu is no longer a DOM descendant of wrapRef, so every
+  // containment check below has to test both nodes.
+  const menuRef = useRef<HTMLDivElement>(null);
   // Menu footprint used for flipping below/above the trigger.
   const MENU_W = 184;
   const MENU_H = 172;
@@ -2231,11 +2245,21 @@ function RsvpPicker({
     setOpen(true);
   }, []);
 
+  function isInside(node: Node | null): boolean {
+    if (!node) return false;
+    return Boolean(wrapRef.current?.contains(node) || menuRef.current?.contains(node));
+  }
+
   // Close on outside tap and on Escape (returning focus to the trigger), the
-  // same contract ViewSelect uses for its menus.
+  // same contract ViewSelect uses for its menus. Without the containment
+  // check, a pointerdown on a menu option closed the menu (and unmounted the
+  // button) before its own click could fire, silently swallowing every
+  // hover-then-pick attempt.
   useEffect(() => {
     if (!open) return;
-    const onPointer = () => setOpen(false);
+    const onPointer = (e: PointerEvent) => {
+      if (!isInside(e.target as Node)) setOpen(false);
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       e.preventDefault();
@@ -2250,20 +2274,19 @@ function RsvpPicker({
     };
   }, [open]);
 
+  const onLeaveToward = (e: { relatedTarget: EventTarget | null }) => {
+    // Moving toward the trigger or the portaled menu must not count as
+    // leaving — that would close the menu before the pointer reaches it.
+    if (e.relatedTarget instanceof Node && isInside(e.relatedTarget)) return;
+    setOpen(false);
+  };
+
   return (
     <span
       ref={wrapRef}
       className="relative inline-flex"
       onMouseEnter={openMenu}
-      onMouseLeave={(e) => {
-        // Moving into the fixed menu (a DOM child sitting outside the span's
-        // box) must not count as leaving — that would close it before the
-        // pointer reaches an option.
-        if (e.relatedTarget instanceof Node && wrapRef.current?.contains(e.relatedTarget)) {
-          return;
-        }
-        setOpen(false);
-      }}
+      onMouseLeave={onLeaveToward}
     >
       <button
         ref={btnRef}
@@ -2277,34 +2300,39 @@ function RsvpPicker({
         {RSVP_GLYPH[value]}
         <span>{t(`guests.rsvp_${value}`)}</span>
       </button>
-      {open && pos && (
-        <div
-          role="menu"
-          aria-label={ariaLabel}
-          style={{ left: pos.left, top: pos.top }}
-          className="fixed z-50 w-[184px] rounded-xl border border-paper-300 bg-white p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
-        >
-          {(["pending", "yes", "maybe", "no"] as RsvpStatus[]).map((s) => (
-            <button
-              key={s}
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onChange(s);
-                setOpen(false);
-              }}
-              className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs font-medium transition-colors ${
-                s === value
-                  ? RSVP_TONE[s]
-                  : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
-              }`}
-            >
-              {RSVP_GLYPH[s]}
-              <span>{t(`guests.rsvp_${s}`)}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {open &&
+        pos &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            aria-label={ariaLabel}
+            style={{ left: pos.left, top: pos.top }}
+            className="fixed z-50 w-[184px] rounded-xl border border-paper-300 bg-white p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+            onMouseLeave={onLeaveToward}
+          >
+            {(["pending", "yes", "maybe", "no"] as RsvpStatus[]).map((s) => (
+              <button
+                key={s}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onChange(s);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs font-medium transition-colors ${
+                  s === value
+                    ? RSVP_TONE[s]
+                    : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+                }`}
+              >
+                {RSVP_GLYPH[s]}
+                <span>{t(`guests.rsvp_${s}`)}</span>
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
     </span>
   );
 }
@@ -2724,6 +2752,7 @@ function HouseholdCard({
   onToggleAccommodation,
   onToggleGuestInvited,
   onPrintPlaceCard,
+  onUpdateGuest,
 }: {
   household: Household;
   members: Guest[];
@@ -2751,6 +2780,7 @@ function HouseholdCard({
   onToggleAccommodation: (id: number, next: boolean) => Promise<void>;
   onToggleGuestInvited: (g: Guest) => void;
   onPrintPlaceCard: (g: Guest) => void | Promise<void>;
+  onUpdateGuest: (g: Guest, patch: Partial<Guest>) => void | Promise<void>;
 }) {
   const { t } = useT();
   const isHosts = household.is_couple_household;
@@ -2841,15 +2871,6 @@ function HouseholdCard({
                 />
               </div>
             </div>
-          )}
-          {!isHosts && coupleSlug && (
-            /* The slug is identical for every household in the workspace
-             * — at phone widths it just steals a row from the code/
-             * invited cells. The full RSVP URL is one tap away via the
-             * share button, so the inline slug is desktop-only. */
-            <span className="hidden min-w-0 font-mono uppercase md:col-start-3 md:row-start-1 md:inline md:truncate">
-              {coupleSlug}
-            </span>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-0.5 md:gap-1">
@@ -2979,7 +3000,11 @@ function HouseholdCard({
                *  keep them on the same line as the name on phones; names
                *  that overrun get the ellipsis. */}
               <div className="flex shrink-0 items-center gap-0.5">
-                <RsvpBadge status={g.rsvp_status} />
+                <RsvpPicker
+                  value={g.rsvp_status}
+                  onChange={(v) => void onUpdateGuest(g, { rsvp_status: v })}
+                  ariaLabel={t("guests.table_col_rsvp")}
+                />
                 <button
                   type="button"
                   className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-500 hover:bg-paper-200 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
