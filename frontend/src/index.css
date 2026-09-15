@@ -1061,15 +1061,20 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       border-left-width: 0;
     }
   }
-  /* Punch-hole notches at the top and bottom of the perforation, coloured to
-     match the page behind the ticket so they read as bites taken out of both
-     halves rather than dots drawn on top. Hidden below `lg` (`.ticket-stub`
-     has no vertical seam there — see the component markup). */
+  /* Punch-hole notches at the top and bottom of the perforation. The seam
+     sits directly on the join between the black card and the ivory stub, so
+     a flat-coloured circle there only ever matched one side — it used to be
+     the page background colour, which read as a stray white dot pasted on
+     the card rather than a hole. Each notch is now split straight down the
+     middle: the card-black half disappears into the card, the paper half
+     disappears into the stub, so it reads as one hole punched through both
+     layers. Hidden below `lg` (`.ticket-stub` has no vertical seam there —
+     see the component markup). */
   .ticket-perforation {
-    --ticket-punch: theme("colors.paper.50");
+    --ticket-punch: theme("colors.neutral.950");
     position: absolute;
-    top: 14px;
-    bottom: 14px;
+    top: 16px;
+    bottom: 16px;
     left: 0;
     width: 2px;
     /* Purely decorative — never the click target, and never lets its own
@@ -1087,24 +1092,28 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     );
   }
   html.dark .ticket-perforation {
-    --ticket-punch: theme("colors.umber.900");
+    --ticket-punch: #000;
   }
   .ticket-perforation::before,
   .ticket-perforation::after {
     content: "";
     position: absolute;
     left: 0;
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     border-radius: 9999px;
-    background: var(--ticket-punch);
+    background: conic-gradient(
+      from 0deg,
+      theme("colors.ticket.paper") 0deg 180deg,
+      var(--ticket-punch) 180deg 360deg
+    );
     transform: translateX(-50%);
   }
   .ticket-perforation::before {
-    top: -7.5px;
+    top: -7px;
   }
   .ticket-perforation::after {
-    bottom: -7.5px;
+    bottom: -7px;
   }
   /* Vertical label — flat + horizontal below `lg` (mobile stub is a
      horizontal bar), rotated onto the stub's spine from `lg` up. `rotate

@@ -184,16 +184,16 @@ export function PublicWeddingChecklist({
             onClick={downloadPdf}
             disabled={downloading}
             aria-label={t("landing.checklist_demo_download")}
-            className="ticket-stub flex min-h-14 w-full shrink-0 items-center justify-center rounded-tl-none rounded-tr-none rounded-bl-2xl rounded-br-2xl bg-ticket-paper px-5 py-4 text-ticket-ink disabled:opacity-60 lg:w-28 lg:rounded-bl-none lg:rounded-tr-2xl lg:px-2 lg:py-6"
+            className="ticket-stub flex min-h-14 w-full shrink-0 items-center justify-center rounded-tl-none rounded-tr-none rounded-bl-2xl rounded-br-2xl bg-ticket-paper px-5 py-4 text-ticket-ink disabled:opacity-60 lg:w-20 lg:rounded-bl-none lg:rounded-tr-2xl lg:px-0 lg:py-6"
           >
             <span aria-hidden="true" className="ticket-perforation hidden lg:block" />
-            <span className="flex items-center justify-center gap-2 lg:h-full lg:flex-col lg:gap-3">
+            <span className="flex items-center justify-center gap-2 lg:h-full lg:flex-col lg:gap-2.5">
               {downloading ? (
-                <Loader2 size={16} className="shrink-0 animate-spin" aria-hidden="true" />
+                <Loader2 size={15} className="shrink-0 animate-spin" aria-hidden="true" />
               ) : (
-                <Download size={16} className="shrink-0" aria-hidden="true" />
+                <Download size={15} className="shrink-0" aria-hidden="true" />
               )}
-              <span className="ticket-stub-label text-sm font-semibold lg:text-xs lg:font-semibold lg:uppercase lg:tracking-[0.14em]">
+              <span className="ticket-stub-label text-sm font-semibold lg:text-[11px] lg:font-semibold lg:uppercase lg:tracking-[0.12em]">
                 {t("landing.checklist_demo_download")}
               </span>
             </span>
