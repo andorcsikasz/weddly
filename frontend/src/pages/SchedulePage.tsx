@@ -390,10 +390,11 @@ export default function SchedulePage() {
 
   return (
     <>
-      <header className="mb-3 flex flex-wrap items-center justify-end gap-3">
+      <header className="mb-4 flex flex-wrap items-center gap-3">
+        <PlanningRouteLinks />
         <div
           data-tour-target="schedule-toolbar"
-          className="inline-flex items-stretch overflow-hidden rounded-xl border border-paper-300 shadow-sm dark:border-umber-600"
+          className="inline-flex items-stretch overflow-hidden rounded-xl border border-paper-300 shadow-sm sm:ml-auto dark:border-umber-600"
         >
           {/* Proportional view toggle */}
           <button
@@ -463,7 +464,6 @@ export default function SchedulePage() {
           </button>
         </div>
       </header>
-      <PlanningRouteLinks className="mb-6" />
 
       {!loading && couple && sortedEvents.length > 0 && (
         <ScheduleSummaryCard

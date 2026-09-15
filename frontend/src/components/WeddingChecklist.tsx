@@ -351,7 +351,7 @@ export function WeddingChecklist({
 
   return (
     <section
-      className="min-h-[36rem] border-t border-ink-900/10 py-7 sm:py-10 dark:border-paper-50/10"
+      className="min-h-[36rem] border-t border-ink-900/10 py-4 sm:py-6 dark:border-paper-50/10"
       aria-labelledby="wedding-checklist-title"
       data-checklist-surface="persistent"
     >
@@ -359,72 +359,85 @@ export function WeddingChecklist({
         {t("planning.checklist.title")}
       </h2>
       <div className="pb-2">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-          <div className="flex min-h-48 flex-col justify-between rounded-lg bg-neutral-950 p-5 text-white sm:p-6 dark:border dark:border-paper-50/15 dark:bg-umber-950">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <p className="text-sm font-medium text-white/60">
-                  {t("planning.checklist.completed_count", { done: completed, total })}
-                </p>
-                <p className="mt-2 font-grotesk text-5xl font-semibold leading-none tracking-[-0.055em] tabular-nums sm:text-6xl">
-                  {percent}%
-                </p>
-              </div>
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-white/10 text-white">
-                <ClipboardCheck size={21} aria-hidden="true" />
-              </span>
-            </div>
-            {weddingDate && remaining.length > 0 && (
-              <button
-                type="button"
-                onClick={applySuggestedDeadlines}
-                disabled={applyingAll}
-                title={t("planning.checklist.suggest_deadlines_hint", { count: remaining.length })}
-                className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 disabled:cursor-wait disabled:opacity-60"
-              >
-                {applyingAll ? (
-                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <Sparkles size={16} aria-hidden="true" />
-                )}
-                {t("planning.checklist.suggest_deadlines_action")}
-              </button>
-            )}
-            <div
-              className="mt-8 h-1.5 overflow-hidden bg-white/20"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={percent}
-              aria-label={t("planning.checklist.percent_complete", { percent })}
-            >
-              <div
-                className="h-full bg-white transition-[width] duration-300 motion-reduce:transition-none"
-                style={{ width: `${percent}%` }}
-              />
+        {/* One compact, sticky toolbar instead of two tall cards plus a
+         *  separately-spaced filter row: progress, the Mind/Teendő/Kész
+         *  filter, and the PDF trigger all stay reachable in a single ~56px
+         *  bar while scrolling the list below, and real task content starts
+         *  much closer to the top of the page. */}
+        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 rounded-lg bg-neutral-950 px-4 py-3 text-white shadow-soft sm:gap-4 dark:border dark:border-paper-50/15 dark:bg-umber-950">
+          <div className="flex shrink-0 items-center gap-2.5">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/10">
+              <ClipboardCheck size={16} aria-hidden="true" />
+            </span>
+            <div className="leading-none">
+              <p className="font-grotesk text-2xl font-semibold tabular-nums">{percent}%</p>
+              <p className="mt-0.5 text-[11px] text-white/60">
+                {t("planning.checklist.completed_count", { done: completed, total })}
+              </p>
             </div>
           </div>
 
-          <div className="flex min-h-48 flex-col justify-between rounded-lg border border-ink-900/15 bg-paper-50 p-5 sm:p-6 lg:w-72 dark:border-paper-50/15 dark:bg-umber-800">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-ink-900/[0.06] text-ink-900 dark:bg-paper-50/10 dark:text-paper-50">
-              <Download size={20} aria-hidden="true" />
-            </span>
-            <div className="mt-7">
-              <p className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-                {t("planning.checklist.download_title")}
-              </p>
-              <button
-                type="button"
-                onClick={() => setDownloadOpen((value) => !value)}
-                aria-expanded={downloadOpen}
-                aria-controls="wedding-checklist-download-options"
-                className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-white dark:focus-visible:ring-paper-100"
-              >
-                <SlidersHorizontal size={16} aria-hidden="true" />
-                {t("planning.checklist.download_options")}
-              </button>
-            </div>
+          <div
+            className="h-1.5 min-w-16 flex-1 overflow-hidden rounded-full bg-white/20"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={percent}
+            aria-label={t("planning.checklist.percent_complete", { percent })}
+          >
+            <div
+              className="h-full bg-white transition-[width] duration-300 motion-reduce:transition-none"
+              style={{ width: `${percent}%` }}
+            />
           </div>
+
+          <div
+            className="inline-flex shrink-0 rounded-lg bg-white/10 p-1"
+            role="radiogroup"
+            aria-label={t("planning.checklist.title")}
+          >
+            {(["all", "todo", "done"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={filter === value}
+                onClick={() => setFilter(value)}
+                className={`min-h-8 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${filter === value ? "bg-white text-neutral-950" : "text-white/70 hover:bg-white/10 hover:text-white"}`}
+              >
+                {t(`planning.checklist.filter_${value}`)}
+              </button>
+            ))}
+          </div>
+
+          {weddingDate && remaining.length > 0 && (
+            <button
+              type="button"
+              onClick={applySuggestedDeadlines}
+              disabled={applyingAll}
+              title={t("planning.checklist.suggest_deadlines_hint", { count: remaining.length })}
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-white/10 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 disabled:cursor-wait disabled:opacity-60"
+            >
+              {applyingAll ? (
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles size={14} aria-hidden="true" />
+              )}
+              {t("planning.checklist.suggest_deadlines_action")}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setDownloadOpen((value) => !value)}
+            aria-expanded={downloadOpen}
+            aria-controls="wedding-checklist-download-options"
+            title={t("planning.checklist.download_title")}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-white/10 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 sm:ml-auto"
+          >
+            <SlidersHorizontal size={14} aria-hidden="true" />
+            {t("planning.checklist.download_options")}
+          </button>
         </div>
 
         {downloadOpen && (
@@ -523,28 +536,10 @@ export function WeddingChecklist({
           </section>
         )}
 
-        <div className="sticky top-2 z-20 my-6 flex justify-center sm:my-8">
-          <div
-            className="inline-grid w-full grid-cols-3 rounded-lg border border-ink-900/15 bg-paper-50/95 p-1 shadow-soft backdrop-blur sm:w-auto dark:border-paper-50/15 dark:bg-umber-900/95"
-            role="radiogroup"
-            aria-label={t("planning.checklist.title")}
-          >
-            {(["all", "todo", "done"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={filter === value}
-                onClick={() => setFilter(value)}
-                className={`min-h-10 min-w-24 rounded-md px-4 py-2 text-sm font-semibold transition-colors ${filter === value ? "bg-neutral-950 text-white dark:bg-paper-100 dark:text-umber-900" : "text-ink-600 hover:bg-ink-900/[0.06] hover:text-ink-900 dark:text-umber-200 dark:hover:bg-paper-50/10 dark:hover:text-paper-50"}`}
-              >
-                {t(`planning.checklist.filter_${value}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid items-start gap-4 md:grid-cols-2" data-checklist-layout="two-column">
+        <div
+          className="mt-4 grid items-start gap-4 md:grid-cols-2"
+          data-checklist-layout="two-column"
+        >
           {sections.map((section) => {
             // Recently-ticked items stay in the active list (in place) until
             // their 4 s delay elapses and the collapse animation is done.

@@ -1105,24 +1105,22 @@ export default function PlanningPage() {
                 </button>
               </>
             )}
+
+            {/* Low-pressure entry point into the standalone long-tail decision
+             *  deck — a quiet trailing link rather than a card, so it never
+             *  competes with the daily scan-and-tick lists above for the same
+             *  click. Sits in the same row as the tabs, filling the space
+             *  next to them instead of costing its own full-width banner. */}
+            <Link
+              to="/app/decisions"
+              className="btn-ghost btn-sm inline-flex shrink-0 items-center gap-1"
+              title={t("planning.decisions_entry_title")}
+            >
+              {t("planning.tab_decisions")}
+              <ArrowRight size={13} aria-hidden="true" />
+            </Link>
           </div>
         </div>
-
-        {/* Promoted, low-pressure entry point into the standalone long-tail
-         *  decision deck — a card, not a tab, so it never competes with the
-         *  daily scan-and-tick lists above for the same click. */}
-        <Link
-          to="/app/decisions"
-          className="mb-4 flex items-center gap-3 rounded-2xl border border-ink-900 bg-paper-100/40 px-4 py-3 transition-colors hover:bg-paper-200/40 dark:border-umber-700 dark:bg-umber-800/40 dark:hover:bg-umber-700/40"
-        >
-          <span className="flex-1 truncate font-grotesk text-sm font-medium text-ink-800 dark:text-paper-50">
-            {t("planning.decisions_entry_title")}
-          </span>
-          <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
-            {t("planning.tab_decisions")}
-            <ArrowRight size={12} aria-hidden="true" />
-          </span>
-        </Link>
 
         {activeKind === "checklist" ? (
           <WeddingChecklist
