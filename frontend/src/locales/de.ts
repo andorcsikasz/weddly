@@ -8810,7 +8810,6 @@ const de: LocaleMessages = {
     seo_title: "Weddly Camera",
     seo_description:
       "Die eigene gemeinsame Kamera eurer Hochzeit — Gäste scannen einen QR-Code, halten die Momente fest, die euch entgehen würden, und die ganze Galerie wird nach dem großen Tag gemeinsam enthüllt. Ohne App, ohne Konto, kostenlos bei jeder Weddly-Hochzeit dabei.",
-    banner_text: "Kostenlos bei jeder Weddly-Hochzeit dabei. Die eigenständige Version kommt bald.",
     already_included: "Plant ihr schon auf Weddly? Wedding Camera ist schon eure.",
     already_included_cta: "Zum Dashboard",
     features_title: "Gebaut, damit es sich wie eine Kamera anfühlt, nicht wie ein Upload-Formular",

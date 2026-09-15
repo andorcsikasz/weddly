@@ -2894,9 +2894,9 @@ export interface LocaleMessages {
     footer_couples_seating: string;
     footer_couples_rsvp: string;
     /** Links to `/camera` (Wedding Camera — ships free with every Weddly
-     *  wedding; also a stand-alone product for guests off Weddly, see
-     *  `camera.banner_text`). Lives in the couples column since a couple is
-     *  the primary buyer, even though the page itself is open to anyone. */
+     *  wedding; also a stand-alone product for guests off Weddly). Lives in
+     *  the couples column since a couple is the primary buyer, even though
+     *  the page itself is open to anyone. */
     footer_couples_camera: string;
     footer_couples_games: string;
     footer_vendors_waitlist: string;
@@ -10062,13 +10062,12 @@ export interface LocaleMessages {
   };
   /** Public, unauthenticated `/camera` product page for the pov.camera-style
    *  standalone guest-camera product. Still under development: no checkout
-   *  exists yet, so `dev_banner` is load-bearing, not decorative. Pricing
-   *  numbers themselves live in the component (they're digits, not prose);
-   *  these keys are the surrounding copy only. */
+   *  exists yet for the stand-alone half — `pricing_note` carries that
+   *  disclosure. Pricing numbers themselves live in the component (they're
+   *  digits, not prose); these keys are the surrounding copy only. */
   camera: {
     seo_title: string;
     seo_description: string;
-    banner_text: string;
     already_included: string;
     already_included_cta: string;
     features_title: string;

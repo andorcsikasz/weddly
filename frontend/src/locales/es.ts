@@ -8755,7 +8755,6 @@ const es: LocaleMessages = {
     seo_title: "Weddly Camera",
     seo_description:
       "La cámara compartida de vuestra boda — los invitados escanean un código QR, capturan los momentos que os perderíais, y toda la galería se revela junta después del gran día. Sin app, sin cuenta, incluida en cada boda de Weddly.",
-    banner_text: "Incluida gratis en cada boda de Weddly. Llega pronto una versión independiente.",
     already_included: "¿Ya estáis en Weddly? Wedding Camera ya es vuestra.",
     already_included_cta: "Abrir mi panel",
     features_title: "Pensada para sentirse como una cámara, no como un formulario de subida",

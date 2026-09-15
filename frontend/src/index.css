@@ -1596,8 +1596,8 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     cursor: pointer;
     background: linear-gradient(
       to right,
-      theme("colors.blush.400") 0%,
-      theme("colors.blush.400") var(--camera-slider-fill),
+      theme("colors.paper.400") 0%,
+      theme("colors.paper.400") var(--camera-slider-fill),
       rgba(251, 250, 245, 0.12) var(--camera-slider-fill),
       rgba(251, 250, 245, 0.12) 100%
     );
@@ -1609,9 +1609,9 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     height: 20px;
     border-radius: 9999px;
     background: theme("colors.paper.50");
-    border: 3px solid theme("colors.blush.400");
+    border: 3px solid theme("colors.paper.400");
     box-shadow:
-      0 0 0 4px rgba(226, 130, 106, 0.18),
+      0 0 0 4px rgba(211, 198, 159, 0.22),
       0 2px 8px rgba(0, 0, 0, 0.45);
     cursor: grab;
     transition:
@@ -1623,9 +1623,9 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     height: 20px;
     border-radius: 9999px;
     background: theme("colors.paper.50");
-    border: 3px solid theme("colors.blush.400");
+    border: 3px solid theme("colors.paper.400");
     box-shadow:
-      0 0 0 4px rgba(226, 130, 106, 0.18),
+      0 0 0 4px rgba(211, 198, 159, 0.22),
       0 2px 8px rgba(0, 0, 0, 0.45);
     cursor: grab;
     transition:
@@ -1635,7 +1635,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .camera-slider::-moz-range-progress {
     height: 4px;
     border-radius: 9999px;
-    background: theme("colors.blush.400");
+    background: theme("colors.paper.400");
   }
   .camera-slider::-moz-range-track {
     height: 4px;
@@ -1654,14 +1654,14 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     cursor: grabbing;
     transform: scale(1.2);
     box-shadow:
-      0 0 0 7px rgba(226, 130, 106, 0.24),
+      0 0 0 7px rgba(211, 198, 159, 0.28),
       0 2px 8px rgba(0, 0, 0, 0.45);
   }
   .camera-slider:active::-moz-range-thumb {
     cursor: grabbing;
     transform: scale(1.2);
     box-shadow:
-      0 0 0 7px rgba(226, 130, 106, 0.24),
+      0 0 0 7px rgba(211, 198, 159, 0.28),
       0 2px 8px rgba(0, 0, 0, 0.45);
   }
   .camera-slider:focus-visible {

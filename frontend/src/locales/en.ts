@@ -8674,7 +8674,6 @@ const en: LocaleMessages = {
     seo_title: "Weddly Camera",
     seo_description:
       "Your wedding's own shared camera — guests scan one QR code, capture the moments you'd miss, and the whole gallery reveals together after the big day. No app, no account, included with every Weddly wedding.",
-    banner_text: "Free with every Weddly wedding. A stand-alone version is coming soon.",
     already_included: "Already on Weddly? Wedding Camera is already yours.",
     already_included_cta: "Open your dashboard",
     features_title: "Built to feel like a camera, not an upload form",

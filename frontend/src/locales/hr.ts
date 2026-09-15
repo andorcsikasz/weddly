@@ -8667,7 +8667,6 @@ const hr: LocaleMessages = {
     seo_title: "Weddly Camera",
     seo_description:
       "Vlastita zajednička kamera vašeg vjenčanja — gosti skeniraju jedan QR kod, snimaju trenutke koje biste inače propustili, a cijela galerija otkriva se zajedno nakon velikog dana. Bez aplikacije, bez računa, uključeno u svako Weddly vjenčanje.",
-    banner_text: "Besplatno uz svako Weddly vjenčanje. Samostalna verzija stiže uskoro.",
     already_included: "Već ste na Weddlyju? Wedding Camera je već vaša.",
     already_included_cta: "Otvori nadzornu ploču",
     features_title: "Napravljeno da se osjeća kao fotoaparat, ne kao obrazac za slanje datoteka",

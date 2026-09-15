@@ -83,6 +83,7 @@ export function CameraHero({
   onCreate,
   onShare,
   headingFont = "serif",
+  accent = "blush",
 }: {
   album: PhotoAlbum | null;
   coupleName: string | null;
@@ -95,6 +96,10 @@ export function CameraHero({
    *  /camera landing page passes "grotesk" so the hero title matches the
    *  single display font the rest of that page uses. */
   headingFont?: "serif" | "grotesk" | "space";
+  /** Dashboard keeps the site-wide `blush` accent. The public /camera landing
+   *  page passes "gold" — a champagne-on-espresso palette with no red in it,
+   *  per owner direction against terracotta on that page. */
+  accent?: "blush" | "gold";
 }) {
   const { t } = useT();
   const hasFilm = album !== null;
@@ -105,12 +110,19 @@ export function CameraHero({
       : headingFont === "space"
         ? "font-space"
         : "font-serif";
+  const isGold = accent === "gold";
+  const glowClass = isGold ? "bg-paper-300/10" : "bg-blush-500/20";
+  const previewGlowClass = isGold ? "bg-paper-300/10" : "bg-blush-500/15";
+  const ctaClass = isGold
+    ? "bg-paper-100 text-umber-950 hover:bg-paper-50"
+    : "bg-blush-500 text-white hover:bg-blush-600";
+  const stepAccentClass = isGold ? "text-paper-300" : "text-blush-300";
 
   return (
     <section className="relative order-1 isolate overflow-hidden rounded-[2rem] bg-umber-950 text-paper-50 shadow-soft">
       <div
         aria-hidden="true"
-        className="absolute -right-20 -top-32 h-80 w-80 rounded-full bg-blush-500/20 blur-3xl"
+        className={`absolute -right-20 -top-32 h-80 w-80 rounded-full blur-3xl ${glowClass}`}
       />
       <div
         aria-hidden="true"
@@ -172,7 +184,7 @@ export function CameraHero({
                 <button
                   type="button"
                   onClick={onShare}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-blush-500 px-6 py-3.5 font-grotesk text-sm font-semibold text-white transition hover:bg-blush-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950"
+                  className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-6 py-3.5 font-grotesk text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
                 >
                   <Share2 size={17} aria-hidden="true" />
                   {t("media.film_cta_share")}
@@ -183,7 +195,7 @@ export function CameraHero({
               <button
                 type="button"
                 onClick={onCreate}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-blush-500 px-7 py-3.5 font-grotesk text-sm font-semibold text-white transition hover:bg-blush-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950"
+                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-7 py-3.5 font-grotesk text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
               >
                 {t("media.film_cta_create")}
                 <ArrowRight size={16} aria-hidden="true" />
@@ -207,7 +219,9 @@ export function CameraHero({
           className="relative mx-auto h-[22rem] w-full max-w-[35rem] sm:h-[30rem] lg:h-[32rem]"
           aria-hidden="true"
         >
-          <div className="absolute left-[6%] top-[6%] h-[82%] w-[88%] rounded-[50%] bg-blush-500/15 blur-3xl" />
+          <div
+            className={`absolute left-[6%] top-[6%] h-[82%] w-[88%] rounded-[50%] blur-3xl ${previewGlowClass}`}
+          />
 
           <CameraPreview
             src={DEMO_STRIP[2]}
@@ -271,11 +285,15 @@ export function CameraHero({
               key={step.n}
               className="grid grid-cols-[2.75rem_1fr] gap-3 border-t border-paper-50/10 px-6 py-5 first:border-t-0 sm:block sm:border-t-0 sm:px-7 sm:py-6"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-paper-50/10 bg-paper-50/[0.07] text-blush-300">
+              <span
+                className={`flex h-10 w-10 items-center justify-center rounded-full border border-paper-50/10 bg-paper-50/[0.07] ${stepAccentClass}`}
+              >
                 <step.icon size={17} strokeWidth={1.7} aria-hidden="true" />
               </span>
               <div className="sm:mt-4">
-                <span className="font-grotesk text-[9px] font-semibold tracking-[0.2em] text-blush-300">
+                <span
+                  className={`font-grotesk text-[9px] font-semibold tracking-[0.2em] ${stepAccentClass}`}
+                >
                   {step.n}
                 </span>
                 <h2 className="font-grotesk text-sm font-semibold text-paper-50">{step.title}</h2>
