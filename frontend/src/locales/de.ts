@@ -5883,6 +5883,8 @@ const de: LocaleMessages = {
       gallery_prev: "Vorheriges Foto",
       gallery_next: "Nächstes Foto",
       gallery_zoom: "In voller Größe ansehen",
+      gallery_show_all: "Alle Fotos ({n})",
+      sectionsAria: "Abschnitte der Seite",
       adminTitle: "Admin-Ansicht",
       back: "Zurück",
       claimed: "Übernommener Dienstleister",
@@ -5890,6 +5892,11 @@ const de: LocaleMessages = {
       reviewsCount: "{n} Bewertungen",
       starsAria: "{rating} von {max} Sternen",
       priceBandAria: "Preisklasse: {band} von {max}",
+      weddingDay: {
+        free: "Frei an eurem Hochzeitstag, {date}",
+        partial: "Teilweise belegt an eurem Hochzeitstag, {date}",
+        busy: "Nicht verfügbar an eurem Hochzeitstag, {date}",
+      },
       claim: {
         sectionTitle: "Ist das Ihr Eintrag?",
         sectionBody:
@@ -6018,6 +6025,7 @@ const de: LocaleMessages = {
         title: "Verfügbarkeit",
         legendBooked: "Belegte Tage",
         legendPartial: "Teilweise belegt",
+        legendWedding: "Euer Hochzeitstag",
         empty: "Noch keine Verfügbarkeit hinterlegt",
         prevMonth: "Vorheriger Monat",
         nextMonth: "Nächster Monat",
@@ -6042,6 +6050,13 @@ const de: LocaleMessages = {
         priceTotal: "{price} gesamt",
         pricePerPerson: "{price} / Person",
         estimatedEquivalent: "Ca. {price}",
+        subtitle:
+          "Richtpreise. Ein verbindliches Angebot erhaltet ihr, sobald der Anbieter euer Datum und die Details kennt.",
+        requestCta: "Angebot anfragen",
+        requestSubject: "Angebotsanfrage: {package}, Hochzeit am {date}",
+        requestBody:
+          'Hallo!\n\nWir planen unsere Hochzeit am {date} mit {guests} Gästen und interessieren uns für euer Paket "{package}". Könnt ihr uns ein Angebot schicken und uns sagen, ob es sich an unsere Wünsche anpassen lässt?\n\nVielen Dank im Voraus, wir freuen uns auf eure Antwort!',
+        forGuests: "Für eure {n} Gäste: ca. {price}",
       },
     },
     reviewTags: {

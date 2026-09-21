@@ -6843,6 +6843,10 @@ export interface LocaleMessages {
       gallery_prev: string;
       gallery_next: string;
       gallery_zoom: string;
+      /** Mosaic button that opens the lightbox. Receives `{n}` photo count. */
+      gallery_show_all: string;
+      /** aria-label of the sticky in-page section nav. */
+      sectionsAria: string;
       adminTitle: string;
       back: string;
       claimed: string;
@@ -6855,6 +6859,13 @@ export interface LocaleMessages {
       /** aria-label / title for the price-band dot row — receives `{band}`
        *  (1..5) and `{max}` (always 5). */
       priceBandAria: string;
+      /** The vendor's calendar answer for THIS couple's wedding date. Each
+       *  receives `{date}`, the formatted wedding date. */
+      weddingDay: {
+        free: string;
+        partial: string;
+        busy: string;
+      };
       /** Bottom-of-page CTA section that lets the listing owner request the
        *  claim. Renders only on unclaimed listings. The button uses an
        *  armed-confirmation pattern (first click arms, second click fires)
@@ -7013,6 +7024,8 @@ export interface LocaleMessages {
         legendBooked: string;
         /** Legend for a day the vendor blocked only for certain hours. */
         legendPartial: string;
+        /** Legend for the couple's own wedding date on the calendar. */
+        legendWedding: string;
         empty: string;
         prevMonth: string;
         nextMonth: string;
@@ -7041,6 +7054,17 @@ export interface LocaleMessages {
         priceTotal: string;
         pricePerPerson: string;
         estimatedEquivalent: string;
+        /** One-line note under the title: prices are guidance, not a quote. */
+        subtitle: string;
+        /** Row button that opens the inquiry composer pre-filled for this package. */
+        requestCta: string;
+        /** Receives `{package}` and `{date}`. */
+        requestSubject: string;
+        /** Receives `{package}`, `{date}` and `{guests}`. */
+        requestBody: string;
+        /** Per-person price scaled to the couple's own headcount. Receives
+         *  `{n}` and `{price}`. */
+        forGuests: string;
       };
     };
     /** Review tag labels shared between the composer (admin selects up to 5)

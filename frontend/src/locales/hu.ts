@@ -5777,6 +5777,8 @@ const hu: LocaleMessages = {
       gallery_prev: "Előző fotó",
       gallery_next: "Következő fotó",
       gallery_zoom: "Teljes méretben",
+      gallery_show_all: "Összes kép ({n})",
+      sectionsAria: "Az oldal szakaszai",
       adminTitle: "Admin nézet",
       back: "Vissza",
       claimed: "Igényelt szolgáltató",
@@ -5784,6 +5786,11 @@ const hu: LocaleMessages = {
       reviewsCount: "{n} értékelés",
       starsAria: "{rating} csillag az {max}-ből",
       priceBandAria: "Ár sáv: {band} az {max}-ből",
+      weddingDay: {
+        free: "Szabad az esküvőtök napján, {date}",
+        partial: "Részben foglalt az esküvőtök napján, {date}",
+        busy: "Nem elérhető az esküvőtök napján, {date}",
+      },
       claim: {
         sectionTitle: "Ez a saját hirdetésed?",
         sectionBody:
@@ -5911,6 +5918,7 @@ const hu: LocaleMessages = {
         title: "Foglaltság",
         legendBooked: "Foglalt napok",
         legendPartial: "Részben foglalt",
+        legendWedding: "Az esküvőtök napja",
         empty: "Nincs rögzített foglaltság",
         prevMonth: "Előző hónap",
         nextMonth: "Következő hónap",
@@ -5935,6 +5943,13 @@ const hu: LocaleMessages = {
         priceTotal: "{price} összesen",
         pricePerPerson: "{price} / fő",
         estimatedEquivalent: "Becsült: {price}",
+        subtitle:
+          "Iránymutató árak. A végleges árajánlatot a szolgáltató a dátum és a részletek ismeretében adja meg.",
+        requestCta: "Árajánlatot kérek",
+        requestSubject: "Árajánlatkérés: {package}, esküvő {date}",
+        requestBody:
+          'Sziasztok!\n\n{date} dátumra tervezzük az esküvőnket, {guests} fő részvételével, és a(z) "{package}" csomagotok érdekel minket. Küldenétek árajánlatot, és jeleznétek, hogy az igényeinkhez igazítható-e?\n\nElőre is köszönjük, várjuk a válaszotokat!',
+        forGuests: "A ti {n} vendégetekre: kb. {price}",
       },
     },
     reviewTags: {

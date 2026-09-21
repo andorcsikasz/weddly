@@ -380,12 +380,26 @@ export function ComposeDialog({
   onClose,
   onSent,
   initialSuppliers,
+  initialDraft,
 }: {
   onClose: () => void;
   onSent: (created: OutreachCampaignDetail) => void | Promise<void>;
   /** Pre-seed the recipient picker with one or more chips. Capped to the
    *  per-campaign limit; extras are silently dropped. */
   initialSuppliers?: OutreachInitialSupplier[];
+  /** Pre-write the subject and message from two locale keys, e.g. a quote
+   *  request for one named package. Keys rather than strings because the
+   *  couple's date and headcount arrive a beat after the dialog opens, and the
+   *  draft is written once they have (or once it is clear they never will). It
+   *  goes through the same `{date}` / `{guests}` merge a template does, and is
+   *  remembered as "ours" so swapping templates afterwards still asks before
+   *  overwriting anything the couple typed. `vars` carries the extra
+   *  placeholders (`{package}`). */
+  initialDraft?: {
+    subjectKey: string;
+    bodyKey: string;
+    vars?: Record<string, string | number>;
+  };
 }) {
   const { t, locale } = useT();
   const toast = useToast();
@@ -402,6 +416,9 @@ export function ComposeDialog({
   const [allSuppliers, setAllSuppliers] = useState<DirectorySupplier[]>([]);
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
   const [couple, setCouple] = useState<Couple | null>(null);
+  // True once the couple fetch has answered either way, so a pre-written draft
+  // is filled with the real date + headcount or, failing that, the placeholders.
+  const [coupleSettled, setCoupleSettled] = useState(false);
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cap = OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP;
@@ -421,7 +438,8 @@ export function ComposeDialog({
         setWeddingDate(r.couple?.wedding_date ?? null);
         setCouple(r.couple ?? null);
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setCoupleSettled(true));
   }, []);
 
   // Substituted into {date} and {guests} when a template is applied.
@@ -454,6 +472,18 @@ export function ComposeDialog({
     setSubject(nextSubject);
     setBody(nextBody);
   };
+
+  // Write the pre-composed draft once, when the couple's details have landed.
+  const draftApplied = useRef(false);
+  useEffect(() => {
+    if (!initialDraft || !coupleSettled || draftApplied.current) return;
+    draftApplied.current = true;
+    const vars = { date: tplDate, guests: tplGuests, ...initialDraft.vars };
+    const nextBody = t(initialDraft.bodyKey, vars);
+    lastAppliedBody.current = nextBody;
+    setSubject(t(initialDraft.subjectKey, vars));
+    setBody(nextBody);
+  }, [initialDraft, coupleSettled, tplDate, tplGuests, t]);
 
   // Picker: filter suppliers by query (name or city, accent-insensitive),
   // hide already-selected ones, cap to 8 visible. Empty query → no dropdown.

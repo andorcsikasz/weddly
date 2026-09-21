@@ -5829,6 +5829,8 @@ const es: LocaleMessages = {
       gallery_prev: "Foto anterior",
       gallery_next: "Foto siguiente",
       gallery_zoom: "Ver a tamaño completo",
+      gallery_show_all: "Ver todas ({n})",
+      sectionsAria: "Secciones de la página",
       adminTitle: "Vista de administrador",
       back: "Atrás",
       claimed: "Proveedor reclamado",
@@ -5836,6 +5838,11 @@ const es: LocaleMessages = {
       reviewsCount: "{n} reseñas",
       starsAria: "{rating} de {max} estrellas",
       priceBandAria: "Rango de precio: {band} de {max}",
+      weddingDay: {
+        free: "Libre el día de vuestra boda, {date}",
+        partial: "Parcialmente reservado el día de vuestra boda, {date}",
+        busy: "No disponible el día de vuestra boda, {date}",
+      },
       claim: {
         sectionTitle: "¿Es esta tu ficha?",
         sectionBody:
@@ -5963,6 +5970,7 @@ const es: LocaleMessages = {
         title: "Disponibilidad",
         legendBooked: "Días reservados",
         legendPartial: "Parcialmente reservado",
+        legendWedding: "El día de vuestra boda",
         empty: "Todavía no hay disponibilidad registrada",
         prevMonth: "Mes anterior",
         nextMonth: "Mes siguiente",
@@ -5987,6 +5995,13 @@ const es: LocaleMessages = {
         priceTotal: "{price} en total",
         pricePerPerson: "{price} / persona",
         estimatedEquivalent: "Est. {price}",
+        subtitle:
+          "Precios orientativos. El proveedor envía un presupuesto definitivo cuando conoce vuestra fecha y los detalles.",
+        requestCta: "Pedir presupuesto",
+        requestSubject: "Solicitud de presupuesto: {package}, boda el {date}",
+        requestBody:
+          '¡Hola!\n\nEstamos organizando nuestra boda para el {date} con {guests} invitados y nos interesa vuestro paquete "{package}". ¿Podéis enviarnos un presupuesto y decirnos si se puede adaptar a lo que necesitamos?\n\n¡Gracias de antemano, esperamos vuestra respuesta!',
+        forGuests: "Para vuestros {n} invitados: aprox. {price}",
       },
     },
     reviewTags: {

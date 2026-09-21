@@ -31,7 +31,7 @@ import {
   Building2,
   Bus,
   Cake,
-  Calendar as CalendarIcon,
+  CalendarCheck,
   Camera,
   ChefHat,
   ChevronLeft,
@@ -80,6 +80,7 @@ import {
   showsCapacity,
   showsSpokenLanguages,
 } from "@shared/suppliers";
+import type { ListingPackage } from "@shared/listing_packages";
 import { pickListingBlurb } from "@shared/listing_language";
 import { packagePriceSummary } from "@shared/listing_pricing";
 import type { Currency } from "@shared/types";
@@ -92,9 +93,10 @@ import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewsSection } from "../components/ReviewsSection";
 import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
 import { StarRow } from "../components/StarRow";
-import { intlLocale } from "../lib/format";
+import { statedGuestCount } from "../lib/budget";
+import { formatDate as formatYmd, intlLocale } from "../lib/format";
 import { formatPackagePrice } from "../lib/listingPricing";
-import { VendorPackageGrid } from "../components/VendorPackageCards";
+import { VendorPackageList } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { VendorGallery } from "../components/VendorGallery";
@@ -110,6 +112,8 @@ import {
   supplierCommentApi,
 } from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
+import { useActiveSection, useScrolledPast } from "../lib/use_scroll_spy";
+import { type WeddingDayStatus, weddingDayStatus } from "../lib/wedding_day_status";
 import {
   readSaved as readSavedStore,
   setSaved as setSavedStore,
@@ -132,6 +136,19 @@ type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string 
 import { CATEGORY_ICON } from "../lib/category_icons";
 
 const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_only"];
+
+// Anchors of the in-page sections the sticky nav jumps between. The Q&A section
+// keeps its own `COMMENTS_ANCHOR_ID`, which the admin panel's counter already
+// links to.
+const SECTION_PACKAGES = "supplier-packages";
+const SECTION_ABOUT = "supplier-about";
+const SECTION_VIDEOS = "supplier-videos";
+const SECTION_REVIEWS = "supplier-reviews";
+const SECTION_AVAILABILITY = "supplier-availability";
+/** A section counts as "current" once its top edge has passed this line, in px
+ *  below the viewport top: the app header (~69px) plus the section nav (~49px)
+ *  plus a little air. */
+const SECTION_SCROLL_LINE = 150;
 
 function formatDate(unixMs: number, locale: Locale): string {
   const d = new Date(unixMs);
@@ -175,6 +192,9 @@ export default function SupplierDetailPage() {
   // it from the UI language turned a HUF amount into euros the moment someone
   // switched the interface to English, with the number left untouched.
   const [coupleCurrency, setCoupleCurrency] = useState<Currency | null>(null);
+  // The headcount the couple has actually stated (null when they haven't), so a
+  // per-guest package price can be scaled to THEIR wedding.
+  const [coupleGuests, setCoupleGuests] = useState<number | null>(null);
   const [bookings, setBookings] = useState<SupplierBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapOpen, setMapOpen] = useState(false);
@@ -277,6 +297,7 @@ export default function SupplierDetailPage() {
         setWeddingDate(r.couple?.wedding_date ?? null);
         setCoupleId(r.couple?.id ?? null);
         setCoupleCurrency(r.couple?.currency ?? null);
+        setCoupleGuests(r.couple ? statedGuestCount(r.couple) : null);
       })
       .catch(() => undefined);
     return () => {
@@ -355,6 +376,25 @@ export default function SupplierDetailPage() {
   // Outreach compose modal — opens with the current supplier pre-attached
   // so the user can write a tailored inquiry without re-picking a vendor.
   const [composeOpen, setComposeOpen] = useState(false);
+  // A pre-written message for the composer (a quote request for one package).
+  // Null opens it blank, exactly as the Send inquiry button always has.
+  const [composeDraft, setComposeDraft] = useState<{
+    subjectKey: string;
+    bodyKey: string;
+    vars: Record<string, string | number>;
+  } | null>(null);
+  const openCompose = useCallback((pkg?: ListingPackage) => {
+    setComposeDraft(
+      pkg
+        ? {
+            subjectKey: "suppliers.detail.packages.requestSubject",
+            bodyKey: "suppliers.detail.packages.requestBody",
+            vars: { package: pkg.name },
+          }
+        : null,
+    );
+    setComposeOpen(true);
+  }, []);
 
   // Share the vendor with someone outside Weddly. Native share sheet first
   // (the real "send to a friend" affordance on mobile — a dismissed sheet
@@ -396,6 +436,27 @@ export default function SupplierDetailPage() {
     await copyToClipboard();
   }, [detail, t, toast]);
 
+  // Profile-page chrome: the sticky section nav lights the section the reader is
+  // in, and the booking card grows a name + rating once the H1 has scrolled away.
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleGone = useScrolledPast(titleRef, detail?.id ?? null);
+  const calendarShown = availability?.calendar_public !== false;
+  const navIds = [
+    ...(detail && detail.packages.length > 0 ? [SECTION_PACKAGES] : []),
+    SECTION_ABOUT,
+    ...(detail && detail.videos.length > 0 ? [SECTION_VIDEOS] : []),
+    SECTION_REVIEWS,
+    ...(calendarShown ? [SECTION_AVAILABILITY] : []),
+    COMMENTS_ANCHOR_ID,
+  ];
+  const activeSection = useActiveSection(navIds, SECTION_SCROLL_LINE);
+  const scrollToSection = useCallback((id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, []);
+
   if (loading || !detail) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
@@ -433,6 +494,23 @@ export default function SupplierDetailPage() {
   const pickLabel = t(isPicked ? "suppliers.unpick_aria" : "suppliers.pick_aria");
   const shareLabel = t("suppliers.detail.cta.share");
   const priceSummary = packagePriceSummary(detail.packages);
+  // The vendor's answer for THIS couple's day, when we can honestly give one.
+  const weddingStatus = weddingDayStatus(availability, weddingDate);
+  const weddingDateLabel = weddingDate ? formatYmd(weddingDate.slice(0, 10), locale) : "";
+  const navItems = [
+    ...(detail.packages.length > 0
+      ? [{ id: SECTION_PACKAGES, label: t("suppliers.detail.packages.title") }]
+      : []),
+    { id: SECTION_ABOUT, label: t("suppliers.detail.about.title") },
+    ...(detail.videos.length > 0
+      ? [{ id: SECTION_VIDEOS, label: t("suppliers.detail.videos.title") }]
+      : []),
+    { id: SECTION_REVIEWS, label: t("suppliers.detail.reviews.title") },
+    ...(calendarShown
+      ? [{ id: SECTION_AVAILABILITY, label: t("suppliers.detail.busy.title") }]
+      : []),
+    { id: COMMENTS_ANCHOR_ID, label: t("suppliers.detail.comments.title") },
+  ];
 
   return (
     // data-admin-shell opts every h1..h6 inside into the sans typography
@@ -457,174 +535,225 @@ export default function SupplierDetailPage() {
         {t("suppliers.detail.back")}
       </button>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        {/* ─── MAIN COLUMN ────────────────────────────────────────────────── */}
-        <main className="min-w-0">
-          {/* Hero. Always renders SOMETHING — a 16:9 photo when the vendor
-              uploaded one, or a paper-toned monogram placeholder so the
-              page never opens with bare text on white. The placeholder
-              also carries a quiet "claim listing to add photos" hint when
-              the vendor hasn't claimed yet, turning an empty slot into an
-              acquisition surface. */}
-          <section className="mb-10">
-            <VendorGallery
-              images={detail.gallery_urls ?? []}
-              name={detail.name}
-              positionsY={detail.gallery_positions_y}
-              emptyState={<HeroImage detail={detail} t={t} src={null} />}
-            />
-            <div className="mt-5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-              {t(`suppliers.cat.${detail.category}`)} · {detail.city}
-            </div>
-            {/* Share moved up next to the name (was demoted at the foot of the
-                CTA row, competing with Send inquiry for the eye down there).
-                It's the first interactive thing on the page now, same spot
-                the reference marketplace pages put it. */}
-            <div className="mt-1 flex items-start justify-between gap-3">
-              <h1 className="inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
-                <span>{detail.name}</span>
-                {detail.vendor_account_id !== null && (
-                  <VerifiedBadge size={28} complete={detail.listing_complete} />
-                )}
-              </h1>
+      {/* ─── HEADER ─────────────────────────────────────────────────────────
+          Title first, then the photos, the way a business profile reads on the
+          booking marketplaces couples already know: who, how good, where, and
+          (the one thing a wedding adds) whether they are free on OUR day. */}
+      <header>
+        <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          {t(`suppliers.cat.${detail.category}`)} · {detail.city}
+        </div>
+        <div className="mt-1 flex items-start justify-between gap-3">
+          <h1
+            ref={titleRef}
+            className="inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl"
+          >
+            <span>{detail.name}</span>
+            {detail.vendor_account_id !== null && (
+              <VerifiedBadge size={28} complete={detail.listing_complete} />
+            )}
+          </h1>
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Community-report action, only for user-submitted tips (never a
+                claimed vendor). Sits with share as one pair of round buttons. */}
+            {detail.source === "community" && (
               <button
                 type="button"
-                onClick={shareVendor}
-                aria-label={shareLabel}
-                title={shareLabel}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-transparent text-ink-600 transition hover:border-ink-300 hover:bg-paper-100/70 hover:text-ink-800 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-800"
+                onClick={() => setReporting({ id: Number(detail.id.slice(1)), name: detail.name })}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 text-ink-500 transition hover:border-ink-400 hover:bg-paper-100 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                aria-label={t("suppliers.report.aria_label")}
+                title={t("suppliers.report.aria_label")}
               >
-                <Share2 size={14} aria-hidden />
+                <Flag size={16} aria-hidden />
               </button>
-            </div>
-            {detail.company_name && detail.company_name !== detail.name && (
-              <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{detail.company_name}</p>
             )}
-            {/* Single rating row — the sidebar's duplicate RATING row was
-                removed (it was repeating this exact value two columns
-                away). Source of truth lives here, in the header. */}
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              {ratingDisplay !== null && ratingAvg !== null ? (
-                <span className="inline-flex items-center gap-2 text-sm">
-                  <StarRow
-                    value={Math.round(ratingAvg)}
-                    size={16}
-                    ariaLabel={t("suppliers.detail.starsAria", {
-                      rating: ratingDisplay,
-                      max: 5,
-                    })}
-                  />
-                  <span className="font-medium text-ink-900 dark:text-paper-50">
-                    {ratingDisplay}
-                  </span>
-                  <span className="text-ink-500 dark:text-umber-300">·</span>
-                  <span className="text-ink-600 dark:text-umber-200">
-                    {t("suppliers.detail.reviewsCount", { n: ratingCount })}
-                  </span>
-                </span>
-              ) : (
-                <span className="text-sm italic text-ink-500 dark:text-umber-300">
-                  {t("suppliers.detail.info.ratingEmpty")}
-                </span>
-              )}
-              {detail.price_band !== null && <PriceBandDots band={detail.price_band} t={t} />}
-              {/* Exact price, straight from the vendor's own packages — the
-                  €€€ dots above are a manual, cooldown-protected signal, not
-                  a number. A real figure this high up (rather than buried
-                  past photos/videos/about in the Packages section) is what
-                  actually earns trust before a couple commits to inquiring. */}
-              {priceSummary && (
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-ink-900 dark:text-paper-50">
-                  <Banknote size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-                  {formatPackagePrice(
-                    priceSummary.range,
-                    priceSummary.mode,
-                    detail.currency,
-                    locale,
-                    t,
-                  )}
-                </span>
-              )}
-              {/* Guest capacity + venue style — captured on the listing but
-                  previously only shown on the compact directory card. Surface
-                  them here too so the detail page (and its shared public twin)
-                  carries the same "worth knowing" facts. */}
-              {showsCapacity(detail) && (
-                <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
-                  <Users size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-                  {detail.capacity_min && detail.capacity_max
-                    ? t("suppliers.capacity_range", {
-                        min: detail.capacity_min,
-                        max: detail.capacity_max,
-                      })
-                    : t("suppliers.capacity_max_only", { max: detail.capacity_max ?? 0 })}
-                </span>
-              )}
-              {showsSpokenLanguages(detail) && (
-                <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
-                  <Speech size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-                  {(detail.spoken_languages ?? []).map((c) => languageLabel(c, locale)).join(", ")}
-                </span>
-              )}
-              {detail.venue_style && (
-                <Pill tone="muted">{t(`suppliers.venue_style.${detail.venue_style}`)}</Pill>
-              )}
-              {/* Verified vendors get the BadgeCheck next to the name (above);
-                  unclaimed listings keep a quiet muted pill so the missing
-                  state still carries a clear label, not silence. */}
-              {detail.vendor_account_id === null && (
-                <Pill tone="muted">{t("suppliers.detail.unclaimed")}</Pill>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={shareVendor}
+              aria-label={shareLabel}
+              title={shareLabel}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 bg-transparent text-ink-600 transition hover:border-ink-300 hover:bg-paper-100/70 hover:text-ink-800 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-800"
+            >
+              <Share2 size={16} aria-hidden />
+            </button>
+          </div>
+        </div>
+        {detail.company_name && detail.company_name !== detail.name && (
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{detail.company_name}</p>
+        )}
 
-            {/* Vendor contact (website / email / phone) lives solely in the
-                sidebar Kapcsolat card — not duplicated under the CTA. The only
-                thing that surfaces here is the community-report action, and
-                only for user-submitted tips (never a claimed vendor). */}
-            {detail.source === "community" && (
-              <div className="mt-3 flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setReporting({ id: Number(detail.id.slice(1)), name: detail.name })
-                  }
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-500 transition hover:border-ink-400 hover:bg-paper-100 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-                  aria-label={t("suppliers.report.aria_label")}
-                  title={t("suppliers.report.aria_label")}
-                >
-                  <Flag size={16} aria-hidden />
-                </button>
-              </div>
-            )}
-          </section>
+        {/* Row 1: rating, the wedding-day verdict, where. The rating lives here
+            and only here (the sidebar's duplicate was removed long ago); the
+            count scrolls to the reviews. */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          {ratingDisplay !== null && ratingAvg !== null ? (
+            <button
+              type="button"
+              onClick={() => scrollToSection(SECTION_REVIEWS)}
+              className="inline-flex items-center gap-2 rounded-md text-sm transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400"
+            >
+              <span className="font-semibold text-ink-900 dark:text-paper-50">{ratingDisplay}</span>
+              <StarRow
+                value={Math.round(ratingAvg)}
+                size={16}
+                ariaLabel={t("suppliers.detail.starsAria", { rating: ratingDisplay, max: 5 })}
+              />
+              <span className="text-ink-600 dark:text-umber-200">
+                {t("suppliers.detail.reviewsCount", { n: ratingCount })}
+              </span>
+            </button>
+          ) : (
+            <span className="text-sm italic text-ink-500 dark:text-umber-300">
+              {t("suppliers.detail.info.ratingEmpty")}
+            </span>
+          )}
+          {weddingStatus && (
+            <WeddingDayNote
+              status={weddingStatus}
+              date={weddingDateLabel}
+              t={t}
+              className="rounded-2xl px-3 py-1"
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => setMapOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md text-sm text-ink-600 transition hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-200 dark:hover:text-paper-50"
+          >
+            <MapPin size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+            <span>{detail.city}</span>
+            <span className="font-medium text-ink-900 underline decoration-ink-300 underline-offset-2 dark:text-paper-50">
+              {t("suppliers.detail.map.open")}
+            </span>
+          </button>
+        </div>
 
-          {/* Videos — reference reel, directly after the photo gallery. A
-              responsive grid (1 col on mobile, 2 from sm up) of lazy,
-              click-to-play embeds. Renders only when the vendor added at
-              least one. */}
-          {detail.videos.length > 0 && (
-            <section className="mb-10">
-              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-                {t("suppliers.detail.videos.title")}
+        {/* Row 2: the quick facts. `price_band` is a manual, cooldown-protected
+            signal; the exact figure below it comes straight from the vendor's
+            own packages and is what earns trust before a couple inquires. */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {detail.price_band !== null && <PriceBandDots band={detail.price_band} t={t} />}
+          {priceSummary && (
+            <button
+              type="button"
+              onClick={() => scrollToSection(SECTION_PACKAGES)}
+              className="inline-flex items-center gap-1 rounded-md text-sm font-medium text-ink-900 transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-paper-50"
+            >
+              <Banknote size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+              {formatPackagePrice(
+                priceSummary.range,
+                priceSummary.mode,
+                detail.currency,
+                locale,
+                t,
+              )}
+            </button>
+          )}
+          {showsCapacity(detail) && (
+            <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
+              <Users size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+              {detail.capacity_min && detail.capacity_max
+                ? t("suppliers.capacity_range", {
+                    min: detail.capacity_min,
+                    max: detail.capacity_max,
+                  })
+                : t("suppliers.capacity_max_only", { max: detail.capacity_max ?? 0 })}
+            </span>
+          )}
+          {showsSpokenLanguages(detail) && (
+            <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
+              <Speech size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+              {(detail.spoken_languages ?? []).map((c) => languageLabel(c, locale)).join(", ")}
+            </span>
+          )}
+          {detail.venue_style && (
+            <Pill tone="muted">{t(`suppliers.venue_style.${detail.venue_style}`)}</Pill>
+          )}
+          {/* Verified vendors carry the BadgeCheck next to the name; unclaimed
+              listings keep a quiet muted pill so the missing state still has a
+              clear label, not silence. */}
+          {detail.vendor_account_id === null && (
+            <Pill tone="muted">{t("suppliers.detail.unclaimed")}</Pill>
+          )}
+        </div>
+      </header>
+
+      {/* ─── PHOTOS ─────────────────────────────────────────────────────────
+          Always renders SOMETHING: the mosaic, or a paper-toned placeholder so
+          the page never opens with bare text on white (which also nudges an
+          unclaimed listing toward the claim flow). */}
+      <div className="mt-5">
+        <VendorGallery
+          layout="mosaic"
+          images={detail.gallery_urls ?? []}
+          name={detail.name}
+          positionsY={detail.gallery_positions_y}
+          emptyState={<HeroImage detail={detail} t={t} src={null} />}
+        />
+      </div>
+
+      {/* ─── SECTION NAV ────────────────────────────────────────────────────
+          Sticks under the app header (~69px) and lights the section in view.
+          Only the sections this listing actually has. */}
+      <nav
+        aria-label={t("suppliers.detail.sectionsAria")}
+        className="sticky top-[69px] z-20 mt-6 border-b border-paper-300 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95"
+      >
+        <div className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {navItems.map((item) => {
+            const on = item.id === activeSection;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => scrollToSection(item.id)}
+                aria-current={on ? "true" : undefined}
+                className={`shrink-0 whitespace-nowrap border-b-2 px-3 py-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-400 ${
+                  on
+                    ? "border-ink-900 font-semibold text-ink-900 dark:border-paper-50 dark:text-paper-50"
+                    : "border-transparent text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        {/* ─── MAIN COLUMN ────────────────────────────────────────────────── */}
+        <main className="min-w-0">
+          {/* Packages (árajánlat): the vendor's guide prices, laid out as a menu
+              of rows. The place a service list sits on a booking profile, but
+              a wedding vendor sells packages, not 30-minute slots, so each row
+              asks for a QUOTE (pre-filled with the package) instead of booking a
+              time. Structured pricing, the legacy price_text fallback and the
+              attached PDF all live in <VendorPackageList>. */}
+          {detail.packages.length > 0 && (
+            <section id={SECTION_PACKAGES} className="mb-12 scroll-mt-36">
+              <h2 className="text-2xl font-bold tracking-tight text-ink-900 dark:text-paper-50">
+                {t("suppliers.detail.packages.title")}
               </h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {detail.videos.map((v, i) => (
-                  <LazyVideoPlayer
-                    key={v.id}
-                    video={v}
-                    title={t("suppliers.detail.videos.playAria", {
-                      name: detail.name,
-                      n: i + 1,
-                    })}
-                  />
-                ))}
-              </div>
+              <p className="mb-4 mt-1 text-sm text-ink-500 dark:text-umber-300">
+                {t("suppliers.detail.packages.subtitle")}
+              </p>
+              <VendorPackageList
+                packages={detail.packages}
+                currency={detail.currency}
+                capacityMin={detail.capacity_min}
+                capacityMax={detail.capacity_max}
+                couplesGuests={coupleGuests}
+                locale={locale}
+                t={t}
+                onRequest={canInquire ? openCompose : undefined}
+              />
             </section>
           )}
 
           {/* About / blurb */}
-          <section className="mb-10">
-            <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+          <section id={SECTION_ABOUT} className="mb-12 scroll-mt-36">
+            <h2 className="mb-3 text-2xl font-bold tracking-tight text-ink-900 dark:text-paper-50">
               {t("suppliers.detail.about.title")}
             </h2>
             <BlurbBody detail={detail} locale={locale} t={t} />
@@ -643,34 +772,57 @@ export default function SupplierDetailPage() {
                 ))}
               </div>
             )}
+            {/* The full street address, one click from the map. */}
+            <button
+              type="button"
+              onClick={() => setMapOpen(true)}
+              title={t("suppliers.detail.map.open")}
+              className="mt-5 inline-flex items-start gap-2 rounded-lg text-left text-sm text-ink-800 transition hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-100 dark:hover:text-paper-50"
+            >
+              <MapPin
+                size={16}
+                aria-hidden
+                className="mt-0.5 shrink-0 text-ink-500 dark:text-umber-400"
+              />
+              <span>{detail.address ? `${detail.city} · ${detail.address}` : detail.city}</span>
+            </button>
           </section>
 
-          {/* Packages (árajánlat) — the vendor's published price offers, as a
-              scannable comparison grid. Card layout, spec parsing, the
-              recommended anchor and the empty-state fallback all live in the
-              shared <VendorPackageGrid> (also used by the public page). */}
-          {detail.packages.length > 0 && (
-            <section className="mb-10">
-              <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-                {t("suppliers.detail.packages.title")}
+          {/* Videos, a responsive grid (1 col on mobile, 2 from sm up) of lazy,
+              click-to-play embeds. Renders only when the vendor added at least
+              one. */}
+          {detail.videos.length > 0 && (
+            <section id={SECTION_VIDEOS} className="mb-12 scroll-mt-36">
+              <h2 className="mb-3 text-2xl font-bold tracking-tight text-ink-900 dark:text-paper-50">
+                {t("suppliers.detail.videos.title")}
               </h2>
-              <VendorPackageGrid
-                packages={detail.packages}
-                currency={detail.currency}
-                capacityMin={detail.capacity_min}
-                capacityMax={detail.capacity_max}
-                locale={locale}
-                t={t}
-              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                {detail.videos.map((v, i) => (
+                  <LazyVideoPlayer
+                    key={v.id}
+                    video={v}
+                    title={t("suppliers.detail.videos.playAria", {
+                      name: detail.name,
+                      n: i + 1,
+                    })}
+                  />
+                ))}
+              </div>
             </section>
           )}
 
-          {/* Reviews — the average + 1-5★ bars stay on the page; the list and
-              the composer open in a modal so the page doesn't scroll through
-              every review to reach Q&A and the calendar below. */}
-          <section className="mb-10">
+          {/* Reviews: the average + 1-5★ bars, then the latest few in their own
+              words. The full list and the composer open in a modal so the page
+              doesn't scroll through every review to reach the calendar. */}
+          <section id={SECTION_REVIEWS} className="mb-12 scroll-mt-36">
             <ReviewSummaryCard
               summary={detail.reviews_summary}
+              locale={locale}
+              t={t}
+              onOpen={() => setReviewsOpen(true)}
+            />
+            <ReviewSnippets
+              reviews={reviews ?? []}
               locale={locale}
               t={t}
               onOpen={() => setReviewsOpen(true)}
@@ -699,6 +851,26 @@ export default function SupplierDetailPage() {
             />
           </Dialog>
 
+          {/* Availability. In the main column now (it was a sidebar card): the
+              booking card beside it stays put while the couple reads the month,
+              so the decision still sits next to the calendar. Drops out
+              entirely for a vendor who publishes no calendar. */}
+          {calendarShown && (
+            <section id={SECTION_AVAILABILITY} className="mb-12 scroll-mt-36">
+              <h2 className="mb-3 text-2xl font-bold tracking-tight text-ink-900 dark:text-paper-50">
+                {t("suppliers.detail.busy.title")}
+              </h2>
+              <div className="max-w-md">
+                <BusyCalendarCard
+                  availability={availability}
+                  weddingDate={weddingDate}
+                  locale={locale}
+                  t={t}
+                />
+              </div>
+            </section>
+          )}
+
           {/* Q&A */}
           <CommentsSection
             supplierId={supplierId}
@@ -712,7 +884,7 @@ export default function SupplierDetailPage() {
           />
 
           {/* Bookings list — admin-only operational view. Couples read
-              availability from the right-rail busy calendar instead. */}
+              availability from the calendar section instead. */}
           {isAdmin && <BookingsSection bookings={bookings} bookable={detail.bookable} t={t} />}
 
           {/* Owner-side claim CTA. Renders only on unclaimed listings; once
@@ -734,81 +906,35 @@ export default function SupplierDetailPage() {
           {isAdmin && <AdminMetaSection detail={detail} t={t} />}
         </main>
 
-        {/* ─── SIDEBAR (sticky on lg+) ───────────────────────────────────── */}
-        <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <InfoCard detail={detail} t={t} onOpenMap={() => setMapOpen(true)} />
-          <ContactCard detail={detail} t={t} />
-          <BusyCalendarCard
-            availability={availability}
-            weddingDate={weddingDate}
-            locale={locale}
+        {/* ─── BOOKING CARD (sticky on lg+) ───────────────────────────────────
+            One card: the decision (inquire, like, pick) and the facts that
+            support it (the wedding-day verdict, address, phone, website). Below
+            `lg` it falls to the end of the page; the fixed bar at the bottom
+            keeps the same three actions in thumb reach. */}
+        <aside className="lg:sticky lg:top-[8.5rem] lg:self-start">
+          <BookingCard
+            detail={detail}
             t={t}
+            showIdentity={titleGone}
+            ratingDisplay={ratingDisplay}
+            ratingAvg={ratingAvg}
+            ratingCount={ratingCount}
+            weddingStatus={weddingStatus}
+            weddingDateLabel={weddingDateLabel}
+            nextAvailable={availability?.next_available ?? null}
+            locale={locale}
+            isSaved={isSaved}
+            isPicked={isPicked}
+            saveText={saveLabel}
+            saveAria={saveAria}
+            pickLabel={pickLabel}
+            canInquire={canInquire}
+            inquireLabel={inquireLabel}
+            onToggleSaved={toggleSaved}
+            onTogglePicked={togglePicked}
+            onInquire={() => openCompose()}
+            onOpenMap={() => setMapOpen(true)}
           />
-          {/* Primary actions, moved here from the top of the page (owner
-              direction) — a couple checks the calendar right before deciding,
-              so the decision itself sits directly under it instead of miles
-              above. Save and pick sit in their own tinted strip ABOVE Send
-              inquiry, so the two-glyph vocabulary (BLUSH HEART for the
-              shortlist, SAGE BOOKMARK for the pick) reads as its own group
-              rather than blending into the white card behind the one solid
-              accent CTA. Both still render in the mobile sticky bar too (see
-              end of this file) — the sidebar sits below the fold on <lg. */}
-          <SidebarCard>
-            <div className="flex flex-col gap-2.5">
-              <div className="grid grid-cols-2 gap-2 rounded-2xl bg-paper-100 p-1.5 dark:bg-umber-800/50">
-                <button
-                  type="button"
-                  onClick={toggleSaved}
-                  aria-pressed={isSaved}
-                  aria-label={saveAria}
-                  title={saveAria}
-                  data-testid="supplier-save-toggle"
-                  className={
-                    isSaved
-                      ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-300 bg-blush-50 px-3 py-1.5 text-sm font-medium text-blush-700 transition hover:border-blush-400 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
-                      : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-600 transition hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
-                  }
-                >
-                  <Heart
-                    size={16}
-                    aria-hidden
-                    className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-                  />
-                  {saveLabel}
-                </button>
-                <button
-                  type="button"
-                  onClick={togglePicked}
-                  aria-pressed={isPicked}
-                  aria-label={pickLabel}
-                  title={pickLabel}
-                  data-testid="supplier-pick-toggle"
-                  className={
-                    isPicked
-                      ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1.5 text-sm font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
-                      : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-600 transition hover:border-sage-400 hover:bg-sage-50 hover:text-sage-700 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-sage-600 dark:hover:bg-sage-600/20 dark:hover:text-sage-300"
-                  }
-                >
-                  {isPicked ? (
-                    <BookmarkCheck size={16} aria-hidden className="fill-sage-200" />
-                  ) : (
-                    <Bookmark size={16} aria-hidden />
-                  )}
-                  {pickLabel}
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => setComposeOpen(true)}
-                disabled={!canInquire}
-                title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
-                className="btn-accent w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Send size={16} aria-hidden />
-                {inquireLabel}
-              </button>
-            </div>
-          </SidebarCard>
         </aside>
       </div>
 
@@ -871,7 +997,7 @@ export default function SupplierDetailPage() {
           </button>
           <button
             type="button"
-            onClick={() => setComposeOpen(true)}
+            onClick={() => openCompose()}
             disabled={!canInquire}
             // Same explanation the desktop row carries. The bar renders below
             // `lg`, which includes hover-capable narrow desktops, so a greyed
@@ -888,6 +1014,7 @@ export default function SupplierDetailPage() {
       {composeOpen && (
         <ComposeDialog
           initialSuppliers={[{ id: detail.id, name: detail.name, city: detail.city }]}
+          initialDraft={composeDraft ?? undefined}
           onClose={() => setComposeOpen(false)}
           onSent={(campaign) => {
             setComposeOpen(false);
@@ -1016,8 +1143,8 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
   return (
     // The id is the jump target for the admin panel's comment counter, which
     // was a dead number sitting a screen below the thread it counts.
-    <section id={COMMENTS_ANCHOR_ID} className="mb-10 scroll-mt-24">
-      <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+    <section id={COMMENTS_ANCHOR_ID} className="mb-12 scroll-mt-36">
+      <h2 className="mb-4 text-2xl font-bold tracking-tight text-ink-900 dark:text-paper-50">
         {t("suppliers.detail.comments.title")}
       </h2>
 
@@ -1246,31 +1373,13 @@ function ClaimCtaSection({
 
 // ─── Right-rail sidebar cards ────────────────────────────────────────────────
 
-function SidebarCard({
-  icon,
-  title,
-  children,
-}: {
-  icon?: React.ReactNode;
-  /** Optional. Section header dropped entirely when omitted, used by the
-   *  Address and Contact cards where the rows already say what they are
-   *  (pin + street, phone + number, etc.). The Foglaltság card keeps a
-   *  title because the month nav needs context. */
-  title?: string;
-  children: React.ReactNode;
-}) {
+function SidebarCard({ children }: { children: React.ReactNode }) {
   return (
     // Shared card elevation: a soft drop shadow lifts the card off the cream
     // page instead of a hard 1px border (dark mode keeps a faint ring since
     // shadows vanish on dark surfaces). Same radius + padding as the package
-    // cards so the whole page reads as one system.
+    // rows so the whole page reads as one system.
     <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-600">
-      {title && (
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
-          {icon}
-          {title}
-        </h3>
-      )}
       {children}
     </div>
   );
@@ -1338,7 +1447,7 @@ function HeroImage({
     <div
       role="img"
       aria-label={t("suppliers.detail.hero.noPhotoAria")}
-      className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl border-2 border-dashed border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800/60"
+      className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl border-2 border-dashed border-paper-300 sm:aspect-[2.3/1] bg-paper-100 dark:border-umber-700 dark:bg-umber-800/60"
     >
       <div className="flex flex-col items-center gap-4 text-center">
         <Wordmark size="lg" className="text-ink-700 dark:text-paper-100" />
@@ -1394,88 +1503,283 @@ function PriceBandDots({
   );
 }
 
-/** Right-rail info card. Slimmer than the original — CATEGORY moved out
- *  (duplicated the kicker above the H1), RATING moved out (duplicated the
- *  header chip), PRICE BAND moved into the header next to the rating
- *  (where it can sit as a single glyph row). What's left is just the one
- *  fact the header doesn't carry: the full street address. */
-function InfoCard({
+/** Tone per wedding-day verdict. Sage / amber / rose are the same three the
+ *  calendar below uses for free / partly booked / booked, so the header chip and
+ *  the month grid cannot disagree about what a colour means. */
+const WEDDING_DAY_TONE: Record<WeddingDayStatus, string> = {
+  free: "bg-sage-50 text-sage-700 dark:bg-sage-600/20 dark:text-sage-200",
+  partial: "bg-amber-100/70 text-amber-800 dark:bg-amber-500/25 dark:text-amber-100",
+  busy: "bg-rose-100/80 text-rose-800 dark:bg-rose-500/25 dark:text-rose-100",
+};
+
+/** The vendor's answer for the couple's own wedding date, as one line. */
+function WeddingDayNote({
+  status,
+  date,
+  t,
+  className = "",
+}: {
+  status: WeddingDayStatus;
+  date: string;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  className?: string;
+}) {
+  return (
+    <span
+      data-testid="wedding-day-note"
+      data-status={status}
+      className={`inline-flex items-center gap-1.5 text-sm font-medium ${WEDDING_DAY_TONE[status]} ${className}`}
+    >
+      <CalendarCheck size={14} aria-hidden className="shrink-0" />
+      {t(`suppliers.detail.weddingDay.${status}`, { date })}
+    </span>
+  );
+}
+
+/** The latest few written reviews, in the reviewers' own words, under the
+ *  average + histogram. Clicking any of them opens the full list. */
+function ReviewSnippets({
+  reviews,
+  locale,
+  t,
+  onOpen,
+}: {
+  reviews: SupplierReview[];
+  locale: Locale;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  onOpen: () => void;
+}) {
+  const latest = reviews
+    .filter((r) => r.published && r.body && r.body.trim().length > 0)
+    .sort((a, b) => b.created_at - a.created_at)
+    .slice(0, 3);
+  if (latest.length === 0) return null;
+  return (
+    <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+      {latest.map((r) => (
+        <li key={r.id}>
+          <button
+            type="button"
+            onClick={onOpen}
+            className="flex h-full w-full flex-col rounded-2xl border border-paper-300 bg-white p-4 text-left transition hover:border-ink-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-600 dark:bg-umber-900 dark:hover:border-umber-500"
+          >
+            <span className="flex items-center justify-between gap-2">
+              <StarRow value={r.rating} size={14} />
+              <span className="text-xs text-ink-500 dark:text-umber-300">
+                {formatDate(r.created_at, locale)}
+              </span>
+            </span>
+            <span className="mt-2 line-clamp-4 text-sm leading-relaxed text-ink-700 dark:text-paper-100">
+              {r.body}
+            </span>
+            <span className="mt-3 text-xs font-medium text-ink-600 dark:text-umber-200">
+              {r.author.display_name}
+              {r.verified ? ` · ${t("suppliers.detail.reviews.verifiedBadge")}` : ""}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The sticky right-hand card: the decision (inquire, like, pick) and the facts
+ *  that support it. Merges what used to be three cards (address, contact,
+ *  actions) so it fits beside the content without outgrowing the viewport; the
+ *  calendar moved into the main column for the same reason. */
+function BookingCard({
   detail,
   t,
+  locale,
+  showIdentity,
+  ratingDisplay,
+  ratingAvg,
+  ratingCount,
+  weddingStatus,
+  weddingDateLabel,
+  nextAvailable,
+  isSaved,
+  isPicked,
+  saveText,
+  saveAria,
+  pickLabel,
+  canInquire,
+  inquireLabel,
+  onToggleSaved,
+  onTogglePicked,
+  onInquire,
   onOpenMap,
 }: {
   detail: SupplierDetail;
   t: (k: string, vars?: Record<string, string | number>) => string;
+  locale: Locale;
+  /** The page's own H1 has scrolled away, so the card says whose it is. */
+  showIdentity: boolean;
+  ratingDisplay: string | null;
+  ratingAvg: number | null;
+  ratingCount: number;
+  weddingStatus: WeddingDayStatus | null;
+  weddingDateLabel: string;
+  nextAvailable: string | null;
+  isSaved: boolean;
+  isPicked: boolean;
+  saveText: string;
+  saveAria: string;
+  pickLabel: string;
+  canInquire: boolean;
+  inquireLabel: string;
+  onToggleSaved: () => void;
+  onTogglePicked: () => void;
+  onInquire: () => void;
   onOpenMap: () => void;
 }) {
-  const value = detail.address ? `${detail.city} · ${detail.address}` : detail.city;
-  return (
-    <SidebarCard>
-      {/* The whole address row is the map trigger — couples expect to click an
-       *  address and see it on a map. The button stays full-width and left-
-       *  aligned so it reads as the same row, just interactive. */}
-      <button
-        type="button"
-        onClick={onOpenMap}
-        title={t("suppliers.detail.map.open")}
-        className="-mx-2 w-[calc(100%+1rem)] rounded-lg px-2 text-left transition hover:bg-ink-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:hover:bg-umber-800/60 dark:focus-visible:ring-paper-100"
-      >
-        <SidebarRow icon={<MapPin size={14} aria-hidden />} value={value} />
-      </button>
-    </SidebarCard>
-  );
-}
+  const hasContact = Boolean(detail.website || detail.contact_phone || detail.contact_phone_alt);
+  const address = detail.address ? `${detail.city} · ${detail.address}` : detail.city;
+  const rowLink =
+    "flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60";
 
-function ContactCard({
-  detail,
-  t,
-}: {
-  detail: SupplierDetail;
-  t: (k: string) => string;
-}) {
-  const hasAny = Boolean(detail.website || detail.contact_phone || detail.contact_phone_alt);
   return (
     <SidebarCard>
-      {!hasAny && (
-        <p className="text-sm italic text-ink-500 dark:text-umber-300">
-          {t("suppliers.detail.contact.empty")}
-        </p>
+      {showIdentity && (
+        <div className="mb-4 border-b border-paper-200 pb-4 dark:border-umber-700">
+          <p className="text-lg font-bold leading-snug text-ink-900 dark:text-paper-50">
+            {detail.name}
+          </p>
+          {ratingDisplay !== null && ratingAvg !== null && (
+            <div className="mt-1 flex items-center gap-2 text-sm">
+              <span className="font-semibold text-ink-900 dark:text-paper-50">{ratingDisplay}</span>
+              <StarRow value={Math.round(ratingAvg)} size={14} />
+              <span className="text-ink-500 dark:text-umber-300">({ratingCount})</span>
+            </div>
+          )}
+        </div>
       )}
-      {detail.website && (
-        <a
-          href={`/r/supplier/${encodeURIComponent(detail.id)}`}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+
+      <div className="flex flex-col gap-2.5">
+        <button
+          type="button"
+          onClick={onInquire}
+          disabled={!canInquire}
+          title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
+          className="btn-accent w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Globe size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-          {t("suppliers.detail.contact.website")}
-        </a>
-      )}
-      {/* No email row. A vendor's mailbox is never shown to a couple (the API
-          sends null for every viewer); writing to them goes through the inquiry
-          flow, which delivers to that address without publishing it. */}
-      {detail.contact_phone && (
-        <a
-          href={`tel:${detail.contact_phone}`}
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+          <Send size={16} aria-hidden />
+          {inquireLabel}
+        </button>
+        {/* The two-glyph vocabulary the directory uses: a blush HEART is the
+            shortlist, a sage BOOKMARK is THE pick for the category. Kept as its
+            own tinted strip so the pair reads as a group beside the one solid
+            CTA above it. */}
+        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-paper-100 p-1.5 dark:bg-umber-800/50">
+          <button
+            type="button"
+            onClick={onToggleSaved}
+            aria-pressed={isSaved}
+            aria-label={saveAria}
+            title={saveAria}
+            data-testid="supplier-save-toggle"
+            className={
+              isSaved
+                ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-blush-300 bg-blush-50 px-3 py-1.5 text-sm font-medium text-blush-700 transition hover:border-blush-400 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
+                : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-600 transition hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+            }
+          >
+            <Heart
+              size={16}
+              aria-hidden
+              className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+            />
+            {saveText}
+          </button>
+          <button
+            type="button"
+            onClick={onTogglePicked}
+            aria-pressed={isPicked}
+            aria-label={pickLabel}
+            title={pickLabel}
+            data-testid="supplier-pick-toggle"
+            className={
+              isPicked
+                ? "inline-flex items-center justify-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1.5 text-sm font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
+                : "inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-600 transition hover:border-sage-400 hover:bg-sage-50 hover:text-sage-700 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-sage-600 dark:hover:bg-sage-600/20 dark:hover:text-sage-300"
+            }
+          >
+            {isPicked ? (
+              <BookmarkCheck size={16} aria-hidden className="fill-sage-200" />
+            ) : (
+              <Bookmark size={16} aria-hidden />
+            )}
+            {pickLabel}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-0.5 border-t border-paper-200 pt-3 dark:border-umber-700">
+        {/* Whether they are free on OUR day: the live status line of a booking
+            card. Without a stated wedding date (or a calendar we can trust) the
+            next free date stands in, and without that, nothing. */}
+        {weddingStatus ? (
+          <WeddingDayNote
+            status={weddingStatus}
+            date={weddingDateLabel}
+            t={t}
+            className="mb-1 w-full rounded-xl px-3 py-2.5"
+          />
+        ) : nextAvailable ? (
+          <SidebarRow
+            icon={<CalendarCheck size={14} aria-hidden />}
+            value={t("suppliers.detail.calendar.nextAvailable", {
+              date: formatYmd(nextAvailable, locale),
+            })}
+          />
+        ) : null}
+
+        {/* The whole address row is the map trigger; couples expect to click an
+            address and see it on a map. */}
+        <button
+          type="button"
+          onClick={onOpenMap}
+          title={t("suppliers.detail.map.open")}
+          className="-mx-2 w-[calc(100%+1rem)] rounded-lg px-2 text-left transition hover:bg-ink-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:hover:bg-umber-800/60 dark:focus-visible:ring-paper-100"
         >
-          <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-          {detail.contact_phone}
-        </a>
-      )}
-      {/* Second published line, when a business runs one. No label: the icon
-          already says "phone", and which desk answers is not something we can
-          state accurately for every listing. */}
-      {detail.contact_phone_alt && (
-        <a
-          href={`tel:${detail.contact_phone_alt}`}
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
-        >
-          <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-          {detail.contact_phone_alt}
-        </a>
-      )}
+          <SidebarRow icon={<MapPin size={14} aria-hidden />} value={address} />
+        </button>
+
+        {!hasContact && (
+          <p className="px-2 py-1.5 text-sm italic text-ink-500 dark:text-umber-300">
+            {t("suppliers.detail.contact.empty")}
+          </p>
+        )}
+        {detail.website && (
+          <a
+            href={`/r/supplier/${encodeURIComponent(detail.id)}`}
+            target="_blank"
+            rel="noreferrer noopener"
+            className={rowLink}
+          >
+            <Globe size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+            {t("suppliers.detail.contact.website")}
+          </a>
+        )}
+        {/* No email row. A vendor's mailbox is never shown to a couple (the API
+            sends null for every viewer); writing to them goes through the
+            inquiry flow, which delivers to that address without publishing it. */}
+        {detail.contact_phone && (
+          <a href={`tel:${detail.contact_phone}`} className={rowLink}>
+            <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+            {detail.contact_phone}
+          </a>
+        )}
+        {/* Second published line, when a business runs one. No label: the icon
+            already says "phone", and which desk answers is not something we can
+            state accurately for every listing. */}
+        {detail.contact_phone_alt && (
+          <a href={`tel:${detail.contact_phone_alt}`} className={rowLink}>
+            <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+            {detail.contact_phone_alt}
+          </a>
+        )}
+      </div>
     </SidebarCard>
   );
 }
@@ -1573,6 +1877,7 @@ function BusyCalendarCard({
   };
 
   const hasAny = blocked.size > 0 || partial.size > 0;
+  const weddingIso = weddingDate ? weddingDate.slice(0, 10) : null;
 
   // The vendor publishes no availability. Drawing the grid anyway would show a
   // month with every day clear, which is a promise about their diary that nobody
@@ -1582,10 +1887,7 @@ function BusyCalendarCard({
   if (availability && !availability.calendar_public) return null;
 
   return (
-    <SidebarCard
-      icon={<CalendarIcon size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />}
-      title={t("suppliers.detail.busy.title")}
-    >
+    <SidebarCard>
       <div className="mb-2 flex items-center justify-between">
         <button
           type="button"
@@ -1634,7 +1936,9 @@ function BusyCalendarCard({
                     : isPartial
                       ? "bg-amber-200/60 font-medium text-amber-800 dark:bg-amber-500/35 dark:text-amber-50"
                       : "text-ink-700 dark:text-umber-100"
-              } ${isToday && inMonth && !isBlocked && !isPartial ? "ring-1 ring-rose-400" : ""}`}
+              } ${isToday && inMonth && !isBlocked && !isPartial ? "ring-1 ring-rose-400" : ""} ${
+                weddingIso === iso && inMonth ? "ring-2 ring-blush-500" : ""
+              }`}
               title={isBlocked || isPartial ? iso : undefined}
             >
               {d.getDate()}
@@ -1663,6 +1967,12 @@ function BusyCalendarCard({
               </div>
             )}
           </>
+        )}
+        {weddingIso && (
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-3 w-3 rounded ring-2 ring-blush-500" />
+            {t("suppliers.detail.busy.legendWedding")}
+          </div>
         )}
       </div>
     </SidebarCard>

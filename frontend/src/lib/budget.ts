@@ -362,6 +362,23 @@ export function guestCountBaseline(couple: Couple, totalGuests: number): number 
 }
 
 /**
+ * The headcount the couple has actually STATED, or null when they haven't.
+ * `guestCountBaseline` always answers with a number (falling back to
+ * `DEFAULT_BASELINE`), which is right for a slider that needs a denominator and
+ * wrong for anything that would print the figure back at them as if they had
+ * said it: a per-guest price scaled to an invented 100 guests is a quote for
+ * nobody.
+ */
+export function statedGuestCount(couple: Couple): number | null {
+  const g = couple.guest_count_goal;
+  const hasGoal =
+    (g.kind === "exact" && g.exact != null) ||
+    (g.kind === "range" && g.min != null && g.max != null) ||
+    couple.target_guest_count != null;
+  return hasGoal ? guestCountBaseline(couple, 0) : null;
+}
+
+/**
  * Slider bounds for the cost-planning headcount slider. When the couple has a
  * real range (`guest_count_goal.kind === "range"`), we use it verbatim so the
  * two pages stay in lockstep. For `exact` / `tbd` we synthesise ±50% around

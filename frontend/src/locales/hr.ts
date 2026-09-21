@@ -5771,6 +5771,8 @@ const hr: LocaleMessages = {
       gallery_prev: "Prethodna fotografija",
       gallery_next: "Sljedeća fotografija",
       gallery_zoom: "Prikaži u punoj veličini",
+      gallery_show_all: "Sve fotografije ({n})",
+      sectionsAria: "Odjeljci stranice",
       adminTitle: "Administratorski prikaz",
       back: "Natrag",
       claimed: "Preuzeti dobavljač",
@@ -5778,6 +5780,11 @@ const hr: LocaleMessages = {
       reviewsCount: "{n} recenzija",
       starsAria: "{rating} od {max} zvjezdica",
       priceBandAria: "Cjenovni razred: {band} od {max}",
+      weddingDay: {
+        free: "Slobodni na dan vašeg vjenčanja, {date}",
+        partial: "Djelomično zauzeti na dan vašeg vjenčanja, {date}",
+        busy: "Nedostupni na dan vašeg vjenčanja, {date}",
+      },
       claim: {
         sectionTitle: "Je li ovo vaš oglas?",
         sectionBody:
@@ -5906,6 +5913,7 @@ const hr: LocaleMessages = {
         title: "Dostupnost",
         legendBooked: "Zauzeti dani",
         legendPartial: "Djelomično zauzeto",
+        legendWedding: "Dan vašeg vjenčanja",
         empty: "Dostupnost još nije upisana",
         prevMonth: "Prethodni mjesec",
         nextMonth: "Sljedeći mjesec",
@@ -5930,6 +5938,12 @@ const hr: LocaleMessages = {
         priceTotal: "Ukupno {price}",
         pricePerPerson: "{price} / osoba",
         estimatedEquivalent: "Procj. {price}",
+        subtitle: "Okvirne cijene. Konačnu ponudu pružatelj šalje kad zna vaš datum i pojedinosti.",
+        requestCta: "Zatraži ponudu",
+        requestSubject: "Upit za ponudu: {package}, vjenčanje {date}",
+        requestBody:
+          'Bok!\n\nPlaniramo vjenčanje za {date} s {guests} gostiju i zanima nas vaš paket "{package}". Možete li nam poslati ponudu i javiti može li se prilagoditi našim potrebama?\n\nUnaprijed hvala, radujemo se vašem odgovoru!',
+        forGuests: "Za vaših {n} gostiju: oko {price}",
       },
     },
     reviewTags: {

@@ -1,5 +1,8 @@
-// Vendor listing "packages" (árajánlat) card grid, shared by the in-app
-// SupplierDetailPage and the public PublicVendorPage so the two never drift.
+// Vendor listing "packages" (árajánlat), rendered two ways from one set of
+// parsing rules: a card GRID (the public PublicVendorPage) and a ROW LIST (the
+// in-app SupplierDetailPage, laid out like a service menu: name, the headline
+// facts, a guide price, and a "request a quote" button on the right). Both
+// share `parseSpecs` + the price logic, so the two never drift.
 //
 // New packages carry a structured price range + total/per-person mode; legacy
 // rows keep their original `price_text`. Descriptions remain free text and an
@@ -314,5 +317,201 @@ export function VendorPackageGrid({
         />
       ))}
     </div>
+  );
+}
+
+/** The two or three facts worth reading before opening anything, as one muted
+ *  line under the package name ("Duration: 8 hours · Photographers: 2"). Only
+ *  the first two: the rest sit behind the row's own toggle. */
+function headlineFacts(specs: Spec[]): string {
+  return specs
+    .slice(0, HEADLINE_SPEC_COUNT)
+    .map((s) => (s.label ? `${s.label}: ${s.value}` : s.value))
+    .join(" · ");
+}
+
+const HEADLINE_SPEC_COUNT = 2;
+
+function PackageRow({
+  pkg,
+  currency,
+  guests,
+  couplesGuests,
+  locale,
+  t,
+  onRequest,
+}: {
+  pkg: ListingPackage;
+  currency: Currency;
+  guests: GuestRange;
+  couplesGuests: number | null;
+  locale: Locale;
+  t: T;
+  onRequest?: (pkg: ListingPackage) => void;
+}) {
+  const specs = parseSpecs(pkg.description);
+  const [expanded, setExpanded] = useState(false);
+  const structured = hasStructuredPrice(pkg) && pkg.price_mode !== null;
+  const primaryPrice = structured
+    ? formatPackagePrice(
+        { min: pkg.price_min, max: pkg.price_max },
+        pkg.price_mode!,
+        currency,
+        locale,
+        t,
+      )
+    : pkg.price_text;
+
+  // The estimate that actually helps a couple decide. A per-guest rate scaled to
+  // THEIR headcount is the number they would otherwise work out on a phone; when
+  // the headcount is unknown it falls back to the listing-capacity conversion,
+  // and a total price keeps its per-person equivalent.
+  let estimate: string | null = null;
+  if (structured && pkg.price_mode === "per_person" && couplesGuests !== null) {
+    estimate = t("suppliers.detail.packages.forGuests", {
+      n: couplesGuests,
+      price: formatPackagePrice(
+        {
+          min: pkg.price_min !== null ? pkg.price_min * couplesGuests : null,
+          max: pkg.price_max !== null ? pkg.price_max * couplesGuests : null,
+        },
+        "total",
+        currency,
+        locale,
+        t,
+      ),
+    });
+  } else {
+    const converted = structured ? convertedPrice(pkg, guests) : null;
+    if (converted) {
+      estimate = t("suppliers.detail.packages.estimatedEquivalent", {
+        price: formatPackagePrice(converted.range, converted.mode, currency, locale, t),
+      });
+    }
+  }
+
+  const isEmpty = !primaryPrice && specs.length === 0 && !pkg.pdf_url;
+  const facts = headlineFacts(specs);
+  const hasMore = specs.length > HEADLINE_SPEC_COUNT;
+
+  return (
+    <li className="rounded-2xl border border-paper-300 bg-white px-5 py-4 transition-colors hover:border-ink-300 dark:border-umber-600 dark:bg-umber-900 dark:hover:border-umber-500">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-semibold leading-snug text-ink-900 dark:text-paper-50">
+            {pkg.name}
+          </h3>
+          {facts && (
+            <p className="mt-0.5 line-clamp-2 text-sm text-ink-500 dark:text-umber-300">{facts}</p>
+          )}
+          {primaryPrice ? (
+            <div className="mt-2">
+              <p className="text-base font-bold leading-tight text-ink-900 dark:text-paper-50">
+                {primaryPrice}
+              </p>
+              {estimate && (
+                <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">{estimate}</p>
+              )}
+            </div>
+          ) : isEmpty ? (
+            <p className="mt-2 text-sm italic text-ink-500 dark:text-umber-300">
+              {t("suppliers.detail.packages.detailsOnRequest")}
+            </p>
+          ) : null}
+        </div>
+        {onRequest && (
+          <button
+            type="button"
+            onClick={() => onRequest(pkg)}
+            data-testid="package-request"
+            className="w-full shrink-0 rounded-full border border-ink-300 bg-white px-4 py-2 text-sm font-medium sm:w-auto text-ink-900 transition hover:border-ink-900 hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-500 dark:bg-transparent dark:text-paper-50 dark:hover:border-paper-100 dark:hover:bg-umber-800"
+          >
+            {t("suppliers.detail.packages.requestCta")}
+          </button>
+        )}
+      </div>
+
+      {(hasMore || pkg.pdf_url) && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-paper-200 pt-2.5 dark:border-umber-700/70">
+          {hasMore && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              className="inline-flex items-center gap-1 py-1 text-sm font-medium text-ink-600 transition hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-200 dark:hover:text-paper-50"
+            >
+              {expanded
+                ? t("suppliers.detail.packages.showLess")
+                : t("suppliers.detail.packages.seeFullDetails")}
+              <ChevronDown
+                size={14}
+                aria-hidden
+                className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+              />
+            </button>
+          )}
+          {pkg.pdf_url && (
+            <a
+              href={pkg.pdf_url}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-1.5 py-1 text-sm font-medium text-ink-700 hover:text-ink-900 hover:underline dark:text-umber-100 dark:hover:text-paper-50"
+            >
+              <FileText size={15} aria-hidden />
+              {pkg.pdf_name ?? t("suppliers.detail.packages.download")}
+            </a>
+          )}
+        </div>
+      )}
+      {hasMore && expanded && (
+        <ul className="mt-1 divide-y divide-paper-100 dark:divide-umber-800">
+          {specs.map((spec, i) => (
+            <SpecRow key={i} spec={spec} />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+/** Service-menu style list of package rows. `onRequest` is optional: without
+ *  it the rows are a plain price list, with it each row carries a "request a
+ *  quote" button that hands the package back to the page. `couplesGuests` is the
+ *  viewing couple's own headcount (null when unknown) and only changes the
+ *  per-person estimate line. */
+export function VendorPackageList({
+  packages,
+  currency,
+  capacityMin,
+  capacityMax,
+  couplesGuests = null,
+  locale,
+  t,
+  onRequest,
+}: {
+  packages: ListingPackage[];
+  currency: Currency;
+  capacityMin: number | null;
+  capacityMax: number | null;
+  couplesGuests?: number | null;
+  locale: Locale;
+  t: T;
+  onRequest?: (pkg: ListingPackage) => void;
+}) {
+  return (
+    <ul className="space-y-3">
+      {packages.map((pkg) => (
+        <PackageRow
+          key={pkg.id}
+          pkg={pkg}
+          currency={currency}
+          guests={{ min: capacityMin, max: capacityMax }}
+          couplesGuests={couplesGuests}
+          locale={locale}
+          t={t}
+          onRequest={onRequest}
+        />
+      ))}
+    </ul>
   );
 }

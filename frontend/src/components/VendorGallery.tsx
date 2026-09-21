@@ -12,6 +12,11 @@
 //     uncropped, on a dark ground.
 //   - One active state. The gold frame marks the shown photo in the rail; it is
 //     the only accent in the component, everything else is ink on paper.
+//
+// `layout="mosaic"` is the profile-page shape: one big photo beside two stacked
+// ones and an "all photos" button, instead of a hero + thumbnail rail. Every
+// tile opens the same lightbox at its own index, which is where the rest of the
+// portfolio lives, so the page itself stays one screen tall.
 
 import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
@@ -27,6 +32,9 @@ export interface VendorGalleryProps {
   positionsY?: Record<string, number>;
   /** Shown when there are no photos at all (the monogram placeholder card). */
   emptyState: ReactNode;
+  /** `strip` (default): hero + thumbnail rail. `mosaic`: 1 large + 2 stacked
+   *  tiles with an "all photos" button; the lightbox is the only way onward. */
+  layout?: "strip" | "mosaic";
 }
 
 /** Circular control that floats over the photo. Same size and weight for the
@@ -34,7 +42,13 @@ export interface VendorGalleryProps {
 const OVERLAY_BUTTON =
   "grid h-10 w-10 place-items-center rounded-full bg-paper-50/85 text-ink-900 shadow-soft backdrop-blur transition hover:bg-paper-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 disabled:pointer-events-none disabled:opacity-0";
 
-export function VendorGallery({ images, name, positionsY, emptyState }: VendorGalleryProps) {
+export function VendorGallery({
+  images,
+  name,
+  positionsY,
+  emptyState,
+  layout = "strip",
+}: VendorGalleryProps) {
   const { t } = useT();
   const [index, setIndex] = useState(0);
   const [zoomed, setZoomed] = useState(false);
@@ -97,6 +111,123 @@ export function VendorGallery({ images, name, positionsY, emptyState }: VendorGa
 
   const framing = (url: string) => `50% ${positionsY?.[url] ?? 50}%`;
   const many = count > 1;
+
+  const lightbox =
+    zoomed &&
+    createPortal(
+      <div
+        className="fixed inset-0 z-50 flex flex-col bg-ink-950/95 backdrop-blur-sm"
+        onMouseDown={(e) => {
+          // Backdrop click closes; clicks on the photo or a control don't.
+          if (e.target === e.currentTarget) setZoomed(false);
+        }}
+      >
+        <div className="flex justify-end p-4">
+          <button
+            type="button"
+            onClick={() => setZoomed(false)}
+            aria-label={t("common.dismiss")}
+            className="grid h-11 w-11 place-items-center rounded-full bg-paper-50/10 text-paper-50 transition hover:bg-paper-50/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50"
+          >
+            <X size={20} aria-hidden />
+          </button>
+        </div>
+        <div
+          className="flex min-h-0 flex-1 items-center justify-center px-4 pb-6"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setZoomed(false);
+          }}
+        >
+          {/* object-contain, no crop and no framing offset: the whole point
+                  of the zoom is the frame the vendor actually shot. */}
+          <img
+            src={current}
+            alt={`${name} ${safeIndex + 1}`}
+            className="max-h-full max-w-full rounded-lg object-contain"
+          />
+        </div>
+        {many && (
+          <div className="flex items-center justify-center gap-6 pb-8">
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              aria-label={t("suppliers.detail.gallery_prev")}
+              className="grid h-11 w-11 place-items-center rounded-full bg-paper-50/10 text-paper-50 transition hover:bg-paper-50/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50"
+            >
+              <ChevronLeft size={20} aria-hidden />
+            </button>
+            <span className="text-sm tabular-nums text-paper-200/80">
+              {safeIndex + 1} / {count}
+            </span>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              aria-label={t("suppliers.detail.gallery_next")}
+              className="grid h-11 w-11 place-items-center rounded-full bg-paper-50/10 text-paper-50 transition hover:bg-paper-50/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50"
+            >
+              <ChevronRight size={20} aria-hidden />
+            </button>
+          </div>
+        )}
+      </div>,
+      document.body,
+    );
+
+  if (layout === "mosaic") {
+    const open = (i: number) => {
+      setIndex(i);
+      setZoomed(true);
+    };
+    const tile = (i: number, className: string) => {
+      const url = images[i];
+      if (!url) return null;
+      return (
+        <button
+          key={`${url}-${i}`}
+          type="button"
+          onClick={() => open(i)}
+          aria-label={t("suppliers.detail.gallery_zoom")}
+          className={`group/tile relative block overflow-hidden bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-900 dark:bg-umber-800 ${className}`}
+        >
+          <img
+            src={url}
+            alt={`${name} ${i + 1}`}
+            loading={i === 0 ? "eager" : "lazy"}
+            className="h-full w-full object-cover transition duration-300 group-hover/tile:scale-[1.02]"
+            style={{ objectPosition: framing(url) }}
+          />
+        </button>
+      );
+    };
+    // Three or more photos fill the mosaic; two split it; one runs full width.
+    const cols = count >= 3 ? "sm:grid-cols-[2fr_1fr]" : count === 2 ? "sm:grid-cols-2" : "";
+    const showAllLabel = t("suppliers.detail.gallery_show_all", { n: count });
+    return (
+      <div className="relative">
+        <div
+          className={`grid gap-2 overflow-hidden rounded-2xl aspect-[4/3] sm:aspect-[2.3/1] ${cols}`}
+        >
+          {tile(0, count >= 3 ? "sm:row-span-2" : "")}
+          {/* Phones show the lead photo alone: two extra slivers of a photo are
+              noise at that width. The lightbox is one tap away. */}
+          {count >= 2 && tile(1, "hidden sm:block")}
+          {count >= 3 && tile(2, "hidden sm:block")}
+        </div>
+        {many && (
+          <button
+            type="button"
+            onClick={() => open(0)}
+            className={`absolute bottom-3 right-3 rounded-full bg-paper-50/95 px-3.5 py-2 text-sm font-medium text-ink-900 shadow-soft backdrop-blur transition hover:bg-paper-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 dark:bg-umber-900/90 dark:text-paper-50 ${
+              count > 3 ? "" : "sm:hidden"
+            }`}
+          >
+            {showAllLabel}
+          </button>
+        )}
+        {lightbox}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -186,65 +317,7 @@ export function VendorGallery({ images, name, positionsY, emptyState }: VendorGa
         </div>
       )}
 
-      {zoomed &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-50 flex flex-col bg-ink-950/95 backdrop-blur-sm"
-            onMouseDown={(e) => {
-              // Backdrop click closes; clicks on the photo or a control don't.
-              if (e.target === e.currentTarget) setZoomed(false);
-            }}
-          >
-            <div className="flex justify-end p-4">
-              <button
-                type="button"
-                onClick={() => setZoomed(false)}
-                aria-label={t("common.dismiss")}
-                className="grid h-11 w-11 place-items-center rounded-full bg-paper-50/10 text-paper-50 transition hover:bg-paper-50/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50"
-              >
-                <X size={20} aria-hidden />
-              </button>
-            </div>
-            <div
-              className="flex min-h-0 flex-1 items-center justify-center px-4 pb-6"
-              onMouseDown={(e) => {
-                if (e.target === e.currentTarget) setZoomed(false);
-              }}
-            >
-              {/* object-contain, no crop and no framing offset: the whole point
-                  of the zoom is the frame the vendor actually shot. */}
-              <img
-                src={current}
-                alt={`${name} ${safeIndex + 1}`}
-                className="max-h-full max-w-full rounded-lg object-contain"
-              />
-            </div>
-            {many && (
-              <div className="flex items-center justify-center gap-6 pb-8">
-                <button
-                  type="button"
-                  onClick={() => go(-1)}
-                  aria-label={t("suppliers.detail.gallery_prev")}
-                  className="grid h-11 w-11 place-items-center rounded-full bg-paper-50/10 text-paper-50 transition hover:bg-paper-50/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50"
-                >
-                  <ChevronLeft size={20} aria-hidden />
-                </button>
-                <span className="text-sm tabular-nums text-paper-200/80">
-                  {safeIndex + 1} / {count}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => go(1)}
-                  aria-label={t("suppliers.detail.gallery_next")}
-                  className="grid h-11 w-11 place-items-center rounded-full bg-paper-50/10 text-paper-50 transition hover:bg-paper-50/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50"
-                >
-                  <ChevronRight size={20} aria-hidden />
-                </button>
-              </div>
-            )}
-          </div>,
-          document.body,
-        )}
+      {lightbox}
     </div>
   );
 }

@@ -5728,6 +5728,8 @@ const en: LocaleMessages = {
       gallery_prev: "Previous photo",
       gallery_next: "Next photo",
       gallery_zoom: "View full size",
+      gallery_show_all: "All photos ({n})",
+      sectionsAria: "Page sections",
       adminTitle: "Admin view",
       back: "Back",
       claimed: "Claimed supplier",
@@ -5735,6 +5737,11 @@ const en: LocaleMessages = {
       reviewsCount: "{n} reviews",
       starsAria: "{rating} out of {max} stars",
       priceBandAria: "Price band: {band} of {max}",
+      weddingDay: {
+        free: "Free on your wedding day, {date}",
+        partial: "Partly booked on your wedding day, {date}",
+        busy: "Not available on your wedding day, {date}",
+      },
       claim: {
         sectionTitle: "Is this your listing?",
         sectionBody:
@@ -5862,6 +5869,7 @@ const en: LocaleMessages = {
         title: "Availability",
         legendBooked: "Booked days",
         legendPartial: "Partly booked",
+        legendWedding: "Your wedding day",
         empty: "No availability recorded yet",
         prevMonth: "Previous month",
         nextMonth: "Next month",
@@ -5886,6 +5894,13 @@ const en: LocaleMessages = {
         priceTotal: "{price} total",
         pricePerPerson: "{price} / person",
         estimatedEquivalent: "Est. {price}",
+        subtitle:
+          "Guide prices. The vendor sends a binding quote once they know your date and details.",
+        requestCta: "Request a quote",
+        requestSubject: "Quote request: {package}, wedding on {date}",
+        requestBody:
+          "Hi!\n\nWe're planning our wedding for {date} with {guests} guests and we're interested in your \"{package}\" package. Could you send us a quote, and let us know if it can be adjusted to our needs?\n\nThanks in advance, looking forward to your reply!",
+        forGuests: "For your {n} guests: est. {price}",
       },
     },
     reviewTags: {
