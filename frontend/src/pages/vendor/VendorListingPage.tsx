@@ -24,6 +24,7 @@ import {
   useState,
 } from "react";
 import { intlLocale } from "../../lib/format";
+import { useActiveSection } from "../../lib/use_scroll_spy";
 import {
   AlertTriangle,
   ArrowRight,
@@ -37,6 +38,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { InfoHint } from "../../components/InfoHint";
+import { SectionNav } from "../../components/SectionNav";
 import { type UploadState, UploadStateOverlay } from "../../components/UploadStateOverlay";
 import { VendorShareDialog } from "../../components/VendorShareDialog";
 import {
@@ -110,16 +112,13 @@ interface FormState {
   capacity_min: string;
   capacity_max: string;
   /** ISO 639-1 codes a verbal vendor (celebrant / MC) works in. Non-string
-   *  field, handled on its own path in formToPatch (like hide_contact_public). */
+   *  field, handled on its own path in formToPatch. */
   spoken_languages: string[];
-  /** Hide the address + email tail from anonymous visitors on the public page.
-   *  A non-string field — handled on its own path in formToPatch. */
-  hide_contact_public: boolean;
 }
 
 /** The string-valued FormState keys — everything the `onChange`/`setNullable`
- *  string helpers touch. Excludes the lone boolean (`hide_contact_public`),
- *  which has its own handler and diff. */
+ *  string helpers touch. Excludes the non-string fields (`spoken_languages`),
+ *  which have their own handler and diff. */
 type StringFormKey = {
   [K in keyof FormState]: FormState[K] extends string ? K : never;
 }[keyof FormState];
@@ -152,7 +151,6 @@ function viewToForm(view: VendorListingView): FormState {
     capacity_min: l.capacity_min == null ? "" : String(l.capacity_min),
     capacity_max: l.capacity_max == null ? "" : String(l.capacity_max),
     spoken_languages: l.spoken_languages ?? [],
-    hide_contact_public: l.hide_contact_public,
   };
 }
 
@@ -206,9 +204,6 @@ function formToPatch(
     const n = Number(form.capacity_max);
     patch.capacity_max =
       form.capacity_max.trim().length === 0 || !Number.isFinite(n) ? null : Math.round(n);
-  }
-  if (form.hide_contact_public !== baseStr.hide_contact_public) {
-    patch.hide_contact_public = form.hide_contact_public;
   }
   const baseLangs = baseline.listing.spoken_languages ?? [];
   if (form.spoken_languages.join(",") !== baseLangs.join(",")) {
@@ -759,6 +754,31 @@ export default function VendorListingPage() {
   const localLang = listingLocalLanguage(view?.account.country);
   const englishOnlyListing = localLang.code === "en";
 
+  // The section nav, in the order of the page couples see: the facts under the
+  // name, photos, packages, about (with contact beside it), videos, reviews,
+  // availability. The ids are the setup checklist's own anchors, so a nav tab and
+  // a checklist row land on the same card.
+  const editorNavItems = [
+    { id: "vendor-section-pricing", label: t("vendor_home.section_pricing") },
+    { id: "vendor-section-cover", label: t("vendor_home.section_gallery") },
+    { id: "vendor-section-packages", label: t("suppliers.detail.packages.title") },
+    { id: "vendor-section-description", label: t("suppliers.detail.about.title") },
+    { id: "vendor-section-contact", label: t("vendor_home.section_contact") },
+    { id: "vendor-section-videos", label: t("suppliers.detail.videos.title") },
+    { id: "vendor-section-reviews", label: t("suppliers.detail.reviews.title") },
+    { id: "vendor-section-availability", label: t("vendor_home.section_availability") },
+  ];
+  const activeEditorSection = useActiveSection(
+    editorNavItems.map((i) => i.id),
+    150,
+  );
+  const scrollToEditorSection = (id: string) => {
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  };
+
   const priceSummary = view ? packagePriceSummary(view.packages ?? []) : null;
   const priceRangeText =
     priceSummary && view
@@ -860,13 +880,13 @@ export default function VendorListingPage() {
               />
               {t("vendor_home.visibility_live")}
             </span>
-            {/* The preview card IS the link to the live public page. It points
-                at the PUBLIC `/vendors/:id` route (not the couple-app-internal
-                `/app/suppliers/:id`, which is behind RequireCoupleAuth and just
-                bounces a vendor back to /vendor). Opens in a new tab so the
-                vendor's in-progress, unsaved editor edits are never blown away. */}
+            {/* The preview card IS the link to the couple's-eye view of this
+                page (read-only, under the vendor shell). It is NOT the public
+                page: that is a locked teaser now and shows no packages, prices
+                or contact. Opens in a new tab so the vendor's in-progress,
+                unsaved editor edits are never blown away. */}
             <Link
-              to={`/suppliers/${view.listing.id}`}
+              to="/vendor/listing/preview"
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t("vendor_home.preview_open")}
@@ -917,8 +937,22 @@ export default function VendorListingPage() {
             <SetupProgressPanel steps={setupSteps} celebrate={false} />
           </aside>
 
-          <form onSubmit={onSubmit} className="order-2 space-y-2.5 lg:order-1">
-            {/* Brand name. It used to be frozen at moderation with a mailto to
+          {/* ONE column, in the SAME order as the page couples see
+              (SupplierDetailPage): the facts under the name, photos, packages,
+              about, then videos, reviews and availability. The section nav is
+              the couple page's own component, so the two read as one product.
+              Contact sits with About because that is where the address shows,
+              and the booking card beside the couple's page carries the rest. */}
+          <div className="order-2 space-y-2.5 lg:order-1">
+            <SectionNav
+              items={editorNavItems}
+              active={activeEditorSection}
+              onSelect={scrollToEditorSection}
+              ariaLabel={t("suppliers.detail.sectionsAria")}
+              className="sticky top-[69px] z-20"
+            />
+            <form id="vendor-listing-form" onSubmit={onSubmit} className="space-y-2.5">
+              {/* Brand name. It used to be frozen at moderation with a mailto to
                 support, which made every typo a ticket. The vendor owns it now;
                 the once-a-week cooldown is what keeps the catalogue stable, and
                 while it's running the field is disabled with the exact unlock
@@ -929,281 +963,512 @@ export default function VendorListingPage() {
                 legend already says what the line is. The only copy under it is
                 conditional — the unlock date while locked, the cooldown warning
                 once a rename is pending. Nothing at rest. */}
-            <fieldset className="card space-y-2 p-4" disabled={saving || heroBusy}>
-              <legend className="font-semibold">{t("vendor_home.label_name")}</legend>
-              <input
-                className="block min-h-tap w-full border-0 border-b border-paper-300 bg-transparent px-0 py-2 text-lg font-medium text-ink-900 focus:border-blush-500 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-ink-500 dark:border-umber-700 dark:text-paper-50 dark:focus:border-blush-400"
-                value={form.name}
-                onChange={onChange("name")}
-                disabled={nameLocked}
-                maxLength={120}
-                aria-label={t("vendor_home.label_name")}
-              />
-              {nameLocked && nameUnlockDate && (
-                <p className="inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-200">
-                  <Lock size={12} aria-hidden="true" />
-                  {t("vendor_home.name_locked_until", { date: nameUnlockDate })}
-                </p>
-              )}
-              {/* The rest of the form autosaves; this one asks first, because
-                  saving it is what spends the next 7 days. */}
-              {namePending && (
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                  <p className="inline-flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
-                    <AlertTriangle size={12} aria-hidden="true" />
-                    {t("vendor_home.name_change_warning", { days: LISTING_NAME_COOLDOWN_DAYS })}
+              <fieldset className="card space-y-2 p-4" disabled={saving || heroBusy}>
+                <legend className="font-semibold">{t("vendor_home.label_name")}</legend>
+                <input
+                  className="block min-h-tap w-full border-0 border-b border-paper-300 bg-transparent px-0 py-2 text-lg font-medium text-ink-900 focus:border-blush-500 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-ink-500 dark:border-umber-700 dark:text-paper-50 dark:focus:border-blush-400"
+                  value={form.name}
+                  onChange={onChange("name")}
+                  disabled={nameLocked}
+                  maxLength={120}
+                  aria-label={t("vendor_home.label_name")}
+                />
+                {nameLocked && nameUnlockDate && (
+                  <p className="inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-200">
+                    <Lock size={12} aria-hidden="true" />
+                    {t("vendor_home.name_locked_until", { date: nameUnlockDate })}
                   </p>
-                  <span className="flex shrink-0 items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={revertName}
-                      className="text-xs font-medium text-ink-500 transition-colors hover:text-ink-700 dark:text-paper-400 dark:hover:text-paper-200"
-                    >
-                      {t("common.cancel")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void runSave("manual")}
-                      className="rounded-lg bg-blush-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blush-600"
-                    >
-                      {t("vendor_home.name_change_confirm")}
-                    </button>
-                  </span>
-                </div>
-              )}
-            </fieldset>
+                )}
+                {/* The rest of the form autosaves; this one asks first, because
+                  saving it is what spends the next 7 days. */}
+                {namePending && (
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <p className="inline-flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                      <AlertTriangle size={12} aria-hidden="true" />
+                      {t("vendor_home.name_change_warning", { days: LISTING_NAME_COOLDOWN_DAYS })}
+                    </p>
+                    <span className="flex shrink-0 items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={revertName}
+                        className="text-xs font-medium text-ink-500 transition-colors hover:text-ink-700 dark:text-paper-400 dark:hover:text-paper-200"
+                      >
+                        {t("common.cancel")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void runSave("manual")}
+                        className="rounded-lg bg-blush-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blush-600"
+                      >
+                        {t("vendor_home.name_change_confirm")}
+                      </button>
+                    </span>
+                  </div>
+                )}
+              </fieldset>
 
-            <fieldset
-              className="card space-y-2.5 p-4"
-              disabled={saving || heroBusy}
-              id="vendor-section-cover"
-            >
-              <legend className="font-semibold">{t("vendor_home.section_hero")}</legend>
-              <input
-                ref={heroInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={onHeroPick}
-              />
-              <div
-                role="button"
-                tabIndex={0}
-                aria-label={
-                  view.listing.hero_image_url
-                    ? t("vendor_home.hero_replace")
-                    : t("vendor_home.hero_upload")
-                }
-                onClick={() => heroInputRef.current?.click()}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    heroInputRef.current?.click();
-                  }
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(true);
-                }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={onHeroDrop}
-                className={`relative flex aspect-[3/2] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
-                  dragOver
-                    ? "border-blush-400 bg-blush-50 dark:border-blush-400 dark:bg-blush-500/10"
-                    : "border-paper-300 bg-paper-50 hover:border-paper-400 dark:border-umber-600 dark:bg-umber-900 dark:hover:border-paper-400"
-                }`}
+              <fieldset
+                className="card scroll-mt-36 space-y-2.5 p-4"
+                disabled={saving}
+                id="vendor-section-pricing"
               >
-                {effectiveHeroUrl ? (
-                  <>
-                    {/* SmartImage, not a bare <img>: the saved cover comes back
+                <legend className="font-semibold">
+                  {capacityKind
+                    ? t("vendor_home.section_pricing")
+                    : t("vendor_home.section_pricing_only")}
+                </legend>
+
+                {/* Both location fields are typeaheads over the geocoder. The city
+                  is the string couples filter the directory by, so it has to be
+                  one spelling per town (the same reason vendor onboarding asks
+                  for it this way) — free typing still stands, the suggestions
+                  are an accelerator. Picking a street address fills the city
+                  too, so the usual order costs one gesture. */}
+                <AddressAutocomplete
+                  id="vendor-city"
+                  kind="city"
+                  label={t("vendor_home.label_city")}
+                  value={form.city}
+                  onChange={(v) => setForm((prev) => (prev ? { ...prev, city: v } : prev))}
+                  onPick={() => {}}
+                  maxLength={80}
+                  required
+                  disabled={saving}
+                />
+
+                {/* The figure couples will actually filter by, pooled straight
+                  from the package prices below (shared/listing_pricing.ts) —
+                  never a second number the vendor has to keep in sync by
+                  hand. One row: the value if there is one, a nudge to fill in
+                  a package price if not, always tapping through to Packages. */}
+                <button
+                  type="button"
+                  onClick={scrollToPackages}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-paper-200 px-3 py-2.5 text-left transition-colors hover:border-paper-300 hover:bg-paper-50 dark:border-umber-700 dark:hover:border-umber-600 dark:hover:bg-umber-800/60"
+                >
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
+                      {t("vendor_home.price_range_label")}
+                      <InfoHint text={t("vendor_home.price_range_hint")} />
+                    </span>
+                    <span
+                      className={
+                        priceRangeText
+                          ? "block truncate text-base font-semibold text-ink-900 dark:text-paper-50"
+                          : "block text-sm font-medium text-blush-600 dark:text-blush-300"
+                      }
+                    >
+                      {priceRangeText ?? t("vendor_home.price_range_empty")}
+                    </span>
+                  </span>
+                  <ArrowRight
+                    size={16}
+                    aria-hidden="true"
+                    className="shrink-0 text-ink-400 dark:text-umber-400"
+                  />
+                </button>
+
+                <div>
+                  <span className="field-label">{t("vendor_home.label_price_band")}</span>
+                  {priceLocked && priceUnlockDate && (
+                    <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-200">
+                      <Lock size={12} aria-hidden="true" />
+                      {t("vendor_home.price_band_locked_until", { date: priceUnlockDate })}
+                    </p>
+                  )}
+                  <div
+                    role="radiogroup"
+                    aria-label={t("vendor_home.label_price_band")}
+                    className="inline-flex w-full overflow-hidden rounded-lg border border-paper-300 dark:border-umber-700"
+                  >
+                    {PRICE_LEVELS.map((lvl, i) => {
+                      const active = form.price_band === String(lvl);
+                      return (
+                        <button
+                          key={lvl}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          // The glyph row IS the label — five € read as a price
+                          // band faster than "Ultra-luxus / A piac csúcsa" does.
+                          // The words survive as the accessible name + the hover
+                          // title, so nothing is lost to a screen reader.
+                          aria-label={t(`vendor_home.price_band_level_${lvl}_name`)}
+                          title={t(`vendor_home.price_band_level_${lvl}_name`)}
+                          onClick={() => setPriceBand(lvl)}
+                          disabled={priceLocked}
+                          className={`flex flex-1 items-center justify-center gap-0.5 py-2.5 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                            i > 0 ? "border-l border-paper-300 dark:border-umber-700" : ""
+                          } ${
+                            active
+                              ? "bg-blush-500 text-white"
+                              : "bg-white text-ink-500 hover:bg-paper-50 dark:bg-umber-900 dark:text-umber-300 dark:hover:bg-umber-800"
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-0.5" aria-hidden="true">
+                            {PRICE_LEVELS.map((g) => (
+                              <span
+                                key={g}
+                                className={
+                                  g <= lvl
+                                    ? active
+                                      ? "text-sm font-semibold text-white"
+                                      : "text-sm font-semibold text-blush-600 dark:text-paper-400"
+                                    : active
+                                      ? "text-sm font-semibold text-white/40"
+                                      : "text-sm font-semibold text-paper-300 dark:text-umber-700"
+                                }
+                              >
+                                €
+                              </span>
+                            ))}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Withdrawing the price is a real decision (it empties the
+                    band on the public card and starts the 30-day cooldown), so
+                    it gets a named, confirmed control instead of riding on a
+                    second click of the level that is already chosen. It only
+                    appears once there is something to withdraw. */}
+                  {form.price_band !== "" && !priceLocked && (
+                    <button
+                      type="button"
+                      onClick={() => void clearPriceBand()}
+                      className="mt-2 text-xs font-medium text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                    >
+                      {t("vendor_home.price_band_clear")}
+                    </button>
+                  )}
+                </div>
+
+                {/* Capacity, only where a guest count exists. A venue reports the
+                  room it can seat; a caterer or a rental stock reports what it
+                  can serve, which is a different promise and gets its own
+                  label. Everyone else never sees this block. */}
+                {capacityKind && (
+                  <div id="vendor-section-capacity">
+                    <span className="field-label">
+                      {capacityKind === "seating"
+                        ? t("vendor_home.capacity_seating_label")
+                        : t("vendor_home.capacity_service_label")}
+                    </span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <TextField
+                        id="vendor-capacity-min"
+                        label={t("vendor_home.capacity_min_label")}
+                        value={form.capacity_min}
+                        onChange={onChange("capacity_min")}
+                        type="number"
+                        min={0}
+                        max={5000}
+                      />
+                      <TextField
+                        id="vendor-capacity-max"
+                        label={t("vendor_home.capacity_max_label")}
+                        value={form.capacity_max}
+                        onChange={onChange("capacity_max")}
+                        type="number"
+                        min={0}
+                        max={5000}
+                      />
+                    </div>
+                    {track && (
+                      <div
+                        className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-100 dark:bg-umber-800"
+                        aria-hidden="true"
+                      >
+                        <div
+                          className={`h-full rounded-full ${
+                            track.invalid
+                              ? "bg-amber-500 dark:bg-amber-400"
+                              : "bg-blush-500 dark:bg-blush-400"
+                          }`}
+                          style={{
+                            marginLeft: `${track.left}%`,
+                            width: `${Math.max(0, track.right - track.left)}%`,
+                          }}
+                        />
+                      </div>
+                    )}
+                    {track?.invalid && (
+                      <p className="mt-1 text-xs text-blush-600 dark:text-blush-300">
+                        {t("vendor_home.capacity_invalid")}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {speaksLang && (
+                  <div id="vendor-section-languages">
+                    <span className="field-label">{t("vendor_home.languages_label")}</span>
+                    <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+                      {t("vendor_home.languages_hint")}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {SPOKEN_LANGUAGE_OPTIONS.map((opt) => {
+                        const on = form.spoken_languages.includes(opt.code);
+                        return (
+                          <button
+                            key={opt.code}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() =>
+                              setForm((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      spoken_languages: on
+                                        ? prev.spoken_languages.filter((c) => c !== opt.code)
+                                        : [...prev.spoken_languages, opt.code],
+                                    }
+                                  : prev,
+                              )
+                            }
+                            className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                              on
+                                ? "border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-500/15 dark:text-blush-200"
+                                : "border-paper-300 text-ink-600 hover:border-ink-400 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500"
+                            }`}
+                          >
+                            {languageLabel(opt.code, locale)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </fieldset>
+
+              <fieldset
+                className="card scroll-mt-36 space-y-2.5 p-4"
+                disabled={saving || heroBusy}
+                id="vendor-section-cover"
+              >
+                <legend className="font-semibold">{t("vendor_home.section_hero")}</legend>
+                <input
+                  ref={heroInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={onHeroPick}
+                />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={
+                    view.listing.hero_image_url
+                      ? t("vendor_home.hero_replace")
+                      : t("vendor_home.hero_upload")
+                  }
+                  onClick={() => heroInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      heroInputRef.current?.click();
+                    }
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={onHeroDrop}
+                  className={`relative flex aspect-[3/2] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
+                    dragOver
+                      ? "border-blush-400 bg-blush-50 dark:border-blush-400 dark:bg-blush-500/10"
+                      : "border-paper-300 bg-paper-50 hover:border-paper-400 dark:border-umber-600 dark:bg-umber-900 dark:hover:border-paper-400"
+                  }`}
+                >
+                  {effectiveHeroUrl ? (
+                    <>
+                      {/* SmartImage, not a bare <img>: the saved cover comes back
                         from R2 on every load and a tinted empty box is
                         indistinguishable from "you have no cover" for the
                         second or two that takes. The shimmer says which one it
                         is. A just-picked blob settles synchronously and never
                         flashes it. */}
-                    {/* The absolute positioning lives on a wrapper span rather
+                      {/* The absolute positioning lives on a wrapper span rather
                         than on SmartImage's own: its wrapper is `relative`, and
                         Tailwind emits `.relative` after `.absolute`, so passing
                         `absolute` down there silently loses and the frame
                         collapses to the image's intrinsic size. */}
-                    <span className="absolute inset-0">
-                      <SmartImage
-                        src={effectiveHeroUrl}
-                        alt={t("vendor_home.hero_current_alt")}
-                        wrapperClassName="h-full w-full"
-                        className="h-full w-full object-cover"
-                      />
-                    </span>
-                    {/* The prompt to replace steps aside while the frame is
-                        reporting: two labels on one photo is one too many. */}
-                    {heroState === null && (
-                      <span className="relative z-10 rounded-lg bg-ink-900/55 px-3 py-1.5 text-xs font-medium text-paper-50">
-                        {t("vendor_home.hero_dropzone_replace")}
+                      <span className="absolute inset-0">
+                        <SmartImage
+                          src={effectiveHeroUrl}
+                          alt={t("vendor_home.hero_current_alt")}
+                          wrapperClassName="h-full w-full"
+                          className="h-full w-full object-cover"
+                        />
                       </span>
-                    )}
-                  </>
-                ) : (
-                  <div className="px-4 py-4">
-                    <p className="text-sm font-medium text-ink-700 dark:text-umber-100">
-                      {t("vendor_home.hero_dropzone_cta")}
-                    </p>
-                    <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
-                      {t("vendor_home.hero_dropzone_hint")}
-                    </p>
-                    <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
-                      {t("vendor_home.hero_size_hint")}
-                    </p>
-                  </div>
-                )}
-                {heroState && (
-                  <UploadStateOverlay
-                    state={heroState}
-                    onRetry={heroState.kind === "error" ? retryHero : undefined}
-                    retryLabel={t("network.retry")}
-                    progressLabel={(pct) => t("vendor_home.upload_progress", { pct: String(pct) })}
-                    doneLabel={t("vendor_home.upload_done")}
-                    errorLabel={t("vendor_home.hero_upload_failed")}
-                  />
-                )}
-              </div>
-              {/* The dropzone itself is the upload control; the zone is cut to
+                      {/* The prompt to replace steps aside while the frame is
+                        reporting: two labels on one photo is one too many. */}
+                      {heroState === null && (
+                        <span className="relative z-10 rounded-lg bg-ink-900/55 px-3 py-1.5 text-xs font-medium text-paper-50">
+                          {t("vendor_home.hero_dropzone_replace")}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <div className="px-4 py-4">
+                      <p className="text-sm font-medium text-ink-700 dark:text-umber-100">
+                        {t("vendor_home.hero_dropzone_cta")}
+                      </p>
+                      <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                        {t("vendor_home.hero_dropzone_hint")}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+                        {t("vendor_home.hero_size_hint")}
+                      </p>
+                    </div>
+                  )}
+                  {heroState && (
+                    <UploadStateOverlay
+                      state={heroState}
+                      onRetry={heroState.kind === "error" ? retryHero : undefined}
+                      retryLabel={t("network.retry")}
+                      progressLabel={(pct) =>
+                        t("vendor_home.upload_progress", { pct: String(pct) })
+                      }
+                      doneLabel={t("vendor_home.upload_done")}
+                      errorLabel={t("vendor_home.hero_upload_failed")}
+                    />
+                  )}
+                </div>
+                {/* The dropzone itself is the upload control; the zone is cut to
                   the exact 3:2 crop of the catalogue card. Only the destructive
                   action needs its own button. */}
-              {view.listing.hero_image_url ? (
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs text-ink-500 dark:text-umber-300">
-                    {t("vendor_home.hero_size_hint")}
-                  </p>
-                  <button
-                    type="button"
-                    className="btn-ghost"
-                    onClick={onHeroDelete}
-                    disabled={heroBusy}
-                  >
-                    {t("vendor_home.hero_delete")}
-                  </button>
-                </div>
-              ) : null}
-            </fieldset>
+                {view.listing.hero_image_url ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-ink-500 dark:text-umber-300">
+                      {t("vendor_home.hero_size_hint")}
+                    </p>
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={onHeroDelete}
+                      disabled={heroBusy}
+                    >
+                      {t("vendor_home.hero_delete")}
+                    </button>
+                  </div>
+                ) : null}
+              </fieldset>
 
-            {/* Portfolio gallery — up to MAX_LISTING_PHOTOS beyond the hero;
+              {/* Portfolio gallery — up to MAX_LISTING_PHOTOS beyond the hero;
                 shows on the public detail page's thumbnail strip. */}
-            <fieldset
-              className="card space-y-2.5 p-4"
-              disabled={saving || galleryBusy}
-              id="vendor-section-gallery"
-            >
-              {/* The thumbnails and the "add photo" tile say what this is; the
+              <fieldset
+                className="card scroll-mt-36 space-y-2.5 p-4"
+                disabled={saving || galleryBusy}
+                id="vendor-section-gallery"
+              >
+                {/* The thumbnails and the "add photo" tile say what this is; the
                   sentence explaining where the photos surface is one (i) away
                   for the first visit and out of the way on every later one. */}
-              <legend className="flex items-center gap-1.5 font-semibold">
-                {t("vendor_home.section_gallery")}
-                <InfoHint text={t("vendor_home.gallery_intro")} />
-              </legend>
-              <input
-                ref={galleryInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                className="hidden"
-                onChange={(e) => void onGalleryPick(e)}
-              />
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {(view.photos ?? []).map((p) => (
-                  <GalleryTile
-                    key={p.id}
-                    photo={p}
-                    busy={galleryBusy}
-                    onDelete={() => void onGalleryDelete(p.id)}
-                    onCommit={(y) => {
-                      void vendorListingApi
-                        .updatePhotoPosition(p.id, y)
-                        .then(setView)
-                        .catch(() => undefined);
-                    }}
-                  />
-                ))}
-                {/* One tile per picked file, from the moment it is picked. The
+                <legend className="flex items-center gap-1.5 font-semibold">
+                  {t("vendor_home.section_gallery")}
+                  <InfoHint text={t("vendor_home.gallery_intro")} />
+                </legend>
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => void onGalleryPick(e)}
+                />
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {(view.photos ?? []).map((p) => (
+                    <GalleryTile
+                      key={p.id}
+                      photo={p}
+                      busy={galleryBusy}
+                      onDelete={() => void onGalleryDelete(p.id)}
+                      onCommit={(y) => {
+                        void vendorListingApi
+                          .updatePhotoPosition(p.id, y)
+                          .then(setView)
+                          .catch(() => undefined);
+                      }}
+                    />
+                  ))}
+                  {/* One tile per picked file, from the moment it is picked. The
                     one in flight carries its percentage, the rest wait as
                     skeletons, and a failure keeps its tile with a retry glyph
                     instead of vanishing into a toast. */}
-                {galleryQueue.map((item) => (
-                  <div
-                    key={item.id}
-                    className="relative aspect-[3/2] overflow-hidden rounded-lg bg-paper-200 dark:bg-umber-800"
-                  >
-                    {item.status === "waiting" ? (
-                      <span
-                        aria-hidden="true"
-                        className="absolute inset-0 skeleton motion-safe:animate-shimmer"
-                      />
-                    ) : (
-                      <UploadStateOverlay
-                        compact
-                        state={
-                          item.status === "failed"
-                            ? { kind: "error" }
-                            : { kind: "uploading", pct: item.pct }
-                        }
-                        onRetry={
-                          item.status === "failed" ? () => retryGalleryItem(item.id) : undefined
-                        }
-                        retryLabel={t("network.retry")}
-                        progressLabel={(pct) =>
-                          t("vendor_home.upload_progress", { pct: String(pct) })
-                        }
-                        doneLabel={t("vendor_home.upload_done")}
-                        errorLabel={t("vendor_home.gallery_upload_failed")}
-                      />
-                    )}
-                  </div>
-                ))}
-                {(view.photos?.length ?? 0) + galleryQueue.length < MAX_LISTING_PHOTOS && (
-                  <button
-                    type="button"
-                    onClick={() => galleryInputRef.current?.click()}
-                    disabled={galleryBusy}
-                    className="flex aspect-[3/2] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-paper-300 text-ink-500 transition hover:border-paper-400 hover:text-blush-600 dark:border-umber-700 dark:text-umber-300 dark:hover:border-paper-400"
-                  >
-                    <Plus size={18} aria-hidden="true" />
-                    <span className="text-xs font-medium">{t("vendor_home.gallery_add")}</span>
-                  </button>
-                )}
-              </div>
-              <p className="text-xs text-ink-500 dark:text-umber-300">
-                {t("vendor_home.gallery_count", {
-                  n: String(view.photos?.length ?? 0),
-                  max: String(MAX_LISTING_PHOTOS),
-                })}
-              </p>
-            </fieldset>
+                  {galleryQueue.map((item) => (
+                    <div
+                      key={item.id}
+                      className="relative aspect-[3/2] overflow-hidden rounded-lg bg-paper-200 dark:bg-umber-800"
+                    >
+                      {item.status === "waiting" ? (
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-0 skeleton motion-safe:animate-shimmer"
+                        />
+                      ) : (
+                        <UploadStateOverlay
+                          compact
+                          state={
+                            item.status === "failed"
+                              ? { kind: "error" }
+                              : { kind: "uploading", pct: item.pct }
+                          }
+                          onRetry={
+                            item.status === "failed" ? () => retryGalleryItem(item.id) : undefined
+                          }
+                          retryLabel={t("network.retry")}
+                          progressLabel={(pct) =>
+                            t("vendor_home.upload_progress", { pct: String(pct) })
+                          }
+                          doneLabel={t("vendor_home.upload_done")}
+                          errorLabel={t("vendor_home.gallery_upload_failed")}
+                        />
+                      )}
+                    </div>
+                  ))}
+                  {(view.photos?.length ?? 0) + galleryQueue.length < MAX_LISTING_PHOTOS && (
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      disabled={galleryBusy}
+                      className="flex aspect-[3/2] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-paper-300 text-ink-500 transition hover:border-paper-400 hover:text-blush-600 dark:border-umber-700 dark:text-umber-300 dark:hover:border-paper-400"
+                    >
+                      <Plus size={18} aria-hidden="true" />
+                      <span className="text-xs font-medium">{t("vendor_home.gallery_add")}</span>
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-ink-500 dark:text-umber-300">
+                  {t("vendor_home.gallery_count", {
+                    n: String(view.photos?.length ?? 0),
+                    max: String(MAX_LISTING_PHOTOS),
+                  })}
+                </p>
+              </fieldset>
 
-            {/* Video reel — reference videos beside the gallery. Self-contained
-                (own busy state + toasts); hits the server per action like the
-                gallery, so it lives outside the autosave form flow. */}
-            <VendorListingVideos videos={view.videos ?? []} onChange={setView} />
-
-            {/* Price offers / packages (árajánlat) — self-contained, per-action
+              {/* Price offers / packages (árajánlat) — self-contained, per-action
                 server writes like the reel; category drives the name suggestions. */}
-            <div id="vendor-section-packages">
-              <VendorListingPackages
-                packages={view.packages ?? []}
-                category={view.listing.category}
-                currency={view.currency}
-                currencyOverride={view.listing.currency_override}
-                capacityMin={view.listing.capacity_min}
-                capacityMax={view.listing.capacity_max}
-                onChange={setView}
-              />
-            </div>
+              <div id="vendor-section-packages" className="scroll-mt-36">
+                <VendorListingPackages
+                  packages={view.packages ?? []}
+                  category={view.listing.category}
+                  currency={view.currency}
+                  currencyOverride={view.listing.currency_override}
+                  capacityMin={view.listing.capacity_min}
+                  capacityMax={view.listing.capacity_max}
+                  onChange={setView}
+                />
+              </div>
 
-            <fieldset
-              className="card space-y-2.5 p-4"
-              disabled={saving}
-              id="vendor-section-description"
-            >
-              <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>
-              {/* One language at a time. Both textareas stacked meant a vendor
+              <fieldset
+                className="card scroll-mt-36 space-y-2.5 p-4"
+                disabled={saving}
+                id="vendor-section-description"
+              >
+                <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>
+                {/* One language at a time. Both textareas stacked meant a vendor
                   scrolled past a field they weren't writing in, twice, on every
                   visit. Same pill toggle as the interface language in Settings;
                   the dot marks a language that already has copy, which is the
@@ -1214,445 +1479,341 @@ export default function VendorListingPage() {
                   question with no useful answer. `blurb_hu` is still the column
                   underneath — see shared/listing_language.ts for why the name
                   outlived its meaning. */}
-              {englishOnlyListing ? (
-                // The vendor's own language IS English, so there is one
-                // description, not two. Showing a second "English" tab would
-                // ask them to write the same text twice.
-                <textarea
-                  id="vendor-blurb-en"
-                  aria-label={t("vendor_home.label_blurb_en")}
-                  className="input"
-                  rows={4}
-                  maxLength={2000}
-                  value={form.blurb_en}
-                  onChange={onChange("blurb_en")}
-                />
-              ) : (
-                <>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div
-                      role="radiogroup"
-                      aria-label={t("vendor_home.blurb_lang_aria")}
-                      className="inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
-                    >
-                      {(["local", "en"] as const).map((l) => {
-                        const active = l === blurbLang;
-                        const filled =
-                          (l === "local" ? form.blurb_hu : form.blurb_en).trim().length > 0;
-                        return (
-                          <button
-                            key={l}
-                            type="button"
-                            role="radio"
-                            aria-checked={active}
-                            onClick={() => setBlurbLang(l)}
-                            className={`inline-flex min-w-[84px] items-center justify-center gap-1.5 px-4 py-1.5 text-xs font-medium transition-colors ${
-                              active
-                                ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                                : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
-                            }`}
-                          >
-                            {l === "local" ? localLang.label : "English"}
-                            {filled && (
-                              <>
-                                <span
-                                  aria-hidden="true"
-                                  className={`h-1.5 w-1.5 rounded-full ${
-                                    active ? "bg-paper-50/70 dark:bg-ink-900/60" : "bg-sage-500"
-                                  }`}
-                                />
-                                <span className="sr-only">
-                                  {t("vendor_home.blurb_lang_filled")}
-                                </span>
-                              </>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* No button at all when DeepL has no such language — a
+                {englishOnlyListing ? (
+                  // The vendor's own language IS English, so there is one
+                  // description, not two. Showing a second "English" tab would
+                  // ask them to write the same text twice.
+                  <textarea
+                    id="vendor-blurb-en"
+                    aria-label={t("vendor_home.label_blurb_en")}
+                    className="input"
+                    rows={4}
+                    maxLength={2000}
+                    value={form.blurb_en}
+                    onChange={onChange("blurb_en")}
+                  />
+                ) : (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div
+                        role="radiogroup"
+                        aria-label={t("vendor_home.blurb_lang_aria")}
+                        className="inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
+                      >
+                        {(["local", "en"] as const).map((l) => {
+                          const active = l === blurbLang;
+                          const filled =
+                            (l === "local" ? form.blurb_hu : form.blurb_en).trim().length > 0;
+                          return (
+                            <button
+                              key={l}
+                              type="button"
+                              role="radio"
+                              aria-checked={active}
+                              onClick={() => setBlurbLang(l)}
+                              className={`inline-flex min-w-[84px] items-center justify-center gap-1.5 px-4 py-1.5 text-xs font-medium transition-colors ${
+                                active
+                                  ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                                  : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
+                              }`}
+                            >
+                              {l === "local" ? localLang.label : "English"}
+                              {filled && (
+                                <>
+                                  <span
+                                    aria-hidden="true"
+                                    className={`h-1.5 w-1.5 rounded-full ${
+                                      active ? "bg-paper-50/70 dark:bg-ink-900/60" : "bg-sage-500"
+                                    }`}
+                                  />
+                                  <span className="sr-only">
+                                    {t("vendor_home.blurb_lang_filled")}
+                                  </span>
+                                </>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* No button at all when DeepL has no such language — a
                         Croatian vendor gets both fields and no machine help,
                         which beats a button that 400s when they press it. */}
-                    {localLang.deepl !== null &&
-                      (blurbLang === "local" ? (
-                        <TranslateButton
-                          source="EN"
-                          target={localLang.deepl}
-                          sourceText={form.blurb_en}
-                          hasExisting={form.blurb_hu.trim().length > 0}
-                          disabled={saving}
-                          onTranslated={(text) =>
-                            setForm((prev) => (prev ? { ...prev, blurb_hu: text } : prev))
-                          }
-                        />
-                      ) : (
-                        <TranslateButton
-                          source={localLang.deepl}
-                          target="EN"
-                          sourceText={form.blurb_hu}
-                          hasExisting={form.blurb_en.trim().length > 0}
-                          disabled={saving}
-                          onTranslated={(text) =>
-                            setForm((prev) => (prev ? { ...prev, blurb_en: text } : prev))
-                          }
-                        />
-                      ))}
-                  </div>
-                  {blurbLang === "local" ? (
-                    <textarea
-                      id="vendor-blurb-hu"
-                      aria-label={t("vendor_home.label_blurb_lang", { lang: localLang.label })}
-                      className="input"
-                      rows={4}
-                      maxLength={2000}
-                      value={form.blurb_hu}
-                      onChange={onChange("blurb_hu")}
-                    />
-                  ) : (
-                    <textarea
-                      id="vendor-blurb-en"
-                      aria-label={t("vendor_home.label_blurb_en")}
-                      className="input"
-                      rows={4}
-                      maxLength={2000}
-                      value={form.blurb_en}
-                      onChange={onChange("blurb_en")}
-                    />
-                  )}
-                </>
-              )}
-              <p className="text-xs text-ink-500 dark:text-umber-300">
-                {t("vendor_home.label_blurb_hint")}
-              </p>
-            </fieldset>
-
-            <fieldset
-              className="card space-y-2.5 p-4"
-              disabled={saving}
-              id="vendor-section-contact"
-            >
-              <legend className="font-semibold">{t("vendor_home.section_contact")}</legend>
-              {/* Both location fields are typeaheads over the geocoder. The city
-                  is the string couples filter the directory by, so it has to be
-                  one spelling per town (the same reason vendor onboarding asks
-                  for it this way) — free typing still stands, the suggestions
-                  are an accelerator. Picking a street address fills the city
-                  too, so the usual order costs one gesture. */}
-              <AddressAutocomplete
-                id="vendor-city"
-                kind="city"
-                label={t("vendor_home.label_city")}
-                value={form.city}
-                onChange={(v) => setForm((prev) => (prev ? { ...prev, city: v } : prev))}
-                onPick={() => {}}
-                maxLength={80}
-                required
-                disabled={saving}
-              />
-              <AddressAutocomplete
-                id="vendor-address"
-                label={t("vendor_home.label_address")}
-                value={form.address}
-                onChange={(v) => setForm((prev) => (prev ? { ...prev, address: v } : prev))}
-                onPick={(s) => {
-                  if (s.city) {
-                    setForm((prev) => (prev ? { ...prev, city: s.city ?? prev.city } : prev));
-                  }
-                }}
-                maxLength={240}
-                disabled={saving}
-              />
-              <TextField
-                id="vendor-website"
-                label={t("vendor_home.label_website")}
-                value={form.website}
-                onChange={onChange("website")}
-                type="url"
-                maxLength={240}
-              />
-              <TextField
-                id="vendor-contact-email"
-                label={t("vendor_home.label_contact_email")}
-                value={form.contact_email}
-                onChange={onChange("contact_email")}
-                type="email"
-                maxLength={120}
-              />
-              <TextField
-                id="vendor-contact-phone"
-                label={t("vendor_home.label_contact_phone")}
-                value={form.contact_phone}
-                onChange={onChange("contact_phone")}
-                type="tel"
-                maxLength={40}
-              />
-              <div className="flex items-start justify-between gap-3 rounded-lg border border-paper-200 px-3 py-2.5 dark:border-umber-700">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 text-sm font-medium text-ink-900 dark:text-paper-100">
-                    {t("vendor_home.label_hide_contact")}
-                    {/* The three-line version (which addresses get masked, what
-                        a signed-in couple sees, why the phone stays hidden)
-                        lives in the tooltip. The line below is what a vendor
-                        needs to decide the toggle. */}
-                    <InfoHint text={t("vendor_home.label_hide_contact_hint")} />
-                  </p>
-                  <p
-                    id="vendor-hide-contact-hint"
-                    className="mt-0.5 text-xs text-ink-500 dark:text-umber-300"
-                  >
-                    {t("vendor_home.label_hide_contact_hint_short")}
-                  </p>
-                </div>
-                <Switch
-                  checked={form.hide_contact_public}
-                  onChange={(next) =>
-                    setForm((prev) => (prev ? { ...prev, hide_contact_public: next } : prev))
-                  }
-                  disabled={saving}
-                  label={t("vendor_home.label_hide_contact")}
-                  describedBy="vendor-hide-contact-hint"
-                />
-              </div>
-            </fieldset>
-
-            <fieldset
-              className="card space-y-2.5 p-4"
-              disabled={saving}
-              id="vendor-section-pricing"
-            >
-              <legend className="font-semibold">
-                {capacityKind
-                  ? t("vendor_home.section_pricing")
-                  : t("vendor_home.section_pricing_only")}
-              </legend>
-
-              {/* The figure couples will actually filter by, pooled straight
-                  from the package prices below (shared/listing_pricing.ts) —
-                  never a second number the vendor has to keep in sync by
-                  hand. One row: the value if there is one, a nudge to fill in
-                  a package price if not, always tapping through to Packages. */}
-              <button
-                type="button"
-                onClick={scrollToPackages}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border border-paper-200 px-3 py-2.5 text-left transition-colors hover:border-paper-300 hover:bg-paper-50 dark:border-umber-700 dark:hover:border-umber-600 dark:hover:bg-umber-800/60"
-              >
-                <span className="min-w-0">
-                  <span className="flex items-center gap-1 text-xs text-ink-500 dark:text-umber-300">
-                    {t("vendor_home.price_range_label")}
-                    <InfoHint text={t("vendor_home.price_range_hint")} />
-                  </span>
-                  <span
-                    className={
-                      priceRangeText
-                        ? "block truncate text-base font-semibold text-ink-900 dark:text-paper-50"
-                        : "block text-sm font-medium text-blush-600 dark:text-blush-300"
-                    }
-                  >
-                    {priceRangeText ?? t("vendor_home.price_range_empty")}
-                  </span>
-                </span>
-                <ArrowRight
-                  size={16}
-                  aria-hidden="true"
-                  className="shrink-0 text-ink-400 dark:text-umber-400"
-                />
-              </button>
-
-              <div>
-                <span className="field-label">{t("vendor_home.label_price_band")}</span>
-                {priceLocked && priceUnlockDate && (
-                  <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-200">
-                    <Lock size={12} aria-hidden="true" />
-                    {t("vendor_home.price_band_locked_until", { date: priceUnlockDate })}
-                  </p>
-                )}
-                <div
-                  role="radiogroup"
-                  aria-label={t("vendor_home.label_price_band")}
-                  className="inline-flex w-full overflow-hidden rounded-lg border border-paper-300 dark:border-umber-700"
-                >
-                  {PRICE_LEVELS.map((lvl, i) => {
-                    const active = form.price_band === String(lvl);
-                    return (
-                      <button
-                        key={lvl}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        // The glyph row IS the label — five € read as a price
-                        // band faster than "Ultra-luxus / A piac csúcsa" does.
-                        // The words survive as the accessible name + the hover
-                        // title, so nothing is lost to a screen reader.
-                        aria-label={t(`vendor_home.price_band_level_${lvl}_name`)}
-                        title={t(`vendor_home.price_band_level_${lvl}_name`)}
-                        onClick={() => setPriceBand(lvl)}
-                        disabled={priceLocked}
-                        className={`flex flex-1 items-center justify-center gap-0.5 py-2.5 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                          i > 0 ? "border-l border-paper-300 dark:border-umber-700" : ""
-                        } ${
-                          active
-                            ? "bg-blush-500 text-white"
-                            : "bg-white text-ink-500 hover:bg-paper-50 dark:bg-umber-900 dark:text-umber-300 dark:hover:bg-umber-800"
-                        }`}
-                      >
-                        <span className="inline-flex items-center gap-0.5" aria-hidden="true">
-                          {PRICE_LEVELS.map((g) => (
-                            <span
-                              key={g}
-                              className={
-                                g <= lvl
-                                  ? active
-                                    ? "text-sm font-semibold text-white"
-                                    : "text-sm font-semibold text-blush-600 dark:text-paper-400"
-                                  : active
-                                    ? "text-sm font-semibold text-white/40"
-                                    : "text-sm font-semibold text-paper-300 dark:text-umber-700"
-                              }
-                            >
-                              €
-                            </span>
-                          ))}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Withdrawing the price is a real decision (it empties the
-                    band on the public card and starts the 30-day cooldown), so
-                    it gets a named, confirmed control instead of riding on a
-                    second click of the level that is already chosen. It only
-                    appears once there is something to withdraw. */}
-                {form.price_band !== "" && !priceLocked && (
-                  <button
-                    type="button"
-                    onClick={() => void clearPriceBand()}
-                    className="mt-2 text-xs font-medium text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
-                  >
-                    {t("vendor_home.price_band_clear")}
-                  </button>
-                )}
-              </div>
-
-              {/* Capacity, only where a guest count exists. A venue reports the
-                  room it can seat; a caterer or a rental stock reports what it
-                  can serve, which is a different promise and gets its own
-                  label. Everyone else never sees this block. */}
-              {capacityKind && (
-                <div id="vendor-section-capacity">
-                  <span className="field-label">
-                    {capacityKind === "seating"
-                      ? t("vendor_home.capacity_seating_label")
-                      : t("vendor_home.capacity_service_label")}
-                  </span>
-                  <div className="grid grid-cols-2 gap-3">
-                    <TextField
-                      id="vendor-capacity-min"
-                      label={t("vendor_home.capacity_min_label")}
-                      value={form.capacity_min}
-                      onChange={onChange("capacity_min")}
-                      type="number"
-                      min={0}
-                      max={5000}
-                    />
-                    <TextField
-                      id="vendor-capacity-max"
-                      label={t("vendor_home.capacity_max_label")}
-                      value={form.capacity_max}
-                      onChange={onChange("capacity_max")}
-                      type="number"
-                      min={0}
-                      max={5000}
-                    />
-                  </div>
-                  {track && (
-                    <div
-                      className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-100 dark:bg-umber-800"
-                      aria-hidden="true"
-                    >
-                      <div
-                        className={`h-full rounded-full ${
-                          track.invalid
-                            ? "bg-amber-500 dark:bg-amber-400"
-                            : "bg-blush-500 dark:bg-blush-400"
-                        }`}
-                        style={{
-                          marginLeft: `${track.left}%`,
-                          width: `${Math.max(0, track.right - track.left)}%`,
-                        }}
-                      />
+                      {localLang.deepl !== null &&
+                        (blurbLang === "local" ? (
+                          <TranslateButton
+                            source="EN"
+                            target={localLang.deepl}
+                            sourceText={form.blurb_en}
+                            hasExisting={form.blurb_hu.trim().length > 0}
+                            disabled={saving}
+                            onTranslated={(text) =>
+                              setForm((prev) => (prev ? { ...prev, blurb_hu: text } : prev))
+                            }
+                          />
+                        ) : (
+                          <TranslateButton
+                            source={localLang.deepl}
+                            target="EN"
+                            sourceText={form.blurb_hu}
+                            hasExisting={form.blurb_en.trim().length > 0}
+                            disabled={saving}
+                            onTranslated={(text) =>
+                              setForm((prev) => (prev ? { ...prev, blurb_en: text } : prev))
+                            }
+                          />
+                        ))}
                     </div>
-                  )}
-                  {track?.invalid && (
-                    <p className="mt-1 text-xs text-blush-600 dark:text-blush-300">
-                      {t("vendor_home.capacity_invalid")}
-                    </p>
-                  )}
-                </div>
-              )}
+                    {blurbLang === "local" ? (
+                      <textarea
+                        id="vendor-blurb-hu"
+                        aria-label={t("vendor_home.label_blurb_lang", { lang: localLang.label })}
+                        className="input"
+                        rows={4}
+                        maxLength={2000}
+                        value={form.blurb_hu}
+                        onChange={onChange("blurb_hu")}
+                      />
+                    ) : (
+                      <textarea
+                        id="vendor-blurb-en"
+                        aria-label={t("vendor_home.label_blurb_en")}
+                        className="input"
+                        rows={4}
+                        maxLength={2000}
+                        value={form.blurb_en}
+                        onChange={onChange("blurb_en")}
+                      />
+                    )}
+                  </>
+                )}
+                <p className="text-xs text-ink-500 dark:text-umber-300">
+                  {t("vendor_home.label_blurb_hint")}
+                </p>
+              </fieldset>
 
-              {speaksLang && (
-                <div id="vendor-section-languages">
-                  <span className="field-label">{t("vendor_home.languages_label")}</span>
-                  <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
-                    {t("vendor_home.languages_hint")}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {SPOKEN_LANGUAGE_OPTIONS.map((opt) => {
-                      const on = form.spoken_languages.includes(opt.code);
-                      return (
-                        <button
-                          key={opt.code}
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() =>
-                            setForm((prev) =>
-                              prev
-                                ? {
-                                    ...prev,
-                                    spoken_languages: on
-                                      ? prev.spoken_languages.filter((c) => c !== opt.code)
-                                      : [...prev.spoken_languages, opt.code],
-                                  }
-                                : prev,
-                            )
-                          }
-                          className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                            on
-                              ? "border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-500/15 dark:text-blush-200"
-                              : "border-paper-300 text-ink-600 hover:border-ink-400 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500"
-                          }`}
-                        >
-                          {languageLabel(opt.code, locale)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </fieldset>
+              <fieldset
+                className="card scroll-mt-36 space-y-2.5 p-4"
+                disabled={saving}
+                id="vendor-section-contact"
+              >
+                <legend className="font-semibold">{t("vendor_home.section_contact")}</legend>
+                {/* The street address is a typeahead over the geocoder; picking one
+                  fills the city (which lives under Basics) too, so the usual
+                  order costs one gesture. */}
+                <AddressAutocomplete
+                  id="vendor-address"
+                  label={t("vendor_home.label_address")}
+                  value={form.address}
+                  onChange={(v) => setForm((prev) => (prev ? { ...prev, address: v } : prev))}
+                  onPick={(s) => {
+                    if (s.city) {
+                      setForm((prev) => (prev ? { ...prev, city: s.city ?? prev.city } : prev));
+                    }
+                  }}
+                  maxLength={240}
+                  disabled={saving}
+                />
+                <TextField
+                  id="vendor-website"
+                  label={t("vendor_home.label_website")}
+                  value={form.website}
+                  onChange={onChange("website")}
+                  type="url"
+                  maxLength={240}
+                />
+                <TextField
+                  id="vendor-contact-email"
+                  label={t("vendor_home.label_contact_email")}
+                  value={form.contact_email}
+                  onChange={onChange("contact_email")}
+                  type="email"
+                  maxLength={120}
+                />
+                <TextField
+                  id="vendor-contact-phone"
+                  label={t("vendor_home.label_contact_phone")}
+                  value={form.contact_phone}
+                  onChange={onChange("contact_phone")}
+                  type="tel"
+                  maxLength={40}
+                />
+              </fieldset>
 
-            {/* Actions grouped right, not pinned to both edges. This row is the
+              {/* Video reel — reference videos beside the gallery. Self-contained
+                (own busy state + toasts); hits the server per action like the
+                gallery, so it lives outside the autosave form flow. */}
+              <div id="vendor-section-videos" className="scroll-mt-36">
+                <VendorListingVideos videos={view.videos ?? []} onChange={setView} />
+              </div>
+
+              {/* Actions grouped right, not pinned to both edges. This row is the
                 only unframed thing in a stack of cards, and justify-between put
                 ~400px of nothing between a ghost link and the save button on a
                 desktop-width form — which reads as a rendering fault between
                 the price card and the one below it, not as a toolbar. */}
-            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-              <Link to="/suppliers" className="btn-ghost">
-                {t("vendor_home.back_to_directory")}
-              </Link>
-              <button
-                type="submit"
-                className="btn bg-blush-500 text-white hover:bg-blush-600"
-                disabled={saving}
-              >
-                {saving ? t("vendor_home.saving") : t("vendor_home.save")}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                <Link to="/suppliers" className="btn-ghost">
+                  {t("vendor_home.back_to_directory")}
+                </Link>
+                <button
+                  type="submit"
+                  className="btn bg-blush-500 text-white hover:bg-blush-600"
+                  disabled={saving}
+                >
+                  {saving ? t("vendor_home.saving") : t("vendor_home.save")}
+                </button>
+              </div>
+            </form>
 
-      {/* Visibility: self-serve pause for fully-booked seasons. Moderation
+            {/* Reviews: managed on their own page; this is where they sit in the
+          profile's order, so the editor and the couple's page read the same. */}
+            <section
+              id="vendor-section-reviews"
+              className="card scroll-mt-36 flex flex-wrap items-center justify-between gap-3 p-4"
+            >
+              <h2 className="font-semibold">{t("suppliers.detail.reviews.title")}</h2>
+              <Link
+                to="/vendor/reviews"
+                className="inline-flex items-center gap-1 text-sm font-medium text-blush-600 transition-colors hover:text-blush-700 dark:text-blush-300 dark:hover:text-blush-200"
+              >
+                <span>{t("vendor_home.reviews_manage")}</span>
+                <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            </section>
+
+            {/* Freemium: the availability calendar is PRO. A FREE vendor sees the
+          locked state with the upgrade path instead of a form whose writes
+          would 402. */}
+            {availability && view?.billing && !view.billing.entitled && (
+              <section
+                id="vendor-section-availability"
+                className="card scroll-mt-36 flex flex-col gap-3 p-4"
+              >
+                <div className="flex items-start gap-2.5">
+                  <Lock
+                    size={18}
+                    aria-hidden="true"
+                    className="mt-0.5 shrink-0 text-ink-400 dark:text-paper-500"
+                  />
+                  <div>
+                    <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
+                    <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">
+                      {t("vendor_home.availability_locked")}
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/vendor/billing"
+                  className="btn w-fit bg-blush-500 text-white hover:bg-blush-600"
+                >
+                  {t("vendor.upgrade.cta")}
+                </Link>
+              </section>
+            )}
+
+            {availability && (!view?.billing || view.billing.entitled) && (
+              <section
+                id="vendor-section-availability"
+                className="card scroll-mt-36 space-y-2.5 p-4"
+              >
+                {/* This section only does whole-day blocks; hour-level edits, the
+              month grid and the task board all live on /vendor/calendar, which
+              until now this page never mentioned. */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
+                  <Link
+                    to="/vendor/calendar"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-blush-600 transition-colors hover:text-blush-700 dark:text-blush-300 dark:hover:text-blush-200"
+                  >
+                    <span>{t("vendor_home.availability_open_calendar")}</span>
+                    <ArrowRight size={15} aria-hidden="true" />
+                  </Link>
+                </div>
+
+                <form onSubmit={onAddBlock} className="flex flex-wrap items-end gap-2">
+                  <div className="w-56">
+                    <DateField
+                      id="vendor-block-date"
+                      label={t("vendor_home.availability_add_label")}
+                      value={newDate}
+                      min={new Date().toISOString().slice(0, 10)}
+                      onChange={setNewDate}
+                      locale={locale}
+                      disabled={availBusy}
+                      clearable
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn bg-blush-500 text-white hover:bg-blush-600"
+                    disabled={availBusy || newDate.trim().length === 0}
+                  >
+                    {t("vendor_home.availability_add")}
+                  </button>
+                </form>
+
+                {availability.blocked_days.length === 0 ? (
+                  <p className="text-sm text-ink-500 dark:text-umber-300">
+                    {t("vendor_home.availability_empty")}
+                  </p>
+                ) : (
+                  /* Chips carry the hour detail, not just the date: the × removes the
+               WHOLE day's block, so a chip that looked identical for a
+               14:00-18:00 block and a full one made that destructive without
+               warning. Hour-level edits stay on /vendor/calendar. */
+                  <ul className="flex flex-wrap gap-2">
+                    {availability.blocked_days.map((bd) => {
+                      const hours = blockedHoursLabel(bd.hours);
+                      const label = hours
+                        ? `${formatBlockedDate(bd.date, locale)} · ${hours}`
+                        : formatBlockedDate(bd.date, locale);
+                      return (
+                        <li
+                          key={bd.date}
+                          className="inline-flex items-center gap-2 rounded-full bg-paper-100 py-1 pl-3 pr-1 text-sm text-ink-800 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-100 dark:ring-umber-700"
+                        >
+                          <span className="inline-flex items-center gap-1.5">
+                            {hours ? (
+                              <Hourglass
+                                size={12}
+                                aria-hidden="true"
+                                className="shrink-0 text-ink-500 dark:text-umber-300"
+                              />
+                            ) : (
+                              <Lock
+                                size={12}
+                                aria-hidden="true"
+                                className="shrink-0 text-ink-500 dark:text-umber-300"
+                              />
+                            )}
+                            <span className="tabular-nums">{label}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveBlock(bd.date)}
+                            disabled={availBusy}
+                            aria-label={t("vendor_home.availability_remove", { date: label })}
+                            title={t("vendor_home.availability_remove", { date: label })}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-300 hover:text-ink-800 disabled:opacity-50 dark:text-umber-300 dark:hover:bg-umber-700"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+
+                <p className="text-xs text-ink-500 dark:text-umber-300">
+                  {availability.next_available
+                    ? t("vendor_home.availability_next_free", {
+                        date: formatBlockedDate(availability.next_available, locale),
+                      })
+                    : t("vendor_home.availability_none_free")}
+                </p>
+              </section>
+            )}
+            {/* Visibility: self-serve pause for fully-booked seasons. Moderation
           states are read-only here; the admin pipeline owns those.
 
           ONE control, and it is the same switch the "hide my contact details"
@@ -1661,202 +1822,81 @@ export default function VendorListingPage() {
           control pattern on a page that already had a switch, and left the
           vendor reading the button to work out what it would do. A switch says
           where it is without being read. */}
-      {view && (
-        <section className="card mt-2.5 space-y-2.5 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="min-w-0 font-semibold">{t("vendor_home.visibility_title")}</h2>
-            {view.listing.status === "active" || view.listing.status === "hidden" ? (
-              <div className="flex items-center gap-2.5">
-                <span
-                  className={
-                    view.listing.status === "active"
-                      ? "text-sm font-medium text-sage-700 dark:text-sage-300"
-                      : "text-sm font-medium text-ink-500 dark:text-umber-300"
-                  }
-                >
-                  {visibilityBusy
-                    ? t("vendor_home.saving")
-                    : view.listing.status === "active"
-                      ? t("vendor_home.visibility_state_live")
-                      : t("vendor_home.visibility_paused")}
-                </span>
-                <Switch
-                  checked={view.listing.status === "active"}
-                  onChange={onVisibilityChange}
-                  disabled={visibilityBusy}
-                  label={t("vendor_home.visibility_title")}
-                  describedBy="vendor-visibility-hint"
-                />
-              </div>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-paper-200 px-2.5 py-0.5 text-xs font-medium text-ink-600 dark:bg-umber-700 dark:text-paper-300">
-                {t("vendor_home.visibility_moderated")}
-              </span>
+            {view && (
+              <section className="card space-y-2.5 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="min-w-0 font-semibold">{t("vendor_home.visibility_title")}</h2>
+                  {view.listing.status === "active" || view.listing.status === "hidden" ? (
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={
+                          view.listing.status === "active"
+                            ? "text-sm font-medium text-sage-700 dark:text-sage-300"
+                            : "text-sm font-medium text-ink-500 dark:text-umber-300"
+                        }
+                      >
+                        {visibilityBusy
+                          ? t("vendor_home.saving")
+                          : view.listing.status === "active"
+                            ? t("vendor_home.visibility_state_live")
+                            : t("vendor_home.visibility_paused")}
+                      </span>
+                      <Switch
+                        checked={view.listing.status === "active"}
+                        onChange={onVisibilityChange}
+                        disabled={visibilityBusy}
+                        label={t("vendor_home.visibility_title")}
+                        describedBy="vendor-visibility-hint"
+                      />
+                    </div>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-paper-200 px-2.5 py-0.5 text-xs font-medium text-ink-600 dark:bg-umber-700 dark:text-paper-300">
+                      {t("vendor_home.visibility_moderated")}
+                    </span>
+                  )}
+                </div>
+                {view.listing.status === "active" || view.listing.status === "hidden" ? (
+                  <>
+                    <p
+                      id="vendor-visibility-hint"
+                      className="text-sm text-ink-500 dark:text-umber-300"
+                    >
+                      {t("vendor_home.visibility_body")}
+                    </p>
+                    {pauseAsked && (
+                      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 dark:border-amber-400/40 dark:bg-amber-400/10">
+                        <p className="min-w-0 text-sm text-ink-700 dark:text-paper-200">
+                          {t("vendor_home.visibility_pause_confirm")}
+                        </p>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPauseAsked(false)}
+                            className="btn btn-outline btn-sm"
+                          >
+                            {t("common.cancel")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void setVisibility(false)}
+                            disabled={visibilityBusy}
+                            className="btn btn-sm bg-blush-500 text-white hover:bg-blush-600"
+                          >
+                            {t("vendor_home.visibility_pause_cta")}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-ink-500 dark:text-umber-300">
+                    {t("vendor_home.visibility_moderated_note")}
+                  </p>
+                )}
+              </section>
             )}
           </div>
-          {view.listing.status === "active" || view.listing.status === "hidden" ? (
-            <>
-              <p id="vendor-visibility-hint" className="text-sm text-ink-500 dark:text-umber-300">
-                {t("vendor_home.visibility_body")}
-              </p>
-              {pauseAsked && (
-                <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 dark:border-amber-400/40 dark:bg-amber-400/10">
-                  <p className="min-w-0 text-sm text-ink-700 dark:text-paper-200">
-                    {t("vendor_home.visibility_pause_confirm")}
-                  </p>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPauseAsked(false)}
-                      className="btn btn-outline btn-sm"
-                    >
-                      {t("common.cancel")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void setVisibility(false)}
-                      disabled={visibilityBusy}
-                      className="btn btn-sm bg-blush-500 text-white hover:bg-blush-600"
-                    >
-                      {t("vendor_home.visibility_pause_cta")}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-ink-500 dark:text-umber-300">
-              {t("vendor_home.visibility_moderated_note")}
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* Freemium: the availability calendar is PRO. A FREE vendor sees the
-          locked state with the upgrade path instead of a form whose writes
-          would 402. */}
-      {availability && view?.billing && !view.billing.entitled && (
-        <section className="card mt-2.5 flex flex-col gap-3 p-4">
-          <div className="flex items-start gap-2.5">
-            <Lock
-              size={18}
-              aria-hidden="true"
-              className="mt-0.5 shrink-0 text-ink-400 dark:text-paper-500"
-            />
-            <div>
-              <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
-              <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">
-                {t("vendor_home.availability_locked")}
-              </p>
-            </div>
-          </div>
-          <Link
-            to="/vendor/billing"
-            className="btn w-fit bg-blush-500 text-white hover:bg-blush-600"
-          >
-            {t("vendor.upgrade.cta")}
-          </Link>
-        </section>
-      )}
-
-      {availability && (!view?.billing || view.billing.entitled) && (
-        <section className="card mt-2.5 space-y-2.5 p-4">
-          {/* This section only does whole-day blocks; hour-level edits, the
-              month grid and the task board all live on /vendor/calendar, which
-              until now this page never mentioned. */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
-            <Link
-              to="/vendor/calendar"
-              className="inline-flex items-center gap-1 text-sm font-medium text-blush-600 transition-colors hover:text-blush-700 dark:text-blush-300 dark:hover:text-blush-200"
-            >
-              <span>{t("vendor_home.availability_open_calendar")}</span>
-              <ArrowRight size={15} aria-hidden="true" />
-            </Link>
-          </div>
-
-          <form onSubmit={onAddBlock} className="flex flex-wrap items-end gap-2">
-            <div className="w-56">
-              <DateField
-                id="vendor-block-date"
-                label={t("vendor_home.availability_add_label")}
-                value={newDate}
-                min={new Date().toISOString().slice(0, 10)}
-                onChange={setNewDate}
-                locale={locale}
-                disabled={availBusy}
-                clearable
-              />
-            </div>
-            <button
-              type="submit"
-              className="btn bg-blush-500 text-white hover:bg-blush-600"
-              disabled={availBusy || newDate.trim().length === 0}
-            >
-              {t("vendor_home.availability_add")}
-            </button>
-          </form>
-
-          {availability.blocked_days.length === 0 ? (
-            <p className="text-sm text-ink-500 dark:text-umber-300">
-              {t("vendor_home.availability_empty")}
-            </p>
-          ) : (
-            /* Chips carry the hour detail, not just the date: the × removes the
-               WHOLE day's block, so a chip that looked identical for a
-               14:00-18:00 block and a full one made that destructive without
-               warning. Hour-level edits stay on /vendor/calendar. */
-            <ul className="flex flex-wrap gap-2">
-              {availability.blocked_days.map((bd) => {
-                const hours = blockedHoursLabel(bd.hours);
-                const label = hours
-                  ? `${formatBlockedDate(bd.date, locale)} · ${hours}`
-                  : formatBlockedDate(bd.date, locale);
-                return (
-                  <li
-                    key={bd.date}
-                    className="inline-flex items-center gap-2 rounded-full bg-paper-100 py-1 pl-3 pr-1 text-sm text-ink-800 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-100 dark:ring-umber-700"
-                  >
-                    <span className="inline-flex items-center gap-1.5">
-                      {hours ? (
-                        <Hourglass
-                          size={12}
-                          aria-hidden="true"
-                          className="shrink-0 text-ink-500 dark:text-umber-300"
-                        />
-                      ) : (
-                        <Lock
-                          size={12}
-                          aria-hidden="true"
-                          className="shrink-0 text-ink-500 dark:text-umber-300"
-                        />
-                      )}
-                      <span className="tabular-nums">{label}</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onRemoveBlock(bd.date)}
-                      disabled={availBusy}
-                      aria-label={t("vendor_home.availability_remove", { date: label })}
-                      title={t("vendor_home.availability_remove", { date: label })}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-300 hover:text-ink-800 disabled:opacity-50 dark:text-umber-300 dark:hover:bg-umber-700"
-                    >
-                      ×
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          <p className="text-xs text-ink-500 dark:text-umber-300">
-            {availability.next_available
-              ? t("vendor_home.availability_next_free", {
-                  date: formatBlockedDate(availability.next_available, locale),
-                })
-              : t("vendor_home.availability_none_free")}
-          </p>
-        </section>
+        </div>
       )}
     </div>
   );

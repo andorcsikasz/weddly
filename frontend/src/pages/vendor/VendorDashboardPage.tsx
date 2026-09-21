@@ -295,15 +295,15 @@ export default function VendorDashboardPage() {
           </span>
         </div>
         {/* Two actions, one primary. "Open preview" stacks above the CTA on a
-            phone and sits beside it from sm up. It points at the PUBLIC
-            /vendors/:id route and opens in a new tab, same as the header icon
+            phone and sits beside it from sm up. It opens the couple's-eye
+            preview (/vendor/listing/preview) in a new tab, same as the header icon
             and the listing-editor preview card, so the dashboard isn't lost.
             Outline rather than a second blush fill: the portal keeps one
             interactive colour and one primary per surface. */}
         <div className="flex flex-col gap-2 self-start sm:flex-row sm:items-center sm:self-auto">
           {listingId && (
             <Link
-              to={`/suppliers/${listingId}`}
+              to="/vendor/listing/preview"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-paper-300 px-5 text-sm font-semibold text-ink-700 transition-colors hover:border-ink-900 hover:bg-paper-100 dark:border-umber-700 dark:text-paper-200 dark:hover:border-paper-200 dark:hover:bg-umber-800"

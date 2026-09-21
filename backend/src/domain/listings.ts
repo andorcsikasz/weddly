@@ -354,6 +354,24 @@ export function listActiveClaimedListingsForDirectory(
   return rows.map(claimedListingToDirectoryBase);
 }
 
+/** A vendor's OWN listing as a directory base, whatever its visibility: paused,
+ *  pending moderation, or a demo account. Only for the owner-preview route (the
+ *  vendor's read-only "how couples see me"), never for anything a couple or a
+ *  stranger can reach: every public path goes through `getClaimedDirectoryBaseById`
+ *  and its `active` + not-suspended + not-demo filter. A preview that 404s for a
+ *  page nobody can see yet would be no preview at the one moment it is needed. */
+export function getOwnDirectoryBase(listingId: string): DirectorySupplierBase | null {
+  const row = db
+    .prepare(
+      `SELECT l.*, va.country AS owner_country, va.company_name AS owner_company_name
+         FROM listings l
+         JOIN vendor_accounts va ON va.id = l.vendor_account_id
+        WHERE l.id = ?`,
+    )
+    .get(listingId) as ClaimedDirectoryRow | undefined;
+  return row ? claimedListingToDirectoryBase(row) : null;
+}
+
 /** Resolve one active registered-vendor listing to its directory base (for the
  *  detail + website-redirect paths, which key off the listing id). Null when
  *  the id isn't a live claimed listing (or its owner is suspended / demo). */

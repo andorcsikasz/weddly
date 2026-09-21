@@ -453,11 +453,18 @@ async function handleRecordEvents(ctx: Ctx): Promise<Response> {
  *  per-couple vote overlay (null for anonymous → user_vote 0); `includeComments`
  *  gates the admin-only moderation count. Returns null when the id resolves to
  *  nothing public (hidden/unknown), so both callers 404 the same way. */
-function buildSupplierDetail(
+export function buildSupplierDetail(
   supplierId: string,
-  opts: { viewerUserId: number | null; includeCommentsCount: boolean },
+  opts: {
+    viewerUserId: number | null;
+    includeCommentsCount: boolean;
+    /** Skip the public-visibility resolution and build from this base. Only the
+     *  vendor's own preview passes it, with a base it took from the owner's own
+     *  listing row. */
+    baseOverride?: DirectorySupplierBase;
+  },
 ): SupplierDetail | null {
-  const resolved = resolveSupplierBase(supplierId);
+  const resolved = opts.baseOverride ?? resolveSupplierBase(supplierId);
   if (!resolved) return null;
   // Copy before overlaying — resolveSupplierBase can hand back the shared
   // static DIRECTORY object, and mutating that would leak one request's

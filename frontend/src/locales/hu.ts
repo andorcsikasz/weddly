@@ -533,10 +533,10 @@ const hu: LocaleMessages = {
     billing_lapsed_cta: "Csomagok megtekintése",
     availability_locked:
       "Az elérhetőségi naptár Pro funkció. Válts Pro-ra, hogy a párok lássák a szabad időpontjaid és közvetlen foglalási megkeresést küldhessenek.",
-    section_marketing: "Leírás",
+    section_marketing: "Bemutatkozás",
     section_contact: "Elérhetőség",
-    section_pricing: "Ár és kapacitás",
-    section_pricing_only: "Ár",
+    section_pricing: "Alapadatok",
+    section_pricing_only: "Alapadatok",
     label_blurb_hu: "Leírás (magyar)",
     label_blurb_en: "Leírás (angol)",
     label_blurb_lang: "Leírás ({lang})",
@@ -551,11 +551,6 @@ const hu: LocaleMessages = {
     label_contact_email_hint:
       "Erre a címre küldjük a párok üzeneteit a hirdetésedről. A hirdetéseden soha, senkinek nem jelenik meg.",
     label_contact_phone: "Nyilvános telefonszám",
-    label_hide_contact: "Elérhetőség elrejtése a látogatók elől",
-    label_hide_contact_hint:
-      "A kijelentkezett látogatók részben elrejtett címet látnak (pl. Attila út •••); a párok bejelentkezve a teljes címet kapják. A telefonszám bejelentkezésig részben rejtve marad, az e-mail-címed pedig egyáltalán nem jelenik meg.",
-    label_hide_contact_hint_short:
-      "A kijelentkezett látogatók részben rejtett elérhetőséget látnak.",
     price_range_label: "Ártartomány",
     price_range_hint: "A lenti csomagok árai alapján. Erre tudnak majd szűrni a párok.",
     price_range_empty: "Ár megadása",
@@ -732,7 +727,10 @@ const hu: LocaleMessages = {
     packages_pdf_removed: "PDF eltávolítva.",
     packages_pdf_too_large: "A fájl túl nagy (max. {max} MB).",
     packages_pdf_invalid: "Ez nem érvényes PDF-fájl.",
-    preview_open: "Előnézet megnyitása",
+    preview_open: "Így látják a párok",
+    preview_banner:
+      "Így látják a párok az oldaladat (a mentett változat). A műveletek ki vannak kapcsolva.",
+    reviews_manage: "Értékelések kezelése",
     preview_no_photo: "Még nincs borítókép",
     preview_capacity_from: "Min. {min}",
     preview_capacity_upto: "Max. {max}",

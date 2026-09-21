@@ -815,11 +815,6 @@ export interface LocaleMessages {
     label_contact_email: string;
     label_contact_email_hint: string;
     label_contact_phone: string;
-    label_hide_contact: string;
-    label_hide_contact_hint: string;
-    /** The one line that stays on screen; the full text above moved into an
-     *  InfoHint next to the toggle's label. */
-    label_hide_contact_hint_short: string;
     /** Pooled straight from the package prices below (packagePriceSummary) —
      *  the figure couples will filter by. Whole row is a button to Packages. */
     price_range_label: string;
@@ -1022,6 +1017,10 @@ export interface LocaleMessages {
     packages_pdf_too_large: string;
     packages_pdf_invalid: string;
     preview_open: string;
+    /** Banner on the vendor's read-only couple-view of their own page. */
+    preview_banner: string;
+    /** Link from the editor's Reviews row to the reviews page. */
+    reviews_manage: string;
     preview_no_photo: string;
     /** Receives `{min}` - minimum guest capacity. */
     preview_capacity_from: string;

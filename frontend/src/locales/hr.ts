@@ -549,10 +549,10 @@ const hr: LocaleMessages = {
     billing_lapsed_cta: "Pogledajte planove",
     availability_locked:
       "Kalendar dostupnosti je Pro značajka. Prijeđite na Pro da parovi vide vaše slobodne datume i pošalju izravan upit za rezervaciju.",
-    section_marketing: "Opis",
+    section_marketing: "O dobavljaču",
     section_contact: "Kontakt",
-    section_pricing: "Cijene i kapacitet",
-    section_pricing_only: "Cijene",
+    section_pricing: "Osnovni podaci",
+    section_pricing_only: "Osnovni podaci",
     label_blurb_hu: "Opis (mađarski)",
     label_blurb_en: "Opis (engleski)",
     label_blurb_lang: "Opis ({lang})",
@@ -567,11 +567,6 @@ const hr: LocaleMessages = {
     label_contact_email_hint:
       "Ovamo šaljemo upite koje parovi napišu s vašeg oglasa. Nikad se ne prikazuje na vašoj stranici, nikome.",
     label_contact_phone: "Javni kontakt telefon",
-    label_hide_contact: "Sakrij kontaktne podatke od javnosti",
-    label_hide_contact_hint:
-      "Odjavljeni posjetitelji vide djelomično skrivenu adresu (npr. Ilica •••); parovi nakon prijave dobivaju punu adresu. Vaš telefon ostaje djelomično skriven do prijave, a adresa e-pošte se ne objavljuje nikada.",
-    label_hide_contact_hint_short:
-      "Odjavljeni posjetitelji vaše kontaktne podatke vide djelomično prekrivene.",
     price_range_label: "Cjenovni raspon",
     price_range_hint: "Izračunato na temelju paketa u nastavku. Parovi će vas po tome filtrirati.",
     price_range_empty: "Dodajte cijenu",
@@ -750,7 +745,9 @@ const hr: LocaleMessages = {
     packages_pdf_removed: "PDF je uklonjen.",
     packages_pdf_too_large: "Datoteka je prevelika (najviše {max} MB).",
     packages_pdf_invalid: "Ovo nije valjana PDF datoteka.",
-    preview_open: "Otvorite javni pregled",
+    preview_open: "Pogledajte kako ga vide parovi",
+    preview_banner: "Ovako parovi vide vašu stranicu (spremljena verzija). Radnje su isključene.",
+    reviews_manage: "Upravljaj recenzijama",
     preview_no_photo: "Još nema naslovne fotografije",
     preview_capacity_from: "Od {min}",
     preview_capacity_upto: "Do {max}",

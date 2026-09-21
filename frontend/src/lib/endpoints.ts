@@ -2919,6 +2919,10 @@ export const aiAssistApi = {
 
 export const vendorListingApi = {
   me: () => apiFetch<VendorListingView>("GET", "/api/vendor/listing/me"),
+  /** The detail payload couples get for this vendor's page, built from their own
+   *  listing whatever its visibility (paused, pending, demo). Feeds the
+   *  read-only "see it as couples do" view. */
+  preview: () => apiFetch<SupplierDetail>("GET", "/api/vendor/listing/me/preview"),
   patch: (body: VendorListingEditInput) =>
     apiFetch<VendorListingView>("PATCH", "/api/vendor/listing/me", body),
   /** Self-serve pause/unpause: flips listings.status 'active' <-> 'hidden'.

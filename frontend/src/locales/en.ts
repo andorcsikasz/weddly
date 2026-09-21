@@ -525,10 +525,10 @@ const en: LocaleMessages = {
     billing_lapsed_cta: "See plans",
     availability_locked:
       "The availability calendar is a Pro feature. Upgrade so couples can see your free dates and send direct booking inquiries.",
-    section_marketing: "Description",
+    section_marketing: "About",
     section_contact: "Contact",
-    section_pricing: "Pricing & capacity",
-    section_pricing_only: "Pricing",
+    section_pricing: "Basics",
+    section_pricing_only: "Basics",
     label_blurb_hu: "Description (Hungarian)",
     label_blurb_en: "Description (English)",
     label_blurb_lang: "Description ({lang})",
@@ -543,10 +543,6 @@ const en: LocaleMessages = {
     label_contact_email_hint:
       "Where we send the inquiries couples write from your listing. Never shown on your page, to anyone.",
     label_contact_phone: "Public contact phone",
-    label_hide_contact: "Hide contact details from the public",
-    label_hide_contact_hint:
-      "Logged-out visitors see a partly hidden address (e.g. Attila út •••); couples get the full address once signed in. Your phone stays partly hidden until sign-in, and your email address is never published at all.",
-    label_hide_contact_hint_short: "Signed-out visitors see your contact details partly masked.",
     price_range_label: "Price range",
     price_range_hint:
       "Calculated from the packages below. This is what couples will filter you by.",
@@ -727,7 +723,10 @@ const en: LocaleMessages = {
     packages_pdf_removed: "PDF removed.",
     packages_pdf_too_large: "The file is too large (max {max} MB).",
     packages_pdf_invalid: "That's not a valid PDF file.",
-    preview_open: "Open public preview",
+    preview_open: "See it as couples do",
+    preview_banner:
+      "This is how couples see your page (the saved version). The actions are switched off.",
+    reviews_manage: "Manage reviews",
     preview_no_photo: "No cover photo yet",
     preview_capacity_from: "From {min}",
     preview_capacity_upto: "Up to {max}",

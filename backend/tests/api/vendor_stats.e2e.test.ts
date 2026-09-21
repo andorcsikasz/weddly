@@ -172,18 +172,20 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     // capacity) and the denominator is 6, not 7: 3 of 6 steps = 50%.
     expect(r.data.listing_completeness).toBe(50);
     // The checklist is the source the percent is derived from, so it must agree.
+    // In the order of the page couples see and of the listing editor: the facts
+    // under the name, photos, packages, about, contact.
     expect(r.data.listing_steps.map((s) => s.key)).toEqual([
+      "pricing",
       "cover",
       "gallery",
+      "packages",
       "description",
       "contact",
-      "pricing",
-      "packages",
     ]);
     expect(r.data.listing_steps.filter((s) => s.done).map((s) => s.key)).toEqual([
+      "pricing",
       "description",
       "contact",
-      "pricing",
     ]);
     expect(["HUF", "EUR"]).toContain(r.data.currency);
     expect(r.data.billing).toBeTruthy();

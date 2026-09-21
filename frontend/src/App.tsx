@@ -145,6 +145,9 @@ const VendorClientDetailPage = lazyWithReload(
   () => import("./pages/vendor/VendorClientDetailPage"),
 );
 const VendorListingPage = lazyWithReload(() => import("./pages/vendor/VendorListingPage"));
+const VendorProfilePreviewPage = lazyWithReload(
+  () => import("./pages/vendor/VendorProfilePreviewPage"),
+);
 const VendorCalendarPage = lazyWithReload(() => import("./pages/vendor/VendorCalendarPage"));
 const VendorStatsPage = lazyWithReload(() => import("./pages/vendor/VendorStatsPage"));
 const VendorReviewsPage = lazyWithReload(() => import("./pages/vendor/VendorReviewsPage"));
@@ -889,6 +892,17 @@ export default function App() {
             element={
               <Page>
                 <VendorListingPage />
+              </Page>
+            }
+          />
+          {/* The couple's-eye view of the vendor's own page (read-only). The
+              public page is a locked teaser and /app/suppliers/:id bounces a
+              vendor, so this is the only place a vendor sees what couples do. */}
+          <Route
+            path="listing/preview"
+            element={
+              <Page>
+                <VendorProfilePreviewPage />
               </Page>
             }
           />

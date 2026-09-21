@@ -566,10 +566,10 @@ const de: LocaleMessages = {
     billing_lapsed_cta: "Tarife ansehen",
     availability_locked:
       "Der Verfügbarkeitskalender ist eine Pro-Funktion. Wechseln Sie auf Pro, damit Paare Ihre freien Termine sehen und direkt anfragen können.",
-    section_marketing: "Beschreibung",
+    section_marketing: "Über den Dienstleister",
     section_contact: "Kontakt",
-    section_pricing: "Preise & Kapazität",
-    section_pricing_only: "Preise",
+    section_pricing: "Grunddaten",
+    section_pricing_only: "Grunddaten",
     label_blurb_hu: "Beschreibung (Ungarisch)",
     label_blurb_en: "Beschreibung (Englisch)",
     label_blurb_lang: "Beschreibung ({lang})",
@@ -584,11 +584,6 @@ const de: LocaleMessages = {
     label_contact_email_hint:
       "Hierhin schicken wir die Anfragen, die Paare von Ihrem Eintrag aus schreiben. Wird auf Ihrer Seite nie gezeigt, niemandem.",
     label_contact_phone: "Öffentliche Telefonnummer",
-    label_hide_contact: "Kontaktdaten vor der Öffentlichkeit verbergen",
-    label_hide_contact_hint:
-      "Nicht angemeldete Besucher sehen eine teilweise verdeckte Adresse (z. B. Hauptstraße •••); Paare bekommen nach der Anmeldung die volle Adresse. Ihre Telefonnummer bleibt bis zur Anmeldung teilweise verdeckt, und Ihre E-Mail-Adresse wird nie veröffentlicht.",
-    label_hide_contact_hint_short:
-      "Nicht angemeldete Besucher sehen Ihre Kontaktdaten teilweise verdeckt.",
     price_range_label: "Preisspanne",
     price_range_hint: "Berechnet aus den Paketen unten. Danach können Paare filtern.",
     price_range_empty: "Preis hinzufügen",
@@ -771,7 +766,10 @@ const de: LocaleMessages = {
     packages_pdf_removed: "PDF entfernt.",
     packages_pdf_too_large: "Die Datei ist zu groß (max. {max} MB).",
     packages_pdf_invalid: "Das ist keine gültige PDF-Datei.",
-    preview_open: "Öffentliche Vorschau öffnen",
+    preview_open: "So sehen es Paare",
+    preview_banner:
+      "So sehen Paare deine Seite (gespeicherte Version). Die Aktionen sind ausgeschaltet.",
+    reviews_manage: "Bewertungen verwalten",
     preview_no_photo: "Noch kein Titelbild",
     preview_capacity_from: "Ab {min}",
     preview_capacity_upto: "Bis {max}",

@@ -91,6 +91,7 @@ import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewsSection } from "../components/ReviewsSection";
 import { ReviewSnippets } from "../components/ReviewSnippets";
+import { SectionNav } from "../components/SectionNav";
 import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
 import { StarRow } from "../components/StarRow";
 import { statedGuestCount } from "../lib/budget";
@@ -110,6 +111,7 @@ import {
   supplierApi,
   supplierBookingApi,
   supplierCommentApi,
+  vendorListingApi,
 } from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
 import { useActiveSection, useScrolledPast } from "../lib/use_scroll_spy";
@@ -160,7 +162,12 @@ function formatDate(unixMs: number, locale: Locale): string {
   }).format(d);
 }
 
-export default function SupplierDetailPage() {
+/** `previewId` turns the page into a read-only "how couples see me" view for the
+ *  vendor's OWN listing (mounted under the vendor shell, where the `:supplier_id`
+ *  route param does not exist). Everything that would act as a couple, count a
+ *  visit or rewrite the address bar is switched off; the data and the layout are
+ *  the same as the couple's. */
+export default function SupplierDetailPage({ previewId }: { previewId?: string } = {}) {
   const { t, locale } = useT();
   const navigate = useNavigate();
   const toast = useToast();
@@ -168,7 +175,8 @@ export default function SupplierDetailPage() {
   const { user } = useAuth();
   const isAdmin = user?.is_admin ?? false;
   const { supplier_id: supplierIdRaw } = useParams<{ supplier_id: string }>();
-  const supplierId = supplierIdRaw ?? "";
+  const isPreview = previewId !== undefined;
+  const supplierId = previewId ?? supplierIdRaw ?? "";
   // `?review=1` (RateVendorsPage's post-wedding nudge, same deep link the
   // public page's share/campaign links use) opens the reviews modal straight
   // to the composer instead of leaving the couple to find the CTA themselves.
@@ -222,14 +230,14 @@ export default function SupplierDetailPage() {
   // slugs, so this only fires for `v{N}` / `c{N}` listings. `replace: true`
   // keeps the upgrade out of back-button history.
   useEffect(() => {
-    if (!detail) return;
+    if (!detail || isPreview) return;
     const pretty = vendorPublicId(detail.id, detail.name);
     if (pretty === supplierIdRaw) return;
     const qs = searchParams.toString();
     navigate(`/app/suppliers/${encodeURIComponent(pretty)}${qs ? `?${qs}` : ""}`, {
       replace: true,
     });
-  }, [detail, supplierIdRaw, searchParams, navigate]);
+  }, [detail, isPreview, supplierIdRaw, searchParams, navigate]);
 
   // The canonical id the data currently in state was fetched for (`v12` /
   // `c17`), so the address-bar upgrade above — which changes `supplierId` to
@@ -243,11 +251,29 @@ export default function SupplierDetailPage() {
       // The per-couple bookings LIST stays admin-only (operational moderation
       // view). Couples skip that call entirely — fetching it would 403 and
       // reject the whole Promise.all.
+      // The vendor's own preview reads the listing from their session (so a
+      // paused or pending page still previews) and treats every side read as
+      // best-effort: a missing calendar is an empty one, not a failed page.
+      const soft = <T,>(p: Promise<T>, fallback: T): Promise<T> =>
+        isPreview ? p.catch(() => fallback) : p;
       const [d, rs, cs, av] = await Promise.all([
-        supplierApi.detail(supplierId),
-        reviewApi.list(supplierId, { limit: 50 }),
-        supplierCommentApi.list(supplierId, { limit: 50 }),
-        supplierBookingApi.availability(supplierId),
+        isPreview ? vendorListingApi.preview() : supplierApi.detail(supplierId),
+        soft(reviewApi.list(supplierId, { limit: 50 }), {
+          items: [],
+          can_review: false,
+          already_reviewed: false,
+          nextCursor: null,
+          summary: { avg_rating: null, reviews_count: 0, histogram: [0, 0, 0, 0, 0], top_tags: [] },
+        }),
+        soft(supplierCommentApi.list(supplierId, { limit: 50 }), { items: [], nextCursor: null }),
+        soft(supplierBookingApi.availability(supplierId), {
+          unavailable_dates: [],
+          partial_dates: [],
+          next_available: null,
+          bookable: false,
+          calendar_public: true,
+          available_weekdays: null,
+        }),
       ]);
       lastFetchedIdRef.current = d.id;
       setDetail(d);
@@ -263,7 +289,7 @@ export default function SupplierDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [supplierId, toast, isAdmin]);
+  }, [supplierId, toast, isAdmin, isPreview]);
 
   useEffect(() => {
     if (!supplierId) return;
@@ -282,13 +308,15 @@ export default function SupplierDetailPage() {
   // show the vendor. Fire-and-forget; a failed ping is never worth surfacing.
   const viewedId = detail?.id;
   useEffect(() => {
-    if (!viewedId || isAdmin) return;
+    if (!viewedId || isAdmin || isPreview) return;
     supplierApi.recordEvents([{ supplier_id: viewedId, type: "view" }]).catch(() => undefined);
-  }, [viewedId, isAdmin]);
+  }, [viewedId, isAdmin, isPreview]);
 
   // Wedding date (busy-calendar default month) + couple id (keys the saved
   // shortlist). Fetched once, best-effort.
   useEffect(() => {
+    // A vendor has no couple workspace to read a wedding date or headcount from.
+    if (isPreview) return;
     let cancelled = false;
     void coupleApi
       .current()
@@ -303,7 +331,7 @@ export default function SupplierDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isPreview]);
 
   // Saved-to-shortlist state — the SAME per-couple, server-side store the
   // directory grid uses (`supplier_saved`), so the save state matches the card
@@ -519,14 +547,27 @@ export default function SupplierDetailPage() {
     // typography (Cormorant headings) the rest of /app uses.
     <div
       data-admin-shell={isAdmin ? "true" : undefined}
-      className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-6 xl:px-10"
+      className={`mx-auto max-w-6xl px-4 pt-6 sm:px-6 lg:px-8 lg:pb-6 xl:px-10 ${
+        isPreview ? "pb-6" : "pb-24"
+      }`}
     >
+      {/* The vendor's own view of their page: the same page a couple gets, with
+          everything that acts as a couple switched off. */}
+      {isPreview && (
+        <div
+          role="note"
+          className="mb-4 rounded-xl border border-paper-300 bg-paper-100 px-4 py-2.5 text-sm text-ink-700 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
+        >
+          {t("vendor_home.preview_banner")}
+        </div>
+      )}
       <button
         type="button"
         onClick={() => {
           // navigate(-1) sends a deep-link user back to about:blank; fall
           // through to the directory index when there's nothing to pop.
-          if (window.history.length > 1) navigate(-1);
+          if (isPreview) navigate("/vendor/listing");
+          else if (window.history.length > 1) navigate(-1);
           else navigate("/app/suppliers");
         }}
         className="mb-4 inline-flex items-center gap-1 rounded-md text-sm text-ink-500 transition hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-300 dark:hover:text-umber-100"
@@ -695,31 +736,13 @@ export default function SupplierDetailPage() {
       {/* ─── SECTION NAV ────────────────────────────────────────────────────
           Sticks under the app header (~69px) and lights the section in view.
           Only the sections this listing actually has. */}
-      <nav
-        aria-label={t("suppliers.detail.sectionsAria")}
-        className="sticky top-[69px] z-20 mt-6 border-b border-paper-300 bg-paper-50/95 backdrop-blur dark:border-umber-700 dark:bg-umber-900/95"
-      >
-        <div className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {navItems.map((item) => {
-            const on = item.id === activeSection;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => scrollToSection(item.id)}
-                aria-current={on ? "true" : undefined}
-                className={`shrink-0 whitespace-nowrap border-b-2 px-3 py-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-400 ${
-                  on
-                    ? "border-ink-900 font-semibold text-ink-900 dark:border-paper-50 dark:text-paper-50"
-                    : "border-transparent text-ink-500 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+      <SectionNav
+        items={navItems}
+        active={activeSection}
+        onSelect={scrollToSection}
+        ariaLabel={t("suppliers.detail.sectionsAria")}
+        className="sticky top-[69px] z-20 mt-6"
+      />
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         {/* ─── MAIN COLUMN ────────────────────────────────────────────────── */}
@@ -746,7 +769,7 @@ export default function SupplierDetailPage() {
                 couplesGuests={coupleGuests}
                 locale={locale}
                 t={t}
-                onRequest={canInquire ? openCompose : undefined}
+                onRequest={canInquire && !isPreview ? openCompose : undefined}
               />
             </section>
           )}
@@ -929,6 +952,7 @@ export default function SupplierDetailPage() {
             saveAria={saveAria}
             pickLabel={pickLabel}
             canInquire={canInquire}
+            readOnly={isPreview}
             inquireLabel={inquireLabel}
             onToggleSaved={toggleSaved}
             onTogglePicked={togglePicked}
@@ -944,72 +968,74 @@ export default function SupplierDetailPage() {
           and pick to the bottom of the viewport so the conversion path is
           always one thumb-reach away. `pb-24` on the outer container reserves
           the height so this never occludes the last article. */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-paper-200 bg-paper-50/95 px-4 py-3 backdrop-blur lg:hidden dark:border-umber-700 dark:bg-umber-900/95">
-        <div className="mx-auto flex max-w-6xl items-center gap-2">
-          {/* Same two glyphs as the desktop row and as the directory card. The
+      {!isPreview && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-paper-200 bg-paper-50/95 px-4 py-3 backdrop-blur lg:hidden dark:border-umber-700 dark:bg-umber-900/95">
+          <div className="mx-auto flex max-w-6xl items-center gap-2">
+            {/* Same two glyphs as the desktop row and as the directory card. The
               save used to be a solid sage fill here, which both stole the
               picked treatment AND put a second solid button beside the one
               blush CTA. A tinted plate with the filled heart says "saved"
               without competing with Send inquiry. */}
-          <button
-            type="button"
-            onClick={toggleSaved}
-            aria-pressed={isSaved}
-            aria-label={saveAria}
-            data-testid="supplier-save-toggle-mobile"
-            className={
-              isSaved
-                ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
-                : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-            }
-          >
-            <Heart
-              size={18}
-              aria-hidden
-              className={isSaved ? "fill-blush-500 text-blush-500" : ""}
-            />
-          </button>
-          <button
-            type="button"
-            onClick={togglePicked}
-            aria-pressed={isPicked}
-            aria-label={pickLabel}
-            data-testid="supplier-pick-toggle-mobile"
-            className={
-              isPicked
-                ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-sage-400 bg-sage-50 text-sage-700 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
-                : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-            }
-          >
-            {isPicked ? (
-              <BookmarkCheck size={18} aria-hidden className="fill-sage-200" />
-            ) : (
-              <Bookmark size={18} aria-hidden />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={shareVendor}
-            aria-label={shareLabel}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-          >
-            <Share2 size={18} aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => openCompose()}
-            disabled={!canInquire}
-            // Same explanation the desktop row carries. The bar renders below
-            // `lg`, which includes hover-capable narrow desktops, so a greyed
-            // CTA that says nothing is avoidable here too.
-            title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
-            className="btn-accent flex-1 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Send size={16} aria-hidden />
-            {inquireLabel}
-          </button>
+            <button
+              type="button"
+              onClick={toggleSaved}
+              aria-pressed={isSaved}
+              aria-label={saveAria}
+              data-testid="supplier-save-toggle-mobile"
+              className={
+                isSaved
+                  ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
+                  : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+              }
+            >
+              <Heart
+                size={18}
+                aria-hidden
+                className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={togglePicked}
+              aria-pressed={isPicked}
+              aria-label={pickLabel}
+              data-testid="supplier-pick-toggle-mobile"
+              className={
+                isPicked
+                  ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-sage-400 bg-sage-50 text-sage-700 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
+                  : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+              }
+            >
+              {isPicked ? (
+                <BookmarkCheck size={18} aria-hidden className="fill-sage-200" />
+              ) : (
+                <Bookmark size={18} aria-hidden />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={shareVendor}
+              aria-label={shareLabel}
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+            >
+              <Share2 size={18} aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => openCompose()}
+              disabled={!canInquire}
+              // Same explanation the desktop row carries. The bar renders below
+              // `lg`, which includes hover-capable narrow desktops, so a greyed
+              // CTA that says nothing is avoidable here too.
+              title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
+              className="btn-accent flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Send size={16} aria-hidden />
+              {inquireLabel}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {composeOpen && (
         <ComposeDialog
@@ -1557,6 +1583,7 @@ function BookingCard({
   saveAria,
   pickLabel,
   canInquire,
+  readOnly,
   inquireLabel,
   onToggleSaved,
   onTogglePicked,
@@ -1580,6 +1607,8 @@ function BookingCard({
   saveAria: string;
   pickLabel: string;
   canInquire: boolean;
+  /** The vendor's own preview: every control is shown and none of them acts. */
+  readOnly: boolean;
   inquireLabel: string;
   onToggleSaved: () => void;
   onTogglePicked: () => void;
@@ -1612,7 +1641,7 @@ function BookingCard({
         <button
           type="button"
           onClick={onInquire}
-          disabled={!canInquire}
+          disabled={!canInquire || readOnly}
           title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
           className="btn-accent w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -1627,6 +1656,7 @@ function BookingCard({
           <button
             type="button"
             onClick={onToggleSaved}
+            disabled={readOnly}
             aria-pressed={isSaved}
             aria-label={saveAria}
             title={saveAria}
@@ -1647,6 +1677,7 @@ function BookingCard({
           <button
             type="button"
             onClick={onTogglePicked}
+            disabled={readOnly}
             aria-pressed={isPicked}
             aria-label={pickLabel}
             title={pickLabel}
@@ -1703,17 +1734,25 @@ function BookingCard({
             {t("suppliers.detail.contact.empty")}
           </p>
         )}
-        {detail.website && (
-          <a
-            href={`/r/supplier/${encodeURIComponent(detail.id)}`}
-            target="_blank"
-            rel="noreferrer noopener"
-            className={rowLink}
-          >
-            <Globe size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-            {t("suppliers.detail.contact.website")}
-          </a>
-        )}
+        {detail.website &&
+          // The tracked redirect counts a website click; the vendor looking at
+          // their own page must not inflate their own number.
+          (readOnly ? (
+            <div className={rowLink}>
+              <Globe size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+              {t("suppliers.detail.contact.website")}
+            </div>
+          ) : (
+            <a
+              href={`/r/supplier/${encodeURIComponent(detail.id)}`}
+              target="_blank"
+              rel="noreferrer noopener"
+              className={rowLink}
+            >
+              <Globe size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+              {t("suppliers.detail.contact.website")}
+            </a>
+          ))}
         {/* No email row. A vendor's mailbox is never shown to a couple (the API
             sends null for every viewer); writing to them goes through the
             inquiry flow, which delivers to that address without publishing it. */}

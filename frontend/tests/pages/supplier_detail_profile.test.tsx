@@ -13,8 +13,9 @@ import type { SupplierAvailability, SupplierDetail, SupplierReview } from "@shar
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import SupplierDetailPage from "@/pages/SupplierDetailPage";
+import VendorProfilePreviewPage from "@/pages/vendor/VendorProfilePreviewPage";
 import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { AuthProvider } from "@/lib/auth";
@@ -28,6 +29,7 @@ let availability: SupplierAvailability;
 let reviews: SupplierReview[];
 let weddingDate: string | null;
 let coupleId = 4000;
+const calls: { url: string; method: string }[] = [];
 
 // Far enough ahead that "the wedding is in the past" can never trip this.
 const WEDDING = `${new Date().getFullYear() + 2}-06-12`;
@@ -40,8 +42,14 @@ function json(payload: unknown): Response {
 }
 
 function installFetch() {
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
+    calls.push({ url, method: (init?.method ?? "GET").toUpperCase() });
+    // The owner-only preview reads the vendor's own listing from their session.
+    if (url.includes("/api/vendor/listing/me/preview")) return json(detail);
+    if (url.includes("/api/vendor/listing/me")) {
+      return json({ listing: { id: SUPPLIER_ID }, photos: [], videos: [], packages: [] });
+    }
     if (url.includes("/api/picks")) return json({ picks: [] });
     if (url.includes("/api/saved-suppliers")) return json({ saved: [] });
     if (url.includes("/api/couples/current")) {
@@ -122,6 +130,7 @@ function navLabels(): string[] {
 }
 
 beforeEach(() => {
+  calls.length = 0;
   coupleId += 1;
   weddingDate = WEDDING;
   reviews = [];
@@ -375,5 +384,100 @@ describe("SupplierDetailPage: profile chrome keeps what the old page carried", (
     expect(screen.getByText(/Anna & Bence/)).toBeTruthy();
     // A star rating with no words is not a snippet.
     expect(screen.queryByText(/Silent Sam/)).toBeNull();
+  });
+});
+
+/** Where the router is, so a test can prove the page did not move it. */
+function Where() {
+  return <span data-testid="where">{useLocation().pathname}</span>;
+}
+
+async function renderPreview() {
+  render(
+    <MemoryRouter initialEntries={["/vendor/listing/preview"]}>
+      <I18nProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <ConfirmDialogProvider>
+              <Where />
+              <Routes>
+                <Route path="/vendor/listing/preview" element={<VendorProfilePreviewPage />} />
+                <Route path="/vendor/listing" element={<div>EDITOR</div>} />
+              </Routes>
+            </ConfirmDialogProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </I18nProvider>
+    </MemoryRouter>,
+  );
+  await flush(6);
+}
+
+describe("SupplierDetailPage: the vendor's own couple's-eye preview", () => {
+  it("resolves the vendor's own listing and shows the same page couples get", async () => {
+    await renderPreview();
+    expect(screen.getByRole("heading", { level: 1, name: /Fényes Fotó/ })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Packages" })).toBeTruthy();
+    expect(screen.getByText("Full day")).toBeTruthy();
+    expect(navLabels()).toEqual([
+      "Packages",
+      "About",
+      "Reviews",
+      "Availability",
+      "Questions & answers",
+    ]);
+    expect(screen.getByRole("note").textContent).toContain("saved version");
+  });
+
+  it("acts as nobody: every couple action is off", async () => {
+    await renderPreview();
+    for (const id of ["supplier-save-toggle", "supplier-pick-toggle"]) {
+      expect((screen.getByTestId(id) as HTMLButtonElement).disabled).toBe(true);
+    }
+    expect((screen.getByText("Send inquiry").closest("button") as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    // No quote buttons on the package rows, and no fixed mobile action bar.
+    expect(screen.queryByTestId("package-request")).toBeNull();
+    expect(screen.queryByTestId("supplier-save-toggle-mobile")).toBeNull();
+  });
+
+  it("control: the same page for a couple DOES count a view and read the workspace", async () => {
+    await renderPage();
+    expect(calls.some((c) => c.url.includes("/api/suppliers/events"))).toBe(true);
+    expect(calls.some((c) => c.url.includes("/api/couples/current"))).toBe(true);
+  });
+
+  it("counts nothing and reads no couple workspace", async () => {
+    await renderPreview();
+    // A view event would inflate the vendor's own reach number; a couple fetch
+    // is a call a vendor has no workspace for.
+    expect(calls.some((c) => c.url.includes("/api/suppliers/events"))).toBe(false);
+    expect(calls.some((c) => c.url.includes("/api/couples/current"))).toBe(false);
+  });
+
+  it("reads the owner-only preview endpoint, never the public detail one", async () => {
+    await renderPreview();
+    expect(calls.some((c) => c.url.includes("/api/vendor/listing/me/preview"))).toBe(true);
+    expect(calls.some((c) => c.url === `/api/suppliers/${SUPPLIER_ID}`)).toBe(false);
+  });
+
+  it("leaves the address bar alone instead of upgrading it to the couple's URL", async () => {
+    await renderPreview();
+    expect(screen.getByTestId("where").textContent).toBe("/vendor/listing/preview");
+  });
+
+  it("shows the website without the tracked redirect, so a look never counts as a click", async () => {
+    detail = { ...detail, website: "https://fenyesfoto.example" };
+    await renderPreview();
+    expect(screen.getByText("Website")).toBeTruthy();
+    expect(document.querySelector("a[href^='/r/supplier']")).toBeNull();
+  });
+
+  it("goes back to the editor, not the couple's directory", async () => {
+    await renderPreview();
+    fireEvent.click(screen.getByText("Back"));
+    await flush();
+    expect(screen.getByText("EDITOR")).toBeTruthy();
   });
 });

@@ -135,9 +135,10 @@ export interface VendorListingChecklistInput {
   package_count: number;
 }
 
-/** The vendor's listing-setup checklist, in the order they should work through
- *  it: the cover photo first (it's what a couple sees on the card), then the
- *  rest of the public sections.
+/** The vendor's listing-setup checklist, in the order of the page couples see
+ *  and of the listing editor (owner direction 2026-09-21: the two are parallel,
+ *  so working down the checklist is working down the form): the facts under the
+ *  name, then photos, packages, about, contact.
  *
  *  Gallery and packages are scored even though earlier versions skipped them —
  *  leaving them out let the ring read 100% on a listing with no photos beyond
@@ -153,20 +154,20 @@ export interface VendorListingChecklistInput {
  *  Single-sourced here so the dashboard ring, the listing-editor chip and the
  *  server's `listing_completeness` can never drift apart. */
 export function listingChecklistFor(input: VendorListingChecklistInput): VendorListingStep[] {
-  const steps: VendorListingStep[] = [
+  const steps: VendorListingStep[] = [{ key: "pricing", done: input.price_band != null }];
+  if (capacityKindFor(input.category) != null) {
+    steps.push({ key: "capacity", done: input.capacity_min != null || input.capacity_max != null });
+  }
+  steps.push(
     { key: "cover", done: Boolean(input.hero_image_url) },
     { key: "gallery", done: input.photo_count > 0 },
+    { key: "packages", done: input.package_count > 0 },
     { key: "description", done: Boolean(input.blurb_hu) || Boolean(input.blurb_en) },
     {
       key: "contact",
       done: Boolean(input.city) && (Boolean(input.contact_email) || Boolean(input.contact_phone)),
     },
-    { key: "pricing", done: input.price_band != null },
-  ];
-  if (capacityKindFor(input.category) != null) {
-    steps.push({ key: "capacity", done: input.capacity_min != null || input.capacity_max != null });
-  }
-  steps.push({ key: "packages", done: input.package_count > 0 });
+  );
   return steps;
 }
 

@@ -550,10 +550,10 @@ const es: LocaleMessages = {
     billing_lapsed_cta: "Ver planes",
     availability_locked:
       "El calendario de disponibilidad es una función Pro. Mejora tu plan para que las parejas vean tus fechas libres y envíen consultas de reserva directas.",
-    section_marketing: "Descripción",
+    section_marketing: "Información",
     section_contact: "Contacto",
-    section_pricing: "Precios y capacidad",
-    section_pricing_only: "Precios",
+    section_pricing: "Datos básicos",
+    section_pricing_only: "Datos básicos",
     label_blurb_hu: "Descripción (húngaro)",
     label_blurb_en: "Descripción (inglés)",
     label_blurb_lang: "Descripción ({lang})",
@@ -568,11 +568,6 @@ const es: LocaleMessages = {
     label_contact_email_hint:
       "Aquí enviamos los mensajes que las parejas escriben desde tu ficha. Nunca se muestra en tu página, a nadie.",
     label_contact_phone: "Teléfono de contacto público",
-    label_hide_contact: "Ocultar los datos de contacto al público",
-    label_hide_contact_hint:
-      "Los visitantes sin sesión ven una dirección parcialmente oculta (p. ej. Attila út •••); las parejas obtienen la dirección completa una vez que inician sesión. Tu teléfono queda parcialmente oculto hasta el inicio de sesión y tu correo no se publica en ningún caso.",
-    label_hide_contact_hint_short:
-      "Los visitantes sin sesión ven tus datos de contacto parcialmente ocultos.",
     price_range_label: "Rango de precios",
     price_range_hint:
       "Calculado a partir de los paquetes de abajo. Las parejas podrán filtrar por esto.",
@@ -754,7 +749,10 @@ const es: LocaleMessages = {
     packages_pdf_removed: "PDF eliminado.",
     packages_pdf_too_large: "El archivo es demasiado grande (máx. {max} MB).",
     packages_pdf_invalid: "Ese no es un archivo PDF válido.",
-    preview_open: "Abrir vista previa pública",
+    preview_open: "Verlo como lo ven las parejas",
+    preview_banner:
+      "Así ven las parejas tu página (versión guardada). Las acciones están desactivadas.",
+    reviews_manage: "Gestionar reseñas",
     preview_no_photo: "Aún no hay foto de portada",
     preview_capacity_from: "Desde {min}",
     preview_capacity_upto: "Hasta {max}",

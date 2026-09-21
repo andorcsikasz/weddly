@@ -62,6 +62,7 @@ import {
   getListingPackage,
   getListingPhoto,
   getListingVideo,
+  getOwnDirectoryBase,
   listListingPackages,
   listListingPhotos,
   listListingVideos,
@@ -84,6 +85,7 @@ import {
 import { getVendorSub, toVendorBilling } from "../domain/vendor_billing";
 import { emitVendorEvent } from "../domain/vendor_points";
 import { getUserById } from "../domain/users";
+import { buildSupplierDetail } from "./suppliers";
 import { addAuditLog } from "../lib/audit";
 
 /** Resolve `requireAuth(ctx)` to the vendor's listing + account, or throw the
@@ -149,6 +151,24 @@ async function handleGetMe(ctx: Ctx): Promise<Response> {
       billing: sub ? toVendorBilling(sub) : null,
     }),
   );
+}
+
+/** GET /api/vendor/listing/me/preview: the detail payload couples get for this
+ *  vendor's page, built from their own listing whatever its visibility. Feeds the
+ *  vendor's read-only "see it as couples do" view; without it a paused, pending
+ *  or demo page would be unpreviewable. Owner-only by construction: it takes the
+ *  listing from the session, never from a path parameter. */
+async function handlePreview(ctx: Ctx): Promise<Response> {
+  const view = resolveVendorListing(ctx);
+  const base = getOwnDirectoryBase(view.listing.id);
+  if (!base) throw new HttpError(404, "No listing");
+  const detail = buildSupplierDetail(view.listing.id, {
+    viewerUserId: ctx.userId,
+    includeCommentsCount: false,
+    baseOverride: base,
+  });
+  if (!detail) throw new HttpError(404, "No listing");
+  return json(detail);
 }
 
 // ── PATCH input parsing ────────────────────────────────────────────────────
@@ -1299,6 +1319,7 @@ async function handleCompleteOnboarding(ctx: Ctx): Promise<Response> {
 
 export function registerVendorListingRoutes(router: Router) {
   router.get("/api/vendor/listing/me", handleGetMe);
+  router.get("/api/vendor/listing/me/preview", handlePreview);
   router.patch("/api/vendor/listing/me", handlePatchMe);
   router.post("/api/vendor/listing/me/visibility", handleSetVisibility);
   router.get("/api/vendor/listing/me/quarantine", handleQuarantineStatus);
