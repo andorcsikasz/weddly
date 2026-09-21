@@ -2229,22 +2229,38 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
 
 /* ── Tracing frame: a light that runs a card's border, four laps, then out ──
    For ONE deliberately loud card on an otherwise calm page (the "know a good
-   vendor?" ask at the foot of /vendors). Four laps is the whole brief: enough
+   vendor?" ask at the foot of /suppliers). Four laps is the whole brief: enough
    to catch an eye scrolling past, few enough that the page settles instead of
    pulsing at the reader forever. Driven by `.is-tracing`, which the component
    adds when the card scrolls into view, so the laps are never spent above the
    fold where nobody sees them.
 
-   FOUR SEGMENTS, ONE PER EDGE, rather than the usual single rotating conic
-   gradient. A conic sweep maps ANGLE to position, and this card is roughly 11:1,
-   so that mapping is wildly uneven: the bright core smears across half the
-   bottom edge, then crosses the short ends in an angular sliver so thin it never
-   visibly lights them. Measured on the real page, most of the lap read as
-   nothing happening. One bar per edge travels at a constant speed and keeps the
-   same length wherever it is on the border.
+   ONE OUTLINE, ONE DASH. The light is a short dash travelling a single closed
+   rounded rectangle (an SVG rect with `pathLength="100"`, so every number below
+   is a percentage of the PERIMETER). That is what makes the run smooth, and both
+   earlier attempts failed on exactly this:
+     - a rotating conic gradient maps ANGLE to position, and on a card this wide
+       (roughly 10:1) that smears the light across the long edges and skips the
+       short ones;
+     - four bars, one per edge, each got a hand-picked slice of the lap (40 / 10 /
+       40 / 10). The slices assumed a 4:1 card, so the light ran at less than half
+       speed on the short ends and rushed along the long ones, and every bar left
+       its edge entirely before the next one entered, so the light went out at
+       each corner.
+   A dash on one path has neither problem: its speed is the same everywhere
+   because the distance is measured along the path, it keeps one length, and it
+   goes round the rounded corners as a single piece.
 
-   The frame's own hairline (the wrapper's background, showing through the 2px
-   padding ring) is what the card wears once the light has gone. */
+   The dash pattern's period equals the path (100), so the dash wraps across the
+   seam by itself: offset -95 draws [95, 100] and, from the previous period,
+   [0, 5]. Five stacked strokes of decreasing length (a dim brass tail into a
+   near-white core) give the soft falloff a gradient would, because a stroke
+   cannot carry a gradient ALONG its path and a blur filter on SVG children is
+   unreliable in Safari. Three layers read as three visible steps; five read as
+   one light.
+
+   The wrapper's own background, showing through the padding ring, is the
+   hairline the card wears once the light has gone. */
 @keyframes trace-envelope {
   0% {
     opacity: 0;
@@ -2259,96 +2275,31 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     opacity: 0;
   }
 }
-/* A bar is `--trace-len` of its edge, so a full traverse is (100 + len) / len of
-   its OWN length: from just off one corner to just past the next. The end
-   translate is that minus the -100% start, and it lives in `--trace-end` next to
-   the length it is derived from, because the two numbers are one decision and a
-   drift between them parks the light half a corner short. */
-@keyframes trace-edge-top {
-  0% {
-    opacity: 1;
-    transform: translateX(-100%);
+/* One keyframe for every layer: a full perimeter (100) per lap. Each layer is
+   centred on the longest one by starting part-way through the SAME animation, a
+   negative delay of `--shift` percent of a lap, which needs no second keyframe
+   and no `calc()` on a bare number inside one. */
+@keyframes trace-lap {
+  from {
+    stroke-dashoffset: 0;
   }
-  40% {
-    opacity: 1;
-    transform: translateX(var(--trace-end));
-  }
-  40.01%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes trace-edge-right {
-  0%,
-  40% {
-    opacity: 0;
-  }
-  40.01% {
-    opacity: 1;
-    transform: translateY(-100%);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(var(--trace-end));
-  }
-  50.01%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes trace-edge-bottom {
-  0%,
-  50% {
-    opacity: 0;
-  }
-  50.01% {
-    opacity: 1;
-    transform: translateX(var(--trace-end));
-  }
-  90% {
-    opacity: 1;
-    transform: translateX(-100%);
-  }
-  90.01%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes trace-edge-left {
-  0%,
-  90% {
-    opacity: 0;
-  }
-  90.01% {
-    opacity: 1;
-    transform: translateY(var(--trace-end));
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(-100%);
+  to {
+    stroke-dashoffset: -100;
   }
 }
 .trace-frame {
   /* One lap. Slow enough to follow with the eye rather than register as a
      flicker: at 1.5s the light crossed the long edge faster than the reader
-     could track it, which reads as a glitch instead of an invitation, and 2.4s
-     still hurried. At a walking pace the light is something the eye can rest
-     on, so the four laps are 29s of quiet drift rather than a blinking badge. */
+     could track it, which reads as a glitch instead of an invitation. At a
+     walking pace it is something the eye can rest on, so the four laps are 29s
+     of quiet drift rather than a blinking badge. */
   --trace-lap: 7.2s;
-  /* Bar length as a share of its edge, and the matching end translate:
-     (100 + len) / len - 100, in the bar's own units. Short and crisp, because a
-     long bar crawling at this pace reads as a smear sliding rather than a light
-     travelling. */
-  --trace-len: 20%;
-  --trace-end: 500%;
   position: relative;
   isolation: isolate;
   overflow: hidden;
   /* The ring is the light's whole stage: nothing wider than this is ever
-     visible, because the plate covers the rest. At 2px the running light was
-     legible in a 3x capture and invisible at normal size, which defeats the
-     point of it. 5px carries at a glance and still reads as a frame rather
-     than a bar, since the ring's own colour sits close to the plate's. */
+     visible, because the plate covers the rest. 5px carries at a glance and
+     still reads as a frame rather than a bar. */
   padding: 5px;
   background: theme("colors.umber.800");
 }
@@ -2370,81 +2321,55 @@ html.dark .trace-frame {
 .trace-frame.is-tracing .trace-run {
   animation: trace-envelope calc(var(--trace-lap) * 4) linear forwards;
 }
-.trace-run > i {
-  position: absolute;
+.trace-run svg {
   display: block;
-  opacity: 0;
+  width: 100%;
+  height: 100%;
 }
-.trace-frame.is-tracing .trace-run > i {
-  animation-duration: var(--trace-lap);
-  animation-timing-function: linear;
-  animation-iteration-count: 4;
+/* The rect is the frame's OUTER edge and the stroke is centred on it, so the
+   outer half is clipped by the wrapper and the inner half is the 5px ring: hence
+   10px, not 5. The layers are 12 / 9 / 6 / 3.5 / 1.5 percent of the perimeter,
+   each centred on the longest (`--shift` is half the length difference), so the
+   bright point sits in the middle of a longer, dimmer tail. */
+.trace-run rect {
+  fill: none;
+  stroke-width: 10px;
 }
-/* Warm brass shoulders into a near-white core, which is what makes it read as
-   light travelling rather than a coloured stripe sliding. The glow is clipped to
-   the ring by the wrapper's `overflow: hidden` and the plate above it, so it
-   widens the apparent line instead of leaking into the card. Tight rather than
-   generous: a 12px halo around a bar this slow blurred the two ends into the
-   ring and the light lost its edge, so the halo is only what keeps the core from
-   looking cut out of paper. */
-.trace-run > i {
-  box-shadow: 0 0 6px 0 theme("colors.paper.200" / 40%);
+.trace-l1 {
+  stroke: theme("colors.paper.400");
+  stroke-opacity: 0.3;
+  stroke-dasharray: 12 88;
+  --shift: 0;
 }
-/* The core is a short bright middle with a fast falloff on both shoulders. The
-   old 20/50/80 stops spread the brightness over the whole bar, which at this
-   pace reads as a lit rod being dragged; 38/50/62 leaves a point of light with a
-   tail. */
-.trace-run-top,
-.trace-run-bottom {
-  left: 0;
-  height: 5px;
-  width: var(--trace-len);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    theme("colors.paper.400") 38%,
-    theme("colors.paper.50") 50%,
-    theme("colors.paper.400") 62%,
-    transparent
-  );
+.trace-l2 {
+  stroke: theme("colors.paper.400");
+  stroke-opacity: 0.5;
+  stroke-dasharray: 9 91;
+  --shift: 1.5;
 }
-.trace-run-left,
-.trace-run-right {
-  top: 0;
-  width: 5px;
-  height: var(--trace-len);
-  background: linear-gradient(
-    180deg,
-    transparent,
-    theme("colors.paper.400") 38%,
-    theme("colors.paper.50") 50%,
-    theme("colors.paper.400") 62%,
-    transparent
-  );
+.trace-l3 {
+  stroke: theme("colors.paper.300");
+  stroke-opacity: 0.75;
+  stroke-dasharray: 6 94;
+  --shift: 3;
 }
-.trace-run-top {
-  top: 0;
+.trace-l4 {
+  stroke: theme("colors.paper.100");
+  stroke-opacity: 0.95;
+  stroke-dasharray: 3.5 96.5;
+  --shift: 4.25;
 }
-.trace-run-bottom {
-  bottom: 0;
+.trace-l5 {
+  stroke: theme("colors.paper.50");
+  stroke-dasharray: 1.5 98.5;
+  --shift: 5.25;
 }
-.trace-run-left {
-  left: 0;
-}
-.trace-run-right {
-  right: 0;
-}
-.trace-frame.is-tracing .trace-run-top {
-  animation-name: trace-edge-top;
-}
-.trace-frame.is-tracing .trace-run-right {
-  animation-name: trace-edge-right;
-}
-.trace-frame.is-tracing .trace-run-bottom {
-  animation-name: trace-edge-bottom;
-}
-.trace-frame.is-tracing .trace-run-left {
-  animation-name: trace-edge-left;
+/* `forwards` because a negative delay shortens the run by up to half a
+   second: the layer holds its last position instead of snapping back to the
+   start while the envelope is still finishing its fade. */
+.trace-frame.is-tracing .trace-run rect {
+  animation: trace-lap var(--trace-lap) linear 4 forwards;
+  animation-delay: calc(var(--shift) * var(--trace-lap) / -100);
 }
 /* Decoration only: the card keeps its hairline and loses nothing but the show. */
 @media (prefers-reduced-motion: reduce) {
