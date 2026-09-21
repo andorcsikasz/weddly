@@ -5945,8 +5945,7 @@ const en: LocaleMessages = {
         priceTotal: "{price} total",
         pricePerPerson: "{price} / person",
         estimatedEquivalent: "Est. {price}",
-        subtitle:
-          "Guide prices. The vendor sends a binding quote once they know your date and details.",
+        subtitle: "Guide prices. The final quote depends on your date and details.",
         requestCta: "Request a quote",
         requestSubject: "Quote request: {package}, wedding on {date}",
         requestBody:

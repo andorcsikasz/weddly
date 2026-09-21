@@ -5990,7 +5990,7 @@ const hr: LocaleMessages = {
         priceTotal: "Ukupno {price}",
         pricePerPerson: "{price} / osoba",
         estimatedEquivalent: "Procj. {price}",
-        subtitle: "Okvirne cijene. Konačnu ponudu pružatelj šalje kad zna vaš datum i pojedinosti.",
+        subtitle: "Okvirne cijene. Konačna ponuda ovisi o vašem datumu i pojedinostima.",
         requestCta: "Zatraži ponudu",
         requestSubject: "Upit za ponudu: {package}, vjenčanje {date}",
         requestBody:

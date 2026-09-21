@@ -1,14 +1,13 @@
-// Admin-only supplier detail page. v1 surface for the locked-in spec, now in
-// the editorial two-column layout: main scroll column on the left (hero,
-// about, reviews, Q&A, bookings, admin meta) and a sticky right rail with
-// the Información / Kapcsolat / Foglaltság cards. Inspired by the reference
-// vendor pages couples already browse on competitor sites — same shape so the
-// design transfers cleanly when the page opens up to couples in Phase 3.
+// The couple-facing vendor page, laid out as a business PROFILE (the shape
+// couples already know from booking marketplaces): a header with the rating and
+// the vendor's answer for THEIR wedding date, a photo mosaic, a sticky section
+// nav, then two columns. The main column reads packages (guide prices, each row
+// a quote request), about, videos, reviews, availability and Q&A; the sticky
+// right card carries the decision (inquire, like, pick) and the contact facts.
 //
-// Route is wrapped in <RequireAdmin> at App.tsx, so this page assumes
-// `user.is_admin === true`. The data-fetching layer still calls admin-only
-// endpoints — a Phase-3 flip is a single auth-rule edit on the backend +
-// removing the RequireAdmin wrap.
+// Admins see the same page plus the operational extras (bookings list, admin
+// meta). The route is behind <RequireAuth>; the admin-only data calls are
+// skipped for couples.
 
 import {
   type ComponentType,

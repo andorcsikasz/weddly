@@ -320,6 +320,9 @@ export function VendorPackageGrid({
   );
 }
 
+/** How many facts sit in the row's headline; the rest wait behind its toggle. */
+const HEADLINE_SPEC_COUNT = 2;
+
 /** The two or three facts worth reading before opening anything, as one muted
  *  line under the package name ("Duration: 8 hours · Photographers: 2"). Only
  *  the first two: the rest sit behind the row's own toggle. */
@@ -329,8 +332,6 @@ function headlineFacts(specs: Spec[]): string {
     .map((s) => (s.label ? `${s.label}: ${s.value}` : s.value))
     .join(" · ");
 }
-
-const HEADLINE_SPEC_COUNT = 2;
 
 function PackageRow({
   pkg,

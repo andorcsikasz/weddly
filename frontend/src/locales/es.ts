@@ -6050,7 +6050,7 @@ const es: LocaleMessages = {
         pricePerPerson: "{price} / persona",
         estimatedEquivalent: "Est. {price}",
         subtitle:
-          "Precios orientativos. El proveedor envía un presupuesto definitivo cuando conoce vuestra fecha y los detalles.",
+          "Precios orientativos. El presupuesto final depende de vuestra fecha y los detalles.",
         requestCta: "Pedir presupuesto",
         requestSubject: "Solicitud de presupuesto: {package}, boda el {date}",
         requestBody:

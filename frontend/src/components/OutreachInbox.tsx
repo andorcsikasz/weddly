@@ -479,10 +479,13 @@ export function ComposeDialog({
     if (!initialDraft || !coupleSettled || draftApplied.current) return;
     draftApplied.current = true;
     const vars = { date: tplDate, guests: tplGuests, ...initialDraft.vars };
+    const nextSubject = t(initialDraft.subjectKey, vars);
     const nextBody = t(initialDraft.bodyKey, vars);
     lastAppliedBody.current = nextBody;
-    setSubject(t(initialDraft.subjectKey, vars));
-    setBody(nextBody);
+    // A draft never overwrites something already typed: the couple fetch is
+    // fast, but not faster than a fast typist.
+    setSubject((prev) => (prev.trim() ? prev : nextSubject));
+    setBody((prev) => (prev.trim() ? prev : nextBody));
   }, [initialDraft, coupleSettled, tplDate, tplGuests, t]);
 
   // Picker: filter suppliers by query (name or city, accent-insensitive),

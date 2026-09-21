@@ -5985,7 +5985,7 @@ const hu: LocaleMessages = {
         playAria: "{name} {n}. videó lejátszása",
       },
       packages: {
-        title: "Árajánlatok",
+        title: "Csomagok",
         download: "Árlista letöltése (PDF)",
         recommended: "Ajánlott",
         detailsOnRequest: "Részletek egyeztetés alapján",
@@ -5996,8 +5996,7 @@ const hu: LocaleMessages = {
         priceTotal: "{price} összesen",
         pricePerPerson: "{price} / fő",
         estimatedEquivalent: "Becsült: {price}",
-        subtitle:
-          "Iránymutató árak. A végleges árajánlatot a szolgáltató a dátum és a részletek ismeretében adja meg.",
+        subtitle: "Iránymutató árajánlatok. A végleges ár a dátum és a részletek függvénye.",
         requestCta: "Árajánlatot kérek",
         requestSubject: "Árajánlatkérés: {package}, esküvő {date}",
         requestBody:

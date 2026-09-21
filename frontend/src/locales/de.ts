@@ -6102,8 +6102,7 @@ const de: LocaleMessages = {
         priceTotal: "{price} gesamt",
         pricePerPerson: "{price} / Person",
         estimatedEquivalent: "Ca. {price}",
-        subtitle:
-          "Richtpreise. Ein verbindliches Angebot erhaltet ihr, sobald der Anbieter euer Datum und die Details kennt.",
+        subtitle: "Richtpreise. Das endgültige Angebot hängt von eurem Datum und den Details ab.",
         requestCta: "Angebot anfragen",
         requestSubject: "Angebotsanfrage: {package}, Hochzeit am {date}",
         requestBody:
