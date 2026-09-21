@@ -10519,6 +10519,16 @@ const de: LocaleMessages = {
     ownerNoticeClaim: "Dieses Profil übernehmen",
     ownerNoticeContact: "Korrektur oder Entfernung anfordern",
     ownerNoticePrivacy: "Warum steht das hier?",
+    unlockCta: "Zum Ansehen registrieren",
+    lockedDetailsTitle: "Verfügbarkeit und Kontakt",
+    lockedBody: "Registriere dich, um das zu sehen und ein Angebot anzufragen.",
+    sideTitle: "Das vollständige Profil",
+    sideItemPackages: "Pakete und Preise",
+    sideItemDate: "Frei an eurem Datum?",
+    sideItemContact: "Kontakt und Ort",
+    sideItemQuote: "Angebot anfragen",
+    haveAccount: "Ich habe schon ein Konto",
+    openInApp: "Vollständiges Profil öffnen",
   },
   vendorLocation: {
     notFoundTitle: "Diese Kombination wurde nicht gefunden",
@@ -10527,7 +10537,7 @@ const de: LocaleMessages = {
   vendorBrowse: {
     title: "Hochzeitsdienstleister entdecken",
     subtitle:
-      "Alle Dienstleister auf Weddly, frei zum Stöbern. Wählen Sie eine Kategorie für die ganze Liste, filtern Sie nach Ort und öffnen Sie ein Profil für Fotos, Preise und Bewertungen.",
+      "Alle Dienstleister auf Weddly, frei zum Stöbern. Wählen Sie eine Kategorie für die ganze Liste, filtern Sie nach Ort und öffnen Sie ein Profil für Fotos und Bewertungen. Für Preise und Verfügbarkeit melden Sie sich an.",
     couples_stat: "{count} Paare planen gerade ihre Hochzeit auf Weddly",
     cta_couple: "Planung starten",
     cta_vendor: "Als Dienstleister mitmachen",

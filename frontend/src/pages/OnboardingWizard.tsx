@@ -42,6 +42,7 @@ import {
 } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { placeholderNameField, realNameErrorKey } from "../lib/real_names";
+import { takeDestination } from "../lib/post_signup_destination";
 import { useDocumentMeta } from "../lib/seo";
 
 const DRAFT_KEY = "weddly.onboarding_draft";
@@ -383,7 +384,13 @@ export default function OnboardingWizard() {
 
   // Onboarding committed: celebrate the milestone before handing off to /app.
   if (done) {
-    return <AllSet onContinue={() => navigate("/app", { replace: true })} />;
+    return (
+      <AllSet
+        // A visitor who signed up from a vendor's public page goes straight
+        // back to that vendor's page in the app, not the generic dashboard.
+        onContinue={() => navigate(takeDestination() ?? "/app", { replace: true })}
+      />
+    );
   }
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {

@@ -10364,6 +10364,16 @@ const en: LocaleMessages = {
     ownerNoticeClaim: "Claim this profile",
     ownerNoticeContact: "Request a correction or removal",
     ownerNoticePrivacy: "Why is this here?",
+    unlockCta: "Sign up to see it",
+    lockedDetailsTitle: "Availability and contact",
+    lockedBody: "Sign up to see this and to ask for a quote.",
+    sideTitle: "The full profile",
+    sideItemPackages: "Packages and prices",
+    sideItemDate: "Free on your wedding date?",
+    sideItemContact: "Contact and location",
+    sideItemQuote: "Ask for a quote",
+    haveAccount: "I already have an account",
+    openInApp: "Open the full profile",
   },
   vendorLocation: {
     notFoundTitle: "This combination could not be found",
@@ -10372,7 +10382,7 @@ const en: LocaleMessages = {
   vendorBrowse: {
     title: "Browse wedding vendors",
     subtitle:
-      "Every vendor on Weddly, free to browse. Pick a category for the whole list, filter by town, and open any profile for photos, prices and reviews.",
+      "Every vendor on Weddly, free to browse. Pick a category for the whole list, filter by town, and open any profile for photos and reviews. Sign up for prices and availability.",
     couples_stat: "{count} couples are planning their wedding on Weddly right now",
     cta_couple: "Start planning",
     cta_vendor: "Join as vendor",

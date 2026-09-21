@@ -11729,6 +11729,21 @@ export interface LocaleMessages {
     ownerNoticeClaim: string;
     ownerNoticeContact: string;
     ownerNoticePrivacy: string;
+    /** Label on every locked-section CTA of the anonymous vendor page. */
+    unlockCta: string;
+    lockedDetailsTitle: string;
+    /** One line inside a locked section: what signing up unlocks. */
+    lockedBody: string;
+    /** Sticky side card that lists what the account adds. */
+    sideTitle: string;
+    sideItemPackages: string;
+    sideItemDate: string;
+    sideItemContact: string;
+    sideItemQuote: string;
+    /** Secondary link to /login, going back to the vendor afterwards. */
+    haveAccount: string;
+    /** CTA for an already signed-in visitor: open the internal page. */
+    openInApp: string;
   };
   /** Category × city SEO landing pages, `/eskuvoi-szolgaltatok/:cat/:city`
    *  (HU) and `/wedding-vendors/:cat/:city` (EN). The h1/intro themselves are

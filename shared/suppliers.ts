@@ -1699,15 +1699,46 @@ export interface SupplierContact {
   contact_phone_alt: string | null;
 }
 
-/** Everything the PUBLIC, unauthenticated vendor page (`/vendors/:id`) needs
- *  in one call — the shareable surface a couple sends to someone with no
- *  Weddly account. `GET /api/public/vendors/:id`. Deliberately a curated
- *  subset: `detail` never carries the admin-only `comments_count`, `reviews`
- *  are published-only, and `comments` are the `public` Q&A tier only (the
- *  `admin_internal` / `vendor_only` tiers never leave the server here). */
+/** What an ANONYMOUS visitor may know about a vendor: who they are, what they
+ *  say about themselves, what they have shot, and what couples say about them.
+ *  Nothing else.
+ *
+ *  This is an ALLOWLIST and it is a separate type on purpose, not a masked
+ *  `SupplierDetail`. The public page used to be the detail payload with a few
+ *  fields blanked, and every field added to the detail afterwards was public
+ *  the moment it existed. Here a new field is private until somebody types it
+ *  into `toPublicVendorProfile`. Packages, prices, videos, capacity, languages,
+ *  price band, phone, website, address, coordinates and availability are
+ *  deliberately absent: the public page shows a locked placeholder for them and
+ *  a sign-up CTA, and the real values live behind the account on
+ *  `/app/suppliers/:id` (owner direction 2026-09-21). */
+export interface PublicVendorProfile {
+  /** Canonical listing id (`v12`), never the URL's spelling. */
+  id: string;
+  name: string;
+  /** Legal company name of a registered vendor, when it differs from `name`. */
+  company_name: string | null;
+  category: SupplierCategory;
+  city: string;
+  country: string;
+  blurb_hu: string;
+  blurb_en: string;
+  /** Photo URLs in display order, hero first. Already empty for an imported
+   *  profile nobody has claimed (the teaser rule lives upstream). */
+  gallery_urls: string[];
+  gallery_positions_y?: Record<string, number>;
+  /** A registered vendor stands behind this listing: wears the verified check
+   *  and needs no "is this your business?" notice. The account id itself is not
+   *  exposed. */
+  claimed: boolean;
+  listing_complete: boolean;
+  reviews_summary: ReviewSummary;
+}
+
+/** `GET /api/public/vendors/:id`: the whole payload of the anonymous vendor
+ *  page. `reviews` are published-only. There is no `comments` (Q&A) and no
+ *  `availability`: both are behind the account. */
 export interface PublicVendorPageData {
-  detail: SupplierDetail;
+  detail: PublicVendorProfile;
   reviews: SupplierReview[];
-  comments: SupplierComment[];
-  availability: SupplierAvailability;
 }

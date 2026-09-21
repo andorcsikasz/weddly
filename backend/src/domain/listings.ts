@@ -660,18 +660,6 @@ export function linkableListingCategory(id: string): string | null {
   return linkableListingCategories([id]).get(id) ?? null;
 }
 
-/** Whether this listing's owner opted to hide the address + contact-email tail
- *  from anonymous visitors. False for curated/community ids (no `listings` row
- *  or the column defaults 0) — only vendor-owned claimed listings can opt in.
- *  A single indexed lookup so the public detail route can gate masking without
- *  widening the public DTO with an internal flag. */
-export function listingContactHidden(id: string): boolean {
-  const row = db.prepare("SELECT hide_contact_public FROM listings WHERE id = ?").get(id) as
-    | { hide_contact_public: number }
-    | undefined;
-  return row?.hide_contact_public === 1;
-}
-
 /** Pull the (at most one in v1) listing owned by a vendor account. Returns
  *  the most-recently-updated row when an account owns multiple — the schema
  *  permits N:1 but P2.D's UI presents a single listing. */

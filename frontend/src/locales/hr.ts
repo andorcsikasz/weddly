@@ -10351,6 +10351,16 @@ const hr: LocaleMessages = {
     ownerNoticeClaim: "Preuzmite ovaj profil",
     ownerNoticeContact: "Zatražite ispravak ili uklanjanje",
     ownerNoticePrivacy: "Zašto je ovo ovdje?",
+    unlockCta: "Registrirajte se za pregled",
+    lockedDetailsTitle: "Dostupnost i kontakt",
+    lockedBody: "Registrirajte se da to vidite i zatražite ponudu.",
+    sideTitle: "Cijeli profil",
+    sideItemPackages: "Paketi i cijene",
+    sideItemDate: "Slobodni na vaš datum?",
+    sideItemContact: "Kontakt i lokacija",
+    sideItemQuote: "Zatraži ponudu",
+    haveAccount: "Već imam račun",
+    openInApp: "Otvori cijeli profil",
   },
   vendorLocation: {
     notFoundTitle: "Ova kombinacija nije pronađena",
@@ -10359,7 +10369,7 @@ const hr: LocaleMessages = {
   vendorBrowse: {
     title: "Pregledajte dobavljače za vjenčanja",
     subtitle:
-      "Svi dobavljači na Weddlyju, slobodni za pregledavanje. Odaberite kategoriju za cijeli popis, filtrirajte po gradu i otvorite bilo koji profil za fotografije, cijene i recenzije.",
+      "Svi dobavljači na Weddlyju, slobodni za pregledavanje. Odaberite kategoriju za cijeli popis, filtrirajte po gradu i otvorite bilo koji profil za fotografije i recenzije. Za cijene i dostupnost registrirajte se.",
     couples_stat: "{count} parova upravo planira vjenčanje na Weddlyju",
     cta_couple: "Počnite planirati",
     cta_vendor: "Pridružite se kao dobavljač",

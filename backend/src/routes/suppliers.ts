@@ -3,7 +3,6 @@
 // caller's own vote. Anonymous callers get votes_score but user_vote = 0.
 
 import type {
-  CommentVisibility,
   DirectorySupplier,
   DirectorySupplierBase,
   PublicShowcaseCategory,
@@ -31,7 +30,6 @@ import {
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
 import { getCoupleForUser } from "../domain/couples";
-import { maskPhoneForAnonymous } from "../domain/phone_mask";
 import { correspondingListingIds } from "../domain/vendor_correspondence";
 import { curatedOverrideMap, isCuratedPubliclyVisible } from "../domain/curated_overrides";
 import { resolveSupplierBase } from "../domain/resolve_supplier";
@@ -41,7 +39,6 @@ import { recordSupplierEvents } from "../domain/supplier_views";
 import {
   getClaimedDirectoryBaseById,
   listActiveClaimedListingsForDirectory,
-  listingContactHidden,
   listListingPackages,
   listListingPhotos,
   listListingVideos,
@@ -49,9 +46,9 @@ import {
   redactUnclaimedImport,
   type ShowcaseVendorRow,
 } from "../domain/listings";
-import { maskAddressForPublic } from "../domain/contact_mask";
+import { toPublicVendorProfile } from "../domain/public_vendor";
 import { getReviewCountsMap, getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
-import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
+import { countNonDeletedComments } from "../domain/supplier_comments";
 import { getAvailability, isIsoDate, listingIdsUnavailableOn } from "../domain/supplier_bookings";
 import { isAdminEmail, requireAdmin } from "../domain/users";
 import { completeListingIds } from "../domain/vendor_clients";
@@ -685,11 +682,17 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
 
 /** GET /api/public/vendors/:supplier_id — the unauthenticated, shareable
  *  vendor page payload. This is the ONE endpoint that leaves the workspace
- *  auth wall, so it deliberately returns a curated public subset: the detail
- *  (never the admin-only comments_count, votes anonymised), PUBLISHED reviews
- *  only, the PUBLIC Q&A tier only, and the busy calendar (public by design).
+ *  auth wall, and it hands out the smallest useful thing: identity, the
+ *  vendor's own description, their photos and their PUBLISHED reviews (see
+ *  `toPublicVendorProfile`). Everything else (packages and prices, videos,
+ *  capacity, languages, contact, address, availability, Q&A) is behind the
+ *  account and the page says so with a sign-up CTA (owner direction
+ *  2026-09-21).
+ *
+ *  The session is deliberately NOT consulted: a signed-in visitor gets the same
+ *  answer and is sent to `/app/suppliers/:id` for the rest, so this response is
+ *  identical for everybody and nothing here can be unlocked by a header.
  *  Rate-limited per IP so it can't be scraped into the ground. */
-const PUBLIC_VISIBILITIES: CommentVisibility[] = ["public"];
 async function handlePublicDetail(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "public.vendor", { capacity: 60, refillRate: 1 });
   const supplierId = ctx.params.supplier_id?.trim();
@@ -701,56 +704,18 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
   });
   if (!detail) throw new HttpError(404, "Unknown supplier");
 
-  // Gate contact details behind registration for anonymous visitors (ctx.userId
-  // is populated whenever a valid session token rides along, even on this public
-  // route). Masked server-side so the hidden characters never leave the server;
-  // a logged-in viewer gets everything in full.
-  //
-  //  - The PHONE is always masked for an anonymous visitor. They get the shape
-  //    of a contact ("+36 70 6** ****"), which is the reason to register; the
-  //    characters themselves never leave the server.
-  //  - There is nothing to do about the EMAIL here any more: it is null for
-  //    every viewer (buildSupplierDetail), so the masked teaser it used to get
-  //    would be a mask over an empty string. Registering no longer reveals it
-  //    either, which is the point — see the rule there.
-  //  - The ADDRESS stays under the vendor's own `hide_contact_public` switch: a
-  //    business address is a published fact, it is what puts the listing on the
-  //    map, and hiding it by default would break the one thing a visitor
-  //    scouting venues actually needs.
-  //  - Website is left as-is — its raw URL already goes through the tracked
-  //    /r/supplier redirect.
-  if (ctx.userId === null) {
-    if (detail.contact_phone) {
-      detail.contact_phone = maskPhoneForAnonymous(detail.contact_phone);
-    }
-    if (detail.contact_phone_alt) {
-      detail.contact_phone_alt = maskPhoneForAnonymous(detail.contact_phone_alt);
-    }
-    if (detail.address && listingContactHidden(detail.id)) {
-      detail.address = maskAddressForPublic(detail.address);
-    }
-  }
-
   // `detail.id` is the canonical id, not the URL's. A pretty share link
-  // ("/vendors/weddly-v67") must read the same reviews, Q&A and calendar as the
-  // bare one, or the link the vendor hands out is the one that looks empty.
+  // ("/vendors/weddly-v67") must read the same reviews as the bare one, or the
+  // link the vendor hands out is the one that looks empty.
   const reviews = listReviewsForSupplier(detail.id, {
     limit: 50,
     cursor: null,
     includeUnpublished: false,
   });
-  const comments = listCommentsForSupplier(detail.id, {
-    limit: 50,
-    cursor: null,
-    visibilities: PUBLIC_VISIBILITIES,
-  });
-  const availability = getAvailability(detail.id);
 
   const payload: PublicVendorPageData = {
-    detail,
+    detail: toPublicVendorProfile(detail),
     reviews: reviews.items,
-    comments: comments.items,
-    availability,
   };
   return json(payload);
 }

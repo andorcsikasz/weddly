@@ -16,7 +16,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import type { DirectorySupplier, SupplierDetail } from "@shared/suppliers";
+import type { DirectorySupplier, PublicVendorProfile, SupplierDetail } from "@shared/suppliers";
 import { db } from "../../src/db";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { lookupVendorPageMeta } from "../../src/lib/seo_ssr";
@@ -103,13 +103,19 @@ describe("imported profiles are redacted until claimed", () => {
   });
 
   test("the anonymous public profile is redacted too", async () => {
-    const r = await req<{ detail: SupplierDetail }>("GET", `/api/public/vendors/${IMPORTED_ID}`);
+    const r = await req<{ detail: PublicVendorProfile }>(
+      "GET",
+      `/api/public/vendors/${IMPORTED_ID}`,
+    );
     expect(r.status).toBe(200);
     const d = r.data.detail;
     expect(d.blurb_hu).toBe("");
     expect(d.blurb_en).toBe("");
-    expect(d.contact_phone).toBeNull();
-    expect(d.price_band).toBeNull();
+    // The anonymous payload carries no contact or pricing fields at all any
+    // more (public_vendor.e2e.test.ts pins the allowlist), so the teaser has
+    // nothing left to redact there.
+    expect(d).not.toHaveProperty("contact_phone");
+    expect(d).not.toHaveProperty("price_band");
     expect(d.gallery_urls?.length ?? 0).toBeLessThanOrEqual(1);
   });
 

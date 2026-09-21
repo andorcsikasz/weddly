@@ -99,11 +99,12 @@ export interface Listing {
    *  monogram avatar. Only vendors who own the listing can write this field;
    *  the file lives under `CONFIG.uploadsDir` on the persistent volume. */
   hero_image_url: string | null;
-  /** Vendor opt-in: on the public page, hide the tail of the street address and
-   *  the contact email from anonymous (logged-out) visitors — a reason to
-   *  register, mirroring the always-on phone mask. False by default. Only the
-   *  owning vendor can flip it; the phone is masked for anonymous visitors
-   *  regardless. Logged-in couples always see the full details. */
+  /** VESTIGIAL (2026-09-21). Once let a vendor hide the tail of the street
+   *  address from logged-out visitors on the public page. That page no longer
+   *  carries an address, phone or any other contact value at all (see
+   *  `PublicVendorProfile`), so the flag changes nothing. The column and the
+   *  PATCH field stay because the schema is additive-only; the editor no longer
+   *  offers the switch. */
   hide_contact_public: boolean;
   /** Epoch ms the listing was pulled for a disputed-source review, or null.
    *  Set once and never cleared, even after `vendor_published_at` — it's the
@@ -312,8 +313,8 @@ export interface VendorListingEditInput {
   currency?: Currency | null;
   /** ISO 639-1 codes for a verbal vendor; ignored for other categories. */
   spoken_languages?: string[] | null;
-  /** Toggle the public-page contact masking (address + email tail) for
-   *  anonymous visitors. See {@link Listing.hide_contact_public}. */
+  /** Vestigial: accepted so an old client does not 400, changes nothing. See
+   *  {@link Listing.hide_contact_public}. */
   hide_contact_public?: boolean;
 }
 

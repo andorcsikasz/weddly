@@ -1,26 +1,37 @@
-// Public, unauthenticated vendor page at `/vendors/:supplier_id`. This is the
-// surface a couple shares with someone OUTSIDE Weddly — no login wall. It's a
-// read-only editorial view: hero, gallery, blurb, packages, videos, published
-// reviews and public Q&A, plus a contact rail and a "plan your own wedding"
-// conversion band. Everything interactive on the in-app detail page (save,
-// inquire, review composer, admin meta) is stripped. Data comes from the
-// single public aggregate endpoint `GET /api/public/vendors/:id`.
+// Public, unauthenticated vendor page at `/suppliers/:supplier_id`. This is the
+// surface a couple shares with someone OUTSIDE Weddly, and its whole job is to
+// lead them into the app: it says who the vendor is, what they say about
+// themselves, shows their photos and what couples say about them, and turns
+// everything else (packages and prices, availability, contact, Q&A) into a
+// locked placeholder with a sign-up CTA that returns to the vendor's page
+// inside the app (owner direction 2026-09-21).
+//
+// Laid out in the SAME order as the in-app profile (`SupplierDetailPage`):
+// header, photo mosaic, packages, about, reviews, availability and contact. The
+// visible sections are real; the locked ones are placeholders, so a visitor sees
+// where the rest lives. The data is the allowlisted `PublicVendorProfile` from
+// `GET /api/public/vendors/:id`; nothing here is masked, because there is
+// nothing to mask.
+//
+// The one interactive thing that stays is the review composer: a past client
+// who is forwarded `?review=1` writes a review after a Google email check, with
+// no account (the vendor review campaign depends on it).
 
 import type {
   PublicVendorPageData,
+  PublicVendorProfile,
   SupplierCategory,
-  SupplierComment,
-  SupplierDetail,
   SupplierReview,
 } from "@shared/suppliers";
 import { pickListingBlurb } from "@shared/listing_language";
-import { packagePriceSummary } from "@shared/listing_pricing";
-import { REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
-import { ArrowLeft, Banknote, ExternalLink, Globe, MapPin, Phone, Star, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { REVIEW_BODY_MAX_CHARS } from "@shared/suppliers";
+import { vendorPublicId } from "@shared/vendor_slug";
+import { ArrowLeft, CalendarCheck, Lock, MapPin, Send, Star, Tag } from "lucide-react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { ReviewSnippets } from "../components/ReviewSnippets";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
@@ -28,14 +39,13 @@ import { Dialog } from "../components/ui";
 import { VendorGallery } from "../components/VendorGallery";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
-import { VendorPackageGrid } from "../components/VendorPackageCards";
-import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import { getVisitorToken, setVisitorToken, supplierApi, visitorApi } from "../lib/endpoints";
 import { intlLocale, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
-import { formatPackagePrice } from "../lib/listingPricing";
+import { rememberDestination } from "../lib/post_signup_destination";
 import { reviewTagLabel } from "../lib/reviewTags";
 
 function StarRow({ value, size = 14 }: { value: number; size?: number }) {
@@ -290,23 +300,6 @@ function PublicReviewComposer({
   );
 }
 
-function PriceBandDots({ band }: { band: 1 | 2 | 3 | 4 | 5 }) {
-  return (
-    <span className="inline-flex items-center gap-0.5 font-mono text-sm" aria-hidden>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <span
-          key={n}
-          className={
-            n <= band ? "text-paper-700 dark:text-paper-300" : "text-paper-300 dark:text-umber-600"
-          }
-        >
-          $
-        </span>
-      ))}
-    </span>
-  );
-}
-
 function formatDate(unixMs: number, locale: Locale): string {
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
@@ -317,28 +310,205 @@ function formatDate(unixMs: number, locale: Locale): string {
   }).format(d);
 }
 
+type T = (k: string, vars?: Record<string, string | number>) => string;
+
+/** Every CTA on this page goes through here, so they all do the same thing: a
+ *  signed-in visitor opens the vendor's page in the app, and everybody else
+ *  goes to sign-up with that page remembered as where to land afterwards. */
+function AccessCta({
+  appPath,
+  signedIn,
+  label,
+  className,
+  t,
+}: {
+  appPath: string;
+  signedIn: boolean;
+  label: string;
+  className: string;
+  t: T;
+}) {
+  if (signedIn) {
+    return (
+      <Link to={appPath} className={className}>
+        {t("publicVendor.openInApp")}
+      </Link>
+    );
+  }
+  return (
+    <Link to="/signup" onClick={() => rememberDestination(appPath)} className={className}>
+      {label}
+    </Link>
+  );
+}
+
+const CTA_DARK =
+  "inline-flex items-center justify-center rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200";
+
 /** Slim public top bar: wordmark home link + a single sign-up CTA. The whole
  *  point of the shared page is acquisition, so the CTA is always visible. */
-function PublicTopBar({ t }: { t: (k: string) => string }) {
+function PublicTopBar({
+  t,
+  appPath,
+  signedIn,
+}: {
+  t: T;
+  appPath: string | null;
+  signedIn: boolean;
+}) {
   return (
     <header className="sticky top-0 z-20 border-b border-paper-200 bg-paper-50/90 backdrop-blur dark:border-umber-700 dark:bg-umber-900/90">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link to="/" aria-label="Weddly" className="inline-flex items-center">
           <Wordmark size="sm" className="text-ink-900 dark:text-paper-50" />
         </Link>
-        <Link
-          to="/signup"
-          className="rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
-        >
-          {t("publicVendor.signupCta")}
-        </Link>
+        {appPath ? (
+          <AccessCta
+            appPath={appPath}
+            signedIn={signedIn}
+            label={t("publicVendor.signupCta")}
+            className={CTA_DARK}
+            t={t}
+          />
+        ) : (
+          <Link to="/signup" className={CTA_DARK}>
+            {t("publicVendor.signupCta")}
+          </Link>
+        )}
       </div>
     </header>
   );
 }
 
+/** A section the account unlocks. It mirrors the shape of the real section on
+ *  the in-app page (same heading, skeleton rows where the content would be) but
+ *  holds no data: the bars are fixed decoration, never derived from anything
+ *  about this vendor, so even their count and width say nothing. */
+function LockedSection({
+  id,
+  title,
+  rows,
+  cta,
+  signedIn,
+  t,
+}: {
+  id?: string;
+  title: string;
+  rows: number;
+  cta: ReactNode;
+  /** A signed-in visitor is not asked to sign up: the button says where to go
+   *  and the sentence about signing up is dropped. */
+  signedIn: boolean;
+  t: T;
+}) {
+  return (
+    <section id={id} className="mb-12 scroll-mt-24">
+      <h2 className="mb-4 text-2xl font-bold tracking-tight text-ink-900 dark:text-paper-50">
+        {title}
+      </h2>
+      <div className="relative overflow-hidden rounded-2xl border border-paper-300 bg-white dark:border-umber-600 dark:bg-umber-900">
+        <div aria-hidden className="pointer-events-none select-none space-y-3 p-5">
+          {Array.from({ length: rows }, (_, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between gap-4 rounded-xl border border-paper-200 px-4 py-4 dark:border-umber-700"
+            >
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-3.5 w-1/3 rounded bg-paper-300 dark:bg-umber-600" />
+                <div className="h-3 w-1/2 rounded bg-paper-200 dark:bg-umber-700" />
+                <div className="h-3.5 w-1/4 rounded bg-paper-300 dark:bg-umber-600" />
+              </div>
+              <div className="h-9 w-28 rounded-full bg-paper-200 dark:bg-umber-700" />
+            </div>
+          ))}
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-paper-50/50 px-6 text-center backdrop-blur-[1.5px] dark:bg-umber-900/60">
+          <Lock
+            size={20}
+            strokeWidth={1.5}
+            aria-hidden
+            className="text-ink-600 dark:text-umber-200"
+          />
+          {!signedIn && (
+            <p className="max-w-xs text-sm text-ink-700 dark:text-paper-100">
+              {t("publicVendor.lockedBody")}
+            </p>
+          )}
+          {cta}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** The sticky side card: what the account adds, and the one button. Mirrors the
+ *  in-app booking card's place and weight so the two pages read as one. */
+function AccessCard({
+  t,
+  appPath,
+  signedIn,
+}: {
+  t: T;
+  appPath: string;
+  signedIn: boolean;
+}) {
+  const items = [
+    { icon: Tag, key: "publicVendor.sideItemPackages" },
+    { icon: CalendarCheck, key: "publicVendor.sideItemDate" },
+    { icon: MapPin, key: "publicVendor.sideItemContact" },
+    { icon: Send, key: "publicVendor.sideItemQuote" },
+  ];
+  return (
+    <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-600">
+      <p className="text-base font-bold text-ink-900 dark:text-paper-50">
+        {t("publicVendor.sideTitle")}
+      </p>
+      <ul className="mt-3 space-y-2.5">
+        {items.map(({ icon: Icon, key }) => (
+          <li
+            key={key}
+            className="flex items-center gap-3 text-sm text-ink-700 dark:text-umber-100"
+          >
+            <Icon
+              size={16}
+              strokeWidth={1.5}
+              aria-hidden
+              className="shrink-0 text-ink-500 dark:text-umber-400"
+            />
+            <span className="flex-1">{t(key)}</span>
+            <Lock
+              size={13}
+              strokeWidth={1.5}
+              aria-hidden
+              className="shrink-0 text-ink-400 dark:text-umber-400"
+            />
+          </li>
+        ))}
+      </ul>
+      <AccessCta
+        appPath={appPath}
+        signedIn={signedIn}
+        label={t("publicVendor.inquiryCta")}
+        className="btn-accent mt-5 w-full justify-center"
+        t={t}
+      />
+      {!signedIn && (
+        <Link
+          to="/login"
+          state={{ from: appPath }}
+          className="mt-3 block text-center text-sm text-ink-600 underline underline-offset-4 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
+        >
+          {t("publicVendor.haveAccount")}
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export default function PublicVendorPage() {
   const { t, locale } = useT();
+  const { user } = useAuth();
+  const signedIn = user !== null;
   const { supplier_id: supplierIdRaw } = useParams<{ supplier_id: string }>();
   const supplierId = supplierIdRaw ?? "";
   // `?review=1` on a shared link (the vendor forwarded it to a past client)
@@ -353,8 +523,8 @@ export default function PublicVendorPage() {
   // Anonymous-friendly: the modal mails the listing's own contact address, so
   // a business owner who found this page on Google needs no account first.
   const [claimOpen, setClaimOpen] = useState(false);
-  // The reviews list + composer live behind this modal now (see
-  // ReviewSummaryCard); `wantsReview` opens it straight to the composer.
+  // The reviews list + composer live behind this modal (see ReviewSummaryCard);
+  // `wantsReview` opens it straight to the composer.
   const [reviewsOpen, setReviewsOpen] = useState(wantsReview);
 
   useEffect(() => {
@@ -395,7 +565,7 @@ export default function PublicVendorPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-paper-50 dark:bg-umber-900">
-        <PublicTopBar t={t} />
+        <PublicTopBar t={t} appPath={null} signedIn={signedIn} />
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="h-64 w-full animate-pulse rounded-2xl bg-paper-200 dark:bg-umber-800" />
         </div>
@@ -406,16 +576,13 @@ export default function PublicVendorPage() {
   if (notFound || !data) {
     return (
       <div className="min-h-screen bg-paper-50 dark:bg-umber-900">
-        <PublicTopBar t={t} />
+        <PublicTopBar t={t} appPath={null} signedIn={signedIn} />
         <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6">
           <h1 className="text-2xl font-bold text-ink-900 dark:text-paper-50">
             {t("publicVendor.notFoundTitle")}
           </h1>
           <p className="mt-2 text-ink-600 dark:text-umber-200">{t("publicVendor.notFoundBody")}</p>
-          <Link
-            to="/suppliers"
-            className="mt-6 inline-flex rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900"
-          >
+          <Link to="/suppliers" className={`mt-6 ${CTA_DARK} px-5 py-2.5`}>
             {t("publicVendor.browseCta")}
           </Link>
         </div>
@@ -423,7 +590,10 @@ export default function PublicVendorPage() {
     );
   }
 
-  const { detail, reviews, comments, availability } = data;
+  const { detail, reviews } = data;
+  // Where every CTA on this page ends up: the vendor's own page inside the app,
+  // by its pretty id, the same URL the in-app page upgrades itself to.
+  const appPath = `/app/suppliers/${encodeURIComponent(vendorPublicId(detail.id, detail.name))}`;
   // Re-pull the public payload after a visitor posts a review so their (now
   // live) review appears without a full page reload.
   const reloadDetail = () => {
@@ -440,157 +610,109 @@ export default function PublicVendorPage() {
         ? ratingAvg.toFixed(1).replace(".", ",")
         : ratingAvg.toFixed(1)
       : null;
-  const priceSummary = packagePriceSummary(detail.packages);
+
+  const unlockCta = (
+    <AccessCta
+      appPath={appPath}
+      signedIn={signedIn}
+      label={t("publicVendor.unlockCta")}
+      className={CTA_DARK}
+      t={t}
+    />
+  );
 
   return (
-    <div className="min-h-screen bg-paper-50 dark:bg-umber-900">
-      <PublicTopBar t={t} />
+    <div className="min-h-screen bg-paper-50 pb-24 dark:bg-umber-900 lg:pb-0">
+      <PublicTopBar t={t} appPath={appPath} signedIn={signedIn} />
 
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        {/* The only way back into the catalogue this page ever offered was the
+            browser's own back button, dead the moment someone arrived via a
+            shared link or a search result. Carries the category forward so
+            "back" lands on a relevant filtered view, not the bare rails. */}
+        <Link
+          to={`/suppliers/browse?category=${detail.category}`}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 transition hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+        >
+          <ArrowLeft size={15} aria-hidden />
+          {t("publicVendor.browseAllCta")}
+        </Link>
+
+        {/* Header, in the in-app page's order: who, how good. The facts that
+            page carries next to the rating (price band, capacity, languages)
+            are behind the account, so they are simply not here. */}
+        <header>
+          <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t(`suppliers.cat.${detail.category}`)} · {detail.city}
+          </div>
+          <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
+            <span>{detail.name}</span>
+            {detail.claimed && <VerifiedBadge size={28} complete={detail.listing_complete} />}
+          </h1>
+          {detail.company_name && detail.company_name !== detail.name && (
+            <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{detail.company_name}</p>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            {ratingDisplay !== null && ratingAvg !== null ? (
+              <span className="inline-flex items-center gap-2 text-sm">
+                <span className="font-semibold text-ink-900 dark:text-paper-50">
+                  {ratingDisplay}
+                </span>
+                <StarRow value={Math.round(ratingAvg)} size={16} />
+                <span className="text-ink-600 dark:text-umber-200">
+                  {t("suppliers.detail.reviewsCount", { n: ratingCount })}
+                </span>
+              </span>
+            ) : (
+              <span className="text-sm italic text-ink-500 dark:text-umber-300">
+                {t("suppliers.detail.info.ratingEmpty")}
+              </span>
+            )}
+          </div>
+        </header>
+
+        <div className="mt-5">
+          <VendorGallery
+            layout="mosaic"
+            images={detail.gallery_urls}
+            name={detail.name}
+            positionsY={detail.gallery_positions_y}
+            emptyState={<PublicHero detail={detail} t={t} />}
+          />
+        </div>
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           {/* ── MAIN ─────────────────────────────────────────────────────── */}
           <main className="min-w-0">
-            {/* The only way back into the catalogue this page ever offered was
-                the browser's own back button — dead the moment someone arrived
-                via a shared link or a search result. Carries the category
-                forward so "back" lands on a relevant filtered view, not the
-                bare rails. */}
-            <Link
-              to={`/suppliers/browse?category=${detail.category}`}
-              className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 transition hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
-            >
-              <ArrowLeft size={15} aria-hidden />
-              {t("publicVendor.browseAllCta")}
-            </Link>
-            <VendorGallery
-              images={detail.gallery_urls ?? []}
-              name={detail.name}
-              positionsY={detail.gallery_positions_y}
-              emptyState={<PublicHero detail={detail} t={t} src={null} />}
+            {/* Packages lead, exactly where the in-app page puts them, because
+                this is the section a visitor most wants and the strongest
+                reason to sign up. */}
+            <LockedSection
+              title={t("suppliers.detail.packages.title")}
+              rows={3}
+              cta={unlockCta}
+              signedIn={signedIn}
+              t={t}
             />
 
-            <div className="mt-5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-              {t(`suppliers.cat.${detail.category}`)} · {detail.city}
-            </div>
-            <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
-              <span>{detail.name}</span>
-              {detail.vendor_account_id !== null && (
-                <VerifiedBadge size={28} complete={detail.listing_complete} />
-              )}
-            </h1>
-            {detail.company_name && detail.company_name !== detail.name && (
-              <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{detail.company_name}</p>
-            )}
-
-            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-              {ratingDisplay !== null && ratingAvg !== null ? (
-                <span className="inline-flex items-center gap-2 text-sm">
-                  <StarRow value={Math.round(ratingAvg)} size={16} />
-                  <span className="font-medium text-ink-900 dark:text-paper-50">
-                    {ratingDisplay}
-                  </span>
-                  <span className="text-ink-500 dark:text-umber-300">·</span>
-                  <span className="text-ink-600 dark:text-umber-200">
-                    {t("suppliers.detail.reviewsCount", { n: ratingCount })}
-                  </span>
-                </span>
-              ) : (
-                <span className="text-sm italic text-ink-500 dark:text-umber-300">
-                  {t("suppliers.detail.info.ratingEmpty")}
-                </span>
-              )}
-              {detail.price_band !== null && <PriceBandDots band={detail.price_band} />}
-              {/* Exact price, straight from the vendor's own packages — see
-                  the matching note on the in-app SupplierDetailPage. Kept in
-                  sync so the shared public link never reads as a lesser
-                  version of the signed-in page. */}
-              {priceSummary && (
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-ink-900 dark:text-paper-50">
-                  <Banknote size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-                  {formatPackagePrice(
-                    priceSummary.range,
-                    priceSummary.mode,
-                    detail.currency,
-                    locale,
-                    t,
-                  )}
-                </span>
-              )}
-              {/* Guest capacity — one of the first facts a couple checks on a
-                  venue, and captured on the listing but previously only shown on
-                  the compact directory card, never on this shareable page.
-                  Gated on the category too: only venues, stays and the
-                  serve-N-guests trades have one at all. */}
-              {showsCapacity(detail) && (
-                <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
-                  <Users size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-                  {detail.capacity_min && detail.capacity_max
-                    ? t("suppliers.capacity_range", {
-                        min: detail.capacity_min,
-                        max: detail.capacity_max,
-                      })
-                    : t("suppliers.capacity_max_only", { max: detail.capacity_max ?? 0 })}
-                </span>
-              )}
-              {/* Venue style (castle, boat, restaurant…) — refines the generic
-                  "venue" category; a quiet chip so it reads as metadata. */}
-              {detail.venue_style && (
-                <span className="inline-flex items-center rounded-full bg-paper-100 px-2.5 py-0.5 text-xs text-ink-700 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-100 dark:ring-umber-600">
-                  {t(`suppliers.venue_style.${detail.venue_style}`)}
-                </span>
-              )}
-            </div>
-
-            {/* Videos */}
-            {detail.videos.length > 0 && (
-              <section className="mt-10">
-                <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-                  {t("suppliers.detail.videos.title")}
-                </h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {detail.videos.map((v, i) => (
-                    <LazyVideoPlayer
-                      key={v.id}
-                      video={v}
-                      title={t("suppliers.detail.videos.playAria", { name: detail.name, n: i + 1 })}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* About */}
-            <section className="mt-10">
-              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+            <section className="mb-12">
+              <h2 className="mb-3 text-2xl font-bold tracking-tight text-ink-900 dark:text-paper-50">
                 {t("suppliers.detail.about.title")}
               </h2>
               <PublicBlurb detail={detail} locale={locale} t={t} />
             </section>
 
-            {/* Packages — same scannable comparison grid as the in-app page
-                (shared component), so the shared public link doesn't read as
-                a lesser version of what the couple sees signed in. */}
-            {detail.packages.length > 0 && (
-              <section className="mt-10">
-                <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-                  {t("suppliers.detail.packages.title")}
-                </h2>
-                <VendorPackageGrid
-                  packages={detail.packages}
-                  currency={detail.currency}
-                  capacityMin={detail.capacity_min}
-                  capacityMax={detail.capacity_max}
-                  locale={locale}
-                  t={t}
-                />
-              </section>
-            )}
-
-            {/* Reviews — the average + 1-5★ bars stay on the page; the list
-                and the composer open in a modal (see ReviewSummaryCard). */}
-            <section id="reviews" className="mt-10 scroll-mt-24">
+            {/* Reviews: the average + 1-5★ bars and the latest few in their own
+                words; the full list and the composer open in a modal. */}
+            <section id="reviews" className="mb-12 scroll-mt-24">
               <ReviewSummaryCard
                 summary={detail.reviews_summary}
+                locale={locale}
+                t={t}
+                onOpen={() => setReviewsOpen(true)}
+              />
+              <ReviewSnippets
+                reviews={reviews}
                 locale={locale}
                 t={t}
                 onOpen={() => setReviewsOpen(true)}
@@ -624,76 +746,23 @@ export default function PublicVendorPage() {
               />
             </Dialog>
 
-            {/* Public Q&A (read-only) — only when there is public content */}
-            {comments.length > 0 && (
-              <section className="mt-10">
-                <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-                  {t("suppliers.detail.comments.title")}
-                </h2>
-                <ul className="space-y-3">
-                  {comments.map((c) => (
-                    <PublicCommentCard key={c.id} comment={c} locale={locale} />
-                  ))}
-                </ul>
-              </section>
-            )}
+            {/* Availability, address, phone, website, videos and Q&A: one
+                locked block, because the in-app page spreads them over three
+                places and a visitor only needs to know they exist. */}
+            <LockedSection
+              title={t("publicVendor.lockedDetailsTitle")}
+              rows={2}
+              cta={unlockCta}
+              signedIn={signedIn}
+              t={t}
+            />
           </main>
 
-          {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
-          <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-            {/* Every other CTA on this page is a generic "plan your wedding"
-                pitch; this one is attached to the vendor a visitor is actually
-                looking at. It can't send anything — an anonymous visitor has
-                no thread to write into — so it goes straight to signup rather
-                than opening a form that would 401. */}
-            <Link
-              to="/signup"
-              className="flex w-full items-center justify-center rounded-2xl bg-ink-900 px-5 py-3.5 text-sm font-semibold text-paper-50 shadow-elevated transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
-            >
-              {t("publicVendor.inquiryCta")}
-            </Link>
-            <PublicContactCard detail={detail} availability={availability} locale={locale} t={t} />
+          {/* ── SIDE ─────────────────────────────────────────────────────── */}
+          <aside className="lg:sticky lg:top-20 lg:self-start">
+            <AccessCard t={t} appPath={appPath} signedIn={signedIn} />
           </aside>
         </div>
-
-        {/* Owner notice. Only on listings nobody has claimed, because that
-            is exactly the case where the business never gave us anything and
-            has no account to find any of this in. GDPR Art. 14(5)(b) lets us
-            publish the information instead of writing to every listed
-            business individually, but only if it is genuinely reachable from
-            where their data appears, so it sits on the page itself and links
-            to the policy chapter, the free claim flow, and a human address. */}
-        {detail.vendor_account_id === null && (
-          <section className="mt-14 rounded-2xl border border-paper-200 bg-paper-100/60 px-6 py-6 dark:border-umber-700 dark:bg-umber-800/40">
-            <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">
-              {t("publicVendor.ownerNoticeTitle")}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-600 dark:text-umber-200">
-              {t("publicVendor.ownerNoticeBody")}
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-              <button
-                type="button"
-                onClick={() => setClaimOpen(true)}
-                className="rounded-full bg-ink-900 px-4 py-2 text-xs font-semibold text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
-              >
-                {t("publicVendor.ownerNoticeClaim")}
-              </button>
-              <a
-                href="mailto:hello@tryweddly.com"
-                className="text-ink-600 underline underline-offset-4 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
-              >
-                {t("publicVendor.ownerNoticeContact")}
-              </a>
-              <Link
-                to="/privacy#directory-listings"
-                className="text-ink-600 underline underline-offset-4 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
-              >
-                {t("publicVendor.ownerNoticePrivacy")}
-              </Link>
-            </div>
-          </section>
-        )}
 
         {/* Conversion band */}
         <section className="mt-14 overflow-hidden rounded-2xl bg-ink-900 px-6 py-10 text-center dark:bg-umber-800">
@@ -703,12 +772,13 @@ export default function PublicVendorPage() {
           <p className="mx-auto mt-2 max-w-xl text-sm text-paper-200">
             {t("publicVendor.bandBody")}
           </p>
-          <Link
-            to="/signup"
+          <AccessCta
+            appPath={appPath}
+            signedIn={signedIn}
+            label={t("publicVendor.bandCta")}
             className="mt-6 inline-flex rounded-full bg-paper-50 px-6 py-3 text-sm font-semibold text-ink-900 transition hover:bg-paper-100"
-          >
-            {t("publicVendor.bandCta")}
-          </Link>
+            t={t}
+          />
         </section>
       </div>
 
@@ -723,8 +793,33 @@ export default function PublicVendorPage() {
           <Link to="/about" className="hover:text-ink-800 dark:hover:text-paper-100">
             {t("publicVendor.footerAbout")}
           </Link>
+          {/* The owner's way in, and deliberately nothing more: one quiet
+              footer link on listings nobody has claimed, in the same voice as
+              the links around it. It is not a banner, because a visitor
+              choosing a vendor has no use for it. */}
+          {!detail.claimed && (
+            <button
+              type="button"
+              onClick={() => setClaimOpen(true)}
+              className="text-ink-400 hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
+            >
+              {t("publicVendor.ownerNoticeClaim")}
+            </button>
+          )}
         </nav>
       </footer>
+
+      {/* Below `lg` the side card falls to the end of the page, so the CTA
+          rides along at the bottom of the screen the whole way down. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-paper-200 bg-paper-50/95 px-4 py-3 backdrop-blur lg:hidden dark:border-umber-700 dark:bg-umber-900/95">
+        <AccessCta
+          appPath={appPath}
+          signedIn={signedIn}
+          label={t("publicVendor.inquiryCta")}
+          className="btn-accent w-full justify-center"
+          t={t}
+        />
+      </div>
 
       <ClaimListingModal
         listingId={claimOpen ? detail.id : null}
@@ -735,40 +830,16 @@ export default function PublicVendorPage() {
   );
 }
 
-function PublicHero({
-  detail,
-  t,
-  src,
-}: {
-  detail: SupplierDetail;
-  t: (k: string) => string;
-  /** The image to show big — the active thumbnail, or the hero when none is
-   *  picked. Null (no photos) falls through to the placeholder card. */
-  src: string | null;
-}) {
-  if (src) {
-    return (
-      <div className="overflow-hidden rounded-2xl">
-        <img
-          src={src}
-          alt={detail.name}
-          className="aspect-[16/9] w-full object-cover"
-          style={{ objectPosition: `50% ${detail.gallery_positions_y?.[src] ?? 50}%` }}
-        />
-      </div>
-    );
-  }
-  // No photos yet. This is the FIRST thing a couple sees on a profile the
+function PublicHero({ detail, t }: { detail: PublicVendorProfile; t: (k: string) => string }) {
+  // No photos yet. This is the FIRST thing a visitor sees on a profile the
   // business has not filled in, so it has to look like a decision rather than
   // an absence: the stationery hairline texture the rest of the product uses,
-  // a monogram in the accent, and the category set as a caption. The old
-  // version was a dashed upload-box outline, which is editor furniture that
-  // had no business on a public page.
+  // a monogram in the accent, and the category set as a caption.
   return (
     <div
       role="img"
       aria-label={detail.name}
-      className="stationery flex aspect-[16/9] w-full items-center justify-center rounded-2xl border border-paper-300 dark:border-umber-700"
+      className="stationery flex aspect-[4/3] w-full items-center justify-center rounded-2xl border border-paper-300 dark:border-umber-700 sm:aspect-[2.3/1]"
     >
       <div className="flex flex-col items-center gap-3 px-6 text-center">
         <span
@@ -799,7 +870,7 @@ function PublicBlurb({
   locale,
   t,
 }: {
-  detail: SupplierDetail;
+  detail: PublicVendorProfile;
   locale: Locale;
   t: (k: string) => string;
 }) {
@@ -859,117 +930,5 @@ function PublicReviewCard({
         </div>
       )}
     </li>
-  );
-}
-
-function PublicCommentCard({ comment, locale }: { comment: SupplierComment; locale: Locale }) {
-  return (
-    <li className="rounded-xl border border-ink-200/60 bg-white p-5 dark:border-umber-700/60 dark:bg-umber-900">
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="text-sm font-medium text-ink-900 dark:text-paper-50">
-          {comment.author.display_name}
-        </span>
-        <span className="text-xs text-ink-500 dark:text-umber-300">
-          {formatDate(comment.created_at, locale)}
-        </span>
-      </div>
-      <p className="whitespace-pre-line text-sm text-ink-800 dark:text-umber-100">{comment.body}</p>
-    </li>
-  );
-}
-
-function PublicContactCard({
-  detail,
-  availability,
-  locale,
-  t,
-}: {
-  detail: SupplierDetail;
-  availability: PublicVendorPageData["availability"];
-  locale: Locale;
-  t: (k: string, vars?: Record<string, string | number>) => string;
-}) {
-  // A vendor can hide the tail of their address from anonymous visitors; the
-  // server masks with `•`, which is our "is this masked?" test. A masked value
-  // renders as plain text — the maps link it would feed is broken, and dropping
-  // it doubles as the "register to see more" nudge. The email has no masked
-  // teaser because it has no revealed state: it is withheld from everyone.
-  const addressMasked = detail.address?.includes("•") ?? false;
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    detail.address ? `${detail.name}, ${detail.address}` : `${detail.name}, ${detail.city}`,
-  )}`;
-  const addressLine = detail.address ? `${detail.city} · ${detail.address}` : detail.city;
-  const nextAvailable =
-    availability.bookable && availability.next_available
-      ? new Intl.DateTimeFormat(intlLocale(locale), {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        }).format(new Date(`${availability.next_available}T00:00:00`))
-      : null;
-
-  return (
-    // Shared card elevation — soft drop shadow, no hard border — matching the
-    // in-app detail page's sidebar cards and the package grid.
-    <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-600">
-      {addressMasked ? (
-        <div className="flex items-start gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 dark:text-umber-100">
-          <MapPin size={14} aria-hidden className="mt-0.5 text-ink-500 dark:text-umber-400" />
-          <span>{addressLine}</span>
-        </div>
-      ) : (
-        <a
-          href={mapsUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="flex items-start gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
-        >
-          <MapPin size={14} aria-hidden className="mt-0.5 text-ink-500 dark:text-umber-400" />
-          <span>{addressLine}</span>
-        </a>
-      )}
-      {detail.website && (
-        <a
-          href={`/r/supplier/${encodeURIComponent(detail.id)}`}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
-        >
-          <Globe size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-          {t("suppliers.detail.contact.website")}
-          <ExternalLink size={12} aria-hidden className="text-ink-400 dark:text-umber-400" />
-        </a>
-      )}
-      {/* No email row, masked or otherwise: a vendor's mailbox is never shown
-          to a visitor, and this page is the one a crawler reads most easily. */}
-      {detail.contact_phone &&
-        // A masked number (first five digits, rest `*`) is served to anonymous
-        // visitors — registration reveals the rest. Render it as plain text, not
-        // a tel: link that would dial a broken number.
-        (detail.contact_phone.includes("*") ? (
-          <div className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 dark:text-umber-100">
-            <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-            <span className="tabular-nums">{detail.contact_phone}</span>
-          </div>
-        ) : (
-          <a
-            href={`tel:${detail.contact_phone}`}
-            onClick={() => {
-              supplierApi
-                .recordEvents([{ supplier_id: detail.id, type: "phone_click" }])
-                .catch(() => undefined);
-            }}
-            className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
-          >
-            <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-            {detail.contact_phone}
-          </a>
-        ))}
-      {nextAvailable && (
-        <p className="mt-3 border-t border-paper-200 px-2 pt-3 text-xs text-ink-500 dark:border-umber-700 dark:text-umber-300">
-          {t("publicVendor.nextAvailable", { date: nextAvailable })}
-        </p>
-      )}
-    </div>
   );
 }

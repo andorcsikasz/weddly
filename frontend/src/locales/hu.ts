@@ -10438,6 +10438,16 @@ const hu: LocaleMessages = {
     ownerNoticeClaim: "Profil átvétele",
     ownerNoticeContact: "Javítás vagy törlés kérése",
     ownerNoticePrivacy: "Miért szerepel itt?",
+    unlockCta: "Regisztráció a megtekintéshez",
+    lockedDetailsTitle: "Foglaltság és elérhetőség",
+    lockedBody: "Regisztrálj, hogy lásd, és árajánlatot kérhess.",
+    sideTitle: "A teljes profil",
+    sideItemPackages: "Csomagok és árak",
+    sideItemDate: "Szabad az esküvőtök napján?",
+    sideItemContact: "Elérhetőség és helyszín",
+    sideItemQuote: "Árajánlatkérés",
+    haveAccount: "Már van fiókom",
+    openInApp: "A teljes profil megnyitása",
   },
   vendorLocation: {
     notFoundTitle: "Ez a kombináció nem található",
@@ -10446,7 +10456,7 @@ const hu: LocaleMessages = {
   vendorBrowse: {
     title: "Szolgáltatók böngészése",
     subtitle:
-      "A Weddly összes szolgáltatója, szabadon böngészhetően. Válassz kategóriát a teljes listához, szűrj településre, és nyiss meg bármelyik profilt a képekért, árakért és véleményekért.",
+      "A Weddly összes szolgáltatója, szabadon böngészhetően. Válassz kategóriát a teljes listához, szűrj településre, és nyiss meg bármelyik profilt a képekért és véleményekért. Az árakhoz és a foglaltsághoz regisztrálj.",
     couples_stat: "Jelenleg {count} pár tervezi az esküvőjét a Weddly-n",
     cta_couple: "Elkezdem a tervezést",
     cta_vendor: "Szolgáltatóként",
