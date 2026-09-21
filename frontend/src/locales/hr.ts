@@ -2576,6 +2576,58 @@ const hr: LocaleMessages = {
     demo_cta: "Pogledajte demo",
     demo_loading: "Trenutak…",
     demo_error: "Pokretanje nije uspjelo. Pokušajte ponovno.",
+    pitch_manage_eyebrow: "Upravljanje",
+    pitch_manage_title: "Svaki upit i svaki datum na jednom mjestu.",
+    pitch_manage_b1: "Upiti stižu u jedan popis klijenata, svaki sa sljedećim korakom.",
+    pitch_manage_b2:
+      "Postavite tjedno radno vrijeme, blokirajte dane i dodajte vrijeme za postavljanje i rastavljanje.",
+    pitch_manage_b3: "Zadržite datum za par dok se odlučuju.",
+    pitch_grow_eyebrow: "Rast",
+    pitch_grow_title: "Budite tu kad parovi biraju.",
+    pitch_grow_b1:
+      "Parovi ovdje planiraju popis gostiju, proračun i vremenski plan, a zatim biraju s kratkog popisa.",
+    pitch_grow_b2: "Vaše fotografije, paketi i recenzije na jednoj stranici.",
+    pitch_grow_b3: "Vaša e-adresa ostaje privatna. Parovi vam pišu putem aplikacije.",
+    pitch_book_eyebrow: "Do rezervacije",
+    pitch_book_title: "Od ponude do potvrđenog datuma.",
+    pitch_book_b1: "Pošaljite specificiranu ponudu s rokom valjanosti.",
+    pitch_book_b2: "Kad par prihvati, datum je potvrđen.",
+    pitch_book_b3: "Pratite predujmove i preostale iznose za svakog klijenta.",
+    pitch_mock_booked: "Rezervirano",
+    pitch_mock_held: "Zadržano",
+    pitch_mock_new_inquiry: "Novi upit",
+    pitch_mock_reply: "Odgovori",
+    pitch_mock_quote: "Ponuda",
+    pitch_mock_accepted: "Prihvaćeno",
+    pitch_mock_line_1: "Cijeli dan",
+    pitch_mock_line_2: "Postavljanje i rastavljanje",
+    pitch_mock_line_3: "Dodatni sat",
+    pitch_mock_total: "Ukupno",
+    pitch_mock_deposit: "Predujam",
+    pitch_mock_balance: "Preostalo",
+    pitch_mock_paid: "Plaćeno",
+    pitch_mock_due: "Dospijeva",
+    pitch_trades_title: "Za svaki vjenčani zanat.",
+    pitch_trades_cta: "Pregledajte imenik",
+    pitch_faq_title: "Dobro je znati",
+    pitch_faq_1_q: "Moje poslovanje već je navedeno. Kako ga preuzeti?",
+    pitch_faq_1_a:
+      "Potražite ga pri vrhu ove stranice. Ako profil postoji, preuzmete ga, a potvrda se šalje na vlastitu kontaktnu adresu poslovanja.",
+    pitch_faq_2_q: "Vide li parovi moju e-adresu?",
+    pitch_faq_2_a:
+      "Ne. Parovi vam pišu putem aplikacije, a vi odgovarate iz svog popisa klijenata. Vaša adresa nikad se ne prikazuje.",
+    pitch_faq_3_q: "Moram li objaviti svoj kalendar?",
+    pitch_faq_3_a:
+      "Ne. Isključite ga i parovi neće vidjeti datume, ali vam i dalje mogu poslati upit. Ako ga ponovno uključite, ništa što ste unijeli nije izgubljeno.",
+    pitch_faq_4_q: "Radi li na mom jeziku?",
+    pitch_faq_4_a:
+      "Weddly je dostupan na engleskom, mađarskom, španjolskom, hrvatskom i njemačkom. Vaš profil ima mjesta za opis na vašem jeziku i na engleskom, a svaki par čita onaj koji mu odgovara.",
+    pitch_faq_5_q: "Za koga je?",
+    pitch_faq_5_a:
+      "Za svako poslovanje koje radi na vjenčanjima, od prostora i cateringa do fotografa, cvjećara i bendova. Wedding planneri imaju vlastitu stranicu.",
+    pitch_faq_6_q: "Mogu li se razgledati prije registracije?",
+    pitch_faq_6_a:
+      "Da. Demo je račun dobavljača s primjerima klijenata, pa sve možete isprobati unaprijed.",
   },
   vendor_register: {
     err_listing_exists:

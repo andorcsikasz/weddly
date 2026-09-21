@@ -92,18 +92,27 @@ function useHeaderState(): { hidden: boolean; atTop: boolean } {
  * Cormorant serif headings, soft paper-300 borders, dark umber-900
  * primary CTAs.
  */
-export function PublicShell({ children }: { children: ReactNode }) {
+/** `black` swaps the DARK theme's warm-brown ground for true black. Opt-in and
+ *  per page (owner direction: /suppliers reads black in dark mode; the rest of
+ *  the public site keeps the brown until that is decided for it too), so it is
+ *  a prop on the shell rather than a retune of `umber-900`, which the whole app
+ *  shares. The light theme is untouched. */
+export function PublicShell({ children, black = false }: { children: ReactNode; black?: boolean }) {
   const { t } = useT();
   const { pathname } = useLocation();
   return (
-    <div className="flex min-h-full flex-col bg-paper-50 text-umber-900 dark:bg-umber-900 dark:text-paper-100">
+    <div
+      className={`flex min-h-full flex-col bg-paper-50 text-umber-900 dark:text-paper-100 ${
+        black ? "public-black dark:bg-black" : "dark:bg-umber-900"
+      }`}
+    >
       <a
         href="#main-content"
         className="sr-only rounded-md bg-umber-900 px-3 py-2 text-sm font-medium text-paper-100 focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:outline-none focus:ring-2 focus:ring-umber-600 focus:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:focus:ring-umber-400"
       >
         {t("landing.skip_to_main")}
       </a>
-      <PublicHeader />
+      <PublicHeader black={black} />
       <main
         id="main-content"
         className={`flex-1 ${
@@ -121,7 +130,7 @@ function navLinkClass(active: boolean) {
   return `relative px-1 py-1.5 text-sm text-umber-900 transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)] focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50 ${active ? "font-medium after:w-[calc(100%-0.5rem)]" : "after:w-0"}`;
 }
 
-function PublicHeader() {
+function PublicHeader({ black = false }: { black?: boolean }) {
   const { t, locale, setLocale } = useT();
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -181,7 +190,9 @@ function PublicHeader() {
     <header
       data-scroll-hide="true"
       data-at-top={atTop ? "true" : undefined}
-      className={`sticky top-0 z-40 border-b bg-paper-50/85 backdrop-blur transition-[transform,border-color,box-shadow] duration-200 dark:bg-umber-900/85 ${
+      className={`sticky top-0 z-40 border-b bg-paper-50/85 backdrop-blur transition-[transform,border-color,box-shadow] duration-200 ${
+        black ? "dark:bg-black/85" : "dark:bg-umber-900/85"
+      } ${
         atTop
           ? "border-transparent"
           : "border-paper-300 shadow-[0_4px_16px_-8px_rgba(58,46,34,0.25)] dark:border-umber-700"
@@ -329,7 +340,9 @@ function PublicHeader() {
         <nav
           id="public-mobile-nav"
           aria-label={t("public.nav_mobile_aria")}
-          className="safe-edges fixed inset-x-0 top-[68px] h-[calc(100dvh-68px)] overflow-y-auto overscroll-contain border-t border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900 sm:top-14 sm:h-[calc(100dvh-3.5rem)] md:hidden"
+          className={`safe-edges fixed inset-x-0 top-[68px] h-[calc(100dvh-68px)] overflow-y-auto overscroll-contain border-t border-paper-300 bg-paper-50 dark:border-umber-700 ${
+            black ? "dark:bg-black" : "dark:bg-umber-900"
+          } sm:top-14 sm:h-[calc(100dvh-3.5rem)] md:hidden`}
         >
           {/* Mobile menu rows: lucide glyph on the left, lowercase label on
            *  the right. `lowercase` is enforced via `normal-case` reset

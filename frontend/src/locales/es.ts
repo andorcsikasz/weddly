@@ -2618,6 +2618,60 @@ const es: LocaleMessages = {
     demo_cta: "Mira la demo",
     demo_loading: "Un momento…",
     demo_error: "No se pudo iniciar. Inténtalo de nuevo.",
+    pitch_manage_eyebrow: "Gestión",
+    pitch_manage_title: "Cada consulta y cada fecha, en un solo lugar.",
+    pitch_manage_b1:
+      "Las consultas llegan a una única lista de clientes, cada una con su siguiente paso.",
+    pitch_manage_b2:
+      "Define tu horario semanal, bloquea días y añade tiempo de montaje y desmontaje.",
+    pitch_manage_b3: "Reserva una fecha para una pareja mientras decide.",
+    pitch_grow_eyebrow: "Crece",
+    pitch_grow_title: "Estate ahí cuando las parejas elijan.",
+    pitch_grow_b1:
+      "Las parejas planifican aquí su lista de invitados, su presupuesto y su calendario, y luego eligen entre unas pocas opciones.",
+    pitch_grow_b2: "Tus fotos, paquetes y reseñas en una sola página.",
+    pitch_grow_b3:
+      "Tu correo electrónico se mantiene privado. Las parejas te escriben a través de Weddly.",
+    pitch_book_eyebrow: "Consigue reservas",
+    pitch_book_title: "De la propuesta a la fecha confirmada.",
+    pitch_book_b1: "Envía un presupuesto detallado con fecha de caducidad.",
+    pitch_book_b2: "Cuando la pareja lo acepta, la fecha queda confirmada.",
+    pitch_book_b3: "Sigue los anticipos y los saldos de cada cliente.",
+    pitch_mock_booked: "Reservado",
+    pitch_mock_held: "Retenida",
+    pitch_mock_new_inquiry: "Nueva consulta",
+    pitch_mock_reply: "Responder",
+    pitch_mock_quote: "Presupuesto",
+    pitch_mock_accepted: "Aceptado",
+    pitch_mock_line_1: "Día completo",
+    pitch_mock_line_2: "Montaje y desmontaje",
+    pitch_mock_line_3: "Hora extra",
+    pitch_mock_total: "Total",
+    pitch_mock_deposit: "Anticipo",
+    pitch_mock_balance: "Saldo",
+    pitch_mock_paid: "Pagado",
+    pitch_mock_due: "Pendiente",
+    pitch_trades_title: "Para cada oficio de boda.",
+    pitch_trades_cta: "Explorar el directorio",
+    pitch_faq_title: "Conviene saber",
+    pitch_faq_1_q: "Mi negocio ya aparece. ¿Cómo lo reclamo?",
+    pitch_faq_1_a:
+      "Búscalo en la parte superior de esta página. Si existe una ficha, la reclamas y la confirmación se envía al correo de contacto del propio negocio.",
+    pitch_faq_2_q: "¿Pueden las parejas ver mi correo electrónico?",
+    pitch_faq_2_a:
+      "No. Las parejas te escriben a través de Weddly y tú respondes desde tu lista de clientes. Tu dirección nunca se muestra.",
+    pitch_faq_3_q: "¿Tengo que publicar mi calendario?",
+    pitch_faq_3_a:
+      "No. Desactívalo y las parejas no verán fechas, pero podrán enviarte una consulta igualmente. Si lo vuelves a activar, no se pierde nada de lo que introdujiste.",
+    pitch_faq_4_q: "¿Funciona en mi idioma?",
+    pitch_faq_4_a:
+      "Weddly está disponible en inglés, húngaro, español, croata y alemán. Tu ficha tiene espacio para una descripción en tu idioma y otra en inglés, y cada pareja lee la que le corresponde.",
+    pitch_faq_5_q: "¿Para quién es?",
+    pitch_faq_5_a:
+      "Para cualquier negocio que trabaje en bodas, desde espacios y catering hasta fotógrafos, floristas y bandas. Los wedding planners tienen su propia página.",
+    pitch_faq_6_q: "¿Puedo echar un vistazo antes de registrarme?",
+    pitch_faq_6_a:
+      "Sí. La demo es una cuenta de proveedor con clientes de ejemplo, así que puedes recorrerlo todo antes.",
   },
   vendor_register: {
     err_listing_exists:

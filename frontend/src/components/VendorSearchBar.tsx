@@ -63,8 +63,12 @@ function hrefFor(s: PublicVendorSuggestion): string {
 export function VendorSearchBar({
   className = "",
   autoDemo = false,
+  black = false,
 }: {
   className?: string;
+  /** Dark theme only: true black instead of the warm-brown umber surfaces, for
+   *  a page that runs on a black ground (PublicShell `black`). */
+  black?: boolean;
   /** Landing-page only: types an example category into the box on its own,
    *  then — if the visitor never touched the box — hands off to the real
    *  directory. See the effect below for why and how. */
@@ -72,6 +76,9 @@ export function VendorSearchBar({
 }) {
   const { t } = useT();
   const navigate = useNavigate();
+  const fieldDark = black ? "dark:bg-black" : "dark:bg-umber-800";
+  const rowActiveDark = black ? "dark:bg-white/10" : "dark:bg-umber-700/60";
+  const rowHoverDark = black ? "dark:hover:bg-white/10" : "dark:hover:bg-umber-700/60";
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<PublicVendorSuggestion[]>([]);
@@ -276,7 +283,9 @@ export function VendorSearchBar({
           border, which would shift the row by a pixel. Dark mode inverts to a
           light outline for the same reason the arrow button does — a near-black
           edge on umber-800 is no edge at all. */}
-      <div className="flex items-center gap-2 rounded-full border border-umber-900 bg-white px-4 py-2.5 shadow-soft transition focus-within:ring-2 focus-within:ring-umber-900/20 dark:border-paper-200 dark:bg-umber-800 dark:focus-within:ring-paper-200/25 sm:px-5 sm:py-3">
+      <div
+        className={`flex items-center gap-2 rounded-full border border-umber-900 bg-white px-4 py-2.5 shadow-soft transition focus-within:ring-2 focus-within:ring-umber-900/20 dark:border-paper-200 ${fieldDark} dark:focus-within:ring-paper-200/25 sm:px-5 sm:py-3`}
+      >
         <Search
           size={18}
           strokeWidth={1.8}
@@ -316,7 +325,7 @@ export function VendorSearchBar({
           id={listId}
           role="listbox"
           aria-label={t("landing.suppliers_search_label")}
-          className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-umber-900 bg-white py-1 shadow-pop dark:border-paper-200 dark:bg-umber-800"
+          className={`absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-umber-900 bg-white py-1 shadow-pop dark:border-paper-200 ${fieldDark}`}
         >
           {items.map((s, i) => {
             const Icon =
@@ -344,7 +353,7 @@ export function VendorSearchBar({
                   onMouseEnter={() => setActive(i)}
                   onClick={() => go(s)}
                   className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                    i === active ? "bg-paper-100 dark:bg-umber-700/60" : ""
+                    i === active ? `bg-paper-100 ${rowActiveDark}` : ""
                   }`}
                 >
                   <Icon
@@ -371,7 +380,7 @@ export function VendorSearchBar({
             <button
               type="button"
               onClick={() => go(null)}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-700/60"
+              className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-paper-100 ${rowHoverDark}`}
             >
               <LayoutGrid
                 size={16}

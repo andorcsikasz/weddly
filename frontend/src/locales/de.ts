@@ -2632,6 +2632,58 @@ const de: LocaleMessages = {
     demo_cta: "Demo ansehen",
     demo_loading: "Einen Moment…",
     demo_error: "Start nicht möglich. Bitte erneut versuchen.",
+    pitch_manage_eyebrow: "Verwalten",
+    pitch_manage_title: "Jede Anfrage und jeder Termin an einem Ort.",
+    pitch_manage_b1: "Anfragen landen in einer Kundenliste, jede mit ihrem nächsten Schritt.",
+    pitch_manage_b2:
+      "Legen Sie Ihre Wochenzeiten fest, sperren Sie Tage und planen Sie Auf- und Abbauzeit ein.",
+    pitch_manage_b3: "Halten Sie einen Termin für ein Paar frei, während es sich entscheidet.",
+    pitch_grow_eyebrow: "Wachsen",
+    pitch_grow_title: "Da sein, wenn Paare wählen.",
+    pitch_grow_b1:
+      "Paare planen hier Gästeliste, Budget und Zeitplan und wählen dann aus einer kurzen Liste.",
+    pitch_grow_b2: "Ihre Fotos, Pakete und Bewertungen auf einer Seite.",
+    pitch_grow_b3: "Ihre E-Mail-Adresse bleibt privat. Paare schreiben Ihnen über Weddly.",
+    pitch_book_eyebrow: "Gebucht werden",
+    pitch_book_title: "Vom Angebot zum bestätigten Termin.",
+    pitch_book_b1: "Senden Sie ein detailliertes Angebot mit Ablaufdatum.",
+    pitch_book_b2: "Sobald das Paar annimmt, ist der Termin bestätigt.",
+    pitch_book_b3: "Behalten Sie Anzahlungen und Restbeträge für jeden Kunden im Blick.",
+    pitch_mock_booked: "Gebucht",
+    pitch_mock_held: "Reserviert",
+    pitch_mock_new_inquiry: "Neue Anfrage",
+    pitch_mock_reply: "Antworten",
+    pitch_mock_quote: "Angebot",
+    pitch_mock_accepted: "Angenommen",
+    pitch_mock_line_1: "Ganzer Tag",
+    pitch_mock_line_2: "Auf- und Abbau",
+    pitch_mock_line_3: "Zusatzstunde",
+    pitch_mock_total: "Gesamt",
+    pitch_mock_deposit: "Anzahlung",
+    pitch_mock_balance: "Restbetrag",
+    pitch_mock_paid: "Bezahlt",
+    pitch_mock_due: "Fällig",
+    pitch_trades_title: "Für jedes Hochzeitsgewerk.",
+    pitch_trades_cta: "Verzeichnis durchsuchen",
+    pitch_faq_title: "Gut zu wissen",
+    pitch_faq_1_q: "Mein Unternehmen ist bereits gelistet. Wie übernehme ich es?",
+    pitch_faq_1_a:
+      "Suchen Sie es oben auf dieser Seite. Gibt es einen Eintrag, übernehmen Sie ihn, und die Bestätigung geht an die eigene Kontaktadresse des Unternehmens.",
+    pitch_faq_2_q: "Können Paare meine E-Mail-Adresse sehen?",
+    pitch_faq_2_a:
+      "Nein. Paare schreiben Ihnen über Weddly, und Sie antworten aus Ihrer Kundenliste. Ihre Adresse wird nie angezeigt.",
+    pitch_faq_3_q: "Muss ich meinen Kalender veröffentlichen?",
+    pitch_faq_3_a:
+      "Nein. Schalten Sie ihn aus, dann sehen Paare keine Termine, können Ihnen aber weiterhin eine Anfrage senden. Schalten Sie ihn wieder ein, geht nichts von Ihren Eingaben verloren.",
+    pitch_faq_4_q: "Gibt es das in meiner Sprache?",
+    pitch_faq_4_a:
+      "Weddly gibt es auf Englisch, Ungarisch, Spanisch, Kroatisch und Deutsch. Ihr Eintrag hat Platz für eine Beschreibung in Ihrer Sprache und eine auf Englisch, und jedes Paar liest die passende.",
+    pitch_faq_5_q: "Für wen ist es?",
+    pitch_faq_5_a:
+      "Für jedes Unternehmen rund um Hochzeiten, von Locations und Catering bis zu Fotografen, Floristen und Bands. Hochzeitsplaner haben eine eigene Seite.",
+    pitch_faq_6_q: "Kann ich mich vorab umsehen?",
+    pitch_faq_6_a:
+      "Ja. Die Demo ist ein Dienstleisterkonto mit Beispielkunden, sodass Sie alles vorher ausprobieren können.",
   },
   vendor_register: {
     err_listing_exists:

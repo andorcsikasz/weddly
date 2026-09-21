@@ -977,6 +977,20 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     --btn-shadow: rgba(0, 0, 0, 0.36);
     --btn-shadow-hover: rgba(0, 0, 0, 0.42);
   }
+  /* A public page on a true-black ground (PublicShell `black`). `.btn-outline`
+     paints a warm-brown face in dark mode, which on black reads as a brown
+     slab, so inside that shell it takes black with a light hairline instead.
+     Scoped to the shell's marker class: every other .btn-outline is untouched. */
+  html.dark .public-black .btn-outline {
+    background-color: theme("colors.black");
+    border-color: theme("colors.white / 20%");
+    --btn-rim: theme("colors.white / 8%");
+    --btn-rim-hover: theme("colors.white / 14%");
+    --btn-rim-active: theme("colors.white / 4%");
+  }
+  html.dark .public-black .btn-outline:hover {
+    background-color: theme("colors.white / 10%");
+  }
   /* Seating toolbar: nudge its outline-button borders one notch darker than the
      app-wide .btn-outline (ink-200 → ink-300) so the print/place-card row reads
      as a defined control group on the cream canvas. Scoped to the toolbar, so

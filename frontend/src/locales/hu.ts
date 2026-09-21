@@ -2587,6 +2587,59 @@ const hu: LocaleMessages = {
     demo_cta: "Demo",
     demo_loading: "Egy pillanat…",
     demo_error: "Nem indult. Próbáld újra.",
+    pitch_manage_eyebrow: "Kezelés",
+    pitch_manage_title: "Minden megkeresés és minden dátum egy helyen.",
+    pitch_manage_b1:
+      "A megkeresések egyetlen ügyféllistába érkeznek, mindegyik a következő lépéssel.",
+    pitch_manage_b2:
+      "Add meg a heti munkarendet, zárj le napokat, és adj hozzá felkészülési és bontási időt.",
+    pitch_manage_b3: "Tarts fenn egy dátumot a párnak, amíg döntenek.",
+    pitch_grow_eyebrow: "Növekedés",
+    pitch_grow_title: "Legyél ott, amikor a párok választanak.",
+    pitch_grow_b1:
+      "A párok itt tervezik a vendéglistát, a költségvetést és az idővonalat, majd egy szűk listából választanak.",
+    pitch_grow_b2: "Fotóid, csomagjaid és értékeléseid egy oldalon.",
+    pitch_grow_b3: "Az e-mail-címed rejtve marad. A párok az alkalmazáson keresztül írnak neked.",
+    pitch_book_eyebrow: "Foglalás",
+    pitch_book_title: "Az ajánlattól a megerősített dátumig.",
+    pitch_book_b1: "Küldj tételes ajánlatot lejárati dátummal.",
+    pitch_book_b2: "Ha a pár elfogadja, a dátum megerősítést nyer.",
+    pitch_book_b3: "Kövesd az előlegeket és a fennmaradó összegeket minden ügyfélnél.",
+    pitch_mock_booked: "Foglalt",
+    pitch_mock_held: "Fenntartva",
+    pitch_mock_new_inquiry: "Új megkeresés",
+    pitch_mock_reply: "Válasz",
+    pitch_mock_quote: "Ajánlat",
+    pitch_mock_accepted: "Elfogadva",
+    pitch_mock_line_1: "Egész nap",
+    pitch_mock_line_2: "Építés és bontás",
+    pitch_mock_line_3: "Plusz óra",
+    pitch_mock_total: "Összesen",
+    pitch_mock_deposit: "Előleg",
+    pitch_mock_balance: "Fennmaradó összeg",
+    pitch_mock_paid: "Kifizetve",
+    pitch_mock_due: "Esedékes",
+    pitch_trades_title: "Minden esküvői szakmához.",
+    pitch_trades_cta: "Böngészd a szolgáltatókat",
+    pitch_faq_title: "Jó tudni",
+    pitch_faq_1_q: "A vállalkozásom már szerepel. Hogyan veszem át?",
+    pitch_faq_1_a:
+      "Keresd meg az oldal tetején. Ha van hozzá adatlap, átveheted, a megerősítést pedig a vállalkozás saját kapcsolati címére küldjük.",
+    pitch_faq_2_q: "Látják a párok az e-mail-címemet?",
+    pitch_faq_2_a:
+      "Nem. A párok az alkalmazáson keresztül írnak neked, te pedig az ügyféllistádból válaszolsz. A címed sosem jelenik meg.",
+    pitch_faq_3_q: "Kötelező közzétennem a naptáramat?",
+    pitch_faq_3_a:
+      "Nem. Kapcsold ki, és a párok nem látnak dátumokat, de továbbra is küldhetnek megkeresést. Ha újra bekapcsolod, semmi nem vész el abból, amit megadtál.",
+    pitch_faq_4_q: "Elérhető a saját nyelvemen?",
+    pitch_faq_4_a:
+      "A Weddly angolul, magyarul, spanyolul, horvátul és németül érhető el. Az adatlapodon lehet leírás a saját nyelveden és angolul is, és minden pár azt olvassa, amelyik neki megfelel.",
+    pitch_faq_5_q: "Kinek szól?",
+    pitch_faq_5_a:
+      "Minden esküvőkkel foglalkozó vállalkozásnak, a helyszínektől és a cateringtől a fotósokig, virágkötőkig és zenekarokig. Az esküvőszervezőknek külön oldaluk van.",
+    pitch_faq_6_q: "Körülnézhetek regisztráció előtt?",
+    pitch_faq_6_a:
+      "Igen. A demó egy szolgáltatói fiók mintaügyfelekkel, így mindent kipróbálhatsz előre.",
   },
   vendor_register: {
     err_listing_exists:
