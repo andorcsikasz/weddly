@@ -351,7 +351,7 @@ export function WeddingChecklist({
 
   return (
     <section
-      className="min-h-[36rem] border-t border-ink-900/10 py-4 sm:py-6 dark:border-paper-50/10"
+      className="min-h-[36rem] border-t border-ink-900/10 py-3 sm:py-4 dark:border-paper-50/10"
       aria-labelledby="wedding-checklist-title"
       data-checklist-surface="persistent"
     >
@@ -364,7 +364,7 @@ export function WeddingChecklist({
          *  filter, and the PDF trigger all stay reachable in a single ~56px
          *  bar while scrolling the list below, and real task content starts
          *  much closer to the top of the page. */}
-        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 rounded-lg bg-neutral-950 px-4 py-3 text-white shadow-soft sm:gap-4 dark:border dark:border-paper-50/15 dark:bg-umber-950">
+        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 rounded-lg bg-neutral-950 px-4 py-2.5 text-white shadow-soft sm:gap-4 dark:border dark:border-paper-50/15 dark:bg-umber-950">
           <div className="flex shrink-0 items-center gap-2.5">
             <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/10">
               <ClipboardCheck size={16} aria-hidden="true" />
@@ -537,7 +537,7 @@ export function WeddingChecklist({
         )}
 
         <div
-          className="mt-4 grid items-start gap-4 md:grid-cols-2"
+          className="mt-3 grid items-start gap-3 md:grid-cols-2"
           data-checklist-layout="two-column"
         >
           {sections.map((section) => {
@@ -602,7 +602,7 @@ export function WeddingChecklist({
                 key={section.id}
                 className="overflow-hidden rounded-lg border border-ink-900/15 bg-paper-50 dark:border-paper-50/15 dark:bg-umber-800"
               >
-                <div className="flex min-h-16 items-center justify-between gap-3 border-b border-ink-900/10 bg-ink-900/[0.035] px-4 py-3.5 sm:px-5 dark:border-paper-50/10 dark:bg-paper-50/[0.035]">
+                <div className="flex min-h-12 items-center justify-between gap-3 border-b border-ink-900/10 bg-ink-900/[0.035] px-4 py-2.5 sm:px-5 dark:border-paper-50/10 dark:bg-paper-50/[0.035]">
                   <h3 className="font-grotesk text-base font-semibold tracking-[-0.015em] text-ink-900 dark:text-paper-50">
                     {section.title}
                   </h3>
@@ -634,7 +634,7 @@ export function WeddingChecklist({
                       >
                         <div className="overflow-hidden">
                           <div
-                            className={`group flex min-w-0 items-start gap-3 px-4 py-4 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025] ${isCollapsing ? "pointer-events-none" : ""}`}
+                            className={`group flex min-w-0 items-start gap-3 px-4 py-3 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025] ${isCollapsing ? "pointer-events-none" : ""}`}
                           >
                             <label className="inline-flex shrink-0 cursor-pointer">
                               <input
@@ -671,7 +671,7 @@ export function WeddingChecklist({
                               {!isPendingCollapse &&
                                 !isCollapsing &&
                                 (task.due_date || task.assignee) && (
-                                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
                                     {task.due_date && (
                                       <span className="inline-flex items-center gap-1">
                                         <CalendarDays size={12} aria-hidden="true" />
@@ -711,7 +711,7 @@ export function WeddingChecklist({
                     ) : (
                       <li
                         key={template.id}
-                        className="group flex min-w-0 items-start gap-3 px-4 py-4 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025]"
+                        className="group flex min-w-0 items-center gap-3 px-4 py-2.5 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025]"
                       >
                         <button
                           type="button"
@@ -726,11 +726,15 @@ export function WeddingChecklist({
                             <Plus size={14} strokeWidth={2.5} aria-hidden="true" />
                           )}
                         </button>
-                        <div className="min-w-0 flex-1">
-                          <p className="break-words text-sm font-medium leading-5 text-ink-900 dark:text-paper-50">
+                        {/* Title left, date picker right on the SAME line: the
+                         *  picker used to sit under every title and doubled the
+                         *  row height with half the row empty. It only drops
+                         *  below when the row is too narrow to hold both. */}
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
+                          <p className="min-w-0 flex-1 basis-44 break-words text-sm font-medium leading-5 text-ink-900 dark:text-paper-50">
                             {template.title}
                           </p>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                          <div className="flex shrink-0 items-center gap-2 text-xs text-ink-500 dark:text-umber-300">
                             <CalendarDays size={12} className="shrink-0" aria-hidden="true" />
                             <input
                               type="date"

@@ -942,7 +942,7 @@ export default function PlanningPage() {
   return (
     <>
       <div>
-        <header className="mb-4">
+        <header className="mb-3">
           {/* The page name repeats what the nav already says; only a sr-only
               copy stays for screen readers and heading structure. */}
           <h1 className="sr-only text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
@@ -954,12 +954,12 @@ export default function PlanningPage() {
         {/* Tabs and the per-tab actions share one row to keep the header
          *  compact. Tabs anchor left; actions push right via ml-auto, and the
          *  whole row stacks on narrow screens. */}
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center">
           <nav
             role="tablist"
             data-tour-target="planning-tabs"
             aria-label={t("planning.tabs_aria")}
-            className="grid w-full grid-cols-3 gap-0.5 rounded-xl border border-ink-900 bg-paper-100/50 p-0.5 sm:w-auto dark:border-umber-700 dark:bg-umber-700/60"
+            className="flex w-full gap-0.5 rounded-xl border border-ink-900 bg-paper-100/50 p-0.5 sm:w-auto dark:border-umber-700 dark:bg-umber-700/60"
           >
             {TABS.map((tab) => {
               const active = tab.kind === activeKind;
@@ -971,7 +971,7 @@ export default function PlanningPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setActiveKind(tab.kind)}
-                  className={`group relative flex flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-colors ${
+                  className={`group relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-colors sm:flex-none sm:px-3 ${
                     active
                       ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-umber-900 dark:text-paper-50"
                       : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
