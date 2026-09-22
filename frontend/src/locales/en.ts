@@ -4789,6 +4789,7 @@ const en: LocaleMessages = {
     sort_name: "Name (A–Z)",
     sort_added: "Recently added",
     sort_rsvp: "RSVP status",
+    sort_certainty: "Certainty (least sure first)",
     sort_group: "Side & group",
     reorder_drag: "Drag to reorder household",
     reorder_failed: "Couldn't save the new order. Please try again.",
@@ -4830,6 +4831,9 @@ const en: LocaleMessages = {
     table_col_household: "Household",
     table_col_group: "Group",
     table_group_household_hint: "Changes the whole household's group",
+    table_col_certainty: "Certainty",
+    table_col_certainty_hint:
+      "How sure you are about inviting this guest — helps you see where to draw the line if you need to cut the list.",
     table_col_rsvp: "RSVP",
     table_col_meal: "Meal",
     table_col_dietary: "Dietary",
@@ -4845,6 +4849,13 @@ const en: LocaleMessages = {
     table_household_new_hint: "Move to a new household",
     table_new_name_placeholder: "New guest name…",
     table_email_placeholder: "Email address",
+    certainty_label: "How sure are you?",
+    certainty_help:
+      "Your own read on this guest, not their RSVP — helps you see who to cut first if the list runs long.",
+    certainty_definite: "Definite",
+    certainty_likely: "Likely",
+    certainty_unsure: "Unsure",
+    certainty_unlikely: "Unlikely",
   },
   budget: {
     title: "Budget",

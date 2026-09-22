@@ -106,6 +106,7 @@ function makeGuest(name: string, overrides: Partial<Guest> = {}): Guest {
     is_plus_one: false,
     plus_one_of: null,
     partner_role: null,
+    certainty: "definite",
     rsvp_status: "pending",
     meal_choice: null,
     dietary: null,

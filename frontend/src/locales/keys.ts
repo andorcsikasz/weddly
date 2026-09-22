@@ -5515,6 +5515,9 @@ export interface LocaleMessages {
     sort_name: string;
     sort_added: string;
     sort_rsvp: string;
+    /** Sorts by GuestCertainty, least-sure-first — the cut candidates float
+     *  to the top of the table. */
+    sort_certainty: string;
     sort_group: string;
     /** Drag-handle tooltip / aria-label for reordering households. */
     reorder_drag: string;
@@ -5570,6 +5573,10 @@ export interface LocaleMessages {
     table_col_group: string;
     /** Tooltip on the group cell: the edit propagates to the household. */
     table_group_household_hint: string;
+    /** Header + tooltip for the couple's own confidence column — see
+     *  `GuestCertainty`. Independent of the guest's own RSVP answer. */
+    table_col_certainty: string;
+    table_col_certainty_hint: string;
     table_col_rsvp: string;
     table_col_meal: string;
     table_col_dietary: string;
@@ -5586,6 +5593,14 @@ export interface LocaleMessages {
     table_household_new_hint: string;
     table_new_name_placeholder: string;
     table_email_placeholder: string;
+    /** The 4-stage confidence picker in the guest drawer + its 4 option
+     *  labels, shared with the table's chip and the sort menu. */
+    certainty_label: string;
+    certainty_help: string;
+    certainty_definite: string;
+    certainty_likely: string;
+    certainty_unsure: string;
+    certainty_unlikely: string;
     dietary: string;
     /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
     allergies: string;

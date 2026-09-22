@@ -6,6 +6,7 @@
 import type {
   Couple,
   Guest,
+  GuestCertainty,
   GuestGroupTag,
   GuestKind,
   Household,
@@ -48,6 +49,7 @@ import {
   Eye,
   Filter,
   Fish,
+  Gauge,
   Gem,
   GripVertical,
   Heart,
@@ -205,6 +207,37 @@ const RSVP_GLYPH: Record<RsvpStatus, ReactNode> = {
   pending: <Clock size={13} aria-hidden />,
 };
 
+/** Most-sure to least-sure, and also the picker's option order. Kept out of
+ *  `RSVP_TONE`'s emerald/blush/amber palette on purpose — certainty is the
+ *  COUPLE's own read on a guest, never the guest's own answer, and the two
+ *  chips sit in adjacent columns; a shared hue would read as one signal. This
+ *  one runs its own green→red gradient instead, so the tone itself carries
+ *  "how sure" independent of the label. */
+const CERTAINTY_ORDER: GuestCertainty[] = ["definite", "likely", "unsure", "unlikely"];
+/** 4 → 1: how many of the meter's dots are filled. */
+const CERTAINTY_LEVEL: Record<GuestCertainty, number> = {
+  definite: 4,
+  likely: 3,
+  unsure: 2,
+  unlikely: 1,
+};
+const CERTAINTY_TONE: Record<GuestCertainty, string> = {
+  definite:
+    "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-300",
+  likely:
+    "border-lime-300 bg-lime-50 text-lime-800 dark:border-lime-400/40 dark:bg-lime-400/15 dark:text-lime-300",
+  unsure:
+    "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/15 dark:text-amber-300",
+  unlikely:
+    "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-400/40 dark:bg-rose-400/15 dark:text-rose-300",
+};
+const CERTAINTY_DOT: Record<GuestCertainty, string> = {
+  definite: "bg-emerald-500",
+  likely: "bg-lime-500",
+  unsure: "bg-amber-500",
+  unlikely: "bg-rose-500",
+};
+
 /** Every slot this couple offers, in render order: the six canonical ones and
  *  then their own. Replaces a hardcoded six-item array that could not show a
  *  couple-defined option however many they added. */
@@ -230,7 +263,7 @@ function slotLabel(
 
 // Guest-list sort axes. "default" preserves the server/household order (the
 // historic behavior); the rest are explicit user picks from the sort control.
-type SortKey = "default" | "name" | "added" | "rsvp" | "group";
+type SortKey = "default" | "name" | "added" | "rsvp" | "group" | "certainty";
 // One glyph per axis so the toolbar's sort control can collapse to an icon on
 // phones (ViewSelect's `compact` mode) and still say what "sorted by" means.
 const SORT_ICON: Record<SortKey, ReactNode> = {
@@ -239,10 +272,20 @@ const SORT_ICON: Record<SortKey, ReactNode> = {
   added: <Clock size={14} aria-hidden />,
   rsvp: <CheckCircle2 size={14} aria-hidden />,
   group: <UsersRound size={14} aria-hidden />,
+  certainty: <Gauge size={14} aria-hidden />,
 };
 // RSVP sort surfaces the actionable states first (pending, maybe) ahead of the
 // settled ones (yes, no) so "who do I still need to chase" floats to the top.
 const RSVP_SORT_ORDER: Record<RsvpStatus, number> = { pending: 0, maybe: 1, yes: 2, no: 3 };
+// Certainty sort surfaces the shakiest guests first (the opposite direction
+// from CERTAINTY_LEVEL's 4-to-1 dot count) — those are the cut candidates, so
+// they're what a couple sorting this column actually wants to see on top.
+const CERTAINTY_SORT_ORDER: Record<GuestCertainty, number> = {
+  unlikely: 0,
+  unsure: 1,
+  likely: 2,
+  definite: 3,
+};
 function sortGuests(list: Guest[], sort: SortKey): Guest[] {
   if (sort === "default") return list;
   const arr = [...list];
@@ -252,6 +295,12 @@ function sortGuests(list: Guest[], sort: SortKey): Guest[] {
     arr.sort(
       (a, b) =>
         RSVP_SORT_ORDER[a.rsvp_status] - RSVP_SORT_ORDER[b.rsvp_status] ||
+        a.full_name.localeCompare(b.full_name),
+    );
+  else if (sort === "certainty")
+    arr.sort(
+      (a, b) =>
+        CERTAINTY_SORT_ORDER[a.certainty] - CERTAINTY_SORT_ORDER[b.certainty] ||
         a.full_name.localeCompare(b.full_name),
     );
   else
@@ -267,8 +316,8 @@ function sortHouseholds(list: Household[], sort: SortKey): Household[] {
   if (sort === "added") return [...list].sort((a, b) => b.id - a.id);
   if (sort === "group")
     return [...list].sort((a, b) => GROUPS.indexOf(a.group_tag) - GROUPS.indexOf(b.group_tag));
-  // "default" and "rsvp" keep the natural household order. rsvp is a
-  // guest-level axis that doesn't map cleanly onto a whole household.
+  // "default", "rsvp" and "certainty" keep the natural household order —
+  // both are guest-level axes that don't map cleanly onto a whole household.
   return list;
 }
 
@@ -327,7 +376,9 @@ export default function GuestsPage() {
   const tableView = params.get("view") === "table";
   const sortKey: SortKey = ((): SortKey => {
     const v = params.get("sort");
-    return v === "name" || v === "added" || v === "rsvp" || v === "group" ? v : "default";
+    return v === "name" || v === "added" || v === "rsvp" || v === "group" || v === "certainty"
+      ? v
+      : "default";
   })();
   const navigate = useNavigate();
   // Anchor for the "households" header stat — clicking it clears any filter and
@@ -2009,6 +2060,126 @@ function HouseholdCell({
   );
 }
 
+/** Inline name editor: the one field every other table column already had and
+ *  this one didn't — every neighbour (email, household, group, RSVP, meal,
+ *  dietary, accommodation, invited) commits inline, but the name sat as plain
+ *  text with the pencil icon as its only edit path. Same commit-on-blur/Enter,
+ *  revert-on-Escape contract as `EmailCell`, except empty REVERTS instead of
+ *  saving — `full_name` is required server-side (same "never orphan" rule
+ *  `HouseholdCell` follows), so an emptied field would otherwise round-trip a
+ *  400 the couple never asked for. */
+function NameCell({
+  name,
+  onChange,
+}: {
+  name: string;
+  onChange: (value: string) => void;
+}) {
+  const { t } = useT();
+  const [text, setText] = useState(name);
+  const revertRef = useRef(false);
+  useEffect(() => setText(name), [name]);
+
+  function commit() {
+    if (revertRef.current) {
+      revertRef.current = false;
+      setText(name);
+      return;
+    }
+    const trimmed = text.trim();
+    if (!trimmed || trimmed === name.trim()) {
+      setText(name); // empty or unchanged → revert, never orphan
+      return;
+    }
+    onChange(trimmed);
+  }
+
+  return (
+    <input
+      type="text"
+      value={text}
+      aria-label={t("guests.table_col_name")}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        } else if (e.key === "Escape") {
+          revertRef.current = true;
+          e.currentTarget.blur();
+        }
+      }}
+      className={`${CELL_FIELD} min-w-[8rem] flex-1 cursor-text truncate pr-2 font-medium text-ink-900 dark:text-paper-50`}
+    />
+  );
+}
+
+/** Small 4-dot fill meter — the certainty chip's "icon". Reads at a glance as
+ *  a signal strength, independent of the label, so a sorted column visibly
+ *  steps down from full to empty rather than relying on colour alone.
+ *
+ *  `onDark` swaps both dot colours for translucent white: the drawer's
+ *  segmented picker fills its ACTIVE option with the same hue the dot would
+ *  otherwise use (emerald dots on an emerald-600 fill, lime-on-lime, ...),
+ *  which is a same-hue-on-same-hue contrast failure on every one of the four
+ *  options, not just an edge case. White dots read against any fill colour. */
+function CertaintyDots({ value, onDark }: { value: GuestCertainty; onDark?: boolean }) {
+  const level = CERTAINTY_LEVEL[value];
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-hidden>
+      {[1, 2, 3, 4].map((n) => {
+        const filled = n <= level;
+        const cls = onDark
+          ? filled
+            ? "bg-white"
+            : "bg-white/30"
+          : filled
+            ? CERTAINTY_DOT[value]
+            : "bg-ink-200 dark:bg-umber-600";
+        return <span key={n} className={`h-1.5 w-1.5 rounded-full ${cls}`} />;
+      })}
+    </span>
+  );
+}
+
+/** Inline certainty editor, the table's twin of `GroupCellChip`: a coloured
+ *  pill (green→red across the four stages) overlaid with a transparent native
+ *  `<select>`. This is the couple's own read on a guest, set independently of
+ *  the guest's own RSVP answer — see `GuestCertainty`. */
+function CertaintyCellChip({
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  value: GuestCertainty;
+  onChange: (v: GuestCertainty) => void;
+  ariaLabel: string;
+}) {
+  const { t } = useT();
+  return (
+    <span
+      className={`relative inline-flex min-w-[8rem] items-center justify-center gap-1.5 rounded-xl border px-2 py-1 text-xs font-medium transition-colors ${CERTAINTY_TONE[value]}`}
+    >
+      <CertaintyDots value={value} />
+      <span className="truncate">{t(`guests.certainty_${value}`)}</span>
+      <ChevronDown size={12} aria-hidden className="shrink-0 opacity-70" />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as GuestCertainty)}
+        aria-label={ariaLabel}
+        className="absolute inset-0 cursor-pointer opacity-0"
+      >
+        {CERTAINTY_ORDER.map((c) => (
+          <option key={c} value={c}>
+            {t(`guests.certainty_${c}`)}
+          </option>
+        ))}
+      </select>
+    </span>
+  );
+}
+
 /** Inline email editor: a quiet text input that commits on blur / Enter (Escape
  *  reverts). Empty clears the address (email is nullable). Format is checked
  *  server-side; a rejected value rolls back through the optimistic update path. */
@@ -2077,6 +2248,7 @@ function GuestTableNewRow({
   const [householdText, setHouseholdText] = useState("");
   const [email, setEmail] = useState("");
   const [group, setGroup] = useState<GuestGroupTag>("other");
+  const [certainty, setCertainty] = useState<GuestCertainty>("definite");
   const [saving, setSaving] = useState(false);
   // Ref-guard against a double-submit from a fast second Enter before `saving`
   // state flushes (the button uses the state; keydown needs the ref).
@@ -2088,7 +2260,7 @@ function GuestTableNewRow({
     if (!trimmed || savingRef.current) return;
     savingRef.current = true;
     setSaving(true);
-    const body: GuestUpsert = { full_name: trimmed, group_tag: group };
+    const body: GuestUpsert = { full_name: trimmed, group_tag: group, certainty };
     if (email.trim()) body.email = email.trim();
     const target = resolveHouseholdTarget(householdText, households);
     if (target && "household_id" in target) {
@@ -2105,6 +2277,7 @@ function GuestTableNewRow({
       setEmail("");
       setHouseholdText("");
       setGroup("other");
+      setCertainty("definite");
       nameRef.current?.focus();
     }
   }
@@ -2173,6 +2346,13 @@ function GuestTableNewRow({
       </td>
       <td className={`${CELL} text-center`}>
         <GroupCellChip value={group} onChange={setGroup} ariaLabel={t("guests.table_col_group")} />
+      </td>
+      <td className={`${CELL} text-center`}>
+        <CertaintyCellChip
+          value={certainty}
+          onChange={setCertainty}
+          ariaLabel={t("guests.table_col_certainty")}
+        />
       </td>
       {/* RSVP / meal / dietary / accommodation / invite are meaningless until
           the guest exists; quiet placeholders keep the columns aligned. */}
@@ -2461,6 +2641,13 @@ function GuestTable({
             <th className={`${th} text-center`} scope="col">
               {sortableHeader("group", t("guests.table_col_group"))}
             </th>
+            <th
+              className={`${th} text-center`}
+              scope="col"
+              title={t("guests.table_col_certainty_hint")}
+            >
+              {sortableHeader("certainty", t("guests.table_col_certainty"))}
+            </th>
             <th className={`${th} text-center`} scope="col">
               {sortableHeader("rsvp", t("guests.table_col_rsvp"))}
             </th>
@@ -2573,9 +2760,7 @@ function GuestTableRow({
           <KindIcon kind={g.kind} />
           <SupplierIcon show={g.is_supplier} />
           <PlusOneBadge show={g.is_plus_one} />
-          <span className="truncate font-medium text-ink-900 dark:text-paper-50">
-            {g.full_name}
-          </span>
+          <NameCell name={g.full_name} onChange={(v) => void onUpdateGuest(g, { full_name: v })} />
         </span>
       </td>
       <td className={`${CELL} max-w-[14rem]`}>
@@ -2605,6 +2790,13 @@ function GuestTableRow({
           onChange={(v) => void onChangeGroup(g, v)}
           ariaLabel={t("guests.table_col_group")}
           title={g.household_id != null ? t("guests.table_group_household_hint") : undefined}
+        />
+      </td>
+      <td className={`${CELL} text-center`}>
+        <CertaintyCellChip
+          value={g.certainty}
+          onChange={(v) => void onUpdateGuest(g, { certainty: v })}
+          ariaLabel={t("guests.table_col_certainty")}
         />
       </td>
       <td className={`${CELL} text-center`}>
@@ -3741,6 +3933,7 @@ function GuestDrawer({
       phone: null,
       group_tag: "other",
       kind: "adult",
+      certainty: "definite",
       rsvp_status: intoSupplierHousehold ? "yes" : "pending",
       meal_choice: null,
       dietary: null,
@@ -4213,6 +4406,34 @@ function GuestDrawer({
             </div>
           )}
 
+          {/* The couple's own read on this guest — independent of whatever the
+              guest answers below. Lives on the "what we know" side of the
+              divider on purpose: it's set (or left at the default) before an
+              invite ever goes out, so a longer wish-list can be sorted against
+              a planned headcount to see where the cut line falls. */}
+          <div className="mb-3">
+            <label className="field-label">{t("guests.certainty_label")}</label>
+            <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+              {t("guests.certainty_help")}
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {CERTAINTY_ORDER.map((c) => {
+                const active = (form.certainty ?? "definite") === c;
+                return (
+                  <SegmentButton
+                    key={c}
+                    active={active}
+                    onClick={() => setForm({ ...form, certainty: c })}
+                    icon={<CertaintyDots value={c} onDark={active} />}
+                    label={t(`guests.certainty_${c}`)}
+                    compact
+                    tone={c}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
           {/* ── Guest-fills divider ─────────────────────────────────────
               Visual break so the couple sees at a glance which fields are
               "what we know about this guest" (above: name, contact,
@@ -4437,7 +4658,16 @@ function Field({
  *  the four buttons are distinguishable at a glance even when none is the
  *  selected one — the glyphs already disambiguate for colour-deficient
  *  users, so the tint is additive information, not the sole signal. */
-type SegmentTone = "default" | "yes" | "no" | "maybe" | "pending";
+type SegmentTone =
+  | "default"
+  | "yes"
+  | "no"
+  | "maybe"
+  | "pending"
+  | "definite"
+  | "likely"
+  | "unsure"
+  | "unlikely";
 
 const SEGMENT_TONE_ACTIVE: Record<SegmentTone, string> = {
   default:
@@ -4448,6 +4678,18 @@ const SEGMENT_TONE_ACTIVE: Record<SegmentTone, string> = {
     "border-2 border-slate-600 bg-slate-600 font-medium text-white dark:border-slate-400 dark:bg-slate-400 dark:text-umber-900",
   pending:
     "border-2 border-amber-600 bg-amber-500 font-medium text-umber-900 dark:border-amber-400 dark:bg-amber-400 dark:text-umber-900",
+  // Certainty's own green→red ladder — kept apart from the RSVP tones above
+  // (yes/no/maybe/pending) even though "definite" and "yes" are both emerald,
+  // because the two controls answer different questions and shouldn't share
+  // a type-level identity, only a colour.
+  definite:
+    "border-2 border-emerald-600 bg-emerald-600 font-medium text-white dark:border-emerald-400 dark:bg-emerald-500 dark:text-umber-900",
+  likely:
+    "border-2 border-lime-600 bg-lime-600 font-medium text-white dark:border-lime-400 dark:bg-lime-500 dark:text-umber-900",
+  unsure:
+    "border-2 border-amber-600 bg-amber-500 font-medium text-umber-900 dark:border-amber-400 dark:bg-amber-400 dark:text-umber-900",
+  unlikely:
+    "border-2 border-rose-700 bg-rose-700 font-medium text-white dark:border-rose-400 dark:bg-rose-500 dark:text-umber-900",
 };
 
 const SEGMENT_TONE_IDLE: Record<SegmentTone, string> = {
@@ -4459,6 +4701,14 @@ const SEGMENT_TONE_IDLE: Record<SegmentTone, string> = {
     "border border-slate-300 bg-slate-50 text-slate-700 hover:border-slate-500 dark:border-slate-400/40 dark:bg-slate-400/10 dark:text-slate-300 dark:hover:border-slate-400/70",
   pending:
     "border border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-500 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:border-amber-400/70",
+  definite:
+    "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:border-emerald-500 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:border-emerald-400/70",
+  likely:
+    "border border-lime-300 bg-lime-50 text-lime-800 hover:border-lime-500 dark:border-lime-400/40 dark:bg-lime-400/10 dark:text-lime-300 dark:hover:border-lime-400/70",
+  unsure:
+    "border border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-500 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:border-amber-400/70",
+  unlikely:
+    "border border-rose-300 bg-rose-50 text-rose-800 hover:border-rose-500 dark:border-rose-400/40 dark:bg-rose-400/10 dark:text-rose-300 dark:hover:border-rose-400/70",
 };
 
 function SegmentButton({
@@ -5720,7 +5970,7 @@ function GuestFilterBar({
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
   const rsvpOptions: RsvpStatus[] = ["pending", "yes", "maybe", "no"];
-  const sortOptions: SortKey[] = ["default", "name", "added", "rsvp", "group"];
+  const sortOptions: SortKey[] = ["default", "name", "added", "rsvp", "certainty", "group"];
   const chip = (on: boolean) =>
     [
       "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm transition-all active:scale-95",

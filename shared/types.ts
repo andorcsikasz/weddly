@@ -1267,6 +1267,17 @@ export interface UpdateCoupleIncomeInput {
 
 export type RsvpStatus = "pending" | "yes" | "no" | "maybe";
 
+/** How sure the COUPLE is that a guest actually makes the cut — orthogonal to
+ *  `rsvp_status`, which is the guest's OWN answer (or lack of one). A guest can
+ *  be "unlikely" and still `rsvp_status: "pending"` (never invited) just as
+ *  easily as "definite" and "pending" (invited, hasn't replied yet). Exists so
+ *  a couple juggling a planned headcount against a longer wish-list can mark
+ *  their own confidence per guest and sort/scan the list to find where to draw
+ *  the cut line, before anyone is ever invited. Defaults to "definite" — most
+ *  guests added to a list are ones the couple already means to invite; the
+ *  couple marks DOWN the exceptions. */
+export type GuestCertainty = "definite" | "likely" | "unsure" | "unlikely";
+
 export type GuestGroupTag =
   | "his_family"
   | "her_family"
@@ -1362,6 +1373,10 @@ export interface Guest {
    *  pin the couple's own slots at the top of the unassigned panel; the
    *  guest list shows a Crown next to matching rows. */
   partner_role: "bride" | "groom" | null;
+  /** The couple's own confidence that this guest makes the final list — see
+   *  `GuestCertainty`. Set by the couple only; the public RSVP form never
+   *  touches it. */
+  certainty: GuestCertainty;
   rsvp_status: RsvpStatus;
   meal_choice: MealSlotKey | null;
   dietary: string | null;

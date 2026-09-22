@@ -4877,6 +4877,7 @@ const es: LocaleMessages = {
     sort_name: "Nombre (A–Z)",
     sort_added: "Añadidos recientemente",
     sort_rsvp: "Estado de confirmación",
+    sort_certainty: "Certeza (menos seguro primero)",
     sort_group: "Lado y grupo",
     reorder_drag: "Arrastra para reordenar el hogar",
     reorder_failed: "No se pudo guardar el nuevo orden. Inténtalo de nuevo.",
@@ -4918,6 +4919,9 @@ const es: LocaleMessages = {
     table_col_household: "Hogar",
     table_col_group: "Grupo",
     table_group_household_hint: "Cambia el grupo de todo el hogar",
+    table_col_certainty: "Certeza",
+    table_col_certainty_hint:
+      "Lo seguro que estás de invitar a este invitado: te ayuda a ver dónde trazar la línea si necesitas recortar la lista.",
     table_col_rsvp: "Confirmación",
     table_col_meal: "Menú",
     table_col_dietary: "Alimentación",
@@ -4933,6 +4937,13 @@ const es: LocaleMessages = {
     table_household_new_hint: "Mover a un hogar nuevo",
     table_new_name_placeholder: "Nombre del nuevo invitado…",
     table_email_placeholder: "Dirección de email",
+    certainty_label: "¿Qué tan seguro estás?",
+    certainty_help:
+      "Tu propia valoración sobre este invitado, no su confirmación: te ayuda a ver a quién recortar primero si la lista se alarga.",
+    certainty_definite: "Seguro",
+    certainty_likely: "Probable",
+    certainty_unsure: "Incierto",
+    certainty_unlikely: "Improbable",
   },
   budget: {
     title: "Presupuesto",

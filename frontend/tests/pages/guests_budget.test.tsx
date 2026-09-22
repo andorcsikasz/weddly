@@ -291,6 +291,7 @@ function makeGuest(over: Partial<Guest> = {}): Guest {
     is_plus_one: false,
     plus_one_of: null,
     partner_role: null,
+    certainty: "definite",
     rsvp_status: "pending",
     meal_choice: null,
     dietary: null,
@@ -720,10 +721,14 @@ describe("<GuestsPage>", () => {
       ],
     });
     renderAt("/app/guests?view=table&household=closed");
-    await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
-    expect(screen.getByText("Bob")).toBeInTheDocument();
+    // The table's name cell is an inline-editable input (NameCell), not plain
+    // text — its value lives in the `value` attribute, so `getByDisplayValue`
+    // is the query that finds it, the same way any other filled-in <input>
+    // would be asserted on.
+    await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
+    expect(screen.getByDisplayValue("Bob")).toBeInTheDocument();
     // The single-person household is exactly what "group households" excludes.
-    expect(screen.queryByText("Loner")).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue("Loner")).not.toBeInTheDocument();
   });
 
   it("a live query with no answer yet never paints as 'no guests match'", async () => {

@@ -1,6 +1,13 @@
 // Guest row → DTO mapper + helpers.
 
-import type { Guest, GuestGroupTag, GuestKind, PublicRsvpView, RsvpStatus } from "@shared/types";
+import type {
+  Guest,
+  GuestCertainty,
+  GuestGroupTag,
+  GuestKind,
+  PublicRsvpView,
+  RsvpStatus,
+} from "@shared/types";
 import { isMealSlotKey } from "@shared/meals";
 import { db, now } from "../db";
 import { purgeHouseholdIfEmpty } from "./household_cleanup";
@@ -19,6 +26,7 @@ export interface GuestRow {
   is_supplier: number;
   is_plus_one: number;
   plus_one_of: number | null;
+  certainty: string;
   rsvp_status: string;
   meal_choice: string | null;
   dietary: string | null;
@@ -62,9 +70,19 @@ const VALID_GROUPS: ReadonlySet<GuestGroupTag> = new Set([
 
 const VALID_RSVP: ReadonlySet<RsvpStatus> = new Set(["pending", "yes", "no", "maybe"]);
 const VALID_KIND: ReadonlySet<GuestKind> = new Set(["adult", "child", "baby"]);
+const VALID_CERTAINTY: ReadonlySet<GuestCertainty> = new Set([
+  "definite",
+  "likely",
+  "unsure",
+  "unlikely",
+]);
 
 export function isGuestKind(s: string): s is GuestKind {
   return VALID_KIND.has(s as GuestKind);
+}
+
+export function isGuestCertainty(s: string): s is GuestCertainty {
+  return VALID_CERTAINTY.has(s as GuestCertainty);
 }
 
 export function isGuestGroupTag(s: string): s is GuestGroupTag {
@@ -95,6 +113,7 @@ export function toGuest(row: GuestRow): Guest {
     is_supplier: Boolean(row.is_supplier),
     is_plus_one: Boolean(row.is_plus_one),
     plus_one_of: row.plus_one_of,
+    certainty: (isGuestCertainty(row.certainty) ? row.certainty : "definite") as GuestCertainty,
     rsvp_status: (isRsvpStatus(row.rsvp_status) ? row.rsvp_status : "pending") as RsvpStatus,
     meal_choice: row.meal_choice && isMealSlotKey(row.meal_choice) ? row.meal_choice : null,
     dietary: row.dietary,

@@ -4826,6 +4826,7 @@ const hu: LocaleMessages = {
     sort_name: "Név (A–Z)",
     sort_added: "Legutóbb hozzáadott",
     sort_rsvp: "Visszajelzés szerint",
+    sort_certainty: "Bizonyosság (legbizonytalanabb elöl)",
     sort_group: "Oldal és csoport",
     reorder_drag: "Húzd a háztartás átrendezéséhez",
     reorder_failed: "Nem sikerült menteni a sorrendet. Próbáld újra.",
@@ -4867,6 +4868,9 @@ const hu: LocaleMessages = {
     table_col_household: "Háztartás",
     table_col_group: "Csoport",
     table_group_household_hint: "Az egész háztartás csoportját módosítja",
+    table_col_certainty: "Bizonyosság",
+    table_col_certainty_hint:
+      "Mennyire vagytok biztosak benne, hogy meghívjátok — segít eldönteni, hol húzzátok meg a határt, ha szűkíteni kell a listát.",
     table_col_rsvp: "Visszajelzés",
     table_col_meal: "Menü",
     table_col_dietary: "Étrend",
@@ -4882,6 +4886,13 @@ const hu: LocaleMessages = {
     table_household_new_hint: "Áthelyezés új háztartásba",
     table_new_name_placeholder: "Új vendég neve…",
     table_email_placeholder: "E-mail cím",
+    certainty_label: "Mennyire vagytok biztosak?",
+    certainty_help:
+      "A ti saját megítélésetek erről a vendégről, nem a visszajelzése — segít eldönteni, kit húzzatok ki elsőként, ha hosszú a lista.",
+    certainty_definite: "Biztos",
+    certainty_likely: "Valószínű",
+    certainty_unsure: "Bizonytalan",
+    certainty_unlikely: "Valószínűtlen",
   },
   budget: {
     title: "Költségvetés",

@@ -175,6 +175,13 @@ addColumnIfMissing("guests", "kind", "kind TEXT NOT NULL DEFAULT 'adult'");
 // separate supplier table, so the couple tags them to count + seat them apart.
 addColumnIfMissing("guests", "is_supplier", "is_supplier INTEGER NOT NULL DEFAULT 0");
 
+// The couple's own confidence this guest makes the cut — 'definite' | 'likely'
+// | 'unsure' | 'unlikely'. Orthogonal to rsvp_status (the GUEST's own answer):
+// lets a couple sort/scan a longer wish-list against a planned headcount and
+// see where to draw the line before anyone's been invited. Defaults to
+// 'definite' so every existing guest reads as intended-to-invite, not unsure.
+addColumnIfMissing("guests", "certainty", "certainty TEXT NOT NULL DEFAULT 'definite'");
+
 // Materialised plus-one marker. 1 when this guest was auto-created from another
 // guest's "+1" field (so the list can flag it). Default 0 for every normal row.
 addColumnIfMissing("guests", "is_plus_one", "is_plus_one INTEGER NOT NULL DEFAULT 0");

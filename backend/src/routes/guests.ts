@@ -3,6 +3,7 @@
 import type {
   DietarySummary,
   Guest,
+  GuestCertainty,
   GuestGroupTag,
   GuestKind,
   MealSlotKey,
@@ -19,6 +20,7 @@ import { indexHeaders, parseCsv } from "../lib/csv";
 import {
   type GuestRow,
   getGuestByIdScoped,
+  isGuestCertainty,
   isGuestGroupTag,
   isGuestKind,
   isMealSlotKey,
@@ -52,6 +54,9 @@ interface UpsertBody {
   kind?: unknown;
   /** Boolean — marks/unmarks the guest as a supplier. Omitted = false. */
   is_supplier?: unknown;
+  /** The couple's own confidence this guest makes the cut — see
+   *  `GuestCertainty`. Omitted = no change (create default: "definite"). */
+  certainty?: unknown;
   rsvp_status?: unknown;
   meal_choice?: unknown;
   dietary?: unknown;
@@ -104,6 +109,7 @@ interface ParsedGuest {
   group_tag: GuestGroupTag;
   kind: GuestKind;
   is_supplier: number;
+  certainty: GuestCertainty;
   rsvp_status: RsvpStatus;
   meal_choice: MealSlotKey | null;
   dietary: string | null;
@@ -134,6 +140,11 @@ function parseGroupTag(raw: unknown): GuestGroupTag {
 function parseKind(raw: unknown): GuestKind {
   if (typeof raw === "string" && isGuestKind(raw)) return raw;
   return "adult";
+}
+
+function parseCertainty(raw: unknown): GuestCertainty {
+  if (typeof raw === "string" && isGuestCertainty(raw)) return raw;
+  return "definite";
 }
 
 /** Resolve + validate the host a "+1" is assigned to. A host must be a real
@@ -193,6 +204,9 @@ function parseUpsert(body: UpsertBody, requireName = true, existing?: GuestRow):
     kind: keep(body.kind, (existing?.kind ?? "adult") as GuestKind, () => parseKind(body.kind)),
     is_supplier: keep(body.is_supplier, existing?.is_supplier ?? 0, () =>
       body.is_supplier ? 1 : 0,
+    ),
+    certainty: keep(body.certainty, (existing?.certainty ?? "definite") as GuestCertainty, () =>
+      parseCertainty(body.certainty),
     ),
     rsvp_status: keep(body.rsvp_status, (existing?.rsvp_status ?? "pending") as RsvpStatus, () =>
       parseRsvp(body.rsvp_status),
@@ -440,11 +454,11 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const result = db
     .prepare(
       `INSERT INTO guests
-        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, is_plus_one, plus_one_of, rsvp_status,
+        (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, is_plus_one, plus_one_of, certainty, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
          created_at, updated_at, household_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -457,6 +471,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       parsed.is_supplier,
       isPlusOne,
       plusOneOf,
+      parsed.certainty,
       parsed.rsvp_status,
       parsed.meal_choice,
       parsed.dietary,
@@ -698,7 +713,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     db.prepare(
       `UPDATE guests SET
         full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, is_supplier = ?,
-        is_plus_one = ?, plus_one_of = ?, rsvp_status = ?,
+        is_plus_one = ?, plus_one_of = ?, certainty = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
         accommodation_needed = ?, song_request = ?, notes = ?, rsvp_responded_at = ?, household_id = ?,
         invited_at = ?, invitation_delivered_at = ?, invitation_opened_at = ?,
@@ -713,6 +728,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
       parsed.is_supplier,
       nextIsPlusOne,
       nextPlusOneOf,
+      parsed.certainty,
       parsed.rsvp_status,
       parsed.meal_choice,
       parsed.dietary,
@@ -1097,6 +1113,7 @@ function handleExportCsv(ctx: Ctx): Response {
     "group_tag",
     "kind",
     "household",
+    "certainty",
     "rsvp_status",
     "meal_choice",
     "dietary",
@@ -1116,6 +1133,7 @@ function handleExportCsv(ctx: Ctx): Response {
         csvField(r.group_tag),
         csvField(r.kind),
         csvField(r.household_label),
+        csvField(r.certainty),
         csvField(r.rsvp_status),
         // A custom slot exports its LABEL, not its `x1` key: the CSV goes to a
         // caterer, and the key is an internal slot id that means nothing to

@@ -4922,6 +4922,7 @@ const de: LocaleMessages = {
     sort_name: "Name (A–Z)",
     sort_added: "Zuletzt hinzugefügt",
     sort_rsvp: "RSVP-Status",
+    sort_certainty: "Sicherheit (unsicherste zuerst)",
     sort_group: "Seite & Gruppe",
     reorder_drag: "Ziehen, um den Haushalt neu zu sortieren",
     reorder_failed: "Die neue Reihenfolge konnte nicht gespeichert werden. Bitte erneut versuchen.",
@@ -4965,6 +4966,9 @@ const de: LocaleMessages = {
     table_col_household: "Haushalt",
     table_col_group: "Gruppe",
     table_group_household_hint: "Ändert die Gruppe des ganzen Haushalts",
+    table_col_certainty: "Sicherheit",
+    table_col_certainty_hint:
+      "Wie sicher ihr euch seid, diesen Gast einzuladen — hilft zu erkennen, wo ihr die Grenze zieht, falls die Liste gekürzt werden muss.",
     table_col_rsvp: "RSVP",
     table_col_meal: "Essen",
     table_col_dietary: "Ernährung",
@@ -4980,6 +4984,13 @@ const de: LocaleMessages = {
     table_household_new_hint: "In einen neuen Haushalt verschieben",
     table_new_name_placeholder: "Name des neuen Gastes…",
     table_email_placeholder: "E-Mail-Adresse",
+    certainty_label: "Wie sicher seid ihr?",
+    certainty_help:
+      "Eure eigene Einschätzung zu diesem Gast, nicht seine Zusage — hilft zu erkennen, wen ihr zuerst streicht, wenn die Liste zu lang wird.",
+    certainty_definite: "Sicher",
+    certainty_likely: "Wahrscheinlich",
+    certainty_unsure: "Unsicher",
+    certainty_unlikely: "Unwahrscheinlich",
   },
   budget: {
     title: "Budget",

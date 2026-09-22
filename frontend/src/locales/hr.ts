@@ -4822,6 +4822,7 @@ const hr: LocaleMessages = {
     sort_name: "Ime (A–Z)",
     sort_added: "Nedavno dodano",
     sort_rsvp: "RSVP status",
+    sort_certainty: "Sigurnost (najnesigurniji prvi)",
     sort_group: "Strana i grupa",
     reorder_drag: "Povucite da presložite kućanstvo",
     reorder_failed: "Novi redoslijed nije spremljen. Pokušajte ponovno.",
@@ -4863,6 +4864,9 @@ const hr: LocaleMessages = {
     table_col_household: "Kućanstvo",
     table_col_group: "Grupa",
     table_group_household_hint: "Mijenja grupu cijelog kućanstva",
+    table_col_certainty: "Sigurnost",
+    table_col_certainty_hint:
+      "Koliko ste sigurni da ćete pozvati ovog gosta — pomaže vam vidjeti gdje povući crtu ako trebate skratiti popis.",
     table_col_rsvp: "RSVP",
     table_col_meal: "Jelo",
     table_col_dietary: "Prehrana",
@@ -4878,6 +4882,13 @@ const hr: LocaleMessages = {
     table_household_new_hint: "Premjesti u novo kućanstvo",
     table_new_name_placeholder: "Ime novog gosta…",
     table_email_placeholder: "Adresa e-pošte",
+    certainty_label: "Koliko ste sigurni?",
+    certainty_help:
+      "Vaša vlastita procjena ovog gosta, ne njegov odgovor — pomaže vam odlučiti koga prvog izbaciti ako je popis predugačak.",
+    certainty_definite: "Sigurno",
+    certainty_likely: "Vjerojatno",
+    certainty_unsure: "Neizvjesno",
+    certainty_unlikely: "Malo vjerojatno",
   },
   budget: {
     title: "Proračun",
