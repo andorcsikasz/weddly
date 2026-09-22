@@ -100,21 +100,11 @@ const PRICE_HISTORY_LIMIT = 300;
 export function questionPriceHistory(questionId: number): MarketPriceTick[] {
   const rows = db
     .prepare(
-      `SELECT probability, pool_yes, pool_no, at FROM market_price_ticks
+      `SELECT probability, at FROM market_price_ticks
         WHERE question_id = ? ORDER BY at ASC LIMIT ?`,
     )
-    .all(questionId, PRICE_HISTORY_LIMIT) as {
-    probability: number;
-    pool_yes: number;
-    pool_no: number;
-    at: number;
-  }[];
-  return rows.map((r) => ({
-    at: r.at,
-    probability: r.probability,
-    poolYes: r.pool_yes,
-    poolNo: r.pool_no,
-  }));
+    .all(questionId, PRICE_HISTORY_LIMIT) as { probability: number; at: number }[];
+  return rows.map((r) => ({ at: r.at, probability: r.probability }));
 }
 
 /** Records where the probability stands right now — called inside the SAME

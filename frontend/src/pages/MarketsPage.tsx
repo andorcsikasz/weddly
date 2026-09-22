@@ -30,6 +30,8 @@ import {
   Play,
   QrCode,
   Trash2,
+  TrendingDown,
+  TrendingUp,
   Users,
   X,
 } from "lucide-react";
@@ -115,6 +117,11 @@ function QuestionCard({
         </span>
         {trend !== null && (
           <span className={`gc-trend ${trend > 0 ? "gc-trend-up" : "gc-trend-down"}`}>
+            {trend > 0 ? (
+              <TrendingUp size={12} aria-hidden />
+            ) : (
+              <TrendingDown size={12} aria-hidden />
+            )}
             {t("markets.trend_since_open", { delta: `${trend > 0 ? "+" : ""}${trend}%` })}
           </span>
         )}
@@ -125,12 +132,6 @@ function QuestionCard({
           ticks={question.priceHistory}
           stroke="#2388ff"
           ariaLabel={t("markets.chart_alt")}
-          showTrades
-          tradeTitle={(side, amount) =>
-            t(side === "yes" ? "markets.recent_bet_yes_title" : "markets.recent_bet_no_title", {
-              amount: String(amount),
-            })
-          }
         />
       </div>
 

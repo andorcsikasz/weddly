@@ -21,7 +21,7 @@ import {
   type MarketQuestion,
   type MarketSide,
 } from "@shared/markets";
-import { Coins, Lock } from "lucide-react";
+import { Coins, Lock, TrendingDown, TrendingUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { MarketMiniChart } from "../components/MarketMiniChart";
@@ -75,7 +75,7 @@ function BetControls({
       <div className="flex gap-2">
         <button
           type="button"
-          className={`flex-1 rounded-xl bg-sage-500 px-3 py-2.5 text-sm font-bold text-white transition-all hover:bg-sage-600 ${
+          className={`flex-1 rounded-xl bg-sage-500 px-3 py-2.5 text-sm font-bold text-white transition-all active:scale-[0.98] hover:bg-sage-600 ${
             side === "yes" ? "ring-2 ring-inset ring-white/70" : ""
           }`}
           onClick={() => setSide("yes")}
@@ -84,7 +84,7 @@ function BetControls({
         </button>
         <button
           type="button"
-          className={`flex-1 rounded-xl bg-blush-500 px-3 py-2.5 text-sm font-bold text-white transition-all hover:bg-blush-600 ${
+          className={`flex-1 rounded-xl bg-blush-500 px-3 py-2.5 text-sm font-bold text-white transition-all active:scale-[0.98] hover:bg-blush-600 ${
             side === "no" ? "ring-2 ring-inset ring-white/70" : ""
           }`}
           onClick={() => setSide("no")}
@@ -178,12 +178,17 @@ function QuestionRow({
           </span>
           {trend !== null && (
             <span
-              className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${
+              className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-bold ${
                 trend > 0
                   ? "bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300"
                   : "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
               }`}
             >
+              {trend > 0 ? (
+                <TrendingUp size={11} aria-hidden />
+              ) : (
+                <TrendingDown size={11} aria-hidden />
+              )}
               {trend > 0 ? "+" : ""}
               {trend}%
             </span>
@@ -196,12 +201,6 @@ function QuestionRow({
           ticks={question.priceHistory}
           stroke="#2f9c52"
           ariaLabel={t("markets.chart_alt")}
-          showTrades
-          tradeTitle={(side, amount) =>
-            t(side === "yes" ? "markets.recent_bet_yes_title" : "markets.recent_bet_no_title", {
-              amount: String(amount),
-            })
-          }
         />
       </div>
 

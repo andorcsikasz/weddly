@@ -4589,8 +4589,6 @@ const de: LocaleMessages = {
     closes_at_label: "Schließt {when}",
     chart_alt: "Wahrscheinlichkeitsverlauf",
     trend_since_open: "{delta} seit Eröffnung",
-    recent_bet_yes_title: "{amount} Punkte auf Ja gesetzt",
-    recent_bet_no_title: "{amount} Punkte auf Nein gesetzt",
   },
   markets_play: {
     join_kicker: "Ihr seid zum Tippen eingeladen",
