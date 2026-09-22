@@ -17,6 +17,7 @@ import {
   estimatedPayout,
   MARKET_AVATARS,
   MARKET_MIN_STAKE,
+  trendSinceOpen,
   type MarketQuestion,
   type MarketSide,
 } from "@shared/markets";
@@ -74,25 +75,21 @@ function BetControls({
       <div className="flex gap-2">
         <button
           type="button"
-          className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-            side === "yes"
-              ? "border-sage-500 bg-sage-500 text-white"
-              : "border-ink-900/15 text-ink-700 dark:border-umber-600 dark:text-umber-100"
+          className={`flex-1 rounded-xl bg-sage-500 px-3 py-2.5 text-sm font-bold text-white transition-all hover:bg-sage-600 ${
+            side === "yes" ? "ring-2 ring-inset ring-white/70" : ""
           }`}
           onClick={() => setSide("yes")}
         >
-          {t("markets_play.bet_yes")} · {question.probability}¢
+          {t("markets_play.bet_yes")} · {question.probability}%
         </button>
         <button
           type="button"
-          className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-            side === "no"
-              ? "border-ink-900 bg-ink-900 text-white dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
-              : "border-ink-900/15 text-ink-700 dark:border-umber-600 dark:text-umber-100"
+          className={`flex-1 rounded-xl bg-blush-500 px-3 py-2.5 text-sm font-bold text-white transition-all hover:bg-blush-600 ${
+            side === "no" ? "ring-2 ring-inset ring-white/70" : ""
           }`}
           onClick={() => setSide("no")}
         >
-          {t("markets_play.bet_no")} · {100 - question.probability}¢
+          {t("markets_play.bet_no")} · {100 - question.probability}%
         </button>
       </div>
 
@@ -169,27 +166,42 @@ function QuestionRow({
   onBet: (questionId: number, side: MarketSide, stake: number) => Promise<void>;
 }) {
   const { t } = useT();
+  const trend = trendSinceOpen(question.priceHistory);
 
   return (
     <li className="rounded-2xl border border-ink-900/15 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900/40">
       <div className="flex items-start justify-between gap-3">
         <p className="font-medium text-ink-900 dark:text-paper-50">{question.prompt}</p>
-        <span className="shrink-0 text-lg font-bold text-ink-900 dark:text-paper-50">
-          {question.probability}%
-        </span>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className="text-lg font-bold text-ink-900 dark:text-paper-50">
+            {question.probability}%
+          </span>
+          {trend !== null && (
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${
+                trend > 0
+                  ? "bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300"
+                  : "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
+              }`}
+            >
+              {trend > 0 ? "+" : ""}
+              {trend}%
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800">
-        <div
-          className="h-full bg-sage-500 dark:bg-sage-400"
-          style={{ width: `${question.probability}%` }}
-        />
-      </div>
-      <div className="mt-2 h-8">
+      <div className="mt-2 h-28">
         <MarketMiniChart
           ticks={question.priceHistory}
           stroke="#2f9c52"
           ariaLabel={t("markets.chart_alt")}
+          showTrades
+          tradeTitle={(side, amount) =>
+            t(side === "yes" ? "markets.recent_bet_yes_title" : "markets.recent_bet_no_title", {
+              amount: String(amount),
+            })
+          }
         />
       </div>
 

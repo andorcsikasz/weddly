@@ -5247,6 +5247,17 @@ export interface LocaleMessages {
     /** aria-label for the per-question probability trend chart, shared by
      *  the couple's board manager and the guest play screen. */
     chart_alt: string;
+    /** Receives `{delta}`, already sign-formatted (e.g. "+14%"). Shown next
+     *  to the big probability number when the chart has moved since the
+     *  question opened — hidden entirely when nothing has, so it never
+     *  reads as "+0%". */
+    trend_since_open: string;
+    /** Native-tooltip title text for a single "+N" trade chip floated on
+     *  the chart — decorative on its own (the chip's number needs no
+     *  translation), this is what a hover/long-press actually reads.
+     *  Receives `{amount}`. */
+    recent_bet_yes_title: string;
+    recent_bet_no_title: string;
   };
   /** Live wedding prediction markets — public guest join/play at
    *  /play/markets/:code. No account: a name + avatar picked at join time,

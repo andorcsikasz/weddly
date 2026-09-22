@@ -4544,6 +4544,9 @@ const es: LocaleMessages = {
     stat_guests: "Invitados",
     closes_at_label: "Cierra {when}",
     chart_alt: "Tendencia de probabilidad",
+    trend_since_open: "{delta} desde la apertura",
+    recent_bet_yes_title: "{amount} puntos apostados a Sí",
+    recent_bet_no_title: "{amount} puntos apostados a No",
   },
   markets_play: {
     join_kicker: "Te han invitado a pronosticar",

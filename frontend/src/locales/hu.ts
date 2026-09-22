@@ -4497,6 +4497,9 @@ const hu: LocaleMessages = {
     stat_guests: "Vendég",
     closes_at_label: "Zárul: {when}",
     chart_alt: "Esély alakulása",
+    trend_since_open: "{delta} a nyitás óta",
+    recent_bet_yes_title: "{amount} pont az IGEN oldalon",
+    recent_bet_no_title: "{amount} pont a NEM oldalon",
   },
   markets_play: {
     join_kicker: "Jóslásra hívtak",

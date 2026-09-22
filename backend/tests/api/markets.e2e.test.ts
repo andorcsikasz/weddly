@@ -10,6 +10,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
+import { recentMarketTrades, trendSinceOpen } from "@shared/markets";
 import type { MarketBoardDetail, MarketPublicState, MarketQuestion } from "@shared/markets";
 import { db } from "../../src/db";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
@@ -99,6 +100,9 @@ describe("markets: board + question CRUD", () => {
     // question creation, before anybody has bet.
     expect(board.questions[0]!.priceHistory).toHaveLength(1);
     expect(board.questions[0]!.priceHistory[0]!.probability).toBe(50);
+    // Nobody has bet yet — no trend to report, not a "+0%".
+    expect(trendSinceOpen(board.questions[0]!.priceHistory)).toBeNull();
+    expect(recentMarketTrades(board.questions[0]!.priceHistory, 5)).toEqual([]);
   });
 
   test("a couple cannot manage another couple's board", async () => {
@@ -152,6 +156,17 @@ describe("markets: guest join + betting", () => {
     expect(history).toHaveLength(2);
     expect(history[0]!.probability).toBe(50);
     expect(history[1]!.probability).toBe(100);
+    // Each tick's own running pool total is what lets a reader reconstruct
+    // the trade that produced it, with no separate trade log.
+    expect(history[0]!.poolYes).toBe(0);
+    expect(history[0]!.poolNo).toBe(0);
+    expect(history[1]!.poolYes).toBe(100);
+    expect(history[1]!.poolNo).toBe(0);
+    expect(recentMarketTrades(history, 5)).toEqual([
+      { at: history[1]!.at, probability: 100, side: "yes", amount: 100 },
+    ]);
+    // 50 -> 100 since the opening tick: a real, non-zero move to report.
+    expect(trendSinceOpen(history)).toBe(50);
 
     // A live position, not yet settled, values at the current pool ratio —
     // Alice is the only YES stake against an empty NO pool, so her whole
@@ -188,7 +203,14 @@ describe("markets: guest join + betting", () => {
     );
     expect(bobBet.status).toBe(200);
     expect(bobBet.data.state.questions[0]!.probability).toBe(50);
-    expect(bobBet.data.state.questions[0]!.priceHistory).toHaveLength(3);
+    const history = bobBet.data.state.questions[0]!.priceHistory;
+    expect(history).toHaveLength(3);
+    // Newest first, one entry per bet — the creation tick (0/0) never
+    // produces a phantom trade.
+    const trades = recentMarketTrades(history, 5);
+    expect(trades).toHaveLength(2);
+    expect(trades[0]).toMatchObject({ side: "no", amount: 100 });
+    expect(trades[1]).toMatchObject({ side: "yes", amount: 100 });
 
     const aliceState = await req<MarketPublicState>(
       "GET",

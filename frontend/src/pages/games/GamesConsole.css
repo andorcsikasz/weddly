@@ -358,25 +358,6 @@
   color: rgba(255, 255, 255, 0.55);
 }
 
-.gc-split-bar {
-  display: flex;
-  height: 10px;
-  width: 100%;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-}
-.gc-split-bar-yes {
-  height: 100%;
-  background: linear-gradient(90deg, #1fbf7a, #45e39e);
-  transition: width 240ms ease;
-}
-.gc-split-bar-no {
-  height: 100%;
-  background: linear-gradient(90deg, #db2f42, #f0596a);
-  transition: width 240ms ease;
-}
-
 .gc-outcome-btn {
   display: inline-flex;
   align-items: center;
@@ -411,6 +392,43 @@
   filter: brightness(1.15);
 }
 
+/* A big, non-interactive Polymarket-style readout of the current split —
+   same colour language as the button above it (deliberately: this is what
+   the button becomes once a side has actually won), just sized to anchor a
+   card rather than sit inline in a control row. Rendered as a <div>, never
+   a <button>, on the couple's read-only board manager. */
+.gc-outcome-btn-block {
+  flex: 1;
+  padding: 12px 14px;
+  font-size: 15px;
+  border-radius: 14px;
+}
+
+.gc-side-split {
+  display: flex;
+  gap: 8px;
+}
+
+/* The probability's own momentum since the question opened, next to the
+   big percentage — hidden by the caller entirely when there's nothing to
+   report, rather than ever printing "+0%". */
+.gc-trend {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.gc-trend-up {
+  background: rgba(69, 227, 158, 0.15);
+  color: #6ff0b7;
+}
+.gc-trend-down {
+  background: rgba(240, 89, 106, 0.15);
+  color: #f3899a;
+}
+
 .gc-leaderboard-row {
   display: flex;
   align-items: center;
@@ -428,8 +446,6 @@
   .gc-tile,
   .gc-btn,
   .gc-outcome-btn,
-  .gc-split-bar-yes,
-  .gc-split-bar-no,
   .gc-arrow {
     animation: none !important;
     transition: none !important;

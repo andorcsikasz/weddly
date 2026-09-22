@@ -4495,6 +4495,9 @@ const hr: LocaleMessages = {
     stat_guests: "Gosti",
     closes_at_label: "Zatvara se {when}",
     chart_alt: "Kretanje vjerojatnosti",
+    trend_since_open: "{delta} od otvaranja",
+    recent_bet_yes_title: "{amount} bodova uloženo na DA",
+    recent_bet_no_title: "{amount} bodova uloženo na NE",
   },
   markets_play: {
     join_kicker: "Pozvani ste na predviđanje",

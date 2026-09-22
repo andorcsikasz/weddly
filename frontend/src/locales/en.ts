@@ -4462,6 +4462,9 @@ const en: LocaleMessages = {
     stat_guests: "Guests",
     closes_at_label: "Closes {when}",
     chart_alt: "Probability trend",
+    trend_since_open: "{delta} since open",
+    recent_bet_yes_title: "{amount} pts bet on Yes",
+    recent_bet_no_title: "{amount} pts bet on No",
   },
   markets_play: {
     join_kicker: "You're invited to predict",

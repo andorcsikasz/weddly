@@ -68,6 +68,13 @@ export interface MarketQuestion {
 export interface MarketPriceTick {
   at: UnixMs;
   probability: number;
+  /** The running pool total at this exact tick. This is what turns a plain
+   *  probability line into a trade log for free: a bet is always recorded
+   *  as a fresh tick in the SAME transaction that grew one side of `pool`
+   *  (see `recordPriceTick`), so two consecutive ticks' pool deltas ARE the
+   *  bet that produced the second one — see `recentMarketTrades`. */
+  poolYes: number;
+  poolNo: number;
 }
 
 export interface MarketPlayer {
@@ -210,6 +217,53 @@ export function currentPositionValue(pool: MarketPool, side: MarketSide, stake: 
   const totalPool = pool.yes + pool.no;
   if (sidePool <= 0) return stake;
   return Math.round(stake * (totalPool / sidePool));
+}
+
+export interface MarketTrade {
+  at: UnixMs;
+  probability: number;
+  side: MarketSide;
+  amount: number;
+}
+
+/** Reconstructs the room's recent bets straight out of `priceHistory`'s own
+ *  running pool totals, newest first — no separate trade log to keep in
+ *  sync, because one tick per bet (see `MarketPriceTick`) already means
+ *  consecutive ticks' pool deltas ARE the trade that produced the second
+ *  one. Skips the seeded creation tick (0/0, see `createQuestion`) since it
+ *  isn't a bet, and any tick that grew neither pool (shouldn't happen, but
+ *  a phantom trade is worse than a missing one). Feeds the "+N" chips
+ *  MarketMiniChart floats along the line — see its own header comment for
+ *  why that reads as real data rather than a decorative flourish. */
+export function recentMarketTrades(
+  ticks: readonly MarketPriceTick[],
+  limit: number,
+): MarketTrade[] {
+  const trades: MarketTrade[] = [];
+  for (let i = 1; i < ticks.length; i++) {
+    const prev = ticks[i - 1]!;
+    const cur = ticks[i]!;
+    const dYes = cur.poolYes - prev.poolYes;
+    const dNo = cur.poolNo - prev.poolNo;
+    if (dYes > 0)
+      trades.push({ at: cur.at, probability: cur.probability, side: "yes", amount: dYes });
+    else if (dNo > 0)
+      trades.push({ at: cur.at, probability: cur.probability, side: "no", amount: dNo });
+  }
+  trades.reverse();
+  return trades.slice(0, limit);
+}
+
+/** How far the probability has moved from the question's own opening line
+ *  (always 50 — see `createQuestion`), in percentage points. This is the
+ *  "since open" momentum shown next to the big number on both the couple's
+ *  board and the guest's play screen. Null before anyone has bet, or if the
+ *  room has moved it right back to 50/50, so the chip has something real to
+ *  report or doesn't render at all — never a printed "+0%". */
+export function trendSinceOpen(ticks: readonly MarketPriceTick[]): number | null {
+  if (ticks.length < 2) return null;
+  const delta = ticks[ticks.length - 1]!.probability - ticks[0]!.probability;
+  return delta === 0 ? null : delta;
 }
 
 export interface MarketPosition {

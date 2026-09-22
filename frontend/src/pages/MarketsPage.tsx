@@ -15,6 +15,7 @@
 // Polymarket-flavoured probability bar + pool numbers rather than the plain
 // paper-app card list it used to be.
 
+import { trendSinceOpen } from "@shared/markets";
 import type { MarketBoardDetail, MarketLeaderboardEntry, MarketQuestion } from "@shared/markets";
 import type { UiLocale } from "@shared/locales";
 import {
@@ -86,8 +87,9 @@ function QuestionCard({
 }) {
   const { t } = useT();
   const total = question.pool.yes + question.pool.no;
-  const yesWidth = total > 0 ? question.probability : 50;
-  const noWidth = 100 - yesWidth;
+  const yesPct = total > 0 ? question.probability : 50;
+  const noPct = 100 - yesPct;
+  const trend = trendSinceOpen(question.priceHistory);
 
   return (
     <li className="gc-market-card rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
@@ -106,36 +108,51 @@ function QuestionCard({
         </p>
       )}
 
-      <div className="mt-3 flex items-center gap-4">
-        <span className="w-14 shrink-0 text-2xl font-bold tabular-nums text-white">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="text-3xl font-bold tabular-nums text-white">
           {total > 0 ? question.probability : "–"}
-          {total > 0 && <span className="text-sm font-semibold text-white/60">%</span>}
+          {total > 0 && <span className="text-base font-semibold text-white/60">%</span>}
         </span>
-        <div className="h-16 min-w-0 flex-1">
-          <MarketMiniChart
-            ticks={question.priceHistory}
-            stroke="#2388ff"
-            ariaLabel={t("markets.chart_alt")}
-          />
-        </div>
+        {trend !== null && (
+          <span className={`gc-trend ${trend > 0 ? "gc-trend-up" : "gc-trend-down"}`}>
+            {t("markets.trend_since_open", { delta: `${trend > 0 ? "+" : ""}${trend}%` })}
+          </span>
+        )}
       </div>
 
-      <div className="mt-3">
-        <div className="gc-split-bar">
-          <div className="gc-split-bar-yes" style={{ width: `${yesWidth}%` }} />
-          <div className="gc-split-bar-no" style={{ width: `${noWidth}%` }} />
+      <div className="mt-2 h-32 sm:h-40">
+        <MarketMiniChart
+          ticks={question.priceHistory}
+          stroke="#2388ff"
+          ariaLabel={t("markets.chart_alt")}
+          showTrades
+          tradeTitle={(side, amount) =>
+            t(side === "yes" ? "markets.recent_bet_yes_title" : "markets.recent_bet_no_title", {
+              amount: String(amount),
+            })
+          }
+        />
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-white/60">
+        <span>
+          {t("markets.pool_label", {
+            yes: String(question.pool.yes),
+            no: String(question.pool.no),
+          })}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Clock3 size={12} aria-hidden />
+          {t("markets.closes_at_label", { when: formatTimestamp(question.closesAt, locale) })}
+        </span>
+      </div>
+
+      <div className="gc-side-split mt-3">
+        <div className="gc-outcome-btn gc-outcome-btn-yes gc-outcome-btn-block">
+          {t("common.yes")} · {yesPct}%
         </div>
-        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-white/60">
-          <span>
-            {t("markets.pool_label", {
-              yes: String(question.pool.yes),
-              no: String(question.pool.no),
-            })}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Clock3 size={12} aria-hidden />
-            {t("markets.closes_at_label", { when: formatTimestamp(question.closesAt, locale) })}
-          </span>
+        <div className="gc-outcome-btn gc-outcome-btn-no gc-outcome-btn-block">
+          {t("common.no")} · {noPct}%
         </div>
       </div>
 
