@@ -492,6 +492,21 @@ function SlideEditor({
   );
 }
 
+// Same order as QuizAnswerButtons.tsx's own STYLES/SHAPES — index 0 is
+// always the red triangle, whichever slide kind (mcq or binary) is asking.
+const ANSWER_COLORS = ["red", "blue", "yellow", "green"] as const;
+const ANSWER_SHAPES = ["triangle", "diamond", "circle", "square"] as const;
+
+function AnswerBadge({ index }: { index: number }) {
+  const color = ANSWER_COLORS[index % ANSWER_COLORS.length];
+  const shape = ANSWER_SHAPES[index % ANSWER_SHAPES.length];
+  return (
+    <span className={`gc-answer-badge gc-answer-badge-${color}`} aria-hidden="true">
+      <span className={`gc-answer-shape gc-answer-shape-${shape}`} />
+    </span>
+  );
+}
+
 function McqEditor({
   config,
   locked,
@@ -516,6 +531,7 @@ function McqEditor({
       <div className="space-y-2">
         {options.map((opt, i) => (
           <div key={i} className="flex items-center gap-2">
+            <AnswerBadge index={i} />
             <input
               type="radio"
               name="correct-index"

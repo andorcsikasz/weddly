@@ -24,6 +24,26 @@ function StatusPill({ status }: { status: QuizSummary["status"] }) {
   return <span className={`gc-pill ${tone}`}>{t(`quiz.list.status_${status}`)}</span>;
 }
 
+// Kahoot's own red-triangle/blue-diamond/yellow-circle/green-square answer
+// language, purely as a brand signature next to the page's own icon — same
+// classes QuizBuilderPage's per-option badge uses, so the two surfaces speak
+// with one visual vocabulary. Decorative only (the shapes carry no unique
+// information on this page), hence aria-hidden rather than a new i18n string.
+const ANSWER_COLORS = ["red", "blue", "yellow", "green"] as const;
+const ANSWER_SHAPES = ["triangle", "diamond", "circle", "square"] as const;
+
+function QuizColorMark() {
+  return (
+    <span className="flex shrink-0 items-center gap-1" aria-hidden="true">
+      {ANSWER_COLORS.map((color, i) => (
+        <span key={color} className={`gc-answer-badge gc-answer-badge-${color}`}>
+          <span className={`gc-answer-shape gc-answer-shape-${ANSWER_SHAPES[i]}`} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function QuizListPage() {
   const { t } = useT();
   const toast = useToast();
@@ -87,6 +107,9 @@ export default function QuizListPage() {
               {t("quiz.list.title")}
             </h1>
             <p className="mt-2 text-white/70">{t("quiz.list.subtitle")}</p>
+            <div className="mt-3">
+              <QuizColorMark />
+            </div>
           </div>
           {!creating && (
             <button

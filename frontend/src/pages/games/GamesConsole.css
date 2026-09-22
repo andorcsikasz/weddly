@@ -23,6 +23,39 @@
   color: white;
 }
 
+/* A console page reads as its own dark place, not a panel floating in the
+   ordinary paper app shell — so it bleeds into the shell's own top/side
+   padding rather than showing a margin of paper behind it (owner direction:
+   "don't leave any place around in white"). Same trick as HoneymoonPage's
+   hero bleed, just permanent rather than mobile-only: cancel AppShell's
+   wrapper padding (`px-4 pb-28 pt-6 sm:px-6 sm:pb-8 lg:px-8 xl:px-10` around
+   `<main>`) with matching negative margins at every breakpoint, since every
+   page here already carries that same horizontal/top padding scale as its
+   own padding — nothing needs to move inward to compensate. The bottom is deliberately
+   left alone: that padding is the phone bottom nav's scroll clearance, and
+   cancelling it would let content scroll under the fixed bar. */
+.gc-page {
+  margin: -1.5rem -1rem 0;
+}
+@media (min-width: 640px) {
+  .gc-page {
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .gc-page {
+    margin-left: -2rem;
+    margin-right: -2rem;
+  }
+}
+@media (min-width: 1280px) {
+  .gc-page {
+    margin-left: -2.5rem;
+    margin-right: -2.5rem;
+  }
+}
+
 /* The app shell's warm-text retint (index.css) recolours every h1/h2 inside
    [data-app-shell] to umber-900 — nearly black, and it is UNLAYERED so it
    outranks the Tailwind `text-white` utility those headings carry. On this
@@ -441,6 +474,66 @@
 }
 .gc-leaderboard-row + .gc-leaderboard-row {
   margin-top: 6px;
+}
+
+/* ── Quiz builder: Kahoot's own answer colour + shape (owner direction) ──
+   The same red-triangle/blue-diamond/yellow-circle/green-square convention
+   QuizAnswerButtons.tsx renders on a guest's phone (QuizPlay.css's own
+   "qz-answer" and "qz-shape" classes) — repeated here, scaled down, so a
+   couple typing an option sees the exact tile colour it becomes for their
+   guests instead of four identical grey rows. A couple who has ever played
+   Kahoot reads this instantly; that recognition IS the point. Values are
+   literals, not shared with QuizPlay.css, since the builder never loads
+   that stylesheet (a different guest-facing scope) — keep the two palettes
+   in sync by hand if Kahoot's colours here ever move. */
+.gc-answer-badge {
+  display: flex;
+  height: 28px;
+  width: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+.gc-answer-badge-red {
+  background: #db2f42;
+}
+.gc-answer-badge-blue {
+  background: #1769c2;
+}
+.gc-answer-badge-yellow {
+  background: #d79e00;
+}
+.gc-answer-badge-green {
+  background: #278b58;
+}
+.gc-answer-shape {
+  display: block;
+  flex: 0 0 auto;
+}
+.gc-answer-shape-triangle {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid white;
+}
+.gc-answer-shape-diamond {
+  height: 9px;
+  width: 9px;
+  background: white;
+  rotate: 45deg;
+}
+.gc-answer-shape-circle {
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  background: white;
+}
+.gc-answer-shape-square {
+  height: 9px;
+  width: 9px;
+  background: white;
 }
 
 @media (prefers-reduced-motion: reduce) {
