@@ -72,7 +72,7 @@ const es: LocaleMessages = {
     decisions_title: "Decisiones · Weddly",
     decisions_description:
       "Los pequeños detalles de la boda, agrupados por tema, para resolverlos cuando estéis listos.",
-    markets_title: "Pronósticos · Weddly",
+    markets_title: "WeddlyMarket apuestas · Weddly",
     markets_description:
       "Preguntas de sí/no sobre el día de vuestra boda, compartidas con invitados que apuestan puntos por el resultado.",
     admin_suppliers_title: "Admin · Proveedores · Weddly",
@@ -4499,7 +4499,7 @@ const es: LocaleMessages = {
     },
   },
   markets: {
-    page_title: "Pronósticos",
+    page_title: "WeddlyMarket apuestas",
     page_subtitle:
       "Crea preguntas de sí/no sobre vuestra boda, comparte un enlace y ved quién acierta más.",
     status_draft: "Borrador — los invitados aún no pueden unirse",

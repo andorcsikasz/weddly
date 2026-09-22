@@ -83,7 +83,7 @@ const de: LocaleMessages = {
     decisions_title: "Entscheidungen · Weddly",
     decisions_description:
       "Die vielen kleinen Details der Hochzeit, nach Themen gruppiert, für den Moment, wenn ihr bereit seid.",
-    markets_title: "Prognosen · Weddly",
+    markets_title: "WeddlyMarket-Wetten · Weddly",
     markets_description:
       "Ja/Nein-Fragen zu eurem Hochzeitstag, geteilt mit Gästen, die mit Punkten auf den Ausgang tippen.",
     admin_suppliers_title: "Admin · Dienstleister · Weddly",
@@ -4541,7 +4541,7 @@ const de: LocaleMessages = {
     },
   },
   markets: {
-    page_title: "Prognosen",
+    page_title: "WeddlyMarket-Wetten",
     page_subtitle:
       "Stellt Ja/Nein-Fragen zu eurer Hochzeit, teilt einen Link und seht, wer am besten tippt.",
     status_draft: "Entwurf — Gäste können noch nicht beitreten",

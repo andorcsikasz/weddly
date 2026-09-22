@@ -85,7 +85,7 @@ const hr: LocaleMessages = {
     decisions_title: "Odluke · Weddly",
     decisions_description:
       "Sitni detalji vjenčanja, grupirani po temama, riješite ih kad budete spremni.",
-    markets_title: "Predviđanja · Weddly",
+    markets_title: "WeddlyMarket oklade · Weddly",
     markets_description:
       "Pitanja da/ne o danu vašeg vjenčanja, podijeljena s gostima koji se bodovima klade na ishod.",
     admin_suppliers_title: "Admin · Dobavljači · Weddly",
@@ -4450,7 +4450,7 @@ const hr: LocaleMessages = {
     },
   },
   markets: {
-    page_title: "Predviđanja",
+    page_title: "WeddlyMarket oklade",
     page_subtitle:
       "Postavite pitanja da/ne o vašem vjenčanju, podijelite jednu poveznicu i vidite tko je najbolje pogodio.",
     status_draft: "Nacrt — gosti se još ne mogu pridružiti",

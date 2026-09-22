@@ -69,7 +69,7 @@ const en: LocaleMessages = {
     decisions_title: "Decisions · Weddly",
     decisions_description:
       "The long-tail wedding-day details, grouped by theme, worked through whenever you're ready.",
-    markets_title: "Predictions · Weddly",
+    markets_title: "WeddlyMarket Bets · Weddly",
     markets_description:
       "Yes/No questions about your wedding day, shared with guests who bet points on the outcome.",
     admin_suppliers_title: "Admin · Suppliers · Weddly",
@@ -4417,7 +4417,7 @@ const en: LocaleMessages = {
     },
   },
   markets: {
-    page_title: "Predictions",
+    page_title: "WeddlyMarket Bets",
     page_subtitle:
       "Set Yes/No questions about your wedding, share one link, and see who calls it best.",
     status_draft: "Draft — guests can't join yet",

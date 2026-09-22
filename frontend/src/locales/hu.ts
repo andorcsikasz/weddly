@@ -70,7 +70,7 @@ const hu: LocaleMessages = {
     decisions_title: "Döntések · Wēddly",
     decisions_description:
       "Az esküvő apró, hosszú távú részletei téma szerint csoportosítva, akkor foglalkoztok velük, amikor készen álltok.",
-    markets_title: "Jóslatok · Wēddly",
+    markets_title: "WeddlyMarket fogadások · Wēddly",
     markets_description:
       "Igen/nem kérdések az esküvőtök napjáról, megosztva a vendégekkel, akik pontokkal fogadnak a végkimenetelre.",
     admin_suppliers_title: "Admin · Szolgáltatók · Wēddly",
@@ -4452,7 +4452,7 @@ const hu: LocaleMessages = {
     },
   },
   markets: {
-    page_title: "Jóslatok",
+    page_title: "WeddlyMarket fogadások",
     page_subtitle:
       "Készíts igen/nem kérdéseket az esküvőtökről, oszd meg egy linkkel, és lásd, ki tippelt jól.",
     status_draft: "Vázlat — a vendégek még nem csatlakozhatnak",
