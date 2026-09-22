@@ -3,6 +3,14 @@
 // the empty-state variant: album=null). Single-sourced so the marketing page
 // shows the same on-brand mockup the product itself renders, not a second
 // hand-drawn approximation of it.
+//
+// The two states are deliberately different shapes, not just different copy.
+// !album is the sell — a couple deciding whether to turn this on, so it earns
+// the full phone-mockup collage. album (the dashboard) is a returning couple
+// who already said yes; the real gallery, stats and QR code are a scroll away
+// on the same page, so a second marketing composition above them was showing
+// the couple their own feature pitched back at them. That state is a quiet
+// masthead instead: mark, status, name, one button.
 import type { PhotoAlbum } from "@shared/types";
 import { FILM_FILTERS } from "@shared/types";
 import {
@@ -76,6 +84,20 @@ function CameraPreview({
   );
 }
 
+/** The Wordmark + camera-icon eyebrow row shared by both hero states. */
+function HeroEyebrow({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 text-paper-200">
+      <Wordmark size="sm" className="text-paper-50" />
+      <span className="h-4 w-px bg-paper-50/20" aria-hidden="true" />
+      <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]">
+        <Camera size={13} strokeWidth={1.7} aria-hidden="true" />
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export function CameraHero({
   album,
   coupleName,
@@ -98,11 +120,11 @@ export function CameraHero({
   headingFont?: "serif" | "grotesk" | "space";
   /** Dashboard keeps the site-wide `blush` accent. The public /camera landing
    *  page passes "gold" — a champagne-on-espresso palette with no red in it,
-   *  per owner direction against terracotta on that page. */
+   *  per owner direction against terracotta on that page. MediaPage also
+   *  passes "gold" now, for the same reason. */
   accent?: "blush" | "gold";
 }) {
   const { t } = useT();
-  const hasFilm = album !== null;
   const filmName = album?.title || coupleName || t("media.film_settings_unnamed");
   const headingFontClass =
     headingFont === "grotesk"
@@ -116,8 +138,52 @@ export function CameraHero({
   const ctaClass = isGold
     ? "bg-paper-100 text-umber-950 hover:bg-paper-50"
     : "bg-blush-500 text-white hover:bg-blush-600";
-  const stepAccentClass = isGold ? "text-paper-300" : "text-blush-300";
+  // Read before the early return below, which would otherwise narrow
+  // `album` to bare `null` for the rest of the function and turn every
+  // `album?.x` past that point into a `never` access.
+  const previewCount = album?.photoCount ?? 24;
+  const previewAesthetic = album?.filmAesthetic ?? "vintage";
 
+  // ── Dashboard masthead — a live film, so this is a returning couple ──────
+  if (album) {
+    return (
+      <section className="relative order-1 isolate overflow-hidden rounded-[2rem] bg-umber-950 text-paper-50 shadow-soft">
+        <div
+          aria-hidden="true"
+          className={`absolute -right-16 -top-20 h-56 w-56 rounded-full blur-3xl ${glowClass}`}
+        />
+        <div className="relative flex flex-col gap-6 px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-10 sm:py-9 lg:px-12">
+          <div className="min-w-0">
+            <HeroEyebrow label={t("media.film_title")} />
+            <div className="mb-3 mt-5 inline-flex items-center gap-2 rounded-full border border-sage-400/30 bg-sage-500/15 px-3 py-1.5 text-xs font-semibold text-sage-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-sage-300" aria-hidden="true" />
+              {t("media.film_header_active").replace("{count}", String(album.photoCount))}
+            </div>
+            <h1
+              className={`max-w-[18ch] text-4xl font-semibold leading-[0.98] tracking-[-0.03em] !text-paper-50 sm:text-5xl ${headingFontClass}`}
+            >
+              {filmName}
+            </h1>
+            <p className="mt-3 max-w-lg text-sm leading-relaxed text-paper-300 sm:text-base">
+              {t("media.film_sub")}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onShare}
+            className={`inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-2xl px-6 py-3.5 font-grotesk text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
+          >
+            <Share2 size={17} aria-hidden="true" />
+            {t("media.film_cta_share")}
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  // ── Marketing hero — no film yet, so this is the moment to sell it ──────
   return (
     <section className="relative order-1 isolate overflow-hidden rounded-[2rem] bg-umber-950 text-paper-50 shadow-soft">
       <div
@@ -141,66 +207,28 @@ export function CameraHero({
 
       <div className="relative grid items-center gap-5 px-6 pb-5 pt-9 sm:px-10 sm:pb-8 sm:pt-11 lg:px-12 xl:min-h-[38rem] xl:grid-cols-[minmax(0,0.95fr)_minmax(25rem,1.05fr)] xl:gap-6 xl:px-16 xl:py-12">
         <div className="relative z-10 max-w-2xl">
-          <div className="mb-6 flex items-center gap-3 text-paper-200">
-            <Wordmark size="sm" className="text-paper-50" />
-            <span className="h-4 w-px bg-paper-50/20" aria-hidden="true" />
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]">
-              <Camera size={13} strokeWidth={1.7} aria-hidden="true" />
-              {t("media.film_title")}
-            </span>
+          <div className="mb-6">
+            <HeroEyebrow label={t("media.film_title")} />
           </div>
 
-          {hasFilm ? (
-            <>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-sage-400/30 bg-sage-500/15 px-3 py-1.5 text-xs font-semibold text-sage-200">
-                <span className="h-1.5 w-1.5 rounded-full bg-sage-300" aria-hidden="true" />
-                {t("media.film_header_active").replace("{count}", String(album.photoCount))}
-              </div>
-              <h1
-                className={`max-w-[13ch] text-5xl font-semibold leading-[0.94] tracking-[-0.035em] !text-paper-50 sm:text-6xl xl:text-7xl ${headingFontClass}`}
-              >
-                {filmName}
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-paper-200 sm:text-lg">
-                {t("media.film_sub")}
-              </p>
-            </>
-          ) : (
-            <>
-              <h1
-                className={`max-w-[14ch] text-[3.15rem] font-semibold leading-[0.9] tracking-[-0.045em] !text-paper-50 sm:text-6xl lg:text-[4rem] xl:text-[4.4rem] ${headingFontClass}`}
-              >
-                {t("media.hero_title")}
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-paper-200 sm:text-lg">
-                {t("media.hero_sub")}
-              </p>
-            </>
-          )}
+          <h1
+            className={`max-w-[14ch] text-[3.15rem] font-semibold leading-[0.9] tracking-[-0.045em] !text-paper-50 sm:text-6xl lg:text-[4rem] xl:text-[4.4rem] ${headingFontClass}`}
+          >
+            {t("media.hero_title")}
+          </h1>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-paper-200 sm:text-lg">
+            {t("media.hero_sub")}
+          </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            {hasFilm ? (
-              <>
-                <button
-                  type="button"
-                  onClick={onShare}
-                  className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-6 py-3.5 font-grotesk text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
-                >
-                  <Share2 size={17} aria-hidden="true" />
-                  {t("media.film_cta_share")}
-                  <ArrowRight size={16} aria-hidden="true" />
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={onCreate}
-                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-7 py-3.5 font-grotesk text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
-              >
-                {t("media.film_cta_create")}
-                <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onCreate}
+              className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-7 py-3.5 font-grotesk text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
+            >
+              {t("media.film_cta_create")}
+              <ArrowRight size={16} aria-hidden="true" />
+            </button>
           </div>
 
           <div className="mt-7 flex flex-wrap gap-2 text-xs font-medium text-paper-200">
@@ -233,11 +261,8 @@ export function CameraHero({
           <CameraPreview
             src={coverPhoto}
             filmName={filmName}
-            shotsLabel={t("media.film_shots_short").replace(
-              "{{n}}",
-              String(album?.photoCount ?? 24),
-            )}
-            filter={FILM_FILTERS[album?.filmAesthetic ?? "vintage"]}
+            shotsLabel={t("media.film_shots_short").replace("{{n}}", String(previewCount))}
+            filter={FILM_FILTERS[previewAesthetic]}
             className="left-1/2 top-[2%] z-20 w-[43%] -translate-x-1/2"
           />
           <CameraPreview
@@ -259,50 +284,51 @@ export function CameraHero({
         </div>
       </div>
 
-      {!hasFilm && (
-        <div className="relative grid border-t border-paper-50/10 bg-paper-50/[0.03] sm:grid-cols-3 sm:divide-x sm:divide-paper-50/10">
-          {[
-            {
-              n: "01",
-              icon: QrCode,
-              title: t("media.film_how_1_title"),
-              body: t("media.film_how_1_body"),
-            },
-            {
-              n: "02",
-              icon: Camera,
-              title: t("media.film_how_2_title"),
-              body: t("media.film_how_2_body"),
-            },
-            {
-              n: "03",
-              icon: GalleryHorizontalEnd,
-              title: t("media.film_how_3_title"),
-              body: t("media.film_how_3_body"),
-            },
-          ].map((step) => (
-            <div
-              key={step.n}
-              className="grid grid-cols-[2.75rem_1fr] gap-3 border-t border-paper-50/10 px-6 py-5 first:border-t-0 sm:block sm:border-t-0 sm:px-7 sm:py-6"
-            >
-              <span
-                className={`flex h-10 w-10 items-center justify-center rounded-full border border-paper-50/10 bg-paper-50/[0.07] ${stepAccentClass}`}
-              >
-                <step.icon size={17} strokeWidth={1.7} aria-hidden="true" />
+      <div className="relative grid border-t border-paper-50/10 bg-paper-50/[0.03] sm:grid-cols-3 sm:divide-x sm:divide-paper-50/10">
+        {[
+          {
+            n: "01",
+            icon: QrCode,
+            title: t("media.film_how_1_title"),
+            body: t("media.film_how_1_body"),
+          },
+          {
+            n: "02",
+            icon: Camera,
+            title: t("media.film_how_2_title"),
+            body: t("media.film_how_2_body"),
+          },
+          {
+            n: "03",
+            icon: GalleryHorizontalEnd,
+            title: t("media.film_how_3_title"),
+            body: t("media.film_how_3_body"),
+          },
+        ].map((step) => (
+          <div
+            key={step.n}
+            className="grid grid-cols-[2.75rem_1fr] gap-3 border-t border-paper-50/10 px-6 py-5 first:border-t-0 sm:block sm:border-t-0 sm:px-7 sm:py-6"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-paper-50/10 bg-paper-50/[0.07] text-paper-300">
+              <step.icon size={17} strokeWidth={1.7} aria-hidden="true" />
+            </span>
+            <div className="sm:mt-4">
+              <span className="font-grotesk text-[9px] font-semibold tracking-[0.2em] text-paper-300">
+                {step.n}
               </span>
-              <div className="sm:mt-4">
-                <span
-                  className={`font-grotesk text-[9px] font-semibold tracking-[0.2em] ${stepAccentClass}`}
-                >
-                  {step.n}
-                </span>
-                <h2 className="font-grotesk text-sm font-semibold text-paper-50">{step.title}</h2>
-                <p className="mt-1 text-xs leading-relaxed text-paper-300">{step.body}</p>
-              </div>
+              {/* `!` forced: inside [data-app-shell] (the /app/media dashboard)
+                  an unlayered light-mode rule repaints every bare h1/h2 to
+                  umber-900, which otherwise wins over a plain text-paper-50
+                  utility and reads as dark-on-dark against this card. The
+                  /camera public page has no [data-app-shell] ancestor, so it
+                  never showed the bug — this hero is the only place both
+                  contexts share the markup. */}
+              <h2 className="font-grotesk text-sm font-semibold !text-paper-50">{step.title}</h2>
+              <p className="mt-1 text-xs leading-relaxed text-paper-300">{step.body}</p>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

@@ -1379,14 +1379,14 @@ export default function MediaPage() {
   const settingsRows: SettingsRow[] = album
     ? [
         {
-          icon: <CalendarDays size={15} aria-hidden="true" />,
+          icon: <CalendarDays size={17} aria-hidden="true" />,
           label: t("media.film_settings_ends"),
           value: album.eventEndsAt
             ? formatRevealDate(album.eventEndsAt, locale)
             : t("media.film_not_set"),
         },
         {
-          icon: <Clock3 size={15} aria-hidden="true" />,
+          icon: <Clock3 size={17} aria-hidden="true" />,
           label: t("media.film_settings_reveal"),
           value: album.revealAt
             ? formatRevealDate(album.revealAt, locale)
@@ -1394,13 +1394,13 @@ export default function MediaPage() {
           dividerAfter: true,
         },
         {
-          icon: <Users size={15} aria-hidden="true" />,
+          icon: <Users size={17} aria-hidden="true" />,
           label: t("media.film_settings_cap"),
           value: `${album.guestCap} ${t("media.film_per_person")}`,
           editable: false,
         },
         {
-          icon: <GalleryHorizontalEnd size={15} aria-hidden="true" />,
+          icon: <GalleryHorizontalEnd size={17} aria-hidden="true" />,
           label: t("media.film_settings_shots"),
           value:
             album.shotsPerGuest != null
@@ -1408,7 +1408,7 @@ export default function MediaPage() {
               : t("media.film_unlimited"),
         },
         {
-          icon: <Film size={15} aria-hidden="true" />,
+          icon: <Film size={17} aria-hidden="true" />,
           label: t("media.film_settings_aesthetic"),
           value: AESTHETIC_LABELS[album.filmAesthetic] ?? album.filmAesthetic,
         },
@@ -1430,6 +1430,7 @@ export default function MediaPage() {
         onCreate={() => setShowFilmModal(true)}
         onShare={() => setShowShare(true)}
         headingFont="space"
+        accent="gold"
       />
 
       {/* ── Photographer gallery card (first) ─────────────────────── */}
@@ -1447,9 +1448,7 @@ export default function MediaPage() {
             <ul>
               {photographerUrls.map((url) => (
                 <li key={url} className="flex items-center gap-4 px-5 py-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
-                    <Camera size={18} aria-hidden="true" />
-                  </span>
+                  <Camera size={17} className="shrink-0 text-umber-500" aria-hidden="true" />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-[15px] font-medium text-umber-900">
                       {url.replace(/^https?:\/\//, "").split("/")[0]}
@@ -1585,11 +1584,11 @@ export default function MediaPage() {
         </div>
       </div>
 
-      {/* ── Wedding film dashboard ────────────────────────────────── */}
-      <div
-        className={`order-3 mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft ${album ? "" : "hidden"}`}
-      >
-        {album ? (
+      {/* ── Wedding film dashboard — only once a film exists. Its own
+          empty state would be redundant: the hero above already carries the
+          "create your film" moment. ─────────────────────────────────── */}
+      {album && (
+        <div className="order-3 mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft">
           <>
             <>
               {/* ── Stats row ─────────────────────────────────────────── */}
@@ -1717,9 +1716,11 @@ export default function MediaPage() {
                         surprising. Retires once the reveal has passed. */}
                   {(album.revealAt === null || Date.now() < album.revealAt) && (
                     <div className="mx-4 mb-2 mt-3 flex items-start gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 py-3">
-                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-umber-900">
-                        <Lock size={14} aria-hidden="true" />
-                      </span>
+                      <Lock
+                        size={14}
+                        className="mt-0.5 shrink-0 text-umber-500"
+                        aria-hidden="true"
+                      />
                       <div className="min-w-0">
                         <h3 className="text-sm font-semibold text-umber-900">
                           {t("media.reveal_explainer_title")}
@@ -1837,9 +1838,7 @@ export default function MediaPage() {
                     const editable = row.editable !== false;
                     const inner = (
                       <>
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
-                          {row.icon}
-                        </span>
+                        <span className="shrink-0 text-umber-500">{row.icon}</span>
                         <span className="min-w-0 flex-1 text-sm font-medium text-umber-900">
                           {row.label}
                         </span>
@@ -2007,55 +2006,8 @@ export default function MediaPage() {
               )}
             </>
           </>
-        ) : (
-          /* ── Empty state ────────────────────────────────────────── */
-          <>
-            <div className="relative h-52 overflow-hidden">
-              <img
-                src={DEMO_STRIP[0]}
-                alt=""
-                className="h-full w-full object-cover opacity-25"
-                aria-hidden="true"
-                style={{ filter: "blur(2px)" }}
-              />
-              <div className="absolute inset-0" style={{ background: "rgba(15,10,7,0.5)" }} />
-              <span className="absolute right-3 top-3 z-10 rounded-full border border-paper-50/25 bg-ink-900/40 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-paper-200 backdrop-blur">
-                {t("media.dev_badge")}
-              </span>
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-umber-700 bg-umber-900">
-                  <Film size={22} className="text-umber-400" aria-hidden="true" />
-                </div>
-                <h2 className="font-space text-2xl font-semibold text-paper-50 sm:text-3xl">
-                  {t("media.film_empty_title")}
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setShowFilmModal(true)}
-                  className="rounded-xl bg-paper-50 px-6 py-3 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100"
-                >
-                  {t("media.film_cta_create")}
-                </button>
-              </div>
-            </div>
-
-            {/* How it works — 3 columns */}
-            <div className="grid grid-cols-3 divide-x divide-paper-200 border-t border-paper-200">
-              {[
-                { n: "1", title: t("media.film_how_1_title"), body: t("media.film_how_1_body") },
-                { n: "2", title: t("media.film_how_2_title"), body: t("media.film_how_2_body") },
-                { n: "3", title: t("media.film_how_3_title"), body: t("media.film_how_3_body") },
-              ].map((s) => (
-                <div key={s.n} className="px-4 py-3">
-                  <span className="font-space text-xs font-bold text-umber-600">{s.n}</span>
-                  <p className="mt-1.5 text-xs font-semibold text-umber-700">{s.title}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-umber-500">{s.body}</p>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Modals ──────────────────────────────────────────────────── */}
       <FilmModal
