@@ -4944,6 +4944,8 @@ const es: LocaleMessages = {
     certainty_likely: "Probable",
     certainty_unsure: "Incierto",
     certainty_unlikely: "Improbable",
+    duplicate_name_warning: "Ya tienes un invitado con este nombre.",
+    duplicate_name_warning_household: "Ya tienes un invitado con este nombre, en {household}.",
   },
   budget: {
     title: "Presupuesto",

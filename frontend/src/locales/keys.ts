@@ -5601,6 +5601,11 @@ export interface LocaleMessages {
     certainty_likely: string;
     certainty_unsure: string;
     certainty_unlikely: string;
+    /** Non-blocking heads-up under the name field (table new-row + drawer)
+     *  when a typed name matches an existing guest — a notice, never a gate,
+     *  since two guests can legitimately share a name. */
+    duplicate_name_warning: string;
+    duplicate_name_warning_household: string;
     dietary: string;
     /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
     allergies: string;

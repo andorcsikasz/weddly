@@ -4889,6 +4889,8 @@ const hr: LocaleMessages = {
     certainty_likely: "Vjerojatno",
     certainty_unsure: "Neizvjesno",
     certainty_unlikely: "Malo vjerojatno",
+    duplicate_name_warning: "Već imate gosta s ovim imenom.",
+    duplicate_name_warning_household: "Već imate gosta s ovim imenom, u: {household}.",
   },
   budget: {
     title: "Proračun",

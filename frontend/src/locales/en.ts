@@ -4856,6 +4856,8 @@ const en: LocaleMessages = {
     certainty_likely: "Likely",
     certainty_unsure: "Unsure",
     certainty_unlikely: "Unlikely",
+    duplicate_name_warning: "You already have a guest with this name.",
+    duplicate_name_warning_household: "You already have a guest with this name, in {household}.",
   },
   budget: {
     title: "Budget",

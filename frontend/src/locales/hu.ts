@@ -4893,6 +4893,8 @@ const hu: LocaleMessages = {
     certainty_likely: "Valószínű",
     certainty_unsure: "Bizonytalan",
     certainty_unlikely: "Valószínűtlen",
+    duplicate_name_warning: "Már van egy ilyen nevű vendéged.",
+    duplicate_name_warning_household: "Már van egy ilyen nevű vendéged itt: {household}.",
   },
   budget: {
     title: "Költségvetés",

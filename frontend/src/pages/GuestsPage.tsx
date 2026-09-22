@@ -76,6 +76,7 @@ import {
   Table as TableIcon,
   Target,
   Trash2,
+  TriangleAlert,
   Upload,
   User,
   UserPlus,
@@ -1423,6 +1424,7 @@ export default function GuestsPage() {
           )}
           <GuestTable
             guests={filteredFlatGuests}
+            allGuests={listableGuests}
             households={households}
             mealMenu={couple?.meal_menu ?? null}
             mealEnabled={households.some((h) => h.rsvp_collects_meal)}
@@ -1919,6 +1921,22 @@ function resolveHouseholdTarget(
   return match ? { household_id: match.id } : { new_household_label: trimmed };
 }
 
+/** Case-insensitive, trimmed name match against the couple's existing guests.
+ *  A NOTICE, not a gate — two guests can legitimately share a name (a parent
+ *  and child, two "Kis Anna"s in different families), so this never blocks
+ *  the save, it only tells the couple before they commit to it. Skips the
+ *  couple's own host rows (`partner_role`, never real invitees) and, when
+ *  editing, the guest being renamed itself. */
+function findDuplicateGuestByName(guests: Guest[], name: string, excludeId?: number): Guest | null {
+  const needle = name.trim().toLowerCase();
+  if (!needle) return null;
+  return (
+    guests.find(
+      (g) => g.id !== excludeId && !g.partner_role && g.full_name.trim().toLowerCase() === needle,
+    ) ?? null
+  );
+}
+
 /** Shared list of household labels for every inline household combobox. One
  *  native <datalist> feeds all rows' `list=` inputs. The native popup escapes
  *  the table's horizontal scroll-clip (a custom dropdown wouldn't) and gives
@@ -2235,10 +2253,12 @@ function EmailCell({
  *  inline cell (existing label reused, new one created, blank → the backend
  *  auto-creates a household-of-one). */
 function GuestTableNewRow({
+  guests,
   households,
   mealEnabled,
   onCreateGuest,
 }: {
+  guests: Guest[];
   households: Household[];
   mealEnabled: boolean;
   onCreateGuest: (body: GuestUpsert) => Promise<boolean>;
@@ -2254,6 +2274,14 @@ function GuestTableNewRow({
   // state flushes (the button uses the state; keydown needs the ref).
   const savingRef = useRef(false);
   const nameRef = useRef<HTMLInputElement>(null);
+
+  // Heads-up only, never a gate (see findDuplicateGuestByName) — recomputed
+  // live as the couple types, so the notice is there before they ever commit
+  // to the save, not after.
+  const duplicate = useMemo(() => findDuplicateGuestByName(guests, name), [guests, name]);
+  const duplicateHousehold = duplicate
+    ? (households.find((h) => h.id === duplicate.household_id)?.label ?? null)
+    : null;
 
   async function commit() {
     const trimmed = name.trim();
@@ -2306,6 +2334,14 @@ function GuestTableNewRow({
             className={`${CELL_FIELD} pr-2 font-medium`}
           />
         </span>
+        {duplicate && (
+          <p className="mt-0.5 flex items-center gap-1 pl-5 text-[11px] font-normal normal-case tracking-normal text-amber-700 dark:text-amber-400">
+            <TriangleAlert size={11} aria-hidden className="shrink-0" />
+            {duplicateHousehold
+              ? t("guests.duplicate_name_warning_household", { household: duplicateHousehold })
+              : t("guests.duplicate_name_warning")}
+          </p>
+        )}
       </td>
       <td className={CELL}>
         <input
@@ -2413,8 +2449,20 @@ function RsvpPicker({
   // Menu footprint used for flipping below/above the trigger.
   const MENU_W = 184;
   const MENU_H = 172;
+  // Grace-period timer for the hover-close below. A ref (not state) since it
+  // never drives a render — only its presence/absence matters.
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function cancelScheduledClose() {
+    if (closeTimerRef.current !== null) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }
+  useEffect(() => cancelScheduledClose, []);
 
   const openMenu = useCallback(() => {
+    cancelScheduledClose();
     const rect = btnRef.current?.getBoundingClientRect();
     if (!rect) return;
     const roomBelow = window.innerHeight - rect.bottom;
@@ -2454,11 +2502,18 @@ function RsvpPicker({
     };
   }, [open]);
 
+  // The trigger's hitbox is just the small pill — the menu itself is portaled
+  // to document.body, so it is NOT a layout descendant and its few pixels of
+  // gap to the pill belong to whatever sits underneath (a table cell, most of
+  // the time). Closing the instant the cursor crosses that gap made the menu
+  // vanish before a mouse could ever reach an option: "the setting
+  // disappears" when trying to click Yes/No/Maybe. A short grace period
+  // tolerates the crossing — it's cancelled the moment the pointer lands back
+  // inside the pill or the menu, so a genuine move-away still closes promptly.
   const onLeaveToward = (e: { relatedTarget: EventTarget | null }) => {
-    // Moving toward the trigger or the portaled menu must not count as
-    // leaving — that would close the menu before the pointer reaches it.
     if (e.relatedTarget instanceof Node && isInside(e.relatedTarget)) return;
-    setOpen(false);
+    cancelScheduledClose();
+    closeTimerRef.current = setTimeout(() => setOpen(false), 250);
   };
 
   return (
@@ -2474,7 +2529,14 @@ function RsvpPicker({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`${ariaLabel}: ${t(`guests.rsvp_${value}`)}`}
-        onClick={() => (open ? setOpen(false) : openMenu())}
+        onClick={() => {
+          if (open) {
+            cancelScheduledClose();
+            setOpen(false);
+          } else {
+            openMenu();
+          }
+        }}
         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${RSVP_TONE[value]}`}
       >
         {RSVP_GLYPH[value]}
@@ -2489,6 +2551,7 @@ function RsvpPicker({
             aria-label={ariaLabel}
             style={{ left: pos.left, top: pos.top }}
             className="fixed z-50 w-[184px] rounded-xl border border-paper-300 bg-white p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+            onMouseEnter={cancelScheduledClose}
             onMouseLeave={onLeaveToward}
           >
             {(["pending", "yes", "maybe", "no"] as RsvpStatus[]).map((s) => (
@@ -2497,6 +2560,7 @@ function RsvpPicker({
                 type="button"
                 role="menuitem"
                 onClick={() => {
+                  cancelScheduledClose();
                   onChange(s);
                   setOpen(false);
                 }}
@@ -2566,6 +2630,7 @@ function GroupCellChip({
  *  group headers double as sort toggles into the shared URL-backed sort axis. */
 function GuestTable({
   guests,
+  allGuests,
   households,
   mealMenu,
   mealEnabled,
@@ -2581,6 +2646,12 @@ function GuestTable({
   onToggleGuestInvited,
 }: {
   guests: Guest[];
+  /** The couple's whole listable roster, NOT narrowed by the active search/
+   *  filters — used only for duplicate-name detection in the always-present
+   *  new-row, so a guest hidden by e.g. an RSVP filter still counts as an
+   *  existing match. `guests` above stays the filtered set that's actually
+   *  rendered as rows. */
+  allGuests: Guest[];
   households: Household[];
   mealMenu: MealMenu | null;
   /** Show the meal-choice column? Mirrors the per-household `rsvp_collects_meal`
@@ -2696,6 +2767,7 @@ function GuestTable({
           {/* Always-present blank row so a guest can be added inline without
               opening the drawer. */}
           <GuestTableNewRow
+            guests={allGuests}
             households={households}
             mealEnabled={mealEnabled}
             onCreateGuest={onCreateGuest}
@@ -3942,6 +4014,16 @@ function GuestDrawer({
       notes: null,
     },
   );
+  // Heads-up only, never a gate (see findDuplicateGuestByName) — recomputed
+  // live as the couple types the name, whether adding or renaming.
+  const duplicateGuest = useMemo(
+    () => findDuplicateGuestByName(guests, form.full_name ?? "", guest?.id),
+    [guests, form.full_name, guest?.id],
+  );
+  const duplicateGuestHousehold = duplicateGuest
+    ? (households.find((h) => h.id === duplicateGuest.household_id)?.label ?? null)
+    : null;
+
   // Dietary is stored as a single free-text column server-side; locally we
   // split it into chip toggles + a free-text remainder so the UI can offer
   // icon chips without losing notes the user typed by hand.
@@ -4129,14 +4211,26 @@ function GuestDrawer({
           {/* Name reads as the drawer's headline — a borderless serif input
               that looks like display text but stays editable, with a faint
               underline on focus so the affordance is still legible. */}
-          <input
-            type="text"
-            value={form.full_name ?? ""}
-            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-            placeholder={t("guests.full_name")}
-            aria-label={t("guests.full_name")}
-            className="mb-5 w-full border-0 border-b border-transparent bg-transparent px-0 pb-1 pt-0 font-grotesk text-3xl font-medium text-ink-900 placeholder:text-ink-300 focus:border-ink-300 focus:outline-none focus:ring-0 dark:text-paper-50 dark:placeholder:text-umber-500 dark:focus:border-umber-500"
-          />
+          <div className="mb-5">
+            <input
+              type="text"
+              value={form.full_name ?? ""}
+              onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+              placeholder={t("guests.full_name")}
+              aria-label={t("guests.full_name")}
+              className="w-full border-0 border-b border-transparent bg-transparent px-0 pb-1 pt-0 font-grotesk text-3xl font-medium text-ink-900 placeholder:text-ink-300 focus:border-ink-300 focus:outline-none focus:ring-0 dark:text-paper-50 dark:placeholder:text-umber-500 dark:focus:border-umber-500"
+            />
+            {duplicateGuest && (
+              <p className="mt-1 flex items-center gap-1.5 text-xs font-normal normal-case tracking-normal text-amber-700 dark:text-amber-400">
+                <TriangleAlert size={13} aria-hidden className="shrink-0" />
+                {duplicateGuestHousehold
+                  ? t("guests.duplicate_name_warning_household", {
+                      household: duplicateGuestHousehold,
+                    })
+                  : t("guests.duplicate_name_warning")}
+              </p>
+            )}
+          </div>
 
           <Field
             label={t("guests.email")}
