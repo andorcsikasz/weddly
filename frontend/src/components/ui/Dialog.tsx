@@ -53,7 +53,7 @@ export function Dialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (closeOnBackdrop && e.target === e.currentTarget) onClose();
       }}
@@ -75,6 +75,7 @@ export function Dialog({
          * mobile variant fills the available height so the dialog behaves
          * like a near-fullscreen sheet without rebuilding the layout. */
         className={`card relative flex max-h-[100dvh] w-full flex-col ${size === "xl" ? "sm:max-w-5xl" : size === "lg" ? "sm:max-w-3xl" : "sm:max-w-md"} rounded-b-none rounded-t-2xl p-0 shadow-pop sm:max-h-[90vh] sm:rounded-2xl dark:bg-umber-800 dark:border-umber-700 dark:text-paper-100`}
+        style={{ animation: "dialogIn 230ms cubic-bezier(0.22, 1, 0.36, 1)" }}
       >
         <div className="flex shrink-0 items-start gap-3 px-4 pt-4 sm:px-6 sm:pt-6">
           <h2 id={titleId} className={`flex-1 pt-1 ${titleClassName}`}>

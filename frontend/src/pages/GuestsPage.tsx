@@ -108,7 +108,7 @@ import {
   householdApi,
   placeCardsUrl,
 } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import {
   type SongEntry,
@@ -343,7 +343,7 @@ interface DrawerInit {
 }
 
 export default function GuestsPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("seo.guests_title", "seo.guests_description");
   const confirm = useConfirm();
   const toast = useToast();
@@ -1266,7 +1266,7 @@ export default function GuestsPage() {
             <button
               type="button"
               className={GUEST_TOOL_BTN}
-              onClick={downloadCsvTemplate}
+              onClick={() => downloadCsvTemplate(locale)}
               title={t("guests.download_template_hint")}
               aria-label={t("guests.download_template")}
             >
@@ -1400,7 +1400,11 @@ export default function GuestsPage() {
                 disabled={importing}
               />
             </label>
-            <button type="button" className="btn-outline" onClick={downloadCsvTemplate}>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={() => downloadCsvTemplate(locale)}
+            >
               <Download size={16} aria-hidden /> {t("guests.download_template")}
             </button>
           </div>
@@ -3572,7 +3576,7 @@ function InviteChip({ guest, onToggle }: { guest: Guest; onToggle: () => void })
         title={`${label}: ${nextHint}`}
         aria-label={`${label}. ${nextHint}`}
         aria-pressed={invited}
-        className={`inline-flex h-6 w-6 shrink-0 flex-col items-center justify-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${
+        className={`relative inline-flex h-6 w-6 shrink-0 flex-col items-center justify-center rounded-full border transition-colors before:absolute before:-inset-1.5 before:rounded-full before:content-[''] focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${
           invited
             ? "border-sage-300 bg-sage-100 text-sage-700 hover:bg-sage-200 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
             : "border-paper-300 bg-paper-50 hover:border-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
@@ -3580,10 +3584,10 @@ function InviteChip({ guest, onToggle }: { guest: Guest; onToggle: () => void })
       >
         <span className="sr-only">{label}</span>
         {invited && (
-          <>
+          <span key="invited" className="flex animate-tick-pop flex-col items-center">
             <Check size={11} strokeWidth={3} aria-hidden="true" />
             <Mail size={8} strokeWidth={2.5} aria-hidden="true" className="-mt-0.5" />
-          </>
+          </span>
         )}
       </button>
       {openedLabel && (
@@ -6121,15 +6125,21 @@ function GuestFilterBar({
                 if (!query) setSearchOpen(false);
               }}
             />
-            {searchOpen && (
+            {searchOpen && query !== "" && (
               <button
                 type="button"
+                /* Ground the pointer so the input's blur (which closes the
+                 *  panel when the field is empty) can't fire between the
+                 *  touch and the click and unmount this button first — an X
+                 *  that unmounts is an X that never clicks. Keeping focus in
+                 *  the field while clearing also lets the user keep typing. */
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => {
                   onQueryChange("");
-                  setSearchOpen(false);
+                  if (searchInputRef.current) searchInputRef.current.focus();
                 }}
                 aria-label={t("guests.search_clear")}
-                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 hover:text-ink-700 sm:hidden dark:text-umber-300 dark:hover:text-paper-100"
+                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 sm:hidden dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
               >
                 <X size={14} aria-hidden />
               </button>
@@ -6404,7 +6414,7 @@ function GuestStat({
   const tooltip = (
     <span
       aria-hidden
-      className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-umber-900 px-2.5 py-1.5 text-xs font-normal normal-case leading-none tracking-normal text-paper-50 opacity-0 shadow-pop transition-opacity duration-100 peer-hover:opacity-100 peer-focus-visible:opacity-100 dark:bg-umber-950"
+      className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-umber-900 px-2.5 py-1.5 text-xs font-normal normal-case leading-none tracking-normal text-paper-50 opacity-0 shadow-pop transition-opacity duration-100 group-hover:opacity-100 peer-hover:opacity-100 peer-focus-visible:opacity-100 dark:bg-umber-950"
     >
       {tip}
     </span>
@@ -6440,10 +6450,52 @@ function GuestStat({
   );
 }
 
-function downloadCsvTemplate() {
-  const csv =
-    "full_name,email,phone,group_tag,household,plus_one_name,dietary,notes\nAnna Kis,anna@example.com,+36301234567,his_family,Kis család,Bence Nagy,vegetarian,VIP\nBence Nagy,bence@example.com,+36309998888,his_family,Kis család,,,Bence is the +1 of Anna\n";
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+function downloadCsvTemplate(locale: Locale) {
+  // Sample rows follow the couple's own language, never a fixed Hungarian
+  // cast. The column names stay the canonical English keys (the importer
+  // normalizes the header row and requires `full_name`), so only the example
+  // names/phones/households change per locale. "Anna Kis + Bence Nagy, +36"
+  // inside an English workspace reads as a template for someone else's guest
+  // list, and the same is true the other way round.
+  const samples: Record<Locale, readonly [string, string, string, string, string, string]> = {
+    hu: ["Anna Kis", "anna@example.com", "+36301234567", "his_family", "Kis család", "Bence Nagy"],
+    en: [
+      "Emily Johnson",
+      "emily@example.com",
+      "+12025550123",
+      "his_family",
+      "The Johnson family",
+      "Michael Smith",
+    ],
+    es: [
+      "Sofía García",
+      "sofia@example.com",
+      "+34612345678",
+      "his_family",
+      "La familia García",
+      "Pablo Martínez",
+    ],
+    hr: [
+      "Ana Horvat",
+      "ana@example.com",
+      "+38591234567",
+      "his_family",
+      "Obitelj Horvat",
+      "Marko Kovač",
+    ],
+    de: [
+      "Anna Müller",
+      "anna@example.com",
+      "+4915123456789",
+      "his_family",
+      "Familie Müller",
+      "Jonas Weber",
+    ],
+  } as const;
+  const [name, email, phone, group, household, plusOne] = samples[locale];
+  const healthy = "full_name,email,phone,group_tag,household,plus_one_name,dietary,notes\n";
+  const rows = `${healthy}${name},${email},${phone},${group},${household},${plusOne},vegetarian,VIP\n`;
+  const blob = new Blob([rows], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

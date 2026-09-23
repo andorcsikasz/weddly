@@ -2422,6 +2422,12 @@ export interface LocaleMessages {
   dashboard: {
     title: string;
     wedding_in_days: string;
+    /** A failed initial dashboard fetch, rendered as a persistent inline card
+     *  with a retry (data stays `"loading"`, so the "no couple yet" onboarding
+     *  redirect must not trigger). */
+    load_error_title: string;
+    load_error_body: string;
+    load_retry: string;
     couple_label: string;
     /** Time-of-day (+ holiday) greeting rendered as the dashboard's own H1,
      *  addressing the couple by their display name. Mirrors

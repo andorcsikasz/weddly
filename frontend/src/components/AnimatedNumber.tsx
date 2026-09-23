@@ -22,20 +22,25 @@ function prefersReducedMotion(): boolean {
 
 /** Animate `value`, returning the number to paint this frame. Integer-valued
  *  throughout, so a counter never flashes a fractional count and a money amount
- *  stays in whole minor units. */
+ *  stays in whole minor units. The FIRST value a consumer shows is animated
+ *  from zero rather than painted instantly — every consumer renders its number
+ *  only after its async load resolves, and a stat that "just arrived" should
+ *  read as having arrived, not as having always been there. Later changes
+ *  animate from whatever was last on screen. */
 export function useCountUp(value: number, durationMs = 650): number {
   const [shown, setShown] = useState(value);
   // The value we animated FROM, kept in a ref so starting a new animation
   // mid-flight picks up where the last one visually left off instead of
-  // snapping back to zero.
-  const fromRef = useRef(value);
+  // snapping back to zero. `null` means "never painted a value", i.e. this is
+  // the first mount and the run starts from zero.
+  const fromRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!Number.isFinite(value)) return;
-    const from = fromRef.current;
+    const from = fromRef.current ?? 0;
+    fromRef.current = value;
     if (from === value || prefersReducedMotion() || durationMs <= 0) {
-      fromRef.current = value;
       setShown(value);
       return;
     }

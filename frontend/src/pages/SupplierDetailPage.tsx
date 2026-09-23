@@ -97,6 +97,7 @@ import { StarRow } from "../components/StarRow";
 import { statedGuestCount } from "../lib/budget";
 import { formatDate as formatYmd, intlLocale } from "../lib/format";
 import { formatPackagePrice } from "../lib/listingPricing";
+import { communityReportId } from "../lib/supplier_report";
 import { VendorPackageList } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
@@ -597,17 +598,24 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
           <div className="flex shrink-0 items-center gap-2">
             {/* Community-report action, only for user-submitted tips (never a
                 claimed vendor). Sits with share as one pair of round buttons. */}
-            {detail.source === "community" && (
-              <button
-                type="button"
-                onClick={() => setReporting({ id: Number(detail.id.slice(1)), name: detail.name })}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 text-ink-500 transition hover:border-ink-400 hover:bg-paper-100 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-                aria-label={t("suppliers.report.aria_label")}
-                title={t("suppliers.report.aria_label")}
-              >
-                <Flag size={16} aria-hidden />
-              </button>
-            )}
+            {detail.source === "community" &&
+              (() => {
+                const reportId = communityReportId(detail.id);
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (reportId === null) return;
+                      setReporting({ id: reportId, name: detail.name });
+                    }}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper-300 text-ink-500 transition hover:border-ink-400 hover:bg-paper-100 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                    aria-label={t("suppliers.report.aria_label")}
+                    title={t("suppliers.report.aria_label")}
+                  >
+                    <Flag size={16} aria-hidden />
+                  </button>
+                );
+              })()}
             <button
               type="button"
               onClick={shareVendor}

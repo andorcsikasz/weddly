@@ -1923,6 +1923,10 @@ const de: LocaleMessages = {
   dashboard: {
     title: "Übersicht",
     wedding_in_days: "Noch {days} Tage bis zur Hochzeit",
+    load_error_title: "Übersicht konnte nicht geladen werden",
+    load_error_body:
+      "Die Verbindung wurde unterbrochen. Deine Daten sind sicher — versuch es erneut.",
+    load_retry: "Erneut versuchen",
     couple_label: "Paar",
     greeting: {
       early: "Sie sind früh dran, {name}",

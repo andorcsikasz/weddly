@@ -1895,6 +1895,9 @@ const es: LocaleMessages = {
   dashboard: {
     title: "Panel",
     wedding_in_days: "{days} días hasta la boda",
+    load_error_title: "No hemos podido cargar tu panel",
+    load_error_body: "La conexión se interrumpió. Tus datos están a salvo — inténtalo de nuevo.",
+    load_retry: "Reintentar",
     couple_label: "Pareja",
     greeting: {
       early: "Habéis madrugado, {name}",

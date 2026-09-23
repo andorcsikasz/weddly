@@ -2069,6 +2069,22 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     opacity: 1;
   }
 }
+/* Centered dialog entrances. Same arrival grammar as sheetUp, pitched for a
+   modal that sits in the middle of the viewport: a short rise plus a tiny
+   scale settle reads as "this is a layer on top", while sheetUp's full 12%
+   slide would look like the dialog is chasing the bottom edge. Inline-applied
+   from `components/ui/Dialog.tsx`; the global prefers-reduced-motion clamp
+   collapses it to an instant show. */
+@keyframes dialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
 /* Success check "pop" — a spring-ish scale + settle so the green tick lands
    with a beat when the success card first mounts. Pairs with the confetti. */
 @keyframes check-pop {

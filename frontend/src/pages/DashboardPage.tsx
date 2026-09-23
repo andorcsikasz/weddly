@@ -35,15 +35,18 @@ import {
   Plane,
   Printer,
   QrCode,
+  RotateCcw,
   Store,
   Tablet,
   Users,
   Wallet,
+  WifiOff,
   X,
 } from "lucide-react";
 import { type FormEvent, type JSX, type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ActivityPanel } from "../components/ActivityPanel";
+import { AnimatedNumber } from "../components/AnimatedNumber";
 import {
   CATEGORY_ICONS,
   CostPlanningCard,
@@ -55,7 +58,7 @@ import { PlannerApprovalBanner } from "../components/PlannerApprovalBanner";
 import { KeyInfoCard } from "../components/KeyInfoCard";
 import { RateVendorsCard } from "../components/RateVendorsCard";
 import { UpcomingTasksCard } from "../components/UpcomingTasksCard";
-import { CalendarPicker, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
+import { Button, CalendarPicker, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import {
@@ -192,6 +195,11 @@ export default function DashboardPage() {
   const toast = useToast();
   const { user: currentUser } = useAuth();
   const [data, setData] = useState<Loaded | null | "loading">("loading");
+  // A failed initial fetch must not be confused with "no couple yet": `null`
+  // navigates to onboarding, so on error we keep `data` at "loading" and drop
+  // into a dedicated error card with a retry. `reloadTick` re-arms the fetch.
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
   const [rsvpOpen, setRsvpOpen] = useState(false);
   const [roiOpen, setRoiOpen] = useState(false);
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
@@ -240,6 +248,7 @@ export default function DashboardPage() {
   useEffect(() => {
     (async () => {
       try {
+        setLoadError(null);
         const couple = (await coupleApi.current()).couple;
         if (!couple) {
           setData(null);
@@ -274,13 +283,14 @@ export default function DashboardPage() {
           schedule: null,
         });
       } catch (e) {
-        // Leave `data` at "loading" (the skeleton) rather than `null` — the
+        // Leave `data` at "loading" (the error card) rather than `null` — the
         // latter navigates to /onboarding, which would wrongly bounce an
-        // already-onboarded couple there on a mere network hiccup.
-        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+        // already-onboarded couple there on a mere network hiccup. The inline
+        // card is persistent (unlike a toast), so the failure has a retry.
+        setLoadError(e instanceof ApiError ? e.message : t("common.error_generic"));
       }
     })();
-  }, []);
+  }, [reloadTick]);
 
   // Cross-tab cost-planning subscription. Once the couple is loaded, any
   // partner-side slider drag on /app/budget (or another /app tab) flows in
@@ -319,6 +329,36 @@ export default function DashboardPage() {
     };
   }, [data]);
 
+  if (data === "loading" && loadError) {
+    return (
+      <div
+        data-testid="dashboard-load-error"
+        className="flex min-h-[55vh] animate-fade-in flex-col items-center justify-center gap-5 text-center"
+      >
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-paper-100 text-ink-500 dark:bg-umber-800 dark:text-umber-300">
+          <WifiOff size={24} aria-hidden />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+            {t("dashboard.load_error_title")}
+          </h2>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-600 dark:text-umber-200">
+            {t("dashboard.load_error_body")}
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          leftIcon={<RotateCcw size={15} aria-hidden />}
+          onClick={() => {
+            setData("loading");
+            setReloadTick((tick) => tick + 1);
+          }}
+        >
+          {t("dashboard.load_retry")}
+        </Button>
+      </div>
+    );
+  }
   if (data === "loading") return <DashboardSkeleton />;
   if (data === null) return <Navigate to="/onboarding" replace />;
 
@@ -849,7 +889,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <>
+    <div className="animate-fade-in-up">
       {/* Surfaces when both partners signed up separately. Hidden unless
        *  there's a pending partner-invite addressed to this user's email;
        *  joining purges the user's solo workspace (typed-phrase confirm). */}
@@ -1195,7 +1235,9 @@ export default function DashboardPage() {
             label={t("dashboard.kpi_guests_label")}
             icon={<Users size={16} aria-hidden="true" />}
             tone="sage"
-            value={formatNumber(respondedCount, locale)}
+            value={
+              <AnimatedNumber value={respondedCount} format={(n) => formatNumber(n, locale)} />
+            }
             unit={
               guestDenominator > 0
                 ? t("dashboard.kpi_guests_unit", { total: formatNumber(guestDenominator, locale) })
@@ -1309,7 +1351,16 @@ export default function DashboardPage() {
               label={t("dashboard.kpi_total_spend_label")}
               icon={<Coins size={16} aria-hidden="true" />}
               tone="ink"
-              value={totalActual > 0 ? formatMoney(totalActual, currency, locale) : "-"}
+              value={
+                totalActual > 0 ? (
+                  <AnimatedNumber
+                    value={totalActual}
+                    format={(n) => formatMoney(n, currency, locale)}
+                  />
+                ) : (
+                  "-"
+                )
+              }
               unit={
                 totalActual > 0
                   ? t("dashboard.kpi_total_spend_unit")
@@ -1326,9 +1377,16 @@ export default function DashboardPage() {
               icon={<Coins size={16} aria-hidden="true" />}
               tone="ink"
               value={
-                roiPlanned !== null
-                  ? `${formatHufCompact(roiPlanned, locale)} ${currencySymbol(currency, locale)}`
-                  : "-"
+                roiPlanned !== null ? (
+                  <AnimatedNumber
+                    value={roiPlanned}
+                    format={(n) =>
+                      `${formatHufCompact(n, locale)} ${currencySymbol(currency, locale)}`
+                    }
+                  />
+                ) : (
+                  "-"
+                )
               }
               unit={t("dashboard.kpi_roi_unit_planned", {
                 n: formatNumber(effectivePlanningCount, locale),
@@ -1489,7 +1547,7 @@ export default function DashboardPage() {
         currency={currency}
         t={t}
       />
-    </>
+    </div>
   );
 }
 
@@ -1534,7 +1592,7 @@ function KpiTile({
   label: string;
   icon: ReactNode;
   tone: TileTone;
-  value: string;
+  value: ReactNode;
   unit: string;
   progress?: number | null;
   progressOver?: boolean;
@@ -1712,7 +1770,10 @@ function BudgetKpiTile({
         ) : (
           <>
             <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
-              {formatMoney(totalActual, currency, locale)}
+              <AnimatedNumber
+                value={totalActual}
+                format={(n) => formatMoney(n, currency, locale)}
+              />
             </div>
             <div className="mt-1.5 flex items-baseline gap-1 text-xs font-medium text-ink-400 dark:text-umber-400">
               {cap === null ? (
@@ -1902,7 +1963,11 @@ function DaysToGoTile({
             className="-my-1 block w-full rounded-lg py-1 text-left transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
           >
             <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
-              {days !== null ? formatNumber(days, locale) : "-"}
+              {days !== null ? (
+                <AnimatedNumber value={days} format={(n) => formatNumber(n, locale)} />
+              ) : (
+                "-"
+              )}
             </div>
             <div className="mt-1.5 text-xs font-medium text-ink-400 dark:text-umber-400">
               {days !== null && goal.exact_date
@@ -2267,12 +2332,12 @@ function DayOfPanel({
       <section className="mb-6 grid gap-3 sm:grid-cols-2">
         <DayOfStatTile
           label={t("dashboard.day_of_stats_yes")}
-          value={formatNumber(rsvpYes, locale)}
+          value={<AnimatedNumber value={rsvpYes} format={(n) => formatNumber(n, locale)} />}
           icon={<Users size={18} aria-hidden="true" />}
         />
         <DayOfStatTile
           label={t("dashboard.day_of_stats_checked_in")}
-          value={formatNumber(checkedInToday, locale)}
+          value={<AnimatedNumber value={checkedInToday} format={(n) => formatNumber(n, locale)} />}
           icon={<CalendarHeart size={18} aria-hidden="true" />}
         />
       </section>
@@ -2374,7 +2439,7 @@ function DayOfStatTile({
   icon,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   icon: ReactNode;
 }) {
   return (

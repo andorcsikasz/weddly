@@ -1880,6 +1880,9 @@ const hr: LocaleMessages = {
   dashboard: {
     title: "Pregled",
     wedding_in_days: "{days} dana do vjenčanja",
+    load_error_title: "Nismo mogli učitati pregled",
+    load_error_body: "Veza je prekinuta. Tvoji podaci su sigurni — pokušaj ponovno.",
+    load_retry: "Pokušaj ponovno",
     couple_label: "Par",
     greeting: {
       early: "Rano ste ustali, {name}",

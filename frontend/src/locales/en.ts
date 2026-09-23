@@ -1858,6 +1858,9 @@ const en: LocaleMessages = {
   dashboard: {
     title: "Dashboard",
     wedding_in_days: "{days} days until the wedding",
+    load_error_title: "We couldn't load your dashboard",
+    load_error_body: "Something interrupted the connection. Your data is safe — try again.",
+    load_retry: "Try again",
     couple_label: "Couple",
     greeting: {
       early: "You're up early, {name}",

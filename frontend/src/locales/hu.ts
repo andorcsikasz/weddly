@@ -1870,6 +1870,9 @@ const hu: LocaleMessages = {
   dashboard: {
     title: "Vezérlőpult",
     wedding_in_days: "{days} nap az esküvőig",
+    load_error_title: "Nem sikerült betölteni a vezérlőpultot",
+    load_error_body: "Megszakadt a kapcsolat. Az adataid biztonságban vannak — próbáld újra.",
+    load_retry: "Újrapróbálom",
     couple_label: "Páros",
     greeting: {
       early: "Korán keltetek, {name}!",

@@ -147,6 +147,7 @@ import {
 } from "../lib/supplier_saved";
 import { useAuth } from "../lib/auth";
 import { fireConfetti } from "../lib/confetti";
+import { communityReportId } from "../lib/supplier_report";
 import { useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { useDocumentMeta } from "../lib/seo";
@@ -2895,15 +2896,21 @@ export default function SuppliersPage() {
                             onToggle={() => toggleCompare(s.id)}
                             t={t}
                           />
-                          <ReportButton
-                            onReport={() =>
-                              setReporting({
-                                id: s.id.startsWith("c") ? Number(s.id.slice(1)) : 0,
-                                name: s.name,
-                              })
-                            }
-                            t={t}
-                          />
+                          {/* Community-report — only for user-submitted tips
+                          (`c{N}` rows). Curated slugs and claimed `v{N}`
+                          listings have no report queue on the server, so
+                          showing the button on them would 400 on a trust
+                          flow. */}
+                          {s.source === "community" && (
+                            <ReportButton
+                              onReport={() => {
+                                const id = communityReportId(s.id);
+                                if (id === null) return;
+                                setReporting({ id, name: s.name });
+                              }}
+                              t={t}
+                            />
+                          )}
                           <VoteRow supplier={s} onVote={onVote} t={t} />
                         </div>
                       </article>
@@ -2919,7 +2926,7 @@ export default function SuppliersPage() {
                           navigate(`/app/suppliers/${encodeURIComponent(s.id)}`);
                       }}
                       tabIndex={0}
-                      className={`card !p-0 relative flex h-full flex-col cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${
+                      className={`card group !p-0 relative flex h-full flex-col cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 ${
                         isPicked ? "border-2 border-sage-500 dark:border-sage-400/60" : ""
                       } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                     >
@@ -2999,9 +3006,18 @@ export default function SuppliersPage() {
                           </button>
                           <SaveToggle isSaved={isSaved} onToggle={() => toggleSaved(s.id)} t={t} />
                         </div>
-                        {/* Bottom-right: compare + community vote, also on the card */}
+                        {/* Bottom-right: compare + community vote, also on the
+                        card. The compare toggle only earns its place once the
+                        cursor is actually on the card — cleaner cards at rest
+                        — but it stays put once picked (so a chosen card still
+                        shows it's chosen) or once the vote pill is already
+                        occupying this corner (so the corner doesn't shift). */}
                         <div
-                          className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-xl bg-paper-50/95 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/90"
+                          className={`absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-xl bg-paper-50/95 px-1 py-1 backdrop-blur-sm transition-opacity dark:bg-umber-800/90 ${
+                            isCompared || s.reviews_count >= VOTE_MIN_REVIEWS
+                              ? ""
+                              : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                          }`}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <CompareToggle
@@ -3689,7 +3705,12 @@ function SaveToggle({
           : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
       }
     >
-      <Heart size={15} aria-hidden className={isSaved ? "fill-blush-500 text-blush-500" : ""} />
+      <span
+        key={isSaved ? "saved" : "unsaved"}
+        className={`flex items-center justify-center ${isSaved ? "animate-tick-pop" : ""}`}
+      >
+        <Heart size={15} aria-hidden className={isSaved ? "fill-blush-500 text-blush-500" : ""} />
+      </span>
     </button>
   );
 }
