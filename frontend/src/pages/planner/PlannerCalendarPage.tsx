@@ -1431,7 +1431,7 @@ export default function PlannerCalendarPage() {
               type="button"
               onClick={() => shift(-1)}
               aria-label={t("planner_calendar.nav_prev")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-umber-700 transition-colors hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
+              className="inline-flex h-tap w-tap items-center justify-center rounded-full text-umber-700 transition-colors hover:bg-paper-200 sm:h-9 sm:w-9 dark:text-paper-200 dark:hover:bg-umber-800"
             >
               <ChevronLeft size={18} />
             </button>
@@ -1439,7 +1439,7 @@ export default function PlannerCalendarPage() {
               type="button"
               onClick={() => shift(1)}
               aria-label={t("planner_calendar.nav_next")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-umber-700 transition-colors hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
+              className="inline-flex h-tap w-tap items-center justify-center rounded-full text-umber-700 transition-colors hover:bg-paper-200 sm:h-9 sm:w-9 dark:text-paper-200 dark:hover:bg-umber-800"
             >
               <ChevronRight size={18} />
             </button>

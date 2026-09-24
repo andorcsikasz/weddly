@@ -2807,14 +2807,14 @@ function HoneymoonTodoSection({
         aria-label={t("honeymoon.todo_add_placeholder")}
         disabled={submitting}
         maxLength={200}
-        className="input h-9 min-h-0 flex-1 py-1 text-sm"
+        className="input h-11 min-h-tap flex-1 py-1 text-sm sm:h-9 sm:min-h-0"
       />
       <button
         type="submit"
         disabled={!draft.trim() || submitting}
         aria-label={t("honeymoon.todo_add_aria")}
         title={t("honeymoon.todo_add_aria")}
-        className="btn-primary inline-flex h-9 w-9 items-center justify-center !p-0"
+        className="btn-primary inline-flex h-11 w-11 items-center justify-center !p-0 sm:h-9 sm:w-9"
       >
         <Plus size={16} aria-hidden="true" />
       </button>

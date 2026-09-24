@@ -223,22 +223,29 @@ export function VendorListingVideos({
                   >
                     <GripVertical size={14} />
                   </span>
-                  <div className="absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                  {/* Always shown on a phone (no hover there). Each button is a 44px
+                      transparent hit box with the small dot drawn inside it, so
+                      the tile stays readable while the target is thumb-sized. */}
+                  <div className="absolute right-0 top-0 flex opacity-100 transition-opacity focus-within:opacity-100 sm:right-1 sm:top-1 sm:gap-1 sm:opacity-0 sm:group-hover:opacity-100">
                     <button
                       type="button"
                       aria-label={t("vendor_home.videos_edit")}
                       onClick={() => startEdit(v)}
-                      className="rounded-full bg-ink-900/60 p-1 text-white hover:bg-ink-900/85 focus-visible:opacity-100"
+                      className="group/btn flex h-11 w-11 items-start justify-end rounded-full p-1 text-white sm:h-auto sm:w-auto sm:p-0"
                     >
-                      <Pencil size={13} aria-hidden />
+                      <span className="block rounded-full bg-ink-900/60 p-1 group-hover/btn:bg-ink-900/85">
+                        <Pencil size={13} aria-hidden />
+                      </span>
                     </button>
                     <button
                       type="button"
                       aria-label={t("vendor_home.videos_delete")}
                       onClick={() => void onRemove(v.id)}
-                      className="rounded-full bg-ink-900/60 p-1 text-white hover:bg-ink-900/85 focus-visible:opacity-100"
+                      className="group/btn flex h-11 w-11 items-start justify-end rounded-full p-1 text-white sm:h-auto sm:w-auto sm:p-0"
                     >
-                      <X size={13} aria-hidden />
+                      <span className="block rounded-full bg-ink-900/60 p-1 group-hover/btn:bg-ink-900/85">
+                        <X size={13} aria-hidden />
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -250,7 +257,7 @@ export function VendorListingVideos({
                     aria-label={t("vendor_home.videos_move_up")}
                     disabled={i === 0}
                     onClick={() => move(i, -1)}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded-md text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-700"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-500 sm:h-6 sm:w-6 transition hover:bg-paper-200 hover:text-ink-800 disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-700"
                   >
                     <ChevronUp size={15} aria-hidden />
                   </button>
@@ -259,7 +266,7 @@ export function VendorListingVideos({
                     aria-label={t("vendor_home.videos_move_down")}
                     disabled={i === items.length - 1}
                     onClick={() => move(i, 1)}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded-md text-ink-500 transition hover:bg-paper-200 hover:text-ink-800 disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-700"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-500 sm:h-6 sm:w-6 transition hover:bg-paper-200 hover:text-ink-800 disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-700"
                   >
                     <ChevronDown size={15} aria-hidden />
                   </button>

@@ -1187,7 +1187,7 @@ export default function AdminUsersPage() {
     const isPending = pendingId === u.id;
     const flag = u.active_flag;
     return (
-      <div className="flex shrink-0 items-center justify-end gap-1.5">
+      <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:shrink-0 sm:flex-nowrap [&>button]:min-h-tap [&>button]:min-w-tap sm:[&>button]:min-h-0 sm:[&>button]:min-w-0">
         {opts.remindCouple &&
           (opts.remindCouple.invite_partner_reminded_at != null ? (
             <button

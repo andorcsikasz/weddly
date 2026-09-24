@@ -611,13 +611,13 @@ export default function SchedulePage() {
                       </span>
                     </span>
                   </button>
-                  <div className="ml-auto flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+                  <div className="ml-auto flex shrink-0 items-center gap-0 sm:gap-1 sm:[@media(hover:hover)]:opacity-0 sm:[@media(hover:hover)]:group-focus-within:opacity-100 sm:[@media(hover:hover)]:group-hover:opacity-100">
                     <button
                       type="button"
                       aria-label={t("schedule.key_moment_toggle")}
                       title={t("schedule.key_moment_toggle")}
                       aria-pressed={event.is_key_moment}
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                      className={`inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-7 sm:w-7 transition-colors ${
                         event.is_key_moment
                           ? "text-blush-600 hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
                           : "text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
@@ -630,7 +630,7 @@ export default function SchedulePage() {
                       type="button"
                       aria-label={t("schedule.edit_event")}
                       title={t("schedule.edit_event")}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-7 sm:w-7 text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
                       onClick={() => setEditing({ event })}
                     >
                       <Pencil size={14} />
@@ -639,7 +639,7 @@ export default function SchedulePage() {
                       type="button"
                       aria-label={t("schedule.delete_event")}
                       title={t("schedule.delete_event")}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-7 sm:w-7 text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
                       onClick={() => void onDelete(event)}
                     >
                       <Trash2 size={14} />

@@ -111,7 +111,7 @@ export function DateField({
             type="button"
             onClick={() => onChange("")}
             aria-label={locale === "hu" ? "Dátum törlése" : "Clear date"}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-ink-400 transition-colors hover:bg-paper-100 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-ink-400 transition-colors before:absolute before:-inset-3 before:content-[''] hover:bg-paper-100 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
           >
             <X size={14} aria-hidden="true" />
           </button>

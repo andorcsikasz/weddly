@@ -636,7 +636,7 @@ export function WeddingChecklist({
                           <div
                             className={`group flex min-w-0 items-start gap-3 px-4 py-3 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025] ${isCollapsing ? "pointer-events-none" : ""}`}
                           >
-                            <label className="inline-flex shrink-0 cursor-pointer">
+                            <label className="relative inline-flex shrink-0 cursor-pointer before:absolute before:-inset-2.5 before:content-['']">
                               <input
                                 type="checkbox"
                                 checked={task.done}
@@ -718,7 +718,7 @@ export function WeddingChecklist({
                           onClick={() => addItem(template)}
                           disabled={addingIds.has(template.id)}
                           aria-label={t("planning.checklist.add_action")}
-                          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border-2 border-dashed border-ink-300 text-ink-400 transition-colors hover:border-ink-900 hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 dark:border-umber-500 dark:text-umber-300 dark:hover:border-paper-100 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+                          className="relative inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border-2 border-dashed before:absolute before:-inset-2.5 before:content-[''] border-ink-300 text-ink-400 transition-colors hover:border-ink-900 hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 dark:border-umber-500 dark:text-umber-300 dark:hover:border-paper-100 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
                         >
                           {addingIds.has(template.id) ? (
                             <Loader2 size={13} className="animate-spin" aria-hidden="true" />
@@ -772,7 +772,7 @@ export function WeddingChecklist({
                           key={template.id}
                           className="group flex items-center gap-2.5 px-4 py-2.5 transition-colors hover:bg-ink-900/[0.025] sm:px-5 dark:hover:bg-paper-50/[0.025]"
                         >
-                          <label className="inline-flex shrink-0 cursor-pointer">
+                          <label className="relative inline-flex shrink-0 cursor-pointer before:absolute before:-inset-3 before:content-['']">
                             <input
                               type="checkbox"
                               checked

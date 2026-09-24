@@ -547,7 +547,7 @@ export default function MoodboardPage() {
                   onClick={() => deleteImage(img.id)}
                   aria-label={t("moodboard.delete_image")}
                   title={t("moodboard.delete_image")}
-                  className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-ink-700 opacity-0 shadow-sm transition-opacity hover:bg-white hover:text-blush-700 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 group-hover:opacity-100 dark:bg-umber-900/90 dark:text-paper-100"
+                  className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-ink-700 shadow-sm transition-opacity before:absolute before:-inset-1.5 before:content-[''] hover:bg-white hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 sm:[@media(hover:hover)]:opacity-0 sm:[@media(hover:hover)]:focus:opacity-100 sm:[@media(hover:hover)]:group-hover:opacity-100 dark:bg-umber-900/90 dark:text-paper-100"
                 >
                   <Trash2 size={15} aria-hidden="true" />
                 </button>

@@ -3137,7 +3137,7 @@ function BudgetMobileCard({
                 expanded ? "budget.collapse_category_aria" : "budget.expand_category_aria",
                 { category: t(`budget.cat.${category}`) },
               )}
-              className="-ml-1 mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-ink-400 transition hover:bg-paper-100 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+              className="relative -ml-1 mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-ink-400 before:absolute before:-inset-2 before:content-[''] transition hover:bg-paper-100 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
             >
               <ChevronDown
                 size={14}
@@ -3157,7 +3157,7 @@ function BudgetMobileCard({
           {canDelete && (
             <button
               type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+              className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300 before:absolute before:-inset-1.5 before:content-['']"
               onClick={onDelete}
               aria-label={t("budget.delete")}
               title={t("budget.delete")}

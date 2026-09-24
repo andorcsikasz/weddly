@@ -324,17 +324,18 @@ function sortHouseholds(list: Household[], sort: SortKey): Household[] {
 
 // Collapsed icon-tool group (Sablon / CSV / Étkezés / Meghívók). Each segment
 // shows only its icon until hovered, when its label slides open (max-width +
-// opacity) and the native `title` tooltip appears. Literal class strings so
-// Tailwind's JIT picks them up.
+// opacity) and the native `title` tooltip appears. Below sm: each segment is
+// a 44px square (icon + aria-label), since there is no hover to reveal the
+// label on a phone. Literal class strings so Tailwind's JIT picks them up.
 const GUEST_TOOL_BTN =
-  "group flex items-center px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-700/5 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:hover:bg-paper-100/10";
+  "group flex min-h-tap min-w-tap items-center justify-center px-3 py-2 text-sm sm:min-h-0 sm:min-w-0 font-medium text-ink-700 transition-colors hover:bg-ink-700/5 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:hover:bg-paper-100/10";
 const GUEST_TOOL_LABEL =
   "max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-[14rem] group-hover:opacity-100";
 // Meal segment keeps a distinct warm caramel/espresso fill (coffee palette),
 // with its own hover shade so it doesn't collide with the default segment's
 // hover overlay.
 const GUEST_TOOL_BTN_MEAL =
-  "group flex items-center px-3 py-2 text-sm font-medium text-umber-900 transition-colors bg-umber-300 hover:bg-umber-400 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-50 dark:bg-umber-600 dark:hover:bg-umber-500";
+  "group flex min-h-tap min-w-tap items-center justify-center px-3 py-2 text-sm sm:min-h-0 sm:min-w-0 font-medium text-umber-900 transition-colors bg-umber-300 hover:bg-umber-400 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-50 dark:bg-umber-600 dark:hover:bg-umber-500";
 
 interface DrawerInit {
   guest: Guest | null;
@@ -3265,9 +3266,11 @@ function HouseholdCard({
               </p>
               {/* Action cluster — tight gap, pinned right, identical
                *  position for every guest. `shrink-0` + small icon-buttons
-               *  keep them on the same line as the name on phones; names
+               *  keep them on the same line as the name on phones (44px tall,
+               *  40px wide and flush below sm: the most three taps can take
+               *  from a 360px row and still leave the name readable); names
                *  that overrun get the ellipsis. */}
-              <div className="flex shrink-0 items-center gap-0.5">
+              <div className="flex shrink-0 items-center sm:gap-0.5">
                 <RsvpPicker
                   value={g.rsvp_status}
                   onChange={(v) => void onUpdateGuest(g, { rsvp_status: v })}
@@ -3275,7 +3278,7 @@ function HouseholdCard({
                 />
                 <button
                   type="button"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-500 hover:bg-paper-200 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+                  className="inline-flex h-11 w-10 items-center justify-center rounded-md text-ink-500 hover:bg-paper-200 hover:text-ink-900 sm:h-8 sm:w-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
                   onClick={() => onEditGuest(g)}
                   aria-label={t("guests.edit")}
                   title={t("guests.edit")}
@@ -3284,7 +3287,7 @@ function HouseholdCard({
                 </button>
                 <button
                   type="button"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-500 hover:bg-paper-200 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+                  className="inline-flex h-11 w-10 items-center justify-center rounded-md text-ink-500 hover:bg-paper-200 hover:text-ink-900 sm:h-8 sm:w-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
                   onClick={() => void onPrintPlaceCard(g)}
                   aria-label={t("guests.print_place_card")}
                   title={t("guests.print_place_card")}
@@ -3293,7 +3296,7 @@ function HouseholdCard({
                 </button>
                 <button
                   type="button"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-blush-700 hover:bg-blush-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 focus-visible:ring-offset-2 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                  className="inline-flex h-11 w-10 items-center justify-center rounded-md text-blush-700 hover:bg-blush-50 sm:h-8 sm:w-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 focus-visible:ring-offset-2 dark:text-blush-300 dark:hover:bg-blush-400/15"
                   onClick={() => onDeleteGuest(g.id)}
                   aria-label={t("guests.delete")}
                   title={t("guests.delete")}
@@ -3576,7 +3579,7 @@ function InviteChip({ guest, onToggle }: { guest: Guest; onToggle: () => void })
         title={`${label}: ${nextHint}`}
         aria-label={`${label}. ${nextHint}`}
         aria-pressed={invited}
-        className={`relative inline-flex h-6 w-6 shrink-0 flex-col items-center justify-center rounded-full border transition-colors before:absolute before:-inset-1.5 before:rounded-full before:content-[''] focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${
+        className={`relative inline-flex h-6 w-6 shrink-0 flex-col items-center justify-center rounded-full border transition-colors before:absolute before:-inset-2.5 before:rounded-full before:content-[''] focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-1 ${
           invited
             ? "border-sage-300 bg-sage-100 text-sage-700 hover:bg-sage-200 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300"
             : "border-paper-300 bg-paper-50 hover:border-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
@@ -4297,6 +4300,11 @@ function GuestDrawer({
                   />
                 ))}
               </div>
+              {/* The cells are icon-only and their name is a hover tooltip,
+                  which a touch screen never shows, so name the pick here. */}
+              <p className="mt-1.5 text-xs text-ink-500 dark:text-umber-300 [@media(hover:hover)]:hidden">
+                {t(`guests.group_${form.group_tag ?? "other"}`)}
+              </p>
             </div>
           )}
 
@@ -4836,7 +4844,7 @@ function SegmentButton({
   tone?: SegmentTone;
 }) {
   const pad = iconOnly
-    ? "px-2 py-2"
+    ? "min-h-tap px-2 py-2 sm:min-h-0"
     : small
       ? "px-1.5 py-1 text-[11px]"
       : compact

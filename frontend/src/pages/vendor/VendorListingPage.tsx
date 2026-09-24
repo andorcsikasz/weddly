@@ -2002,9 +2002,13 @@ function GalleryTile({
         aria-label={t("vendor_home.gallery_delete")}
         onClick={onDelete}
         disabled={busy}
-        className="absolute right-1 top-1 rounded-full bg-ink-900/60 p-1 text-white opacity-0 transition-opacity hover:bg-ink-900/85 focus-visible:opacity-100 group-hover:opacity-100"
+        className="group/del absolute right-0 top-0 flex h-11 w-11 items-start justify-end rounded-full p-1 text-white opacity-100 transition-opacity focus-visible:opacity-100 sm:right-1 sm:top-1 sm:h-auto sm:w-auto sm:p-0 sm:opacity-0 sm:group-hover:opacity-100"
       >
-        <X size={14} aria-hidden="true" />
+        {/* 44px transparent hit box on a phone, the small dot drawn inside it;
+            always visible there because touch has no hover. */}
+        <span className="block rounded-full bg-ink-900/60 p-1 group-hover/del:bg-ink-900/85">
+          <X size={14} aria-hidden="true" />
+        </span>
       </button>
     </div>
   );

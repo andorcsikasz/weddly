@@ -173,7 +173,7 @@ export function Combobox({
                 setOpen(false);
               }}
               aria-label={ariaLabel}
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+              className="relative inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-400 transition before:absolute before:-inset-y-3 before:-left-2 before:-right-4 before:content-[''] hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
             >
               <X size={13} aria-hidden />
             </button>

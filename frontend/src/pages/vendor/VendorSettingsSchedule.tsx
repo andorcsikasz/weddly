@@ -139,7 +139,7 @@ function IntervalRow({
   return (
     <div className="flex items-center gap-2">
       <select
-        className="input h-9 w-[5.75rem] py-0 text-sm"
+        className="input h-11 min-w-0 flex-1 py-0 text-sm sm:h-9 sm:w-[5.75rem] sm:flex-none"
         aria-label={t("vendor.schedule.from")}
         disabled={disabled}
         value={interval.start_min}
@@ -164,7 +164,7 @@ function IntervalRow({
         -
       </span>
       <select
-        className="input h-9 w-[5.75rem] py-0 text-sm"
+        className="input h-11 min-w-0 flex-1 py-0 text-sm sm:h-9 sm:w-[5.75rem] sm:flex-none"
         aria-label={t("vendor.schedule.to")}
         disabled={disabled}
         value={interval.end_min}
@@ -182,7 +182,7 @@ function IntervalRow({
         disabled={disabled}
         aria-label={t("vendor.schedule.remove_interval")}
         title={t("vendor.schedule.remove_interval")}
-        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-100 hover:text-ink-700 disabled:opacity-40 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-paper-100"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-400 sm:h-8 sm:w-8 transition-colors hover:bg-paper-100 hover:text-ink-700 disabled:opacity-40 dark:text-umber-400 dark:hover:bg-umber-800 dark:hover:text-paper-100"
       >
         <X size={15} aria-hidden="true" />
       </button>
@@ -225,7 +225,7 @@ function CopyMenu({
   return (
     <div
       ref={ref}
-      className="absolute right-0 top-9 z-20 w-52 rounded-xl border border-paper-200 bg-white p-2 shadow-lg dark:border-umber-700 dark:bg-umber-900"
+      className="absolute right-0 top-12 z-20 sm:top-9 w-52 rounded-xl border border-paper-200 bg-white p-2 shadow-lg dark:border-umber-700 dark:bg-umber-900"
     >
       <p className="px-2 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wider text-umber-400">
         {t("vendor.schedule.copy_title")}
@@ -289,14 +289,14 @@ function DayRow({
   const working = intervals.length > 0;
 
   return (
-    <div className="flex items-start gap-3 border-b border-paper-100 py-3 last:border-b-0 dark:border-umber-800">
+    <div className="flex flex-wrap items-start gap-3 border-b sm:flex-nowrap border-paper-100 py-3 last:border-b-0 dark:border-umber-800">
       <button
         type="button"
         onClick={onToggle}
         disabled={disabled}
         aria-pressed={working}
         title={working ? t("vendor.schedule.day_off_action") : t("vendor.schedule.day_on_action")}
-        className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold uppercase tracking-wide transition-colors disabled:opacity-50 ${
+        className={`mt-0.5 inline-flex h-11 w-11 shrink-0 sm:h-10 sm:w-10 items-center justify-center rounded-full border text-[11px] font-semibold uppercase tracking-wide transition-colors disabled:opacity-50 ${
           working
             ? "border-blush-500 bg-blush-500 text-white hover:bg-blush-600"
             : "border-paper-300 text-ink-400 hover:border-ink-400 hover:text-ink-600 dark:border-umber-700 dark:text-umber-400 dark:hover:text-paper-200"
@@ -305,7 +305,13 @@ function DayRow({
         {label}
       </button>
 
-      <div className="min-w-0 flex-1 space-y-2 pt-0.5">
+      {/* On a phone a working day's from-to rows take a line of their own
+          under the toggle + glyphs; side by side they overflow 360px. */}
+      <div
+        className={`min-w-0 space-y-2 pt-0.5 ${
+          working ? "order-last w-full sm:order-none sm:w-auto sm:flex-1" : "flex-1"
+        }`}
+      >
         {working ? (
           intervals.map((iv, i) => (
             <IntervalRow
@@ -326,7 +332,7 @@ function DayRow({
             disabled={disabled}
             aria-label={t("vendor.schedule.add_day", { day: label })}
             title={t("vendor.schedule.add_day", { day: label })}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-paper-300 text-ink-400 transition-colors hover:border-ink-400 hover:text-ink-700 disabled:opacity-40 dark:border-umber-700 dark:text-umber-400 dark:hover:text-paper-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-dashed sm:h-9 sm:w-9 border-paper-300 text-ink-400 transition-colors hover:border-ink-400 hover:text-ink-700 disabled:opacity-40 dark:border-umber-700 dark:text-umber-400 dark:hover:text-paper-100"
           >
             <Plus size={16} aria-hidden="true" />
           </button>
@@ -334,14 +340,14 @@ function DayRow({
       </div>
 
       {working && (
-        <div className="relative flex shrink-0 items-center gap-1 pt-0.5">
+        <div className="relative ml-auto flex shrink-0 items-center gap-1 pt-0.5 sm:ml-0">
           <button
             type="button"
             disabled={disabled || intervals.length >= MAX_INTERVALS_PER_DAY}
             onClick={() => onChange([...intervals, nextInterval(intervals)])}
             aria-label={t("vendor.schedule.add_interval")}
             title={t("vendor.schedule.add_interval")}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-800 disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-500 sm:h-8 sm:w-8 transition-colors hover:bg-paper-100 hover:text-ink-800 disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-100"
           >
             <Plus size={16} aria-hidden="true" />
           </button>
@@ -352,7 +358,7 @@ function DayRow({
             aria-label={t("vendor.schedule.copy_to")}
             title={t("vendor.schedule.copy_to")}
             aria-expanded={copyOpen}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-800 disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-500 sm:h-8 sm:w-8 transition-colors hover:bg-paper-100 hover:text-ink-800 disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-100"
           >
             <Copy size={15} aria-hidden="true" />
           </button>

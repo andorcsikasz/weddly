@@ -187,7 +187,7 @@ export function VendorClientDrawer({
               {!passive && anchor && (
                 <Link
                   to={`${detailHref}#${anchor}`}
-                  className="btn btn-sm mt-1 self-start bg-blush-500 text-white hover:bg-blush-600"
+                  className="btn btn-sm mt-1 min-h-tap self-start bg-blush-500 text-white hover:bg-blush-600 sm:min-h-0"
                 >
                   {actionLabel(client.next_action)}
                   <ArrowRight size={15} aria-hidden="true" className="ml-1.5" />

@@ -161,7 +161,7 @@ export function NextActionBar({ client }: { client: VendorClientView }) {
         <button
           type="button"
           onClick={() => scrollToActionTarget(anchor)}
-          className="btn btn-sm shrink-0 self-start bg-blush-500 text-white hover:bg-blush-600 sm:self-auto"
+          className="btn btn-sm min-h-tap shrink-0 self-start bg-blush-500 text-white hover:bg-blush-600 sm:min-h-0 sm:self-auto"
         >
           {ctaLabel}
           <ArrowRight size={15} aria-hidden="true" className="ml-1.5" />
@@ -225,7 +225,7 @@ export function AttentionBand({
               </div>
               <Link
                 to={href}
-                className="btn btn-sm shrink-0 bg-blush-500 text-white hover:bg-blush-600"
+                className="btn btn-sm min-h-tap shrink-0 bg-blush-500 text-white hover:bg-blush-600 sm:min-h-0"
               >
                 {label(c.next_action)}
               </Link>
@@ -234,7 +234,7 @@ export function AttentionBand({
                 onClick={() => onSnooze(c)}
                 aria-label={t("vendor.attention.snooze")}
                 title={t("vendor.attention.snooze")}
-                className="shrink-0 rounded-lg p-2 text-ink-500 transition-colors hover:bg-amber-100 hover:text-ink-800 dark:text-paper-400 dark:hover:bg-amber-500/20 dark:hover:text-paper-100"
+                className="inline-flex min-h-tap min-w-tap shrink-0 items-center justify-center rounded-lg p-2 text-ink-500 sm:min-h-0 sm:min-w-0 transition-colors hover:bg-amber-100 hover:text-ink-800 dark:text-paper-400 dark:hover:bg-amber-500/20 dark:hover:text-paper-100"
               >
                 <BellOff size={16} strokeWidth={1.5} aria-hidden="true" />
               </button>

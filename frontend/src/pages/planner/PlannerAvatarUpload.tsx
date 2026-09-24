@@ -76,7 +76,7 @@ export function PlannerAvatarUpload({
         disabled={busy}
         aria-label={t("planner_profile.avatar_change")}
         title={t("planner_profile.avatar_change")}
-        className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-paper-50 bg-moss-600 text-paper-50 shadow-sm transition-colors hover:bg-moss-700 disabled:opacity-60 dark:border-umber-950"
+        className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 before:absolute before:-inset-2 before:content-[''] items-center justify-center rounded-full border-2 border-paper-50 bg-moss-600 text-paper-50 shadow-sm transition-colors hover:bg-moss-700 disabled:opacity-60 dark:border-umber-950"
       >
         <Camera size={13} aria-hidden="true" />
       </button>
@@ -87,7 +87,7 @@ export function PlannerAvatarUpload({
           onClick={() => void handleRemove()}
           aria-label={t("planner_profile.avatar_remove")}
           title={t("planner_profile.avatar_remove")}
-          className="absolute -right-1 -top-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-umber-600 shadow-sm transition-colors hover:bg-paper-200 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200"
+          className="absolute -right-1 -top-1 inline-flex h-5 w-5 before:absolute before:-inset-3 before:content-[''] items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-umber-600 shadow-sm transition-colors hover:bg-paper-200 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200"
         >
           <X size={11} aria-hidden="true" />
         </button>

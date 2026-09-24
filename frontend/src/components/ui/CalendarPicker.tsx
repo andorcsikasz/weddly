@@ -85,7 +85,7 @@ export function CalendarPicker({
           type="button"
           onClick={prevMonth}
           aria-label={locale === "hu" ? "Előző hónap" : "Previous month"}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-700"
+          className="relative inline-flex h-7 w-7 items-center justify-center rounded-lg text-ink-500 transition-colors before:absolute before:-inset-2 before:content-[''] hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-700"
         >
           <ChevronLeft size={15} aria-hidden />
         </button>
@@ -96,7 +96,7 @@ export function CalendarPicker({
           type="button"
           onClick={nextMonth}
           aria-label={locale === "hu" ? "Következő hónap" : "Next month"}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-700"
+          className="relative inline-flex h-7 w-7 items-center justify-center rounded-lg text-ink-500 transition-colors before:absolute before:-inset-2 before:content-[''] hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-700"
         >
           <ChevronRight size={15} aria-hidden />
         </button>

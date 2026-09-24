@@ -1900,7 +1900,7 @@ export default function SuppliersPage() {
             <div
               role="group"
               aria-label={t("suppliers.view_label")}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-paper-300 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800 sm:hidden"
+              className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-paper-300 bg-paper-50 p-0.5 dark:border-umber-700 dark:bg-umber-800 sm:hidden"
             >
               {VIEW_MODES.map(({ mode, icon: VIcon, label }) => (
                 <button
@@ -1912,8 +1912,8 @@ export default function SuppliersPage() {
                   title={t(`suppliers.${label}`)}
                   className={
                     viewMode === mode
-                      ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                      : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+                      ? "inline-flex h-11 w-11 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                      : "inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
                   }
                 >
                   <VIcon size={14} aria-hidden />
@@ -1925,7 +1925,7 @@ export default function SuppliersPage() {
               onClick={() => setSubmitOpen(true)}
               aria-label={t("suppliers.drop_your_own")}
               title={t("suppliers.drop_your_own")}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-paper-300 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200 sm:hidden"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200 sm:hidden"
             >
               <Plus size={15} aria-hidden />
             </button>
@@ -1935,8 +1935,8 @@ export default function SuppliersPage() {
               aria-haspopup="dialog"
               className={
                 scopeFilterCount > 0
-                  ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                  : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm font-medium text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
+                  ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                  : "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm font-medium text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
               }
             >
               <SlidersHorizontal size={14} aria-hidden />
@@ -1955,8 +1955,8 @@ export default function SuppliersPage() {
                 title={t("suppliers.saved_filter", { n: saved.size })}
                 className={
                   showSavedOnly
-                    ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                    : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
+                    ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
                 }
               >
                 <Heart size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
@@ -1982,8 +1982,8 @@ export default function SuppliersPage() {
                 )}
                 className={
                   showPickedOnly
-                    ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                    : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
+                    ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
                 }
               >
                 <BookmarkCheck size={14} aria-hidden />
@@ -2001,8 +2001,8 @@ export default function SuppliersPage() {
               // umber alike, so there is no dark-mode flip here.
               className={
                 showVerifiedOnly
-                  ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-verified bg-verified px-3.5 text-sm font-medium text-white"
-                  : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
+                  ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-verified bg-verified px-3.5 text-sm font-medium text-white"
+                  : "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
               }
             >
               <BadgeCheck
@@ -2016,7 +2016,7 @@ export default function SuppliersPage() {
                 phone; only the box around it is ours. */}
             <div className="relative shrink-0">
               <select
-                className="h-9 appearance-none rounded-full border border-paper-300 bg-transparent pl-3.5 pr-8 text-sm text-ink-800 transition hover:border-ink-900 focus:border-ink-900 focus:outline-none dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
+                className="h-11 appearance-none sm:h-9 rounded-full border border-paper-300 bg-transparent pl-3.5 pr-8 text-sm text-ink-800 transition hover:border-ink-900 focus:border-ink-900 focus:outline-none dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
                 value={sortMode}
                 onChange={(e) =>
                   setSortMode(e.target.value as "top" | "alpha" | "price_asc" | "price_desc")
@@ -2670,7 +2670,7 @@ export default function SuppliersPage() {
                               type="button"
                               onClick={openEdit}
                               aria-label={t("suppliers.diy_action_edit_aria")}
-                              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-6 sm:w-6 text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
                             >
                               <Pencil size={13} aria-hidden />
                             </button>
@@ -2878,8 +2878,8 @@ export default function SuppliersPage() {
                             title={t("suppliers.pick_aria")}
                             className={
                               isPicked
-                                ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                                : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                                ? "inline-flex h-11 w-11 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                                : "inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
                             }
                           >
                             {isPicked ? (
@@ -2975,7 +2975,7 @@ export default function SuppliersPage() {
                                 }}
                                 aria-label={t("suppliers.diy_action_edit_aria")}
                                 title={t("suppliers.diy_modal_edit")}
-                                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-6 sm:w-6 text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
                               >
                                 <Pencil size={13} aria-hidden />
                               </button>
@@ -2994,8 +2994,8 @@ export default function SuppliersPage() {
                             title={t("suppliers.pick_aria")}
                             className={
                               isPicked
-                                ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                                : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                                ? "inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-6 sm:w-6 text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                                : "inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-6 sm:w-6 text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
                             }
                           >
                             {isPicked ? (
@@ -3016,7 +3016,7 @@ export default function SuppliersPage() {
                           className={`absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-xl bg-paper-50/95 px-1 py-1 backdrop-blur-sm transition-opacity dark:bg-umber-800/90 ${
                             isCompared || s.reviews_count >= VOTE_MIN_REVIEWS
                               ? ""
-                              : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                              : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                           }`}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -3664,10 +3664,10 @@ function CompareToggle({
       data-supplier-id={supplierId}
       className={
         isCompared
-          ? "inline-flex h-7 w-7 items-center justify-center rounded-full border border-ink-900 text-ink-900 transition hover:bg-ink-900/5 dark:border-paper-200 dark:text-paper-100 dark:hover:bg-paper-100/10"
+          ? "inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded-full border border-ink-900 text-ink-900 transition hover:bg-ink-900/5 dark:border-paper-200 dark:text-paper-100 dark:hover:bg-paper-100/10"
           : disabled
-            ? "inline-flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full text-ink-300 dark:text-umber-500"
-            : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
+            ? "inline-flex h-11 w-11 sm:h-7 sm:w-7 cursor-not-allowed items-center justify-center rounded-full text-ink-300 dark:text-umber-500"
+            : "inline-flex h-11 w-11 sm:h-7 sm:w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
       }
     >
       <Scale size={14} aria-hidden />
@@ -3701,8 +3701,8 @@ function SaveToggle({
       title={label}
       className={
         isSaved
-          ? "inline-flex h-9 w-9 items-center justify-center rounded-full text-blush-700 transition hover:bg-blush-50 sm:h-7 sm:w-7 dark:text-blush-300 dark:hover:bg-blush-400/15"
-          : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
+          ? "inline-flex h-11 w-11 items-center justify-center rounded-full text-blush-700 transition hover:bg-blush-50 sm:h-7 sm:w-7 dark:text-blush-300 dark:hover:bg-blush-400/15"
+          : "inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
       }
     >
       <span
@@ -3745,7 +3745,7 @@ function ReportButton({ onReport, t }: { onReport: () => void; t: (key: string) 
       onClick={onReport}
       aria-label={label}
       title={label}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
     >
       <Flag size={14} aria-hidden />
     </button>
@@ -3873,8 +3873,8 @@ export function VoteRow({
         aria-label={t("suppliers.vote_up_aria")}
         className={
           my === 1
-            ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-vote-up"
-            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-vote-up dark:text-umber-200 dark:hover:bg-umber-700"
+            ? "inline-flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center rounded-full text-vote-up"
+            : "inline-flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-vote-up dark:text-umber-200 dark:hover:bg-umber-700"
         }
       >
         <ArrowBigUp size={16} aria-hidden className={my === 1 ? "fill-current" : undefined} />
@@ -3897,8 +3897,8 @@ export function VoteRow({
         aria-label={t("suppliers.vote_down_aria")}
         className={
           my === -1
-            ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-vote-down"
-            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-vote-down dark:text-umber-200 dark:hover:bg-umber-700"
+            ? "inline-flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center rounded-full text-vote-down"
+            : "inline-flex h-11 w-11 sm:h-6 sm:w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-vote-down dark:text-umber-200 dark:hover:bg-umber-700"
         }
       >
         <ArrowBigDown size={16} aria-hidden className={my === -1 ? "fill-current" : undefined} />

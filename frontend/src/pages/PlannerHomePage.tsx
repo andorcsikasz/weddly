@@ -1016,7 +1016,7 @@ export default function PlannerHomePage() {
               {invites.map((inv) => (
                 <div
                   key={inv.couple_id}
-                  className="card group flex items-center justify-between gap-4 px-5 py-4"
+                  className="card group flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span
@@ -1040,7 +1040,7 @@ export default function PlannerHomePage() {
                     <button
                       type="button"
                       onClick={() => void handleAcceptInvite(inv.couple_id)}
-                      className="btn-moss btn-sm flex items-center gap-1.5"
+                      className="btn-moss btn-sm flex min-h-tap items-center gap-1.5 sm:min-h-0"
                       title={t("planner_home.invite_accept")}
                     >
                       <Check size={14} aria-hidden="true" />
@@ -1049,7 +1049,7 @@ export default function PlannerHomePage() {
                     <button
                       type="button"
                       onClick={() => void handleDeclineInvite(inv)}
-                      className="btn-outline btn-sm flex items-center gap-1.5"
+                      className="btn-outline btn-sm flex min-h-tap items-center gap-1.5 sm:min-h-0"
                       title={t("planner_home.invite_decline")}
                     >
                       <X size={14} aria-hidden="true" />

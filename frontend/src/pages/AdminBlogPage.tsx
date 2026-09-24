@@ -90,8 +90,8 @@ function BlogList({ onEdit, onNew }: { onEdit: (id: number) => void; onNew: () =
           description={t("admin_blog.empty_body")}
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-paper-300 dark:border-umber-700">
+          <table className="w-full min-w-[40rem] text-sm">
             <thead className="bg-paper-100 text-left text-xs uppercase tracking-wider text-neutral-500 dark:bg-umber-800 dark:text-umber-300">
               <tr>
                 <th className="px-4 py-3 font-semibold">{t("admin_blog.col_title")}</th>
