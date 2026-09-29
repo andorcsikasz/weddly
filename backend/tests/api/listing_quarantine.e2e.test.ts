@@ -414,6 +414,29 @@ describe("quarantine — the vendor's private review + gated publish", () => {
     expect(toggleOn.status).toBe(200);
   });
 
+  test("owning the listing is not enough: publish also needs a VERIFIED claim row", async () => {
+    // bun:sqlite's `.get()` answers null on a miss, and the claim check used
+    // to compare against undefined, so it passed for every listing.
+    wipeAll();
+    const { id, contactEmail } = pickClaimableCuratedListing();
+    stompWebsiteToDisputedHost(id);
+    await quarantineOne(id);
+    const vendorToken = await claimListing(id, contactEmail);
+    expect((await uploadHero(vendorToken)).status).toBe(200);
+
+    db.prepare("UPDATE listing_claims SET status = 'pending' WHERE listing_id = ?").run(id);
+
+    const blocked = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/vendor/listing/me/quarantine/publish",
+      {},
+      { token: vendorToken },
+    );
+    expect(blocked.status).toBe(409);
+    expect(blocked.data.detail?.code).toBe("not_claimed");
+    expect(getListingById(id)?.vendor_published_at).toBeNull();
+  });
+
   test("the preview image is only reachable by the owning vendor, not anonymously or by another vendor", async () => {
     wipeAll();
     const { id, contactEmail } = pickClaimableCuratedListing();

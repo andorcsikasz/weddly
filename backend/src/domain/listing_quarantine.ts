@@ -262,7 +262,7 @@ function hasVerifiedClaim(listingId: string): boolean {
         LIMIT 1`,
     )
     .get(listingId);
-  return row !== undefined;
+  return row != null;
 }
 
 /** Server-side gate for the vendor's "publish" action on a quarantined

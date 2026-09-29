@@ -51,8 +51,8 @@ interface OutreachHealth {
 function tableExists(name: string): boolean {
   const row = db
     .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?")
-    .get(name) as { name: string } | undefined;
-  return row !== undefined;
+    .get(name) as { name: string } | null;
+  return row !== null;
 }
 
 function handleHealth(): Response {
