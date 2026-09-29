@@ -5600,6 +5600,8 @@ export interface LocaleMessages {
     table_columns: string;
     table_columns_hint: string;
     table_columns_reset: string;
+    table_pin_name: string;
+    table_unpin_name: string;
     table_col_invited_auto_hidden: string;
     table_col_actions: string;
     table_meal_unset: string;

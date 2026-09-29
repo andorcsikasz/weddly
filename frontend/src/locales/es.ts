@@ -4943,6 +4943,8 @@ const es: LocaleMessages = {
     table_columns_hint:
       "Arrastra un encabezado para mover una columna y desmárcala para ocultarla.",
     table_columns_reset: "Restablecer",
+    table_pin_name: "Fijar la columna de nombre",
+    table_unpin_name: "Dejar que la columna de nombre se desplace",
     table_col_invited_auto_hidden: "Oculta mientras todos estén invitados",
     table_col_actions: "Acciones",
     table_meal_unset: "Sin definir",

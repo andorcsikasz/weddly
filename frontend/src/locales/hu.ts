@@ -4892,6 +4892,8 @@ const hu: LocaleMessages = {
     table_columns_hint:
       "Az oszlopfejlécet húzva áthelyezheted, a pipát kivéve elrejtheted az oszlopot.",
     table_columns_reset: "Alapértelmezett",
+    table_pin_name: "Név oszlop rögzítése",
+    table_unpin_name: "Név oszlop görgethető",
     table_col_invited_auto_hidden: "Rejtve, amíg mindenki meg van hívva",
     table_col_actions: "Műveletek",
     table_meal_unset: "Nincs megadva",

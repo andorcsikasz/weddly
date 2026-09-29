@@ -767,6 +767,8 @@ describe("<GuestsPage>", () => {
         JSON.stringify({
           order: ["group", "name", "invited", "household", "rsvp", "email", "dietary"],
           hidden: ["email", "name"],
+          // Unpinned, or the pinned Name column would lead whatever the order.
+          pinName: false,
         }),
       );
       const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10] });
@@ -790,6 +792,37 @@ describe("<GuestsPage>", () => {
         "Meal",
       ]);
       expect(heads).not.toContain("Email");
+    });
+
+    it("pins Name first and sticky by default, and the header pin releases it", async () => {
+      localStorage.setItem(
+        "weddly.guests.table_columns",
+        JSON.stringify({ order: ["group", "name", "invited"], hidden: [] }),
+      );
+      const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10] });
+      installDefaultEndpoints({
+        households: [hh],
+        guests: [makeGuest({ id: 10, full_name: "Alice", household_id: 1 })],
+      });
+      renderAt("/app/guests?view=table");
+      await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
+      // A layout saved before pinning existed reads as pinned.
+      expect(headerTexts()[0]).toBe("Name");
+      const nameCell = () => screen.getByDisplayValue("Alice").closest("td") as HTMLElement;
+      expect(nameCell().className).toContain("sticky");
+
+      fireEvent.click(screen.getByRole("button", { name: /let the name column scroll/i }));
+      await flush(1);
+      expect(headerTexts().slice(0, 2)).toEqual(["Group", "Certainty"]);
+      expect(nameCell().className).not.toContain("sticky");
+      expect(JSON.parse(localStorage.getItem("weddly.guests.table_columns") ?? "{}").pinName).toBe(
+        false,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /pin the name column/i }));
+      await flush(1);
+      expect(headerTexts()[0]).toBe("Name");
+      expect(nameCell().className).toContain("sticky");
     });
 
     it("a certainty change repaints the whole household at once", async () => {

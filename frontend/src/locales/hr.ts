@@ -4887,6 +4887,8 @@ const hr: LocaleMessages = {
     table_columns: "Stupci",
     table_columns_hint: "Povucite zaglavlje da premjestite stupac, odznačite ga da ga sakrijete.",
     table_columns_reset: "Vrati zadano",
+    table_pin_name: "Zaključaj stupac s imenom",
+    table_unpin_name: "Neka se stupac s imenom pomiče",
     table_col_invited_auto_hidden: "Skriveno dok su svi pozvani",
     table_col_actions: "Radnje",
     table_meal_unset: "Nije postavljeno",

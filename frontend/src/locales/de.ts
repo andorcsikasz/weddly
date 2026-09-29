@@ -4991,6 +4991,8 @@ const de: LocaleMessages = {
     table_columns_hint:
       "Zieht eine Überschrift, um die Spalte zu verschieben, oder entfernt den Haken, um sie auszublenden.",
     table_columns_reset: "Standard wiederherstellen",
+    table_pin_name: "Namensspalte fixieren",
+    table_unpin_name: "Namensspalte mitscrollen lassen",
     table_col_invited_auto_hidden: "Ausgeblendet, solange alle eingeladen sind",
     table_col_actions: "Aktionen",
     table_meal_unset: "Nicht gesetzt",

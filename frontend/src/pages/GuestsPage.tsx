@@ -67,6 +67,8 @@ import {
   MoreHorizontal,
   Nut,
   Pencil,
+  Pin,
+  PinOff,
   Plus,
   Printer,
   RotateCcw,
@@ -1876,7 +1878,21 @@ const CELL = "border border-paper-200 px-2.5 py-1.5 align-middle dark:border-umb
  *  every other header is centred (a `text-center` in the same class would
  *  race whichever Tailwind emits last), so the caller adds `text-left` /
  *  `text-center` to the specific <th>. */
-const CELL_HEAD = `${CELL} bg-paper-100/80 text-[11px] font-semibold uppercase tracking-widest text-ink-400 dark:bg-umber-800/70 dark:text-umber-500`;
+const CELL_HEAD_TEXT = `${CELL} text-[11px] font-semibold uppercase tracking-widest text-ink-400 dark:text-umber-500`;
+const CELL_HEAD = `${CELL_HEAD_TEXT} bg-paper-100/80 dark:bg-umber-800/70`;
+
+/** The pinned Name column. A sticky cell must be OPAQUE or the columns
+ *  scrolling underneath show through, so the translucent header / zebra /
+ *  hover tints are layered as a flat gradient over a solid card-white base
+ *  (same colour as the transparent version, just composited). In dark mode
+ *  every tint is umber-800 over umber-800, so the solid base alone matches.
+ *  Collapsed borders don't travel with a sticky cell, hence the 1px shadow as
+ *  the right-hand grid line. */
+const STICKY_NAME =
+  "sticky left-0 bg-white shadow-[1px_0_0_0_theme(colors.paper.200)] dark:bg-umber-800 dark:bg-none dark:shadow-[1px_0_0_0_theme(colors.umber.700)]";
+const STICKY_NAME_HEAD = `${CELL_HEAD_TEXT} ${STICKY_NAME} z-20 bg-gradient-to-r from-paper-100/80 to-paper-100/80`;
+const STICKY_NAME_BODY = `${STICKY_NAME} z-10 bg-gradient-to-r group-hover/row:from-paper-100/60 group-hover/row:to-paper-100/60`;
+const STICKY_NAME_ZEBRA = "from-paper-100/40 to-paper-100/40";
 
 /** Shared look for every inline editor living inside a cell (text input or
  *  <select>): flat and borderless at rest, and a real ring around the whole
@@ -2317,8 +2333,15 @@ const GUEST_TABLE_COLS_KEY = "weddly.guests.table_columns";
 interface GuestTableColPrefs {
   order: GuestTableCol[];
   hidden: GuestTableCol[];
+  /** Name stays put (first, sticky) while the grid scrolls sideways. On by
+   *  default; the pin in the Name header lets it scroll with the rest. */
+  pinName: boolean;
 }
-const DEFAULT_COL_PREFS: GuestTableColPrefs = { order: GUEST_TABLE_COLS, hidden: [] };
+const DEFAULT_COL_PREFS: GuestTableColPrefs = {
+  order: GUEST_TABLE_COLS,
+  hidden: [],
+  pinName: true,
+};
 
 function isGuestTableCol(v: unknown): v is GuestTableCol {
   return typeof v === "string" && (GUEST_TABLE_COLS as string[]).includes(v);
@@ -2329,7 +2352,7 @@ function isGuestTableCol(v: unknown): v is GuestTableCol {
  *  default left-hand neighbour instead of silently never appearing. */
 function normalizeColPrefs(raw: unknown): GuestTableColPrefs {
   if (!raw || typeof raw !== "object") return DEFAULT_COL_PREFS;
-  const r = raw as { order?: unknown; hidden?: unknown };
+  const r = raw as { order?: unknown; hidden?: unknown; pinName?: unknown };
   const order = Array.isArray(r.order) ? [...new Set(r.order.filter(isGuestTableCol))] : [];
   GUEST_TABLE_COLS.forEach((c, i) => {
     if (order.includes(c)) return;
@@ -2341,7 +2364,7 @@ function normalizeColPrefs(raw: unknown): GuestTableColPrefs {
   const hidden = Array.isArray(r.hidden)
     ? [...new Set(r.hidden.filter(isGuestTableCol))].filter((c) => c !== "name")
     : [];
-  return { order, hidden };
+  return { order, hidden, pinName: r.pinName !== false };
 }
 
 function useGuestTableColPrefs(): [GuestTableColPrefs, (next: GuestTableColPrefs) => void] {
@@ -2433,7 +2456,9 @@ function GuestTableColumnsMenu({
   }, [open]);
 
   const isDefault =
-    prefs.hidden.length === 0 && prefs.order.every((c, i) => c === DEFAULT_COL_PREFS.order[i]);
+    prefs.pinName &&
+    prefs.hidden.length === 0 &&
+    prefs.order.every((c, i) => c === DEFAULT_COL_PREFS.order[i]);
 
   function toggle(c: GuestTableCol) {
     const hidden = prefs.hidden.includes(c)
@@ -2543,11 +2568,13 @@ function GuestTableColumnsMenu({
  *  certainty server-side, so the pick here only decides a brand-new one. */
 function GuestTableNewRow({
   cols,
+  pinName,
   guests,
   households,
   onCreateGuest,
 }: {
   cols: GuestTableCol[];
+  pinName: boolean;
   guests: Guest[];
   households: Household[];
   onCreateGuest: (body: GuestUpsert) => Promise<boolean>;
@@ -2611,7 +2638,7 @@ function GuestTableNewRow({
     switch (c) {
       case "name":
         return (
-          <td key={c} className={CELL}>
+          <td key={c} className={pinName ? `${CELL} ${STICKY_NAME_BODY}` : CELL}>
             <span className="flex items-center gap-1.5">
               <Plus size={13} aria-hidden className="shrink-0 text-ink-300 dark:text-umber-500" />
               <input
@@ -3005,9 +3032,13 @@ function GuestTable({
     () => new Set<GuestTableCol>(allInvited ? ["invited"] : []),
     [allInvited],
   );
-  const cols = prefs.order.filter(
+  const shown = prefs.order.filter(
     (c) => available.has(c) && !autoHidden.has(c) && !prefs.hidden.includes(c),
   );
+  // A sticky column only reads right at the left edge, so pinning Name takes
+  // it to the front whatever the saved order; unpinning restores that order.
+  const pinName = prefs.pinName;
+  const cols: GuestTableCol[] = pinName ? ["name", ...shown.filter((c) => c !== "name")] : shown;
 
   const th = CELL_HEAD;
   const sortableHeader = (key: SortKey, label: string) => (
@@ -3068,9 +3099,9 @@ function GuestTable({
           setDragCol(null);
           setDropCol(null);
         }}
-        className={`${th} group/th cursor-grab ${c === "name" ? "text-left" : "text-center"} ${
-          dragCol === c ? "opacity-50" : ""
-        } ${indicator}`}
+        className={`${c === "name" && pinName ? STICKY_NAME_HEAD : th} group/th cursor-grab ${
+          c === "name" ? "text-left" : "text-center"
+        } ${dragCol === c ? "opacity-50" : ""} ${indicator}`}
       >
         <span className={`inline-flex items-center gap-1 ${c === "name" ? "" : "justify-center"}`}>
           <GripVertical
@@ -3079,6 +3110,22 @@ function GuestTable({
             className="shrink-0 opacity-0 transition-opacity group-hover/th:opacity-60"
           />
           {sort ? sortableHeader(sort, label) : label}
+          {c === "name" && (
+            <button
+              type="button"
+              onClick={() => setPrefs({ ...prefs, pinName: !pinName })}
+              aria-pressed={pinName}
+              aria-label={t(pinName ? "guests.table_unpin_name" : "guests.table_pin_name")}
+              title={t(pinName ? "guests.table_unpin_name" : "guests.table_pin_name")}
+              className={`ml-1 rounded p-0.5 transition hover:text-ink-900 dark:hover:text-paper-50 ${
+                pinName
+                  ? "text-ink-700 dark:text-paper-100"
+                  : "opacity-0 group-hover/th:opacity-60 focus-visible:opacity-100"
+              }`}
+            >
+              {pinName ? <Pin size={11} aria-hidden /> : <PinOff size={11} aria-hidden />}
+            </button>
+          )}
         </span>
       </th>
     );
@@ -3110,6 +3157,7 @@ function GuestTable({
               <GuestTableRow
                 key={g.id}
                 cols={cols}
+                pinName={pinName}
                 guest={g}
                 /* Alternating row tint, Excel-style, so the eye can track one
                    row across the grid on wide screens. */
@@ -3133,6 +3181,7 @@ function GuestTable({
                 opening the drawer. */}
             <GuestTableNewRow
               cols={cols}
+              pinName={pinName}
               guests={allGuests}
               households={households}
               onCreateGuest={onCreateGuest}
@@ -3146,6 +3195,7 @@ function GuestTable({
 
 function GuestTableRow({
   cols,
+  pinName,
   guest: g,
   zebra = false,
   householdLabel,
@@ -3161,6 +3211,7 @@ function GuestTableRow({
   onToggleGuestInvited,
 }: {
   cols: GuestTableCol[];
+  pinName: boolean;
   guest: Guest;
   zebra?: boolean;
   householdLabel: string | null;
@@ -3192,7 +3243,12 @@ function GuestTableRow({
     switch (c) {
       case "name":
         return (
-          <td key={c} className={`${CELL} max-w-[16rem]`}>
+          <td
+            key={c}
+            className={`${CELL} max-w-[16rem] ${
+              pinName ? `${STICKY_NAME_BODY} ${zebra ? STICKY_NAME_ZEBRA : ""}` : ""
+            }`}
+          >
             <span className="flex items-center gap-1.5">
               <PartnerRoleIcon role={g.partner_role} />
               <KindIcon kind={g.kind} />
@@ -3340,7 +3396,7 @@ function GuestTableRow({
 
   return (
     <tr
-      className={`transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-800/40 ${
+      className={`group/row transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-800/40 ${
         zebra ? "bg-paper-100/40 dark:bg-umber-800/25" : ""
       }`}
     >

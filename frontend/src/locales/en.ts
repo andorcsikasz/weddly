@@ -4854,6 +4854,8 @@ const en: LocaleMessages = {
     table_columns: "Columns",
     table_columns_hint: "Drag a header to move a column, untick one to hide it.",
     table_columns_reset: "Reset to default",
+    table_pin_name: "Pin the name column",
+    table_unpin_name: "Let the name column scroll",
     table_col_invited_auto_hidden: "Hidden while everyone is invited",
     table_col_actions: "Actions",
     table_meal_unset: "Not set",
