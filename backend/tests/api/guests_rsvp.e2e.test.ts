@@ -597,6 +597,57 @@ describe("guests: CSV import", () => {
     expect(jr!.notes).toBe('needs "vegan" plate');
   });
 
+  test("POST /api/guests/import: the downloadable template round-trips (kind, certainty, +1)", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("csv-template@weddly.test");
+    // Same shape as `downloadCsvTemplate` on /app/guests, BOM included.
+    const csv = [
+      "﻿full_name,email,phone,group_tag,kind,household,certainty,plus_one_name,dietary,notes",
+      "Emily Johnson,emily@example.com,+12025550123,his_family,adult,The Johnson family,unsure,Michael Smith,vegetarian,VIP",
+      // A conflicting certainty in the same household loses to the first row.
+      "Lily Johnson,,,his_family,child,The Johnson family,definite,,,",
+    ].join("\r\n");
+    const r = await req<{ created_count: number; errors: unknown[] }>(
+      "POST",
+      "/api/guests/import",
+      { csv },
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.errors.length).toBe(0);
+    // Two rows plus the materialised +1.
+    expect(r.data.created_count).toBe(3);
+
+    const list = await req<{
+      guests: {
+        id: number;
+        full_name: string;
+        kind: string;
+        certainty: string;
+        household_id: number | null;
+        is_plus_one: boolean;
+        plus_one_of: number | null;
+        plus_one_name: string | null;
+      }[];
+    }>("GET", "/api/guests", undefined, { token });
+    const byName = new Map(list.data.guests.map((g) => [g.full_name, g]));
+    const emily = byName.get("Emily Johnson")!;
+    const lily = byName.get("Lily Johnson")!;
+    const michael = byName.get("Michael Smith");
+
+    // The +1 is a real guest, not a soft string on the host, so it counts.
+    expect(emily.plus_one_name).toBeNull();
+    expect(michael).toBeDefined();
+    expect(michael!.is_plus_one).toBe(true);
+    expect(michael!.plus_one_of).toBe(emily.id);
+
+    expect(lily.kind).toBe("child");
+    expect(emily.kind).toBe("adult");
+    // One household, one certainty.
+    expect(new Set([emily, lily, michael!].map((g) => g.household_id)).size).toBe(1);
+    expect([emily, lily, michael!].every((g) => g.certainty === "unsure")).toBe(true);
+  });
+
   test("POST /api/guests/import requires auth", async () => {
     wipeAll();
     const r = await req("POST", "/api/guests/import", { csv: "full_name\nAnna" });

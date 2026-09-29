@@ -4581,7 +4581,7 @@ const en: LocaleMessages = {
     download_template_hint: "Download a CSV template to fill in, then import",
     meals_hint: "Set meal options and see the per-meal tally",
     csv_help:
-      "CSV must have a 'full_name' column. Optional: email, phone, group_tag, plus_one_name, dietary, notes.",
+      "CSV must have a 'full_name' column. Optional: email, phone, group_tag, kind, household, certainty, plus_one_name, dietary, notes.",
     full_name: "Name",
     email: "Email",
     send_invite_label: "Send invite now",

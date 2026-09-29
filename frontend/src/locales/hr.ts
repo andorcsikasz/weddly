@@ -4613,7 +4613,7 @@ const hr: LocaleMessages = {
     download_template_hint: "Preuzmite CSV predložak, ispunite ga pa uvezite",
     meals_hint: "Postavite opcije jela i vidite zbroj po jelu",
     csv_help:
-      "CSV mora imati stupac 'full_name'. Neobavezno: email, phone, group_tag, plus_one_name, dietary, notes.",
+      "CSV mora imati stupac 'full_name'. Neobavezno: email, phone, group_tag, kind, household, certainty, plus_one_name, dietary, notes.",
     full_name: "Ime",
     email: "E-pošta",
     send_invite_label: "Pošaljite pozivnicu odmah",

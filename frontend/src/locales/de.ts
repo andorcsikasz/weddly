@@ -4711,7 +4711,7 @@ const de: LocaleMessages = {
       "Laden Sie eine CSV-Vorlage herunter, füllen Sie sie aus und importieren Sie sie",
     meals_hint: "Essensoptionen festlegen und die Zahlen pro Gericht sehen",
     csv_help:
-      "Die CSV braucht eine Spalte 'full_name'. Optional: email, phone, group_tag, plus_one_name, dietary, notes.",
+      "Die CSV braucht eine Spalte 'full_name'. Optional: email, phone, group_tag, kind, household, certainty, plus_one_name, dietary, notes.",
     full_name: "Name",
     email: "E-Mail",
     send_invite_label: "Einladung jetzt senden",

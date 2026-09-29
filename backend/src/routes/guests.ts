@@ -965,7 +965,9 @@ const CSV_FIELDS = [
   "email",
   "phone",
   "group_tag",
+  "kind",
   "household",
+  "certainty",
   "plus_one_name",
   "dietary",
   "notes",
@@ -991,10 +993,21 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
   const ts = now();
   const insert = db.prepare(
     `INSERT INTO guests
-      (couple_id, full_name, email, phone, group_tag, invite_code, rsvp_status,
+      (couple_id, full_name, email, phone, group_tag, invite_code, kind, certainty, rsvp_status,
        meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
        song_request, notes, rsvp_responded_at, created_at, updated_at, household_id)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, ?, ?, NULL, 0, NULL, ?, NULL, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NULL, ?, NULL, NULL, 0, NULL, ?, NULL, ?, ?, ?)`,
+  );
+  // A `plus_one_name` cell becomes a real guest, exactly as it does when the
+  // couple fills the +1 in the drawer (`materializePlusOne`). Storing it as the
+  // soft carrier string left every imported +1 out of the headcount and the
+  // seating chart. Inlined rather than calling `materializePlusOne` so a
+  // 200-row paste writes one bundled audit entry, not one per +1.
+  const insertPlusOne = db.prepare(
+    `INSERT INTO guests
+      (couple_id, full_name, group_tag, invite_code, kind, is_plus_one, plus_one_of, certainty,
+       rsvp_status, accommodation_needed, created_at, updated_at, household_id)
+     VALUES (?, ?, ?, ?, 'adult', 1, ?, ?, 'pending', 0, ?, ?, ?)`,
   );
 
   const created: Guest[] = [];
@@ -1007,17 +1020,26 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
     // household always inherit a single value — the first row of that
     // household wins, later rows for the same label adopt it. Keeps the
     // household.group_tag === every member.group_tag invariant intact.
-    const householdByLabel = new Map<string, { id: number; group_tag: GuestGroupTag }>();
+    // Certainty rides the same first-row-wins rule: the guest list treats it as
+    // a household-wide answer ("will the Kovács family make the cut?"), so one
+    // household must not import half "definite" and half "unlikely".
+    type ImportHousehold = { id: number; group_tag: GuestGroupTag; certainty: GuestCertainty };
+    const householdByLabel = new Map<string, ImportHousehold>();
     const ensureHousehold = (
       label: string,
       group: GuestGroupTag,
-    ): { id: number; group_tag: GuestGroupTag } => {
+      certainty: GuestCertainty,
+    ): ImportHousehold => {
       const cached = householdByLabel.get(label);
       if (cached) return cached;
       const created = createHousehold({ couple_id: couple.id, label, group_tag: group });
-      const entry = { id: created.id, group_tag: group };
+      const entry = { id: created.id, group_tag: group, certainty };
       householdByLabel.set(label, entry);
       return entry;
+    };
+    const cell = (r: string[], field: string): string => {
+      const at = idx[field];
+      return at === undefined ? "" : (r[at]?.trim() ?? "");
     };
 
     for (let i = 1; i < rows.length; i++) {
@@ -1027,22 +1049,31 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
         errors.push({ row: i + 1, reason: "missing full_name" });
         continue;
       }
-      const groupRaw = idx.group_tag !== undefined ? (r[idx.group_tag]?.trim() ?? "") : "";
+      const groupRaw = cell(r, "group_tag");
       const requestedGroup: GuestGroupTag = isGuestGroupTag(groupRaw) ? groupRaw : "other";
-      const code = uniqueInviteCode();
-      const householdLabel = idx.household !== undefined ? (r[idx.household]?.trim() ?? "") : "";
-      const household = ensureHousehold(householdLabel || name, requestedGroup);
+      const kindRaw = cell(r, "kind");
+      const kind: GuestKind = isGuestKind(kindRaw) ? kindRaw : "adult";
+      const certaintyRaw = cell(r, "certainty");
+      const requestedCertainty: GuestCertainty = isGuestCertainty(certaintyRaw)
+        ? certaintyRaw
+        : "definite";
+      const household = ensureHousehold(
+        cell(r, "household") || name,
+        requestedGroup,
+        requestedCertainty,
+      );
       const group = household.group_tag; // household wins
       const result = insert.run(
         couple.id,
         name,
-        idx.email !== undefined ? r[idx.email]?.trim() || null : null,
-        idx.phone !== undefined ? r[idx.phone]?.trim() || null : null,
+        cell(r, "email") || null,
+        cell(r, "phone") || null,
         group,
-        code,
-        idx.dietary !== undefined ? r[idx.dietary]?.trim() || null : null,
-        idx.plus_one_name !== undefined ? r[idx.plus_one_name]?.trim() || null : null,
-        idx.notes !== undefined ? r[idx.notes]?.trim() || null : null,
+        uniqueInviteCode(),
+        kind,
+        household.certainty,
+        cell(r, "dietary") || null,
+        cell(r, "notes") || null,
         ts,
         ts,
         household.id,
@@ -1050,6 +1081,23 @@ async function handleImportCsv(ctx: Ctx): Promise<Response> {
       const guestId = Number(result.lastInsertRowid);
       const row = getGuestByIdScoped(guestId, couple.id);
       if (row) created.push(toGuest(row));
+
+      const plusOneName = cell(r, "plus_one_name");
+      if (plusOneName) {
+        const plusOne = insertPlusOne.run(
+          couple.id,
+          plusOneName,
+          group,
+          uniqueInviteCode(),
+          guestId,
+          household.certainty,
+          ts,
+          ts,
+          household.id,
+        );
+        const plusOneRow = getGuestByIdScoped(Number(plusOne.lastInsertRowid), couple.id);
+        if (plusOneRow) created.push(toGuest(plusOneRow));
+      }
     }
   });
   tx();

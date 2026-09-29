@@ -4616,7 +4616,7 @@ const hu: LocaleMessages = {
     download_template_hint: "Tölts le egy kitölthető CSV-sablont, majd importáld",
     meals_hint: "Étkezési opciók beállítása és a fogásonkénti összesítés",
     csv_help:
-      "A CSV-nek legyen 'full_name' oszlopa. Választható: email, phone, group_tag, plus_one_name, dietary, notes.",
+      "A CSV-nek legyen 'full_name' oszlopa. Választható: email, phone, group_tag, kind, household, certainty, plus_one_name, dietary, notes.",
     full_name: "Név",
     email: "E-mail",
     send_invite_label: "Meghívó küldése most",

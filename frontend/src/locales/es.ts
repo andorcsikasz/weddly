@@ -4664,7 +4664,7 @@ const es: LocaleMessages = {
     download_template_hint: "Descarga una plantilla CSV para rellenar y luego importar",
     meals_hint: "Configura las opciones de menú y consulta el recuento por menú",
     csv_help:
-      "El CSV debe tener una columna 'full_name'. Opcionales: email, phone, group_tag, plus_one_name, dietary, notes.",
+      "El CSV debe tener una columna 'full_name'. Opcionales: email, phone, group_tag, kind, household, certainty, plus_one_name, dietary, notes.",
     full_name: "Nombre",
     email: "Email",
     send_invite_label: "Enviar invitación ahora",

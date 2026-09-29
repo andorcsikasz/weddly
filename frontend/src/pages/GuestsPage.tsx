@@ -6924,45 +6924,71 @@ function downloadCsvTemplate(locale: Locale) {
   // names/phones/households change per locale. "Anna Kis + Bence Nagy, +36"
   // inside an English workspace reads as a template for someone else's guest
   // list, and the same is true the other way round.
-  const samples: Record<Locale, readonly [string, string, string, string, string, string]> = {
-    hu: ["Anna Kis", "anna@example.com", "+36301234567", "his_family", "Kis család", "Bence Nagy"],
-    en: [
-      "Emily Johnson",
-      "emily@example.com",
-      "+12025550123",
-      "his_family",
-      "The Johnson family",
-      "Michael Smith",
-    ],
-    es: [
-      "Sofía García",
-      "sofia@example.com",
-      "+34612345678",
-      "his_family",
-      "La familia García",
-      "Pablo Martínez",
-    ],
-    hr: [
-      "Ana Horvat",
-      "ana@example.com",
-      "+38591234567",
-      "his_family",
-      "Obitelj Horvat",
-      "Marko Kovač",
-    ],
-    de: [
-      "Anna Müller",
-      "anna@example.com",
-      "+4915123456789",
-      "his_family",
-      "Familie Müller",
-      "Jonas Weber",
-    ],
-  } as const;
-  const [name, email, phone, group, household, plusOne] = samples[locale];
-  const healthy = "full_name,email,phone,group_tag,household,plus_one_name,dietary,notes\n";
-  const rows = `${healthy}${name},${email},${phone},${group},${household},${plusOne},vegetarian,VIP\n`;
-  const blob = new Blob([rows], { type: "text/csv;charset=utf-8" });
+  //
+  // The second row is a child in the SAME household: it is the only way the
+  // file can show that one `household` label folds several rows into one
+  // invitation, and that `kind` is where a child is marked. The columns are
+  // the export's own keys (minus the RSVP answers, which are the guests' to
+  // give), so an exported list re-imports without losing kind or certainty.
+  const samples: Record<Locale, readonly [string, string, string, string, string, string, string]> =
+    {
+      hu: [
+        "Anna Kis",
+        "anna@example.com",
+        "+36301234567",
+        "his_family",
+        "Kis család",
+        "Bence Nagy",
+        "Lili Kis",
+      ],
+      en: [
+        "Emily Johnson",
+        "emily@example.com",
+        "+12025550123",
+        "his_family",
+        "The Johnson family",
+        "Michael Smith",
+        "Lily Johnson",
+      ],
+      es: [
+        "Sofía García",
+        "sofia@example.com",
+        "+34612345678",
+        "his_family",
+        "La familia García",
+        "Pablo Martínez",
+        "Lucía García",
+      ],
+      hr: [
+        "Ana Horvat",
+        "ana@example.com",
+        "+38591234567",
+        "his_family",
+        "Obitelj Horvat",
+        "Marko Kovač",
+        "Lana Horvat",
+      ],
+      de: [
+        "Anna Müller",
+        "anna@example.com",
+        "+4915123456789",
+        "his_family",
+        "Familie Müller",
+        "Jonas Weber",
+        "Mia Müller",
+      ],
+    } as const;
+  const [name, email, phone, group, household, plusOne, child] = samples[locale];
+  const header =
+    "full_name,email,phone,group_tag,kind,household,certainty,plus_one_name,dietary,notes";
+  const rows = [
+    header,
+    `${name},${email},${phone},${group},adult,${household},definite,${plusOne},vegetarian,VIP`,
+    `${child},,,${group},child,${household},definite,,,`,
+  ];
+  // BOM so Excel on Windows opens the accented sample names as UTF-8, same as
+  // the export; the importer strips it.
+  const blob = new Blob([`﻿${rows.join("\r\n")}\r\n`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
