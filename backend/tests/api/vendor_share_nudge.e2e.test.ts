@@ -84,6 +84,21 @@ describe("vendor profile-share nudge", () => {
     expect(nudgeCount(id)).toBe(1);
   });
 
+  test("waits for a LIVE listing: a hidden page gets no dead link, and the one-shot stays owed", async () => {
+    wipeAll();
+    const id = await registerVendor("hidden-vendor@test.test", "Quiet Studio");
+    backdateCreation(id, 1000 * 60 * 60 * 3);
+    db.prepare("UPDATE listings SET status = 'hidden' WHERE vendor_account_id = ?").run(id);
+
+    runEmailSweep();
+    expect(nudgeCount(id)).toBe(0);
+    expect(stamp(id)).toBeNull();
+
+    db.prepare("UPDATE listings SET status = 'active' WHERE vendor_account_id = ?").run(id);
+    runEmailSweep();
+    expect(nudgeCount(id)).toBe(1);
+  });
+
   test("skips demo and purged owners", async () => {
     wipeAll();
     const demoId = await registerVendor("demo-x@demo.weddly.local", "Demo Cakes");

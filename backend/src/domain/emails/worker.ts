@@ -377,14 +377,19 @@ function sweepVendorProfileShareNudge(ts: number): number {
   const stamp = db.prepare("UPDATE vendor_accounts SET share_nudge_sent_at = ? WHERE id = ?");
   for (const r of rows) {
     const listing = getListingByVendorAccountId(r.account_id);
+    // The share mail's whole job is handing the vendor a URL that works, so it
+    // waits for a LIVE listing: with none (still onboarding) or a hidden one,
+    // `/suppliers/<id>` 404s. Skipping without the stamp keeps the one-shot
+    // owed, so it goes out once the page is up. Same rule as the incomplete
+    // reminder below.
+    if (!listing || listing.status !== "active") continue;
     // The listing's OWN id, for the same reason `vendorListingMissing` uses it:
     // a claimed listing keeps its imported id, so `v<accountId>` counted nothing
-    // for two thirds of vendors AND put a dead link in the share mail — the one
-    // mail whose entire job is handing the vendor their own URL.
-    const listingId = listing?.id ?? `v${r.account_id}`;
+    // for two thirds of vendors AND put a dead link in the share mail.
+    const listingId = listing.id;
     const missing = {
-      photos: !listing?.hero_image_url && countListingPhotos(listingId) === 0,
-      bio: !(listing?.blurb_hu || listing?.blurb_en),
+      photos: !listing.hero_image_url && countListingPhotos(listingId) === 0,
+      bio: !(listing.blurb_hu || listing.blurb_en),
       packages: countListingPackages(listingId) === 0,
     };
     // Stamp BEFORE the fire-and-forget send — a true one-shot.
