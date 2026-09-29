@@ -2399,8 +2399,14 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
 .map-chrome :is(button, a, select, input, [role="listbox"], [data-tour-target="vendors-search"]) {
   pointer-events: auto;
 }
-.map-chrome .chain-step {
+.map-chrome .chain-step,
+.map-chrome .map-subcats > button {
   box-shadow: 0 1px 4px rgba(16, 24, 48, 0.16);
+}
+/* Chips over tiles read cleaner without the hairline the page version needs. */
+.map-chrome .chain-step,
+.map-chrome .map-subcats > button {
+  border-color: transparent;
 }
 
 /* Banner stack — the strips above the workspace header (demo band, verify

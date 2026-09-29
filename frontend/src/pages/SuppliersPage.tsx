@@ -1814,10 +1814,10 @@ export default function SuppliersPage() {
                 : undefined
             }
           >
-            <div className="mb-3 flex items-center gap-2 sm:gap-3">
+            <div className={`flex items-center gap-2 ${isMap ? "mb-2" : "mb-3 sm:gap-3"}`}>
               <div
                 data-tour-target="vendors-search"
-                className={`flex h-12 min-w-0 flex-1 items-center rounded-full border border-paper-300 bg-white ${isMap ? "shadow-pop lg:max-w-2xl dark:border-umber-600" : "shadow-soft"} transition focus-within:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-paper-200`}
+                className={`flex min-w-0 flex-1 items-center rounded-full border border-paper-300 bg-white ${isMap ? "h-10 shadow-pop sm:w-[22rem] sm:flex-none dark:border-umber-600" : "h-12 shadow-soft"} transition focus-within:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-paper-200`}
               >
                 <Combobox
                   className="h-full min-w-0 flex-1"
@@ -1829,41 +1829,74 @@ export default function SuppliersPage() {
                   placeholder={t("suppliers.search_placeholder")}
                   leadingIcon={Search}
                   onClear={() => setQuery("")}
-                  inputClassName="h-full w-full bg-transparent pl-10 pr-9 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300"
+                  inputClassName={`h-full w-full bg-transparent pl-10 pr-9 ${isMap ? "text-sm" : "text-[15px]"} text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300`}
                 />
-                <span
-                  className="h-6 w-px shrink-0 bg-paper-300 dark:bg-umber-700"
-                  aria-hidden="true"
-                />
-                <Combobox
-                  className="h-full w-24 shrink-0 sm:w-56"
-                  value={cityInput}
-                  onChange={(v) => {
-                    setCityInput(v);
-                    if (v.trim() === "") setCityFilter("");
-                  }}
-                  onSelect={(opt) => {
-                    setCityFilter(opt.id);
-                    setCityInput(opt.label);
-                  }}
-                  options={cityOptions}
-                  ariaLabel={t("suppliers.city_label")}
-                  placeholder={t("suppliers.city_all")}
-                  leadingIcon={MapPin}
-                  onClear={() => {
-                    setCityFilter("");
-                    setCityInput("");
-                  }}
-                  suffix={
-                    cityNearbyKm != null ? (
-                      <span className="hidden sm:inline">
-                        {t("suppliers.nearby_plus_km", { km: cityNearbyKm })}
-                      </span>
-                    ) : undefined
-                  }
-                  inputClassName="h-full w-full bg-transparent pl-8 pr-6 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300 sm:pr-20"
-                />
+                {/* On the map the town field steps aside: panning IS the
+                    location filter there. It comes back only while a town is
+                    set, so a filter can never be on without being visible. */}
+                {(!isMap || cityInput.trim() !== "") && (
+                  <>
+                    <span
+                      className="h-6 w-px shrink-0 bg-paper-300 dark:bg-umber-700"
+                      aria-hidden="true"
+                    />
+                    <Combobox
+                      className="h-full w-24 shrink-0 sm:w-56"
+                      value={cityInput}
+                      onChange={(v) => {
+                        setCityInput(v);
+                        if (v.trim() === "") setCityFilter("");
+                      }}
+                      onSelect={(opt) => {
+                        setCityFilter(opt.id);
+                        setCityInput(opt.label);
+                      }}
+                      options={cityOptions}
+                      ariaLabel={t("suppliers.city_label")}
+                      placeholder={t("suppliers.city_all")}
+                      leadingIcon={MapPin}
+                      onClear={() => {
+                        setCityFilter("");
+                        setCityInput("");
+                      }}
+                      suffix={
+                        cityNearbyKm != null ? (
+                          <span className="hidden sm:inline">
+                            {t("suppliers.nearby_plus_km", { km: cityNearbyKm })}
+                          </span>
+                        ) : undefined
+                      }
+                      inputClassName="h-full w-full bg-transparent pl-8 pr-6 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300 sm:pr-20"
+                    />
+                  </>
+                )}
               </div>
+
+              {/* Map view keeps ONE control for everything that scopes the
+                  result set, like the single "filters" chip Google hangs off
+                  its search box. The count covers the dialog's filters plus
+                  the verified toggle, which on the map lives behind it. */}
+              {isMap && (
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-label={t("suppliers.filters_button")}
+                  title={t("suppliers.filters_button")}
+                  className={
+                    scopeFilterCount + (showVerifiedOnly ? 1 : 0) > 0
+                      ? "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-900 text-paper-50 shadow-pop dark:bg-paper-50 dark:text-ink-900"
+                      : "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-50 text-ink-800 shadow-pop transition hover:text-ink-900 dark:bg-umber-800 dark:text-paper-100"
+                  }
+                >
+                  <SlidersHorizontal size={16} aria-hidden />
+                  {scopeFilterCount + (showVerifiedOnly ? 1 : 0) > 0 && (
+                    <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-paper-50 dark:ring-umber-800">
+                      {scopeFilterCount + (showVerifiedOnly ? 1 : 0)}
+                    </span>
+                  )}
+                </button>
+              )}
 
               {/* Messages lives under this page (one row in the top control
                 band), so the couple meets their vendor conversations where
@@ -1874,7 +1907,7 @@ export default function SuppliersPage() {
                 to="/app/vendors/messages"
                 aria-label={t("nav.messages")}
                 title={t("nav.messages")}
-                className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 ${isMap ? "shadow-pop lg:ml-auto" : ""} text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50`}
+                className={`relative ${isMap ? "hidden" : "inline-flex"} h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50`}
               >
                 <MessageSquare size={16} aria-hidden />
                 {unreadCount > 0 && (
@@ -1890,7 +1923,7 @@ export default function SuppliersPage() {
               <div
                 role="group"
                 aria-label={t("suppliers.view_label")}
-                className={`hidden shrink-0 items-center gap-1 rounded-full border border-paper-300 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800 sm:inline-flex ${isMap ? "shadow-pop" : ""}`}
+                className={`shrink-0 items-center gap-1 rounded-full border border-paper-300 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800 ${isMap ? "ml-auto inline-flex border-transparent shadow-pop dark:border-transparent" : "hidden sm:inline-flex"}`}
               >
                 {VIEW_MODES.map(({ mode, icon: VIcon, label }) => (
                   <button
@@ -1918,7 +1951,7 @@ export default function SuppliersPage() {
                 onClick={() => setSubmitOpen(true)}
                 aria-label={t("suppliers.drop_your_own")}
                 title={t("suppliers.drop_your_own")}
-                className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50 sm:inline-flex ${isMap ? "shadow-pop" : ""}`}
+                className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50 ${isMap ? "" : "sm:inline-flex"}`}
               >
                 <Plus size={16} aria-hidden />
               </button>
@@ -1928,7 +1961,16 @@ export default function SuppliersPage() {
               the three the couple flips constantly stay out, the scoping
               controls live behind the first chip. Scrolls sideways on a phone
               rather than wrapping into a second and third row. */}
-            <div className="mb-3 -mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+            {/* On the map this whole row folds away: the filters live behind
+                the icon beside the search box, saved + verified ride at the
+                head of the category line, and sort means nothing on a map. */}
+            <div
+              className={
+                isMap
+                  ? "hidden"
+                  : "mb-3 -mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
+              }
+            >
               {/* The view switch and "Recommend a supplier" live here below
                 sm: — see the search row above, where they sit instead once
                 there is room beside it. */}
@@ -2079,13 +2121,57 @@ export default function SuppliersPage() {
           sub-category) that turn sage as the couple locks each pick in.
           The right-edge fade only shows when the row actually overflows —
           otherwise it leaves a phantom white slab next to the last step. */}
-            <div className="relative mb-2">
+            <div className={isMap ? "relative -mx-4 mb-1.5 sm:mx-0" : "relative mb-2"}>
               {/* snap-x mandatory keeps each step centred under a flicked thumb on
             touch widths — without it the row drifts mid-icon and the user
             has to nudge it back. snap-start on each child anchors the
             alignment to the leading edge of the step group. */}
-              <div ref={chainScrollRef} className="overflow-x-auto snap-x snap-mandatory pb-1">
-                <div className="flex min-w-max items-stretch gap-2">
+              <div
+                ref={chainScrollRef}
+                className={
+                  isMap
+                    ? "overflow-x-auto px-4 pb-1.5 [scrollbar-width:none] sm:px-0 [&::-webkit-scrollbar]:hidden"
+                    : "overflow-x-auto snap-x snap-mandatory pb-1"
+                }
+              >
+                <div className={`flex min-w-max items-stretch ${isMap ? "gap-1.5" : "gap-2"}`}>
+                  {isMap && (saved.size > 0 || showSavedOnly) && (
+                    <button
+                      type="button"
+                      onClick={toggleSavedFilter}
+                      aria-pressed={showSavedOnly}
+                      aria-label={t("suppliers.saved_filter", { n: saved.size })}
+                      title={t("suppliers.saved_filter", { n: saved.size })}
+                      className={`chain-step inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium tabular-nums ${
+                        showSavedOnly
+                          ? "bg-blush-600 text-paper-50"
+                          : "bg-paper-50 text-ink-800 hover:text-ink-900 dark:bg-umber-800 dark:text-paper-100"
+                      }`}
+                    >
+                      <Heart
+                        size={13}
+                        className={showSavedOnly ? "fill-current" : ""}
+                        aria-hidden
+                      />
+                      {saved.size}
+                    </button>
+                  )}
+                  {isMap && (
+                    <button
+                      type="button"
+                      onClick={toggleVerifiedFilter}
+                      aria-pressed={showVerifiedOnly}
+                      aria-label={t("suppliers.verified_filter")}
+                      title={t("suppliers.verified_filter")}
+                      className={`chain-step inline-flex items-center rounded-full px-2 py-1.5 ${
+                        showVerifiedOnly
+                          ? "bg-verified text-white"
+                          : "bg-paper-50 text-verified dark:bg-umber-800"
+                      }`}
+                    >
+                      <BadgeCheck size={15} aria-hidden />
+                    </button>
+                  )}
                   {SUPPLIER_GROUPS.map((g) => {
                     const Icon = GROUP_ICON[g.id];
                     const progress = groupSelectionProgress.byGroup.get(g.id) ?? {
@@ -2101,8 +2187,9 @@ export default function SuppliersPage() {
                           onClick={() => pickGroup(activeGroup === g.id ? null : g.id)}
                           label={t(`suppliers.group.${g.id}`)}
                           count={groupCounts.get(g.id) ?? 0}
-                          icon={<Icon size={16} />}
+                          icon={<Icon size={isMap ? 14 : 16} />}
                           progress={progress}
+                          compact={isMap}
                           t={t}
                         />
                       </div>
@@ -2127,7 +2214,13 @@ export default function SuppliersPage() {
           from the May 2026 mobile audit (compact, predictable horizontal
           motion beats a chaotic two-line wrap at thumb width). */}
             {activeGroup && subCategories.length > 0 && (
-              <div className="mb-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-3 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+              <div
+                className={
+                  isMap
+                    ? "map-subcats mb-2 -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1.5 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+                    : "mb-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-3 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0"
+                }
+              >
                 <button
                   type="button"
                   onClick={() => setActiveCat(null)}
@@ -3454,6 +3547,7 @@ function ChainStep({
   isAll,
   count,
   progress,
+  compact = false,
   t,
 }: {
   active: boolean;
@@ -3466,6 +3560,8 @@ function ChainStep({
    *  thin bars under the label — sage once a pick lands, full-tile sage tint
    *  when every sub-cat is done. */
   progress?: { done: number; total: number };
+  /** Map view: a Google-style chip, one line high, no progress bars. */
+  compact?: boolean;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const allDone = progress !== undefined && progress.done > 0 && progress.done >= progress.total;
@@ -3487,8 +3583,14 @@ function ChainStep({
       onClick={onClick}
       aria-label={collapsed ? (count !== undefined ? `${label} · ${count}` : label) : undefined}
       title={collapsed ? label : undefined}
-      className={`chain-step group relative flex items-center justify-center rounded-full border text-sm transition-[color,background-color,border-color,padding] duration-300 ease-out ${
-        collapsed ? "px-2.5 py-2" : "px-3.5 pt-[5px] pb-2.5"
+      className={`chain-step group relative flex items-center justify-center rounded-full border transition-[color,background-color,border-color,padding] duration-300 ease-out ${
+        compact
+          ? collapsed
+            ? "px-2 py-1 text-xs"
+            : "px-2.5 py-1 text-xs"
+          : collapsed
+            ? "px-2.5 py-2 text-sm"
+            : "px-3.5 pt-[5px] pb-2.5 text-sm"
       } ${
         active
           ? "border-transparent stationery-coffee text-paper-50"
@@ -3530,7 +3632,7 @@ function ChainStep({
           </>
         )}
       </span>
-      {!collapsed && progress !== undefined && progress.total > 0 && (
+      {!compact && !collapsed && progress !== undefined && progress.total > 0 && (
         <span
           className="absolute inset-x-0 bottom-1.5 flex items-center justify-center gap-[3px]"
           aria-label={t("suppliers.chain_progress_aria", {
