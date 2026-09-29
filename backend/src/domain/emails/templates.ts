@@ -3162,8 +3162,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
 
   timeline_escalation: (p, ctx) => {
     const titles = p.sampleTitles.slice(0, 4);
-    const listHu = titles.length > 0 ? titles.join(", ") : "";
-    const listEn = titles.length > 0 ? titles.join(", ") : "";
+    // One bullet per task: a comma-joined sentence of task titles read as a
+    // wall of text. The renderer turns `- ` lines into a <ul> (and `•` in the
+    // plain-text part); newlines inside a title are flattened so one title
+    // can never split into two bullets.
+    const bullets = titles.map((t) => `- ${t.replace(/\s+/g, " ").trim()}`).join("\n");
     const headlineHu =
       p.overdueCount > 0
         ? `${p.overdueCount} teendő esedékes${p.dueSoonCount > 0 ? `, és ${p.dueSoonCount} következik hamarosan` : ""}.`
@@ -3184,7 +3187,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
         paragraphs: [
           headlineHu,
-          listHu ? `A következő tételek: ${listHu}.` : "Nézzétek át az ütemterveteket.",
+          bullets ? `A következő tételek:\n${bullets}` : "Nézzétek át az ütemterveteket.",
           "Az idővonalon megjelölhetitek, ami elkészült, és új időpontot adhattok a következő feladatoknak.",
         ],
         cta: "Idővonal megnyitása",
@@ -3194,7 +3197,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Hi ${ctx.recipientName || "there"},`,
         paragraphs: [
           headlineEn,
-          listEn ? `Next on the timeline: ${listEn}.` : "Take a look at your timeline.",
+          bullets ? `Next on the timeline:\n${bullets}` : "Take a look at your timeline.",
           "Open the timeline to mark completed tasks and reschedule anything that remains.",
         ],
         cta: "Open timeline",
