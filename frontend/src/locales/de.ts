@@ -4981,12 +4981,17 @@ const de: LocaleMessages = {
     table_group_household_hint: "Ändert die Gruppe des ganzen Haushalts",
     table_col_certainty: "Sicherheit",
     table_col_certainty_hint:
-      "Wie sicher ihr euch seid, diesen Gast einzuladen — hilft zu erkennen, wo ihr die Grenze zieht, falls die Liste gekürzt werden muss.",
+      "Wie sicher ihr euch seid, diesen Gast einzuladen — hilft zu erkennen, wo ihr die Grenze zieht, falls die Liste gekürzt werden muss. Gilt für den ganzen Haushalt.",
     table_col_rsvp: "RSVP",
     table_col_meal: "Essen",
     table_col_dietary: "Ernährung",
     table_col_accommodation: "Unterkunft",
     table_col_invited: "Einladung",
+    table_columns: "Spalten",
+    table_columns_hint:
+      "Zieht eine Überschrift, um die Spalte zu verschieben, oder entfernt den Haken, um sie auszublenden.",
+    table_columns_reset: "Standard wiederherstellen",
+    table_col_invited_auto_hidden: "Ausgeblendet, solange alle eingeladen sind",
     table_col_actions: "Aktionen",
     table_meal_unset: "Nicht gesetzt",
     table_dietary_none: "Keine",
@@ -4999,7 +5004,7 @@ const de: LocaleMessages = {
     table_email_placeholder: "E-Mail-Adresse",
     certainty_label: "Wie sicher seid ihr?",
     certainty_help:
-      "Eure eigene Einschätzung zu diesem Gast, nicht seine Zusage — hilft zu erkennen, wen ihr zuerst streicht, wenn die Liste zu lang wird.",
+      "Eure eigene Einschätzung zu diesem Gast, nicht seine Zusage — hilft zu erkennen, wen ihr zuerst streicht, wenn die Liste zu lang wird. Gilt für den ganzen Haushalt.",
     certainty_definite: "Sicher",
     certainty_likely: "Wahrscheinlich",
     certainty_unsure: "Unsicher",

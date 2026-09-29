@@ -731,6 +731,98 @@ describe("<GuestsPage>", () => {
     expect(screen.queryByDisplayValue("Loner")).not.toBeInTheDocument();
   });
 
+  describe("table view columns", () => {
+    const headerTexts = () =>
+      screen
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent?.trim() ?? "")
+        .filter(Boolean);
+
+    it("defaults to Name, Invited, Household, RSVP, Group, then the rest", async () => {
+      const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10] });
+      installDefaultEndpoints({
+        households: [hh],
+        guests: [makeGuest({ id: 10, full_name: "Alice", household_id: 1 })],
+      });
+      renderAt("/app/guests?view=table");
+      await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
+      expect(headerTexts().slice(0, 5)).toEqual(["Name", "Invited", "Household", "RSVP", "Group"]);
+    });
+
+    it("hides the Invited column once every guest is invited", async () => {
+      const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10] });
+      installDefaultEndpoints({
+        households: [hh],
+        guests: [makeGuest({ id: 10, full_name: "Alice", household_id: 1, invited_at: 1 })],
+      });
+      renderAt("/app/guests?view=table");
+      await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
+      expect(headerTexts()).not.toContain("Invited");
+      expect(headerTexts().slice(0, 3)).toEqual(["Name", "Household", "RSVP"]);
+    });
+
+    it("honours a saved order and hidden set", async () => {
+      localStorage.setItem(
+        "weddly.guests.table_columns",
+        JSON.stringify({
+          order: ["group", "name", "invited", "household", "rsvp", "email", "dietary"],
+          hidden: ["email", "name"],
+        }),
+      );
+      const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10] });
+      installDefaultEndpoints({
+        households: [hh],
+        guests: [makeGuest({ id: 10, full_name: "Alice", household_id: 1 })],
+      });
+      renderAt("/app/guests?view=table");
+      await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
+      const heads = headerTexts();
+      // Group was dragged first and the name can never be hidden. Columns the
+      // saved layout predates (certainty, meal, lodging) slot back in after
+      // their default left-hand neighbour instead of vanishing.
+      expect(heads.slice(0, 7)).toEqual([
+        "Group",
+        "Certainty",
+        "Name",
+        "Invited",
+        "Household",
+        "RSVP",
+        "Meal",
+      ]);
+      expect(heads).not.toContain("Email");
+    });
+
+    it("a certainty change repaints the whole household at once", async () => {
+      const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10, 11] });
+      installDefaultEndpoints({
+        households: [hh],
+        guests: [
+          makeGuest({ id: 10, full_name: "Alice", household_id: 1 }),
+          makeGuest({ id: 11, full_name: "Adam", household_id: 1 }),
+        ],
+      });
+      onPatch((u) => u.startsWith("/api/guests/10"), {
+        guest: makeGuest({ id: 10, full_name: "Alice", household_id: 1, certainty: "unsure" }),
+      });
+      renderAt("/app/guests?view=table");
+      await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
+      const selects = () => screen.getAllByLabelText(/^certainty: /i) as HTMLSelectElement[];
+      // Two guest rows plus the blank new-guest row.
+      expect(selects()).toHaveLength(3);
+      fireEvent.change(selects()[0]!, { target: { value: "unsure" } });
+      await flush(2);
+      expect(
+        selects()
+          .slice(0, 2)
+          .map((s) => s.value),
+      ).toEqual(["unsure", "unsure"]);
+      const patch = fetchCalls.find(
+        (c) => c.method === "PATCH" && c.url.startsWith("/api/guests/10"),
+      );
+      expect(patch?.body).toEqual({ certainty: "unsure" });
+    });
+  });
+
   it("a live query with no answer yet never paints as 'no guests match'", async () => {
     // The regression: `searching` was set inside the fetch effect, one commit
     // after the render where the query changed, so that render had a query, no

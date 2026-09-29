@@ -42,6 +42,7 @@ import {
   ChevronDown,
   ClipboardCopy,
   Clock,
+  Columns3,
   Cookie,
   Crown,
   Download,
@@ -88,6 +89,7 @@ import {
 } from "lucide-react";
 import {
   type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
   useCallback,
   useEffect,
@@ -221,16 +223,6 @@ const CERTAINTY_LEVEL: Record<GuestCertainty, number> = {
   likely: 3,
   unsure: 2,
   unlikely: 1,
-};
-const CERTAINTY_TONE: Record<GuestCertainty, string> = {
-  definite:
-    "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-300",
-  likely:
-    "border-lime-300 bg-lime-50 text-lime-800 dark:border-lime-400/40 dark:bg-lime-400/15 dark:text-lime-300",
-  unsure:
-    "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/15 dark:text-amber-300",
-  unlikely:
-    "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-400/40 dark:bg-rose-400/15 dark:text-rose-300",
 };
 const CERTAINTY_DOT: Record<GuestCertainty, string> = {
   definite: "bg-emerald-500",
@@ -750,6 +742,31 @@ export default function GuestsPage() {
     } catch (e) {
       setGuests(prevGuests);
       setHouseholds(prevHouseholds);
+      setSearchResults(prevSearch);
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  /** Certainty edit from the table view. Certainty is household-canonical (the
+   *  backend spreads a change to every member, see db.ts), so the optimistic
+   *  state flips the whole household at once rather than one row and letting
+   *  its siblings jump on the next refresh. */
+  async function onTableChangeCertainty(g: Guest, certainty: GuestCertainty) {
+    const prevGuests = guests;
+    const prevSearch = searchResults;
+    const hhId = g.household_id;
+    const apply = (list: Guest[]) =>
+      list.map((row) =>
+        row.id === g.id || (hhId != null && row.household_id === hhId)
+          ? { ...row, certainty }
+          : row,
+      );
+    setGuests(apply);
+    patchSearchResults(apply);
+    try {
+      await guestApi.update(g.id, { certainty });
+    } catch (e) {
+      setGuests(prevGuests);
       setSearchResults(prevSearch);
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     }
@@ -1437,6 +1454,7 @@ export default function GuestsPage() {
             onSetSort={setSort}
             onUpdateGuest={onInlineUpdateGuest}
             onChangeGroup={onTableChangeGroup}
+            onChangeCertainty={onTableChangeCertainty}
             onChangeHousehold={onInlineChangeHousehold}
             onRenameHousehold={onRenameHousehold}
             onCreateGuest={onCreateGuestInline}
@@ -2147,10 +2165,21 @@ function NameCell({
  *  otherwise use (emerald dots on an emerald-600 fill, lime-on-lime, ...),
  *  which is a same-hue-on-same-hue contrast failure on every one of the four
  *  options, not just an edge case. White dots read against any fill colour. */
-function CertaintyDots({ value, onDark }: { value: GuestCertainty; onDark?: boolean }) {
+function CertaintyDots({
+  value,
+  onDark,
+  large,
+}: {
+  value: GuestCertainty;
+  onDark?: boolean;
+  /** The table cell shows the dots ALONE, so they carry the whole meaning
+   *  there and get a size up from the chip-icon default. */
+  large?: boolean;
+}) {
   const level = CERTAINTY_LEVEL[value];
+  const dot = large ? "h-2 w-2" : "h-1.5 w-1.5";
   return (
-    <span className="inline-flex items-center gap-0.5" aria-hidden>
+    <span className={`inline-flex items-center ${large ? "gap-1" : "gap-0.5"}`} aria-hidden>
       {[1, 2, 3, 4].map((n) => {
         const filled = n <= level;
         const cls = onDark
@@ -2160,16 +2189,19 @@ function CertaintyDots({ value, onDark }: { value: GuestCertainty; onDark?: bool
           : filled
             ? CERTAINTY_DOT[value]
             : "bg-ink-200 dark:bg-umber-600";
-        return <span key={n} className={`h-1.5 w-1.5 rounded-full ${cls}`} />;
+        return <span key={n} className={`${dot} rounded-full ${cls}`} />;
       })}
     </span>
   );
 }
 
-/** Inline certainty editor, the table's twin of `GroupCellChip`: a coloured
- *  pill (green→red across the four stages) overlaid with a transparent native
- *  `<select>`. This is the couple's own read on a guest, set independently of
- *  the guest's own RSVP answer — see `GuestCertainty`. */
+/** Inline certainty editor for the table: the 4-dot meter ALONE, no label and
+ *  no pill, because a sorted column of dots already reads as a signal-strength
+ *  ladder and the words only widened the grid. The label lives in the tooltip
+ *  and the accessible name, and a transparent native `<select>` sits on top so
+ *  it survives the table's overflow clip and keeps keyboard support. This is
+ *  the couple's own read on a HOUSEHOLD (see db.ts), set independently of the
+ *  guest's own RSVP answer. */
 function CertaintyCellChip({
   value,
   onChange,
@@ -2180,17 +2212,17 @@ function CertaintyCellChip({
   ariaLabel: string;
 }) {
   const { t } = useT();
+  const label = t(`guests.certainty_${value}`);
   return (
     <span
-      className={`relative inline-flex min-w-[8rem] items-center justify-center gap-1.5 rounded-xl border px-2 py-1 text-xs font-medium transition-colors ${CERTAINTY_TONE[value]}`}
+      title={label}
+      className="relative inline-flex h-8 items-center justify-center rounded px-2 transition-colors hover:bg-paper-100/70 focus-within:ring-1 focus-within:ring-umber-500 dark:hover:bg-umber-800/50"
     >
-      <CertaintyDots value={value} />
-      <span className="truncate">{t(`guests.certainty_${value}`)}</span>
-      <ChevronDown size={12} aria-hidden className="shrink-0 opacity-70" />
+      <CertaintyDots value={value} large />
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as GuestCertainty)}
-        aria-label={ariaLabel}
+        aria-label={`${ariaLabel}: ${label}`}
         className="absolute inset-0 cursor-pointer opacity-0"
       >
         {CERTAINTY_ORDER.map((c) => (
@@ -2251,21 +2283,273 @@ function EmailCell({
   );
 }
 
+/** Every column the guest table can show, in the DEFAULT order: who, whether
+ *  they have been invited yet, which household, what they answered, which
+ *  side, and then the rest. The couple can drag any column elsewhere and hide
+ *  any but the name (a row with no name is not a row); the layout is a
+ *  per-device convenience, so it lives in localStorage. The actions column is
+ *  not in this list: it is always last and always there. */
+type GuestTableCol =
+  | "name"
+  | "invited"
+  | "household"
+  | "rsvp"
+  | "group"
+  | "certainty"
+  | "email"
+  | "meal"
+  | "dietary"
+  | "accommodation";
+const GUEST_TABLE_COLS: GuestTableCol[] = [
+  "name",
+  "invited",
+  "household",
+  "rsvp",
+  "group",
+  "certainty",
+  "email",
+  "meal",
+  "dietary",
+  "accommodation",
+];
+const GUEST_TABLE_COLS_KEY = "weddly.guests.table_columns";
+
+interface GuestTableColPrefs {
+  order: GuestTableCol[];
+  hidden: GuestTableCol[];
+}
+const DEFAULT_COL_PREFS: GuestTableColPrefs = { order: GUEST_TABLE_COLS, hidden: [] };
+
+function isGuestTableCol(v: unknown): v is GuestTableCol {
+  return typeof v === "string" && (GUEST_TABLE_COLS as string[]).includes(v);
+}
+
+/** Heal a saved layout against today's column set: unknown keys are dropped,
+ *  and a column shipped after the layout was saved slots in right after its
+ *  default left-hand neighbour instead of silently never appearing. */
+function normalizeColPrefs(raw: unknown): GuestTableColPrefs {
+  if (!raw || typeof raw !== "object") return DEFAULT_COL_PREFS;
+  const r = raw as { order?: unknown; hidden?: unknown };
+  const order = Array.isArray(r.order) ? [...new Set(r.order.filter(isGuestTableCol))] : [];
+  GUEST_TABLE_COLS.forEach((c, i) => {
+    if (order.includes(c)) return;
+    const prev = GUEST_TABLE_COLS.slice(0, i)
+      .reverse()
+      .find((p) => order.includes(p));
+    order.splice(prev ? order.indexOf(prev) + 1 : 0, 0, c);
+  });
+  const hidden = Array.isArray(r.hidden)
+    ? [...new Set(r.hidden.filter(isGuestTableCol))].filter((c) => c !== "name")
+    : [];
+  return { order, hidden };
+}
+
+function useGuestTableColPrefs(): [GuestTableColPrefs, (next: GuestTableColPrefs) => void] {
+  const [prefs, setPrefs] = useState<GuestTableColPrefs>(() => {
+    try {
+      const raw = localStorage.getItem(GUEST_TABLE_COLS_KEY);
+      return raw ? normalizeColPrefs(JSON.parse(raw)) : DEFAULT_COL_PREFS;
+    } catch {
+      return DEFAULT_COL_PREFS;
+    }
+  });
+  const update = useCallback((next: GuestTableColPrefs) => {
+    setPrefs(next);
+    try {
+      localStorage.setItem(GUEST_TABLE_COLS_KEY, JSON.stringify(next));
+    } catch {
+      // Private window / blocked storage: the layout just lasts this visit.
+    }
+  }, []);
+  return [prefs, update];
+}
+
+/** Move `from` onto `to`'s slot. Dragging rightwards lands AFTER the target
+ *  and leftwards BEFORE it, which is what the drop indicator promises. */
+function moveGuestTableCol(
+  order: GuestTableCol[],
+  from: GuestTableCol,
+  to: GuestTableCol,
+): GuestTableCol[] {
+  if (from === to) return order;
+  const rightwards = order.indexOf(from) < order.indexOf(to);
+  const next = order.filter((c) => c !== from);
+  const at = next.indexOf(to);
+  next.splice(rightwards ? at + 1 : at, 0, from);
+  return next;
+}
+
+const GUEST_TABLE_COL_LABEL: Record<GuestTableCol, string> = {
+  name: "guests.table_col_name",
+  invited: "guests.table_col_invited",
+  household: "guests.table_col_household",
+  rsvp: "guests.table_col_rsvp",
+  group: "guests.table_col_group",
+  certainty: "guests.table_col_certainty",
+  email: "guests.email",
+  meal: "guests.table_col_meal",
+  dietary: "guests.table_col_dietary",
+  accommodation: "guests.table_col_accommodation",
+};
+
+/** "Columns" popover above the table: tick to show / untick to hide, drag a
+ *  row (or a header in the table itself) to reorder, and one reset back to the
+ *  default layout. A column the table is hiding on its own (Invited, once
+ *  everyone is invited) is listed disabled with the reason, so it never reads
+ *  as a setting that failed to stick. */
+function GuestTableColumnsMenu({
+  prefs,
+  onChange,
+  available,
+  autoHidden,
+}: {
+  prefs: GuestTableColPrefs;
+  onChange: (next: GuestTableColPrefs) => void;
+  available: Set<GuestTableCol>;
+  autoHidden: Set<GuestTableCol>;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const [dragCol, setDragCol] = useState<GuestTableCol | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      btnRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const isDefault =
+    prefs.hidden.length === 0 && prefs.order.every((c, i) => c === DEFAULT_COL_PREFS.order[i]);
+
+  function toggle(c: GuestTableCol) {
+    const hidden = prefs.hidden.includes(c)
+      ? prefs.hidden.filter((h) => h !== c)
+      : [...prefs.hidden, c];
+    onChange({ ...prefs, hidden });
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        ref={btnRef}
+        type="button"
+        className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Columns3 size={14} aria-hidden />
+        {t("guests.table_columns")}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-30 mt-1 w-72 rounded-xl border border-paper-300 bg-white p-2 shadow-pop dark:border-umber-700 dark:bg-umber-800">
+          <p className="px-2 pb-2 text-[11px] text-ink-500 dark:text-umber-300">
+            {t("guests.table_columns_hint")}
+          </p>
+          <ul>
+            {prefs.order
+              .filter((c) => available.has(c))
+              .map((c) => {
+                const auto = autoHidden.has(c);
+                const pinned = c === "name";
+                return (
+                  <li
+                    key={c}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", c);
+                      setDragCol(c);
+                    }}
+                    onDragEnd={() => setDragCol(null)}
+                    onDragOver={(e) => {
+                      if (dragCol) e.preventDefault();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (dragCol)
+                        onChange({ ...prefs, order: moveGuestTableCol(prefs.order, dragCol, c) });
+                      setDragCol(null);
+                    }}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${
+                      dragCol === c ? "opacity-50" : "hover:bg-paper-100 dark:hover:bg-umber-700"
+                    }`}
+                  >
+                    <GripVertical
+                      size={13}
+                      aria-hidden
+                      className="shrink-0 cursor-grab text-ink-300 dark:text-umber-500"
+                    />
+                    <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="h-3.5 w-3.5 accent-umber-700 dark:accent-paper-100"
+                        checked={!auto && !prefs.hidden.includes(c)}
+                        disabled={pinned || auto}
+                        onChange={() => toggle(c)}
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate text-ink-800 dark:text-paper-50">
+                          {t(GUEST_TABLE_COL_LABEL[c])}
+                        </span>
+                        {auto && (
+                          <span className="block text-[11px] text-ink-400 dark:text-umber-400">
+                            {t("guests.table_col_invited_auto_hidden")}
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+          </ul>
+          <div className="mt-1 border-t border-paper-200 pt-2 dark:border-umber-700">
+            <button
+              type="button"
+              className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+              disabled={isDefault}
+              onClick={() => onChange(DEFAULT_COL_PREFS)}
+            >
+              <RotateCcw size={13} aria-hidden />
+              {t("guests.table_columns_reset")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Always-present blank row pinned to the bottom of the table: type a name (and
  *  optionally a household / group), press Enter or hit the +, and the guest is
  *  created inline, then the row clears and refocuses so the couple can keep
  *  adding without leaving the spreadsheet. Household resolution matches the
  *  inline cell (existing label reused, new one created, blank → the backend
- *  auto-creates a household-of-one). */
+ *  auto-creates a household-of-one). Joining an existing household adopts its
+ *  certainty server-side, so the pick here only decides a brand-new one. */
 function GuestTableNewRow({
+  cols,
   guests,
   households,
-  mealEnabled,
   onCreateGuest,
 }: {
+  cols: GuestTableCol[];
   guests: Guest[];
   households: Household[];
-  mealEnabled: boolean;
   onCreateGuest: (body: GuestUpsert) => Promise<boolean>;
 }) {
   const { t } = useT();
@@ -2315,93 +2599,110 @@ function GuestTableNewRow({
     }
   }
 
-  const placeholderCell = `${CELL} text-xs text-ink-300 dark:text-umber-600`;
+  const onEnter = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void commit();
+    }
+  };
+  const placeholderCell = `${CELL} text-center text-xs text-ink-300 dark:text-umber-600`;
+
+  function cell(c: GuestTableCol): ReactNode {
+    switch (c) {
+      case "name":
+        return (
+          <td key={c} className={CELL}>
+            <span className="flex items-center gap-1.5">
+              <Plus size={13} aria-hidden className="shrink-0 text-ink-300 dark:text-umber-500" />
+              <input
+                ref={nameRef}
+                type="text"
+                value={name}
+                placeholder={t("guests.table_new_name_placeholder")}
+                aria-label={t("guests.table_new_name_placeholder")}
+                disabled={saving}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={onEnter}
+                className={`${CELL_FIELD} pr-2 font-medium`}
+              />
+            </span>
+            {duplicate && (
+              <p className="mt-0.5 flex items-center gap-1 pl-5 text-[11px] font-normal normal-case tracking-normal text-amber-700 dark:text-amber-400">
+                <TriangleAlert size={11} aria-hidden className="shrink-0" />
+                {duplicateHousehold
+                  ? t("guests.duplicate_name_warning_household", { household: duplicateHousehold })
+                  : t("guests.duplicate_name_warning")}
+              </p>
+            )}
+          </td>
+        );
+      case "email":
+        return (
+          <td key={c} className={CELL}>
+            <input
+              type="email"
+              value={email}
+              placeholder={t("guests.table_email_placeholder")}
+              aria-label={t("guests.email")}
+              disabled={saving}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={onEnter}
+              className={`${CELL_FIELD} min-w-[9rem] truncate pr-2`}
+            />
+          </td>
+        );
+      case "household":
+        return (
+          <td key={c} className={`${CELL} min-w-[12rem]`}>
+            <span className="relative inline-flex w-full min-w-[10rem]">
+              <input
+                type="text"
+                list={HOUSEHOLD_DATALIST_ID}
+                value={householdText}
+                placeholder={t("guests.table_household_placeholder")}
+                aria-label={t("guests.table_col_household")}
+                disabled={saving}
+                onChange={(e) => setHouseholdText(e.target.value)}
+                onKeyDown={onEnter}
+                className={`${CELL_FIELD} pr-2`}
+              />
+            </span>
+          </td>
+        );
+      case "group":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            <GroupCellChip
+              value={group}
+              onChange={setGroup}
+              ariaLabel={t("guests.table_col_group")}
+            />
+          </td>
+        );
+      case "certainty":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            <CertaintyCellChip
+              value={certainty}
+              onChange={setCertainty}
+              ariaLabel={t("guests.table_col_certainty")}
+            />
+          </td>
+        );
+      default:
+        // RSVP / meal / dietary / accommodation / invite are meaningless until
+        // the guest exists; quiet placeholders keep the columns aligned.
+        return (
+          <td key={c} className={placeholderCell}>
+            –
+          </td>
+        );
+    }
+  }
 
   return (
     <tr className="bg-paper-50/50 dark:bg-umber-900/30">
-      <td className={CELL}>
-        <span className="flex items-center gap-1.5">
-          <Plus size={13} aria-hidden className="shrink-0 text-ink-300 dark:text-umber-500" />
-          <input
-            ref={nameRef}
-            type="text"
-            value={name}
-            placeholder={t("guests.table_new_name_placeholder")}
-            aria-label={t("guests.table_new_name_placeholder")}
-            disabled={saving}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void commit();
-              }
-            }}
-            className={`${CELL_FIELD} pr-2 font-medium`}
-          />
-        </span>
-        {duplicate && (
-          <p className="mt-0.5 flex items-center gap-1 pl-5 text-[11px] font-normal normal-case tracking-normal text-amber-700 dark:text-amber-400">
-            <TriangleAlert size={11} aria-hidden className="shrink-0" />
-            {duplicateHousehold
-              ? t("guests.duplicate_name_warning_household", { household: duplicateHousehold })
-              : t("guests.duplicate_name_warning")}
-          </p>
-        )}
-      </td>
-      <td className={CELL}>
-        <input
-          type="email"
-          value={email}
-          placeholder={t("guests.table_email_placeholder")}
-          aria-label={t("guests.email")}
-          disabled={saving}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              void commit();
-            }
-          }}
-          className={`${CELL_FIELD} min-w-[9rem] truncate pr-2`}
-        />
-      </td>
-      <td className={`${CELL} min-w-[12rem]`}>
-        <span className="relative inline-flex w-full min-w-[10rem]">
-          <input
-            type="text"
-            list={HOUSEHOLD_DATALIST_ID}
-            value={householdText}
-            placeholder={t("guests.table_household_placeholder")}
-            aria-label={t("guests.table_col_household")}
-            disabled={saving}
-            onChange={(e) => setHouseholdText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void commit();
-              }
-            }}
-            className={`${CELL_FIELD} pr-2`}
-          />
-        </span>
-      </td>
-      <td className={`${CELL} text-center`}>
-        <GroupCellChip value={group} onChange={setGroup} ariaLabel={t("guests.table_col_group")} />
-      </td>
-      <td className={`${CELL} text-center`}>
-        <CertaintyCellChip
-          value={certainty}
-          onChange={setCertainty}
-          ariaLabel={t("guests.table_col_certainty")}
-        />
-      </td>
-      {/* RSVP / meal / dietary / accommodation / invite are meaningless until
-          the guest exists; quiet placeholders keep the columns aligned. */}
-      <td className={`${placeholderCell} text-center`}>–</td>
-      {mealEnabled && <td className={`${placeholderCell} text-center`}>–</td>}
-      <td className={`${placeholderCell} text-center`}>–</td>
-      <td className={`${placeholderCell} text-center`}>–</td>
-      <td className={`${placeholderCell} text-center`}>–</td>
+      {cols.map(cell)}
       <td className={CELL}>
         <span className="flex items-center justify-end gap-1">
           <button
@@ -2632,7 +2933,9 @@ function GroupCellChip({
  *  dietary tags are edited inline via dropdowns; dietary uses a toggle-select
  *  (picking an option flips that allergen tag on/off) so the free-text
  *  remainder written by the RSVP form is preserved untouched. Name / RSVP /
- *  group headers double as sort toggles into the shared URL-backed sort axis. */
+ *  group / certainty headers double as sort toggles into the shared URL-backed
+ *  sort axis. Columns render from the couple's saved layout (see
+ *  `GUEST_TABLE_COLS`): headers drag to reorder, the Columns menu hides. */
 function GuestTable({
   guests,
   allGuests,
@@ -2643,6 +2946,7 @@ function GuestTable({
   onSetSort,
   onUpdateGuest,
   onChangeGroup,
+  onChangeCertainty,
   onChangeHousehold,
   onRenameHousehold,
   onCreateGuest,
@@ -2652,10 +2956,11 @@ function GuestTable({
 }: {
   guests: Guest[];
   /** The couple's whole listable roster, NOT narrowed by the active search/
-   *  filters — used only for duplicate-name detection in the always-present
-   *  new-row, so a guest hidden by e.g. an RSVP filter still counts as an
-   *  existing match. `guests` above stays the filtered set that's actually
-   *  rendered as rows. */
+   *  filters. Used for duplicate-name detection in the always-present new-row
+   *  (a guest hidden by e.g. an RSVP filter still counts as an existing match)
+   *  and for "is everyone invited?", which must not flip because a filter
+   *  happens to show only invited guests. `guests` above stays the filtered
+   *  set that's actually rendered as rows. */
   allGuests: Guest[];
   households: Household[];
   mealMenu: MealMenu | null;
@@ -2667,6 +2972,7 @@ function GuestTable({
   onSetSort: (k: SortKey) => void;
   onUpdateGuest: (g: Guest, patch: Partial<Guest>) => void | Promise<void>;
   onChangeGroup: (g: Guest, tag: GuestGroupTag) => void | Promise<void>;
+  onChangeCertainty: (g: Guest, c: GuestCertainty) => void | Promise<void>;
   onChangeHousehold: (
     g: Guest,
     target: { household_id: number } | { new_household_label: string },
@@ -2678,11 +2984,30 @@ function GuestTable({
   onToggleGuestInvited: (g: Guest) => void | Promise<void>;
 }) {
   const { t } = useT();
+  const [prefs, setPrefs] = useGuestTableColPrefs();
+  const [dragCol, setDragCol] = useState<GuestTableCol | null>(null);
+  const [dropCol, setDropCol] = useState<GuestTableCol | null>(null);
   const householdLabelById = useMemo(() => {
     const m = new Map<number, string>();
     for (const hh of households) m.set(hh.id, hh.label);
     return m;
   }, [households]);
+
+  // Once every guest has been invited the Invited column has nothing left to
+  // say, so it steps aside on its own; the first new (uninvited) guest brings
+  // it back.
+  const allInvited = allGuests.length > 0 && allGuests.every((g) => g.invited_at != null);
+  const available = useMemo(
+    () => new Set(GUEST_TABLE_COLS.filter((c) => c !== "meal" || mealEnabled)),
+    [mealEnabled],
+  );
+  const autoHidden = useMemo(
+    () => new Set<GuestTableCol>(allInvited ? ["invited"] : []),
+    [allInvited],
+  );
+  const cols = prefs.order.filter(
+    (c) => available.has(c) && !autoHidden.has(c) && !prefs.hidden.includes(c),
+  );
 
   const th = CELL_HEAD;
   const sortableHeader = (key: SortKey, label: string) => (
@@ -2698,114 +3023,152 @@ function GuestTable({
       <ArrowUpDown size={11} aria-hidden className={sortKey === key ? "" : "opacity-40"} />
     </button>
   );
+  const SORT_OF: Partial<Record<GuestTableCol, SortKey>> = {
+    name: "name",
+    rsvp: "rsvp",
+    group: "group",
+    certainty: "certainty",
+  };
+
+  function header(c: GuestTableCol) {
+    const label = t(GUEST_TABLE_COL_LABEL[c]);
+    const sort = SORT_OF[c];
+    // Drop indicator on the side the column will land: dragging rightwards
+    // lands after the target, leftwards before it (see moveGuestTableCol).
+    const rightwards = dragCol != null && prefs.order.indexOf(dragCol) < prefs.order.indexOf(c);
+    const indicator =
+      dropCol === c && dragCol != null && dragCol !== c
+        ? rightwards
+          ? "border-r-2 border-r-umber-500 dark:border-r-paper-100"
+          : "border-l-2 border-l-umber-500 dark:border-l-paper-100"
+        : "";
+    return (
+      <th
+        key={c}
+        scope="col"
+        draggable
+        title={c === "certainty" ? t("guests.table_col_certainty_hint") : undefined}
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", c);
+          setDragCol(c);
+        }}
+        onDragEnd={() => {
+          setDragCol(null);
+          setDropCol(null);
+        }}
+        onDragOver={(e) => {
+          if (!dragCol) return;
+          e.preventDefault();
+          if (dropCol !== c) setDropCol(c);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (dragCol) setPrefs({ ...prefs, order: moveGuestTableCol(prefs.order, dragCol, c) });
+          setDragCol(null);
+          setDropCol(null);
+        }}
+        className={`${th} group/th cursor-grab ${c === "name" ? "text-left" : "text-center"} ${
+          dragCol === c ? "opacity-50" : ""
+        } ${indicator}`}
+      >
+        <span className={`inline-flex items-center gap-1 ${c === "name" ? "" : "justify-center"}`}>
+          <GripVertical
+            size={11}
+            aria-hidden
+            className="shrink-0 opacity-0 transition-opacity group-hover/th:opacity-60"
+          />
+          {sort ? sortableHeader(sort, label) : label}
+        </span>
+      </th>
+    );
+  }
 
   return (
-    <div className="card overflow-x-auto p-0">
-      <HouseholdDatalist households={households} />
-      <table className="w-full min-w-[920px] border-collapse text-sm">
-        <thead>
-          <tr>
-            <th className={`${th} text-left`} scope="col">
-              {sortableHeader("name", t("guests.table_col_name"))}
-            </th>
-            <th className={`${th} text-center`} scope="col">
-              {t("guests.email")}
-            </th>
-            <th className={`${th} text-center`} scope="col">
-              {t("guests.table_col_household")}
-            </th>
-            <th className={`${th} text-center`} scope="col">
-              {sortableHeader("group", t("guests.table_col_group"))}
-            </th>
-            <th
-              className={`${th} text-center`}
-              scope="col"
-              title={t("guests.table_col_certainty_hint")}
-            >
-              {sortableHeader("certainty", t("guests.table_col_certainty"))}
-            </th>
-            <th className={`${th} text-center`} scope="col">
-              {sortableHeader("rsvp", t("guests.table_col_rsvp"))}
-            </th>
-            {mealEnabled && (
-              <th className={`${th} text-center`} scope="col">
-                {t("guests.table_col_meal")}
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <GuestTableColumnsMenu
+          prefs={prefs}
+          onChange={setPrefs}
+          available={available}
+          autoHidden={autoHidden}
+        />
+      </div>
+      <div className="card overflow-x-auto p-0">
+        <HouseholdDatalist households={households} />
+        <table className="w-full min-w-[920px] border-collapse text-sm">
+          <thead>
+            <tr>
+              {cols.map(header)}
+              <th className={th} scope="col">
+                <span className="sr-only">{t("guests.table_col_actions")}</span>
               </th>
-            )}
-            <th className={`${th} text-center`} scope="col">
-              {t("guests.table_col_dietary")}
-            </th>
-            <th className={`${th} text-center`} scope="col">
-              {t("guests.table_col_accommodation")}
-            </th>
-            <th className={`${th} text-center`} scope="col">
-              {t("guests.table_col_invited")}
-            </th>
-            <th className={th} scope="col">
-              <span className="sr-only">{t("guests.table_col_actions")}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {guests.map((g, i) => (
-            <GuestTableRow
-              key={g.id}
-              guest={g}
-              /* Alternating row tint, Excel-style, so the eye can track one
-                 row across the grid on wide screens. */
-              zebra={i % 2 === 1}
-              householdLabel={
-                g.household_id != null ? (householdLabelById.get(g.household_id) ?? null) : null
-              }
+            </tr>
+          </thead>
+          <tbody>
+            {guests.map((g, i) => (
+              <GuestTableRow
+                key={g.id}
+                cols={cols}
+                guest={g}
+                /* Alternating row tint, Excel-style, so the eye can track one
+                   row across the grid on wide screens. */
+                zebra={i % 2 === 1}
+                householdLabel={
+                  g.household_id != null ? (householdLabelById.get(g.household_id) ?? null) : null
+                }
+                households={households}
+                mealMenu={mealMenu}
+                onUpdateGuest={onUpdateGuest}
+                onChangeGroup={onChangeGroup}
+                onChangeCertainty={onChangeCertainty}
+                onChangeHousehold={onChangeHousehold}
+                onRenameHousehold={onRenameHousehold}
+                onEditGuest={onEditGuest}
+                onDeleteGuest={onDeleteGuest}
+                onToggleGuestInvited={onToggleGuestInvited}
+              />
+            ))}
+            {/* Always-present blank row so a guest can be added inline without
+                opening the drawer. */}
+            <GuestTableNewRow
+              cols={cols}
+              guests={allGuests}
               households={households}
-              mealMenu={mealMenu}
-              mealEnabled={mealEnabled}
-              onUpdateGuest={onUpdateGuest}
-              onChangeGroup={onChangeGroup}
-              onChangeHousehold={onChangeHousehold}
-              onRenameHousehold={onRenameHousehold}
-              onEditGuest={onEditGuest}
-              onDeleteGuest={onDeleteGuest}
-              onToggleGuestInvited={onToggleGuestInvited}
+              onCreateGuest={onCreateGuest}
             />
-          ))}
-          {/* Always-present blank row so a guest can be added inline without
-              opening the drawer. */}
-          <GuestTableNewRow
-            guests={allGuests}
-            households={households}
-            mealEnabled={mealEnabled}
-            onCreateGuest={onCreateGuest}
-          />
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
 function GuestTableRow({
+  cols,
   guest: g,
   zebra = false,
   householdLabel,
   households,
   mealMenu,
-  mealEnabled,
   onUpdateGuest,
   onChangeGroup,
+  onChangeCertainty,
   onChangeHousehold,
   onRenameHousehold,
   onEditGuest,
   onDeleteGuest,
   onToggleGuestInvited,
 }: {
+  cols: GuestTableCol[];
   guest: Guest;
   zebra?: boolean;
   householdLabel: string | null;
   households: Household[];
   mealMenu: MealMenu | null;
-  mealEnabled: boolean;
   onUpdateGuest: (g: Guest, patch: Partial<Guest>) => void | Promise<void>;
   onChangeGroup: (g: Guest, tag: GuestGroupTag) => void | Promise<void>;
+  onChangeCertainty: (g: Guest, c: GuestCertainty) => void | Promise<void>;
   onChangeHousehold: (
     g: Guest,
     target: { household_id: number } | { new_household_label: string },
@@ -2825,123 +3188,163 @@ function GuestTableRow({
     void onUpdateGuest(g, { dietary: buildDietary(next, dietary.remainder) });
   }
 
+  function cell(c: GuestTableCol): ReactNode {
+    switch (c) {
+      case "name":
+        return (
+          <td key={c} className={`${CELL} max-w-[16rem]`}>
+            <span className="flex items-center gap-1.5">
+              <PartnerRoleIcon role={g.partner_role} />
+              <KindIcon kind={g.kind} />
+              <SupplierIcon show={g.is_supplier} />
+              <PlusOneBadge show={g.is_plus_one} />
+              <NameCell
+                name={g.full_name}
+                onChange={(v) => void onUpdateGuest(g, { full_name: v })}
+              />
+            </span>
+          </td>
+        );
+      case "email":
+        return (
+          <td key={c} className={`${CELL} max-w-[14rem]`}>
+            <EmailCell email={g.email} onChange={(v) => void onUpdateGuest(g, { email: v })} />
+          </td>
+        );
+      case "household":
+        return (
+          <td key={c} className={`${CELL} min-w-[12rem]`}>
+            {/* A +1's household is bound to its host server-side, so editing it
+                here would silently revert, so show it read-only. Everyone else
+                gets the pick-or-type combobox. */}
+            {g.is_plus_one ? (
+              <span className="text-xs text-ink-600 dark:text-umber-200">
+                {householdLabel ?? "–"}
+              </span>
+            ) : (
+              <HouseholdCell
+                label={householdLabel}
+                householdId={g.household_id}
+                households={households}
+                onChangeHousehold={(target) => void onChangeHousehold(g, target)}
+                onRenameHousehold={(id, label) => void onRenameHousehold(id, label)}
+              />
+            )}
+          </td>
+        );
+      case "group":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            {/* Group is household-canonical on the backend, so this chip edits
+                the whole household's tag (title says so), not just this row. */}
+            <GroupCellChip
+              value={g.group_tag}
+              onChange={(v) => void onChangeGroup(g, v)}
+              ariaLabel={t("guests.table_col_group")}
+              title={g.household_id != null ? t("guests.table_group_household_hint") : undefined}
+            />
+          </td>
+        );
+      case "certainty":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            <CertaintyCellChip
+              value={g.certainty}
+              onChange={(v) => void onChangeCertainty(g, v)}
+              ariaLabel={t("guests.table_col_certainty")}
+            />
+          </td>
+        );
+      case "rsvp":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            <RsvpPicker
+              value={g.rsvp_status}
+              onChange={(v) => void onUpdateGuest(g, { rsvp_status: v })}
+              ariaLabel={t("guests.table_col_rsvp")}
+            />
+          </td>
+        );
+      case "meal":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            <CellSelect
+              value={g.meal_choice ?? ""}
+              ariaLabel={t("guests.table_col_meal")}
+              onChange={(v) =>
+                void onUpdateGuest(g, { meal_choice: v === "" ? null : (v as MealSlotKey) })
+              }
+              className="[&>select]:text-center"
+            >
+              <option value="">{t("guests.table_meal_unset")}</option>
+              {mealSlots(mealMenu)
+                .map((m) => ({ m, label: slotLabel(mealMenu, m, t) }))
+                .filter((o) => o.label)
+                .map((o) => (
+                  <option key={o.m} value={o.m}>
+                    {o.label}
+                  </option>
+                ))}
+            </CellSelect>
+          </td>
+        );
+      case "dietary":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            <span className="flex items-center justify-center gap-1.5">
+              <MealIcons meal={null} dietary={g.dietary} />
+              {/* Toggle-select: value stays "", the visible summary lives in
+                  the hidden placeholder option, and picking an allergen flips
+                  it. */}
+              <CellSelect
+                value=""
+                ariaLabel={t("guests.table_col_dietary")}
+                onChange={(v) => toggleDietaryTag(v as DietaryTag)}
+                className="min-w-[7rem]"
+              >
+                <option value="" hidden>
+                  {dietary.tags.size > 0
+                    ? t("guests.table_dietary_selected", { count: dietary.tags.size })
+                    : t("guests.table_dietary_none")}
+                </option>
+                {DIETARY_TAG_KEYS.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {dietary.tags.has(tag) ? "✓ " : "  "}
+                    {t(`rsvp.tag_${tag}`)}
+                  </option>
+                ))}
+              </CellSelect>
+            </span>
+          </td>
+        );
+      case "accommodation":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            <input
+              type="checkbox"
+              className="h-4 w-4 cursor-pointer accent-umber-700 dark:accent-paper-100"
+              checked={g.accommodation_needed}
+              aria-label={t("guests.table_col_accommodation")}
+              onChange={(e) => void onUpdateGuest(g, { accommodation_needed: e.target.checked })}
+            />
+          </td>
+        );
+      case "invited":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            <InviteChip guest={g} onToggle={() => void onToggleGuestInvited(g)} />
+          </td>
+        );
+    }
+  }
+
   return (
     <tr
       className={`transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-800/40 ${
         zebra ? "bg-paper-100/40 dark:bg-umber-800/25" : ""
       }`}
     >
-      <td className={`${CELL} max-w-[16rem]`}>
-        <span className="flex items-center gap-1.5">
-          <PartnerRoleIcon role={g.partner_role} />
-          <KindIcon kind={g.kind} />
-          <SupplierIcon show={g.is_supplier} />
-          <PlusOneBadge show={g.is_plus_one} />
-          <NameCell name={g.full_name} onChange={(v) => void onUpdateGuest(g, { full_name: v })} />
-        </span>
-      </td>
-      <td className={`${CELL} max-w-[14rem]`}>
-        <EmailCell email={g.email} onChange={(v) => void onUpdateGuest(g, { email: v })} />
-      </td>
-      <td className={`${CELL} min-w-[12rem]`}>
-        {/* A +1's household is bound to its host server-side, so editing it here
-            would silently revert, so show it read-only. Everyone else gets the
-            pick-or-type combobox. */}
-        {g.is_plus_one ? (
-          <span className="text-xs text-ink-600 dark:text-umber-200">{householdLabel ?? "–"}</span>
-        ) : (
-          <HouseholdCell
-            label={householdLabel}
-            householdId={g.household_id}
-            households={households}
-            onChangeHousehold={(target) => void onChangeHousehold(g, target)}
-            onRenameHousehold={(id, label) => void onRenameHousehold(id, label)}
-          />
-        )}
-      </td>
-      <td className={`${CELL} text-center`}>
-        {/* Group is household-canonical on the backend, so this chip edits
-            the whole household's tag (title says so), not just this row. */}
-        <GroupCellChip
-          value={g.group_tag}
-          onChange={(v) => void onChangeGroup(g, v)}
-          ariaLabel={t("guests.table_col_group")}
-          title={g.household_id != null ? t("guests.table_group_household_hint") : undefined}
-        />
-      </td>
-      <td className={`${CELL} text-center`}>
-        <CertaintyCellChip
-          value={g.certainty}
-          onChange={(v) => void onUpdateGuest(g, { certainty: v })}
-          ariaLabel={t("guests.table_col_certainty")}
-        />
-      </td>
-      <td className={`${CELL} text-center`}>
-        <RsvpPicker
-          value={g.rsvp_status}
-          onChange={(v) => void onUpdateGuest(g, { rsvp_status: v })}
-          ariaLabel={t("guests.table_col_rsvp")}
-        />
-      </td>
-      {mealEnabled && (
-        <td className={`${CELL} text-center`}>
-          <CellSelect
-            value={g.meal_choice ?? ""}
-            ariaLabel={t("guests.table_col_meal")}
-            onChange={(v) =>
-              void onUpdateGuest(g, { meal_choice: v === "" ? null : (v as MealSlotKey) })
-            }
-            className="[&>select]:text-center"
-          >
-            <option value="">{t("guests.table_meal_unset")}</option>
-            {mealSlots(mealMenu)
-              .map((c) => ({ c, label: slotLabel(mealMenu, c, t) }))
-              .filter((o) => o.label)
-              .map((o) => (
-                <option key={o.c} value={o.c}>
-                  {o.label}
-                </option>
-              ))}
-          </CellSelect>
-        </td>
-      )}
-      <td className={`${CELL} text-center`}>
-        <span className="flex items-center justify-center gap-1.5">
-          <MealIcons meal={null} dietary={g.dietary} />
-          {/* Toggle-select: value stays "", the visible summary lives in the
-              hidden placeholder option, and picking an allergen flips it. */}
-          <CellSelect
-            value=""
-            ariaLabel={t("guests.table_col_dietary")}
-            onChange={(v) => toggleDietaryTag(v as DietaryTag)}
-            className="min-w-[7rem]"
-          >
-            <option value="" hidden>
-              {dietary.tags.size > 0
-                ? t("guests.table_dietary_selected", { count: dietary.tags.size })
-                : t("guests.table_dietary_none")}
-            </option>
-            {DIETARY_TAG_KEYS.map((tag) => (
-              <option key={tag} value={tag}>
-                {dietary.tags.has(tag) ? "✓ " : "  "}
-                {t(`rsvp.tag_${tag}`)}
-              </option>
-            ))}
-          </CellSelect>
-        </span>
-      </td>
-      <td className={`${CELL} text-center`}>
-        <input
-          type="checkbox"
-          className="h-4 w-4 cursor-pointer accent-umber-700 dark:accent-paper-100"
-          checked={g.accommodation_needed}
-          aria-label={t("guests.table_col_accommodation")}
-          onChange={(e) => void onUpdateGuest(g, { accommodation_needed: e.target.checked })}
-        />
-      </td>
-      <td className={`${CELL} text-center`}>
-        <InviteChip guest={g} onToggle={() => void onToggleGuestInvited(g)} />
-      </td>
+      {cols.map(cell)}
       <td className={CELL}>
         <span className="flex items-center justify-end gap-1">
           <button

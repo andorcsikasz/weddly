@@ -97,3 +97,105 @@ describe("guest certainty: CSV export", () => {
     expect(text).toContain("unlikely");
   });
 });
+
+// Certainty is household-canonical (triggers in db.ts): a household is invited
+// or cut as one unit, so every path that changes or adds a member has to land
+// on one value for the whole household.
+describe("guest certainty: one value per household", () => {
+  interface G {
+    id: number;
+    full_name: string;
+    certainty: string;
+    household_id: number | null;
+  }
+  async function list(token: string): Promise<G[]> {
+    const r = await req<{ guests: G[] }>("GET", "/api/guests", undefined, { token });
+    return r.data.guests;
+  }
+
+  test("changing one member's certainty changes every member's", async () => {
+    const { token } = await bootstrapCouple("gc-hh-spread@weddly.test");
+    const a = await req<{ guest: G }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Anna", household_id: null, new_household_label: "Kovács család" },
+      { token },
+    );
+    const hh = a.data.guest.household_id;
+    expect(hh).not.toBeNull();
+    await req("POST", "/api/guests", { full_name: "Márk", household_id: hh }, { token });
+
+    await req("PATCH", `/api/guests/${a.data.guest.id}`, { certainty: "unsure" }, { token });
+    const members = (await list(token)).filter((g) => g.household_id === hh);
+    expect(members).toHaveLength(2);
+    expect(members.every((g) => g.certainty === "unsure")).toBe(true);
+  });
+
+  test("a guest joining a household takes the household's value", async () => {
+    const { token } = await bootstrapCouple("gc-hh-join@weddly.test");
+    const a = await req<{ guest: G }>(
+      "POST",
+      "/api/guests",
+      {
+        full_name: "Bella",
+        certainty: "unlikely",
+        household_id: null,
+        new_household_label: "Nagy család",
+      },
+      { token },
+    );
+    const hh = a.data.guest.household_id;
+    const b = await req<{ guest: G }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Bence", household_id: hh },
+      { token },
+    );
+    expect(b.data.guest.certainty).toBe("unlikely");
+  });
+
+  test("moving a guest into another household adopts that household's value", async () => {
+    const { token } = await bootstrapCouple("gc-hh-move@weddly.test");
+    const a = await req<{ guest: G }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Csilla", certainty: "likely", household_id: null, new_household_label: "A" },
+      { token },
+    );
+    const b = await req<{ guest: G }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Dani", household_id: null, new_household_label: "B" },
+      { token },
+    );
+    expect(b.data.guest.certainty).toBe("definite");
+    const moved = await req<{ guest: G }>(
+      "PATCH",
+      `/api/guests/${b.data.guest.id}`,
+      { household_id: a.data.guest.household_id },
+      { token },
+    );
+    expect(moved.data.guest.certainty).toBe("likely");
+    // And the household it joined did not flip to the newcomer's old value.
+    const csilla = (await list(token)).find((g) => g.id === a.data.guest.id);
+    expect(csilla?.certainty).toBe("likely");
+  });
+
+  test("a materialised +1 inherits its host household's value", async () => {
+    const { token } = await bootstrapCouple("gc-hh-plusone@weddly.test");
+    const host = await req<{ guest: G }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Emese", certainty: "unsure" },
+      { token },
+    );
+    await req(
+      "PATCH",
+      `/api/guests/${host.data.guest.id}`,
+      { plus_one_name: "Emese kísérője" },
+      { token },
+    );
+    const plusOne = (await list(token)).find((g) => g.full_name === "Emese kísérője");
+    expect(plusOne?.certainty).toBe("unsure");
+  });
+});

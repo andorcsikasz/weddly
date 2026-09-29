@@ -4933,12 +4933,17 @@ const es: LocaleMessages = {
     table_group_household_hint: "Cambia el grupo de todo el hogar",
     table_col_certainty: "Certeza",
     table_col_certainty_hint:
-      "Lo seguro que estás de invitar a este invitado: te ayuda a ver dónde trazar la línea si necesitas recortar la lista.",
+      "Lo seguro que estás de invitar a este invitado: te ayuda a ver dónde trazar la línea si necesitas recortar la lista. Se aplica a todo el hogar.",
     table_col_rsvp: "Confirmación",
     table_col_meal: "Menú",
     table_col_dietary: "Alimentación",
     table_col_accommodation: "Alojamiento",
     table_col_invited: "Invitado",
+    table_columns: "Columnas",
+    table_columns_hint:
+      "Arrastra un encabezado para mover una columna y desmárcala para ocultarla.",
+    table_columns_reset: "Restablecer",
+    table_col_invited_auto_hidden: "Oculta mientras todos estén invitados",
     table_col_actions: "Acciones",
     table_meal_unset: "Sin definir",
     table_dietary_none: "Ninguno",
@@ -4951,7 +4956,7 @@ const es: LocaleMessages = {
     table_email_placeholder: "Dirección de email",
     certainty_label: "¿Qué tan seguro estás?",
     certainty_help:
-      "Tu propia valoración sobre este invitado, no su confirmación: te ayuda a ver a quién recortar primero si la lista se alarga.",
+      "Tu propia valoración sobre este invitado, no su confirmación: te ayuda a ver a quién recortar primero si la lista se alarga. Se aplica a todo el hogar.",
     certainty_definite: "Seguro",
     certainty_likely: "Probable",
     certainty_unsure: "Incierto",

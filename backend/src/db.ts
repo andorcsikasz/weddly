@@ -182,6 +182,64 @@ addColumnIfMissing("guests", "is_supplier", "is_supplier INTEGER NOT NULL DEFAUL
 // 'definite' so every existing guest reads as intended-to-invite, not unsure.
 addColumnIfMissing("guests", "certainty", "certainty TEXT NOT NULL DEFAULT 'definite'");
 
+// Certainty is HOUSEHOLD-canonical: a household is invited or cut as one unit,
+// so "Anna definite, her husband unlikely" is not an answer anyone can act on.
+// Enforced here as triggers rather than in the routes because guests are
+// inserted from ten places (drawer, table, bulk paste, CSV, +1 materialise,
+// the public RSVP form adding a member, seeds...) and every one of them would
+// otherwise need to remember it. Three rules, and recursive_triggers is off,
+// so a trigger's own UPDATE never fires another:
+//   - a guest ARRIVING in a household (insert or move) takes the household's
+//     existing value; an empty household keeps the guest's own;
+//   - a certainty CHANGE on a guest who stays put spreads to every sibling.
+// The backfill aligns households that were mixed before the rule, to their
+// earliest member, and is a no-op on every later boot.
+db.exec(`
+  CREATE TRIGGER IF NOT EXISTS guests_certainty_inherit_insert
+  AFTER INSERT ON guests
+  WHEN NEW.household_id IS NOT NULL
+    AND EXISTS (SELECT 1 FROM guests WHERE household_id = NEW.household_id AND id <> NEW.id)
+  BEGIN
+    UPDATE guests SET certainty = (
+      SELECT certainty FROM guests
+       WHERE household_id = NEW.household_id AND id <> NEW.id ORDER BY id LIMIT 1
+    ) WHERE id = NEW.id;
+  END;
+
+  CREATE TRIGGER IF NOT EXISTS guests_certainty_inherit_move
+  AFTER UPDATE OF household_id ON guests
+  WHEN NEW.household_id IS NOT NULL
+    AND OLD.household_id IS NOT NEW.household_id
+    AND EXISTS (SELECT 1 FROM guests WHERE household_id = NEW.household_id AND id <> NEW.id)
+  BEGIN
+    UPDATE guests SET certainty = (
+      SELECT certainty FROM guests
+       WHERE household_id = NEW.household_id AND id <> NEW.id ORDER BY id LIMIT 1
+    ) WHERE id = NEW.id;
+  END;
+
+  CREATE TRIGGER IF NOT EXISTS guests_certainty_spread
+  AFTER UPDATE OF certainty ON guests
+  WHEN NEW.household_id IS NOT NULL
+    AND OLD.household_id IS NEW.household_id
+    AND OLD.certainty IS NOT NEW.certainty
+  BEGIN
+    UPDATE guests SET certainty = NEW.certainty
+     WHERE household_id = NEW.household_id AND id <> NEW.id AND certainty <> NEW.certainty;
+  END;
+`);
+db.exec(`
+  UPDATE guests SET certainty = (
+    SELECT g2.certainty FROM guests g2
+     WHERE g2.household_id = guests.household_id ORDER BY g2.id LIMIT 1
+  )
+  WHERE household_id IS NOT NULL
+    AND certainty <> (
+      SELECT g2.certainty FROM guests g2
+       WHERE g2.household_id = guests.household_id ORDER BY g2.id LIMIT 1
+    );
+`);
+
 // Materialised plus-one marker. 1 when this guest was auto-created from another
 // guest's "+1" field (so the list can flag it). Default 0 for every normal row.
 addColumnIfMissing("guests", "is_plus_one", "is_plus_one INTEGER NOT NULL DEFAULT 0");

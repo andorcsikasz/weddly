@@ -4882,12 +4882,17 @@ const hu: LocaleMessages = {
     table_group_household_hint: "Az egész háztartás csoportját módosítja",
     table_col_certainty: "Bizonyosság",
     table_col_certainty_hint:
-      "Mennyire vagytok biztosak benne, hogy meghívjátok — segít eldönteni, hol húzzátok meg a határt, ha szűkíteni kell a listát.",
+      "Mennyire vagytok biztosak benne, hogy meghívjátok — segít eldönteni, hol húzzátok meg a határt, ha szűkíteni kell a listát. Az egész háztartásra vonatkozik.",
     table_col_rsvp: "Visszajelzés",
     table_col_meal: "Menü",
     table_col_dietary: "Étrend",
     table_col_accommodation: "Szállás",
     table_col_invited: "Meghívó",
+    table_columns: "Oszlopok",
+    table_columns_hint:
+      "Az oszlopfejlécet húzva áthelyezheted, a pipát kivéve elrejtheted az oszlopot.",
+    table_columns_reset: "Alapértelmezett",
+    table_col_invited_auto_hidden: "Rejtve, amíg mindenki meg van hívva",
     table_col_actions: "Műveletek",
     table_meal_unset: "Nincs megadva",
     table_dietary_none: "Nincs",
@@ -4900,7 +4905,7 @@ const hu: LocaleMessages = {
     table_email_placeholder: "E-mail cím",
     certainty_label: "Mennyire vagytok biztosak?",
     certainty_help:
-      "A ti saját megítélésetek erről a vendégről, nem a visszajelzése — segít eldönteni, kit húzzatok ki elsőként, ha hosszú a lista.",
+      "A ti saját megítélésetek erről a vendégről, nem a visszajelzése — segít eldönteni, kit húzzatok ki elsőként, ha hosszú a lista. Az egész háztartásra vonatkozik.",
     certainty_definite: "Biztos",
     certainty_likely: "Valószínű",
     certainty_unsure: "Bizonytalan",
