@@ -21,12 +21,18 @@
 //   developing    — reveal_at is in the future; countdown shown
 //   gallery       — reveal_at passed; grid of photos
 //   limit_reached — shots_per_guest exhausted
+//   demo_developed — /camera/try only: the visitor's own demo shots, "developed"
+//
+// Demo mode (/camera/try, the "Try it" QR on the /camera landing page) runs
+// this exact viewfinder against a local, made-up film. Nothing is registered
+// or uploaded: the queue settles each shot on the phone, and running out of
+// frames (or tapping Develop) shows the reveal a guest would get.
 
 import type { FilmAesthetic, FilmUpload, PhotoAlbumPublic } from "@shared/types";
 import { FILM_FILTERS } from "@shared/types";
 import { Camera, Check, ImagePlus, RotateCcw, Share2, SwitchCamera } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
 import { intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -110,7 +116,28 @@ type PageState =
   | { kind: "viewfinder"; album: PhotoAlbumPublic; guestName: string | null; shotCount: number }
   | { kind: "developing"; album: PhotoAlbumPublic }
   | { kind: "gallery"; album: PhotoAlbumPublic; uploads: FilmUpload[] }
-  | { kind: "limit_reached"; album: PhotoAlbumPublic };
+  | { kind: "limit_reached"; album: PhotoAlbumPublic }
+  | { kind: "demo_developed"; album: PhotoAlbumPublic; files: File[] };
+
+// Frames on the demo roll: enough to feel the counter move, few enough that
+// the reveal arrives while the visitor is still curious.
+const DEMO_SHOTS = 8;
+
+function demoAlbum(displayName: string): PhotoAlbumPublic {
+  return {
+    displayName,
+    weddingDate: null,
+    slug: null,
+    title: null,
+    shotsPerGuest: DEMO_SHOTS,
+    isUploadEnabled: true,
+    eventEndsAt: null,
+    revealAt: null,
+    filmAesthetic: "vintage",
+    coverImageUrl: null,
+    promptsEnabled: true,
+  };
+}
 
 // ─── CSS filter helper ────────────────────────────────────────────────────────
 
@@ -192,7 +219,7 @@ const GHOST_BTN =
 
 // Slim sticky bar shown when the couple opens the guest screens with ?preview=1,
 // so they can tell at a glance they are looking at the guest-facing view.
-function PreviewBanner() {
+function PreviewBanner({ label }: { label?: string }) {
   const { t } = useT();
   return (
     <div
@@ -200,7 +227,7 @@ function PreviewBanner() {
       className="pointer-events-none fixed left-0 right-0 top-0 z-50 flex justify-center px-3 pt-[max(0.5rem,env(safe-area-inset-top))]"
     >
       <span className="rounded-full border border-paper-50/30 bg-umber-700 px-3 py-1.5 text-[11px] font-grotesk font-bold uppercase tracking-[0.1em] text-paper-50 shadow-lg">
-        {t("photos.preview_banner")}
+        {label ?? t("photos.preview_banner")}
       </span>
     </div>
   );
@@ -410,6 +437,59 @@ function useRotatingPrompt(enabled: boolean): string | null {
   return t(orderRef.current[index] ?? PROMPT_KEYS[0]);
 }
 
+// ─── exposure counter ─────────────────────────────────────────────────────────
+// A disposable camera's frame wheel: capped films count DOWN the shots left,
+// uncapped ones count up the shots taken. The neighbours stay visible, faded
+// under a mask, and the strip rolls one cell per shot, so the number moving is
+// itself the confirmation that the frame was spent.
+
+const COUNTER_CELL_PX = 28;
+
+function ExposureCounter({ value, max }: { value: number; max: number }) {
+  const { t } = useT();
+  const numbers = useMemo(
+    () =>
+      max > 0
+        ? Array.from({ length: max + 1 }, (_, i) => max - i)
+        : Array.from({ length: value + 2 }, (_, i) => i),
+    [max, value],
+  );
+  const index = max > 0 ? max - value : value;
+  return (
+    <div className="flex flex-col items-start" aria-live="polite">
+      <div
+        className="relative h-9 overflow-hidden"
+        style={{
+          width: COUNTER_CELL_PX * 3,
+          maskImage: "linear-gradient(to right, transparent, black 30%, black 70%, transparent)",
+        }}
+      >
+        <div
+          className="absolute inset-y-0 left-0 flex items-center transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+          style={{ transform: `translateX(${(1 - index) * COUNTER_CELL_PX}px)` }}
+          aria-hidden="true"
+        >
+          {numbers.map((n, i) => (
+            <span
+              key={n}
+              className={`text-center font-serif italic tabular-nums transition-[opacity,color] duration-300 ${
+                i === index ? "text-[26px] text-paper-50" : "text-[20px] text-paper-50/35"
+              }`}
+              style={{ width: COUNTER_CELL_PX }}
+            >
+              {n}
+            </span>
+          ))}
+        </div>
+      </div>
+      <span className="font-grotesk text-[10px] font-semibold uppercase tracking-[0.18em] text-paper-50/45">
+        <span className="sr-only">{value} </span>
+        {max > 0 ? t("photos.shots_left") : t("photos.shots_taken")}
+      </span>
+    </div>
+  );
+}
+
 // ─── viewfinder ───────────────────────────────────────────────────────────────
 
 function Viewfinder({
@@ -418,16 +498,22 @@ function Viewfinder({
   shotCount,
   token,
   preview,
+  demo = false,
   onShotTaken,
   onLimitReached,
+  onDemoDevelop,
 }: {
   album: PhotoAlbumPublic;
   guestName: string | null;
   shotCount: number;
   token: string;
   preview: boolean;
+  /** /camera/try: shots settle locally instead of uploading. */
+  demo?: boolean;
   onShotTaken: (newCount: number) => void;
   onLimitReached: () => void;
+  /** Demo only: the roll is spent or the visitor tapped Develop. */
+  onDemoDevelop?: (files: File[]) => void;
 }) {
   const { t, locale } = useT();
   const mobile = isMobileDevice();
@@ -464,7 +550,7 @@ function Viewfinder({
   const [sentCount, setSentCount] = useState(0);
   const [toastCount, setToastCount] = useState<number | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const deviceId = preview ? "" : getDeviceId(token);
+  const deviceId = preview || demo ? "" : getDeviceId(token);
 
   useEffect(() => {
     unmountedRef.current = false;
@@ -491,14 +577,27 @@ function Viewfinder({
   const pendingCount = queueRef.current.filter(
     (i) => i.status === "queued" || i.status === "uploading" || i.status === "retrying",
   ).length;
+  const latestShot = queueRef.current.at(-1);
+
+  function demoFiles(): File[] {
+    return queueRef.current.filter((i) => i.status === "done").map((i) => i.file);
+  }
 
   function handleUploadSuccess(newShotCount: number) {
+    if (demo && album.shotsPerGuest !== null && newShotCount >= album.shotsPerGuest) {
+      limitReachedRef.current = true;
+      onDemoDevelop?.(demoFiles());
+      return;
+    }
     if (album.shotsPerGuest !== null && newShotCount >= album.shotsPerGuest) {
       limitReachedRef.current = true;
       onLimitReached();
       return;
     }
     onShotTaken(newShotCount);
+    // The demo sends nothing, so it confirms nothing: the rolling frame
+    // counter is its feedback, and the reveal is its payoff.
+    if (demo) return;
     if (newShotCount === 1) {
       setSentCount(newShotCount);
       setSent(true);
@@ -514,6 +613,16 @@ function Viewfinder({
    *  failed. Never throws — every branch of `photoAlbumApi.upload` rejecting
    *  is handled here. */
   async function uploadOne(item: QueueItem) {
+    if (demo) {
+      // A beat of "sending" so the thumbnail's spinner reads as real, then
+      // settle it on the phone. Nothing leaves the device.
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      if (unmountedRef.current) return;
+      item.status = "done";
+      bump();
+      handleUploadSuccess(queueRef.current.filter((i) => i.status === "done").length);
+      return;
+    }
     try {
       const result = await photoAlbumApi.upload(token, item.file, {
         deviceId,
@@ -633,6 +742,8 @@ function Viewfinder({
     // authoritatively flips the screen via handleUploadSuccess.
     if (max > 0 && shotCount + pendingCount >= max) return;
     setError(null);
+    // A short tick where supported (Android); iOS Safari ignores it.
+    navigator.vibrate?.(8);
     setFlash(true);
     setTimeout(() => setFlash(false), 120);
     queueRef.current = [
@@ -782,9 +893,16 @@ function Viewfinder({
     // chrome against a black frame reads as two panels stitched together.
     <div className="flex min-h-dvh flex-col bg-black">
       {preview && <PreviewBanner />}
+      {demo && <PreviewBanner label={t("photos.demo_banner")} />}
 
       {/* ── Top bar: who + how many left, nothing else ─────────────── */}
-      <div className="flex items-center gap-3 px-5 pb-3 pt-[max(0.9rem,env(safe-area-inset-top))]">
+      <div
+        className={`flex items-center gap-3 px-5 pb-3 ${
+          demo || preview
+            ? "pt-[calc(max(0.5rem,env(safe-area-inset-top))+2.5rem)]"
+            : "pt-[max(0.9rem,env(safe-area-inset-top))]"
+        }`}
+      >
         <p className="min-w-0 flex-1 truncate font-grotesk text-[15px] font-bold tracking-[-0.01em] text-paper-50">
           {album.displayName}
         </p>
@@ -793,25 +911,34 @@ function Viewfinder({
             {formatFilmCountdown(remaining)}
           </span>
         )}
-        {max > 0 && (
-          <span className="shrink-0 rounded-full bg-paper-50/10 px-2.5 py-1 font-grotesk text-[13px] font-bold tabular-nums text-paper-50">
-            {Math.min(shotCount + pendingCount, max)}/{max}
-          </span>
+        {demo ? (
+          <button
+            type="button"
+            onClick={() => onDemoDevelop?.(demoFiles())}
+            disabled={shotCount === 0}
+            className="min-h-9 shrink-0 rounded-full bg-paper-50 px-4 font-grotesk text-[13px] font-bold text-ink-950 transition-[transform,opacity] duration-150 ease-out active:scale-[0.97] disabled:opacity-0"
+          >
+            {t("photos.demo_develop")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={shareInvite}
+            disabled={preview}
+            aria-label={t("photos.invite_aria")}
+            title={t("photos.invite_aria")}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
+          >
+            <Share2 size={16} aria-hidden="true" />
+          </button>
         )}
-        <button
-          type="button"
-          onClick={shareInvite}
-          disabled={preview}
-          aria-label={t("photos.invite_aria")}
-          title={t("photos.invite_aria")}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
-        >
-          <Share2 size={16} aria-hidden="true" />
-        </button>
       </div>
 
       {/* ── Viewfinder ─────────────────────────────────────────────── */}
-      <div className="relative flex-1 overflow-hidden bg-black" style={{ minHeight: "50vh" }}>
+      <div
+        className="relative mx-2 flex-1 overflow-hidden rounded-[28px] bg-ink-950"
+        style={{ minHeight: "50vh" }}
+      >
         <video
           ref={videoRef}
           playsInline
@@ -893,73 +1020,96 @@ function Viewfinder({
             retried. Uploading/retrying show a spinner or an amber dot; a
             permanently failed one shows why (bad file) or offers a retry
             (network) right on the thumbnail — no separate screen for it. */}
-        {queueRef.current.length > 0 && (
+        {/* The latest shot lives by the shutter; this strip only surfaces the
+            ones that still need attention (retrying, or failed). */}
+        {queueRef.current.some((i) => i.status === "retrying" || i.status === "failed") && (
           <div className="absolute bottom-4 right-4 flex gap-2">
-            {queueRef.current.slice(-QUEUE_DISPLAY_MAX).map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleQueueThumbTap(item)}
-                disabled={item.status !== "failed"}
-                aria-label={
-                  item.status === "failed" && item.retryable ? t("photos.queue_retry") : undefined
-                }
-                className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-paper-50/25 shadow-lg disabled:cursor-default"
-              >
-                <img
-                  src={item.previewUrl}
-                  alt=""
-                  aria-hidden="true"
-                  className="h-full w-full object-cover"
-                  style={{ filter: cssFilter }}
-                />
-                {(item.status === "queued" || item.status === "uploading") && (
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-paper-50/40 border-t-paper-50" />
-                  </span>
-                )}
-                {item.status === "retrying" && (
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <span className="h-2 w-2 rounded-full bg-amber-400" />
-                  </span>
-                )}
-                {item.status === "failed" && (
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/55">
-                    {item.retryable ? (
-                      <RotateCcw size={16} className="text-paper-50" aria-hidden="true" />
-                    ) : (
-                      <span className="font-grotesk text-[15px] font-bold text-red-300">!</span>
-                    )}
-                  </span>
-                )}
-              </button>
-            ))}
+            {queueRef.current
+              .filter((i) => i.status === "retrying" || i.status === "failed")
+              .slice(-QUEUE_DISPLAY_MAX)
+              .map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleQueueThumbTap(item)}
+                  disabled={item.status !== "failed"}
+                  aria-label={
+                    item.status === "failed" && item.retryable ? t("photos.queue_retry") : undefined
+                  }
+                  className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-paper-50/25 shadow-lg disabled:cursor-default"
+                >
+                  <img
+                    src={item.previewUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-full w-full object-cover"
+                    style={{ filter: cssFilter }}
+                  />
+                  {(item.status === "queued" || item.status === "uploading") && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-paper-50/40 border-t-paper-50" />
+                    </span>
+                  )}
+                  {item.status === "retrying" && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <span className="h-2 w-2 rounded-full bg-amber-400" />
+                    </span>
+                  )}
+                  {item.status === "failed" && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/55">
+                      {item.retryable ? (
+                        <RotateCcw size={16} className="text-paper-50" aria-hidden="true" />
+                      ) : (
+                        <span className="font-grotesk text-[15px] font-bold text-red-300">!</span>
+                      )}
+                    </span>
+                  )}
+                </button>
+              ))}
           </div>
         )}
       </div>
 
-      {/* ── Prompt: a playful idea, above the shutter ──────────────── */}
-      {promptText && (
-        <div className="flex justify-center px-8 pt-4">
-          <span className="rounded-full bg-paper-50/10 px-4 py-2 text-center text-[13px] font-medium text-paper-50/75">
-            {promptText}
-          </span>
+      {/* ── Utility row: upload · prompt · flip ────────────────────── */}
+      <div className="flex items-center gap-3 px-5 pt-4">
+        <button
+          type="button"
+          onClick={openPicker}
+          disabled={preview}
+          aria-label={t("photos.upload_existing")}
+          title={t("photos.upload_existing")}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
+        >
+          <ImagePlus size={20} aria-hidden="true" />
+        </button>
+        <div className="flex min-w-0 flex-1 justify-center">
+          {promptText && (
+            <span className="truncate text-center text-[13px] font-medium text-paper-50/60">
+              {promptText}
+            </span>
+          )}
         </div>
-      )}
+        <button
+          type="button"
+          onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}
+          disabled={!live}
+          aria-label={t("photos.flip_camera")}
+          title={t("photos.flip_camera")}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-[opacity,background-color] active:bg-paper-50/20 disabled:opacity-0"
+        >
+          <SwitchCamera size={20} aria-hidden="true" />
+        </button>
+      </div>
 
-      {/* ── Controls: upload · shutter · flip ──────────────────────── */}
-      <div className="grid grid-cols-3 items-center px-8 pb-[max(2rem,env(safe-area-inset-bottom))] pt-6">
+      {/* ── Controls: frame counter · shutter · last shot ──────────── */}
+      <div className="grid grid-cols-3 items-center px-6 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-5">
         <div className="flex justify-start">
-          <button
-            type="button"
-            onClick={openPicker}
-            disabled={preview}
-            aria-label={t("photos.upload_existing")}
-            title={t("photos.upload_existing")}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
-          >
-            <ImagePlus size={22} aria-hidden="true" />
-          </button>
+          <ExposureCounter
+            value={
+              max > 0 ? Math.max(0, max - (shotCount + pendingCount)) : shotCount + pendingCount
+            }
+            max={max}
+          />
         </div>
 
         <div className="flex justify-center">
@@ -972,25 +1122,37 @@ function Viewfinder({
             onPointerLeave={stopBurst}
             onClick={handleShutterClick}
             aria-label={t("photos.take_photo")}
-            className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-4 border-paper-50/35 bg-paper-50 transition-transform active:scale-90 disabled:opacity-50"
+            className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-[3px] border-paper-50/80 transition-transform duration-150 ease-out active:scale-[0.92] disabled:opacity-50"
           >
-            {pendingCount > 0 && (
-              <span className="h-6 w-6 animate-spin rounded-full border-2 border-ink-300 border-t-ink-950" />
-            )}
+            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-paper-50">
+              {pendingCount > 0 && (
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-ink-300 border-t-ink-950" />
+              )}
+            </span>
           </button>
         </div>
 
         <div className="flex justify-end">
-          {live && (
-            <button
-              type="button"
-              onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}
-              aria-label={t("photos.flip_camera")}
-              title={t("photos.flip_camera")}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
+          {latestShot ? (
+            <span
+              key={latestShot.id}
+              className="shot-pop relative h-12 w-12 overflow-hidden rounded-xl border border-paper-50/25"
             >
-              <SwitchCamera size={22} aria-hidden="true" />
-            </button>
+              <img
+                src={latestShot.previewUrl}
+                alt=""
+                aria-hidden="true"
+                className="h-full w-full object-cover"
+                style={{ filter: cssFilter }}
+              />
+              {(latestShot.status === "queued" || latestShot.status === "uploading") && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-paper-50/40 border-t-paper-50" />
+                </span>
+              )}
+            </span>
+          ) : (
+            <span aria-hidden="true" className="h-12 w-12 rounded-xl border border-paper-50/15" />
           )}
         </div>
       </div>
@@ -1105,10 +1267,67 @@ function Gallery({ uploads, aesthetic }: { uploads: FilmUpload[]; aesthetic: Fil
   );
 }
 
+// ─── demo reveal ──────────────────────────────────────────────────────────────
+// The payoff of /camera/try: the visitor's own shots, filtered like a real
+// reveal, and the one action that turns the demo into a film of their own.
+
+function DemoDeveloped({
+  album,
+  files,
+  onAgain,
+}: {
+  album: PhotoAlbumPublic;
+  files: File[];
+  onAgain: () => void;
+}) {
+  const { t } = useT();
+  const [urls, setUrls] = useState<string[]>([]);
+  useEffect(() => {
+    const created = files.map((f) => URL.createObjectURL(f));
+    setUrls(created);
+    return () => {
+      for (const u of created) URL.revokeObjectURL(u);
+    };
+  }, [files]);
+  const cssFilter = filterStyle(album.filmAesthetic);
+  return (
+    <div className="min-h-dvh bg-ink-950 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-14 text-paper-50">
+      <div className="mx-auto w-full max-w-md">
+        <p className="mb-3 font-grotesk text-[11px] font-semibold uppercase tracking-[0.22em] text-paper-50/40">
+          {album.displayName}
+        </p>
+        <SheetTitle>{t("photos.demo_developed_heading")}</SheetTitle>
+        <SheetBody>{t("photos.demo_developed_sub")}</SheetBody>
+        <div className="mt-8 grid grid-cols-3 gap-1.5">
+          {urls.map((url, i) => (
+            <img
+              key={url}
+              src={url}
+              alt=""
+              className="develop-in aspect-[3/4] w-full rounded-lg object-cover"
+              style={{ filter: cssFilter, animationDelay: `${i * 90}ms` }}
+            />
+          ))}
+        </div>
+        <div className="mt-10 flex flex-col gap-3">
+          <Link to="/signup" className={`${PRIMARY_BTN} text-center`}>
+            {t("photos.demo_cta")}
+          </Link>
+          <button type="button" onClick={onAgain} className={GHOST_BTN}>
+            {t("photos.demo_again")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── main page ────────────────────────────────────────────────────────────────
 
-export default function GuestPhotoPage() {
-  const { token = "" } = useParams<{ token: string }>();
+export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
+  const { token: routeToken = "" } = useParams<{ token: string }>();
+  // The demo never reaches the API, so its token only has to be non-empty.
+  const token = demo ? "demo" : routeToken;
   const { t, locale } = useT();
   const [searchParams] = useSearchParams();
   const preview = searchParams.get("preview") === "1";
@@ -1122,6 +1341,15 @@ export default function GuestPhotoPage() {
   useEffect(() => {
     if (!token) {
       setState({ kind: "not_found" });
+      return;
+    }
+    if (demo) {
+      setState({
+        kind: "viewfinder",
+        album: demoAlbum(t("photos.demo_film_name")),
+        guestName: null,
+        shotCount: 0,
+      });
       return;
     }
     if (preview) {
@@ -1172,7 +1400,8 @@ export default function GuestPhotoPage() {
         else if (err?.status === 403) setState({ kind: "disabled" });
         else setState({ kind: "not_found" });
       });
-  }, [preview, token]);
+    // `t` stays out of the deps: a locale switch must not reset a demo roll.
+  }, [demo, preview, token]);
 
   function handleOpenCamera() {
     if (state.kind !== "landing") return;
@@ -1504,6 +1733,18 @@ export default function GuestPhotoPage() {
     );
   }
 
+  if (state.kind === "demo_developed") {
+    return (
+      <DemoDeveloped
+        album={state.album}
+        files={state.files}
+        onAgain={() =>
+          setState({ kind: "viewfinder", album: state.album, guestName: null, shotCount: 0 })
+        }
+      />
+    );
+  }
+
   // viewfinder
   const { album, guestName, shotCount } = state;
   return (
@@ -1513,6 +1754,8 @@ export default function GuestPhotoPage() {
       shotCount={shotCount}
       token={token}
       preview={preview}
+      demo={demo}
+      onDemoDevelop={(files) => setState({ kind: "demo_developed", album, files })}
       onShotTaken={(count) =>
         setState((s) => (s.kind === "viewfinder" ? { ...s, shotCount: count } : s))
       }

@@ -4233,6 +4233,15 @@ export interface LocaleMessages {
     prompt_6: string;
     prompt_7: string;
     prompt_8: string;
+    demo_banner: string;
+    demo_film_name: string;
+    demo_develop: string;
+    demo_developed_heading: string;
+    demo_developed_sub: string;
+    demo_cta: string;
+    demo_again: string;
+    shots_left: string;
+    shots_taken: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   /** /app/design — the curated wedding visual-identity editor. */
@@ -10168,7 +10177,6 @@ export interface LocaleMessages {
     seo_description: string;
     hero_title: string;
     hero_sub: string;
-    fine_print: string;
     already_included: string;
     already_included_cta: string;
     features_title: string;
@@ -10188,6 +10196,9 @@ export interface LocaleMessages {
     pricing_couple_label: string;
     pricing_standard: string;
     pricing_note: string;
+    try_title: string;
+    try_body: string;
+    try_cta: string;
   };
   /** Public-facing blog index and post pages. Body content lives in the
    *  `blog_posts` DB table; these are the chrome strings around it. */

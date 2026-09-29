@@ -84,7 +84,17 @@ export default function CameraPage() {
             minimal
             title={t("camera.hero_title")}
             subtitle={t("camera.hero_sub")}
-            finePrint={t("camera.fine_print")}
+            tryQr={{ src: "/camera-try-qr.svg", label: t("camera.try_title") }}
+            secondaryAction={
+              // On a phone the visitor IS on the device, so a link beats a QR.
+              <Link
+                to="/camera/try"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-paper-50/20 px-7 py-3.5 text-sm font-semibold text-paper-50 transition-[transform,background-color] duration-150 ease-out hover:bg-paper-50/5 active:scale-[0.97] lg:hidden"
+              >
+                <Camera size={16} aria-hidden="true" />
+                {t("camera.try_cta")}
+              </Link>
+            }
           />
 
           {/* Feature highlights — icon, title, one short line. No cards, no
@@ -107,22 +117,22 @@ export default function CameraPage() {
           {/* Stand-alone product */}
           <section
             id="standalone"
-            className="mt-24 scroll-mt-20 border-t border-paper-50/10 pt-20 sm:mt-32 sm:pt-24"
+            className="mt-20 scroll-mt-20 border-t border-paper-50/10 pt-14 sm:mt-24 sm:pt-16"
           >
             <div className="flex flex-col items-center text-center">
-              <h2 className="max-w-lg text-2xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
+              <h2 className="max-w-lg text-xl font-semibold tracking-tight text-paper-50 sm:text-2xl">
                 {t("camera.standalone_title")}
               </h2>
               <p className="mt-2 text-sm text-paper-400">{t("camera.standalone_body")}</p>
 
-              <div className="mt-10 w-full max-w-sm rounded-3xl border border-paper-50/10 bg-paper-50/[0.03] p-8 sm:p-10">
+              <div className="mt-7 w-full max-w-xs rounded-3xl border border-paper-50/10 bg-paper-50/[0.03] p-6 sm:p-7">
                 {/* The Weddly price leads; the stand-alone price is the
                     footnote. Both rows keep their height on the free tier so
                     the card doesn't jump while the slider moves. */}
                 <p className="h-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-paper-300">
                   {tier.couplePrice && t("camera.pricing_couple_label")}
                 </p>
-                <span className="stat-num mt-3 block text-7xl font-semibold tabular-nums tracking-[-0.04em] text-paper-50 sm:text-8xl">
+                <span className="stat-num mt-2 block text-5xl font-semibold tabular-nums tracking-[-0.04em] text-paper-50 sm:text-6xl">
                   {tier.couplePrice ?? tier.price}
                 </span>
                 <p className="mt-3 text-sm text-paper-400">
@@ -132,7 +142,7 @@ export default function CameraPage() {
                   {tier.couplePrice && t("camera.pricing_standard", { price: tier.price })}
                 </p>
 
-                <div className="mt-8 text-left">
+                <div className="mt-6 text-left">
                   <input
                     type="range"
                     min={0}

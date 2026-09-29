@@ -23,7 +23,7 @@ import {
   Share2,
   Sparkles,
 } from "lucide-react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useT } from "../lib/i18n";
 import { Wordmark } from "./Wordmark";
 
@@ -116,6 +116,8 @@ export function CameraHero({
   title,
   subtitle,
   finePrint,
+  secondaryAction,
+  tryQr,
 }: {
   album: PhotoAlbum | null;
   coupleName: string | null;
@@ -139,10 +141,16 @@ export function CameraHero({
    *  print, and the how-it-works strip cut to its three titles. The page
    *  below it carries the detail, so the hero only has to land one idea. */
   minimal?: boolean;
-  /** Overrides for the marketing state's copy; default to the media.* keys. */
+  /** Overrides for the marketing state's copy; default to the media.* keys.
+   *  In `minimal`, the fine-print line only renders when `finePrint` is set. */
   title?: string;
   subtitle?: string;
   finePrint?: string;
+  /** Rendered beside the primary CTA (the /camera page's "Try the camera"). */
+  secondaryAction?: ReactNode;
+  /** /camera: turns the mockup's decorative QR card into a real, scannable
+   *  code that opens the demo camera on the visitor's phone. */
+  tryQr?: { src: string; label: string };
 }) {
   const { t } = useT();
   const filmName = album?.title || coupleName || t("media.film_settings_unnamed");
@@ -251,7 +259,11 @@ export function CameraHero({
           </div>
 
           <h1
-            className={`max-w-[14ch] text-[3.15rem] font-semibold leading-[0.9] tracking-[-0.045em] !text-paper-50 sm:text-6xl lg:text-[4rem] xl:text-[4.4rem] ${headingFontClass} ${rise(1).className}`}
+            className={`font-semibold !text-paper-50 ${
+              minimal
+                ? "max-w-[17ch] text-[2.6rem] leading-[0.98] tracking-[-0.035em] sm:text-5xl xl:text-[3.6rem]"
+                : "max-w-[14ch] text-[3.15rem] leading-[0.9] tracking-[-0.045em] sm:text-6xl lg:text-[4rem] xl:text-[4.4rem]"
+            } ${headingFontClass} ${rise(1).className}`}
             style={rise(1).style}
           >
             {title ?? t("media.hero_title")}
@@ -275,15 +287,18 @@ export function CameraHero({
               {t("media.film_cta_create")}
               <ArrowRight size={16} aria-hidden="true" />
             </button>
+            {secondaryAction}
           </div>
 
           {minimal ? (
-            <p
-              className={`mt-5 text-xs font-medium text-paper-400 ${rise(4).className}`}
-              style={rise(4).style}
-            >
-              {finePrint ?? `${t("media.film_no_app_hint")} · ${t("media.film_privacy_notice")}`}
-            </p>
+            finePrint && (
+              <p
+                className={`mt-5 text-xs font-medium text-paper-400 ${rise(4).className}`}
+                style={rise(4).style}
+              >
+                {finePrint}
+              </p>
+            )
           ) : (
             <div className="mt-7 flex flex-wrap gap-2 text-xs font-medium text-paper-200">
               <span className="flex items-center gap-1.5 rounded-full border border-paper-50/10 bg-paper-50/[0.06] px-3 py-1.5">
@@ -330,11 +345,33 @@ export function CameraHero({
           />
 
           <div className="absolute bottom-1 left-0 z-30 -rotate-6 rounded-2xl border border-paper-200 bg-paper-50 p-2.5 text-center text-umber-950 shadow-2xl sm:bottom-3 sm:left-[2%] sm:p-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-lg border-2 border-umber-950 sm:h-[4.5rem] sm:w-[4.5rem]">
-              <QrCode className="h-11 w-11 sm:h-14 sm:w-14" strokeWidth={1.6} aria-hidden="true" />
-            </div>
+            {tryQr ? (
+              // Real and scannable on desktop; on a phone the page's own
+              // "Try the camera" link does this job, so the card reads as
+              // the ordinary table-card illustration there.
+              <img
+                src={tryQr.src}
+                alt=""
+                className="h-14 w-14 sm:h-[4.5rem] sm:w-[4.5rem] lg:h-24 lg:w-24"
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg border-2 border-umber-950 sm:h-[4.5rem] sm:w-[4.5rem]">
+                <QrCode
+                  className="h-11 w-11 sm:h-14 sm:w-14"
+                  strokeWidth={1.6}
+                  aria-hidden="true"
+                />
+              </div>
+            )}
             <p className="mt-1.5 font-grotesk text-[7px] font-bold uppercase tracking-[0.18em] sm:text-[8px]">
-              {t("media.film_how_2_title")}
+              {tryQr ? (
+                <>
+                  <span className="lg:hidden">{t("media.film_how_2_title")}</span>
+                  <span className="hidden lg:inline">{tryQr.label}</span>
+                </>
+              ) : (
+                t("media.film_how_2_title")
+              )}
             </p>
           </div>
         </div>

@@ -3670,6 +3670,15 @@ const de: LocaleMessages = {
     prompt_6: "Haltet etwas fest, das euch gerade zum Lächeln bringt.",
     prompt_7: "Findet den bestangezogenen Gast im Raum.",
     prompt_8: "Haltet einen stillen Moment fest, den sonst niemand bemerkt.",
+    demo_banner: "Demo · nichts verlässt dein Handy",
+    demo_film_name: "Euer Hochzeitsfilm",
+    demo_develop: "Entwickeln",
+    demo_developed_heading: "Dein Film ist entwickelt",
+    demo_developed_sub: "So sehen eure Gäste die Enthüllung nach der Hochzeit.",
+    demo_cta: "Hochzeitsfilm erstellen",
+    demo_again: "Nochmal fotografieren",
+    shots_left: "übrig",
+    shots_taken: "Fotos",
   },
   design: {
     title: "Design",
@@ -8892,10 +8901,9 @@ const de: LocaleMessages = {
     seo_title: "Weddly Camera",
     seo_description:
       "Die eigene gemeinsame Kamera eurer Hochzeit — Gäste scannen einen QR-Code, halten die Momente fest, die euch entgehen würden, und die ganze Galerie wird nach dem großen Tag gemeinsam enthüllt. Ohne App, ohne Konto, kostenlos bei jeder Weddly-Hochzeit dabei.",
-    hero_title: "Alle Gästefotos. Ein Film.",
+    hero_title: "Haltet euren Tag durch die Augen aller fest.",
     hero_sub:
       "Gäste scannen einen QR-Code und fotografieren. Die Galerie öffnet sich nach dem großen Tag.",
-    fine_print: "Keine App für Gäste · Privat bis zur Enthüllung",
     already_included: "Schon auf Weddly? Ist inklusive.",
     already_included_cta: "Zum Dashboard",
     features_title: "Eine Kamera, kein Upload-Formular",
@@ -8915,6 +8923,9 @@ const de: LocaleMessages = {
     pricing_couple_label: "Weddly-Paare",
     pricing_standard: "Alle anderen: {price}",
     pricing_note: "Buchungen öffnen bald.",
+    try_title: "Probier es auf dem Handy",
+    try_body: "Scannen und fotografieren. Nichts wird hochgeladen.",
+    try_cta: "Kamera ausprobieren",
   },
   blog: {
     eyebrow: "Blog",

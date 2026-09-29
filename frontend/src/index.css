@@ -1592,6 +1592,34 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     cursor: not-allowed;
   }
 
+  /* Guest camera: the latest shot lands by the shutter. Every shot plays it,
+     so it stays short and small; it is the "I heard you" of the shutter. */
+  .shot-pop {
+    animation: shotPop 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  @keyframes shotPop {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+  }
+  /* Demo reveal: each frame develops out of a dark, soft blur, staggered. */
+  .develop-in {
+    animation: developIn 900ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  @keyframes developIn {
+    from {
+      opacity: 0;
+      filter: brightness(0.2) blur(6px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shot-pop,
+    .develop-in {
+      animation: cameraFade 200ms ease-out both;
+    }
+  }
+
   /* /camera entrance: one staggered rise on first paint, set per element with
      `--rise-i`. A public page seen once, so it can afford the moment; the
      strong ease-out keeps it from reading as a delay. Reduced motion keeps

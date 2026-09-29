@@ -1028,6 +1028,16 @@ export default function App() {
             </Page>
           }
         />
+        {/* The "Try it" QR on /camera: the real guest camera in demo mode.
+         *  Shots stay on the phone; nothing hits the API. */}
+        <Route
+          path="/camera/try"
+          element={
+            <Page>
+              <GuestPhotoPage demo />
+            </Page>
+          }
+        />
         {/* Live quiz game — guests join with no login, scanning the host's QR
          *  or the shared link. :code is the quiz's join code. */}
         <Route
