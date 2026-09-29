@@ -99,7 +99,7 @@ describe("<MediaPage> Wedding Film setup", () => {
     const dialog = await screen.findByRole("dialog", { name: "Set up your guest photo album" });
     expect(dialog).toBeVisible();
     expect(screen.getByDisplayValue("24")).toHaveAttribute("type", "number");
-    expect(screen.getAllByText("25 Guests").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("50 Guests").length).toBeGreaterThan(0);
     expect(screen.getByText("Unlock 200 · €7.90")).toBeVisible();
 
     const dateInputs = Array.from(
@@ -108,20 +108,17 @@ describe("<MediaPage> Wedding Film setup", () => {
     expect(dateInputs).toHaveLength(2);
     const [eventEndsInput, revealInput] = dateInputs;
     if (!eventEndsInput || !revealInput) throw new Error("Expected both film date inputs");
-    fireEvent.change(eventEndsInput, {
-      target: { value: "2099-01-01T23:00" },
-    });
-    fireEvent.change(revealInput, {
-      target: { value: "2099-01-02T12:00" },
-    });
+    // Defaults: uploads close at 10:00 the morning after, the reveal is at noon.
+    expect(eventEndsInput.value).toBe("2099-01-02T10:00");
+    expect(revealInput.value).toBe("2099-01-02T12:00");
     fireEvent.click(screen.getByRole("button", { name: "Create album" }));
 
     await waitFor(() => expect(requests).toHaveLength(1));
     expect(requests[0]).toMatchObject({
-      title: "Sari & Andor Wedding",
+      title: "Sari & Andor POV",
       film_aesthetic: "natural",
       shots_per_guest: 24,
-      event_ends_at: new Date("2099-01-01T23:00").getTime(),
+      event_ends_at: new Date("2099-01-02T10:00").getTime(),
       reveal_at: new Date("2099-01-02T12:00").getTime(),
     });
   });

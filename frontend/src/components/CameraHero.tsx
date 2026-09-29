@@ -104,6 +104,39 @@ function HeroEyebrow({ label, bare = false }: { label: string; bare?: boolean })
   );
 }
 
+/** "Test", "asdf", or a single token of three letters or fewer: a title typed to
+ *  get past the form rather than one meant for guests. */
+export function isPlaceholderTitle(raw: string): boolean {
+  const v = raw.trim().toLowerCase();
+  if (!v) return false;
+  const flagged = ["test", "teszt", "asdf", "xxx", "x"];
+  if (flagged.includes(v)) return true;
+  // single short token (no whitespace, length <= 3) reads as throwaway
+  if (!/\s/.test(v) && v.length <= 3) return true;
+  return false;
+}
+
+/** The couple's names as the film knows them: "Anna & Béla", or the workspace
+ *  label when neither name is set. */
+export function filmCoupleNames(
+  couple: {
+    bride_name?: string | null;
+    groom_name?: string | null;
+    display_name?: string | null;
+  } | null,
+): string | null {
+  const names = [couple?.bride_name?.trim(), couple?.groom_name?.trim()].filter(Boolean);
+  if (names.length > 0) return names.join(" & ");
+  return couple?.display_name?.trim() || null;
+}
+
+/** Default film title: the couple's names plus "POV", since the film is the
+ *  wedding through the guests' eyes. */
+export function defaultFilmTitle(couple: Parameters<typeof filmCoupleNames>[0]): string {
+  const names = filmCoupleNames(couple);
+  return names ? `${names} POV` : "";
+}
+
 export function CameraHero({
   album,
   coupleName,
@@ -153,7 +186,11 @@ export function CameraHero({
   tryQr?: { src: string; label: string };
 }) {
   const { t } = useT();
-  const filmName = album?.title || coupleName || t("media.film_settings_unnamed");
+  // A throwaway title ("Test") is shown as if unset: the masthead is the first
+  // thing the couple sees, and it should read as their film, not a draft.
+  const ownTitle = album?.title && !isPlaceholderTitle(album.title) ? album.title : null;
+  const filmName =
+    ownTitle ?? (coupleName ? `${coupleName} POV` : t("media.film_settings_unnamed"));
   const headingFontClass =
     headingFont === "grotesk"
       ? "font-grotesk"

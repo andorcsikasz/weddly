@@ -1809,7 +1809,10 @@ addColumnIfMissing("photo_albums", "stripe_tier", "stripe_tier TEXT");
 addColumnIfMissing("photo_albums", "paid_at", "paid_at INTEGER");
 // Keep every unpaid album on the current included tier. Must run after paid_at
 // exists so a purchased 200-guest film is never touched.
-db.exec("UPDATE photo_albums SET guest_cap = 25 WHERE guest_cap IN (5, 15) AND paid_at IS NULL");
+// The included tier is 50 guests (was 25); raising it lifts every unpaid film.
+db.exec(
+  "UPDATE photo_albums SET guest_cap = 50 WHERE guest_cap IN (5, 15, 25) AND paid_at IS NULL",
+);
 addColumnIfMissing("photo_uploads", "filter_applied", "filter_applied TEXT");
 addColumnIfMissing("photo_uploads", "thumbnail_path", "thumbnail_path TEXT");
 // Custom guest-link slug (#17). Partial unique index lives AFTER the column add

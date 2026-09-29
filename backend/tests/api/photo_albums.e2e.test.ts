@@ -81,7 +81,7 @@ describe("photo-albums API", () => {
     expect(r.data.access.free).toBe(false);
     expect(r.data.access.priceEurCents).toBe(FILM_TIER_PRICE_EUR_CENTS.paid);
     expect(r.data.access.priceEurCents).toBe(790);
-    expect(FILM_TIER_CAPS.free).toBe(25);
+    expect(FILM_TIER_CAPS.free).toBe(50);
     expect(FILM_TIER_CAPS.paid).toBe(200);
   });
 

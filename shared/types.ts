@@ -717,7 +717,7 @@ export const FILM_FILTERS: Record<FilmAesthetic, string> = {
 export type FilmStripeTier = "free" | "paid";
 
 export const FILM_TIER_CAPS: Record<FilmStripeTier, number> = {
-  free: 25,
+  free: 50,
   paid: 200,
 };
 

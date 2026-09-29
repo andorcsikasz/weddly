@@ -110,6 +110,10 @@ describe("<MediaPage> expired film reopening", () => {
       </I18nProvider>,
     );
 
+    // Film settings start collapsed.
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Film beállításai/, expanded: false }),
+    );
     const reopen = await screen.findByRole("button", { name: "Feltöltés újranyitása" });
     fireEvent.click(reopen);
 

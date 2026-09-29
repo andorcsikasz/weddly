@@ -43,7 +43,13 @@ import {
 import React, { type FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { CameraHero, DEMO_STRIP } from "../components/CameraHero";
+import {
+  CameraHero,
+  DEMO_STRIP,
+  defaultFilmTitle,
+  filmCoupleNames,
+  isPlaceholderTitle,
+} from "../components/CameraHero";
 import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
 import { useModalShell } from "../components/ui/modal_shell";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
@@ -155,18 +161,6 @@ function Countdown({ targetMs, label }: { targetMs: number; label: string }) {
       {label} {formatDuration(remaining)}
     </span>
   );
-}
-
-// --- placeholder film-name heuristic ----------------------------------------
-
-function isPlaceholderTitle(raw: string): boolean {
-  const v = raw.trim().toLowerCase();
-  if (!v) return false;
-  const flagged = ["test", "teszt", "asdf", "xxx", "x"];
-  if (flagged.includes(v)) return true;
-  // single short token (no whitespace, length <= 3) reads as throwaway
-  if (!/\s/.test(v) && v.length <= 3) return true;
-  return false;
 }
 
 // --- share sheet ------------------------------------------------------------
@@ -766,15 +760,21 @@ function FilmModal({
     setRevealAt(album?.revealAt ? toDatetimeLocal(album.revealAt) : "");
     setPromptsEnabled(album?.promptsEnabled ?? true);
     if (!isEdit) {
-      const b = couple?.bride_name?.trim();
-      const g = couple?.groom_name?.trim();
-      if (b || g) setTitle(`${b ?? ""} & ${g ?? ""} Wedding`.trim());
-      // LOCAL midnight, or the "21:00" below is 23:00 in Budapest and 17:00 in New York.
-      const wd = couple?.wedding_date
-        ? (parseIsoDate(couple.wedding_date.slice(0, 10))?.getTime() ?? null)
-        : null;
-      // wedding_date midnight + 1 day - 3 h = 21:00 on the day after the wedding
-      setEventEndsAt(wd ? toDatetimeLocal(wd + 45 * 60 * 60 * 1000) : "");
+      setTitle(defaultFilmTitle(couple));
+      // LOCAL wall-clock times, or "10:00" is noon in Budapest and 04:00 in New York.
+      // Uploads close at 10:00 the morning after, the film reveals at 12:00.
+      const wd = couple?.wedding_date ? parseIsoDate(couple.wedding_date.slice(0, 10)) : null;
+      const dayAfterAt = (hour: number): number | null => {
+        if (!wd) return null;
+        const d = new Date(wd);
+        d.setDate(d.getDate() + 1);
+        d.setHours(hour, 0, 0, 0);
+        return d.getTime();
+      };
+      const endsMs = dayAfterAt(10);
+      const revealMs = dayAfterAt(12);
+      setEventEndsAt(endsMs ? toDatetimeLocal(endsMs) : "");
+      setRevealAt(revealMs ? toDatetimeLocal(revealMs) : "");
     } else {
       setEventEndsAt(album?.eventEndsAt ? toDatetimeLocal(album.eventEndsAt) : "");
     }
@@ -1029,6 +1029,7 @@ export default function MediaPage() {
   const [showFilmModal, setShowFilmModal] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [editingSlug, setEditingSlug] = useState(false);
   const [slugDraft, setSlugDraft] = useState("");
@@ -1379,7 +1380,18 @@ export default function MediaPage() {
     value: string;
     editable?: boolean;
     dividerAfter?: boolean;
+    onClick?: () => void;
+    actionLabel?: string;
   };
+  // Raising the guest cap is one tap from the row that shows it, not a banner
+  // that only appears once the film is nearly full.
+  const canRaiseCap =
+    album !== null &&
+    album.paidAt === null &&
+    album.guestCap < FILM_TIER_CAPS.paid &&
+    filmAccess !== null &&
+    !filmAccess.free &&
+    filmAccess.checkoutEnabled !== false;
   const settingsRows: SettingsRow[] = album
     ? [
         {
@@ -1402,6 +1414,12 @@ export default function MediaPage() {
           label: t("media.film_settings_cap"),
           value: `${album.guestCap} ${t("media.film_per_person")}`,
           editable: false,
+          ...(canRaiseCap
+            ? {
+                onClick: () => void handleUpgradeFilm(),
+                actionLabel: `${FILM_TIER_CAPS.paid} ${t("media.film_per_person")} · ${filmUpgradePrice}`,
+              }
+            : {}),
         },
         {
           icon: <GalleryHorizontalEnd size={17} aria-hidden="true" />,
@@ -1429,7 +1447,7 @@ export default function MediaPage() {
 
       <CameraHero
         album={album}
-        coupleName={couple?.display_name ?? null}
+        coupleName={filmCoupleNames(couple)}
         coverPhoto={coverPhoto}
         onCreate={() => setShowFilmModal(true)}
         onShare={() => setShowShare(true)}
@@ -1823,11 +1841,24 @@ export default function MediaPage() {
               )}
 
               {/* ── Settings list (Uber-style rows) ───────────────────── */}
+              {/* Collapsed by default: the numbers are set once at creation and
+                  rarely revisited, so they should not push the guest link down. */}
               <div className="border-t border-paper-200">
-                <div className="flex items-center justify-between px-5 pb-1 pt-3">
-                  <h3 className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-600">
+                <div className="flex items-center justify-between py-1 pl-5 pr-5">
+                  <button
+                    type="button"
+                    onClick={() => setShowSettings((v) => !v)}
+                    aria-expanded={showSettings}
+                    aria-controls="film-settings"
+                    className="flex min-h-11 flex-1 items-center gap-1 text-left text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-600 transition-colors hover:text-umber-900"
+                  >
                     {t("media.film_settings_title")}
-                  </h3>
+                    <ChevronRight
+                      size={12}
+                      aria-hidden="true"
+                      className={`transition-transform ${showSettings ? "rotate-90" : ""}`}
+                    />
+                  </button>
                   <button
                     type="button"
                     onClick={() => setShowFilmModal(true)}
@@ -1837,73 +1868,82 @@ export default function MediaPage() {
                     <Pencil size={13} aria-hidden="true" />
                   </button>
                 </div>
-                <div className="divide-y divide-paper-200 border-t border-paper-200">
-                  {settingsRows.map((row) => {
-                    const editable = row.editable !== false;
-                    const inner = (
-                      <>
-                        <span className="shrink-0 text-umber-500">{row.icon}</span>
-                        <span className="min-w-0 flex-1 text-sm font-medium text-umber-900">
-                          {row.label}
-                        </span>
-                        <span className="shrink truncate text-right text-sm text-umber-500">
-                          {row.value}
-                        </span>
-                      </>
-                    );
-                    return editable ? (
-                      <button
-                        key={row.label}
-                        type="button"
-                        onClick={() => setShowFilmModal(true)}
-                        className="group flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-paper-50"
-                      >
-                        {inner}
-                      </button>
-                    ) : (
-                      <div
-                        key={row.label}
-                        className="flex cursor-default items-center gap-3 px-5 py-3.5"
-                      >
-                        {inner}
+                {showSettings && (
+                  <div id="film-settings">
+                    <div className="divide-y divide-paper-200 border-t border-paper-200">
+                      {settingsRows.map((row) => {
+                        const editable = row.editable !== false || row.onClick !== undefined;
+                        const inner = (
+                          <>
+                            <span className="shrink-0 text-umber-500">{row.icon}</span>
+                            <span className="min-w-0 flex-1 text-sm font-medium text-umber-900">
+                              {row.label}
+                            </span>
+                            <span className="shrink truncate text-right text-sm text-umber-500">
+                              {row.value}
+                            </span>
+                            {row.actionLabel && (
+                              <span className="shrink-0 rounded-full bg-umber-900 px-3 py-1 text-xs font-semibold text-paper-50 transition-colors group-hover:bg-umber-800">
+                                {row.actionLabel}
+                              </span>
+                            )}
+                          </>
+                        );
+                        return editable ? (
+                          <button
+                            key={row.label}
+                            type="button"
+                            onClick={row.onClick ?? (() => setShowFilmModal(true))}
+                            className="group flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-paper-50"
+                          >
+                            {inner}
+                          </button>
+                        ) : (
+                          <div
+                            key={row.label}
+                            className="flex cursor-default items-center gap-3 px-5 py-3.5"
+                          >
+                            {inner}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Early-close upload toggle */}
+                    <div className="flex items-start justify-between gap-3 border-t border-paper-200 px-5 py-3.5">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-umber-900">
+                          {uploadsOpen ? t("media.early_close") : t("media.early_close_reopen")}
+                        </p>
+                        {uploadsOpen && (
+                          <p className="mt-0.5 text-xs leading-snug text-umber-500">
+                            {t("media.early_close_hint")}
+                          </p>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-                {/* Early-close upload toggle */}
-                <div className="flex items-start justify-between gap-3 border-t border-paper-200 px-5 py-3.5">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-umber-900">
-                      {uploadsOpen ? t("media.early_close") : t("media.early_close_reopen")}
-                    </p>
-                    {uploadsOpen && (
-                      <p className="mt-0.5 text-xs leading-snug text-umber-500">
-                        {t("media.early_close_hint")}
-                      </p>
-                    )}
+                      <button
+                        type="button"
+                        disabled={togglingUpload}
+                        onClick={() => {
+                          if (uploadsOpen) {
+                            void handleToggleUpload(false);
+                          } else if (filmExpired) {
+                            setReopenRequested(true);
+                            setShowFilmModal(true);
+                          } else {
+                            void handleToggleUpload(true);
+                          }
+                        }}
+                        className={`shrink-0 rounded-xl px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-60 ${
+                          uploadsOpen
+                            ? "border border-paper-300 text-umber-700 hover:bg-paper-100"
+                            : "bg-umber-900 text-paper-50 hover:bg-umber-800"
+                        }`}
+                      >
+                        {uploadsOpen ? t("media.early_close") : t("media.early_close_reopen")}
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    disabled={togglingUpload}
-                    onClick={() => {
-                      if (uploadsOpen) {
-                        void handleToggleUpload(false);
-                      } else if (filmExpired) {
-                        setReopenRequested(true);
-                        setShowFilmModal(true);
-                      } else {
-                        void handleToggleUpload(true);
-                      }
-                    }}
-                    className={`shrink-0 rounded-xl px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-60 ${
-                      uploadsOpen
-                        ? "border border-paper-300 text-umber-700 hover:bg-paper-100"
-                        : "bg-umber-900 text-paper-50 hover:bg-umber-800"
-                    }`}
-                  >
-                    {uploadsOpen ? t("media.early_close") : t("media.early_close_reopen")}
-                  </button>
-                </div>
+                )}
               </div>
 
               {/* ── Guest link ────────────────────────────────────────── */}
