@@ -300,12 +300,11 @@ function Shape({ type }: { type: Answer["shape"] }) {
   return <span className="games-shape games-shape-square" />;
 }
 
-function DevBadge({ dark = false }: { dark?: boolean }) {
+function RegisterLink({ dark = false }: { dark?: boolean }) {
   return (
-    <span className={`games-dev-badge ${dark ? "games-dev-badge-dark" : ""}`}>
-      <span className="games-dev-dot" />
-      Under development
-    </span>
+    <Link to="/signup" className={`games-register ${dark ? "games-register-dark" : ""}`}>
+      Register <ArrowRight size={13} aria-hidden />
+    </Link>
   );
 }
 
@@ -482,7 +481,7 @@ export default function GamesPage() {
               <strong>{balance}</strong>
               <span>PTS</span>
             </div>
-            <DevBadge dark />
+            <RegisterLink dark />
           </div>
         </div>
       </header>
@@ -646,7 +645,7 @@ export default function GamesPage() {
                   <p className="games-section-kicker whitespace-nowrap text-[#1769e0]">
                     02 · Prediction market
                   </p>
-                  <DevBadge />
+                  <RegisterLink />
                 </div>
                 <h2 className="games-section-title mt-3 text-[#111827]">Trade the night.</h2>
                 <p className="mt-3 max-w-2xl text-[#64748b]">
@@ -823,7 +822,7 @@ export default function GamesPage() {
                 <span>500</span>
               </div>
               <div className="relative z-10">
-                <DevBadge dark />
+                <RegisterLink dark />
                 <h2>We’re still setting the table.</h2>
                 <p>
                   Wēddly Games is an interactive concept preview. Scores, markets and bets on this

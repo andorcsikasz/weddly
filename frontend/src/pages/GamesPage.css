@@ -33,26 +33,26 @@
 .games-wallet strong { font-size: 13px; font-variant-numeric: tabular-nums; }
 .games-wallet-coin { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 50%; color: #2b1c00; background: #f6bf54; }
 
-.games-dev-badge {
+.games-register {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   width: fit-content;
-  border: 1px solid #f0d59b;
   border-radius: 999px;
-  background: #fff8e8;
-  padding: 7px 10px;
-  color: #805b0e;
-  font-size: 10px;
+  background: #1769e0;
+  padding: 8px 13px;
+  color: white;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: .04em;
   line-height: 1;
-  text-transform: uppercase;
   white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(23, 105, 224, .22);
+  transition: transform 140ms ease, filter 140ms ease;
 }
-
-.games-dev-badge-dark { border-color: rgba(246, 191, 84, .26); background: rgba(246, 191, 84, .1); color: #f6c86e; }
-.games-dev-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px rgba(246, 191, 84, .1); }
+.games-register:hover { transform: translateY(-1px); filter: brightness(1.06); }
+.games-register:active { transform: scale(.97); }
+.games-register-dark { background: #f6c86e; color: #111827; box-shadow: 0 4px 14px rgba(246, 191, 84, .2); }
 
 .games-hero {
   background:
@@ -238,7 +238,6 @@
 .games-toast svg { flex: 0 0 auto; color: #5ce3a4; }
 
 @media (max-width: 767px) {
-  .games-header .games-dev-badge { display: none; }
   .games-question-wrap { min-height: 185px; grid-template-columns: 42px 1fr 42px; gap: 7px; padding: 20px 10px; }
   .games-timer, .games-place-chip { width: 39px; height: 39px; }
   .games-timer { box-shadow: 0 0 0 4px #e9ddfb; }
