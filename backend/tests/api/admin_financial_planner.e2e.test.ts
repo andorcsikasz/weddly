@@ -348,6 +348,11 @@ describe("financial planner: vendors, planners, camera, guest-page add-on", () =
     expect(camera.sold_last_30d).toBe(1);
     expect(camera.owed).toBe(1);
     expect(camera.revenue_eur).toBe(Math.round(FILM_TIER_PRICE_EUR_CENTS.paid / 100));
+    // The forecast prices each line from these, so they must match the catalogue.
+    expect(camera.unit_price_eur).toBe(FILM_TIER_PRICE_EUR_CENTS.paid / 100);
+    expect(guest_page_addon.unit_price_eur).toBe(GUEST_PAGE_ADDON_PRICE.EUR);
+    expect(vendors.list_price_eur).toBe(VENDOR_MONTHLY_PRICE.EUR);
+    expect(planners.list_price_eur).toBe(PLANNER_TIER_PRICE.starter.EUR);
 
     expect(guest_page_addon.sold).toBe(1);
     expect(guest_page_addon.sold_last_30d).toBe(1);

@@ -22,13 +22,20 @@ import {
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   type AdminFinancialPlannerOverview,
+  combineProductForecast,
+  expiryOffsets,
   type FoundingExpiryBucket,
   type ForecastAssumptions,
   type FxRates,
   type PaymentLaunchesResponse,
   type PaymentLaunchProduct,
   type PaymentLaunchState,
+  type ProductsForecastAssumptions,
+  type ProductsForecastPoint,
+  projectRecurringProduct,
   projectRevenue,
+  type RecurringProductAssumptions,
+  type RecurringProductOverview,
   type StripeHealth,
   type SubscriptionUnitEconomics,
   subscriptionUnitEconomics,
@@ -67,20 +74,33 @@ const DEFAULT_ASSUMPTIONS: ForecastAssumptions = {
   monthlyChurnPct: 3,
 };
 
-/** Map the backend's "YYYY-MM" founding-expiry buckets onto month offsets from
- *  now (0 = this month) so projectRevenue can apply them per step. */
-function expiryByOffset(o: AdminFinancialPlannerOverview, months: number): number[] {
-  const arr = new Array(months).fill(0);
-  const base = new Date(o.generated_at);
-  const baseIdx = base.getFullYear() * 12 + base.getMonth();
-  for (const b of o.founding_expiry) {
-    const [y, m] = b.month.split("-").map(Number);
-    if (!y || !m) continue;
-    const offset = y * 12 + (m - 1) - baseIdx;
-    if (offset >= 0 && offset < months) arr[offset] += b.count;
-  }
-  return arr;
+// Vendors and planners are businesses, not a wedding with an end date, so
+// their defaults are slower acquisition and lower churn than the couple line.
+// The one-off unit counts are seeded from the last 30 days once data arrives.
+const DEFAULT_PRODUCT_ASSUMPTIONS: ProductsForecastAssumptions = {
+  vendors: { newPerMonth: 10, trialToPaidPct: 20, monthlyChurnPct: 3, foundingConvPct: 30 },
+  planners: { newPerMonth: 2, trialToPaidPct: 30, monthlyChurnPct: 2, foundingConvPct: 40 },
+  camera: { unitsPerMonth: 0 },
+  guestPageAddon: { unitsPerMonth: 0 },
+};
+
+/** Real blended ARPU once anyone pays, the entry list price until then. */
+function recurringArpu(r: RecurringProductOverview): number {
+  return r.paying > 0 ? r.mrr_eur / r.paying : r.list_price_eur;
 }
+
+/** The forecast series, one bar per product, in stacking order. */
+const SERIES = [
+  { key: "couples_mrr", label: "admin.fin_prod_couples", color: "bg-chart-olive" },
+  { key: "vendors_mrr", label: "admin.fin_prod_vendors", color: "bg-chart-terracotta" },
+  { key: "planners_mrr", label: "admin.fin_prod_planners", color: "bg-chart-sage" },
+  { key: "camera_revenue", label: "admin.fin_prod_camera", color: "bg-chart-ochre" },
+  { key: "addon_revenue", label: "admin.fin_prod_addon", color: "bg-chart-rose" },
+] as const satisfies readonly {
+  key: keyof ProductsForecastPoint;
+  label: `admin.${string}`;
+  color: string;
+}[];
 
 // ── Becsült adózás ────────────────────────────────────────────────────
 // Tájékoztató jellegű, leegyszerűsített magyar adóbecslés a tervezett éves
@@ -165,6 +185,7 @@ export default function AdminFinancialPlannerPage() {
   const [launchesFailed, setLaunchesFailed] = useState(false);
   const [launchBusy, setLaunchBusy] = useState<PaymentLaunchProduct | null>(null);
   const [a, setA] = useState<ForecastAssumptions>(DEFAULT_ASSUMPTIONS);
+  const [pa, setPa] = useState<ProductsForecastAssumptions>(DEFAULT_PRODUCT_ASSUMPTIONS);
   // Költséghányad (a bevétel hány %-a a levonható költség) a profitalapú
   // adóformákhoz. Csak a KFT-sorokat befolyásolja.
   const [costPct, setCostPct] = useState(20);
@@ -176,7 +197,15 @@ export default function AdminFinancialPlannerPage() {
   useEffect(() => {
     adminFinancialPlannerApi
       .overview()
-      .then(setData)
+      .then((o) => {
+        setData(o);
+        // Seed the one-off sliders from what actually sold last month, once.
+        setPa((prev) => ({
+          ...prev,
+          camera: { unitsPerMonth: o.products.camera.sold_last_30d },
+          guestPageAddon: { unitsPerMonth: o.products.guest_page_addon.sold_last_30d },
+        }));
+      })
       .catch(() => setData(null));
   }, []);
 
@@ -218,17 +247,54 @@ export default function AdminFinancialPlannerPage() {
 
   const hufPerEur = fx?.rates.HUF ?? FALLBACK_HUF_PER_EUR;
 
-  const projection = useMemo(() => {
+  const projection = useMemo<ProductsForecastPoint[]>(() => {
     if (!data) return [];
-    return projectRevenue(
+    const p = data.products;
+    const now = data.generated_at;
+    const couples = projectRevenue(
       { subscribers: data.paying_subscribers, arpuEur: data.arpu_eur },
       a,
-      expiryByOffset(data, a.months),
+      expiryOffsets(data.founding_expiry, now, a.months),
     );
-  }, [data, a]);
+    const vendors = projectRecurringProduct(
+      {
+        subscribers: p.vendors.paying,
+        arpuEur: recurringArpu(p.vendors),
+        certainAdds: p.vendors.billing_scheduled,
+      },
+      pa.vendors,
+      a.months,
+      expiryOffsets(p.vendors.founding_expiry, now, a.months),
+    );
+    const planners = projectRecurringProduct(
+      { subscribers: p.planners.paying, arpuEur: recurringArpu(p.planners) },
+      pa.planners,
+      a.months,
+      expiryOffsets(p.planners.founding_expiry, now, a.months),
+    );
+    return combineProductForecast(
+      { couples, vendors, planners },
+      {
+        cameraPerMonthEur: pa.camera.unitsPerMonth * p.camera.unit_price_eur,
+        addonPerMonthEur: pa.guestPageAddon.unitsPerMonth * p.guest_page_addon.unit_price_eur,
+      },
+      a.months,
+    );
+  }, [data, a, pa]);
 
   const eur = (n: number) => formatMoney(n, "EUR", locale);
+  // A unit price has cents (7,90 €); formatMoney rounds to the whole unit.
+  const unitEur = (n: number) =>
+    new Intl.NumberFormat(intlLocale(locale), {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: 2,
+    }).format(n);
   const last = projection[projection.length - 1];
+  const lastMrr = last ? last.couples_mrr + last.vendors_mrr + last.planners_mrr : 0;
+  const lastOneOff = last ? last.camera_revenue + last.addon_revenue : 0;
+  // What the tax section taxes: a year of the final month, one-offs included.
+  const lastAnnualRevenue = last ? last.total * 12 : 0;
 
   async function onToggleEnforcement(next: boolean) {
     // Going live states the blast radius in the confirm itself. The button is
@@ -448,7 +514,7 @@ export default function AdminFinancialPlannerPage() {
         <p className="mt-1 text-xs text-neutral-500 dark:text-umber-300">
           {t("admin.fin_assumptions_hint")}
         </p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <AssumptionGroup title={t("admin.fin_prod_couples")}>
           <Slider
             label={t("admin.fin_new_couples")}
             value={a.newCouplesPerMonth}
@@ -485,7 +551,51 @@ export default function AdminFinancialPlannerPage() {
             display={`${a.monthlyChurnPct}%`}
             onChange={(v) => setA({ ...a, monthlyChurnPct: v })}
           />
-        </div>
+        </AssumptionGroup>
+        <RecurringSliders
+          title={t("admin.fin_prod_vendors")}
+          note={t("admin.fin_forecast_at_price", {
+            price: eur(recurringArpu(data.products.vendors)),
+          })}
+          value={pa.vendors}
+          maxNew={500}
+          onChange={(v) => setPa({ ...pa, vendors: v })}
+          t={t}
+        />
+        <RecurringSliders
+          title={t("admin.fin_prod_planners")}
+          note={t("admin.fin_forecast_at_price", {
+            price: eur(recurringArpu(data.products.planners)),
+          })}
+          value={pa.planners}
+          maxNew={100}
+          onChange={(v) => setPa({ ...pa, planners: v })}
+          t={t}
+        />
+        <AssumptionGroup title={t("admin.fin_one_off_group")}>
+          <Slider
+            label={`${t("admin.fin_prod_camera")} · ${t("admin.fin_units_per_month")}`}
+            value={pa.camera.unitsPerMonth}
+            min={0}
+            max={Math.max(500, pa.camera.unitsPerMonth)}
+            step={1}
+            display={`${pa.camera.unitsPerMonth} · ${t("admin.fin_forecast_at_price", {
+              price: unitEur(data.products.camera.unit_price_eur),
+            })}`}
+            onChange={(v) => setPa({ ...pa, camera: { unitsPerMonth: v } })}
+          />
+          <Slider
+            label={`${t("admin.fin_prod_addon")} · ${t("admin.fin_units_per_month")}`}
+            value={pa.guestPageAddon.unitsPerMonth}
+            min={0}
+            max={Math.max(500, pa.guestPageAddon.unitsPerMonth)}
+            step={1}
+            display={`${pa.guestPageAddon.unitsPerMonth} · ${t("admin.fin_forecast_at_price", {
+              price: unitEur(data.products.guest_page_addon.unit_price_eur),
+            })}`}
+            onChange={(v) => setPa({ ...pa, guestPageAddon: { unitsPerMonth: v } })}
+          />
+        </AssumptionGroup>
         <div className="mt-4 flex items-center gap-2">
           <span className="text-xs font-medium text-neutral-600 dark:text-umber-200">
             {t("admin.fin_horizon")}
@@ -520,7 +630,7 @@ export default function AdminFinancialPlannerPage() {
                   {t("admin.fin_projected_mrr", { n: a.months })}
                 </div>
                 <div className="text-lg font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
-                  {eur(last.mrr)}
+                  {eur(lastMrr)}
                 </div>
               </div>
               <div>
@@ -528,15 +638,23 @@ export default function AdminFinancialPlannerPage() {
                   {t("admin.fin_projected_arr", { n: a.months })}
                 </div>
                 <div className="text-lg font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
-                  {eur(last.mrr * 12)}
+                  {eur(lastMrr * 12)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-neutral-500 dark:text-umber-300">
+                  {t("admin.fin_projected_one_off", { n: a.months })}
+                </div>
+                <div className="text-lg font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
+                  {eur(lastOneOff)}
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Simple MRR bar chart */}
-        <MrrChart points={projection.map((p) => ({ month: p.month, mrr: p.mrr }))} fmt={eur} />
+        {/* Stacked monthly revenue, one colour per product */}
+        <MrrChart points={projection} fmt={eur} t={t} />
 
         <details className="group mt-4">
           <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 dark:text-umber-200 dark:hover:text-paper-50">
@@ -552,8 +670,11 @@ export default function AdminFinancialPlannerPage() {
               <thead>
                 <tr className="text-center text-xs uppercase tracking-wide text-neutral-500 dark:text-umber-300">
                   <th className="px-3 py-1 font-medium">{t("admin.fin_col_month")}</th>
-                  <th className="px-3 py-1 font-medium">{t("admin.fin_col_subs")}</th>
-                  <th className="px-3 py-1 font-medium">{t("admin.fin_col_mrr")}</th>
+                  <th className="px-3 py-1 font-medium">{t("admin.fin_prod_couples")}</th>
+                  <th className="px-3 py-1 font-medium">{t("admin.fin_prod_vendors")}</th>
+                  <th className="px-3 py-1 font-medium">{t("admin.fin_prod_planners")}</th>
+                  <th className="px-3 py-1 font-medium">{t("admin.fin_col_one_off")}</th>
+                  <th className="px-3 py-1 font-medium">{t("admin.fin_col_total")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -562,11 +683,12 @@ export default function AdminFinancialPlannerPage() {
                     <td className="px-3 py-1.5 text-center tabular-nums text-neutral-600 dark:text-umber-200">
                       {p.month}
                     </td>
-                    <td className="px-3 py-1.5 text-center tabular-nums text-neutral-800 dark:text-paper-100">
-                      {p.subscribers}
-                    </td>
+                    <ForecastCell amount={eur(p.couples_mrr)} count={p.couples_subscribers} />
+                    <ForecastCell amount={eur(p.vendors_mrr)} count={p.vendors_subscribers} />
+                    <ForecastCell amount={eur(p.planners_mrr)} count={p.planners_subscribers} />
+                    <ForecastCell amount={eur(p.camera_revenue + p.addon_revenue)} />
                     <td className="px-3 py-1.5 text-center tabular-nums font-medium text-neutral-900 dark:text-paper-50">
-                      {eur(p.mrr)}
+                      {eur(p.total)}
                     </td>
                   </tr>
                 ))}
@@ -585,10 +707,11 @@ export default function AdminFinancialPlannerPage() {
                 Becsült adózás
               </h2>
               <p className="mt-1 max-w-prose text-xs text-neutral-500 dark:text-umber-300">
-                A tervezett éves árbevételre ({eur(last.mrr * 12)} ARR a(z) {a.months}. hónapban).
-                Tájékoztató becslés 2024-es kulcsokkal, kerekítve — nem adótanácsadás. A
-                költséghányad csak a KFT (profitalapú) sorokat befolyásolja, a Ft-tételek pedig az
-                élő árfolyammal ({hufPerEur.toFixed(1)} Ft/€) számolnak.
+                A tervezett éves árbevételre ({eur(lastAnnualRevenue)} / év a(z) {a.months}. hónap
+                ütemében, minden termékkel és az egyszeri eladásokkal együtt). Tájékoztató becslés
+                2024-es kulcsokkal, kerekítve — nem adótanácsadás. A költséghányad csak a KFT
+                (profitalapú) sorokat befolyásolja, a Ft-tételek pedig az élő árfolyammal (
+                {hufPerEur.toFixed(1)} Ft/€) számolnak.
               </p>
             </div>
             <div className="w-44 shrink-0">
@@ -616,7 +739,7 @@ export default function AdminFinancialPlannerPage() {
               </thead>
               <tbody>
                 {TAX_FORMS.map((f) => {
-                  const rev = last.mrr * 12;
+                  const rev = lastAnnualRevenue;
                   const tax = Math.max(0, Math.round(f.tax(rev, costPct / 100, hufPerEur)));
                   const eff = rev > 0 ? (tax / rev) * 100 : 0;
                   const overKataCap = f.key === "kata" && rev * hufPerEur > 18_000_000;
@@ -1747,23 +1870,32 @@ function Slider({
 function MrrChart({
   points,
   fmt,
+  t,
 }: {
-  points: { month: number; mrr: number }[];
+  points: ProductsForecastPoint[];
   fmt: (n: number) => string;
+  t: Translate;
 }) {
-  const max = Math.max(1, ...points.map((p) => p.mrr));
+  const max = Math.max(1, ...points.map((p) => p.total));
   const [hover, setHover] = useState<number | null>(null);
+  const hovered = hover !== null ? points[hover] : undefined;
   return (
     <div className="relative mt-4">
-      {/* Hover tooltip: the month + its projected MRR. */}
-      {hover !== null && points[hover] && (
+      {/* Hover tooltip: the month, its total, and each product's share. */}
+      {hover !== null && hovered && (
         <div
-          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-paper-50 shadow-pop dark:bg-paper-50 dark:text-neutral-900"
+          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1.5 text-xs text-paper-50 shadow-pop dark:bg-paper-50 dark:text-neutral-900"
           style={{ left: `${((hover + 0.5) / points.length) * 100}%` }}
         >
-          <span className="tabular-nums">{points[hover].month}. hó</span>
-          <span className="mx-1 opacity-40">·</span>
-          <span className="tabular-nums">{fmt(points[hover].mrr)}</span>
+          <div className="font-medium tabular-nums">
+            {hovered.month}. hó · {fmt(hovered.total)}
+          </div>
+          {SERIES.filter((s) => hovered[s.key] > 0).map((s) => (
+            <div key={s.key} className="flex items-center gap-1.5 tabular-nums opacity-80">
+              <span className={`size-2 rounded-sm ${s.color}`} aria-hidden="true" />
+              {t(s.label)} {fmt(hovered[s.key])}
+            </div>
+          ))}
         </div>
       )}
       <div className="flex h-28 items-end gap-0.5">
@@ -1771,20 +1903,127 @@ function MrrChart({
           <button
             type="button"
             key={p.month}
-            className="group flex h-full flex-1 items-end p-0"
+            className="group flex h-full flex-1 flex-col-reverse p-0"
             onMouseEnter={() => setHover(i)}
             onMouseLeave={() => setHover((h) => (h === i ? null : h))}
             onFocus={() => setHover(i)}
             onBlur={() => setHover((h) => (h === i ? null : h))}
-            aria-label={`${p.month}. hó: ${fmt(p.mrr)}`}
+            aria-label={`${p.month}. hó: ${fmt(p.total)}`}
           >
-            <span
-              className="w-full rounded-t bg-neutral-800/80 transition-colors group-hover:bg-neutral-900 dark:bg-neutral-300/60 dark:group-hover:bg-paper-50"
-              style={{ height: `${Math.max(2, (p.mrr / max) * 100)}%` }}
-            />
+            {p.total === 0 ? (
+              <span className="h-[2%] w-full rounded-t bg-paper-200 dark:bg-umber-700" />
+            ) : (
+              SERIES.map((s) =>
+                p[s.key] > 0 ? (
+                  <span
+                    key={s.key}
+                    className={`w-full opacity-85 transition-opacity first:rounded-none last:rounded-t group-hover:opacity-100 ${s.color}`}
+                    style={{ height: `${(p[s.key] / max) * 100}%` }}
+                  />
+                ) : null,
+              )
+            )}
           </button>
         ))}
       </div>
+      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-600 dark:text-umber-200">
+        {SERIES.map((s) => (
+          <li key={s.key} className="flex items-center gap-1.5">
+            <span className={`size-2.5 rounded-sm ${s.color}`} aria-hidden="true" />
+            {t(s.label)}
+          </li>
+        ))}
+      </ul>
     </div>
+  );
+}
+
+function ForecastCell({ amount, count }: { amount: string; count?: number }) {
+  return (
+    <td className="px-3 py-1.5 text-center tabular-nums text-neutral-800 dark:text-paper-100">
+      {amount}
+      {count !== undefined && (
+        <span className="ml-1 text-xs text-neutral-500 dark:text-umber-300">({count})</span>
+      )}
+    </td>
+  );
+}
+
+function AssumptionGroup({
+  title,
+  note,
+  children,
+}: {
+  title: string;
+  note?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="mt-5 border-t border-paper-200 pt-4 first-of-type:border-t-0 dark:border-umber-700">
+      <div className="flex items-baseline gap-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-700 dark:text-umber-100">
+          {title}
+        </h3>
+        {note && <span className="text-xs text-neutral-500 dark:text-umber-300">{note}</span>}
+      </div>
+      <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
+    </div>
+  );
+}
+
+function RecurringSliders({
+  title,
+  note,
+  value,
+  maxNew,
+  onChange,
+  t,
+}: {
+  title: string;
+  note: string;
+  value: RecurringProductAssumptions;
+  maxNew: number;
+  onChange: (v: RecurringProductAssumptions) => void;
+  t: Translate;
+}) {
+  return (
+    <AssumptionGroup title={title} note={note}>
+      <Slider
+        label={t("admin.fin_new_accounts")}
+        value={value.newPerMonth}
+        min={0}
+        max={maxNew}
+        step={1}
+        display={String(value.newPerMonth)}
+        onChange={(v) => onChange({ ...value, newPerMonth: v })}
+      />
+      <Slider
+        label={t("admin.fin_trial_conv")}
+        value={value.trialToPaidPct}
+        min={0}
+        max={100}
+        step={1}
+        display={`${value.trialToPaidPct}%`}
+        onChange={(v) => onChange({ ...value, trialToPaidPct: v })}
+      />
+      <Slider
+        label={t("admin.fin_founding_conv")}
+        value={value.foundingConvPct}
+        min={0}
+        max={100}
+        step={1}
+        display={`${value.foundingConvPct}%`}
+        onChange={(v) => onChange({ ...value, foundingConvPct: v })}
+      />
+      <Slider
+        label={t("admin.fin_churn")}
+        value={value.monthlyChurnPct}
+        min={0}
+        max={20}
+        step={1}
+        display={`${value.monthlyChurnPct}%`}
+        onChange={(v) => onChange({ ...value, monthlyChurnPct: v })}
+      />
+    </AssumptionGroup>
   );
 }

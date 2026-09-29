@@ -7602,6 +7602,14 @@ export interface LocaleMessages {
     fin_projected_mrr: string;
     fin_projected_arr: string;
     fin_subscribers_suffix: string;
+    fin_new_accounts: string;
+    fin_founding_conv: string;
+    fin_units_per_month: string;
+    fin_one_off_group: string;
+    fin_col_one_off: string;
+    fin_col_total: string;
+    fin_projected_one_off: string;
+    fin_forecast_at_price: string;
     /** Admin blog CRUD page (/app/admin/blog). */
     nav_blog: string;
     /** Read-only analytics dashboard — money, activity, picks rollups. */

@@ -115,6 +115,9 @@ export interface RecurringProductOverview {
   /** When those free windows end, by calendar month. Chronological. */
   founding_expiry: FoundingExpiryBucket[];
   trialing: number;
+  /** EUR list price of the entry plan, monthly. The forecast's ARPU while
+   *  nobody is paying yet (a real blended ARPU replaces it once they are). */
+  list_price_eur: number;
 }
 
 export interface VendorProductOverview extends RecurringProductOverview {
@@ -147,6 +150,8 @@ export interface OneOffProductOverview {
   /** Paid units whose service is still owed: a camera film whose event has
    *  not ended, or a prepaid add-on the planner has not switched on yet. */
   owed: number;
+  /** EUR price of one unit, what the forecast multiplies units by. */
+  unit_price_eur: number;
 }
 
 export interface CameraProductOverview extends OneOffProductOverview {
@@ -304,6 +309,128 @@ export function projectRevenue(
     out.push({ month: m, subscribers: rounded, mrr: Math.round(rounded * arpu) });
   }
   return out;
+}
+
+// ── Every product in one forecast ─────────────────────────────────────────
+// The couple line keeps its own lifecycle model (projectRevenue: a couple
+// stops paying when the wedding is over). Vendors and planners are a business
+// with no natural end date, so their line is plain acquisition minus churn,
+// plus whatever share of each free window converts the month it closes. The
+// one-off products (camera film, guest-page add-on) earn in the month they
+// sell and carry nothing forward.
+
+export interface RecurringProductAssumptions {
+  /** New accounts per month. */
+  newPerMonth: number;
+  /** % of new accounts that end up paying after their trial. */
+  trialToPaidPct: number;
+  /** % of paying accounts lost each month. */
+  monthlyChurnPct: number;
+  /** % of a free (founding / early) window that starts paying when it ends. */
+  foundingConvPct: number;
+}
+
+export interface OneOffProductAssumptions {
+  unitsPerMonth: number;
+}
+
+export interface ProductsForecastAssumptions {
+  vendors: RecurringProductAssumptions;
+  planners: RecurringProductAssumptions;
+  camera: OneOffProductAssumptions;
+  guestPageAddon: OneOffProductAssumptions;
+}
+
+export interface ProductsForecastPoint {
+  month: number;
+  couples_mrr: number;
+  vendors_mrr: number;
+  planners_mrr: number;
+  camera_revenue: number;
+  addon_revenue: number;
+  couples_subscribers: number;
+  vendors_subscribers: number;
+  planners_subscribers: number;
+  /** Everything booked in the month: subscriptions plus one-off sales, EUR. */
+  total: number;
+}
+
+/** Acquisition-minus-churn projection for a subscription with no natural end.
+ *  `certainAdds` joins the paying base in month 1 regardless of any rate: a
+ *  vendor whose first charge is already scheduled has said yes. */
+export function projectRecurringProduct(
+  base: { subscribers: number; arpuEur: number; certainAdds?: number },
+  a: RecurringProductAssumptions,
+  months: number,
+  foundingExpiryByOffset: number[],
+): ForecastPoint[] {
+  const churn = clampPct(a.monthlyChurnPct) / 100;
+  const trialConv = clampPct(a.trialToPaidPct) / 100;
+  const foundingConv = clampPct(a.foundingConvPct) / 100;
+  const arpu = base.arpuEur > 0 ? base.arpuEur : 0;
+  const out: ForecastPoint[] = [];
+  let subs = base.subscribers;
+  for (let m = 1; m <= months; m++) {
+    subs = subs * (1 - churn);
+    subs += Math.max(0, a.newPerMonth) * trialConv;
+    subs += (foundingExpiryByOffset[m - 1] ?? 0) * foundingConv;
+    if (m === 1) subs += base.certainAdds ?? 0;
+    const rounded = Math.max(0, Math.round(subs));
+    out.push({ month: m, subscribers: rounded, mrr: Math.round(rounded * arpu) });
+  }
+  return out;
+}
+
+/** Zip the per-product lines into one monthly series. Every input series must
+ *  cover the same horizon; a shorter one reads as zero. */
+export function combineProductForecast(
+  lines: { couples: ForecastPoint[]; vendors: ForecastPoint[]; planners: ForecastPoint[] },
+  oneOff: { cameraPerMonthEur: number; addonPerMonthEur: number },
+  months: number,
+): ProductsForecastPoint[] {
+  const camera = Math.max(0, Math.round(oneOff.cameraPerMonthEur));
+  const addon = Math.max(0, Math.round(oneOff.addonPerMonthEur));
+  const out: ProductsForecastPoint[] = [];
+  for (let i = 0; i < months; i++) {
+    const c = lines.couples[i];
+    const v = lines.vendors[i];
+    const p = lines.planners[i];
+    const couplesMrr = c?.mrr ?? 0;
+    const vendorsMrr = v?.mrr ?? 0;
+    const plannersMrr = p?.mrr ?? 0;
+    out.push({
+      month: i + 1,
+      couples_mrr: couplesMrr,
+      vendors_mrr: vendorsMrr,
+      planners_mrr: plannersMrr,
+      camera_revenue: camera,
+      addon_revenue: addon,
+      couples_subscribers: c?.subscribers ?? 0,
+      vendors_subscribers: v?.subscribers ?? 0,
+      planners_subscribers: p?.subscribers ?? 0,
+      total: couplesMrr + vendorsMrr + plannersMrr + camera + addon,
+    });
+  }
+  return out;
+}
+
+/** Map "YYYY-MM" expiry buckets onto month offsets from `nowMs` (0 = this
+ *  month). Buckets in the past or past the horizon are dropped. */
+export function expiryOffsets(
+  buckets: FoundingExpiryBucket[],
+  nowMs: number,
+  months: number,
+): number[] {
+  const arr = new Array<number>(months).fill(0);
+  const now = new Date(nowMs);
+  const baseIdx = now.getFullYear() * 12 + now.getMonth();
+  for (const b of buckets) {
+    const [y, m] = b.month.split("-").map(Number);
+    if (!y || !m) continue;
+    const offset = y * 12 + (m - 1) - baseIdx;
+    if (offset >= 0 && offset < months) arr[offset] = (arr[offset] ?? 0) + b.count;
+  }
+  return arr;
 }
 
 function clampPct(n: number): number {

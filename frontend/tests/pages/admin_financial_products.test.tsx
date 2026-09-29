@@ -20,6 +20,7 @@ const recurring: RecurringProductOverview = {
   founding_value_eur: 0,
   founding_expiry: [],
   trialing: 0,
+  list_price_eur: 10,
 };
 
 function overview(): AdminFinancialPlannerOverview {

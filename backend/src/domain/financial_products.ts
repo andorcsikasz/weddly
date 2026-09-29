@@ -164,6 +164,7 @@ function vendorsOverview(nowMs: number): VendorProductOverview {
     founding_value_eur: Math.round(foundingValue),
     founding_expiry: expiryBuckets(untils),
     trialing: counts.trialing ?? 0,
+    list_price_eur: VENDOR_MONTHLY_PRICE.EUR,
     early_active: earlyActive,
     lead_window: leadWindow,
     lead_credits_owed: creditsOwed,
@@ -234,6 +235,8 @@ function plannersOverview(nowMs: number): PlannerProductOverview {
     founding_value_eur: Math.round(foundingValue),
     founding_expiry: expiryBuckets(untils),
     trialing: counts.trialing ?? 0,
+    // The entry tier: a forecast should not assume planners buy up.
+    list_price_eur: PLANNER_TIER_PRICE.starter.EUR,
     paying_by_tier: payingByTier,
   };
 }
@@ -278,6 +281,7 @@ function cameraOverview(nowMs: number): CameraProductOverview {
     revenue_eur: Math.round(sold * unitEur),
     revenue_last_30d_eur: Math.round(sold30 * unitEur),
     owed: row.owed ?? 0,
+    unit_price_eur: unitEur,
     albums_total: row.albums,
     uploads_total: uploads.n,
   };
@@ -320,6 +324,7 @@ function guestPageAddonOverview(nowMs: number): OneOffProductOverview {
     revenue_eur: Math.round(revenue),
     revenue_last_30d_eur: Math.round(revenue30),
     owed,
+    unit_price_eur: GUEST_PAGE_ADDON_PRICE.EUR,
   };
 }
 
