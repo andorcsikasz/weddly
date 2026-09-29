@@ -10,7 +10,7 @@
 // looks like a churned one (the trap a binary paying/not marker falls into).
 
 import type { AdminVendorView } from "@shared/listings";
-import { formatLastActive, intlLocale } from "../lib/format";
+import { formatActiveDuration, formatLastActive, intlLocale } from "../lib/format";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { VENDOR_FOUNDING_CAP, VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
 import type { VendorPlan } from "@shared/vendor_plan";
@@ -38,6 +38,7 @@ import {
   Search,
   Star,
   Store,
+  Timer,
   Trash2,
   UserPlus,
 } from "lucide-react";
@@ -692,6 +693,23 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                   >
                     <Clock size={12} aria-hidden />
                     {formatLastActive(vendor.owner_last_seen_at, locale, t)}
+                  </span>
+                </>
+              )}
+              {/* Time spent, same heartbeat total as the Users list. Last-seen
+                  says when they came; this says whether they stayed. Hidden at
+                  zero like the counters below. */}
+              {vendor.owner_total_active_seconds > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span
+                    className="inline-flex items-center gap-1"
+                    title={t("admin.total_time_tooltip")}
+                  >
+                    <Timer size={12} aria-hidden />
+                    <span className="tabular-nums">
+                      {formatActiveDuration(vendor.owner_total_active_seconds, t)}
+                    </span>
                   </span>
                 </>
               )}

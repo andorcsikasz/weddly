@@ -176,6 +176,7 @@ interface AdminVendorRow extends VendorAccountRow {
   /** Owner activity + demand + reputation, all correlated subqueries on the one
    *  admin list query rather than an N+1 per row. */
   owner_last_seen_at: number | null;
+  owner_total_active_seconds: number | null;
   inquiry_count: number;
   review_count: number;
   review_avg: number | null;
@@ -246,6 +247,7 @@ export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
     profile_nudge_count: row.profile_nudge_count ?? 0,
     profile_nudge_last_at: row.profile_nudge_last_at,
     owner_last_seen_at: row.owner_last_seen_at,
+    owner_total_active_seconds: row.owner_total_active_seconds ?? 0,
     inquiry_count: row.inquiry_count ?? 0,
     review_count: row.review_count ?? 0,
     // SQLite AVG returns a full float; one decimal is all a star rating means.
@@ -271,6 +273,8 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
               vs.current_period_end   AS sub_current_period_end,
               vs.past_due_since       AS sub_past_due_since,
               u.last_seen_at          AS owner_last_seen_at,
+              (SELECT SUM(uad.active_seconds) FROM user_activity_daily uad
+                WHERE uad.user_id = va.owner_user_id) AS owner_total_active_seconds,
               (SELECT COUNT(*) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_count,
               (SELECT GROUP_CONCAT(DISTINCT l.category) FROM listings l WHERE l.vendor_account_id = va.id) AS categories,
               (SELECT MAX(l.updated_at) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_updated_at,

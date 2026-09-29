@@ -264,6 +264,11 @@ export interface AdminVendorView {
    *  another from someone who never opened the door. Null for pending rows,
    *  which have no user yet. */
   owner_last_seen_at: number | null;
+  /** All-time seconds the owner has spent in the app (`user_activity_daily`,
+   *  the same heartbeat-fed total the admin Users list shows). Last-seen says
+   *  WHEN they were here; this says whether they stayed. 0 for pending rows
+   *  and for anyone who never kept a tab open past one heartbeat. */
+  owner_total_active_seconds: number;
   /** Couple inquiries this vendor has received (`supplier_bookings`), all
    *  statuses. The demand side of the same account: reach says how many people
    *  looked, this says how many wrote. 0 for pending rows. */

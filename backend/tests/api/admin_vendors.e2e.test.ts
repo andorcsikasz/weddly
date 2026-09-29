@@ -139,6 +139,15 @@ describe("admin vendor management", () => {
     const listingId = `v${accountId}`;
     const seenAt = Date.now() - 3 * 86_400_000;
     db.prepare("UPDATE users SET last_seen_at = ? WHERE id = ?").run(seenAt, userId);
+    // Two days of heartbeats: the row sums them, like the Users list does.
+    for (const [day, secs] of [
+      ["2026-09-01", 600],
+      ["2026-09-02", 120],
+    ] as const) {
+      db.prepare(
+        "INSERT INTO user_activity_daily (user_id, day, active_seconds, updated_at) VALUES (?, ?, ?, ?)",
+      ).run(userId, day, secs, seenAt);
+    }
 
     const { coupleId } = await bootstrapCouple("inquirer@weddly.test");
     const ts = Date.now();
@@ -168,6 +177,7 @@ describe("admin vendor management", () => {
     });
     const row = res.data.active.find((v) => v.id === accountId);
     expect(row?.owner_last_seen_at).toBe(seenAt);
+    expect(row?.owner_total_active_seconds).toBe(720);
     expect(row?.inquiry_count).toBe(2);
     expect(row?.review_count).toBe(2);
     expect(row?.review_avg).toBe(4.5);
@@ -196,11 +206,13 @@ describe("admin vendor management", () => {
     );
     const row = res.data.active.find((v) => v.id === accountId);
     expect(row?.owner_last_seen_at).toBeNull();
+    expect(row?.owner_total_active_seconds).toBe(0);
     expect(row?.inquiry_count).toBe(0);
     expect(row?.review_count).toBe(0);
     expect(row?.review_avg).toBeNull();
     // A pending onboarding is an emailed link and an address, nothing more.
     expect(res.data.pending[0]?.owner_last_seen_at).toBeNull();
+    expect(res.data.pending[0]?.owner_total_active_seconds).toBe(0);
     expect(res.data.pending[0]?.review_avg).toBeNull();
   });
 

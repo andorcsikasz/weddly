@@ -129,6 +129,7 @@ export function listPendingOnboardings(): AdminVendorView[] {
     // Nobody has signed in, nobody can have written to them, nothing to review:
     // a pending row is an emailed link and an address, nothing more.
     owner_last_seen_at: null,
+    owner_total_active_seconds: 0,
     inquiry_count: 0,
     review_count: 0,
     review_avg: null,
