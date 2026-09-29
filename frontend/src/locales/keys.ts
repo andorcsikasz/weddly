@@ -10166,6 +10166,9 @@ export interface LocaleMessages {
   camera: {
     seo_title: string;
     seo_description: string;
+    hero_title: string;
+    hero_sub: string;
+    fine_print: string;
     already_included: string;
     already_included_cta: string;
     features_title: string;
@@ -10177,14 +10180,13 @@ export interface LocaleMessages {
     feature_3_body: string;
     feature_4_title: string;
     feature_4_body: string;
-    standalone_eyebrow: string;
     standalone_title: string;
     standalone_body: string;
     pricing_guest_cap: string;
     pricing_custom_cap: string;
     pricing_custom_price: string;
-    pricing_couple_note: string;
-    pricing_couple_free: string;
+    pricing_couple_label: string;
+    pricing_standard: string;
     pricing_note: string;
   };
   /** Public-facing blog index and post pages. Body content lives in the

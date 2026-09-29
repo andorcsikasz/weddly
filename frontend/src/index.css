@@ -1592,6 +1592,32 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     cursor: not-allowed;
   }
 
+  /* /camera entrance: one staggered rise on first paint, set per element with
+     `--rise-i`. A public page seen once, so it can afford the moment; the
+     strong ease-out keeps it from reading as a delay. Reduced motion keeps
+     the fade and drops the travel. */
+  .camera-rise {
+    animation: cameraRise 560ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    animation-delay: calc(var(--rise-i, 0) * 70ms);
+  }
+  @keyframes cameraRise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .camera-rise {
+      animation-name: cameraFade;
+      animation-duration: 200ms;
+    }
+  }
+  @keyframes cameraFade {
+    from {
+      opacity: 0;
+    }
+  }
+
   /* /camera pricing slider. Self-contained rather than reusing `.range-fill`:
      that component's fill colours live on `--range-fill-*`, scoped to
      `html.dark`, but this page forces dark via a local wrapper div (see

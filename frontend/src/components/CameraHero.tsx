@@ -23,6 +23,7 @@ import {
   Share2,
   Sparkles,
 } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useT } from "../lib/i18n";
 import { Wordmark } from "./Wordmark";
 
@@ -84,12 +85,17 @@ function CameraPreview({
   );
 }
 
-/** The Wordmark + camera-icon eyebrow row shared by both hero states. */
-function HeroEyebrow({ label }: { label: string }) {
+/** The Wordmark + camera-icon eyebrow row shared by both hero states.
+ *  `bare` drops the Wordmark for pages whose own header already carries it. */
+function HeroEyebrow({ label, bare = false }: { label: string; bare?: boolean }) {
   return (
     <div className="flex items-center gap-3 text-paper-200">
-      <Wordmark size="sm" className="text-paper-50" />
-      <span className="h-4 w-px bg-paper-50/20" aria-hidden="true" />
+      {!bare && (
+        <>
+          <Wordmark size="sm" className="text-paper-50" />
+          <span className="h-4 w-px bg-paper-50/20" aria-hidden="true" />
+        </>
+      )}
       <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]">
         <Camera size={13} strokeWidth={1.7} aria-hidden="true" />
         {label}
@@ -106,6 +112,10 @@ export function CameraHero({
   onShare,
   headingFont = "serif",
   accent = "blush",
+  minimal = false,
+  title,
+  subtitle,
+  finePrint,
 }: {
   album: PhotoAlbum | null;
   coupleName: string | null;
@@ -123,6 +133,16 @@ export function CameraHero({
    *  per owner direction against terracotta on that page. MediaPage also
    *  passes "gold" now, for the same reason. */
   accent?: "blush" | "gold";
+  /** Public /camera only: the quiet version of the marketing hero. No card
+   *  chrome or grid texture (the page is already the dark slab), no second
+   *  Wordmark under the site header, chips collapsed into one line of fine
+   *  print, and the how-it-works strip cut to its three titles. The page
+   *  below it carries the detail, so the hero only has to land one idea. */
+  minimal?: boolean;
+  /** Overrides for the marketing state's copy; default to the media.* keys. */
+  title?: string;
+  subtitle?: string;
+  finePrint?: string;
 }) {
   const { t } = useT();
   const filmName = album?.title || coupleName || t("media.film_settings_unnamed");
@@ -172,7 +192,7 @@ export function CameraHero({
           <button
             type="button"
             onClick={onShare}
-            className={`inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-2xl px-6 py-3.5 font-grotesk text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
+            className={`inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-2xl px-6 py-3.5 font-grotesk text-sm font-semibold transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
           >
             <Share2 size={17} aria-hidden="true" />
             {t("media.film_cta_share")}
@@ -184,67 +204,103 @@ export function CameraHero({
   }
 
   // ── Marketing hero — no film yet, so this is the moment to sell it ──────
+  // Staggered first-paint rise, landing page only (see `.camera-rise`).
+  const rise = (i: number) =>
+    minimal
+      ? { className: "camera-rise", style: { "--rise-i": i } as CSSProperties }
+      : { className: "", style: undefined };
   return (
-    <section className="relative order-1 isolate overflow-hidden rounded-[2rem] bg-umber-950 text-paper-50 shadow-soft">
+    <section
+      className={`relative order-1 isolate text-paper-50 ${
+        minimal ? "" : "overflow-hidden rounded-[2rem] bg-umber-950 shadow-soft"
+      }`}
+    >
       <div
         aria-hidden="true"
         className={`absolute -right-20 -top-32 h-80 w-80 rounded-full blur-3xl ${glowClass}`}
       />
-      <div
-        aria-hidden="true"
-        className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-paper-300/10 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 opacity-[0.035]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-          maskImage: "linear-gradient(to bottom, black, transparent 76%)",
-        }}
-      />
+      {!minimal && (
+        <>
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-paper-300/10 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-[0.035]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px)",
+              backgroundSize: "48px 48px",
+              maskImage: "linear-gradient(to bottom, black, transparent 76%)",
+            }}
+          />
+        </>
+      )}
 
-      <div className="relative grid items-center gap-5 px-6 pb-5 pt-9 sm:px-10 sm:pb-8 sm:pt-11 lg:px-12 xl:min-h-[38rem] xl:grid-cols-[minmax(0,0.95fr)_minmax(25rem,1.05fr)] xl:gap-6 xl:px-16 xl:py-12">
+      <div
+        className={`relative grid items-center gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(25rem,1.05fr)] xl:gap-6 ${
+          minimal
+            ? "pb-4 pt-2 sm:pt-6 xl:min-h-[34rem]"
+            : "px-6 pb-5 pt-9 sm:px-10 sm:pb-8 sm:pt-11 lg:px-12 xl:min-h-[38rem] xl:px-16 xl:py-12"
+        }`}
+      >
         <div className="relative z-10 max-w-2xl">
-          <div className="mb-6">
-            <HeroEyebrow label={t("media.film_title")} />
+          <div className={`mb-6 ${rise(0).className}`} style={rise(0).style}>
+            <HeroEyebrow label={t("media.film_title")} bare={minimal} />
           </div>
 
           <h1
-            className={`max-w-[14ch] text-[3.15rem] font-semibold leading-[0.9] tracking-[-0.045em] !text-paper-50 sm:text-6xl lg:text-[4rem] xl:text-[4.4rem] ${headingFontClass}`}
+            className={`max-w-[14ch] text-[3.15rem] font-semibold leading-[0.9] tracking-[-0.045em] !text-paper-50 sm:text-6xl lg:text-[4rem] xl:text-[4.4rem] ${headingFontClass} ${rise(1).className}`}
+            style={rise(1).style}
           >
-            {t("media.hero_title")}
+            {title ?? t("media.hero_title")}
           </h1>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-paper-200 sm:text-lg">
-            {t("media.hero_sub")}
+          <p
+            className={`mt-5 max-w-md text-base leading-relaxed text-paper-200 sm:text-lg ${rise(2).className}`}
+            style={rise(2).style}
+          >
+            {subtitle ?? t("media.hero_sub")}
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div
+            className={`mt-8 flex flex-col gap-3 sm:flex-row ${rise(3).className}`}
+            style={rise(3).style}
+          >
             <button
               type="button"
               onClick={onCreate}
-              className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-7 py-3.5 font-grotesk text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
+              className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-7 py-3.5 font-grotesk text-sm font-semibold transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper-50 focus-visible:ring-offset-2 focus-visible:ring-offset-umber-950 ${ctaClass}`}
             >
               {t("media.film_cta_create")}
               <ArrowRight size={16} aria-hidden="true" />
             </button>
           </div>
 
-          <div className="mt-7 flex flex-wrap gap-2 text-xs font-medium text-paper-200">
-            <span className="flex items-center gap-1.5 rounded-full border border-paper-50/10 bg-paper-50/[0.06] px-3 py-1.5">
-              <ScanLine size={14} aria-hidden="true" />
-              {t("media.film_no_app_hint")}
-            </span>
-            <span className="flex items-center gap-1.5 rounded-full border border-paper-50/10 bg-paper-50/[0.06] px-3 py-1.5">
-              <Lock size={13} aria-hidden="true" />
-              {t("media.film_privacy_notice")}
-            </span>
-          </div>
+          {minimal ? (
+            <p
+              className={`mt-5 text-xs font-medium text-paper-400 ${rise(4).className}`}
+              style={rise(4).style}
+            >
+              {finePrint ?? `${t("media.film_no_app_hint")} · ${t("media.film_privacy_notice")}`}
+            </p>
+          ) : (
+            <div className="mt-7 flex flex-wrap gap-2 text-xs font-medium text-paper-200">
+              <span className="flex items-center gap-1.5 rounded-full border border-paper-50/10 bg-paper-50/[0.06] px-3 py-1.5">
+                <ScanLine size={14} aria-hidden="true" />
+                {t("media.film_no_app_hint")}
+              </span>
+              <span className="flex items-center gap-1.5 rounded-full border border-paper-50/10 bg-paper-50/[0.06] px-3 py-1.5">
+                <Lock size={13} aria-hidden="true" />
+                {t("media.film_privacy_notice")}
+              </span>
+            </div>
+          )}
         </div>
 
         <div
-          className="relative mx-auto h-[22rem] w-full max-w-[35rem] sm:h-[30rem] lg:h-[32rem]"
+          className={`relative mx-auto h-[22rem] w-full max-w-[35rem] sm:h-[30rem] lg:h-[32rem] ${rise(3).className}`}
+          style={rise(3).style}
           aria-hidden="true"
         >
           <div
@@ -284,51 +340,68 @@ export function CameraHero({
         </div>
       </div>
 
-      <div className="relative grid border-t border-paper-50/10 bg-paper-50/[0.03] sm:grid-cols-3 sm:divide-x sm:divide-paper-50/10">
-        {[
-          {
-            n: "01",
-            icon: QrCode,
-            title: t("media.film_how_1_title"),
-            body: t("media.film_how_1_body"),
-          },
-          {
-            n: "02",
-            icon: Camera,
-            title: t("media.film_how_2_title"),
-            body: t("media.film_how_2_body"),
-          },
-          {
-            n: "03",
-            icon: GalleryHorizontalEnd,
-            title: t("media.film_how_3_title"),
-            body: t("media.film_how_3_body"),
-          },
-        ].map((step) => (
-          <div
-            key={step.n}
-            className="grid grid-cols-[2.75rem_1fr] gap-3 border-t border-paper-50/10 px-6 py-5 first:border-t-0 sm:block sm:border-t-0 sm:px-7 sm:py-6"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-paper-50/10 bg-paper-50/[0.07] text-paper-300">
-              <step.icon size={17} strokeWidth={1.7} aria-hidden="true" />
-            </span>
-            <div className="sm:mt-4">
-              <span className="font-grotesk text-[9px] font-semibold tracking-[0.2em] text-paper-300">
-                {step.n}
+      {minimal ? (
+        <ol className="relative mt-10 grid gap-4 border-t border-paper-50/10 pt-6 sm:grid-cols-3 sm:gap-6">
+          {[
+            t("media.film_how_1_title"),
+            t("media.film_how_2_title"),
+            t("media.film_how_3_title"),
+          ].map((step, i) => (
+            <li key={step} className="flex items-baseline gap-3 text-sm text-paper-200">
+              <span className="font-grotesk text-[11px] font-semibold tabular-nums tracking-[0.2em] text-paper-500">
+                0{i + 1}
               </span>
-              {/* `!` forced: inside [data-app-shell] (the /app/media dashboard)
+              {step}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <div className="relative grid border-t border-paper-50/10 bg-paper-50/[0.03] sm:grid-cols-3 sm:divide-x sm:divide-paper-50/10">
+          {[
+            {
+              n: "01",
+              icon: QrCode,
+              title: t("media.film_how_1_title"),
+              body: t("media.film_how_1_body"),
+            },
+            {
+              n: "02",
+              icon: Camera,
+              title: t("media.film_how_2_title"),
+              body: t("media.film_how_2_body"),
+            },
+            {
+              n: "03",
+              icon: GalleryHorizontalEnd,
+              title: t("media.film_how_3_title"),
+              body: t("media.film_how_3_body"),
+            },
+          ].map((step) => (
+            <div
+              key={step.n}
+              className="grid grid-cols-[2.75rem_1fr] gap-3 border-t border-paper-50/10 px-6 py-5 first:border-t-0 sm:block sm:border-t-0 sm:px-7 sm:py-6"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-paper-50/10 bg-paper-50/[0.07] text-paper-300">
+                <step.icon size={17} strokeWidth={1.7} aria-hidden="true" />
+              </span>
+              <div className="sm:mt-4">
+                <span className="font-grotesk text-[9px] font-semibold tracking-[0.2em] text-paper-300">
+                  {step.n}
+                </span>
+                {/* `!` forced: inside [data-app-shell] (the /app/media dashboard)
                   an unlayered light-mode rule repaints every bare h1/h2 to
                   umber-900, which otherwise wins over a plain text-paper-50
                   utility and reads as dark-on-dark against this card. The
                   /camera public page has no [data-app-shell] ancestor, so it
                   never showed the bug — this hero is the only place both
                   contexts share the markup. */}
-              <h2 className="font-grotesk text-sm font-semibold !text-paper-50">{step.title}</h2>
-              <p className="mt-1 text-xs leading-relaxed text-paper-300">{step.body}</p>
+                <h2 className="font-grotesk text-sm font-semibold !text-paper-50">{step.title}</h2>
+                <p className="mt-1 text-xs leading-relaxed text-paper-300">{step.body}</p>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
