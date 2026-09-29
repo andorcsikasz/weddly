@@ -213,6 +213,17 @@ export function CameraHero({
   if (album) {
     return (
       <section className="relative order-1 isolate overflow-hidden rounded-[2rem] bg-umber-950 text-paper-50 shadow-soft">
+        <img
+          src="/demo/wedding-party-hero.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover object-[68%_center] opacity-60 sm:opacity-75"
+          decoding="async"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,15,11,0.98)_0%,rgba(24,15,11,0.88)_36%,rgba(24,15,11,0.48)_72%,rgba(24,15,11,0.58)_100%)]"
+        />
         <div
           aria-hidden="true"
           className={`absolute -right-16 -top-20 h-56 w-56 rounded-full blur-3xl ${glowClass}`}
