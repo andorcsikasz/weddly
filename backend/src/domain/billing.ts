@@ -521,10 +521,13 @@ export function applySubscriptionState(
  *  This is the precondition the planner needs before switching guest-page
  *  editing back on for the couple — it does NOT grant edit access by itself. */
 export function markGuestPagePrepaid(coupleId: number, nowMs: number = now()): void {
-  db.prepare("UPDATE couples SET guest_page_prepaid = 1, updated_at = ? WHERE id = ?").run(
-    nowMs,
-    coupleId,
-  );
+  // A replayed webhook keeps the first payment's timestamp.
+  db.prepare(
+    `UPDATE couples
+        SET guest_page_prepaid = 1, guest_page_prepaid_at = COALESCE(guest_page_prepaid_at, ?),
+            updated_at = ?
+      WHERE id = ?`,
+  ).run(nowMs, nowMs, coupleId);
 }
 
 // ── Entitlement guard ───────────────────────────────────────────────────────

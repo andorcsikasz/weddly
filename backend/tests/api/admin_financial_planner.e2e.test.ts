@@ -11,13 +11,16 @@ import {
   type StripeHealth,
   subscriptionUnitEconomics,
 } from "@shared/admin_financial_planner";
-import { MONTHLY_PRICE, TRIAL_GRACE_MS } from "@shared/billing";
+import { GUEST_PAGE_ADDON_PRICE, MONTHLY_PRICE, TRIAL_GRACE_MS } from "@shared/billing";
+import { PLANNER_TIER_PRICE } from "@shared/planner_billing";
+import { FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
+import { VENDOR_FREE_LEAD_CREDITS, VENDOR_MONTHLY_PRICE } from "@shared/vendor_billing";
 import { CONFIG } from "../../src/config";
 import { db } from "../../src/db";
 import { recordGrowthEvent } from "../../src/domain/growth_events";
 import { runEmailSweep } from "../../src/domain/emails/worker";
 import { paymentPriceValidationIssues } from "../../src/domain/payment_launch";
-import { setBillingEnforcement } from "../../src/domain/billing";
+import { markGuestPagePrepaid, setBillingEnforcement } from "../../src/domain/billing";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Seed N placeholder non-demo couples (negative ids) so later real couples
@@ -157,6 +160,206 @@ describe("GET /api/admin/financial-planner/overview", () => {
     // aggregates as well — neither has a row in this fixture.
     expect(r.data.enforcement_impact.vendors).toBe(0);
     expect(r.data.enforcement_impact.planners).toBe(0);
+  });
+});
+
+/** A bare user row for a vendor / planner subscription to hang off. */
+function seedUser(email: string, userType = "couple", plannerPlan: string | null = null) {
+  const r = db
+    .prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, user_type, planner_plan,
+         verified_email, created_at, updated_at)
+       VALUES (?, 'x', 'Seed User', 'active', 'user', ?, ?, 1, 1, 1)`,
+    )
+    .run(email, userType, plannerPlan);
+  return Number(r.lastInsertRowid);
+}
+
+function seedVendorSub(
+  email: string,
+  cols: {
+    status: string;
+    currency: "HUF" | "EUR";
+    interval?: "month" | "year";
+    founding_until?: number;
+    early?: boolean;
+    lead_credits_used?: number;
+    billing_starts_at?: number;
+  },
+) {
+  const userId = seedUser(email);
+  const va = db
+    .prepare(
+      "INSERT INTO vendor_accounts (owner_user_id, display_name, created_at, updated_at) VALUES (?, ?, 1, 1)",
+    )
+    .run(userId, email);
+  db.prepare(
+    `INSERT INTO vendor_subscriptions (vendor_account_id, subscription_status, currency,
+       billing_interval, founding_until, is_founding_member, is_early_member,
+       lead_credits_used, billing_starts_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)`,
+  ).run(
+    Number(va.lastInsertRowid),
+    cols.status,
+    cols.currency,
+    cols.interval ?? "month",
+    cols.founding_until ?? null,
+    cols.founding_until && !cols.early ? 1 : 0,
+    cols.early ? 1 : 0,
+    cols.lead_credits_used ?? 0,
+    cols.billing_starts_at ?? null,
+  );
+}
+
+function seedPlannerSub(
+  email: string,
+  plan: string,
+  cols: {
+    status: string;
+    currency: "HUF" | "EUR";
+    interval?: "month" | "year";
+    founding_until?: number;
+  },
+) {
+  const userId = seedUser(email, "planner", plan);
+  db.prepare(
+    `INSERT INTO planner_subscriptions (user_id, subscription_status, currency, billing_interval,
+       founding_until, is_founding_member, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, 1)`,
+  ).run(
+    userId,
+    cols.status,
+    cols.currency,
+    cols.interval ?? "month",
+    cols.founding_until ?? null,
+    cols.founding_until ? 1 : 0,
+  );
+}
+
+describe("financial planner: vendors, planners, camera, guest-page add-on", () => {
+  test("rolls up every product's revenue and what it still owes", async () => {
+    wipeAll();
+    const day = 24 * 60 * 60 * 1000;
+    const future = Date.now() + 60 * day;
+
+    // Vendors: one monthly EUR, one annual HUF, one founding, one early,
+    // one lead window with a credit left, one with billing already scheduled.
+    seedVendorSub("v-active@fin.test", { status: "active", currency: "EUR" });
+    seedVendorSub("v-annual@fin.test", { status: "active", currency: "HUF", interval: "year" });
+    seedVendorSub("v-founding@fin.test", {
+      status: "founding",
+      currency: "EUR",
+      founding_until: future,
+    });
+    seedVendorSub("v-early@fin.test", {
+      status: "founding",
+      currency: "EUR",
+      founding_until: future,
+      early: true,
+    });
+    seedVendorSub("v-leads@fin.test", {
+      status: "lead_window",
+      currency: "EUR",
+      lead_credits_used: 1,
+    });
+    seedVendorSub("v-sched@fin.test", {
+      status: "lead_window",
+      currency: "EUR",
+      lead_credits_used: VENDOR_FREE_LEAD_CREDITS,
+      billing_starts_at: future,
+    });
+
+    // Planners: a paying pro, an annual premium on the legacy "unlimited" key,
+    // and one founding starter.
+    seedPlannerSub("p-pro@fin.test", "pro", { status: "active", currency: "EUR" });
+    seedPlannerSub("p-prem@fin.test", "unlimited", {
+      status: "active",
+      currency: "EUR",
+      interval: "year",
+    });
+    seedPlannerSub("p-found@fin.test", "starter", {
+      status: "founding",
+      currency: "EUR",
+      founding_until: future,
+    });
+
+    // Camera: one paid film whose event is still ahead, one free film.
+    const { coupleId } = await bootstrapCouple("fin-camera@weddly.test");
+    const album = db.prepare(
+      `INSERT INTO photo_albums (couple_id, upload_token, created_at, updated_at, paid_at, event_ends_at)
+       VALUES (?, ?, 1, 1, ?, ?)`,
+    );
+    album.run(coupleId, "tok-paid", Date.now() - day, future);
+    album.run(coupleId, "tok-free", null, null);
+
+    // Guest-page add-on: paid (HUF couple), not switched on yet.
+    db.prepare("UPDATE couples SET currency = 'HUF' WHERE id = ?").run(coupleId);
+    markGuestPagePrepaid(coupleId);
+    const stamped = db
+      .prepare("SELECT guest_page_prepaid_at AS at FROM couples WHERE id = ?")
+      .get(coupleId) as { at: number | null };
+    expect(stamped.at).not.toBeNull();
+    // A replayed webhook keeps the first timestamp.
+    markGuestPagePrepaid(coupleId, (stamped.at ?? 0) + 5000);
+    expect(
+      (
+        db
+          .prepare("SELECT guest_page_prepaid_at AS at FROM couples WHERE id = ?")
+          .get(coupleId) as {
+          at: number;
+        }
+      ).at,
+    ).toBe(stamped.at as number);
+
+    const adminToken = await addAdmin();
+    const r = await req<AdminFinancialPlannerOverview>(
+      "GET",
+      "/api/admin/financial-planner/overview",
+      undefined,
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    const { vendors, planners, camera, guest_page_addon } = r.data.products;
+
+    expect(vendors.total).toBe(6);
+    expect(vendors.paying).toBe(2);
+    expect(vendors.annual).toBe(1);
+    // Annual = 9 months' price over 12 months.
+    const vendorMrr = VENDOR_MONTHLY_PRICE.EUR + (VENDOR_MONTHLY_PRICE.HUF * 9) / 12 / 400;
+    expect(vendors.mrr_eur).toBe(Math.round(vendorMrr));
+    expect(vendors.founding_active).toBe(2);
+    expect(vendors.early_active).toBe(1);
+    expect(vendors.founding_value_eur).toBe(VENDOR_MONTHLY_PRICE.EUR * 2);
+    expect(vendors.lead_window).toBe(2);
+    expect(vendors.lead_credits_owed).toBe(VENDOR_FREE_LEAD_CREDITS - 1);
+    expect(vendors.billing_scheduled).toBe(1);
+    expect(vendors.billing_scheduled_mrr_eur).toBe(VENDOR_MONTHLY_PRICE.EUR);
+
+    expect(planners.paying).toBe(2);
+    expect(planners.paying_by_tier).toEqual({ starter: 0, pro: 1, premium: 1 });
+    expect(planners.mrr_eur).toBe(
+      Math.round(PLANNER_TIER_PRICE.pro.EUR + (PLANNER_TIER_PRICE.premium.EUR * 9) / 12),
+    );
+    expect(planners.founding_active).toBe(1);
+    expect(planners.founding_value_eur).toBe(PLANNER_TIER_PRICE.starter.EUR);
+
+    expect(camera.albums_total).toBe(2);
+    expect(camera.sold).toBe(1);
+    expect(camera.sold_last_30d).toBe(1);
+    expect(camera.owed).toBe(1);
+    expect(camera.revenue_eur).toBe(Math.round(FILM_TIER_PRICE_EUR_CENTS.paid / 100));
+
+    expect(guest_page_addon.sold).toBe(1);
+    expect(guest_page_addon.sold_last_30d).toBe(1);
+    expect(guest_page_addon.owed).toBe(1);
+    expect(guest_page_addon.revenue_eur).toBe(Math.round(GUEST_PAGE_ADDON_PRICE.HUF / 400));
+
+    expect(r.data.products.total_mrr_eur).toBe(
+      r.data.mrr_eur_total + vendors.mrr_eur + planners.mrr_eur,
+    );
+    expect(r.data.products.total_founding_value_eur).toBe(
+      r.data.founding_value_eur + vendors.founding_value_eur + planners.founding_value_eur,
+    );
   });
 });
 

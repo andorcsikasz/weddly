@@ -22,6 +22,7 @@ import {
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   type AdminFinancialPlannerOverview,
+  type FoundingExpiryBucket,
   type ForecastAssumptions,
   type FxRates,
   type PaymentLaunchesResponse,
@@ -433,6 +434,9 @@ export default function AdminFinancialPlannerPage() {
         </section>
       </div>
 
+      {/* Every revenue line beyond the couple subscription, and what each owes */}
+      <ProductsCard data={data} t={t} locale={locale} />
+
       {/* Egy előfizetés bontása: bruttó ár → ÁFA → Stripe → magyar adók */}
       <UnitEconomicsCard locale={locale} liveHuf={data.price_huf} />
 
@@ -649,6 +653,211 @@ export default function AdminFinancialPlannerPage() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+// ── All products: revenue + obligations ────────────────────────────────────
+// The couple subscription has the whole page above; this puts the other four
+// revenue lines beside it, each split into what it earns and what it owes.
+
+type Translate = ReturnType<typeof useT>["t"];
+
+type ProductRow = { label: string; value: string; sub?: boolean };
+
+export function ProductsCard({
+  data,
+  t,
+  locale,
+}: {
+  data: AdminFinancialPlannerOverview;
+  t: Translate;
+  locale: Locale;
+}) {
+  const p = data.products;
+  const eur = (n: number) => formatMoney(n, "EUR", locale);
+  const num = (n: number) => n.toLocaleString(intlLocale(locale));
+  const nextExpiry = (buckets: FoundingExpiryBucket[]): ProductRow[] =>
+    buckets.slice(0, 3).map((b) => ({
+      label: new Date(`${b.month}-01T00:00:00Z`).toLocaleDateString(intlLocale(locale), {
+        year: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      }),
+      value: num(b.count),
+      sub: true,
+    }));
+  const withExpiry = (buckets: FoundingExpiryBucket[]): ProductRow[] =>
+    buckets.length > 0
+      ? [{ label: t("admin.fin_prod_next_expiry"), value: "" }, ...nextExpiry(buckets)]
+      : [];
+
+  const products: Array<{ key: string; title: string; earns: ProductRow[]; owes: ProductRow[] }> = [
+    {
+      key: "couples",
+      title: t("admin.fin_prod_couples"),
+      earns: [
+        { label: t("admin.fin_prod_mrr"), value: eur(data.mrr_eur_total) },
+        { label: t("admin.fin_prod_accounts"), value: num(data.total_couples) },
+        { label: t("admin.fin_prod_paying"), value: num(data.paying_subscribers) },
+        { label: t("admin.fin_prod_trialing"), value: num(data.trialing) },
+      ],
+      owes: [
+        { label: t("admin.fin_prod_founding_active"), value: num(data.founding_active) },
+        { label: t("admin.fin_prod_free_value"), value: eur(data.founding_value_eur) },
+        { label: t("admin.fin_prod_spots_left"), value: num(data.founding_spots_left) },
+        ...withExpiry(data.founding_expiry),
+      ],
+    },
+    {
+      key: "vendors",
+      title: t("admin.fin_prod_vendors"),
+      earns: [
+        { label: t("admin.fin_prod_mrr"), value: eur(p.vendors.mrr_eur) },
+        { label: t("admin.fin_prod_accounts"), value: num(p.vendors.total) },
+        { label: t("admin.fin_prod_paying"), value: num(p.vendors.paying) },
+        { label: t("admin.fin_prod_annual"), value: num(p.vendors.annual), sub: true },
+        { label: t("admin.fin_prod_trialing"), value: num(p.vendors.trialing) },
+        {
+          label: t("admin.fin_prod_billing_scheduled"),
+          value: `${num(p.vendors.billing_scheduled)} · ${eur(p.vendors.billing_scheduled_mrr_eur)}`,
+        },
+      ],
+      owes: [
+        { label: t("admin.fin_prod_founding_active"), value: num(p.vendors.founding_active) },
+        { label: t("admin.fin_prod_early_active"), value: num(p.vendors.early_active), sub: true },
+        { label: t("admin.fin_prod_free_value"), value: eur(p.vendors.founding_value_eur) },
+        { label: t("admin.fin_prod_lead_window"), value: num(p.vendors.lead_window) },
+        { label: t("admin.fin_prod_lead_credits"), value: num(p.vendors.lead_credits_owed) },
+        { label: t("admin.fin_prod_spots_left"), value: num(p.vendors.founding_spots_left) },
+        ...withExpiry(p.vendors.founding_expiry),
+      ],
+    },
+    {
+      key: "planners",
+      title: t("admin.fin_prod_planners"),
+      earns: [
+        { label: t("admin.fin_prod_mrr"), value: eur(p.planners.mrr_eur) },
+        { label: t("admin.fin_prod_accounts"), value: num(p.planners.total) },
+        { label: t("admin.fin_prod_paying"), value: num(p.planners.paying) },
+        {
+          label: t("admin.fin_prod_tiers"),
+          value: [
+            p.planners.paying_by_tier.starter,
+            p.planners.paying_by_tier.pro,
+            p.planners.paying_by_tier.premium,
+          ]
+            .map(num)
+            .join(" / "),
+          sub: true,
+        },
+        { label: t("admin.fin_prod_annual"), value: num(p.planners.annual), sub: true },
+        { label: t("admin.fin_prod_trialing"), value: num(p.planners.trialing) },
+      ],
+      owes: [
+        { label: t("admin.fin_prod_founding_active"), value: num(p.planners.founding_active) },
+        { label: t("admin.fin_prod_free_value"), value: eur(p.planners.founding_value_eur) },
+        { label: t("admin.fin_prod_spots_left"), value: num(p.planners.founding_spots_left) },
+        ...withExpiry(p.planners.founding_expiry),
+      ],
+    },
+    {
+      key: "camera",
+      title: t("admin.fin_prod_camera"),
+      earns: [
+        { label: t("admin.fin_prod_collected_30d"), value: eur(p.camera.revenue_last_30d_eur) },
+        { label: t("admin.fin_prod_collected"), value: eur(p.camera.revenue_eur) },
+        { label: t("admin.fin_prod_sold_30d"), value: num(p.camera.sold_last_30d) },
+        { label: t("admin.fin_prod_sold"), value: num(p.camera.sold) },
+      ],
+      owes: [
+        { label: t("admin.fin_prod_camera_owed"), value: num(p.camera.owed) },
+        { label: t("admin.fin_prod_albums"), value: num(p.camera.albums_total) },
+        { label: t("admin.fin_prod_uploads"), value: num(p.camera.uploads_total) },
+      ],
+    },
+    {
+      key: "addon",
+      title: t("admin.fin_prod_addon"),
+      earns: [
+        {
+          label: t("admin.fin_prod_collected_30d"),
+          value: eur(p.guest_page_addon.revenue_last_30d_eur),
+        },
+        { label: t("admin.fin_prod_collected"), value: eur(p.guest_page_addon.revenue_eur) },
+        { label: t("admin.fin_prod_sold_30d"), value: num(p.guest_page_addon.sold_last_30d) },
+        { label: t("admin.fin_prod_sold"), value: num(p.guest_page_addon.sold) },
+      ],
+      owes: [{ label: t("admin.fin_prod_addon_owed"), value: num(p.guest_page_addon.owed) }],
+    },
+  ];
+
+  return (
+    <section className="admin-card mt-4">
+      <h2 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
+        {t("admin.fin_prod_title")}
+      </h2>
+      <p className="mt-1 max-w-prose text-xs text-neutral-500 dark:text-umber-300">
+        {t("admin.fin_prod_hint")}
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Kpi
+          label={t("admin.fin_prod_total_mrr")}
+          value={eur(p.total_mrr_eur)}
+          emphasis
+          hint={t("admin.fin_prod_total_mrr_hint")}
+        />
+        <Kpi label={t("admin.fin_prod_one_off")} value={eur(p.one_off_last_30d_eur)} />
+        <Kpi
+          label={t("admin.fin_prod_free_owed")}
+          value={eur(p.total_founding_value_eur)}
+          hint={t("admin.fin_prod_free_owed_hint")}
+        />
+        <Kpi
+          label={t("admin.fin_prod_vat")}
+          value={eur(p.vat_embedded_eur)}
+          hint={t("admin.fin_prod_vat_hint")}
+        />
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {products.map((prod) => (
+          <div
+            key={prod.key}
+            className="rounded-xl border border-paper-200 p-3 dark:border-umber-700"
+          >
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-paper-50">
+              {prod.title}
+            </h3>
+            <ProductRows heading={t("admin.fin_prod_earns")} rows={prod.earns} />
+            <ProductRows heading={t("admin.fin_prod_owes")} rows={prod.owes} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProductRows({ heading, rows }: { heading: string; rows: ProductRow[] }) {
+  return (
+    <div className="mt-3">
+      <div className="text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-umber-300">
+        {heading}
+      </div>
+      <ul className="mt-1 space-y-1">
+        {rows.map((r, i) => (
+          <li
+            key={`${r.label}-${i}`}
+            className={`flex items-center justify-between gap-3 text-sm ${r.sub ? "pl-3 text-xs" : ""}`}
+          >
+            <span className="text-neutral-600 dark:text-umber-200">{r.label}</span>
+            <span className="shrink-0 font-medium tabular-nums text-neutral-900 dark:text-paper-50">
+              {r.value}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

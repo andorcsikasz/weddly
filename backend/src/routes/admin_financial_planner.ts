@@ -21,6 +21,7 @@ import {
   setBillingEnforcement,
   stripe,
 } from "../domain/billing";
+import { productsOverview } from "../domain/financial_products";
 import { requireAdmin } from "../domain/users";
 import {
   isPaymentLaunchProduct,
@@ -102,6 +103,24 @@ function overview(): AdminFinancialPlannerOverview {
     )
     .all(nowMs) as Array<{ month: string; n: number }>;
 
+  // What the live couple founding windows would pay at list price, per month.
+  const foundingCurrencyRows = db
+    .prepare(
+      `SELECT COALESCE(currency, 'HUF') AS currency, COUNT(*) AS n
+         FROM couples
+        WHERE is_demo = 0 AND subscription_status = 'founding'
+          AND founding_until IS NOT NULL AND founding_until > ?
+        GROUP BY COALESCE(currency, 'HUF')`,
+    )
+    .all(nowMs) as Array<{ currency: string; n: number }>;
+  const founding_value_eur = Math.round(
+    foundingCurrencyRows.reduce((a, r) => {
+      const currency = toBillingCurrency(isCurrency(r.currency) ? r.currency : "HUF");
+      const price = MONTHLY_PRICE[currency];
+      return a + r.n * (currency === "HUF" ? price / HUF_PER_EUR : price);
+    }, 0),
+  );
+
   // Paid-conversion funnel top: how many couples reached the Stripe pay
   // screen, from the checkout.started growth events.
   const checkoutStarted = db
@@ -133,6 +152,11 @@ function overview(): AdminFinancialPlannerOverview {
     billing_enforcement_on: billingEnforcementOn(),
     enforcement_ready: total >= FOUNDING_CAP,
     enforcement_impact: enforcementImpact(nowMs),
+    founding_value_eur,
+    products: productsOverview(nowMs, {
+      mrrEur: mrr_eur_total,
+      foundingValueEur: founding_value_eur,
+    }),
   };
 }
 

@@ -86,6 +86,91 @@ export interface AdminFinancialPlannerOverview {
   checkout_started_couples: number;
   /** Total checkout starts including repeat attempts by the same couple. */
   checkout_started_total: number;
+  /** List-price MRR the live couple founding windows are not paying, EUR. */
+  founding_value_eur: number;
+  /** The other revenue lines (vendors, planners, camera, guest-page add-on)
+   *  and what each one currently owes its customers. */
+  products: AdminProductsOverview;
+}
+
+/** Live state of one recurring product (vendor or planner subscriptions). All
+ *  money is MONTHLY: an annual subscriber contributes a twelfth of their
+ *  annual price, so the figure adds up with the couple MRR. */
+export interface RecurringProductOverview {
+  /** Subscription rows per stored status. Vendors add `lead_window`. */
+  counts: Record<string, number>;
+  total: number;
+  /** Paying subscribers (active + past_due). */
+  paying: number;
+  /** Of `paying`, how many are on the annual cadence. */
+  annual: number;
+  mrr_by_currency: CurrencyMrr[];
+  mrr_eur: number;
+  /** Currently inside a free founding (or early-cohort) window. */
+  founding_active: number;
+  founding_spots_left: number;
+  /** List-price MRR those free windows are NOT paying us while they run: the
+   *  size of the promise, in EUR per month. */
+  founding_value_eur: number;
+  /** When those free windows end, by calendar month. Chronological. */
+  founding_expiry: FoundingExpiryBucket[];
+  trialing: number;
+}
+
+export interface VendorProductOverview extends RecurringProductOverview {
+  /** Early-cohort (three-month) members still inside their window. Included
+   *  in `founding_active`, split out because the window is much shorter. */
+  early_active: number;
+  /** Card on file, working through the free leads before the first charge. */
+  lead_window: number;
+  /** Free inquiries still owed to vendors in the lead window. */
+  lead_credits_owed: number;
+  /** Vendors whose first charge is already scheduled (billing_starts_at in the
+   *  future), and the MRR that lands when it does. */
+  billing_scheduled: number;
+  billing_scheduled_mrr_eur: number;
+}
+
+export interface PlannerProductOverview extends RecurringProductOverview {
+  /** Paying planners per tier. */
+  paying_by_tier: Record<"starter" | "pro" | "premium", number>;
+}
+
+/** A one-off purchase product (camera film, guest-page add-on). */
+export interface OneOffProductOverview {
+  /** Units sold, all time. */
+  sold: number;
+  sold_last_30d: number;
+  /** Gross collected, all time, in EUR (HUF converted at HUF_PER_EUR). */
+  revenue_eur: number;
+  revenue_last_30d_eur: number;
+  /** Paid units whose service is still owed: a camera film whose event has
+   *  not ended, or a prepaid add-on the planner has not switched on yet. */
+  owed: number;
+}
+
+export interface CameraProductOverview extends OneOffProductOverview {
+  /** Every film created (free + paid): the included tier still costs storage. */
+  albums_total: number;
+  /** Photos stored across all films, the storage the included tier carries. */
+  uploads_total: number;
+}
+
+export interface AdminProductsOverview {
+  vendors: VendorProductOverview;
+  planners: PlannerProductOverview;
+  camera: CameraProductOverview;
+  guest_page_addon: OneOffProductOverview;
+  /** Couples + vendors + planners, monthly, EUR. */
+  total_mrr_eur: number;
+  /** Camera + add-on, collected in the last 30 days, EUR. */
+  one_off_last_30d_eur: number;
+  /** Every free window we have promised, across the three subscriptions, as
+   *  list-price MRR per month. */
+  total_founding_value_eur: number;
+  /** VAT embedded in this month's gross (MRR + last-30-day one-offs) at the HU
+   *  27% rate: money collected that is not ours. */
+  vat_embedded_eur: number;
 }
 
 /** Stripe connection + config health for the admin planner. Surfaces what we

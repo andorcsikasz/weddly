@@ -1374,6 +1374,10 @@ addColumnIfMissing(
   "guest_page_prepaid INTEGER NOT NULL DEFAULT 0",
 );
 addColumnIfMissing("couples", "guest_page_addon", "guest_page_addon INTEGER NOT NULL DEFAULT 0");
+// When the add-on was paid for. The flag alone could not say how much of the
+// add-on revenue is recent, so the financial planner could only ever show an
+// all-time total. NULL on rows paid before this column existed.
+addColumnIfMissing("couples", "guest_page_prepaid_at", "guest_page_prepaid_at INTEGER");
 // Index AFTER the column adds (see the May-2026 ordering rule): a column added
 // via addColumnIfMissing can't carry an inline index in schema.sql.
 db.exec(
