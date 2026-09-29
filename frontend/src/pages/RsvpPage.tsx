@@ -5,10 +5,9 @@
 
 import type { PublicCheckinView } from "@shared/types";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { HouseholdRsvpForm } from "../components/HouseholdRsvpForm";
-import { LocaleSwitcher } from "../components/LocaleSwitcher";
-import { Wordmark } from "../components/Wordmark";
+import { RsvpShell, RsvpTopBar } from "../components/RsvpShell";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
@@ -33,24 +32,23 @@ export default function RsvpPage() {
   }, [code, t]);
 
   return (
-    <FullPage>
-      <div className="mb-6 flex items-center justify-between">
-        <Link
-          to="/"
-          aria-label={t("common.back_home_aria")}
-          className="inline-block text-ink-700 transition-colors hover:text-ink-900"
-        >
-          <Wordmark size="sm" />
-        </Link>
-        <LocaleSwitcher buttonClassName="btn-ghost btn-sm" />
-      </div>
+    <RsvpShell>
+      <RsvpTopBar />
 
       {error ? (
-        <p className="text-sm text-blush-700">{error}</p>
+        // On the photo, not beside it. `text-blush-700` was chosen against a
+        // paper-100 page; the backdrop is a dark print, so the message has to
+        // arrive on its own card or it is unreadable at exactly the moment the
+        // guest most needs to read it.
+        <div className="card stationery shadow-pop">
+          <p className="text-sm text-blush-700">{error}</p>
+        </div>
       ) : view ? (
         <HouseholdRsvpForm view={view} onUpdated={setView} />
       ) : (
-        <div className="card">
+        // The skeleton is the same print the form becomes, so the swap when the
+        // payload lands doesn't change the weight of anything on screen.
+        <div className="card stationery shadow-pop">
           <Skeleton variant="block" width={180} height={28} rounded="md" />
           <Skeleton variant="line" height={12} width="70%" className="mt-3" />
           <div className="mt-6 flex flex-col gap-5">
@@ -64,15 +62,6 @@ export default function RsvpPage() {
           <Skeleton variant="block" height={48} rounded="lg" className="mt-8 w-full" />
         </div>
       )}
-    </FullPage>
-  );
-}
-
-function FullPage({ children }: { children: React.ReactNode }) {
-  // pb-32 keeps the submit CTA visible above the iOS soft keyboard.
-  return (
-    <div className="min-h-full bg-paper-100 px-4 pb-32 pt-8 sm:pt-16">
-      <div className="mx-auto max-w-md">{children}</div>
-    </div>
+    </RsvpShell>
   );
 }

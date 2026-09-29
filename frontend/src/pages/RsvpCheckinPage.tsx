@@ -4,10 +4,9 @@
 import { HOUSEHOLD_CODE_LENGTH, type PublicCheckinView } from "@shared/types";
 import { Lock } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { HouseholdRsvpForm } from "../components/HouseholdRsvpForm";
-import { LocaleSwitcher } from "../components/LocaleSwitcher";
-import { Wordmark } from "../components/Wordmark";
+import { RsvpShell, RsvpTopBar } from "../components/RsvpShell";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
@@ -196,25 +195,8 @@ export default function RsvpCheckinPage() {
   }
 
   return (
-    <FullPage>
-      <div className="mb-6 flex items-center justify-between">
-        {kiosk ? (
-          // Kiosk: wordmark stays visible for orientation but is no longer a
-          // navigation target — one tap can't escape to the marketing site.
-          <span aria-label="Weddly" className="inline-block text-ink-700">
-            <Wordmark size="sm" />
-          </span>
-        ) : (
-          <Link
-            to="/"
-            aria-label={t("common.back_home_aria")}
-            className="inline-block text-ink-700 transition-colors hover:text-ink-900"
-          >
-            <Wordmark size="sm" />
-          </Link>
-        )}
-        {!kiosk && <LocaleSwitcher buttonClassName="btn-ghost btn-sm" />}
-      </div>
+    <RsvpShell>
+      <RsvpTopBar kiosk={kiosk} />
 
       {kiosk && (
         <div
@@ -243,7 +225,7 @@ export default function RsvpCheckinPage() {
           onNextGuest={kiosk ? resetForNextGuest : undefined}
         />
       ) : (
-        <form className="card stationery animate-fade-in-up" onSubmit={onSubmitLookup}>
+        <form className="card stationery shadow-pop animate-fade-in-up" onSubmit={onSubmitLookup}>
           {/* Quiet airport-style kicker — anchors the metaphor before the
               guest types anything. Mono uppercase, low contrast. */}
           <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-ink-500">
@@ -342,7 +324,7 @@ export default function RsvpCheckinPage() {
           can't lock themselves into kiosk mode by accident. Exit stays a
           long-press hotspot in the bottom-right + Shift+K. */}
       {kiosk && <KioskExitHotspot onExit={exitKiosk} label={t("rsvp.kiosk_exit_hold")} />}
-    </FullPage>
+    </RsvpShell>
   );
 }
 
@@ -399,22 +381,11 @@ function KioskExitHotspot({ onExit, label }: { onExit: () => void; label: string
       onPointerMove={onPointerMove}
       className={
         armed
-          ? "fixed bottom-3 right-3 inline-flex size-8 items-center justify-center rounded-full border border-ink-400 bg-ink-700 text-paper-100 shadow-md transition-colors"
-          : "fixed bottom-3 right-3 inline-flex size-8 items-center justify-center rounded-full border border-paper-300 bg-paper-50/70 text-ink-500 transition-colors hover:bg-paper-50"
+          ? "fixed bottom-3 right-3 z-20 inline-flex size-8 items-center justify-center rounded-full border border-ink-400 bg-ink-700 text-paper-100 shadow-md transition-colors"
+          : "fixed bottom-3 right-3 z-20 inline-flex size-8 items-center justify-center rounded-full border border-paper-300 bg-paper-50/70 text-ink-500 transition-colors hover:bg-paper-50"
       }
     >
       <Lock size={14} aria-hidden />
     </button>
-  );
-}
-
-function FullPage({ children }: { children: React.ReactNode }) {
-  // pb-32 reserves space at the bottom so the iOS soft keyboard doesn't park
-  // itself directly over the submit button when a guest taps a meal/dietary
-  // input — they can scroll past the form and still see the CTA.
-  return (
-    <div className="min-h-full bg-paper-100 px-4 pb-32 pt-8 sm:pt-16">
-      <div className="mx-auto max-w-md">{children}</div>
-    </div>
   );
 }

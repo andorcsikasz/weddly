@@ -1758,6 +1758,110 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     );
   }
 
+  /* ── RSVP backdrop: an analog print behind the guest's form ───────────
+     The check-in page is the first and often the only screen a guest ever
+     sees of a wedding, so it opens on a photograph rather than on a form.
+     The treatment is the one a print gets rather than the one a web page
+     gets: a warm, slightly faded colour grade, a light leak across one
+     corner, corners falling away into a vignette, and grain that shifts.
+
+     The photo is composited with the two washes through `background-blend-mode`
+     instead of as stacked child layers, so the whole backdrop is ONE composited
+     layer: a fixed, viewport-sized element with an animated overlay on top is
+     exactly the shape that drops frames on a mid-range phone while a guest is
+     typing their answer.
+
+     The grain lives in its own element (`.rsvp-grain`) only because it has to
+     move — it reuses the shared `analog-grain` keyframes the Media page and the
+     editorial photo cards use, and the `prefers-reduced-motion` kill switch
+     below them covers this instance too. */
+  .rsvp-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    /* Stand-in for the print while the photo decodes, and the page's own base
+       tone if it ever fails to load at all. */
+    background-color: #241b13;
+    background-image:
+      /* Top scrim. The only two things that ever sit directly on the photo are
+         the wordmark and the language switcher, so this exists for them alone
+         and stops well before the card. */
+      linear-gradient(to bottom, rgba(18, 12, 6, 0.55) 0, rgba(18, 12, 6, 0) 14rem),
+      /* Light leak — a print catching the sun it was held up to. */
+      radial-gradient(
+        130% 90% at 12% -6%,
+        rgba(255, 214, 148, 0.38) 0%,
+        rgba(255, 214, 148, 0) 58%
+      ),
+      /* Vignette — the corners a lens leaves behind. */
+      radial-gradient(122% 84% at 50% 44%, rgba(255, 255, 255, 0) 34%, rgba(20, 13, 7, 0.6) 100%),
+      url("/rsvp-backdrop.jpg");
+    background-size: cover;
+    background-position: center top, center top, center center, center 34%;
+    background-repeat: no-repeat;
+    background-blend-mode: normal, screen, multiply, normal;
+    /* Warm, faded, a touch more contrast than the source. Saturation comes
+       DOWN from 1: film stock of this age is not punchy.
+       `brightness(0.68)` is the load-bearing number. The source is a HIGH-KEY
+       photograph — mostly 60-90% luminance — and the card sitting on it is the
+       same cream as the rest of the stationery surfaces, so at full brightness
+       the two blocks were within a few percent of each other and the card
+       stopped reading as a print laid on a photo. Pulled down, the foliage
+       holds its shape in the midtones, the corners fall to the vignette, and
+       the        cream card separates from the frame instead of dissolving into it.
+       `blur(1.5px)` is the last item: a soft print never resolves perfectly
+       sharp, and that is enough to take the edge off a 1400px print upscaled to
+       a 1440px desktop without turning the photo into a colour wash. A
+     deliberately defocused backdrop is where this number would go next. */
+    filter: saturate(0.88) contrast(1.12) brightness(0.68) sepia(0.18) blur(1.5px);
+  }
+
+  .rsvp-grain {
+    position: fixed;
+    inset: -12%;
+    z-index: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px;
+    opacity: 0.14;
+    mix-blend-mode: overlay;
+    animation: analog-grain 0.4s steps(2) infinite;
+  }
+
+  /* A highlighter swipe, sized to the text rather than padded into a pill.
+     `.rsvp-highlight` marks the two things a guest opens an invite link to
+     confirm — the couple's names and the date — so it is a text treatment
+     that follows the words, not a chip they sit inside. Pair it with
+     `w-fit max-w-full`: the swipe has to hug the words, and a long name still
+     has to wrap inside the form column. `box-decoration-break: clone` is what
+     gives a wrapped name one swipe per line instead of one long band with a
+     gap down the seam. */
+  .rsvp-highlight {
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    padding-inline: 0.28em;
+    background-image: linear-gradient(
+      to bottom,
+      transparent 14%,
+      rgba(211, 198, 159, 0.55) 14%,
+      rgba(211, 198, 159, 0.55) 86%,
+      transparent 86%
+    );
+  }
+  html.dark .rsvp-highlight {
+    /* The same swipe at a third of the strength: paper-400 at light-mode
+     * opacity is a near-white band on the dark card, and it swallows the
+     * serif. paper-600 keeps the warm cast at a weight the text survives. */
+    background-image: linear-gradient(
+      to bottom,
+      transparent 14%,
+      rgba(161, 141, 93, 0.3) 14%,
+      rgba(161, 141, 93, 0.3) 86%,
+      transparent 86%
+    );
+  }
+
   /* Horizontal "ruled rows" striping for the empty timeline Gantt body, so a
      couple with no tasks yet sees where task rows will land. The 44px period
      matches GanttView's ROW_HEIGHT constant; keep the two in sync. */

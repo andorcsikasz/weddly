@@ -767,22 +767,44 @@ export function HouseholdRsvpForm({
   }, [runnerActive, publicSiteUrl, navigate]);
 
   return (
-    <form className="card stationery animate-fade-in-up" onSubmit={onSubmit}>
-      <p className="font-grotesk text-lg sm:text-xl leading-tight text-ink-900 break-words hyphens-auto dark:text-paper-50">
-        {view.couple_display_name}
+    // `shadow-pop` over the card's own `shadow-soft`: on the analog backdrop
+    // the soft shadow vanished entirely, and this is the one surface that has
+    // to read as a print laid on a table rather than as a hole in a photo.
+    <form className="card stationery shadow-pop animate-fade-in-up" onSubmit={onSubmit}>
+      {/* ── Who this wedding is ───────────────────────────────────────────
+          The party count used to carry the page: `text-3xl` "Party of 2" as
+          the <h1>, with the couple's own names sitting ABOVE it at `text-lg`.
+          That is backwards for a guest arriving from an invite link, whose
+          first question is "is this the right wedding, on the right day?" —
+          so the names and the date take the emphasis (display serif, with a
+          highlighter swipe behind them) and the count drops to the quiet
+          mono kicker the check-in form already opens with. It is the same
+          kicker, so both halves of the flow now read the same way round.
+          The names are the <h1>: this block is what replaces the check-in
+          form's own heading once a code resolves, so the page would have no
+          heading at all otherwise. */}
+      <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-ink-500 dark:text-umber-400">
+        {t("rsvp.checkin_party_of", { n: drafts.length })}
       </p>
+      <h1 className="rsvp-highlight mt-1.5 w-fit max-w-full break-words hyphens-auto font-serif text-[1.75rem] font-semibold leading-[1.12] tracking-tight text-ink-900 sm:text-[2.25rem] dark:text-paper-50">
+        {view.couple_display_name}
+      </h1>
       {view.wedding_date && (
-        <p className="font-grotesk text-sm sm:text-base text-ink-600 dark:text-umber-200">
+        <p className="rsvp-highlight mt-2 w-fit max-w-full break-words font-grotesk text-sm font-medium text-ink-800 sm:text-base dark:text-paper-100">
           {formatDate(view.wedding_date, locale)}
         </p>
       )}
+      <p className="mt-2.5 break-words text-sm text-ink-700 dark:text-paper-100">
+        {view.household_label}
+      </p>
 
       {/* Boarding-pass anchor: monospace REF · slug · code so the credential
           on the page matches what was on the invite the guest just typed.
           Single line (flex-nowrap): the slug truncates if space is tight so
           the RSVP code never drops to its own row on narrow phones — the code
-          is the credential that matters, the slug is identical for everyone. */}
-      <div className="mt-2.5 flex flex-nowrap items-center gap-2 self-start sm:mt-3">
+          is the credential that matters, the slug is identical for everyone.
+          Sits BELOW the identity block now, as the receipt detail it is. */}
+      <div className="mt-3 flex flex-nowrap items-center gap-2 self-start sm:mt-4">
         <span className="rounded-lg border border-paper-300 bg-paper-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-700 min-w-0 truncate dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 sm:text-xs sm:tracking-[0.25em]">
           {view.couple_slug}
         </span>
@@ -790,13 +812,6 @@ export function HouseholdRsvpForm({
           {view.household_code}
         </span>
       </div>
-
-      <h1 className="mt-3 font-grotesk text-2xl sm:mt-4 sm:text-3xl">
-        {t("rsvp.checkin_party_of", { n: drafts.length })}
-      </h1>
-      <p className="mt-1 break-words text-sm text-ink-700 dark:text-paper-100">
-        {view.household_label}
-      </p>
 
       {/* Offline queue badge — surfaces when at least one record is sitting in
           localStorage waiting to flush. Small calm chip, not a banner; the
