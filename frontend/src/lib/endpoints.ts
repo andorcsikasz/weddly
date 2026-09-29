@@ -315,6 +315,12 @@ import type {
 } from "@shared/listings";
 import type { PackagePriceMode } from "@shared/listing_pricing";
 import type {
+  VenueDetail,
+  VenuePricingRuleInput,
+  VenueProfilePatch,
+  VenueSpaceInput,
+} from "@shared/venue";
+import type {
   CreateOutreachCampaignInput,
   OutreachCampaign,
   OutreachCampaignDetail,
@@ -3026,6 +3032,28 @@ export const vendorListingApi = {
    *  redirecting back into it. Returns the refreshed view (account.onboarding_done
    *  is now true). Idempotent. */
   completeOnboarding: () => apiFetch<VendorListingView>("POST", "/api/vendor/onboarding/complete"),
+};
+
+/** Venue profile, spaces and seasonal pricing rules on the vendor's own venue
+ *  listing (shared/venue.ts). Every call answers with the whole VenueDetail. */
+export const vendorVenueApi = {
+  get: () => apiFetch<VenueDetail>("GET", "/api/vendor/listing/me/venue"),
+  patchProfile: (body: VenueProfilePatch) =>
+    apiFetch<VenueDetail>("PATCH", "/api/vendor/listing/me/venue/profile", body),
+  addSpace: (body: VenueSpaceInput) =>
+    apiFetch<VenueDetail>("POST", "/api/vendor/listing/me/venue/spaces", body),
+  saveSpace: (id: number, body: VenueSpaceInput) =>
+    apiFetch<VenueDetail>("PUT", `/api/vendor/listing/me/venue/spaces/${id}`, body),
+  deleteSpace: (id: number) =>
+    apiFetch<VenueDetail>("DELETE", `/api/vendor/listing/me/venue/spaces/${id}`),
+  addRule: (body: VenuePricingRuleInput) =>
+    apiFetch<VenueDetail>("POST", "/api/vendor/listing/me/venue/pricing-rules", body),
+  saveRule: (id: number, body: VenuePricingRuleInput) =>
+    apiFetch<VenueDetail>("PUT", `/api/vendor/listing/me/venue/pricing-rules/${id}`, body),
+  duplicateRule: (id: number) =>
+    apiFetch<VenueDetail>("POST", `/api/vendor/listing/me/venue/pricing-rules/${id}/duplicate`),
+  deleteRule: (id: number) =>
+    apiFetch<VenueDetail>("DELETE", `/api/vendor/listing/me/venue/pricing-rules/${id}`),
 };
 
 /** The vendor's own name or company details just changed, so the header (which

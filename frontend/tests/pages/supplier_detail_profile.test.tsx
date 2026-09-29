@@ -172,6 +172,7 @@ beforeEach(() => {
     listing_complete: true,
     bookable: true,
     videos: [],
+    venue: null,
     packages: [
       pkg({
         id: 11,

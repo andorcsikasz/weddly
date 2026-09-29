@@ -13,6 +13,8 @@ import { ToastProvider } from "@/components/ui/ToastProvider";
 import { AuthProvider } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 
+import { emptyVenueProfile } from "@shared/venue";
+
 const realFetch = globalThis.fetch;
 
 function json(body: unknown): Response {
@@ -25,6 +27,15 @@ function json(body: unknown): Response {
 function installFetch(category: string) {
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
+    if (url.includes("/api/vendor/listing/me/venue")) {
+      return json({
+        profile: emptyVenueProfile(),
+        spaces: [],
+        pricing_rules: [],
+        currency: "HUF",
+        country: "HU",
+      });
+    }
     if (url.includes("/api/vendor/listing/me")) {
       return json({
         listing: {

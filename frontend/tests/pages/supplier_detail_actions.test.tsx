@@ -214,6 +214,7 @@ beforeEach(() => {
     listing_complete: true,
     bookable: true,
     videos: [],
+    venue: null,
     packages: [],
     reviews_summary: {
       avg_rating: null,

@@ -100,6 +100,14 @@ import { formatDate as formatYmd, intlLocale } from "../lib/format";
 import { formatPackagePrice } from "../lib/listingPricing";
 import { communityReportId } from "../lib/supplier_report";
 import { VendorPackageList } from "../components/VendorPackageCards";
+import {
+  type VenueEstimateRequest,
+  VenueOverviewSection,
+  VenueRatesSection,
+  VenueRulesSection,
+  VenueTagChips,
+  venueHasOverview,
+} from "../components/VenueSections";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { VendorGallery } from "../components/VendorGallery";
@@ -144,6 +152,9 @@ const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_o
 // Anchors of the in-page sections the sticky nav jumps between. The Q&A section
 // keeps its own `COMMENTS_ANCHOR_ID`, which the admin panel's counter already
 // links to.
+const SECTION_VENUE = "supplier-venue";
+const SECTION_RATES = "supplier-rates";
+const SECTION_VENUE_RULES = "supplier-venue-rules";
 const SECTION_PACKAGES = "supplier-packages";
 const SECTION_ABOUT = "supplier-about";
 const SECTION_VIDEOS = "supplier-videos";
@@ -425,6 +436,24 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
     );
     setComposeOpen(true);
   }, []);
+  // The venue estimate asks for an offer on the date and headcount the couple
+  // just priced, so the vendor reads the same numbers the couple did.
+  const openVenueOffer = useCallback(
+    (r: VenueEstimateRequest) => {
+      setComposeDraft({
+        subjectKey: "venue.request_subject",
+        bodyKey: r.rule ? "venue.request_body_rule" : "venue.request_body",
+        vars: {
+          date: formatYmd(r.date, locale),
+          guests: r.guests ?? "?",
+          rule: r.rule ?? "",
+          total: r.total ?? "",
+        },
+      });
+      setComposeOpen(true);
+    },
+    [locale],
+  );
 
   // Share the vendor with someone outside Weddly. Native share sheet first
   // (the real "send to a friend" affordance on mobile — a dismissed sheet
@@ -471,7 +500,10 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
   const titleRef = useRef<HTMLHeadingElement>(null);
   const titleGone = useScrolledPast(titleRef, detail?.id ?? null);
   const calendarShown = availability?.calendar_public !== false;
+  const venue = detail?.venue ?? null;
   const navIds = [
+    ...(venue && venueHasOverview(venue) ? [SECTION_VENUE] : []),
+    ...(venue && venue.pricing_rules.length > 0 ? [SECTION_RATES] : []),
     ...(detail && detail.packages.length > 0 ? [SECTION_PACKAGES] : []),
     SECTION_ABOUT,
     ...(detail && detail.videos.length > 0 ? [SECTION_VIDEOS] : []),
@@ -528,6 +560,12 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
   const weddingStatus = weddingDayStatus(availability, weddingDate);
   const weddingDateLabel = weddingDate ? formatYmd(weddingDate.slice(0, 10), locale) : "";
   const navItems = [
+    ...(venue && venueHasOverview(venue)
+      ? [{ id: SECTION_VENUE, label: t("venue.section_title") }]
+      : []),
+    ...(venue && venue.pricing_rules.length > 0
+      ? [{ id: SECTION_RATES, label: t("venue.rates_title") }]
+      : []),
     ...(detail.packages.length > 0
       ? [{ id: SECTION_PACKAGES, label: t("suppliers.detail.packages.title") }]
       : []),
@@ -716,7 +754,8 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
               {(detail.spoken_languages ?? []).map((c) => languageLabel(c, locale)).join(", ")}
             </span>
           )}
-          {detail.venue_style && (
+          {/* The vendor's own venue types supersede the curated single tag. */}
+          {detail.venue_style && !venue?.profile.venue_types.length && (
             <Pill tone="muted">{t(`suppliers.venue_style.${detail.venue_style}`)}</Pill>
           )}
           {/* Verified vendors carry the BadgeCheck next to the name; unclaimed
@@ -726,6 +765,7 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
             <Pill tone="muted">{t("suppliers.detail.unclaimed")}</Pill>
           )}
         </div>
+        {venue && <VenueTagChips venue={venue} t={t} />}
       </header>
 
       {/* ─── PHOTOS ─────────────────────────────────────────────────────────
@@ -756,6 +796,30 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         {/* ─── MAIN COLUMN ────────────────────────────────────────────────── */}
         <main className="min-w-0">
+          {/* Venue: capacity, facilities and spaces, then the date-aware
+              rates, then the catering / drinks / supplier rules. Null on every
+              non-venue listing and on a venue that has filled none of it in. */}
+          {venue && (
+            <>
+              <VenueOverviewSection
+                id={SECTION_VENUE}
+                venue={venue}
+                currency={venue.currency}
+                locale={locale}
+                t={t}
+              />
+              <VenueRatesSection
+                id={SECTION_RATES}
+                venue={venue}
+                initialDate={weddingDate}
+                initialGuests={coupleGuests}
+                locale={locale}
+                t={t}
+                onRequest={canInquire && !isPreview ? openVenueOffer : undefined}
+              />
+              <VenueRulesSection id={SECTION_VENUE_RULES} venue={venue} t={t} />
+            </>
+          )}
           {/* Packages (árajánlat): the vendor's guide prices, laid out as a menu
               of rows. The place a service list sits on a booking profile, but
               a wedding vendor sells packages, not 30-minute slots, so each row

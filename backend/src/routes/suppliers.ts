@@ -46,6 +46,7 @@ import {
   redactUnclaimedImport,
   type ShowcaseVendorRow,
 } from "../domain/listings";
+import { getPublishedVenueDetail } from "../domain/venue_profile";
 import { toPublicVendorProfile } from "../domain/public_vendor";
 import { getReviewCountsMap, getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments } from "../domain/supplier_comments";
@@ -577,12 +578,13 @@ export function buildSupplierDetail(
   };
   const gated = redactUnclaimedImport(directory, gate);
   const redacted = gate.profile_imported && gate.vendor_account_id === null;
+  const detailCurrency = listingCurrency({
+    country: directory.country,
+    currency: listing?.currency,
+  });
   return {
     ...gated,
-    currency: listingCurrency({
-      country: directory.country,
-      currency: listing?.currency,
-    }),
+    currency: detailCurrency,
     reviews_summary: reviewsSummary,
     bookable: availability.bookable,
     next_available: availability.next_available,
@@ -594,6 +596,10 @@ export function buildSupplierDetail(
     // them would put back through the side door exactly what the price band
     // just took out.
     packages: redacted ? [] : listListingPackages(id),
+    venue:
+      redacted || base.category !== "venue"
+        ? null
+        : getPublishedVenueDetail(id, detailCurrency, directory.country || null),
     // `comments_count` stays admin-only — it's a moderation signal, not a
     // couple-facing fact — so it's gated by the caller.
     ...(opts.includeCommentsCount ? { comments_count: countNonDeletedComments(id) } : {}),

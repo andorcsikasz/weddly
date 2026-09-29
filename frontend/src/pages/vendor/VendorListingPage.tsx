@@ -39,6 +39,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { InfoHint } from "../../components/InfoHint";
 import { SectionNav } from "../../components/SectionNav";
+import { VendorVenueEditor } from "../../components/VendorVenueEditor";
 import { type UploadState, UploadStateOverlay } from "../../components/UploadStateOverlay";
 import { VendorShareDialog } from "../../components/VendorShareDialog";
 import {
@@ -761,6 +762,12 @@ export default function VendorListingPage() {
   const editorNavItems = [
     { id: "vendor-section-pricing", label: t("vendor_home.section_pricing") },
     { id: "vendor-section-cover", label: t("vendor_home.section_gallery") },
+    ...(view?.listing.category === "venue"
+      ? [
+          { id: "vendor-section-venue", label: t("venue.section_title") },
+          { id: "vendor-section-venue-pricing", label: t("venue.rates_title") },
+        ]
+      : []),
     { id: "vendor-section-packages", label: t("suppliers.detail.packages.title") },
     { id: "vendor-section-description", label: t("suppliers.detail.about.title") },
     { id: "vendor-section-contact", label: t("vendor_home.section_contact") },
@@ -1447,6 +1454,13 @@ export default function VendorListingPage() {
                   })}
                 </p>
               </fieldset>
+
+              {/* Venue-only half of the editor: profile, spaces, seasonal pricing
+                and catering / supplier rules, in the order the couple's page
+                shows them. Self-contained, like the packages below. */}
+              {view.listing.category === "venue" && (
+                <VendorVenueEditor photos={view.photos ?? []} />
+              )}
 
               {/* Price offers / packages (árajánlat) — self-contained, per-action
                 server writes like the reel; category drives the name suggestions. */}

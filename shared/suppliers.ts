@@ -6,6 +6,7 @@ import type { ListingPackage } from "./listing_packages";
 import type { Currency } from "./currency";
 import type { ListingVideo } from "./listing_videos";
 import { isSentinelPick } from "./picks";
+import type { VenueDetail } from "./venue";
 
 // v2 taxonomy (July 2026): business types, not micro-services. Grouped below in
 // SUPPLIER_GROUPS. `other` is retired from the UI but kept as a hidden legacy
@@ -1622,6 +1623,11 @@ export interface SupplierDetail extends DirectorySupplier {
    *  publish these, so `[]` for the unclaimed majority. Rendered as a card
    *  grid with the optional PDF download. */
   packages: ListingPackage[];
+  /** Venue profile, spaces and seasonal pricing rules (shared/venue.ts).
+   *  Null on every non-venue listing, on a venue that has filled none of it
+   *  in, and on a redacted import (the rules ARE pricing). Signed-in only:
+   *  the anonymous profile is an allowlist that does not name it. */
+  venue: VenueDetail | null;
 }
 
 /** One page of the PUBLIC directory (`GET /api/public/vendors`).

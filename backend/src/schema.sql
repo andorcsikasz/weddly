@@ -2145,6 +2145,74 @@ CREATE TABLE IF NOT EXISTS listing_packages (
 );
 CREATE INDEX IF NOT EXISTS idx_listing_packages_listing ON listing_packages(listing_id);
 
+-- Venue profile (shared/venue.ts): what only a venue can say about itself.
+-- One row per listing, created on the vendor's first save; no row reads as an
+-- empty profile. The multi-select columns hold JSON arrays of the controlled
+-- keys in shared/venue.ts, validated on write and filtered again on read so a
+-- key retired from the vocabulary never reaches a page.
+CREATE TABLE IF NOT EXISTS listing_venue_profiles (
+  listing_id             TEXT    PRIMARY KEY,
+  venue_types            TEXT    NOT NULL DEFAULT '[]',
+  settings               TEXT    NOT NULL DEFAULT '[]',
+  styles                 TEXT    NOT NULL DEFAULT '[]',
+  contact_person         TEXT,
+  instagram              TEXT,
+  min_guests             INTEGER,
+  max_seated             INTEGER,
+  max_ceremony           INTEGER,
+  max_standing           INTEGER,
+  accommodation_capacity INTEGER,
+  facilities             TEXT    NOT NULL DEFAULT '[]',
+  catering               TEXT    NOT NULL DEFAULT '[]',
+  catering_partners      TEXT,
+  drinks                 TEXT    NOT NULL DEFAULT '[]',
+  supplier_policy        TEXT,
+  external_allowed       TEXT    NOT NULL DEFAULT '[]',
+  rules_note             TEXT,
+  updated_at             INTEGER NOT NULL
+);
+
+-- The rooms and gardens inside a venue. Photos are listing_photos ids (JSON),
+-- borrowed from the gallery rather than uploaded twice.
+CREATE TABLE IF NOT EXISTS listing_venue_spaces (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  listing_id     TEXT    NOT NULL,
+  name           TEXT    NOT NULL,
+  uses           TEXT    NOT NULL DEFAULT '[]',
+  setting        TEXT,
+  capacity       INTEGER,
+  fee            TEXT,
+  fee_amount     INTEGER,
+  weather_backup INTEGER NOT NULL DEFAULT 0,
+  description    TEXT,
+  photo_ids      TEXT    NOT NULL DEFAULT '[]',
+  position       INTEGER NOT NULL DEFAULT 0,
+  created_at     INTEGER NOT NULL,
+  updated_at     INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_listing_venue_spaces_listing ON listing_venue_spaces(listing_id);
+
+-- Season x day x guest-band pricing rules. `items` is a JSON array of
+-- VenuePriceItem; a rule is always read and written whole, and the estimate
+-- is derived from it on read, never stored.
+CREATE TABLE IF NOT EXISTS listing_venue_pricing_rules (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  listing_id  TEXT    NOT NULL,
+  name        TEXT    NOT NULL,
+  start_month INTEGER NOT NULL,
+  end_month   INTEGER NOT NULL,
+  days        TEXT    NOT NULL DEFAULT '[]',
+  min_guests  INTEGER,
+  max_guests  INTEGER,
+  min_spend   INTEGER,
+  available   INTEGER NOT NULL DEFAULT 1,
+  items       TEXT    NOT NULL DEFAULT '[]',
+  position    INTEGER NOT NULL DEFAULT 0,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_listing_venue_pricing_rules_listing ON listing_venue_pricing_rules(listing_id);
+
 -- Admin-provisioned planner activations. An admin pre-registers a planner
 -- (email + name + business name + category) with a 2-year free comp; the
 -- planner receives an activation link and goes live by setting a password

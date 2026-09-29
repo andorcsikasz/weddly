@@ -577,6 +577,9 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
         db.prepare("DELETE FROM listing_photos WHERE listing_id = ?").run(listingId);
         db.prepare("DELETE FROM listing_videos WHERE listing_id = ?").run(listingId);
         db.prepare("DELETE FROM listing_packages WHERE listing_id = ?").run(listingId);
+        db.prepare("DELETE FROM listing_venue_profiles WHERE listing_id = ?").run(listingId);
+        db.prepare("DELETE FROM listing_venue_spaces WHERE listing_id = ?").run(listingId);
+        db.prepare("DELETE FROM listing_venue_pricing_rules WHERE listing_id = ?").run(listingId);
         db.prepare(
           `UPDATE listings
               SET status = 'hidden', vendor_account_id = NULL,
