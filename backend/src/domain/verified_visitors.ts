@@ -9,6 +9,7 @@
 // hashed verify token, 7-day TTL); the one addition is a device-session table so
 // the visitor verifies once per device and then acts freely.
 
+import type { UiLocale } from "@shared/locales";
 import type { VerifiedVisitor } from "@shared/verified_visitors";
 import { VISITOR_TOKEN_HEADER } from "@shared/verified_visitors";
 import { hashToken, mintToken } from "../auth/tokens";
@@ -87,7 +88,7 @@ export function getVisitorById(id: number): VerifiedVisitorRow | null {
 export function requestVisitorVerify(input: {
   email: string;
   full_name: string | null;
-  locale: "hu" | "en";
+  locale: UiLocale;
 }): { row: VerifiedVisitorRow; token: string } {
   const token = mintToken();
   const ts = now();
@@ -119,7 +120,7 @@ export function requestVisitorVerify(input: {
 export function verifyVisitorViaGoogle(input: {
   email: string;
   full_name: string | null;
-  locale: "hu" | "en";
+  locale: UiLocale;
 }): { visitor: VerifiedVisitorRow; deviceToken: string } {
   const ts = now();
   const deviceToken = mintToken();

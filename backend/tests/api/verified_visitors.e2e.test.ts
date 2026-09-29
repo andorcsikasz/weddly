@@ -68,6 +68,19 @@ describe("verified visitor email confirmation", () => {
     expect(row?.verified_at).toBeNull();
   });
 
+  test("every shipped UI locale persists; anything else falls back to EN", async () => {
+    // The route used to read `locale === "hu" ? "hu" : "en"`, so a German
+    // visitor was stored, and mailed, as English.
+    for (const locale of ["de", "es", "hr"]) {
+      const email = `vv-${locale}@example.com`;
+      const res = await req("POST", "/api/visitors/verify/request", { email, locale });
+      expect(res.status).toBe(200);
+      expect(visitor(email)?.locale).toBe(locale);
+    }
+    await req("POST", "/api/visitors/verify/request", { email: "vv-fr@example.com", locale: "fr" });
+    expect(visitor("vv-fr@example.com")?.locale).toBe("en");
+  });
+
   test("consume verifies the visitor and mints a device token; no user row", async () => {
     await req("POST", "/api/visitors/verify/request", { email: "vv2@example.com" });
     const token = verifyTokenFor("vv2@example.com");

@@ -9,6 +9,7 @@
 // X-Visitor-Token header; suggest-supplier and review endpoints resolve it via
 // requireVerifiedVisitor (domain/verified_visitors.ts). See shared/verified_visitors.ts.
 
+import { isUiLocale, type UiLocale } from "@shared/locales";
 import type { VisitorSession } from "@shared/verified_visitors";
 import { CONFIG } from "../config";
 import { sendKind } from "../domain/emails/send";
@@ -43,7 +44,7 @@ async function handleRequest(ctx: Ctx): Promise<Response> {
   const at = email.indexOf("@");
   if (at < 1 || email.indexOf(".", at) === -1) throw new HttpError(400, "email is not valid");
 
-  const locale = body.locale === "hu" ? "hu" : "en";
+  const locale: UiLocale = isUiLocale(body.locale) ? body.locale : "en";
   let fullName: string | null = null;
   const nameRaw = (typeof body.full_name === "string" ? body.full_name : "").trim();
   if (nameRaw) {
@@ -107,7 +108,7 @@ async function handleGoogleVerify(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Google account email is not verified");
   }
 
-  const locale = body.locale === "hu" ? "hu" : "en";
+  const locale: UiLocale = isUiLocale(body.locale) ? body.locale : "en";
   const fullName = identity.name.trim() ? identity.name.trim().slice(0, 120) : null;
   const { visitor, deviceToken } = verifyVisitorViaGoogle({
     email: identity.email,

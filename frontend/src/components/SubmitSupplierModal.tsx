@@ -464,7 +464,7 @@ export function SubmitSupplierModal({
   const onVisitorVerify = async (credential: string) => {
     setVerifyError(null);
     try {
-      await visitorApi.googleVerify(credential, locale === "hu" ? "hu" : "en");
+      await visitorApi.googleVerify(credential, locale);
       setVerified(true);
     } catch (e) {
       setVerifyError(e instanceof Error ? e.message : t("common.error_generic"));

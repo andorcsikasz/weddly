@@ -2188,7 +2188,7 @@ export function setVisitorToken(token: string | null) {
 /** Actions for an email-verified visitor with no account. googleVerify mints
  *  (and stores) the device token; createReview replays it on X-Visitor-Token. */
 export const visitorApi = {
-  googleVerify: async (credential: string, locale?: "hu" | "en"): Promise<VisitorSession> => {
+  googleVerify: async (credential: string, locale?: UiLocale): Promise<VisitorSession> => {
     const session = await apiFetch<VisitorSession>("POST", "/api/visitors/verify/google", {
       credential,
       locale,
