@@ -562,7 +562,7 @@ const META: Record<UiLocale, LocaleMeta> = {
   hu: {
     lang: "hu",
     ogLocale: "hu_HU",
-    title: "Esküvőtervezés, stressz nélkül | Weddly",
+    title: "Tervezd meg az esküvődet | Weddly",
     description:
       "Tervezzétek együtt az esküvőt: közös költségvetés, vendéglista, személyes RSVP-linkek és vizuális ültetési rend egy helyen, pároknak.",
     twDescription: "Nyugodt esküvőszervezés, egyetlen közös, naprakész tervvel kettőtöknek.",
