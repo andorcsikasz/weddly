@@ -67,6 +67,35 @@ describe("curated directory integrity", () => {
     expect(bad).toEqual([]);
   });
 
+  test("the Győr–Sopron venue guide entries are contactable and illustrated", () => {
+    const ids = [
+      "eventgarden-agfalva",
+      "achilles-park-gyor",
+      "dudits-kastely",
+      "aranyhal-etterem-gyor",
+      "panorama-etterem-balf",
+      "solo-il-grande-sopron",
+      "hu-scale-panorama-birtok-wellness-panzio-konferencia-es-rendezvenykozpont-gyorujbarat-4dc5dc28",
+      "hu-scale-szidonia-kastelyszalloda-rojtokmuzsaj-a1344134",
+      "hu-scale-sopronbanfalvi-palos-kesobb-karmelita-kolostor-sopron-b44bb27d",
+      "vineyard-wedding-sopron",
+      "fagus-hotel-sopron",
+    ];
+
+    for (const id of ids) {
+      const venue = DIRECTORY.find((supplier) => supplier.id === id);
+      expect(venue).toBeDefined();
+      expect(venue?.category).toBe("venue");
+      expect(venue?.country).toBe("HU");
+      expect(venue?.address?.trim()).not.toBe("");
+      expect(venue?.contact_email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+      expect(venue?.lat).toBeNumber();
+      expect(venue?.lng).toBeNumber();
+      expect(venue?.gallery_urls?.length).toBeGreaterThanOrEqual(1);
+      expect(venue?.hero_image_url).toBe(venue?.gallery_urls?.[0]);
+    }
+  });
+
   test("a venue_style is one of the controlled values", () => {
     // Each value needs a `suppliers.venue_style.*` label in every locale file;
     // an invented one renders as a raw dotted path on the card.

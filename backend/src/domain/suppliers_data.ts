@@ -29,6 +29,10 @@ import { CZ_OPEN_WEB_2026_08 } from "./suppliers_data_cz_2026_08";
 import { DE_OPEN_WEB_2026_08 } from "./suppliers_data_de_2026_08";
 import { EUROPE_LEGACY_ENRICHMENTS_2026_08 } from "./suppliers_data_europe_legacy_enrichments_2026_08";
 import { FR_OPEN_WEB_2026_08 } from "./suppliers_data_fr_2026_08";
+import {
+  HUNGARY_GYOR_VENUE_ENRICHMENTS_2026_09,
+  HUNGARY_GYOR_VENUES_2026_09,
+} from "./suppliers_data_hu_gyor_venues_2026_09";
 import { HUNGARY_OPEN_WEB_2026_08 } from "./suppliers_data_hu_open_web";
 import { HUNGARY_SCALE_2026_08 } from "./suppliers_data_hu_scale_2026_08";
 import { IT_OPEN_WEB_2026_08 } from "./suppliers_data_it_2026_08";
@@ -22306,6 +22310,7 @@ const RAW_DIRECTORY: RawDirectoryEntry[] = [
   ...CROATIA_SCALE_2026_08_3,
   ...CROATIA_SCALE_2026_08_4,
   ...CROATIA_SCALE_2026_08_5,
+  ...HUNGARY_GYOR_VENUES_2026_09,
   ...HUNGARY_OPEN_WEB_2026_08,
   ...HUNGARY_SCALE_2026_08,
   ...POLAND_2026_08,
@@ -24147,13 +24152,24 @@ function enrichedHungarianBlurbs(
 }
 
 export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
-  const enriched = EUROPE_LEGACY_ENRICHMENTS_2026_08[s.id]
+  const legacyEnriched = EUROPE_LEGACY_ENRICHMENTS_2026_08[s.id]
     ? { ...s, ...EUROPE_LEGACY_ENRICHMENTS_2026_08[s.id] }
     : s;
-  // Prefer the id-specific coord, then the address geocode, and only then fall
-  // back to the town centroid so every entry with a known city still lands on
-  // the map view.
+  const enriched = HUNGARY_GYOR_VENUE_ENRICHMENTS_2026_09[legacyEnriched.id]
+    ? {
+        ...legacyEnriched,
+        ...HUNGARY_GYOR_VENUE_ENRICHMENTS_2026_09[legacyEnriched.id],
+      }
+    : legacyEnriched;
+  // Prefer an entry's researched coordinate, then the legacy id/address maps,
+  // and only then fall back to the town centroid so every entry with a known
+  // city still lands on the map view.
+  const explicitCoord =
+    enriched.lat != null && enriched.lng != null
+      ? { lat: enriched.lat, lng: enriched.lng }
+      : undefined;
   const c =
+    explicitCoord ??
     VENUE_COORDS[enriched.id] ??
     GEOCODED_COORDS[enriched.id] ??
     (enriched.city ? CITY_COORDS[enriched.city] : undefined);
@@ -24161,8 +24177,8 @@ export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
   // `vendor_account_id` defaults to null at the code layer; the
   // public-list handler in routes/suppliers.ts overlays the real value
   // from the `listings` table (where claimed entries live) before responding.
-  // `hero_image_url` likewise overlays from the listings table once the
-  // vendor uploads one, curated entries don't ship with images today.
+  // `hero_image_url` starts with the curated gallery cover below; the public
+  // route can overlay it with the claimed vendor's uploaded cover later.
   const country = curatedCountry(enriched.id, enriched.city);
   return {
     ...withCoords,
