@@ -2,16 +2,31 @@ import { Check, X } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { useT } from "../../lib/i18n";
 
-type TagChipProps = {
+type TagChipBase = {
   label: string;
   selected: boolean;
-  onToggle: () => void;
   /** Optional decorative icon shown before the label. */
   icon?: ReactNode;
-  /** When true, the chip renders an inline X and calls onRemove instead of toggling. */
-  removable?: boolean;
-  onRemove?: () => void;
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "aria-pressed" | "type">;
+
+/** A chip is either a toggle (it is the control) or a removable summary (it is
+ *  the read-out of a control somewhere else, and only its X is live). Modelled
+ *  as a union rather than as a pair of optional props so that neither shape can
+ *  be constructed without the handler it needs — a toggle with no `onToggle`
+ *  would be a button that silently does nothing. */
+type TagChipProps =
+  | (TagChipBase & {
+      /** When true the chip renders an inline X and calls `onRemove` instead of
+       *  toggling — the active-filter summary row. */
+      removable?: false;
+      onToggle: () => void;
+      onRemove?: never;
+    })
+  | (TagChipBase & {
+      removable: true;
+      onRemove: () => void;
+      onToggle?: never;
+    });
 
 /** Multi-select chip — toggle in a group of independent selections.
  *  For single-select use SegmentedControl. */

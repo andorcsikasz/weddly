@@ -11674,6 +11674,30 @@ export interface LocaleMessages {
     filter_all: string;
     filter_awaiting: string;
     filter_responded: string;
+    /** Which order the guest rows are in. `list` is the default and is the
+     *  ONLY one that is not a sort: it keeps the order the guest list is in, so
+     *  marking somebody invited cannot move their row. */
+    sort_label: string;
+    sort_list: string;
+    sort_attention: string;
+    sort_name: string;
+    /** Explains the default order under the toolbar, because a list that does
+     *  not move when you edit it is deliberate and worth saying out loud. */
+    sort_stable_note: string;
+    filters_button: string;
+    filters_clear_all: string;
+    filters_group_reply: string;
+    filters_group_channel: string;
+    filters_group_kind: string;
+    filters_group_mailable: string;
+    /** "Invited through exactly one channel" — the two channel chips and
+     *  `not_invited` already exist; the middle case had no name. */
+    filter_channel_one: string;
+    filter_mailable_yes: string;
+    filter_mailable_no: string;
+    /** Heading over the icon key, so the reply icons are learnable on first
+     *  use rather than only from a hover tooltip. */
+    status_legend_label: string;
     search_placeholder: string;
     search_label: string;
     table_empty: string;

@@ -1,19 +1,34 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
+  ArrowUpDown,
+  Baby,
+  CakeSlice,
   CalendarClock,
   Check,
   CheckCheck,
+  CircleCheck,
+  CircleDashed,
+  CircleHelp,
+  CircleSlash,
   Clock3,
   Coins,
+  Filter,
+  Handshake,
+  Inbox,
+  Layers,
+  Loader,
   Mail,
+  MailX,
   Megaphone,
   Pencil,
   Search,
   Send,
   Sparkles,
   TriangleAlert,
+  UserRound,
   Users,
   X,
   type LucideIcon,
@@ -22,8 +37,10 @@ import type {
   Couple,
   EnvelopeTip,
   Guest,
+  GuestKind,
   GuestMessage,
   GuestMessageAudience,
+  GuestMessageStatus,
   GuestMessageTemplate,
   RsvpStatus,
 } from "@shared/types";
@@ -32,9 +49,12 @@ import {
   SegmentedControl,
   Skeleton,
   Switch,
+  TagChip,
   useConfirm,
   useToast,
+  ViewSelect,
 } from "../components/ui";
+import { AnimatedNumber } from "../components/AnimatedNumber";
 import { InfoHint } from "../components/InfoHint";
 import { MoneyInput } from "../components/MoneyInput";
 import { coupleApi, guestApi, guestMessageApi } from "../lib/endpoints";
@@ -46,8 +66,10 @@ const AUDIENCES: GuestMessageAudience[] = ["all", "pending", "confirmed"];
 /** Where a guest sits in the invite pipeline: nobody has been told yet, they
  *  were told and haven't answered, or they answered (yes/no/maybe all count —
  *  a decline is still a decision, unlike "pending"). Drives both the filter
- *  pills and the default sort, so the two can never disagree about what
- *  "needs attention" means. */
+ *  pills and the OPT-IN "needs attention first" order, so the two can never
+ *  disagree about what "needs attention" means — and it deliberately does not
+ *  drive the default order, because a guest's status is not a request to
+ *  re-sort the list (see `SortMode` below). */
 type GuestBucket = "not_invited" | "awaiting" | "responded";
 type StatusFilter = "all" | GuestBucket;
 const FILTERS: StatusFilter[] = ["all", "not_invited", "awaiting", "responded"];
@@ -57,6 +79,170 @@ function guestBucket(g: Guest): GuestBucket {
   const invited = g.invited_online_at !== null || g.invited_physical_at !== null;
   if (!invited) return "not_invited";
   return g.rsvp_status === "pending" ? "awaiting" : "responded";
+}
+
+/** ── Ordering ──
+ *
+ *  `list` is the DEFAULT and is deliberately NOT a sort: it keeps the order
+ *  `guests` arrived in, which is the guest list's own `created_at ASC`
+ *  (`listGuestsByCouple`). Before this the rows were sorted actionable-first,
+ *  so marking one guest "online" moved them from the `not_invited` bucket into
+ *  `awaiting` and dropped their row to the bottom of the list — the rows
+ *  reshuffled themselves under the finger that was working down them, and the
+ *  next tap landed on a different person. A list you are clicking THROUGH has
+ *  to hold still until you ask it to move, and no status a guest happens to be
+ *  in is the couple asking for a re-sort.
+ *
+ *  The other two orders stay, and both are opt-in now. `attention` is exactly
+ *  the old behaviour and remains the right answer for someone opening the page
+ *  to find out who is missing; it is simply not the answer for someone working
+ *  a list top to bottom. The choice is remembered, because re-deciding it on
+ *  every visit is the same annoyance in a smaller box. */
+type SortMode = "list" | "attention" | "name";
+const SORT_MODES: SortMode[] = ["list", "attention", "name"];
+const SORT_STORAGE_KEY = "weddly.invites.sort";
+
+/** Read the remembered order. A value we do not recognise — a hand-edited key,
+ *  a stale build — falls back to `list`, which is the safe reading: an
+ *  unrecognised order must never become a surprise re-sort. */
+function readStoredSort(): SortMode {
+  try {
+    const v = window.localStorage.getItem(SORT_STORAGE_KEY);
+    return SORT_MODES.includes(v as SortMode) ? (v as SortMode) : "list";
+  } catch {
+    return "list";
+  }
+}
+
+/** How many of the two invite channels actually reached a guest. The three
+ *  states are MUTUALLY EXCLUSIVE on purpose: "invited online" and "invited in
+ *  person" overlap — one guest can be both — so a filter built out of those
+ *  two numbers cannot add up to anything. Completeness is a partition, and
+ *  "invited through only one channel" is the question a couple actually has. */
+type ChannelState = "none" | "one" | "both";
+const CHANNEL_STATES: ChannelState[] = ["none", "one", "both"];
+
+function channelState(g: Guest): ChannelState {
+  const n = (g.invited_online_at !== null ? 1 : 0) + (g.invited_physical_at !== null ? 1 : 0);
+  return n === 0 ? "none" : n === 1 ? "one" : "both";
+}
+
+/** Whether a guest can be reached by a broadcast at all. Not cosmetic: a guest
+ *  with no address is silently skipped by the server's `resolveRecipients`, so
+ *  the audience counts below are always lower than the guest count. Showing
+ *  them apart is what explains that gap instead of leaving it as a mystery. */
+type Mailable = "yes" | "no";
+const MAILABLES: Mailable[] = ["yes", "no"];
+
+const isMailable = (g: Guest): Mailable => ((g.email ?? "").trim() !== "" ? "yes" : "no");
+
+/** Pending first in both places this appears: it is the answer a couple is
+ *  scanning for ("who hasn't replied"), and the default state every guest
+ *  starts in. */
+const RSVP_ORDER: RsvpStatus[] = ["pending", "yes", "no", "maybe"];
+
+/** Every answer carries a SHAPE and a colour, never colour alone. The shape is
+ *  what survives a colour-blind read, a greyscale print and the dark-mode
+ *  inversion, the legend below the list teaches it on first use, and the
+ *  element itself keeps the full word as its accessible name — so the glyph
+ *  replaces the label a sighted user reads, not the label a screen reader
+ *  speaks. */
+const RSVP_ICON: Record<RsvpStatus, LucideIcon> = {
+  pending: CircleDashed,
+  yes: CircleCheck,
+  no: CircleSlash,
+  maybe: CircleHelp,
+};
+const RSVP_SURFACE: Record<RsvpStatus, string> = {
+  pending:
+    "border-dashed border-paper-300 bg-paper-100 text-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-400",
+  yes: "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-900/30 dark:text-emerald-300",
+  no: "border-blush-200 bg-blush-50 text-blush-700 dark:border-blush-400/30 dark:bg-blush-900/30 dark:text-blush-300",
+  maybe:
+    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/30 dark:bg-amber-900/30 dark:text-amber-300",
+};
+/** The left rail on each row and the dot beside it in the legend — the same
+ *  colour as the badge, so a long list is scannable from the edge without
+ *  reading a single glyph. */
+const RSVP_DOT: Record<RsvpStatus, string> = {
+  pending: "bg-paper-300 dark:bg-umber-600",
+  yes: "bg-emerald-500",
+  no: "bg-blush-500",
+  maybe: "bg-amber-500",
+};
+
+const BROADCAST_ICON: Record<GuestMessageStatus, LucideIcon> = {
+  sent: CheckCheck,
+  scheduled: CalendarClock,
+  sending: Loader,
+  failed: TriangleAlert,
+};
+const BROADCAST_SURFACE: Record<GuestMessageStatus, string> = {
+  sent: "bg-sage-100 text-sage-700 dark:bg-sage-900/40 dark:text-sage-300",
+  scheduled: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  sending: "bg-paper-200 text-umber-600 dark:bg-umber-800 dark:text-umber-300",
+  failed: "bg-blush-100 text-blush-700 dark:bg-blush-900/40 dark:text-blush-300",
+};
+
+const KIND_ICON: Record<GuestKind, LucideIcon> = {
+  adult: UserRound,
+  child: CakeSlice,
+  baby: Baby,
+};
+const KIND_DOT: Record<GuestKind, string> = {
+  adult: "bg-umber-500 dark:bg-umber-400",
+  child: "bg-amber-500",
+  baby: "bg-blush-400",
+};
+
+const CHANNEL_ICON: Record<ChannelState, LucideIcon> = {
+  none: CircleSlash,
+  one: Send,
+  both: Layers,
+};
+const CHANNEL_DOT: Record<ChannelState, string> = {
+  none: "bg-paper-300 dark:bg-umber-600",
+  one: "bg-sage-500",
+  both: "bg-umber-500 dark:bg-umber-400",
+};
+/** The two ends already have names on the page (`not_invited`, `invited_both`);
+ *  the middle case is the one that needed one. */
+const CHANNEL_FILTER_KEY: Record<ChannelState, string> = {
+  none: "guest_invites.not_invited",
+  one: "guest_invites.filter_channel_one",
+  both: "guest_invites.invited_both",
+};
+
+/** Delay a staggered reveal by row index, CAPPED. A guest list runs to a few
+ *  hundred rows and an uncapped stagger would leave the last one invisible for
+ *  seconds — the animation is there to make the list arrive, not to make the
+ *  couple wait for it. */
+function staggerMs(index: number, step = 22, cap = 14): number {
+  return Math.min(index, cap) * step;
+}
+
+/** Add or remove one value from a filter set, as a NEW set. Mutating in place
+ *  is how a filter chip goes on looking selectable while the list never
+ *  re-renders, and this is the one function every filter chip goes through. */
+function toggleIn<T>(current: ReadonlySet<T>, value: T): Set<T> {
+  const next = new Set(current);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return next;
+}
+
+/** One labelled group of filter chips. The label is what makes four groups of
+ *  multi-selects readable at a glance — without it the panel is twelve pills
+ *  and a couple has to read every one to know what dimension it is choosing. */
+function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="mr-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-umber-400 dark:text-umber-500">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
 }
 
 /** One glyph per audience, so the picker can be three small pills carrying the
@@ -641,26 +827,65 @@ function PreWeddingCard({
   );
 }
 
-/** One KPI tile: group icon + label, the headline number, a quiet breakdown
- *  line, and — only when something in this group actually needs the couple's
- *  attention — a highlighted action line. This replaces a cramped inline stat
- *  row with three tiles a CRM dashboard would recognise: what's the number,
- *  what's it made of, and is there anything to do about it. */
+/** A proportional bar. Widths transition, so a change in the mix shows the bar
+ *  re-balancing instead of snapping — this is the one place on the page where
+ *  motion carries information rather than company, which is why the segments
+ *  and the words below them are the same three facts in the same colours: the
+ *  bar is the "at a glance", the dots are the "exactly", and learning one
+ *  teaches the other. A total of 0 renders an empty track, which is what a
+ *  brand-new guest list looks like. */
+function StackedMeter({
+  segments,
+  total,
+}: {
+  segments: { key: string; value: number; className: string }[];
+  total: number;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800"
+    >
+      {segments.map((s) => (
+        <span
+          key={s.key}
+          className={`h-full transition-[width] duration-700 ease-out motion-reduce:transition-none ${s.className}`}
+          style={{ width: total > 0 ? `${(s.value / total) * 100}%` : "0%" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** One KPI tile: group icon + label, the headline number, a proportional bar of
+ *  what the whole guest list is made of, that same composition spelled out
+ *  against colour dots, and — only when something in this group actually needs
+ *  the couple's attention — a highlighted action line. */
 function KpiTile({
   icon: Icon,
   label,
   value,
+  segments,
   breakdown,
   alert,
+  index = 0,
 }: {
   icon: LucideIcon;
   label: string;
   value: number;
-  breakdown: string;
+  /** Always a partition of the WHOLE guest list, never of `value` — so the bar
+   *  and the headline can be two different questions without lying about
+   *  either. */
+  segments: { key: string; value: number; className: string }[];
+  breakdown: { dot: string; label: string }[];
   alert?: string;
+  index?: number;
 }) {
   return (
-    <div className="rounded-xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
+    <div
+      className="animate-fade-in-up rounded-xl border border-paper-300 bg-paper-50 p-4 motion-reduce:animate-none dark:border-umber-700 dark:bg-umber-900"
+      style={{ animationDelay: `${staggerMs(index)}ms` }}
+    >
       <div className="flex items-center gap-2">
         <Icon
           className="h-4 w-4 shrink-0 text-umber-500 dark:text-umber-300"
@@ -672,9 +897,17 @@ function KpiTile({
         </span>
       </div>
       <p className="mt-2 font-grotesk text-3xl font-semibold leading-none text-umber-900 dark:text-paper-50">
-        {value}
+        <AnimatedNumber value={value} />
       </p>
-      <p className="mt-1.5 text-xs text-umber-600 dark:text-umber-300">{breakdown}</p>
+      <StackedMeter segments={segments} total={segments.reduce((a, s) => a + s.value, 0)} />
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-umber-600 dark:text-umber-300">
+        {breakdown.map((b) => (
+          <span key={b.label} className="inline-flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${b.dot}`} aria-hidden="true" />
+            {b.label}
+          </span>
+        ))}
+      </p>
       {alert && (
         <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-blush-600 dark:text-blush-300">
           <TriangleAlert size={13} aria-hidden="true" className="shrink-0" />
@@ -685,28 +918,61 @@ function KpiTile({
   );
 }
 
-/** RSVP as a coloured badge instead of plain text — colour + label together
- *  (never colour alone), matching the badge language the guest list itself
- *  uses: yes = emerald (attending), no = blush (declined), maybe = amber
- *  (declared tentative), pending = dashed neutral (no word yet). Sage is kept
- *  for the channel chips in the per-guest rows, where it means "invited/done" —
- *  one tone never means a status and a channel at once. */
-function RsvpStatusBadge({ status }: { status: RsvpStatus }) {
+/** The reply, as one glyph in a badge.
+ *
+ *  It used to be the WORD — "Jön" / "Függőben" — in a coloured pill, and on a
+ *  phone that word was the widest thing on the row: it shoved the two channel
+ *  chips aside and turned a list of names into a column of badges to scroll
+ *  past rather than names to scan. The glyph answers the same question in
+ *  18px, and the badge keeps the three things that keep it legible — a SHAPE
+ *  that differs per answer (so nothing is carried by colour alone), the colour
+ *  itself, and the full word as the accessible name plus a tooltip for anyone
+ *  who hovers. */
+function RsvpStatusIcon({ status }: { status: RsvpStatus }) {
   const { t } = useT();
-  const cls =
-    status === "yes"
-      ? "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-900/30 dark:text-emerald-300"
-      : status === "no"
-        ? "border-blush-200 bg-blush-50 text-blush-700 dark:border-blush-400/30 dark:bg-blush-900/30 dark:text-blush-300"
-        : status === "maybe"
-          ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/30 dark:bg-amber-900/30 dark:text-amber-300"
-          : "border-dashed border-paper-300 bg-paper-100 text-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-400";
+  const label = t(`guest_invites.rsvp_${status}`);
+  const Icon = RSVP_ICON[status];
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium ${cls}`}
+      className={`inline-grid h-8 w-8 shrink-0 place-items-center rounded-full border ${RSVP_SURFACE[status]}`}
+      title={label}
     >
-      {t(`guest_invites.rsvp_${status}`)}
+      <Icon size={17} strokeWidth={1.75} role="img" aria-label={label} />
     </span>
+  );
+}
+
+/** Teaches the four glyphs once, under the list. Replacing the word with a
+ *  glyph saves each row ~40px, and an un-introduced glyph is a riddle — so the
+ *  key sits right under the thing it explains, carrying the same words and the
+ *  same dots as the row rails. */
+function RsvpLegend() {
+  const { t } = useT();
+  return (
+    <div
+      className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5"
+      data-testid="gi-rsvp-legend"
+    >
+      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-umber-400 dark:text-umber-500">
+        {t("guest_invites.status_legend_label")}
+      </span>
+      {RSVP_ORDER.map((s) => {
+        const Icon = RSVP_ICON[s];
+        return (
+          <span
+            key={s}
+            className="inline-flex items-center gap-1.5 text-xs text-umber-600 dark:text-umber-300"
+          >
+            <span
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${RSVP_DOT[s]}`}
+              aria-hidden="true"
+            />
+            <Icon size={14} strokeWidth={1.75} aria-hidden="true" className="shrink-0" />
+            {t(`guest_invites.rsvp_${s}`)}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -716,13 +982,20 @@ function RsvpStatusBadge({ status }: { status: RsvpStatus }) {
  *  mean?") is exactly what this replaces. */
 function ChannelChip({
   label,
+  icon: Icon,
   active,
   guestName,
+  justToggled,
   onToggle,
 }: {
   label: string;
+  icon: LucideIcon;
   active: boolean;
   guestName: string;
+  /** True only for the chip the couple just pressed. The tick pops on the
+   *  ACTION and never on arrival: a list that re-plays its own finished work
+   *  on every load is a list that says the work is still happening. */
+  justToggled: boolean;
   onToggle: () => void;
 }) {
   return (
@@ -732,13 +1005,22 @@ function ChannelChip({
       aria-label={`${guestName}: ${label}`}
       title={label}
       onClick={onToggle}
-      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors active:scale-95 ${
         active
           ? "border-sage-300 bg-sage-100 text-sage-700 dark:border-sage-400/40 dark:bg-sage-900/30 dark:text-sage-300"
           : "border-paper-300 bg-white text-umber-500 hover:border-umber-400 hover:text-umber-800 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-400 dark:hover:border-umber-500 dark:hover:text-umber-100"
       }`}
     >
-      {active && <Check size={11} aria-hidden="true" />}
+      {active ? (
+        <Check
+          size={13}
+          strokeWidth={2.5}
+          aria-hidden="true"
+          className={justToggled ? "animate-tick-pop motion-reduce:animate-none" : undefined}
+        />
+      ) : (
+        <Icon size={13} strokeWidth={1.5} aria-hidden="true" />
+      )}
       {label}
     </button>
   );
@@ -855,6 +1137,32 @@ export default function GuestInvitesPage() {
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortMode>(readStoredSort);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [rsvpFilter, setRsvpFilter] = useState<ReadonlySet<RsvpStatus>>(() => new Set());
+  const [channelFilter, setChannelFilter] = useState<ReadonlySet<ChannelState>>(() => new Set());
+  const [kindFilter, setKindFilter] = useState<ReadonlySet<GuestKind>>(() => new Set());
+  const [mailableFilter, setMailableFilter] = useState<ReadonlySet<Mailable>>(() => new Set());
+  /** The one chip the couple just pressed, so its tick can pop. Cleared on a
+   *  timer, and the timer is torn down with the page so a pending setState can
+   *  never land on an unmounted tree. */
+  const [justToggled, setJustToggled] = useState<string | null>(null);
+  const toggleTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toggleTimerRef.current !== null) window.clearTimeout(toggleTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SORT_STORAGE_KEY, sort);
+    } catch {
+      // A browser refusing storage is not a reason to break the page; the
+      // order simply does not survive the reload.
+    }
+  }, [sort]);
 
   const filterCount: Record<StatusFilter, number> = {
     all: stats.total,
@@ -863,22 +1171,71 @@ export default function GuestInvitesPage() {
     responded: stats.responded,
   };
 
-  /** Filtered by pipeline bucket + name search, then sorted actionable-first
-   *  (not yet invited, then awaiting reply, then responded) so the guests who
-   *  need something from the couple surface at the top of "Mind" without
-   *  requiring a filter tap. */
+  /** Headcount per chip in the filter panel. Every group is a PARTITION of the
+   *  guest list, so the three numbers in a row add up to the total — a chip
+   *  whose count could not be reconciled with its neighbours would be a chip
+   *  nobody can trust enough to filter by. */
+  const filterCounts = useMemo(() => {
+    const rsvp: Record<RsvpStatus, number> = { pending: 0, yes: 0, no: 0, maybe: 0 };
+    const channel: Record<ChannelState, number> = { none: 0, one: 0, both: 0 };
+    const kind: Record<GuestKind, number> = { adult: 0, child: 0, baby: 0 };
+    const mailable: Record<Mailable, number> = { yes: 0, no: 0 };
+    for (const g of eligible) {
+      rsvp[g.rsvp_status] += 1;
+      channel[channelState(g)] += 1;
+      kind[g.kind] += 1;
+      mailable[isMailable(g)] += 1;
+    }
+    return { rsvp, channel, kind, mailable };
+  }, [eligible]);
+
+  const activeFilterCount =
+    rsvpFilter.size + channelFilter.size + kindFilter.size + mailableFilter.size;
+
+  function clearAllFilters() {
+    setRsvpFilter(new Set());
+    setChannelFilter(new Set());
+    setKindFilter(new Set());
+    setMailableFilter(new Set());
+  }
+
+  /** Filtered by the pipeline bucket, the four filter groups and the name
+   *  search — then ordered, and only ordered if the couple picked an order.
+   *
+   *  `list` returns the array UNTOUCHED. That is the whole point: the server
+   *  already hands the rows over in a stable `created_at ASC`, so preserving
+   *  that order is what keeps a row exactly where it was while its status
+   *  changes underneath. Sorting it again, even stably, would re-derive the
+   *  order from state the couple never asked to sort by. */
   const visibleGuests = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = eligible.filter((g) => {
       if (statusFilter !== "all" && guestBucket(g) !== statusFilter) return false;
+      if (rsvpFilter.size > 0 && !rsvpFilter.has(g.rsvp_status)) return false;
+      if (channelFilter.size > 0 && !channelFilter.has(channelState(g))) return false;
+      if (kindFilter.size > 0 && !kindFilter.has(g.kind)) return false;
+      if (mailableFilter.size > 0 && !mailableFilter.has(isMailable(g))) return false;
       if (q && !g.full_name.toLowerCase().includes(q)) return false;
       return true;
     });
+    if (sort === "list") return filtered;
+    const byName = (a: Guest, b: Guest) => a.full_name.localeCompare(b.full_name, locale);
+    if (sort === "name") return [...filtered].sort(byName);
     return [...filtered].sort((a, b) => {
       const d = BUCKET_ORDER[guestBucket(a)] - BUCKET_ORDER[guestBucket(b)];
-      return d !== 0 ? d : a.full_name.localeCompare(b.full_name, locale);
+      return d !== 0 ? d : byName(a, b);
     });
-  }, [eligible, statusFilter, query, locale]);
+  }, [
+    eligible,
+    statusFilter,
+    rsvpFilter,
+    channelFilter,
+    kindFilter,
+    mailableFilter,
+    query,
+    sort,
+    locale,
+  ]);
 
   async function toggleChannel(guest: Guest, channel: "online" | "physical") {
     try {
@@ -887,6 +1244,12 @@ export default function GuestInvitesPage() {
           ? { invited_online: guest.invited_online_at === null }
           : { invited_physical: guest.invited_physical_at === null };
       await guestApi.update(guest.id, body);
+      const key = `${guest.id}:${channel}`;
+      setJustToggled(key);
+      if (toggleTimerRef.current !== null) window.clearTimeout(toggleTimerRef.current);
+      toggleTimerRef.current = window.setTimeout(() => {
+        setJustToggled((c) => (c === key ? null : c));
+      }, 450);
       await loadGuests();
     } catch {
       toast.error(t("common.error_generic"));
@@ -957,16 +1320,44 @@ export default function GuestInvitesPage() {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <KpiTile
+                  index={0}
                   icon={Users}
                   label={t("guest_invites.guests_section_title")}
                   value={stats.total}
-                  breakdown={`${stats.adults} ${t("guest_invites.stat_adults")} · ${stats.children} ${t("guest_invites.stat_children")} · ${stats.babies} ${t("guest_invites.stat_babies")}`}
+                  segments={[
+                    { key: "adult", value: stats.adults, className: KIND_DOT.adult },
+                    { key: "child", value: stats.children, className: KIND_DOT.child },
+                    { key: "baby", value: stats.babies, className: KIND_DOT.baby },
+                  ]}
+                  breakdown={[
+                    {
+                      dot: KIND_DOT.adult,
+                      label: `${stats.adults} ${t("guest_invites.stat_adults")}`,
+                    },
+                    {
+                      dot: KIND_DOT.child,
+                      label: `${stats.children} ${t("guest_invites.stat_children")}`,
+                    },
+                    {
+                      dot: KIND_DOT.baby,
+                      label: `${stats.babies} ${t("guest_invites.stat_babies")}`,
+                    },
+                  ]}
                 />
                 <KpiTile
+                  index={1}
                   icon={Send}
                   label={t("guest_invites.channel_section_title")}
                   value={stats.total - stats.notInvited}
-                  breakdown={`${stats.online} ${t("guest_invites.invited_online")} · ${stats.physical} ${t("guest_invites.invited_physical")} · ${stats.both} ${t("guest_invites.invited_both")}`}
+                  segments={CHANNEL_STATES.map((c) => ({
+                    key: c,
+                    value: filterCounts.channel[c],
+                    className: CHANNEL_DOT[c],
+                  }))}
+                  breakdown={CHANNEL_STATES.map((c) => ({
+                    dot: CHANNEL_DOT[c],
+                    label: `${filterCounts.channel[c]} ${t(CHANNEL_FILTER_KEY[c])}`,
+                  }))}
                   alert={
                     stats.notInvited > 0
                       ? t("guest_invites.not_invited_alert", { count: stats.notInvited })
@@ -974,10 +1365,19 @@ export default function GuestInvitesPage() {
                   }
                 />
                 <KpiTile
+                  index={2}
                   icon={CheckCheck}
                   label={t("guest_invites.rsvp_title")}
                   value={stats.yes}
-                  breakdown={`${stats.no} ${t("guest_invites.rsvp_no")} · ${stats.maybe} ${t("guest_invites.rsvp_maybe")}`}
+                  segments={RSVP_ORDER.map((s) => ({
+                    key: s,
+                    value: filterCounts.rsvp[s],
+                    className: RSVP_DOT[s],
+                  }))}
+                  breakdown={RSVP_ORDER.map((s) => ({
+                    dot: RSVP_DOT[s],
+                    label: `${filterCounts.rsvp[s]} ${t(`guest_invites.rsvp_${s}`)}`,
+                  }))}
                   alert={
                     stats.pending > 0
                       ? t("guest_invites.pending_alert", { count: stats.pending })
@@ -987,20 +1387,69 @@ export default function GuestInvitesPage() {
               </div>
 
               {/* Filter + search — a pipeline the couple can actually work
-                  from, not just a number. */}
+                  from, not just a number. The order picker sits next to the
+                  filters rather than buried under them because the ORDER is a
+                  first-class choice here: the default deliberately does not
+                  move rows, and that is a promise worth being able to break
+                  deliberately. */}
               {eligible.length > 0 && (
-                <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-                  <SegmentedControl
-                    size="sm"
-                    ariaLabel={t("guest_invites.filter_label")}
-                    value={statusFilter}
-                    onChange={setStatusFilter}
-                    options={FILTERS.map((f) => ({
-                      value: f,
-                      label: `${t(f === "not_invited" ? "guest_invites.not_invited" : `guest_invites.filter_${f}`)} ${filterCount[f]}`,
-                    }))}
-                  />
-                  <div className="relative w-full sm:w-56">
+                <div className="mt-5 flex flex-col gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <SegmentedControl
+                      size="sm"
+                      ariaLabel={t("guest_invites.filter_label")}
+                      value={statusFilter}
+                      onChange={setStatusFilter}
+                      options={FILTERS.map((f) => ({
+                        value: f,
+                        label: `${t(f === "not_invited" ? "guest_invites.not_invited" : `guest_invites.filter_${f}`)} ${filterCount[f]}`,
+                      }))}
+                    />
+                    <div className="ml-auto flex shrink-0 items-center gap-2">
+                      <ViewSelect
+                        compact
+                        ariaLabel={t("guest_invites.sort_label")}
+                        value={sort}
+                        onChange={setSort}
+                        options={[
+                          {
+                            value: "list",
+                            label: t("guest_invites.sort_list"),
+                            icon: <Inbox size={14} aria-hidden="true" />,
+                          },
+                          {
+                            value: "attention",
+                            label: t("guest_invites.sort_attention"),
+                            icon: <TriangleAlert size={14} aria-hidden="true" />,
+                          },
+                          {
+                            value: "name",
+                            label: t("guest_invites.sort_name"),
+                            icon: <ArrowUpDown size={14} aria-hidden="true" />,
+                          },
+                        ]}
+                      />
+                      <button
+                        type="button"
+                        className="btn-outline shrink-0 px-3"
+                        onClick={() => setFiltersOpen((o) => !o)}
+                        aria-expanded={filtersOpen}
+                        aria-label={t("guest_invites.filters_button")}
+                      >
+                        <Filter size={14} aria-hidden="true" />
+                        <span className="hidden sm:inline">
+                          {t("guest_invites.filters_button")}
+                        </span>
+                        {activeFilterCount > 0 && (
+                          <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-umber-900 px-1.5 text-xs text-paper-50 dark:bg-paper-100 dark:text-umber-900">
+                            {activeFilterCount}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="relative w-full sm:max-w-xs">
                     <Search
                       size={14}
                       aria-hidden="true"
@@ -1015,6 +1464,147 @@ export default function GuestInvitesPage() {
                       onChange={(e) => setQuery(e.target.value)}
                     />
                   </div>
+
+                  {filtersOpen && (
+                    <div className="animate-fade-in-up flex flex-col gap-2.5 rounded-xl border border-paper-300 bg-paper-50/60 p-3 motion-reduce:animate-none dark:border-umber-700 dark:bg-umber-900/40">
+                      <FilterGroup label={t("guest_invites.filters_group_reply")}>
+                        {RSVP_ORDER.map((s) => {
+                          const Icon = RSVP_ICON[s];
+                          return (
+                            <TagChip
+                              key={s}
+                              label={`${t(`guest_invites.rsvp_${s}`)} ${filterCounts.rsvp[s]}`}
+                              icon={<Icon size={13} strokeWidth={1.75} aria-hidden="true" />}
+                              selected={rsvpFilter.has(s)}
+                              onToggle={() => setRsvpFilter((p) => toggleIn(p, s))}
+                            />
+                          );
+                        })}
+                      </FilterGroup>
+                      <FilterGroup label={t("guest_invites.filters_group_channel")}>
+                        {CHANNEL_STATES.map((c) => {
+                          const Icon = CHANNEL_ICON[c];
+                          return (
+                            <TagChip
+                              key={c}
+                              label={`${t(CHANNEL_FILTER_KEY[c])} ${filterCounts.channel[c]}`}
+                              icon={<Icon size={13} strokeWidth={1.75} aria-hidden="true" />}
+                              selected={channelFilter.has(c)}
+                              onToggle={() => setChannelFilter((p) => toggleIn(p, c))}
+                            />
+                          );
+                        })}
+                      </FilterGroup>
+                      <FilterGroup label={t("guest_invites.filters_group_kind")}>
+                        {(Object.keys(KIND_ICON) as GuestKind[]).map((k) => {
+                          const Icon = KIND_ICON[k];
+                          return (
+                            <TagChip
+                              key={k}
+                              label={`${t(`guest_invites.stat_${k}`)} ${filterCounts.kind[k]}`}
+                              icon={<Icon size={13} strokeWidth={1.75} aria-hidden="true" />}
+                              selected={kindFilter.has(k)}
+                              onToggle={() => setKindFilter((p) => toggleIn(p, k))}
+                            />
+                          );
+                        })}
+                      </FilterGroup>
+                      <FilterGroup label={t("guest_invites.filters_group_mailable")}>
+                        {MAILABLES.map((m) => (
+                          <TagChip
+                            key={m}
+                            label={`${t(`guest_invites.filter_mailable_${m}`)} ${filterCounts.mailable[m]}`}
+                            icon={
+                              m === "yes" ? (
+                                <Mail size={13} strokeWidth={1.75} aria-hidden="true" />
+                              ) : (
+                                <MailX size={13} strokeWidth={1.75} aria-hidden="true" />
+                              )
+                            }
+                            selected={mailableFilter.has(m)}
+                            onToggle={() => setMailableFilter((p) => toggleIn(p, m))}
+                          />
+                        ))}
+                      </FilterGroup>
+                    </div>
+                  )}
+
+                  {activeFilterCount > 0 && (
+                    <div
+                      className="flex flex-wrap items-center gap-2"
+                      data-testid="gi-active-filters"
+                    >
+                      {[...rsvpFilter].map((s) => {
+                        const Icon = RSVP_ICON[s];
+                        return (
+                          <TagChip
+                            key={`r-${s}`}
+                            label={`${t(`guest_invites.rsvp_${s}`)} ${filterCounts.rsvp[s]}`}
+                            icon={<Icon size={13} strokeWidth={1.75} aria-hidden="true" />}
+                            selected
+                            removable
+                            onRemove={() => setRsvpFilter((p) => toggleIn(p, s))}
+                          />
+                        );
+                      })}
+                      {[...channelFilter].map((c) => {
+                        const Icon = CHANNEL_ICON[c];
+                        return (
+                          <TagChip
+                            key={`c-${c}`}
+                            label={`${t(CHANNEL_FILTER_KEY[c])} ${filterCounts.channel[c]}`}
+                            icon={<Icon size={13} strokeWidth={1.75} aria-hidden="true" />}
+                            selected
+                            removable
+                            onRemove={() => setChannelFilter((p) => toggleIn(p, c))}
+                          />
+                        );
+                      })}
+                      {[...kindFilter].map((k) => {
+                        const Icon = KIND_ICON[k];
+                        return (
+                          <TagChip
+                            key={`k-${k}`}
+                            label={`${t(`guest_invites.stat_${k}`)} ${filterCounts.kind[k]}`}
+                            icon={<Icon size={13} strokeWidth={1.75} aria-hidden="true" />}
+                            selected
+                            removable
+                            onRemove={() => setKindFilter((p) => toggleIn(p, k))}
+                          />
+                        );
+                      })}
+                      {[...mailableFilter].map((m) => (
+                        <TagChip
+                          key={`m-${m}`}
+                          label={`${t(`guest_invites.filter_mailable_${m}`)} ${filterCounts.mailable[m]}`}
+                          icon={
+                            m === "yes" ? (
+                              <Mail size={13} strokeWidth={1.75} aria-hidden="true" />
+                            ) : (
+                              <MailX size={13} strokeWidth={1.75} aria-hidden="true" />
+                            )
+                          }
+                          selected
+                          removable
+                          onRemove={() => setMailableFilter((p) => toggleIn(p, m))}
+                        />
+                      ))}
+                      <button
+                        type="button"
+                        className="text-sm text-umber-500 underline underline-offset-2 hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
+                        onClick={clearAllFilters}
+                      >
+                        {t("guest_invites.filters_clear_all")}
+                      </button>
+                    </div>
+                  )}
+
+                  {sort === "list" && (
+                    <p className="flex items-center gap-1.5 text-xs text-umber-500 dark:text-umber-400">
+                      <Inbox size={13} aria-hidden="true" className="shrink-0" />
+                      {t("guest_invites.sort_stable_note")}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1045,48 +1635,72 @@ export default function GuestInvitesPage() {
                     </p>
                   </div>
                 ) : (
-                  <ul className="divide-y divide-paper-200 dark:divide-umber-800">
-                    {visibleGuests.map((g) => {
+                  <ul
+                    className="divide-y divide-paper-200 dark:divide-umber-800"
+                    data-testid="gi-guest-list"
+                  >
+                    {visibleGuests.map((g, i) => {
                       const onlineOn = g.invited_online_at !== null;
                       const physicalOn = g.invited_physical_at !== null;
                       const initial = g.full_name.trim().charAt(0).toUpperCase() || "?";
                       return (
                         <li
                           key={g.id}
-                          className="flex flex-col gap-2.5 px-4 py-3 sm:flex-row sm:items-center sm:gap-4"
+                          className="relative animate-fade-in-up pl-[3px] motion-reduce:animate-none"
+                          style={{ animationDelay: `${staggerMs(i)}ms` }}
+                          data-testid="gi-guest-row"
                         >
-                          <div className="flex min-w-0 flex-1 items-center gap-3">
-                            <span
-                              aria-hidden="true"
-                              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-paper-200 font-grotesk text-sm font-semibold text-umber-700 dark:bg-umber-800 dark:text-umber-200"
-                            >
-                              {initial}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="truncate font-medium text-umber-900 dark:text-paper-50">
-                                {g.full_name}
-                              </p>
-                              <p className="text-xs text-umber-500 dark:text-umber-400">
-                                {g.rsvp_responded_at !== null
-                                  ? formatTimestamp(g.rsvp_responded_at, locale)
-                                  : t("guest_invites.responded_never")}
-                              </p>
+                          {/* The answer, as a rail down the edge of the row. One
+                              glance down a 60-guest list then reads as a
+                              colour run — the same colour the badge and the
+                              legend use, so it is learned once. Decorative:
+                              the badge in the row carries the same fact with
+                              the same accessible name. */}
+                          <span
+                            aria-hidden="true"
+                            className={`absolute inset-y-0 left-0 w-[3px] ${RSVP_DOT[g.rsvp_status]}`}
+                          />
+                          <div className="flex flex-col gap-2.5 py-3 pl-3 pr-4 sm:flex-row sm:items-center sm:gap-4">
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                              <span
+                                aria-hidden="true"
+                                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-paper-200 font-grotesk text-sm font-semibold text-umber-700 dark:bg-umber-800 dark:text-umber-200"
+                              >
+                                {initial}
+                              </span>
+                              <div className="min-w-0">
+                                <p
+                                  className="truncate font-medium text-umber-900 dark:text-paper-50"
+                                  data-testid="gi-guest-name"
+                                >
+                                  {g.full_name}
+                                </p>
+                                <p className="text-xs text-umber-500 dark:text-umber-400">
+                                  {g.rsvp_responded_at !== null
+                                    ? formatTimestamp(g.rsvp_responded_at, locale)
+                                    : t("guest_invites.responded_never")}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-                            <ChannelChip
-                              label={t("guest_invites.channel_online")}
-                              active={onlineOn}
-                              guestName={g.full_name}
-                              onToggle={() => void toggleChannel(g, "online")}
-                            />
-                            <ChannelChip
-                              label={t("guest_invites.channel_physical")}
-                              active={physicalOn}
-                              guestName={g.full_name}
-                              onToggle={() => void toggleChannel(g, "physical")}
-                            />
-                            <RsvpStatusBadge status={g.rsvp_status} />
+                            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                              <ChannelChip
+                                label={t("guest_invites.channel_online")}
+                                icon={Mail}
+                                active={onlineOn}
+                                guestName={g.full_name}
+                                justToggled={justToggled === `${g.id}:online`}
+                                onToggle={() => void toggleChannel(g, "online")}
+                              />
+                              <ChannelChip
+                                label={t("guest_invites.channel_physical")}
+                                icon={Handshake}
+                                active={physicalOn}
+                                guestName={g.full_name}
+                                justToggled={justToggled === `${g.id}:physical`}
+                                onToggle={() => void toggleChannel(g, "physical")}
+                              />
+                              <RsvpStatusIcon status={g.rsvp_status} />
+                            </div>
                           </div>
                         </li>
                       );
@@ -1094,6 +1708,8 @@ export default function GuestInvitesPage() {
                   </ul>
                 )}
               </div>
+
+              {visibleGuests.length > 0 && <RsvpLegend />}
             </section>
 
             {/* ── B) Communication ── */}
@@ -1126,12 +1742,15 @@ export default function GuestInvitesPage() {
                 </div>
               ) : (
                 <ul className="mt-3 flex flex-col gap-2">
-                  {messages.map((m) => {
+                  {messages.map((m, i) => {
                     const Icon = TEMPLATE_ICON[m.template];
+                    const StatusIcon = BROADCAST_ICON[m.status];
+                    const statusLabel = t(`guest_invites.status_${m.status}`);
                     return (
                       <li
                         key={m.id}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-paper-300 bg-paper-50 px-4 py-3 dark:border-umber-700 dark:bg-umber-900"
+                        className="animate-card-deal flex flex-wrap items-center justify-between gap-3 rounded-xl border border-paper-300 bg-paper-50 px-4 py-3 motion-reduce:animate-none dark:border-umber-700 dark:bg-umber-900"
+                        style={{ animationDelay: `${staggerMs(i, 26)}ms` }}
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <span
@@ -1157,23 +1776,32 @@ export default function GuestInvitesPage() {
                                   ? t("guest_invites.sent_on", {
                                       date: formatTimestamp(m.sent_at, locale),
                                     })
-                                  : t(`guest_invites.status_${m.status}`)}
+                                  : statusLabel}
                             </p>
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-3">
+                          {/* Same treatment as the guest rows: a shape, a
+                              colour, and the full word as the accessible name.
+                              `sending` is the one status that MOVES, so it is
+                              the one that gets a spinner — the only animated
+                              glyph on the page that is reporting work still in
+                              flight. */}
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                              m.status === "sent"
-                                ? "bg-sage-100 text-sage-700 dark:bg-sage-900/40 dark:text-sage-300"
-                                : m.status === "failed"
-                                  ? "bg-blush-100 text-blush-700 dark:bg-blush-900/40 dark:text-blush-300"
-                                  : m.status === "scheduled"
-                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                                    : "bg-paper-200 text-umber-600 dark:bg-umber-800 dark:text-umber-300"
-                            }`}
+                            className={`inline-grid h-8 w-8 place-items-center rounded-full ${BROADCAST_SURFACE[m.status]}`}
+                            title={statusLabel}
                           >
-                            {t(`guest_invites.status_${m.status}`)}
+                            <StatusIcon
+                              size={16}
+                              strokeWidth={1.75}
+                              role="img"
+                              aria-label={statusLabel}
+                              className={
+                                m.status === "sending"
+                                  ? "animate-spin motion-reduce:animate-none"
+                                  : undefined
+                              }
+                            />
                           </span>
                           {m.status === "scheduled" && (
                             <button

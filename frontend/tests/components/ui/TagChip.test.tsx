@@ -39,9 +39,11 @@ describe("<TagChip>", () => {
 
   it("renders a remove button in removable mode and fires onRemove", () => {
     const onRemove = mock(() => undefined);
+    // No `onToggle` here on purpose: a removable chip is a read-out of a
+    // control elsewhere, so the type makes the two shapes mutually exclusive.
     render(
       <I18nProvider>
-        <TagChip label="Anna" selected onToggle={() => undefined} removable onRemove={onRemove} />
+        <TagChip label="Anna" selected removable onRemove={onRemove} />
       </I18nProvider>,
     );
     // The button's aria-label runs through t("common.remove_item", { label }),
