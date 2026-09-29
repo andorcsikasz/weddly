@@ -3409,7 +3409,7 @@ const hr: LocaleMessages = {
     film_settings_reveal_default: "Nakon zatvaranja filma",
     film_settings_reveal_hint: "Od tog trenutka gosti vide fotografije.",
     film_settings_cap: "Ograničenje gostiju",
-    film_settings_cap_hint: "Kapacitet određuje vaš filmski paket.",
+    film_settings_cap_hint: "Do {n} gostiju uključeno je u vašu Weddly pretplatu.",
     film_settings_prompts: "Igrivi izazovi",
     film_settings_prompts_hint:
       "Ideja koja se izmjenjuje iznad okidača, poput „uhvati najbolji plesni korak”.",
@@ -8758,7 +8758,7 @@ const hr: LocaleMessages = {
       "Vlastita zajednička kamera vašeg vjenčanja — gosti skeniraju jedan QR kod, snimaju trenutke koje biste inače propustili, a cijela galerija otkriva se zajedno nakon velikog dana. Bez aplikacije, bez računa, uključeno u svako Weddly vjenčanje.",
     hero_title: "Zabilježite svoj dan očima svih gostiju.",
     hero_sub: "Gosti skeniraju QR kod i snimaju. Galerija se otvara nakon velikog dana.",
-    already_included: "Već ste na Weddlyju? Uključeno je.",
+    already_included: "Do {n} gostiju uključeno je u Weddly pretplatu.",
     already_included_cta: "Otvori nadzornu ploču",
     features_title: "Fotoaparat, ne obrazac za slanje",
     feature_1_title: "Bez aplikacije",

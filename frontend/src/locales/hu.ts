@@ -3435,7 +3435,7 @@ const hu: LocaleMessages = {
     film_settings_reveal_default: "Film lezárása után",
     film_settings_reveal_hint: "Ettől az időponttól látják a vendégek a képeket.",
     film_settings_cap: "Vendégkapacitás",
-    film_settings_cap_hint: "A kapacitást a filmcsomag határozza meg.",
+    film_settings_cap_hint: "{n} vendégig benne van a Weddly-előfizetésetekben.",
     film_settings_prompts: "Ötletadó promptok",
     film_settings_prompts_hint:
       "Váltakozó ötlet az exponálógomb fölött, például „kapd le a legjobb tánclépést”.",
@@ -8841,7 +8841,7 @@ const hu: LocaleMessages = {
       "A ti esküvőtök saját közös kamerája: a vendégek beolvasnak egy QR-kódot, megörökítik, amit ti lemaradnátok róla, és a teljes galéria egyszerre tárul fel az esküvő után. Applikáció és regisztráció nélkül, minden Weddly esküvőhöz ingyen jár.",
     hero_title: "Örökítsétek meg a napot mindenki szemével.",
     hero_sub: "A vendégek beolvassák a QR-kódot, és fotóznak. A galéria az esküvő után nyílik meg.",
-    already_included: "Már a Weddlyn vagytok? Benne van.",
+    already_included: "{n} vendégig benne van a Weddly-előfizetésben.",
     already_included_cta: "Ugrás a fiókomba",
     features_title: "Fényképezőgép, nem feltöltő űrlap",
     feature_1_title: "Nincs app",

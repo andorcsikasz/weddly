@@ -3481,7 +3481,7 @@ const de: LocaleMessages = {
     film_settings_reveal_default: "Nach dem Filmende",
     film_settings_reveal_hint: "Ab diesem Zeitpunkt sehen die Gäste die Fotos.",
     film_settings_cap: "Gästelimit",
-    film_settings_cap_hint: "Die Kapazität wird durch Ihren Filmtarif bestimmt.",
+    film_settings_cap_hint: "Bis zu {n} Gäste sind in eurem Weddly-Abo inklusive.",
     film_settings_prompts: "Spielerische Impulse",
     film_settings_prompts_hint:
       "Eine wechselnde Idee über dem Auslöser, etwa „haltet den besten Tanzschritt fest“.",
@@ -8904,7 +8904,7 @@ const de: LocaleMessages = {
     hero_title: "Haltet euren Tag durch die Augen aller fest.",
     hero_sub:
       "Gäste scannen einen QR-Code und fotografieren. Die Galerie öffnet sich nach dem großen Tag.",
-    already_included: "Schon auf Weddly? Ist inklusive.",
+    already_included: "Bis zu {n} Gäste sind im Weddly-Abo inklusive.",
     already_included_cta: "Zum Dashboard",
     features_title: "Eine Kamera, kein Upload-Formular",
     feature_1_title: "Keine App",

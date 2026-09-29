@@ -3408,7 +3408,7 @@ const en: LocaleMessages = {
     film_settings_reveal_default: "After the film closes",
     film_settings_reveal_hint: "Photos become visible to guests from this time.",
     film_settings_cap: "Guest cap",
-    film_settings_cap_hint: "Capacity is determined by your film plan.",
+    film_settings_cap_hint: "Up to {n} guests is included in your Weddly subscription.",
     film_settings_prompts: "Playful prompts",
     film_settings_prompts_hint:
       "A rotating idea shown above the shutter, like “catch the best dance move”.",
@@ -8766,7 +8766,7 @@ const en: LocaleMessages = {
       "Your wedding's own shared camera — guests scan one QR code, capture the moments you'd miss, and the whole gallery reveals together after the big day. No app, no account, included with every Weddly wedding.",
     hero_title: "Capture your day through everyone’s eyes.",
     hero_sub: "Guests scan a QR code and shoot. The gallery opens after the big day.",
-    already_included: "Already on Weddly? It's included.",
+    already_included: "Up to {n} guests is included with a Weddly subscription.",
     already_included_cta: "Open dashboard",
     features_title: "A camera, not an upload form",
     feature_1_title: "No app",

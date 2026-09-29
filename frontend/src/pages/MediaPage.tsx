@@ -945,8 +945,13 @@ function FilmModal({
               </span>
             </label>
             <div className="flex items-start gap-3 px-4 py-3">
-              <span className="flex-1 text-sm font-medium text-umber-900 dark:text-paper-100">
-                {t("media.film_settings_cap")}
+              <span className="flex-1">
+                <span className="block text-sm font-medium text-umber-900 dark:text-paper-100">
+                  {t("media.film_settings_cap")}
+                </span>
+                <span className="block text-xs leading-snug text-umber-600 dark:text-paper-300">
+                  {t("media.film_settings_cap_hint", { n: FILM_TIER_CAPS.free })}
+                </span>
               </span>
               <span className="text-right">
                 <span className="block font-space text-sm font-semibold text-umber-700 dark:text-paper-200">
@@ -1382,6 +1387,7 @@ export default function MediaPage() {
     dividerAfter?: boolean;
     onClick?: () => void;
     actionLabel?: string;
+    hint?: string;
   };
   // Raising the guest cap is one tap from the row that shows it, not a banner
   // that only appears once the film is nearly full.
@@ -1414,6 +1420,9 @@ export default function MediaPage() {
           label: t("media.film_settings_cap"),
           value: `${album.guestCap} ${t("media.film_per_person")}`,
           editable: false,
+          ...(album.paidAt === null && album.guestCap <= FILM_TIER_CAPS.free
+            ? { hint: t("media.film_settings_cap_hint", { n: FILM_TIER_CAPS.free }) }
+            : {}),
           ...(canRaiseCap
             ? {
                 onClick: () => void handleUpgradeFilm(),
@@ -1455,8 +1464,10 @@ export default function MediaPage() {
         accent="gold"
       />
 
-      {/* ── Photographer gallery card (first) ─────────────────────── */}
-      <div className="order-2 mt-4 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft">
+      {/* ── Photographer gallery: its own card at the very top, apart from
+          the guest film. The professional gallery is a link out, and it
+          should not read as a section of the film. ── */}
+      <div className="order-first mb-6 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft">
         {/* ── Photographer row ──────────────────────────────────────── */}
         <div ref={photographerRowRef}>
           <h2 className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-600">
@@ -1876,8 +1887,15 @@ export default function MediaPage() {
                         const inner = (
                           <>
                             <span className="shrink-0 text-umber-500">{row.icon}</span>
-                            <span className="min-w-0 flex-1 text-sm font-medium text-umber-900">
-                              {row.label}
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-medium text-umber-900">
+                                {row.label}
+                              </span>
+                              {row.hint && (
+                                <span className="block text-xs leading-snug text-umber-600">
+                                  {row.hint}
+                                </span>
+                              )}
                             </span>
                             <span className="shrink truncate text-right text-sm text-umber-500">
                               {row.value}

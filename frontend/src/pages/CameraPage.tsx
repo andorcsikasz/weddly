@@ -16,6 +16,7 @@ import { Camera, Hourglass, ScanLine, Wifi } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
 import { CameraHero, DEMO_STRIP } from "../components/CameraHero";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
@@ -23,11 +24,8 @@ import { useDocumentMeta } from "../lib/seo";
 
 interface PricingTier {
   cap: number;
+  /** Stand-alone price for a wedding that isn't on Weddly. */
   price: string;
-  /** What a couple already planning on Weddly pays. This is the number the
-   *  card leads with; `price` drops to the quieter "everyone else" line. The
-   *  25-guest tier has none because it's already free for everyone. */
-  couplePrice?: string;
 }
 
 // Anchored to the owner's own $10@50 / $25@100 pricing, extrapolated along
@@ -35,12 +33,22 @@ interface PricingTier {
 // scoped to a couple's workspace currency.
 const TIERS: PricingTier[] = [
   { cap: 25, price: "$0" },
-  { cap: 50, price: "$9.99", couplePrice: "$0" },
-  { cap: 100, price: "$24.99", couplePrice: "$8.99" },
-  { cap: 175, price: "$44.99", couplePrice: "$19.90" },
-  { cap: 250, price: "$69.99", couplePrice: "$29.90" },
-  { cap: 400, price: "$99.99", couplePrice: "$49.90" },
+  { cap: 50, price: "$9.99" },
+  { cap: 100, price: "$24.99" },
+  { cap: 175, price: "$44.99" },
+  { cap: 250, price: "$69.99" },
+  { cap: 400, price: "$99.99" },
 ];
+
+/** What a Weddly couple pays for a tier, derived from the SAME constants the
+ *  in-app film enforces, so this page cannot promise a cap the product does
+ *  not grant. `included` up to the subscription's cap, the one-time unlock up
+ *  to its cap, and null past it (the app has no tier that large). */
+function couplePrice(cap: number): "included" | string | null {
+  if (cap <= FILM_TIER_CAPS.free) return "included";
+  if (cap <= FILM_TIER_CAPS.paid) return `€${(FILM_TIER_PRICE_EUR_CENTS.paid / 100).toFixed(2)}`;
+  return null;
+}
 
 /** Thumb-aware fill offset for `.camera-slider`'s `--camera-slider-fill` var,
  *  same idiom as the budget sliders' `rangeFillStyle`: the raw step
@@ -61,6 +69,8 @@ export default function CameraPage() {
   // TIERS[1] as the fallback: the slider is clamped to [0, TIERS.length - 1]
   // so this only ever matters to the type checker, never at runtime.
   const tier = TIERS[tierIndex] ?? (TIERS[1] as PricingTier);
+  const tierCouplePrice = couplePrice(tier.cap);
+  const includedLine = t("camera.already_included", { n: FILM_TIER_CAPS.free });
 
   const features = [
     { Icon: ScanLine, title: t("camera.feature_1_title"), body: t("camera.feature_1_body") },
@@ -84,6 +94,7 @@ export default function CameraPage() {
             minimal
             title={t("camera.hero_title")}
             subtitle={t("camera.hero_sub")}
+            finePrint={includedLine}
             tryQr={{ src: "/camera-try-qr.svg", label: t("camera.try_title") }}
             secondaryAction={
               // On a phone the visitor IS on the device, so a link beats a QR.
@@ -130,16 +141,18 @@ export default function CameraPage() {
                     footnote. Both rows keep their height on the free tier so
                     the card doesn't jump while the slider moves. */}
                 <p className="h-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-paper-300">
-                  {tier.couplePrice && t("camera.pricing_couple_label")}
+                  {tierCouplePrice && t("camera.pricing_couple_label")}
                 </p>
                 <span className="stat-num mt-2 block text-5xl font-semibold tabular-nums tracking-[-0.04em] text-paper-50 sm:text-6xl">
-                  {tier.couplePrice ?? tier.price}
+                  {tierCouplePrice === "included"
+                    ? t("media.film_price_free")
+                    : (tierCouplePrice ?? tier.price)}
                 </span>
                 <p className="mt-3 text-sm text-paper-400">
                   {t("camera.pricing_guest_cap", { n: tier.cap })}
                 </p>
                 <p className="mt-1 h-5 text-sm tabular-nums text-paper-500">
-                  {tier.couplePrice && t("camera.pricing_standard", { price: tier.price })}
+                  {tierCouplePrice && t("camera.pricing_standard", { price: tier.price })}
                 </p>
 
                 <div className="mt-6 text-left">
@@ -182,7 +195,7 @@ export default function CameraPage() {
           </section>
 
           <p className="mt-24 text-center text-sm text-paper-400">
-            {t("camera.already_included")}{" "}
+            {includedLine}{" "}
             <Link
               to="/app/media"
               className="font-semibold text-paper-100 underline decoration-paper-50/25 underline-offset-4 transition-colors hover:decoration-paper-50/60"

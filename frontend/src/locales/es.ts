@@ -3473,7 +3473,7 @@ const es: LocaleMessages = {
     film_settings_reveal_hint:
       "Las fotos se hacen visibles para los invitados a partir de esta hora.",
     film_settings_cap: "Límite de invitados",
-    film_settings_cap_hint: "La capacidad depende de tu plan de película.",
+    film_settings_cap_hint: "Hasta {n} invitados está incluido en vuestra suscripción a Weddly.",
     film_settings_prompts: "Retos divertidos",
     film_settings_prompts_hint:
       "Una idea rotativa sobre el disparador, como «capta el mejor paso de baile».",
@@ -8850,7 +8850,7 @@ const es: LocaleMessages = {
       "La cámara compartida de vuestra boda — los invitados escanean un código QR, capturan los momentos que os perderíais, y toda la galería se revela junta después del gran día. Sin app, sin cuenta, incluida en cada boda de Weddly.",
     hero_title: "Captura tu día a través de los ojos de todos.",
     hero_sub: "Los invitados escanean un QR y disparan. La galería se abre después del gran día.",
-    already_included: "¿Ya estáis en Weddly? Está incluida.",
+    already_included: "Hasta {n} invitados está incluido con la suscripción a Weddly.",
     already_included_cta: "Abrir mi panel",
     features_title: "Una cámara, no un formulario de subida",
     feature_1_title: "Sin app",
