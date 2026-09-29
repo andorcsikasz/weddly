@@ -28,6 +28,7 @@
 // or uploaded: the queue settles each shot on the phone, and running out of
 // frames (or tapping Develop) shows the reveal a guest would get.
 
+import { parseIsoDate } from "@shared/planning_timeline";
 import type { FilmAesthetic, FilmUpload, PhotoAlbumPublic } from "@shared/types";
 import { FILM_FILTERS } from "@shared/types";
 import { Camera, Check, ImagePlus, RotateCcw, Share2, SwitchCamera } from "lucide-react";
@@ -160,7 +161,10 @@ type TFn = (path: string, vars?: Record<string, string | number>) => string;
 // The app locale, not the device's. A Hungarian guest reading a Hungarian page
 // on an en-US phone was getting "13 September 2026" mid-sentence.
 function formatRevealDate(value: string | number, locale: Locale): string {
-  return new Date(value).toLocaleDateString(intlLocale(locale), {
+  // A bare YYYY-MM-DD (the wedding date) is a calendar day, so parse it at
+  // local midnight; as UTC it prints the day before west of UTC.
+  const d = typeof value === "string" ? (parseIsoDate(value) ?? new Date(value)) : new Date(value);
+  return d.toLocaleDateString(intlLocale(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",

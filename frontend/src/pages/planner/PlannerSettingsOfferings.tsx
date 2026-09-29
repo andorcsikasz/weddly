@@ -13,6 +13,7 @@ import {
   type ListingPackage,
 } from "@shared/listing_packages";
 import { intlLocale } from "../../lib/format";
+import { parseIsoDate } from "@shared/planning_timeline";
 import type { PlannerAvailabilityView, PlannerProfile } from "@shared/types";
 import { FileText, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -30,8 +31,9 @@ interface OutletCtx {
 }
 
 function formatIsoDate(iso: string, locale: Locale): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+  // Local midnight, not UTC: see PlannerDetailPage's twin.
+  const d = parseIsoDate(iso);
+  if (!d) return iso;
   return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",

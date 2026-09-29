@@ -7,6 +7,7 @@
 // card uses. Distinct from the vendor CTA: Felkérés is a bidirectional
 // account-link handshake (invite → planner accepts → linked), not a booking lead.
 
+import { parseIsoDate } from "@shared/planning_timeline";
 import { countryName } from "@shared/country_list";
 import { intlLocale } from "../lib/format";
 import type { PlannerDirectoryDetail, PlannerDirectoryEntry } from "@shared/types";
@@ -41,8 +42,10 @@ type LinkStatus = PlannerDirectoryEntry["link_status"];
 
 /** Format an ISO 'YYYY-MM-DD' in the reader's locale ("2027. jún. 12."). */
 function formatIsoDate(iso: string, locale: Locale): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+  // Local midnight: `new Date("2027-06-12")` is UTC midnight, which west of
+  // UTC formats as the 11th.
+  const d = parseIsoDate(iso);
+  if (!d) return iso;
   return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",

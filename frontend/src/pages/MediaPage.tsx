@@ -1,3 +1,4 @@
+import { parseIsoDate } from "@shared/planning_timeline";
 import type {
   Couple,
   FilmAccessCheck,
@@ -768,7 +769,10 @@ function FilmModal({
       const b = couple?.bride_name?.trim();
       const g = couple?.groom_name?.trim();
       if (b || g) setTitle(`${b ?? ""} & ${g ?? ""} Wedding`.trim());
-      const wd = couple?.wedding_date ? new Date(couple.wedding_date).getTime() : null;
+      // LOCAL midnight, or the "21:00" below is 23:00 in Budapest and 17:00 in New York.
+      const wd = couple?.wedding_date
+        ? (parseIsoDate(couple.wedding_date.slice(0, 10))?.getTime() ?? null)
+        : null;
       // wedding_date midnight + 1 day - 3 h = 21:00 on the day after the wedding
       setEventEndsAt(wd ? toDatetimeLocal(wd + 45 * 60 * 60 * 1000) : "");
     } else {

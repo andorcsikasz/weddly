@@ -79,6 +79,7 @@ import {
   showsCapacity,
   showsSpokenLanguages,
 } from "@shared/suppliers";
+import { parseIsoDate } from "@shared/planning_timeline";
 import type { ListingPackage } from "@shared/listing_packages";
 import { pickListingBlurb } from "@shared/listing_language";
 import { packagePriceSummary } from "@shared/listing_pricing";
@@ -1818,7 +1819,9 @@ function BusyCalendarCard({
   const appliedWeddingMonth = useRef(false);
   useEffect(() => {
     if (appliedWeddingMonth.current || !weddingDate) return;
-    const d = new Date(weddingDate);
+    // Local midnight: as UTC, a wedding on the 1st opened the previous month
+    // for anyone west of UTC.
+    const d = parseIsoDate(weddingDate.slice(0, 10)) ?? new Date(weddingDate);
     if (Number.isNaN(d.getTime())) return;
     appliedWeddingMonth.current = true;
     setCursor({ year: d.getFullYear(), month: d.getMonth() });

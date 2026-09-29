@@ -35,7 +35,7 @@ import { ReviewSnippets } from "../components/ReviewSnippets";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
-import { Dialog } from "../components/ui";
+import { Dialog, useConfirm } from "../components/ui";
 import { VendorGallery } from "../components/VendorGallery";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
@@ -108,10 +108,11 @@ function PublicReviewComposer({
 }: {
   supplierId: string;
   category: SupplierCategory;
-  locale: "hu" | "en";
+  locale: Locale;
   t: (k: string, vars?: Record<string, string | number>) => string;
   onSubmitted: () => void;
 }) {
+  const confirm = useConfirm();
   const [verified, setVerified] = useState<boolean>(() => Boolean(getVisitorToken()));
   const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [body, setBody] = useState("");
@@ -200,7 +201,14 @@ function PublicReviewComposer({
   };
 
   const remove = async () => {
-    if (!ownReview || !window.confirm(t("suppliers.detail.reviews.deleteConfirmTitle"))) return;
+    if (!ownReview) return;
+    const ok = await confirm({
+      title: t("suppliers.detail.reviews.deleteConfirmTitle"),
+      body: t("suppliers.detail.reviews.deleteConfirmBody"),
+      confirmLabel: t("common.delete"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -740,7 +748,7 @@ export default function PublicVendorPage() {
               <PublicReviewComposer
                 supplierId={supplierId}
                 category={detail.category}
-                locale={locale === "hu" ? "hu" : "en"}
+                locale={locale}
                 t={t}
                 onSubmitted={reloadDetail}
               />

@@ -1,6 +1,7 @@
 import { ArrowRight, Clock, MailQuestion, Plus, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { parseIsoDate } from "@shared/planning_timeline";
 import type { PlannerClientView } from "@shared/types";
 import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -27,7 +28,9 @@ function initials(displayName: string): string {
 function daysUntil(weddingDate: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const target = new Date(weddingDate);
+  // Local midnight: parsing as UTC and then zeroing LOCAL hours lands on the
+  // previous day west of UTC, one day short on every countdown.
+  const target = parseIsoDate(weddingDate.slice(0, 10)) ?? new Date(weddingDate);
   target.setHours(0, 0, 0, 0);
   return Math.round((target.getTime() - today.getTime()) / 86_400_000);
 }
