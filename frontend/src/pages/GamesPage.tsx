@@ -1,22 +1,30 @@
+import { estimatedPayout, type MarketPool, marketProbability } from "@shared/markets";
 import {
   ArrowRight,
+  ArrowUpDown,
   BarChart3,
+  CakeSlice,
   Check,
-  ChevronDown,
   Clock3,
   Coins,
   Crown,
+  Droplets,
+  Flower2,
   Gamepad2,
   Heart,
+  type LucideIcon,
   LockKeyhole,
+  Music,
   PartyPopper,
   Sparkles,
+  TrendingDown,
+  TrendingUp,
   Trophy,
   Users,
   X,
   Zap,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Wordmark } from "../components/Wordmark";
 import { usePublicPageMeta } from "../lib/seo";
@@ -34,14 +42,30 @@ type Question = {
   correct: number;
 };
 
+type MarketCategory = "ceremony" | "party" | "food";
+
+type Side = "YES" | "NO";
+
+type LastBet = { id: number; who: string; side: Side; stake: number };
+
 type Market = {
   id: string;
-  icon: string;
+  icon: LucideIcon;
+  category: MarketCategory;
   question: string;
-  yes: number;
-  volume: string;
   closes: string;
-  trend: number[];
+  /** Pari-mutuel pool, priced the same way as the real game
+   *  (`marketProbability` in shared/markets.ts). Seeded small on purpose so
+   *  a single guest's bet visibly moves the line. */
+  pool: MarketPool;
+  /** The pool's opening probability — simulated guests lean toward it so
+   *  the demo odds wander around a believable number instead of drifting
+   *  to 0 or 100 while the page sits open. */
+  anchor: number;
+  /** Probability history, oldest first; the last value is always
+   *  `marketProbability(pool)`. */
+  history: number[];
+  lastBet: LastBet | null;
 };
 
 const QUIZ_QUESTIONS: Question[] = [
@@ -80,44 +104,88 @@ const QUIZ_QUESTIONS: Question[] = [
   },
 ];
 
-const MARKETS: Market[] = [
+const INITIAL_MARKETS: Market[] = [
   {
     id: "tears",
-    icon: "🥹",
+    icon: Droplets,
+    category: "ceremony",
     question: "Will the groom cry during the vows?",
-    yes: 74,
-    volume: "3,240 pts",
     closes: "Before the vows",
-    trend: [44, 47, 45, 52, 51, 58, 56, 63, 61, 67, 70, 74],
+    pool: { yes: 548, no: 192 },
+    anchor: 74,
+    history: [44, 47, 45, 52, 51, 58, 56, 63, 61, 67, 70, 74],
+    lastBet: null,
   },
   {
     id: "bouquet",
-    icon: "💐",
+    icon: Flower2,
+    category: "party",
     question: "Will a single guest catch the bouquet?",
-    yes: 42,
-    volume: "2,180 pts",
     closes: "At bouquet toss",
-    trend: [51, 49, 47, 48, 44, 46, 45, 41, 39, 43, 40, 42],
+    pool: { yes: 218, no: 302 },
+    anchor: 42,
+    history: [51, 49, 47, 48, 44, 46, 45, 41, 39, 43, 40, 42],
+    lastBet: null,
   },
   {
     id: "dance",
-    icon: "🪩",
+    icon: Music,
+    category: "party",
     question: "Will the first dance last the full song?",
-    yes: 61,
-    volume: "1,870 pts",
     closes: "Before first dance",
-    trend: [39, 42, 46, 44, 49, 52, 55, 53, 57, 60, 58, 61],
+    pool: { yes: 281, no: 179 },
+    anchor: 61,
+    history: [39, 42, 46, 44, 49, 52, 55, 53, 57, 60, 58, 61],
+    lastBet: null,
   },
   {
     id: "cake",
-    icon: "🎂",
+    icon: CakeSlice,
+    category: "food",
     question: "Will there be a cake smash?",
-    yes: 28,
-    volume: "980 pts",
     closes: "Before cake cutting",
-    trend: [36, 37, 34, 35, 31, 29, 32, 30, 27, 29, 26, 28],
+    pool: { yes: 90, no: 230 },
+    anchor: 28,
+    history: [36, 37, 34, 35, 31, 29, 32, 30, 27, 29, 26, 28],
+    lastBet: null,
   },
 ];
+
+const MARKET_TABS: { id: MarketCategory | "all"; label: string }[] = [
+  { id: "all", label: "Trending" },
+  { id: "ceremony", label: "Ceremony" },
+  { id: "party", label: "Party" },
+  { id: "food", label: "Food & drinks" },
+];
+
+const HISTORY_CAP = 40;
+const GUEST_BET_EVERY_MS = 2800;
+const GUEST_NAMES = [
+  "Anna",
+  "Bence",
+  "Chloé",
+  "Dávid",
+  "Eszter",
+  "Finn",
+  "Greta",
+  "Hugo",
+  "Lili",
+  "Marco",
+];
+const GUEST_STAKES = [10, 15, 20, 25, 30, 40, 50, 75];
+
+function volumeOf(market: Market): number {
+  return market.pool.yes + market.pool.no;
+}
+
+function withBet(market: Market, bet: LastBet): Market {
+  const pool = {
+    yes: market.pool.yes + (bet.side === "YES" ? bet.stake : 0),
+    no: market.pool.no + (bet.side === "NO" ? bet.stake : 0),
+  };
+  const history = [...market.history, marketProbability(pool)].slice(-HISTORY_CAP);
+  return { ...market, pool, history, lastBet: bet };
+}
 
 const ANSWER_STYLES = [
   "games-answer-red",
@@ -126,29 +194,102 @@ const ANSWER_STYLES = [
   "games-answer-green",
 ];
 
-function MiniChart({ values }: { values: number[] }) {
-  const points = values
-    .map((value, index) => `${(index / (values.length - 1)) * 180},${62 - value * 0.56}`)
-    .join(" ");
+/** Polymarket-style probability line: auto-scaled to the history's own
+ *  range (so a 3-point move is visible, not a flat line near 70%), with
+ *  labelled gridlines, the dashed 50% mark when it's in range, and a
+ *  pulsing dot at the latest price that re-fires on every new bet. The
+ *  line is stretched with `preserveAspectRatio="none"`, so the dot and the
+ *  labels are HTML laid over it — an SVG circle would render as an oval. */
+function LiveChart({
+  values,
+  pulseKey,
+  tall = false,
+}: {
+  values: number[];
+  /** Changes on every bet so the end dot's pulse re-fires. */
+  pulseKey: number;
+  tall?: boolean;
+}) {
+  const gradientId = useId();
+  const w = 300;
+  const h = 100;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  let lo = Math.max(0, Math.floor((min - 5) / 10) * 10);
+  let hi = Math.min(100, Math.ceil((max + 5) / 10) * 10);
+  if (hi - lo < 20) {
+    if (hi + 10 <= 100) hi += 10;
+    if (hi - lo < 20) lo = Math.max(0, lo - 10);
+  }
+  const yOf = (v: number) => ((hi - v) / (hi - lo)) * h;
+  const xOf = (i: number) => (values.length < 2 ? w : (i / (values.length - 1)) * w);
+  const points = values.map((v, i) => `${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(" ");
+  const last = values[values.length - 1] ?? 50;
+  const prev = values[values.length - 2] ?? last;
+  const down = last < prev;
+  const grid = [hi, Math.round((hi + lo) / 2), lo];
 
   return (
-    <svg viewBox="0 0 180 64" className="h-14 w-full" role="img" aria-label="Probability trend">
-      <defs>
-        <linearGradient id="games-chart-fill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#2388ff" stopOpacity="0.24" />
-          <stop offset="100%" stopColor="#2388ff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon points={`0,64 ${points} 180,64`} fill="url(#games-chart-fill)" />
-      <polyline
-        points={points}
-        fill="none"
-        stroke="#2388ff"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+    <div className={`games-live-chart ${tall ? "is-tall" : ""}`}>
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={`Chance of yes over time, now ${last}%`}
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#2388ff" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#2388ff" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {grid.map((g) => (
+          <line
+            key={g}
+            x1="0"
+            x2={w}
+            y1={yOf(g)}
+            y2={yOf(g)}
+            stroke="#e3e8ef"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+        {lo < 50 && hi > 50 && (
+          <line
+            x1="0"
+            x2={w}
+            y1={yOf(50)}
+            y2={yOf(50)}
+            stroke="#94a0af"
+            strokeWidth="1"
+            strokeDasharray="3 4"
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+        <polygon points={`0,${h} ${points} ${w},${h}`} fill={`url(#${gradientId})`} />
+        <polyline
+          points={points}
+          fill="none"
+          stroke="#2388ff"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      {grid.map((g) => (
+        <span key={g} className="games-live-chart-label" style={{ top: `${(yOf(g) / h) * 100}%` }}>
+          {g}%
+        </span>
+      ))}
+      <span
+        key={pulseKey}
+        className={`games-live-chart-dot ${down ? "is-down" : ""}`}
+        style={{ top: `${(yOf(last) / h) * 100}%` }}
+        aria-hidden="true"
       />
-    </svg>
+    </div>
   );
 }
 
@@ -179,20 +320,93 @@ export default function GamesPage() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [quizPoints, setQuizPoints] = useState(0);
-  const [activeMarket, setActiveMarket] = useState<Market | null>(null);
-  const [side, setSide] = useState<"YES" | "NO">("YES");
+  const [markets, setMarkets] = useState<Market[]>(INITIAL_MARKETS);
+  const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
+  const [side, setSide] = useState<Side>("YES");
   const [stake, setStake] = useState(50);
   const [predictionCount, setPredictionCount] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
+  const [tab, setTab] = useState<MarketCategory | "all">("all");
+  const [sortBy, setSortBy] = useState<"volume" | "chance">("volume");
+  const toastTimer = useRef<number | null>(null);
+  const betSeq = useRef(0);
+  const activeMarket = markets.find((m) => m.id === activeMarketId) ?? null;
 
   const question = QUIZ_QUESTIONS[questionIndex]!;
   const isCorrect = selectedAnswer === question.correct;
   const maxStake = Math.max(0, balance);
-  const potentialReturn = useMemo(() => {
-    if (!activeMarket) return 0;
-    const probability = side === "YES" ? activeMarket.yes : 100 - activeMarket.yes;
-    return probability > 0 ? Math.round(stake * (100 / probability)) : 0;
-  }, [activeMarket, side, stake]);
+  const activeYes = activeMarket ? marketProbability(activeMarket.pool) : 50;
+  const potentialReturn = activeMarket
+    ? estimatedPayout(activeMarket.pool, side === "YES" ? "yes" : "no", stake)
+    : 0;
+
+  // Card order is decided when the viewer picks a tab or sort, not on every
+  // bet — re-sorting live would slide a card out from under the cursor.
+  const [order, setOrder] = useState<string[]>(() => INITIAL_MARKETS.map((m) => m.id));
+  const marketsRef = useRef(markets);
+  marketsRef.current = markets;
+  useEffect(() => {
+    const snapshot = marketsRef.current.filter((m) => tab === "all" || m.category === tab);
+    snapshot.sort((a, b) =>
+      sortBy === "volume"
+        ? volumeOf(b) - volumeOf(a)
+        : marketProbability(b.pool) - marketProbability(a.pool),
+    );
+    setOrder(snapshot.map((m) => m.id));
+  }, [tab, sortBy]);
+  const visibleMarkets = order
+    .map((id) => markets.find((m) => m.id === id))
+    .filter((m): m is Market => m !== undefined);
+
+  const hotIds = useMemo(
+    () =>
+      new Set(
+        [...markets]
+          .sort((a, b) => volumeOf(b) - volumeOf(a))
+          .slice(0, 2)
+          .map((m) => m.id),
+      ),
+    [markets],
+  );
+
+  // The room keeps betting while you watch: every few seconds a simulated
+  // guest backs one market, which moves its pool, price and chart exactly
+  // like a real bet would. Paused while the tab is hidden so a background
+  // tab doesn't come back to a wall of history.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.hidden) return;
+      // Draw the bet outside the state updater so it stays pure (StrictMode
+      // may run an updater twice).
+      const targetId = INITIAL_MARKETS[Math.floor(Math.random() * INITIAL_MARKETS.length)]?.id;
+      const anchor = INITIAL_MARKETS.find((m) => m.id === targetId)?.anchor ?? 50;
+      betSeq.current += 1;
+      const bet: LastBet = {
+        id: betSeq.current,
+        who: GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)] ?? "A guest",
+        side: Math.random() < 0.15 + 0.7 * (anchor / 100) ? "YES" : "NO",
+        stake: GUEST_STAKES[Math.floor(Math.random() * GUEST_STAKES.length)] ?? 20,
+      };
+      setMarkets((current) => current.map((m) => (m.id === targetId ? withBet(m, bet) : m)));
+    }, GUEST_BET_EVERY_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!activeMarketId) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveMarketId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeMarketId]);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    },
+    [],
+  );
 
   function chooseAnswer(index: number) {
     if (selectedAnswer !== null) return;
@@ -208,19 +422,29 @@ export default function GamesPage() {
     setSelectedAnswer(null);
   }
 
-  function openTrade(market: Market, nextSide: "YES" | "NO") {
-    setActiveMarket(market);
+  function openTrade(market: Market, nextSide: Side) {
+    setActiveMarketId(market.id);
     setSide(nextSide);
     setStake(Math.min(50, balance));
   }
 
+  function addStake(amount: number) {
+    setStake((current) => Math.min(balance, current + amount));
+  }
+
   function placePrediction() {
     if (!activeMarket || stake <= 0 || stake > balance) return;
+    betSeq.current += 1;
+    const bet: LastBet = { id: betSeq.current, who: "You", side, stake };
+    const before = marketProbability(activeMarket.pool);
+    const after = marketProbability(withBet(activeMarket, bet).pool);
+    setMarkets((current) => current.map((m) => (m.id === activeMarket.id ? withBet(m, bet) : m)));
     setBalance((current) => current - stake);
     setPredictionCount((current) => current + 1);
-    setToast(`${stake} points placed on ${side} · ${activeMarket.question}`);
-    setActiveMarket(null);
-    window.setTimeout(() => setToast(null), 3600);
+    setToast(`${stake} pts on ${side} moved the odds ${before}% → ${after}%`);
+    setActiveMarketId(null);
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 3600);
   }
 
   return (
@@ -402,7 +626,8 @@ export default function GamesPage() {
                 </div>
                 {selectedAnswer !== null && (
                   <button type="button" onClick={nextQuestion}>
-                    Next question <ArrowRight size={16} aria-hidden />
+                    {questionIndex === QUIZ_QUESTIONS.length - 1 ? "Play again" : "Next question"}{" "}
+                    <ArrowRight size={16} aria-hidden />
                   </button>
                 )}
               </div>
@@ -438,58 +663,107 @@ export default function GamesPage() {
             </div>
 
             <div className="games-market-toolbar">
-              <div className="games-market-tabs">
-                <button type="button" className="active">
-                  Trending
-                </button>
-                <button type="button">Ceremony</button>
-                <button type="button">Party</button>
-                <button type="button">Food & drinks</button>
+              <div className="games-market-tabs" role="tablist" aria-label="Market categories">
+                {MARKET_TABS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === item.id}
+                    className={tab === item.id ? "active" : ""}
+                    onClick={() => setTab(item.id)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
-              <button type="button" className="games-sort-button">
-                Most traded <ChevronDown size={15} aria-hidden />
+              <button
+                type="button"
+                className="games-sort-button"
+                onClick={() => setSortBy((current) => (current === "volume" ? "chance" : "volume"))}
+              >
+                {sortBy === "volume" ? "Most traded" : "Highest chance"}{" "}
+                <ArrowUpDown size={14} aria-hidden />
               </button>
             </div>
 
             <div className="games-markets-grid">
-              {MARKETS.map((market, marketIndex) => (
-                <article key={market.id} className="games-market-card">
-                  <div className="games-market-meta">
-                    <span className="games-market-icon" aria-hidden="true">
-                      {market.icon}
-                    </span>
-                    <span className="games-market-status">
-                      <span /> {marketIndex < 2 ? "Hot market" : "Open"}
-                    </span>
-                  </div>
-                  <h3>{market.question}</h3>
-                  <div className="games-probability-row">
-                    <div>
-                      <strong>{market.yes}%</strong>
-                      <span>chance</span>
+              {visibleMarkets.map((market) => {
+                const Icon = market.icon;
+                const yes = marketProbability(market.pool);
+                const opened = market.history[0] ?? yes;
+                const delta = yes - opened;
+                const moved = yes - (market.history[market.history.length - 2] ?? yes);
+                return (
+                  <article key={market.id} className="games-market-card">
+                    <div className="games-market-meta">
+                      <span className="games-market-icon" aria-hidden="true">
+                        <Icon size={18} strokeWidth={1.75} />
+                      </span>
+                      <span className="games-market-status">
+                        <span /> {hotIds.has(market.id) ? "Hot market" : "Open"}
+                      </span>
                     </div>
-                    <div className="games-chart">
-                      <MiniChart values={market.trend} />
+                    <h3>{market.question}</h3>
+                    <div className="games-probability-row">
+                      <div>
+                        <strong
+                          key={market.lastBet?.id ?? 0}
+                          className={
+                            moved > 0 ? "games-flash-up" : moved < 0 ? "games-flash-down" : ""
+                          }
+                          aria-live="polite"
+                        >
+                          {yes}%
+                        </strong>
+                        <span>chance</span>
+                        {delta !== 0 && (
+                          <em className={delta > 0 ? "games-delta-up" : "games-delta-down"}>
+                            {delta > 0 ? (
+                              <TrendingUp size={12} aria-hidden />
+                            ) : (
+                              <TrendingDown size={12} aria-hidden />
+                            )}
+                            {delta > 0 ? "+" : ""}
+                            {delta}
+                          </em>
+                        )}
+                      </div>
+                      <LiveChart values={market.history} pulseKey={market.lastBet?.id ?? 0} />
                     </div>
-                  </div>
-                  <div className="games-market-actions">
-                    <button type="button" onClick={() => openTrade(market, "YES")}>
-                      Yes <strong>{market.yes}¢</strong>
-                    </button>
-                    <button type="button" onClick={() => openTrade(market, "NO")}>
-                      No <strong>{100 - market.yes}¢</strong>
-                    </button>
-                  </div>
-                  <div className="games-market-footer">
-                    <span>
-                      <BarChart3 size={13} aria-hidden /> {market.volume} traded
-                    </span>
-                    <span>
-                      <Clock3 size={13} aria-hidden /> {market.closes}
-                    </span>
-                  </div>
-                </article>
-              ))}
+                    <div className="games-bet-ticker" aria-live="off">
+                      {market.lastBet ? (
+                        <span
+                          key={market.lastBet.id}
+                          className={market.lastBet.side === "YES" ? "is-yes" : "is-no"}
+                        >
+                          <strong>{market.lastBet.who}</strong> bet {market.lastBet.stake} pts on{" "}
+                          <b>{market.lastBet.side}</b>
+                        </span>
+                      ) : (
+                        <span className="is-idle">Waiting for the next bet…</span>
+                      )}
+                    </div>
+                    <div className="games-market-actions">
+                      <button type="button" onClick={() => openTrade(market, "YES")}>
+                        Yes <strong>{yes}¢</strong>
+                      </button>
+                      <button type="button" onClick={() => openTrade(market, "NO")}>
+                        No <strong>{100 - yes}¢</strong>
+                      </button>
+                    </div>
+                    <div className="games-market-footer">
+                      <span>
+                        <BarChart3 size={13} aria-hidden /> {volumeOf(market).toLocaleString()} pts
+                        traded
+                      </span>
+                      <span>
+                        <Clock3 size={13} aria-hidden /> {market.closes}
+                      </span>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
 
             {predictionCount > 0 && (
@@ -574,7 +848,7 @@ export default function GamesPage() {
         <div
           className="games-trade-overlay"
           role="presentation"
-          onMouseDown={() => setActiveMarket(null)}
+          onMouseDown={() => setActiveMarketId(null)}
         >
           <section
             className="games-trade-panel"
@@ -585,32 +859,44 @@ export default function GamesPage() {
           >
             <div className="games-trade-panel-head">
               <div>
-                <span className="games-market-icon">{activeMarket.icon}</span>
+                <span className="games-market-icon" aria-hidden="true">
+                  <activeMarket.icon size={18} strokeWidth={1.75} />
+                </span>
                 <strong>Make a prediction</strong>
               </div>
               <button
                 type="button"
-                onClick={() => setActiveMarket(null)}
+                onClick={() => setActiveMarketId(null)}
                 aria-label="Close prediction panel"
               >
                 <X size={19} />
               </button>
             </div>
             <h2 id="trade-title">{activeMarket.question}</h2>
+            <div className="games-trade-chart">
+              <div>
+                <strong>{activeYes}%</strong> chance · live
+              </div>
+              <LiveChart
+                values={activeMarket.history}
+                pulseKey={activeMarket.lastBet?.id ?? 0}
+                tall
+              />
+            </div>
             <div className="games-side-toggle">
               <button
                 type="button"
                 className={side === "YES" ? "active" : ""}
                 onClick={() => setSide("YES")}
               >
-                Yes · {activeMarket.yes}¢
+                Yes · {activeYes}¢
               </button>
               <button
                 type="button"
                 className={side === "NO" ? "active" : ""}
                 onClick={() => setSide("NO")}
               >
-                No · {100 - activeMarket.yes}¢
+                No · {100 - activeYes}¢
               </button>
             </div>
             <div className="games-stake-label">
@@ -627,8 +913,8 @@ export default function GamesPage() {
                 <button
                   key={amount}
                   type="button"
-                  disabled={amount > balance}
-                  onClick={() => setStake(amount)}
+                  disabled={stake >= balance}
+                  onClick={() => addStake(amount)}
                 >
                   +{amount}
                 </button>
@@ -636,9 +922,12 @@ export default function GamesPage() {
               <button type="button" onClick={() => setStake(maxStake)}>
                 Max
               </button>
+              <button type="button" onClick={() => setStake(0)} disabled={stake === 0}>
+                Clear
+              </button>
             </div>
             <div className="games-return-row">
-              <span>Potential return</span>
+              <span>Estimated return if {side} wins</span>
               <strong>{potentialReturn} pts</strong>
             </div>
             <button

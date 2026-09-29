@@ -153,14 +153,39 @@
 .games-market-card { border: 1px solid #dfe4eb; border-radius: 13px; background: white; padding: 18px; box-shadow: 0 2px 3px rgba(20,32,50,.02); transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease; }
 .games-market-card:hover { transform: translateY(-2px); border-color: #c9d2df; box-shadow: 0 13px 28px rgba(20,32,50,.07); }
 .games-market-meta { display: flex; align-items: center; justify-content: space-between; }
-.games-market-icon { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #e3e8ef; border-radius: 8px; background: #f9fafb; font-size: 19px; }
+.games-market-icon { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #e3e8ef; border-radius: 8px; background: #f9fafb; color: #475569; }
 .games-market-status { display: flex; align-items: center; gap: 6px; color: #8793a3; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .games-market-status span { width: 6px; height: 6px; border-radius: 50%; background: #2dbf7d; }
 .games-market-card h3 { max-width: 420px; margin-top: 18px; font-size: 18px; font-weight: 650; letter-spacing: -.025em; line-height: 1.25; }
-.games-probability-row { display: grid; grid-template-columns: 92px 1fr; align-items: end; gap: 10px; margin-top: 20px; }
-.games-probability-row strong { display: block; font-size: 34px; font-weight: 650; letter-spacing: -.05em; line-height: 1; }
-.games-probability-row span { display: block; margin-top: 4px; color: #94a0af; font-size: 10px; text-transform: uppercase; }
-.games-chart { min-width: 0; }
+.games-probability-row { display: grid; grid-template-columns: 96px 1fr; align-items: stretch; gap: 12px; margin-top: 18px; }
+.games-probability-row > div:first-child { display: flex; flex-direction: column; justify-content: flex-end; }
+.games-probability-row strong { display: block; width: fit-content; border-radius: 6px; font-size: 34px; font-weight: 650; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+.games-probability-row > div > span { display: block; margin-top: 4px; color: #94a0af; font-size: 10px; text-transform: uppercase; }
+.games-probability-row em { display: inline-flex; width: fit-content; align-items: center; gap: 3px; margin-top: 8px; border-radius: 999px; padding: 2px 7px; font-size: 10px; font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+.games-delta-up { background: #e8f7ef; color: #1e8256; }
+.games-delta-down { background: #fdeef0; color: #c53a4b; }
+.games-flash-up { animation: games-flash-up 900ms ease-out; }
+.games-flash-down { animation: games-flash-down 900ms ease-out; }
+@keyframes games-flash-up { 0% { background: rgba(45,191,125,.22); color: #1e8256; } 100% { background: transparent; } }
+@keyframes games-flash-down { 0% { background: rgba(212,61,79,.18); color: #c53a4b; } 100% { background: transparent; } }
+.games-live-chart { position: relative; height: 92px; min-width: 0; margin-right: 34px; }
+.games-live-chart.is-tall { height: 120px; }
+.games-live-chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.games-live-chart-label { position: absolute; right: -34px; transform: translateY(-50%); color: #9aa5b4; font-size: 9px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+.games-live-chart-dot { position: absolute; right: 0; width: 9px; height: 9px; border: 2px solid white; border-radius: 50%; background: #2388ff; box-shadow: 0 0 0 1px rgba(35,136,255,.35); transform: translate(50%, -50%); transition: top 320ms ease; }
+.games-live-chart-dot::after { position: absolute; inset: -6px; border-radius: 50%; background: #2388ff; content: ""; opacity: 0; animation: games-dot-pulse 1100ms ease-out; }
+.games-live-chart-dot.is-down::after { background: #d43d4f; }
+@keyframes games-dot-pulse { 0% { opacity: .45; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.6); } }
+.games-bet-ticker { height: 18px; margin-top: 12px; overflow: hidden; color: #7b8798; font-size: 11px; }
+.games-bet-ticker > span { display: block; animation: games-ticker-in 260ms ease-out; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.games-bet-ticker strong { color: #111827; font-weight: 650; }
+.games-bet-ticker .is-yes b { color: #1769e0; }
+.games-bet-ticker .is-no b { color: #d43d4f; }
+.games-bet-ticker .is-idle { color: #a7b0bd; animation: none; }
+@keyframes games-ticker-in { from { opacity: 0; transform: translateY(8px); } }
+.games-trade-chart { margin-top: 14px; border: 1px solid #edf0f4; border-radius: 10px; padding: 10px 12px 10px 10px; }
+.games-trade-chart > div:first-child { margin-bottom: 6px; color: #7e8a9b; font-size: 11px; }
+.games-trade-chart strong { color: #111827; font-size: 15px; }
 .games-market-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
 .games-market-actions button { display: flex; min-height: 42px; align-items: center; justify-content: space-between; border-radius: 7px; padding: 0 12px; font-size: 12px; font-weight: 650; transition: filter 140ms ease, transform 140ms ease; }
 .games-market-actions button:hover { transform: translateY(-1px); filter: brightness(.98); }
@@ -201,7 +226,7 @@
 .games-stake-value { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; border-bottom: 1px solid #dfe4eb; padding-bottom: 12px; color: #1769e0; }
 .games-stake-value strong { color: #111827; font-size: 38px; font-weight: 600; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
 .games-stake-value span { color: #909bab; font-size: 10px; font-weight: 700; letter-spacing: .1em; }
-.games-stake-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.games-stake-chips { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px; }
 .games-stake-chips button { border: 1px solid #dfe4eb; border-radius: 7px; padding: 8px 4px; color: #4f5d70; font-size: 10px; font-weight: 700; }
 .games-stake-chips button:disabled { opacity: .35; }
 .games-return-row { display: flex; align-items: center; justify-content: space-between; margin-top: 23px; color: #7e8a9b; font-size: 11px; }
@@ -224,7 +249,6 @@
   .games-market-heading { align-items: stretch; flex-direction: column; }
   .games-market-balance { min-width: 0; }
   .games-markets-grid { grid-template-columns: 1fr; }
-  .games-sort-button { display: none; }
   .games-steps-grid { grid-template-columns: 1fr; }
   .games-steps-grid article { min-height: 230px; }
   .games-coming-card { grid-template-columns: 1fr; padding: 29px 24px; }
@@ -237,5 +261,7 @@
 @media (prefers-reduced-motion: reduce) {
   .games-confetti i { animation: none; }
   .games-trade-panel, .games-toast { animation: none; }
+  .games-flash-up, .games-flash-down, .games-bet-ticker > span, .games-live-chart-dot::after { animation: none; }
+  .games-live-chart-dot { transition: none; }
   .games-page * { scroll-behavior: auto !important; }
 }

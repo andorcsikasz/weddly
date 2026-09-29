@@ -63,50 +63,56 @@ export function MarketMiniChart({
 
   const gradId = `mchart-${stroke.replace(/[^a-zA-Z0-9]/g, "")}`;
 
+  // The line is stretched to the container (`preserveAspectRatio="none"`),
+  // which would squash an SVG <circle> into an oval — so the end dot is an
+  // HTML element laid over the same coordinates instead.
   return (
-    <svg
-      viewBox={`0 0 ${w} ${h}`}
-      className="h-full w-full overflow-visible"
-      role="img"
-      aria-label={ariaLabel}
-      preserveAspectRatio="none"
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity="0.32" />
-          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <line
-        x1="0"
-        y1={mid}
-        x2={w}
-        y2={mid}
-        stroke="currentColor"
-        opacity="0.16"
-        strokeWidth="1"
-        strokeDasharray="2 3"
-        vectorEffect="non-scaling-stroke"
+    <div className="relative h-full w-full">
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="h-full w-full overflow-visible"
+        role="img"
+        aria-label={ariaLabel}
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={stroke} stopOpacity="0.32" />
+            <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <line
+          x1="0"
+          y1={mid}
+          x2={w}
+          y2={mid}
+          stroke="currentColor"
+          opacity="0.16"
+          strokeWidth="1"
+          strokeDasharray="2 3"
+          vectorEffect="non-scaling-stroke"
+        />
+        <polygon points={area} fill={`url(#${gradId})`} />
+        <polyline
+          points={points}
+          fill="none"
+          stroke={stroke}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          left: `${(end.x / w) * 100}%`,
+          top: `${(end.y / h) * 100}%`,
+          background: stroke,
+          boxShadow: `0 0 0 4px color-mix(in srgb, ${stroke} 22%, transparent)`,
+        }}
       />
-      <polygon points={area} fill={`url(#${gradId})`} />
-      <polyline
-        points={points}
-        fill="none"
-        stroke={stroke}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-      <circle
-        cx={end.x}
-        cy={end.y}
-        r="4.5"
-        fill={stroke}
-        opacity="0.22"
-        vectorEffect="non-scaling-stroke"
-      />
-      <circle cx={end.x} cy={end.y} r="2.4" fill={stroke} vectorEffect="non-scaling-stroke" />
-    </svg>
+    </div>
   );
 }
