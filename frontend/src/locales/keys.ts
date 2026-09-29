@@ -6684,6 +6684,10 @@ export interface LocaleMessages {
     /** Title + popup heading of a map marker several suppliers share (they sit
      *  on the same address, or on the same town-centre fallback coordinate). */
     map_group_count: string;
+    map_zoom_in: string;
+    map_zoom_out: string;
+    map_locate: string;
+    map_locate_failed: string;
     submit: {
       title: string;
       intro: string;

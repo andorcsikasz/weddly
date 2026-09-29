@@ -2351,6 +2351,58 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   z-index: 0;
 }
 
+/* Directory map (SupplierMap), styled after Google Maps. The place card is a
+   rounded, borderless sheet whose photo runs to the edge, so the popup's own
+   padding goes and the card pads itself. */
+.supplier-map .leaflet-popup-content-wrapper {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow:
+    0 2px 6px rgba(16, 24, 48, 0.18),
+    0 12px 28px -8px rgba(16, 24, 48, 0.3);
+}
+.supplier-map .leaflet-popup-content {
+  margin: 0;
+  width: auto !important;
+}
+.supplier-map .leaflet-popup-close-button {
+  z-index: 1;
+  top: 6px !important;
+  right: 6px !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 18px !important;
+  line-height: 24px !important;
+}
+.supplier-map .leaflet-control-attribution {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.75);
+}
+/* Place names beside a pin, with the white halo Google uses so the text reads
+   over any tile, satellite included. */
+.supplier-pin-label {
+  text-shadow:
+    0 0 2px #fff,
+    0 0 2px #fff,
+    0 0 3px #fff,
+    0 0 4px #fff;
+}
+/* The search bar and chips FLOAT over the map in map view. The overlay spans
+   the map's full width, so it must let drags and clicks through everywhere
+   except the controls themselves. */
+.map-chrome {
+  pointer-events: none;
+}
+.map-chrome :is(button, a, select, input, [role="listbox"], [data-tour-target="vendors-search"]) {
+  pointer-events: auto;
+}
+.map-chrome .chain-step {
+  box-shadow: 0 1px 4px rgba(16, 24, 48, 0.16);
+}
+
 /* Banner stack — the strips above the workspace header (demo band, verify
    nudge, billing band) used to run as a stack of full-bleed stripes, which
    read as one striped block rather than as separate messages. They now sit

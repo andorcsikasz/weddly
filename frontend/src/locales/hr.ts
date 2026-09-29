@@ -5617,6 +5617,10 @@ const hr: LocaleMessages = {
     view_map: "Karta",
     map_missing_count: "{n} dobavljača još nije na karti.",
     map_group_count: "{n} dobavljača na ovoj točki",
+    map_zoom_in: "Povećaj",
+    map_zoom_out: "Smanji",
+    map_locate: "Prikaži moju lokaciju",
+    map_locate_failed: "Nismo mogli dohvatiti tvoju lokaciju.",
     submit: {
       title: "Preporučite dobavljača",
       intro: "Dovoljno je nekoliko podataka, drugi će ih parovi brže pronaći.",

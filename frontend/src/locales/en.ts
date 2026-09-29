@@ -5577,6 +5577,10 @@ const en: LocaleMessages = {
     view_map: "Map",
     map_missing_count: "{n} suppliers aren't on the map yet.",
     map_group_count: "{n} suppliers at this point",
+    map_zoom_in: "Zoom in",
+    map_zoom_out: "Zoom out",
+    map_locate: "Show my location",
+    map_locate_failed: "We couldn't get your location.",
     submit: {
       title: "Recommend a supplier",
       intro: "A few details is all it takes, other couples will find them faster.",

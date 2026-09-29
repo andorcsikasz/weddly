@@ -5729,6 +5729,10 @@ const de: LocaleMessages = {
     view_map: "Karte",
     map_missing_count: "{n} Dienstleister sind noch nicht auf der Karte.",
     map_group_count: "{n} Dienstleister an diesem Punkt",
+    map_zoom_in: "Vergrößern",
+    map_zoom_out: "Verkleinern",
+    map_locate: "Meinen Standort zeigen",
+    map_locate_failed: "Dein Standort konnte nicht ermittelt werden.",
     submit: {
       title: "Dienstleister empfehlen",
       intro: "Ein paar Angaben genügen, andere Paare finden ihn dann schneller.",

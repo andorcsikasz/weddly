@@ -5627,6 +5627,10 @@ const hu: LocaleMessages = {
     view_map: "Térkép",
     map_missing_count: "{n} szolgáltató nincs még a térképen.",
     map_group_count: "{n} szolgáltató ezen a ponton",
+    map_zoom_in: "Nagyítás",
+    map_zoom_out: "Kicsinyítés",
+    map_locate: "Saját hely mutatása",
+    map_locate_failed: "Nem sikerült lekérni a helyzetedet.",
     submit: {
       title: "Ajánlj egy szolgáltatót",
       intro: "Pár adat, és más párok is könnyebben rátalálnak.",

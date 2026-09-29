@@ -181,6 +181,12 @@ const VIEW_MODES = [
  *  of settling a category read as peers on a single line, instead of a chip, a
  *  chip and a full-width card. Same geometry as the category pills to their
  *  left — only the fill differs. */
+/** The map view's frame: the viewport below the app header, less the shell's
+ *  own padding (and the phone tab bar), full-bleed on a phone the way a maps
+ *  app is, a rounded sheet from sm: up. */
+const MAP_FRAME =
+  "-mx-4 h-[calc(100dvh-13rem)] min-h-[420px] rounded-none border-y border-paper-300 dark:border-umber-700 sm:mx-0 sm:h-[calc(100dvh-8.5rem)] sm:min-h-[520px] sm:rounded-2xl sm:border sm:shadow-pop";
+
 const ACTION_CHIP =
   "inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-medium transition";
 const ACTION_CHIP_IDLE =
@@ -414,6 +420,19 @@ export default function SuppliersPage() {
     return () => ro.disconnect();
   }, []);
 
+  // Map view floats the search bar + chips over the map (Google Maps style).
+  // The map needs their height so fitting the pins never tucks one under them.
+  const [mapChrome, setMapChrome] = useState<HTMLDivElement | null>(null);
+  const [mapChromeHeight, setMapChromeHeight] = useState(0);
+  useEffect(() => {
+    if (!mapChrome) return;
+    const measure = () => setMapChromeHeight(mapChrome.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(mapChrome);
+    return () => ro.disconnect();
+  }, [mapChrome]);
+
   // Filter state lives in URL params so back-button restores it.
   const query = params.get("q") ?? "";
   // Pre-normalized form used both by the free-text filter and by the
@@ -441,6 +460,10 @@ export default function SuppliersPage() {
     if (v === "line") return "line";
     return "grid";
   })();
+  const isMap = viewMode === "map";
+  // Idle chips are see-through on the page, which would leave them unreadable
+  // over map tiles; floating, they take a solid fill and a lift.
+  const floatBg = isMap ? " !bg-paper-50 shadow-soft dark:!bg-umber-800" : "";
   // Price band: single exact 1..5 match. Five simple dots in a row; clicking
   // dot N shows suppliers whose declared band equals N (not "up to N"). Click
   // the same dot again to clear. Suppliers without a declared price band pass
@@ -1751,7 +1774,7 @@ export default function SuppliersPage() {
           here; they now live inline as a dedicated "Esküvőszervező" step in the
           supplier chain, so the directory owns the full page width. */}
       <div>
-        <div className="min-w-0">
+        <div className={isMap ? "relative min-w-0" : "min-w-0"}>
           {/* Chrome, rebuilt 2026-07-27 to read like a marketplace app rather
               than a control panel, then again 2026-09-14 to fold the button
               row into the search bar's own line — a header row that held
@@ -1779,264 +1802,276 @@ export default function SuppliersPage() {
               rather than squeezing the search field down to nothing. Messages
               stays icon-only at every width — sharing this row is what the
               text label could no longer afford. */}
-          <div className="mb-3 flex items-center gap-2 sm:gap-3">
-            <div
-              data-tour-target="vendors-search"
-              className="flex h-12 min-w-0 flex-1 items-center rounded-full border border-paper-300 bg-white shadow-soft transition focus-within:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-paper-200"
-            >
-              <Combobox
-                className="h-full min-w-0 flex-1"
-                value={query}
-                onChange={setQuery}
-                onSelect={onSearchSuggestion}
-                options={searchSuggestions}
-                ariaLabel={t("suppliers.search_label")}
-                placeholder={t("suppliers.search_placeholder")}
-                leadingIcon={Search}
-                onClear={() => setQuery("")}
-                inputClassName="h-full w-full bg-transparent pl-10 pr-9 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300"
-              />
-              <span
-                className="h-6 w-px shrink-0 bg-paper-300 dark:bg-umber-700"
-                aria-hidden="true"
-              />
-              <Combobox
-                className="h-full w-24 shrink-0 sm:w-56"
-                value={cityInput}
-                onChange={(v) => {
-                  setCityInput(v);
-                  if (v.trim() === "") setCityFilter("");
-                }}
-                onSelect={(opt) => {
-                  setCityFilter(opt.id);
-                  setCityInput(opt.label);
-                }}
-                options={cityOptions}
-                ariaLabel={t("suppliers.city_label")}
-                placeholder={t("suppliers.city_all")}
-                leadingIcon={MapPin}
-                onClear={() => {
-                  setCityFilter("");
-                  setCityInput("");
-                }}
-                suffix={
-                  cityNearbyKm != null ? (
-                    <span className="hidden sm:inline">
-                      {t("suppliers.nearby_plus_km", { km: cityNearbyKm })}
-                    </span>
-                  ) : undefined
-                }
-                inputClassName="h-full w-full bg-transparent pl-8 pr-6 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300 sm:pr-20"
-              />
-            </div>
+          {/* In map view everything from here to the nearby banner floats over
+              the top of the map, the way Google Maps lays its search box and
+              category chips over the tiles. `map-chrome` (index.css) lets the
+              drags through everywhere except the controls themselves. */}
+          <div
+            ref={setMapChrome}
+            className={
+              isMap
+                ? "map-chrome absolute inset-x-0 top-0 z-10 -mx-4 px-4 pt-3 sm:mx-0 sm:px-4 sm:pt-4"
+                : undefined
+            }
+          >
+            <div className="mb-3 flex items-center gap-2 sm:gap-3">
+              <div
+                data-tour-target="vendors-search"
+                className={`flex h-12 min-w-0 flex-1 items-center rounded-full border border-paper-300 bg-white ${isMap ? "shadow-pop lg:max-w-2xl dark:border-umber-600" : "shadow-soft"} transition focus-within:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-paper-200`}
+              >
+                <Combobox
+                  className="h-full min-w-0 flex-1"
+                  value={query}
+                  onChange={setQuery}
+                  onSelect={onSearchSuggestion}
+                  options={searchSuggestions}
+                  ariaLabel={t("suppliers.search_label")}
+                  placeholder={t("suppliers.search_placeholder")}
+                  leadingIcon={Search}
+                  onClear={() => setQuery("")}
+                  inputClassName="h-full w-full bg-transparent pl-10 pr-9 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300"
+                />
+                <span
+                  className="h-6 w-px shrink-0 bg-paper-300 dark:bg-umber-700"
+                  aria-hidden="true"
+                />
+                <Combobox
+                  className="h-full w-24 shrink-0 sm:w-56"
+                  value={cityInput}
+                  onChange={(v) => {
+                    setCityInput(v);
+                    if (v.trim() === "") setCityFilter("");
+                  }}
+                  onSelect={(opt) => {
+                    setCityFilter(opt.id);
+                    setCityInput(opt.label);
+                  }}
+                  options={cityOptions}
+                  ariaLabel={t("suppliers.city_label")}
+                  placeholder={t("suppliers.city_all")}
+                  leadingIcon={MapPin}
+                  onClear={() => {
+                    setCityFilter("");
+                    setCityInput("");
+                  }}
+                  suffix={
+                    cityNearbyKm != null ? (
+                      <span className="hidden sm:inline">
+                        {t("suppliers.nearby_plus_km", { km: cityNearbyKm })}
+                      </span>
+                    ) : undefined
+                  }
+                  inputClassName="h-full w-full bg-transparent pl-8 pr-6 text-[15px] text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-300 sm:pr-20"
+                />
+              </div>
 
-            {/* Messages lives under this page (one row in the top control
+              {/* Messages lives under this page (one row in the top control
                 band), so the couple meets their vendor conversations where
                 they shortlisted the vendor. The blush dot carries the sum of
                 unseen vendor replies; the pill is a plain link — there is no
                 need for state to change its look server-side. */}
-            <Link
-              to="/app/vendors/messages"
-              aria-label={t("nav.messages")}
-              title={t("nav.messages")}
-              className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50"
-            >
-              <MessageSquare size={16} aria-hidden />
-              {unreadCount > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-paper-50 dark:ring-umber-800">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </Link>
+              <Link
+                to="/app/vendors/messages"
+                aria-label={t("nav.messages")}
+                title={t("nav.messages")}
+                className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 ${isMap ? "shadow-pop lg:ml-auto" : ""} text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50`}
+              >
+                <MessageSquare size={16} aria-hidden />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blush-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-paper-50 dark:ring-umber-800">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Link>
 
-            {/* Icon-only view switch: three glyphs, one filled. The words
+              {/* Icon-only view switch: three glyphs, one filled. The words
                 ride in the tooltip + aria-label. Shown here from sm: up only
                 — below that it moves into the chip row. */}
-            <div
-              role="group"
-              aria-label={t("suppliers.view_label")}
-              className="hidden shrink-0 items-center gap-1 rounded-full border border-paper-300 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800 sm:inline-flex"
-            >
-              {VIEW_MODES.map(({ mode, icon: VIcon, label }) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setViewMode(mode)}
-                  aria-pressed={viewMode === mode}
-                  aria-label={t(`suppliers.${label}`)}
-                  title={t(`suppliers.${label}`)}
-                  className={
-                    viewMode === mode
-                      ? "inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                      : "inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-                  }
-                >
-                  <VIcon size={15} aria-hidden />
-                </button>
-              ))}
-            </div>
-            {/* Icon-only at every width, same reasoning as Messages above.
+              <div
+                role="group"
+                aria-label={t("suppliers.view_label")}
+                className={`hidden shrink-0 items-center gap-1 rounded-full border border-paper-300 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800 sm:inline-flex ${isMap ? "shadow-pop" : ""}`}
+              >
+                {VIEW_MODES.map(({ mode, icon: VIcon, label }) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setViewMode(mode)}
+                    aria-pressed={viewMode === mode}
+                    aria-label={t(`suppliers.${label}`)}
+                    title={t(`suppliers.${label}`)}
+                    className={
+                      viewMode === mode
+                        ? "inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                        : "inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+                    }
+                  >
+                    <VIcon size={15} aria-hidden />
+                  </button>
+                ))}
+              </div>
+              {/* Icon-only at every width, same reasoning as Messages above.
                 Shown here from sm: up only — below that it moves into the
                 chip row. */}
-            <button
-              type="button"
-              onClick={() => setSubmitOpen(true)}
-              aria-label={t("suppliers.drop_your_own")}
-              title={t("suppliers.drop_your_own")}
-              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50 sm:inline-flex"
-            >
-              <Plus size={16} aria-hidden />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => setSubmitOpen(true)}
+                aria-label={t("suppliers.drop_your_own")}
+                title={t("suppliers.drop_your_own")}
+                className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50 sm:inline-flex ${isMap ? "shadow-pop" : ""}`}
+              >
+                <Plus size={16} aria-hidden />
+              </button>
+            </div>
 
-          {/* One line of chips. Everything here is one tap from a decision:
+            {/* One line of chips. Everything here is one tap from a decision:
               the three the couple flips constantly stay out, the scoping
               controls live behind the first chip. Scrolls sideways on a phone
               rather than wrapping into a second and third row. */}
-          <div className="mb-3 -mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
-            {/* The view switch and "Recommend a supplier" live here below
+            <div className="mb-3 -mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+              {/* The view switch and "Recommend a supplier" live here below
                 sm: — see the search row above, where they sit instead once
                 there is room beside it. */}
-            <div
-              role="group"
-              aria-label={t("suppliers.view_label")}
-              className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-paper-300 bg-paper-50 p-0.5 dark:border-umber-700 dark:bg-umber-800 sm:hidden"
-            >
-              {VIEW_MODES.map(({ mode, icon: VIcon, label }) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setViewMode(mode)}
-                  aria-pressed={viewMode === mode}
-                  aria-label={t(`suppliers.${label}`)}
-                  title={t(`suppliers.${label}`)}
-                  className={
-                    viewMode === mode
-                      ? "inline-flex h-11 w-11 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                      : "inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-                  }
-                >
-                  <VIcon size={14} aria-hidden />
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setSubmitOpen(true)}
-              aria-label={t("suppliers.drop_your_own")}
-              title={t("suppliers.drop_your_own")}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200 sm:hidden"
-            >
-              <Plus size={15} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(true)}
-              aria-haspopup="dialog"
-              className={
-                scopeFilterCount > 0
-                  ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                  : "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm font-medium text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
-              }
-            >
-              <SlidersHorizontal size={14} aria-hidden />
-              {t("suppliers.filters_button")}
-              {scopeFilterCount > 0 && <span className="tabular-nums">{scopeFilterCount}</span>}
-            </button>
-            {/* A "0 saved" chip is a control that can't do anything — it used
+              <div
+                role="group"
+                aria-label={t("suppliers.view_label")}
+                className={`inline-flex shrink-0 items-center gap-0.5 rounded-full border border-paper-300 bg-paper-50 p-0.5 dark:border-umber-700 dark:bg-umber-800 sm:hidden ${isMap ? "shadow-soft" : ""}`}
+              >
+                {VIEW_MODES.map(({ mode, icon: VIcon, label }) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setViewMode(mode)}
+                    aria-pressed={viewMode === mode}
+                    aria-label={t(`suppliers.${label}`)}
+                    title={t(`suppliers.${label}`)}
+                    className={
+                      viewMode === mode
+                        ? "inline-flex h-11 w-11 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                        : "inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+                    }
+                  >
+                    <VIcon size={14} aria-hidden />
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setSubmitOpen(true)}
+                aria-label={t("suppliers.drop_your_own")}
+                title={t("suppliers.drop_your_own")}
+                className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200 sm:hidden${floatBg}`}
+              >
+                <Plus size={15} aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(true)}
+                aria-haspopup="dialog"
+                className={
+                  scopeFilterCount > 0
+                    ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : `inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm font-medium text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200${floatBg}`
+                }
+              >
+                <SlidersHorizontal size={14} aria-hidden />
+                {t("suppliers.filters_button")}
+                {scopeFilterCount > 0 && <span className="tabular-nums">{scopeFilterCount}</span>}
+              </button>
+              {/* A "0 saved" chip is a control that can't do anything — it used
                 to sit here greyed out, teaching nobody. It appears the moment
                 there is something to filter to. */}
-            {(saved.size > 0 || showSavedOnly) && (
+              {(saved.size > 0 || showSavedOnly) && (
+                <button
+                  type="button"
+                  onClick={toggleSavedFilter}
+                  aria-pressed={showSavedOnly}
+                  aria-label={t("suppliers.saved_filter", { n: saved.size })}
+                  title={t("suppliers.saved_filter", { n: saved.size })}
+                  className={
+                    showSavedOnly
+                      ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                      : `inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200${floatBg}`
+                  }
+                >
+                  <Heart size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
+                  <span className="tabular-nums">{saved.size}</span>
+                </button>
+              )}
+              {(pickedCount > 0 || showPickedOnly) && (
+                <button
+                  type="button"
+                  onClick={togglePickedFilter}
+                  aria-pressed={showPickedOnly}
+                  aria-label={t(
+                    showPickedOnly
+                      ? "suppliers.picked_filter_active"
+                      : "suppliers.picked_filter_idle",
+                    { n: pickedCount },
+                  )}
+                  title={t(
+                    showPickedOnly
+                      ? "suppliers.picked_filter_active"
+                      : "suppliers.picked_filter_idle",
+                    { n: pickedCount },
+                  )}
+                  className={
+                    showPickedOnly
+                      ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                      : `inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200${floatBg}`
+                  }
+                >
+                  <BookmarkCheck size={14} aria-hidden />
+                  <span className="tabular-nums">{pickedCount}</span>
+                </button>
+              )}
               <button
                 type="button"
-                onClick={toggleSavedFilter}
-                aria-pressed={showSavedOnly}
-                aria-label={t("suppliers.saved_filter", { n: saved.size })}
-                title={t("suppliers.saved_filter", { n: saved.size })}
+                onClick={toggleVerifiedFilter}
+                aria-pressed={showVerifiedOnly}
+                title={t("suppliers.verified_filter")}
+                // Active state takes the `verified` azure rather than the ink of
+                // the other chips: this filter is the badge, so it turns the
+                // badge's own colour on. The token reads on light paper and dark
+                // umber alike, so there is no dark-mode flip here.
                 className={
-                  showSavedOnly
-                    ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                    : "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
+                  showVerifiedOnly
+                    ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-verified bg-verified px-3.5 text-sm font-medium text-white"
+                    : `inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200${floatBg}`
                 }
               >
-                <Heart size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
-                <span className="tabular-nums">{saved.size}</span>
+                <BadgeCheck
+                  size={14}
+                  aria-hidden
+                  className={showVerifiedOnly ? "" : "text-verified"}
+                />
+                {t("suppliers.verified_filter")}
               </button>
-            )}
-            {(pickedCount > 0 || showPickedOnly) && (
-              <button
-                type="button"
-                onClick={togglePickedFilter}
-                aria-pressed={showPickedOnly}
-                aria-label={t(
-                  showPickedOnly
-                    ? "suppliers.picked_filter_active"
-                    : "suppliers.picked_filter_idle",
-                  { n: pickedCount },
-                )}
-                title={t(
-                  showPickedOnly
-                    ? "suppliers.picked_filter_active"
-                    : "suppliers.picked_filter_idle",
-                  { n: pickedCount },
-                )}
-                className={
-                  showPickedOnly
-                    ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                    : "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
-                }
-              >
-                <BookmarkCheck size={14} aria-hidden />
-                <span className="tabular-nums">{pickedCount}</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={toggleVerifiedFilter}
-              aria-pressed={showVerifiedOnly}
-              title={t("suppliers.verified_filter")}
-              // Active state takes the `verified` azure rather than the ink of
-              // the other chips: this filter is the badge, so it turns the
-              // badge's own colour on. The token reads on light paper and dark
-              // umber alike, so there is no dark-mode flip here.
-              className={
-                showVerifiedOnly
-                  ? "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-verified bg-verified px-3.5 text-sm font-medium text-white"
-                  : "inline-flex h-11 shrink-0 sm:h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
-              }
-            >
-              <BadgeCheck
-                size={14}
-                aria-hidden
-                className={showVerifiedOnly ? "" : "text-verified"}
-              />
-              {t("suppliers.verified_filter")}
-            </button>
-            {/* Sort stays a native select so it keeps the platform picker on a
+              {/* Sort stays a native select so it keeps the platform picker on a
                 phone; only the box around it is ours. */}
-            <div className="relative shrink-0">
-              <select
-                className="h-11 appearance-none sm:h-9 rounded-full border border-paper-300 bg-transparent pl-3.5 pr-8 text-sm text-ink-800 transition hover:border-ink-900 focus:border-ink-900 focus:outline-none dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
-                value={sortMode}
-                onChange={(e) =>
-                  setSortMode(e.target.value as "top" | "alpha" | "price_asc" | "price_desc")
-                }
-                aria-label={t("suppliers.sort_label")}
-              >
-                <option value="top">{t("suppliers.sort_top")}</option>
-                <option value="price_asc">{t("suppliers.sort_price_asc")}</option>
-                <option value="price_desc">{t("suppliers.sort_price_desc")}</option>
-                <option value="alpha">{t("suppliers.sort_alpha")}</option>
-              </select>
-              <ChevronDown
-                size={14}
-                aria-hidden
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 dark:text-umber-200"
-              />
+              <div className="relative shrink-0">
+                <select
+                  className={`h-11 appearance-none sm:h-9 rounded-full border border-paper-300 ${isMap ? "bg-paper-50 shadow-soft dark:bg-umber-800" : "bg-transparent"} pl-3.5 pr-8 text-sm text-ink-800 transition hover:border-ink-900 focus:border-ink-900 focus:outline-none dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200`}
+                  value={sortMode}
+                  onChange={(e) =>
+                    setSortMode(e.target.value as "top" | "alpha" | "price_asc" | "price_desc")
+                  }
+                  aria-label={t("suppliers.sort_label")}
+                >
+                  <option value="top">{t("suppliers.sort_top")}</option>
+                  <option value="price_asc">{t("suppliers.sort_price_asc")}</option>
+                  <option value="price_desc">{t("suppliers.sort_price_desc")}</option>
+                  <option value="alpha">{t("suppliers.sort_alpha")}</option>
+                </select>
+                <ChevronDown
+                  size={14}
+                  aria-hidden
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 dark:text-umber-200"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Step chain. Sequence numbers dropped — the icons carry the meaning,
+            {/* Step chain. Sequence numbers dropped — the icons carry the meaning,
           and the left-to-right order carries the sequence. The little "→"
           between the steps went with the 2026-07-27 pass: nine arrows are
           nine pieces of punctuation to read past, and the row already reads
@@ -2044,123 +2079,123 @@ export default function SuppliersPage() {
           sub-category) that turn sage as the couple locks each pick in.
           The right-edge fade only shows when the row actually overflows —
           otherwise it leaves a phantom white slab next to the last step. */}
-          <div className="relative mb-2">
-            {/* snap-x mandatory keeps each step centred under a flicked thumb on
+            <div className="relative mb-2">
+              {/* snap-x mandatory keeps each step centred under a flicked thumb on
             touch widths — without it the row drifts mid-icon and the user
             has to nudge it back. snap-start on each child anchors the
             alignment to the leading edge of the step group. */}
-            <div ref={chainScrollRef} className="overflow-x-auto snap-x snap-mandatory pb-1">
-              <div className="flex min-w-max items-stretch gap-2">
-                {SUPPLIER_GROUPS.map((g) => {
-                  const Icon = GROUP_ICON[g.id];
-                  const progress = groupSelectionProgress.byGroup.get(g.id) ?? {
-                    done: 0,
-                    total: g.categories.length,
-                  };
-                  return (
-                    <div key={g.id} className="flex snap-start items-stretch">
-                      <ChainStep
-                        active={activeGroup === g.id}
-                        // Re-click on the active group clears the filter — the
-                        // "Mind" tile is gone so this toggle is the only way back.
-                        onClick={() => pickGroup(activeGroup === g.id ? null : g.id)}
-                        label={t(`suppliers.group.${g.id}`)}
-                        count={groupCounts.get(g.id) ?? 0}
-                        icon={<Icon size={16} />}
-                        progress={progress}
-                        t={t}
-                      />
-                    </div>
-                  );
-                })}
+              <div ref={chainScrollRef} className="overflow-x-auto snap-x snap-mandatory pb-1">
+                <div className="flex min-w-max items-stretch gap-2">
+                  {SUPPLIER_GROUPS.map((g) => {
+                    const Icon = GROUP_ICON[g.id];
+                    const progress = groupSelectionProgress.byGroup.get(g.id) ?? {
+                      done: 0,
+                      total: g.categories.length,
+                    };
+                    return (
+                      <div key={g.id} className="flex snap-start items-stretch">
+                        <ChainStep
+                          active={activeGroup === g.id}
+                          // Re-click on the active group clears the filter — the
+                          // "Mind" tile is gone so this toggle is the only way back.
+                          onClick={() => pickGroup(activeGroup === g.id ? null : g.id)}
+                          label={t(`suppliers.group.${g.id}`)}
+                          count={groupCounts.get(g.id) ?? 0}
+                          icon={<Icon size={16} />}
+                          progress={progress}
+                          t={t}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+              {/* Right-edge fade — only when the row overflows. */}
+              {chainOverflows && !isMap && (
+                <div
+                  className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-paper-50 dark:from-umber-900 to-transparent"
+                  aria-hidden
+                />
+              )}
             </div>
-            {/* Right-edge fade — only when the row overflows. */}
-            {chainOverflows && (
-              <div
-                className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-paper-50 dark:from-umber-900 to-transparent"
-                aria-hidden
-              />
-            )}
-          </div>
 
-          {/* Sub-category pills (only when a group is selected). Each pill shows
+            {/* Sub-category pills (only when a group is selected). Each pill shows
           the count of suppliers in that category after the non-category
           filters, so couples can pre-scan where the inventory lives.
           On mobile the row becomes a horizontal snap-scroller — wrapping
           to a second/third line was the "ticketek szétcsúsztak" complaint
           from the May 2026 mobile audit (compact, predictable horizontal
           motion beats a chaotic two-line wrap at thumb width). */}
-          {activeGroup && subCategories.length > 0 && (
-            <div className="mb-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-3 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-              <button
-                type="button"
-                onClick={() => setActiveCat(null)}
-                className={
-                  activeCat === null
-                    ? "inline-flex items-center gap-1.5 rounded-full border border-transparent stationery-coffee px-3.5 py-1.5 text-xs font-medium text-paper-50"
-                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 py-1.5 text-xs text-ink-700 transition hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
-                }
-              >
-                <span className="lowercase">{t("suppliers.filter_all")}</span>
-                <span
+            {activeGroup && subCategories.length > 0 && (
+              <div className="mb-2 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-3 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveCat(null)}
                   className={
                     activeCat === null
-                      ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
-                      : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
+                      ? "inline-flex items-center gap-1.5 rounded-full border border-transparent stationery-coffee px-3.5 py-1.5 text-xs font-medium text-paper-50"
+                      : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 py-1.5 text-xs text-ink-700 transition hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
                   }
                 >
-                  {inGroupTotal}
-                </span>
-              </button>
-              {subCategories.map((c) => {
-                const Icon = CATEGORY_ICON[c];
-                const selected = activeCat === c;
-                const count = subCategoryCounts.get(c) ?? 0;
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setActiveCat(c)}
+                  <span className="lowercase">{t("suppliers.filter_all")}</span>
+                  <span
                     className={
-                      selected
-                        ? "inline-flex items-center gap-1.5 rounded-full border border-transparent stationery-coffee px-3.5 py-1.5 text-xs font-medium text-paper-50"
-                        : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 py-1.5 text-xs text-ink-700 transition hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
+                      activeCat === null
+                        ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
+                        : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
                     }
                   >
-                    <Icon size={13} />
-                    <span className="lowercase">{t(`suppliers.cat.${c}`)}</span>
-                    <span
+                    {inGroupTotal}
+                  </span>
+                </button>
+                {subCategories.map((c) => {
+                  const Icon = CATEGORY_ICON[c];
+                  const selected = activeCat === c;
+                  const count = subCategoryCounts.get(c) ?? 0;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setActiveCat(c)}
                       className={
                         selected
-                          ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
-                          : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
+                          ? "inline-flex items-center gap-1.5 rounded-full border border-transparent stationery-coffee px-3.5 py-1.5 text-xs font-medium text-paper-50"
+                          : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 py-1.5 text-xs text-ink-700 transition hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
                       }
                     >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-              {/* Right-floating action group: the cake & drinks calculator (only
+                      <Icon size={13} />
+                      <span className="lowercase">{t(`suppliers.cat.${c}`)}</span>
+                      <span
+                        className={
+                          selected
+                            ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
+                            : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
+                        }
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+                {/* Right-floating action group: the cake & drinks calculator (only
               for the food/drink categories it estimates) sits just left of
               "Csinálom magam". On sm+ the pair sits flush-right of the pill
               row via `ml-auto`; on mobile the row is a horizontal scroller so
               they ride as the last shrink-0 chips. */}
-              <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
-                {activeCat && CALC_CATEGORIES.has(activeCat) && (
-                  <button
-                    type="button"
-                    onClick={() => setCalcOpen(true)}
-                    aria-label={t("suppliers.calc.open_aria")}
-                    title={t("suppliers.calc.open_aria")}
-                    className={`${ACTION_CHIP} ${ACTION_CHIP_IDLE}`}
-                  >
-                    <Calculator size={13} aria-hidden />
-                    <span className="lowercase">{t("suppliers.calc.open")}</span>
-                  </button>
-                )}
-                {/* "Már foglaltam" — same weight as its two neighbours: the
+                <div className={isMap ? "hidden" : "flex shrink-0 items-center gap-2 sm:ml-auto"}>
+                  {activeCat && CALC_CATEGORIES.has(activeCat) && (
+                    <button
+                      type="button"
+                      onClick={() => setCalcOpen(true)}
+                      aria-label={t("suppliers.calc.open_aria")}
+                      title={t("suppliers.calc.open_aria")}
+                      className={`${ACTION_CHIP} ${ACTION_CHIP_IDLE}`}
+                    >
+                      <Calculator size={13} aria-hidden />
+                      <span className="lowercase">{t("suppliers.calc.open")}</span>
+                    </button>
+                  )}
+                  {/* "Már foglaltam" — same weight as its two neighbours: the
                     couple is choosing between three ways to settle a category
                     (booked it elsewhere / doing it ourselves / don't need it),
                     so all three are one row of peer chips. This one OPENS A
@@ -2170,198 +2205,201 @@ export default function SuppliersPage() {
                     form is what settles the category, and that goes through the
                     same one-pick-per-category storage, so it replaces a "nincs
                     rá szükségem" mark rather than standing beside it. */}
-                {activeCat && (
-                  <button
-                    type="button"
-                    onClick={() => setBookedOpen((v) => !v)}
-                    aria-expanded={bookedOpen}
-                    aria-controls="booked-supplier-panel"
-                    title={t("suppliers.bookedCard.title")}
-                    className={`${ACTION_CHIP} ${bookedOpen ? ACTION_CHIP_OPEN : ACTION_CHIP_IDLE}`}
-                  >
-                    <Bookmark size={13} aria-hidden />
-                    <span className="lowercase">{t("suppliers.bookedCard.title")}</span>
-                    <ChevronDown
-                      size={12}
-                      aria-hidden
-                      className={`transition-transform ${bookedOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                )}
-                {/* No "csinálom magam" DIY entry for planners — self-organizing
+                  {activeCat && (
+                    <button
+                      type="button"
+                      onClick={() => setBookedOpen((v) => !v)}
+                      aria-expanded={bookedOpen}
+                      aria-controls="booked-supplier-panel"
+                      title={t("suppliers.bookedCard.title")}
+                      className={`${ACTION_CHIP} ${bookedOpen ? ACTION_CHIP_OPEN : ACTION_CHIP_IDLE}`}
+                    >
+                      <Bookmark size={13} aria-hidden />
+                      <span className="lowercase">{t("suppliers.bookedCard.title")}</span>
+                      <ChevronDown
+                        size={12}
+                        aria-hidden
+                        className={`transition-transform ${bookedOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                  )}
+                  {/* No "csinálom magam" DIY entry for planners — self-organizing
                     means NOT hiring a planner, so the honest control is the
                     "Magam szervezem" done-toggle rendered in the results area
                     below, not a DIY vendor row. */}
-                {activeGroup !== "planning_rentals" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDiyEditing(null);
-                      setDiyOpen(true);
-                    }}
-                    className={`${ACTION_CHIP} ${ACTION_CHIP_IDLE}`}
-                  >
-                    <Pencil size={13} aria-hidden />
-                    <span className="lowercase">{t("suppliers.diy_button_short")}</span>
-                  </button>
-                )}
-                {/* "Nincs rá szükségem" — tick to mark the active sub-category as
+                  {activeGroup !== "planning_rentals" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDiyEditing(null);
+                        setDiyOpen(true);
+                      }}
+                      className={`${ACTION_CHIP} ${ACTION_CHIP_IDLE}`}
+                    >
+                      <Pencil size={13} aria-hidden />
+                      <span className="lowercase">{t("suppliers.diy_button_short")}</span>
+                    </button>
+                  )}
+                  {/* "Nincs rá szükségem" — tick to mark the active sub-category as
                     one this couple doesn't need, greening its runner segment.
                     Only for a concrete sub-category (not the "all" tab, not the
                     planning step which has its own self-organize toggle) and only
                     while there's no real booking to overwrite. */}
-                {activeGroup !== "planning_rentals" && activeCat && !activeCatHasRealPick && (
-                  <button
-                    type="button"
-                    onClick={toggleNotNeeded}
-                    aria-pressed={activeCatNotNeeded}
-                    title={t("suppliers.not_needed_aria", {
-                      category: t(`suppliers.cat.${activeCat}`),
-                    })}
-                    className={`${ACTION_CHIP} ${
-                      activeCatNotNeeded ? ACTION_CHIP_SAGE : ACTION_CHIP_IDLE
-                    }`}
-                  >
-                    {/* The checkbox square made this read a level below its
+                  {activeGroup !== "planning_rentals" && activeCat && !activeCatHasRealPick && (
+                    <button
+                      type="button"
+                      onClick={toggleNotNeeded}
+                      aria-pressed={activeCatNotNeeded}
+                      title={t("suppliers.not_needed_aria", {
+                        category: t(`suppliers.cat.${activeCat}`),
+                      })}
+                      className={`${ACTION_CHIP} ${
+                        activeCatNotNeeded ? ACTION_CHIP_SAGE : ACTION_CHIP_IDLE
+                      }`}
+                    >
+                      {/* The checkbox square made this read a level below its
                         neighbours; the chip's own fill carries the on-state
                         now, with aria-pressed doing the semantic work. */}
-                    <Check size={13} strokeWidth={activeCatNotNeeded ? 3 : 2} aria-hidden />
-                    <span className="lowercase">{t("suppliers.not_needed_toggle")}</span>
-                  </button>
-                )}
-                {/* The way out of the settled-category collapse. Only meaningful
+                      <Check size={13} strokeWidth={activeCatNotNeeded ? 3 : 2} aria-hidden />
+                      <span className="lowercase">{t("suppliers.not_needed_toggle")}</span>
+                    </button>
+                  )}
+                  {/* The way out of the settled-category collapse. Only meaningful
                     once the couple is looking at one concrete sub-category (a
                     settled main category with nothing chosen underneath it has
                     no single card to be hiding siblings under), so it rides the
                     same row as its two neighbours rather than floating above the
                     grid for every view. */}
-                {activeCat && settledHiddenCount + plannersHiddenCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowSettledSiblings((v) => !v)}
-                    aria-pressed={showSettledSiblings}
-                    className={`${ACTION_CHIP} ${showSettledSiblings ? ACTION_CHIP_ON : ACTION_CHIP_IDLE}`}
-                  >
-                    {showSettledSiblings ? (
-                      <EyeOff size={13} aria-hidden />
-                    ) : (
-                      <Eye size={13} aria-hidden />
-                    )}
-                    <span className="lowercase">
-                      {showSettledSiblings
-                        ? t("suppliers.settled_collapse")
-                        : t("suppliers.settled_show_all", {
-                            n: settledHiddenCount + plannersHiddenCount,
-                          })}
-                    </span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeCat === "accommodation" && (
-            <section
-              aria-labelledby="accommodation-external-heading"
-              className="mb-4 rounded-2xl border border-paper-200 bg-paper-50 p-4 sm:p-5 dark:border-umber-700 dark:bg-umber-800"
-            >
-              <div className="flex items-start gap-3">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300">
-                  <BedDouble size={16} aria-hidden />
-                </span>
-                <div className="min-w-0">
-                  <h3
-                    id="accommodation-external-heading"
-                    className="text-sm font-semibold text-ink-900 dark:text-paper-100"
-                  >
-                    {t("suppliers.accommodation_external_title")}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
-                    {t("suppliers.accommodation_external_subtitle")}
-                  </p>
+                  {activeCat && settledHiddenCount + plannersHiddenCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSettledSiblings((v) => !v)}
+                      aria-pressed={showSettledSiblings}
+                      className={`${ACTION_CHIP} ${showSettledSiblings ? ACTION_CHIP_ON : ACTION_CHIP_IDLE}`}
+                    >
+                      {showSettledSiblings ? (
+                        <EyeOff size={13} aria-hidden />
+                      ) : (
+                        <Eye size={13} aria-hidden />
+                      )}
+                      <span className="lowercase">
+                        {showSettledSiblings
+                          ? t("suppliers.settled_collapse")
+                          : t("suppliers.settled_show_all", {
+                              n: settledHiddenCount + plannersHiddenCount,
+                            })}
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
-              {/* Brand-coloured partner tiles — full bleed brand colour, white
+            )}
+
+            {activeCat === "accommodation" && !isMap && (
+              <section
+                aria-labelledby="accommodation-external-heading"
+                className="mb-4 rounded-2xl border border-paper-200 bg-paper-50 p-4 sm:p-5 dark:border-umber-700 dark:bg-umber-800"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300">
+                    <BedDouble size={16} aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <h3
+                      id="accommodation-external-heading"
+                      className="text-sm font-semibold text-ink-900 dark:text-paper-100"
+                    >
+                      {t("suppliers.accommodation_external_title")}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+                      {t("suppliers.accommodation_external_subtitle")}
+                    </p>
+                  </div>
+                </div>
+                {/* Brand-coloured partner tiles — full bleed brand colour, white
               wordmark, external-link icon top-right. The previous treatment
               (generic bed icon + grey outline) read as "more of the same
               Weddly UI"; couples scan recognisable brands faster when the
               card USES the brand. Brand colours go via Tailwind arbitrary
               value (`bg-[#003580]`) — they're external-company-owned and
               shouldn't pollute the design tokens. */}
-              <ul className="mt-3 grid gap-3 sm:grid-cols-3">
-                {[
-                  {
-                    key: "booking",
-                    href: "https://www.booking.com/",
-                    wordmark: (
-                      <span className="text-xl font-bold tracking-tight text-white">
-                        Booking
-                        <span className="text-[#febb02]">.</span>
-                        com
-                      </span>
-                    ),
-                    bgClass: "bg-[#003580] hover:bg-[#002a66]",
-                  },
-                  {
-                    key: "airbnb",
-                    href: "https://www.airbnb.com/",
-                    wordmark: (
-                      <span className="text-xl font-bold lowercase tracking-tight text-white">
-                        airbnb
-                      </span>
-                    ),
-                    bgClass: "bg-[#FF5A5F] hover:bg-[#e64a4f]",
-                  },
-                  {
-                    key: "szallas_hu",
-                    href: "https://www.szallas.hu/",
-                    wordmark: (
-                      <span className="text-xl font-bold tracking-tight text-white">
-                        Szállás
-                        <span className="opacity-70">.hu</span>
-                      </span>
-                    ),
-                    bgClass: "bg-[#0e7c66] hover:bg-[#0a5e4e]",
-                  },
-                ].map((p) => (
-                  <li key={p.key}>
-                    <a
-                      href={p.href}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className={`group relative flex h-full items-center justify-between rounded-xl px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${p.bgClass}`}
-                    >
-                      {p.wordmark}
-                      <ExternalLink
-                        size={16}
-                        aria-hidden
-                        className="absolute right-3 top-3 text-white/70 transition group-hover:text-white"
-                      />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+                <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+                  {[
+                    {
+                      key: "booking",
+                      href: "https://www.booking.com/",
+                      wordmark: (
+                        <span className="text-xl font-bold tracking-tight text-white">
+                          Booking
+                          <span className="text-[#febb02]">.</span>
+                          com
+                        </span>
+                      ),
+                      bgClass: "bg-[#003580] hover:bg-[#002a66]",
+                    },
+                    {
+                      key: "airbnb",
+                      href: "https://www.airbnb.com/",
+                      wordmark: (
+                        <span className="text-xl font-bold lowercase tracking-tight text-white">
+                          airbnb
+                        </span>
+                      ),
+                      bgClass: "bg-[#FF5A5F] hover:bg-[#e64a4f]",
+                    },
+                    {
+                      key: "szallas_hu",
+                      href: "https://www.szallas.hu/",
+                      wordmark: (
+                        <span className="text-xl font-bold tracking-tight text-white">
+                          Szállás
+                          <span className="opacity-70">.hu</span>
+                        </span>
+                      ),
+                      bgClass: "bg-[#0e7c66] hover:bg-[#0a5e4e]",
+                    },
+                  ].map((p) => (
+                    <li key={p.key}>
+                      <a
+                        href={p.href}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className={`group relative flex h-full items-center justify-between rounded-xl px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${p.bgClass}`}
+                      >
+                        {p.wordmark}
+                        <ExternalLink
+                          size={16}
+                          aria-hidden
+                          className="absolute right-3 top-3 text-white/70 transition group-hover:text-white"
+                        />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-          {/* Booking.com-style nearby banner — appears when the typed town
+            {/* Booking.com-style nearby banner — appears when the typed town
           isn't an anchor but resolves to a known metro (e.g. "Zsámbék"
           → Budapest area). Neutral paper/ink palette instead of the
           old blush variant: blush is the codebase's error colour
           (ToastProvider, FieldError, AlertCircle pills) and the banner
           was reading as a warning rather than a hint. */}
-          {(() => {
-            const townLabel = nearbyTownLabel(queryNorm);
-            if (!townLabel) return null;
-            return (
-              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
-                <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
-                <span>
-                  {t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}
-                </span>
-              </p>
-            );
-          })()}
+            {(() => {
+              const townLabel = nearbyTownLabel(queryNorm);
+              if (!townLabel) return null;
+              return (
+                <p
+                  className={`mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200 ${isMap ? "shadow-soft" : ""}`}
+                >
+                  <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
+                  <span>
+                    {t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}
+                  </span>
+                </p>
+              );
+            })()}
+          </div>
 
           {/* Registered planner ACCOUNTS strip — surfaced atop the
               wedding_planner category. These are Weddly planner users reachable
@@ -2439,13 +2477,14 @@ export default function SuppliersPage() {
                   <Skeleton
                     variant="block"
                     rounded="2xl"
-                    className="w-full"
-                    style={{ height: "70vh", minHeight: "480px" }}
+                    className={`${MAP_FRAME} w-auto sm:w-full`}
                     aria-label={t("common.loading")}
                   />
                 }
               >
                 <SupplierMap
+                  className={MAP_FRAME}
+                  topInset={mapChromeHeight}
                   // The map draws the in-country half only, off the same split
                   // as the grid. A map has no "further down the list" to sink
                   // an out-of-country pin into, and one pin in Antibes would
@@ -3448,7 +3487,7 @@ function ChainStep({
       onClick={onClick}
       aria-label={collapsed ? (count !== undefined ? `${label} · ${count}` : label) : undefined}
       title={collapsed ? label : undefined}
-      className={`group relative flex items-center justify-center rounded-full border text-sm transition-[color,background-color,border-color,padding] duration-300 ease-out ${
+      className={`chain-step group relative flex items-center justify-center rounded-full border text-sm transition-[color,background-color,border-color,padding] duration-300 ease-out ${
         collapsed ? "px-2.5 py-2" : "px-3.5 pt-[5px] pb-2.5"
       } ${
         active
