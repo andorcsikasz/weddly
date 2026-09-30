@@ -34,11 +34,32 @@ describe("RoomSizeStep", () => {
       </I18nProvider>,
     );
     expect(screen.getByText("How big is the room?")).toBeTruthy();
-    const width = screen.getByLabelText("Room width in metres") as HTMLInputElement;
-    const length = screen.getByLabelText("Room height in metres") as HTMLInputElement;
+    const width = screen.getByRole("spinbutton", {
+      name: "Room width in metres",
+    }) as HTMLInputElement;
+    const length = screen.getByRole("spinbutton", {
+      name: "Room height in metres",
+    }) as HTMLInputElement;
     expect(width.value).toBe("12");
     expect(length.value).toBe("9");
     fireEvent.change(width, { target: { value: "20" } });
     expect(onChange).toHaveBeenCalledWith({ w: "20", h: "9" });
+  });
+
+  it("the edge handles step the room by half a metre from the keyboard", () => {
+    const onChange = mock(() => {});
+    render(
+      <I18nProvider>
+        <RoomSizeStep draft={roomDraftFromMm(12_000, 9_000)} onChange={onChange} />
+      </I18nProvider>,
+    );
+    fireEvent.keyDown(screen.getByRole("slider", { name: "Room width in metres" }), {
+      key: "ArrowRight",
+    });
+    expect(onChange).toHaveBeenCalledWith({ w: "12.5", h: "9" });
+    fireEvent.keyDown(screen.getByRole("slider", { name: "Room height in metres" }), {
+      key: "ArrowDown",
+    });
+    expect(onChange).toHaveBeenCalledWith({ w: "12", h: "8.5" });
   });
 });
