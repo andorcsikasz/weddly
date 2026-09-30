@@ -690,16 +690,17 @@ export default function OnboardingWizard() {
                   </div>
 
                   <p
-                    className={`${dateAnswerCell("tbd")} rounded-lg bg-paper-200 p-4 text-sm text-umber-700 dark:bg-umber-800 dark:text-umber-200`}
+                    className={`${dateAnswerCell("tbd")} rounded-lg bg-sage-50 p-4 text-center text-sm text-sage-800 dark:bg-sage-900/40 dark:text-sage-100`}
                     aria-hidden={form.date_kind !== "tbd"}
                   >
                     {/* One sentence per line. Split here rather than in the
                      *  copy so every locale gets it without a "\n" in five files. */}
                     {t("onboarding.date_kind_help_tbd")
                       .split(/(?<=[.!?])\s+/)
-                      .map((sentence) => (
+                      .map((sentence, i, all) => (
                         <span key={sentence} className="block">
                           {sentence}
+                          {i === all.length - 1 && " :)"}
                         </span>
                       ))}
                   </p>
