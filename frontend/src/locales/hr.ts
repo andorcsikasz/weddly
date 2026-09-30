@@ -4608,6 +4608,7 @@ const hr: LocaleMessages = {
     open_ended: "Bez kraja",
     time_conflict: "Termin je već zauzet: „{label}”, odaberite drugo vrijeme.",
     wand_item_conflict: "Preklapa se s postojećim događajem",
+    view_mode: "Prikaz",
     view_proportional: "Razmjerno",
     view_timeline: "Vremenska crta",
     view_list: "Popis",

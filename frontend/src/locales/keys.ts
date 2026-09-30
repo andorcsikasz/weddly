@@ -5393,6 +5393,7 @@ export interface LocaleMessages {
     wand_item_conflict: string;
     /** Label for events with no duration set (duration_minutes is null). */
     open_ended: string;
+    view_mode: string;
     view_proportional: string;
     view_timeline: string;
     view_list: string;

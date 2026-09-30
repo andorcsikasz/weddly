@@ -274,9 +274,11 @@ async function openFloorPlan() {
   });
 }
 
+/** The three views are a SegmentedControl, so the options are radios, not
+ *  buttons — the old toolbar's icon-only toggles are gone. */
 async function openScheduleList() {
   await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: /^list$/i }));
+    fireEvent.click(screen.getByRole("radio", { name: /^list$/i }));
     await Promise.resolve();
   });
 }
@@ -884,7 +886,7 @@ describe("<SchedulePage>", () => {
 
     await renderPage(<SchedulePage />);
 
-    const wandButton = screen.getByRole("button", { name: /generate a timeline/i });
+    const wandButton = screen.getByRole("button", { name: /suggest timeline/i });
     await act(async () => {
       fireEvent.click(wandButton!);
       await Promise.resolve();

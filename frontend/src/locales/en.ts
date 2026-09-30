@@ -4576,6 +4576,7 @@ const en: LocaleMessages = {
     open_ended: "Open-ended",
     time_conflict: "Already booked by “{label}”, pick a different time.",
     wand_item_conflict: "Conflicts with existing event",
+    view_mode: "View",
     view_proportional: "Proportional",
     view_timeline: "Timeline",
     view_list: "List",

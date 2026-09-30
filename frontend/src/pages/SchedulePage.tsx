@@ -22,6 +22,7 @@ import {
   AlignJustify,
   Briefcase,
   Cake,
+  CalendarClock,
   Camera,
   Clock,
   DoorOpen,
@@ -55,7 +56,7 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
+import { Dialog, SegmentedControl, Skeleton, useConfirm, useToast } from "../components/ui";
 import { PlanningRouteLinks } from "../components/PlanningRouteLinks";
 import { ApiError } from "../lib/api";
 import {
@@ -201,6 +202,10 @@ function eventRowPx(minutes: number): number {
   return Math.max(48, Math.round(minutes * 1.5));
 }
 
+/** The three ways a run of show can be read. Named once so the view switcher
+ *  and the page's own state cannot drift apart on the string values. */
+type ViewMode = "timeline" | "list" | "proportional";
+
 export default function SchedulePage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.schedule_title", "seo.schedule_description");
@@ -222,7 +227,7 @@ export default function SchedulePage() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [wandOpen, setWandOpen] = useState(false);
   const [wandApplying, setWandApplying] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "proportional" | "timeline">("timeline");
+  const [viewMode, setViewMode] = useState<ViewMode>("timeline");
 
   async function refresh() {
     try {
@@ -392,107 +397,78 @@ export default function SchedulePage() {
     <>
       <header className="mb-4 flex flex-wrap items-center gap-3">
         <PlanningRouteLinks />
+        {/* Labelled actions, not a row of unlabelled glyphs: the toolbar used
+            to be five icon-only buttons whose labels only existed as browser
+            tooltips, which is the least discoverable control shape there is.
+            The tour's two steps (build a run of show / export a PDF) point at
+            this row, so it keeps the `schedule-toolbar` target. */}
         <div
           data-tour-target="schedule-toolbar"
-          className="inline-flex items-stretch overflow-hidden rounded-xl border border-paper-300 shadow-sm sm:ml-auto dark:border-umber-600"
+          className="flex flex-wrap items-center gap-2 sm:ml-auto"
         >
-          {/* Proportional view toggle */}
-          <button
-            type="button"
-            className={`inline-flex h-9 w-10 items-center justify-center transition-colors ${
-              viewMode === "proportional"
-                ? "bg-umber-200 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
-                : "text-ink-500 hover:bg-paper-100 hover:text-ink-800 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-            }`}
-            onClick={() => setViewMode((m) => (m === "proportional" ? "list" : "proportional"))}
-            title={
-              viewMode === "proportional"
-                ? t("schedule.view_list")
-                : t("schedule.view_proportional")
-            }
-            aria-pressed={viewMode === "proportional"}
-            disabled={sortedEvents.length === 0}
-          >
-            {viewMode === "proportional" ? <AlignJustify size={16} /> : <Clock size={16} />}
-          </button>
-          <div className="w-px self-stretch bg-paper-300 dark:bg-umber-600" />
-          {/* Timeline view toggle */}
-          <button
-            type="button"
-            className={`inline-flex h-9 w-10 items-center justify-center transition-colors ${
-              viewMode === "timeline"
-                ? "bg-umber-200 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
-                : "text-ink-500 hover:bg-paper-100 hover:text-ink-800 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-            }`}
-            onClick={() => setViewMode((m) => (m === "timeline" ? "list" : "timeline"))}
-            title={viewMode === "timeline" ? t("schedule.view_list") : t("schedule.view_timeline")}
-            aria-pressed={viewMode === "timeline"}
-            disabled={sortedEvents.length === 0}
-          >
-            <Milestone size={16} />
-          </button>
-          <div className="w-px self-stretch bg-paper-300 dark:bg-umber-600" />
-          {/* Download PDF */}
-          <button
-            type="button"
-            className="inline-flex h-9 w-10 items-center justify-center text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-800 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+          <ToolbarButton
+            icon={<Download size={16} aria-hidden="true" />}
+            label={t("schedule.download_pdf")}
             onClick={onDownloadPdf}
             disabled={downloadingPdf || sortedEvents.length === 0}
-            title={t("schedule.download_pdf")}
-          >
-            <Download size={16} />
-          </button>
-          <div className="w-px self-stretch bg-paper-300 dark:bg-umber-600" />
-          {/* Suggest timeline */}
-          <button
-            type="button"
-            className="inline-flex h-9 w-10 items-center justify-center text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-            onClick={() => setWandOpen(true)}
+          />
+          <ToolbarButton
+            icon={<Wand2 size={16} aria-hidden="true" />}
+            label={t("schedule.wand_button")}
             title={t("schedule.wand_button_hint")}
-          >
-            <Wand2 size={16} />
-          </button>
-          <div className="w-px self-stretch bg-paper-300 dark:bg-umber-600" />
-          {/* New event — primary slot at the end */}
+            onClick={() => setWandOpen(true)}
+          />
           <button
             type="button"
-            className="inline-flex h-9 w-10 items-center justify-center bg-ink-900 text-paper-50 transition-colors hover:bg-ink-700 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
+            className="btn-primary inline-flex min-h-tap items-center gap-2"
             onClick={() => setEditing({ event: null })}
-            title={t("schedule.add_event")}
           >
-            <Plus size={16} />
+            <Plus size={16} aria-hidden="true" />
+            {t("schedule.add_event")}
           </button>
         </div>
       </header>
 
-      {!loading && couple && sortedEvents.length > 0 && (
-        <ScheduleSummaryCard
+      {!loading && sortedEvents.length > 0 && (
+        <ScheduleHero
           couple={couple}
           events={sortedEvents}
           locale={locale}
           venueVendor={venueVendor}
           venueResolved={venueResolved}
-          onShowTimeline={() => setViewMode("timeline")}
-          timelineActive={viewMode === "timeline"}
+          viewMode={viewMode}
+          onViewMode={setViewMode}
         />
       )}
 
       {loading ? (
         <ScheduleListSkeleton />
       ) : sortedEvents.length === 0 ? (
-        <div className="card stationery text-center">
-          <h3 className="text-base font-semibold">{t("schedule.empty_title")}</h3>
-          <p className="mx-auto mt-1 max-w-md text-sm text-ink-600 dark:text-umber-200">
-            {t("schedule.empty_body")}
-          </p>
-          <button
-            type="button"
-            className="btn-primary mt-4 inline-flex"
-            onClick={() => setWandOpen(true)}
-          >
-            <Wand2 size={16} aria-hidden="true" />
-            {t("schedule.wand_button")}
-          </button>
+        <div className="card stationery overflow-hidden p-0">
+          <div className="flex flex-col items-center px-6 py-12 text-center">
+            <span
+              aria-hidden="true"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-paper-100 text-ink-700 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-600"
+            >
+              <CalendarClock size={24} strokeWidth={1.5} />
+            </span>
+            <h3 className="mt-4 font-grotesk text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+              {t("schedule.empty_title")}
+            </h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+              {t("schedule.empty_body")}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                className="btn-primary inline-flex min-h-tap items-center gap-2"
+                onClick={() => setWandOpen(true)}
+              >
+                <Wand2 size={16} aria-hidden="true" />
+                {t("schedule.wand_button")}
+              </button>
+            </div>
+          </div>
         </div>
       ) : viewMode === "timeline" ? (
         <ScheduleTimelineView
@@ -518,6 +494,7 @@ export default function SchedulePage() {
               viewMode === "proportional" && event.duration_minutes !== null
                 ? eventRowPx(event.duration_minutes)
                 : null;
+            const BeatIcon = iconForBeat(event.label);
             return (
               <Fragment key={event.id}>
                 {viewMode === "proportional" &&
@@ -540,9 +517,29 @@ export default function SchedulePage() {
                     </li>
                   ))}
                 <li
-                  className={`group flex items-center gap-4 px-4 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700 ${propH === null ? "py-3" : ""}`}
+                  className={`group relative flex items-center gap-3 px-4 transition-colors hover:bg-paper-100/60 dark:hover:bg-umber-700 sm:gap-4 ${propH === null ? "py-3" : ""}`}
                   style={propH !== null ? { height: `${propH}px` } : undefined}
                 >
+                  {/* A key moment is a beat the wedding site shows, so the row
+                  says so with a blush spine rather than only a filled star. */}
+                  {event.is_key_moment && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-y-0 left-0 w-[3px] bg-blush-400"
+                    />
+                  )}
+                  {/* Same beat glyph the timeline draws, so the two views read
+                  as one document. Decorative: the row button carries the name. */}
+                  <span
+                    aria-hidden="true"
+                    className={`hidden h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 sm:inline-flex ${
+                      event.is_key_moment
+                        ? "bg-blush-100 text-blush-600 ring-blush-200 dark:bg-blush-400/20 dark:text-blush-300 dark:ring-blush-400/40"
+                        : "bg-paper-100 text-ink-600 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-600"
+                    }`}
+                  >
+                    <BeatIcon size={15} strokeWidth={1.5} />
+                  </span>
                   {/* The big edit hit-area is a `<button>` so keyboard users get
                   a real Tab stop. We keep the delete action as a sibling
                   button rather than nesting inside it (nested interactive
@@ -553,11 +550,11 @@ export default function SchedulePage() {
                     aria-label={t("schedule.edit_event")}
                     className="flex min-w-0 flex-1 items-center gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
                   >
-                    <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start gap-0.5 leading-none">
+                    <span className="flex min-w-[4.5rem] shrink-0 flex-col items-start gap-1 leading-none">
                       <span className="stat-num text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                         {formatHHMM(event.starts_at_minutes)}
                         {isDayTwo(event.starts_at_minutes) && (
-                          <sup className="ml-0.5 text-[9px] font-semibold text-ink-700 dark:text-paper-200">
+                          <sup className="ml-0.5 text-[9px] font-semibold text-blush-600 dark:text-blush-300">
                             +1
                           </sup>
                         )}
@@ -569,10 +566,10 @@ export default function SchedulePage() {
                       )}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium text-ink-900 dark:text-paper-50">
+                      <span className="block font-grotesk text-[15px] font-semibold leading-snug text-ink-900 dark:text-paper-50">
                         {localizeKnownLabel(event.label, locale)}
                       </span>
-                      <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-500 dark:text-umber-300">
+                      <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
                         {event.duration_minutes !== null ? (
                           <span className="inline-flex items-center gap-1">
                             <Clock size={12} aria-hidden="true" />
@@ -604,7 +601,7 @@ export default function SchedulePage() {
                             </span>
                           )}
                         {event.notes && (
-                          <span className="truncate">
+                          <span className="truncate italic text-ink-400 dark:text-umber-400">
                             {event.notes.length > 80 ? `${event.notes.slice(0, 80)}…` : event.notes}
                           </span>
                         )}
@@ -691,6 +688,12 @@ export default function SchedulePage() {
   );
 }
 
+/** Run-of-show view: a time rail on the left and one card per beat. The old
+ *  markup zig-zagged the beats either side of a centred spine, which read as a
+ *  zigzag rather than as a day — and it gave the start/end pair nowhere but the
+ *  card, so the eye had to re-parse it every row. Time lives in its own column
+ *  (start over end, exactly like the list view), and the rail carries only the
+ *  beat glyph. */
 function ScheduleTimelineView({
   events,
   locale,
@@ -704,151 +707,182 @@ function ScheduleTimelineView({
 }) {
   const { t } = useT();
   return (
-    <div className="card p-5 sm:p-8">
-      <ol data-tour-target="schedule-events" className="relative mx-auto max-w-2xl">
-        {events.map((event, i) => {
-          const isLast = i === events.length - 1;
-          // On sm+ the rail becomes a centered spine and items zig-zag: even
-          // beats sit on the left (right-aligned toward the rail), odd on the
-          // right. On mobile everything stays in the single left-rail column.
-          const left = i % 2 === 0;
-          const end =
-            event.duration_minutes !== null && event.duration_minutes > 0
-              ? formatHHMM(event.starts_at_minutes + event.duration_minutes)
-              : null;
-          const timeLabel = end
-            ? `${formatHHMM(event.starts_at_minutes)} – ${end}`
-            : formatHHMM(event.starts_at_minutes);
-          const day2 = isDayTwo(event.starts_at_minutes);
-          const Icon = iconForBeat(event.label);
-          const supplierName = event.couple_supplier_id
-            ? (supplierNameById.get(event.couple_supplier_id) ?? null)
-            : null;
-          const hasMeta = Boolean(
-            event.location || event.responsible || supplierName || event.is_key_moment,
-          );
+    <ol data-tour-target="schedule-events" className="mx-auto mt-1 max-w-3xl space-y-2.5">
+      {events.map((event, i) => {
+        const isLast = i === events.length - 1;
+        const durationMin = event.duration_minutes ?? 0;
+        const timed = event.duration_minutes !== null && event.duration_minutes > 0;
+        const end = timed ? formatHHMM(event.starts_at_minutes + durationMin) : null;
+        const day2 = isDayTwo(event.starts_at_minutes);
+        const Icon = iconForBeat(event.label);
+        const supplierName = event.couple_supplier_id
+          ? (supplierNameById.get(event.couple_supplier_id) ?? null)
+          : null;
 
-          return (
-            <li
-              key={event.id}
-              className="grid grid-cols-[2rem_1fr] gap-4 pb-7 last:pb-0 sm:grid-cols-[1fr_2rem_1fr]"
-            >
-              {/* Rail: continuous hairline with an icon node at each beat. */}
-              <div className="relative col-start-1 row-start-1 flex justify-center sm:col-start-2">
-                {!isLast && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute top-9 -bottom-7 left-1/2 w-px -translate-x-1/2 bg-paper-300 dark:bg-umber-600"
-                  />
+        return (
+          <li
+            key={event.id}
+            className="group grid grid-cols-[3rem_1.75rem_minmax(0,1fr)] items-start gap-x-2 sm:grid-cols-[4.25rem_2.25rem_minmax(0,1fr)] sm:gap-x-3"
+          >
+            {/* Time: start over end, tabular, right-aligned against the rail. */}
+            <div className="pt-3 text-right">
+              <div className="stat-num text-[15px] font-semibold leading-none text-ink-900 dark:text-paper-50">
+                {formatHHMM(event.starts_at_minutes)}
+                {day2 && (
+                  <sup className="ml-0.5 text-[9px] font-semibold text-blush-600 dark:text-blush-300">
+                    +1
+                  </sup>
                 )}
+              </div>
+              {end && (
+                <div className="stat-num mt-1.5 text-[11px] leading-none text-ink-400 dark:text-umber-400">
+                  –{end}
+                </div>
+              )}
+            </div>
+
+            {/* Rail: hairline spine, punched through by the beat's glyph. The
+                ring is the page background, which is what cuts the line. */}
+            <div className="relative flex justify-center">
+              {!isLast && (
                 <span
                   aria-hidden="true"
-                  className={`relative z-10 mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-white dark:ring-umber-800 ${
-                    event.is_key_moment
-                      ? "bg-blush-100 text-blush-600 dark:bg-blush-400/20 dark:text-blush-300"
-                      : "bg-paper-100 text-ink-700 dark:bg-umber-700 dark:text-paper-100"
-                  }`}
-                >
-                  <Icon size={15} />
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onEdit(event)}
-                className={`group/btn col-start-2 row-start-1 flex w-full flex-col items-start rounded-xl px-3 py-2 text-left transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:hover:bg-umber-700 ${
-                  left
-                    ? "sm:col-start-1 sm:items-end sm:text-right"
-                    : "sm:col-start-3 sm:items-start sm:text-left"
+                  className="absolute bottom-[-0.625rem] left-1/2 top-8 w-px -translate-x-1/2 bg-paper-300 dark:bg-umber-700"
+                />
+              )}
+              <span
+                aria-hidden="true"
+                className={`relative z-10 mt-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-paper-100 dark:ring-umber-900 ${
+                  event.is_key_moment
+                    ? "bg-blush-500 text-paper-50"
+                    : "bg-paper-50 text-ink-700 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-600"
                 }`}
               >
-                <div className={`flex items-center gap-2 ${left ? "sm:flex-row-reverse" : ""}`}>
-                  <span className="text-[15px] font-semibold text-ink-900 dark:text-paper-50">
-                    {localizeKnownLabel(event.label, locale)}
+                <Icon size={15} strokeWidth={1.5} />
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onEdit(event)}
+              className={`w-full rounded-xl border p-3 text-left transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:bg-umber-800 dark:hover:bg-umber-700 ${
+                event.is_key_moment
+                  ? "border-blush-200 bg-blush-50/40 dark:border-blush-400/40 dark:bg-umber-800"
+                  : "border-paper-300 bg-paper-50 dark:border-umber-700"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-grotesk text-[15px] font-semibold leading-snug text-ink-900 dark:text-paper-50">
+                  {localizeKnownLabel(event.label, locale)}
+                </span>
+                {event.is_key_moment && (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blush-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush-700 dark:bg-blush-400/20 dark:text-blush-300">
+                    <Star size={9} fill="currentColor" aria-hidden="true" />
+                    {t("schedule.guest_visible_badge")}
                   </span>
-                  <Pencil
-                    size={12}
-                    aria-hidden="true"
-                    className="shrink-0 opacity-0 transition-opacity group-hover/btn:opacity-40"
-                  />
-                </div>
-                <div
-                  className={`mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 ${left ? "sm:justify-end" : ""}`}
-                >
-                  <span className="inline-flex items-center rounded-full bg-paper-100 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-600 dark:bg-umber-700 dark:text-paper-100">
-                    {timeLabel}
-                    {day2 && <sup className="ml-0.5 text-[9px] font-semibold">+1</sup>}
+                )}
+                <Pencil
+                  size={12}
+                  aria-hidden="true"
+                  className="ml-auto shrink-0 text-ink-400 opacity-0 transition-opacity group-hover:opacity-60"
+                />
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
+                {timed ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Clock size={11} aria-hidden="true" />
+                    {t("schedule.duration_unit", { n: durationMin })}
                   </span>
-                  {!end && (
-                    <span className="inline-flex items-center gap-1 text-xs text-ink-400 dark:text-umber-400">
-                      <Infinity size={11} aria-hidden="true" />
-                      {t("schedule.open_ended")}
-                    </span>
-                  )}
-                </div>
-                {hasMeta && (
-                  <div
-                    className={`mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500 dark:text-umber-300 ${left ? "sm:justify-end" : ""}`}
-                  >
-                    {event.location && (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin size={11} aria-hidden="true" />
-                        {event.location}
-                      </span>
-                    )}
-                    {event.responsible && (
-                      <span className="inline-flex items-center gap-1">
-                        <User size={11} aria-hidden="true" />
-                        {event.responsible}
-                      </span>
-                    )}
-                    {supplierName && (
-                      <span className="inline-flex items-center gap-1 text-umber-600 dark:text-umber-300">
-                        <Briefcase size={11} aria-hidden="true" />
-                        {supplierName}
-                      </span>
-                    )}
-                    {event.is_key_moment && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blush-50 px-2 py-0.5 font-medium text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-                        <Star size={10} fill="currentColor" aria-hidden="true" />
-                        {t("schedule.guest_visible_badge")}
-                      </span>
-                    )}
-                  </div>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-ink-400 dark:text-umber-400">
+                    <Infinity size={11} aria-hidden="true" />
+                    {t("schedule.open_ended")}
+                  </span>
                 )}
-                {event.notes && (
-                  <p className="mt-1.5 line-clamp-2 text-xs italic text-ink-400 dark:text-umber-400">
-                    {event.notes}
-                  </p>
+                {event.location && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin size={11} aria-hidden="true" />
+                    {event.location}
+                  </span>
                 )}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
+                {event.responsible && (
+                  <span className="inline-flex items-center gap-1">
+                    <User size={11} aria-hidden="true" />
+                    {event.responsible}
+                  </span>
+                )}
+                {supplierName && (
+                  <span className="inline-flex items-center gap-1 text-umber-600 dark:text-umber-300">
+                    <Briefcase size={11} aria-hidden="true" />
+                    {supplierName}
+                  </span>
+                )}
+              </div>
+              {event.notes && (
+                <p className="mt-2 border-t border-paper-200 pt-2 text-xs italic leading-relaxed text-ink-500 dark:border-umber-700 dark:text-umber-300">
+                  {event.notes}
+                </p>
+              )}
+            </button>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
-/** Day-of summary banner above the schedule views: couple name, date + venue,
- *  and a stat strip (event count · day window · expected headcount). Pure
- *  read-out over already-loaded couple + schedule data — no new fetch. */
-function ScheduleSummaryCard({
+/** Toolbar action: an icon plus its label from sm up, icon-only below. The label
+ *  is always the accessible name, so the collapsed form is never a mystery
+ *  button. */
+function ToolbarButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  title,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title ?? label}
+      aria-label={label}
+      className="inline-flex min-h-tap items-center gap-2 rounded-full border border-paper-300 bg-paper-50 px-3 text-sm font-medium text-ink-700 transition-colors hover:border-ink-300 hover:bg-paper-100 hover:text-ink-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-200 dark:hover:border-umber-500 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+    >
+      {icon}
+      <span className="hidden sm:inline">{label}</span>
+    </button>
+  );
+}
+
+/** Day-of band above the schedule views: the couple and their date as an
+ *  eyebrow, the page's own title + subtitle (a schedule page never had either),
+ *  then the three read-outs a run of show is judged on — how many beats, the
+ *  window they cover, how many guests — with the view switcher. Pure read-out
+ *  over already-loaded couple + schedule data, so it costs no new fetch. */
+function ScheduleHero({
   couple,
   events,
   locale,
   venueVendor,
   venueResolved,
-  onShowTimeline,
-  timelineActive,
+  viewMode,
+  onViewMode,
 }: {
-  couple: Couple;
+  couple: Couple | null;
   events: ScheduleEvent[];
   locale: Locale;
   venueVendor: DirectorySupplier | null;
   venueResolved: boolean;
-  onShowTimeline: () => void;
-  timelineActive: boolean;
+  viewMode: ViewMode;
+  onViewMode: (mode: ViewMode) => void;
 }) {
   const { t } = useT();
   const first = events[0];
@@ -857,7 +891,7 @@ function ScheduleSummaryCard({
   const lastEnd = events.reduce((max, e) => Math.max(max, eventEndMinutes(e)), 0);
   const windowLabel = `${formatHHMM(first.starts_at_minutes)} – ${formatHHMM(lastEnd)}`;
 
-  const date = parseISODate(couple.wedding_date);
+  const date = parseISODate(couple?.wedding_date ?? null);
   const dateLabel = date
     ? new Intl.DateTimeFormat(intlLocale(locale), {
         year: "numeric",
@@ -865,82 +899,134 @@ function ScheduleSummaryCard({
         day: "numeric",
       }).format(date)
     : null;
-  const venue = [couple.venue_name, couple.venue_city].filter(Boolean).join(", ");
+  const venue = [couple?.venue_name, couple?.venue_city].filter(Boolean).join(", ");
   // The venue is where the whole day happens, so its name is the one label here
   // worth following: it opens the vendor's card (rates, phone, map) rather than
   // making the couple go hunt for it in the directory. A venue we can't tie to
   // a directory entry — DIY, free-text, or renamed off a stale pick — still
   // links, just to the vendors hub.
   const venueHref = venueVendorHref(
-    venueDetachedFromPick(couple.venue_name, venueVendor?.name) ? null : venueVendor?.id,
+    venueDetachedFromPick(couple?.venue_name ?? "", venueVendor?.name) ? null : venueVendor?.id,
   );
-  const guests = couple.target_guest_count;
+  const guests = couple?.target_guest_count ?? null;
+  const eyebrow = couple?.display_name ?? null;
 
   return (
-    <section className="card mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0">
-        {couple.display_name && (
-          <p className="truncate font-grotesk text-2xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-            {couple.display_name}
+    <section className="relative mb-5 overflow-hidden rounded-2xl bg-paper-200 shadow-pop dark:bg-umber-800">
+      {/* Two hairline clock rings behind the copy: the one piece of ornament a
+          schedule earns. Behind the text at every width, never over it. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-28 -right-24 hidden h-80 w-80 rounded-full border border-paper-400/70 sm:block dark:border-umber-600/70"
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-20 -right-12 hidden h-56 w-56 rounded-full border border-paper-400/70 sm:block dark:border-umber-600/70"
+      />
+
+      <div className="relative px-5 py-6 sm:px-8 sm:py-7">
+        {eyebrow && (
+          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 dark:text-umber-300">
+            {eyebrow}
           </p>
         )}
+        <h1 className="mt-1 font-grotesk text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
+          {t("schedule.title")}
+        </h1>
+        <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+          {t("schedule.sub")}
+        </p>
+
         {(dateLabel || venue) && (
-          <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">
-            {dateLabel}
-            {dateLabel && venue && " · "}
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-600 dark:text-umber-200">
+            {dateLabel && (
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarClock size={14} aria-hidden="true" className="text-ink-400" />
+                {dateLabel}
+              </span>
+            )}
+            {dateLabel && venue && (
+              <span aria-hidden="true" className="text-paper-400 dark:text-umber-600">
+                ·
+              </span>
+            )}
             {venue &&
               (venueResolved ? (
                 <Link
                   to={venueHref}
                   title={t("schedule.summary_venue_link")}
-                  className="rounded-sm underline decoration-ink-300 underline-offset-2 transition-colors hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:decoration-umber-500 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
+                  className="inline-flex items-center gap-1.5 rounded-sm underline decoration-ink-300 underline-offset-2 transition-colors hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:decoration-umber-500 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
                 >
+                  <MapPin size={14} aria-hidden="true" className="text-ink-400" />
                   {venue}
                 </Link>
               ) : (
-                venue
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin size={14} aria-hidden="true" className="text-ink-400" />
+                  {venue}
+                </span>
               ))}
           </p>
         )}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={onShowTimeline}
-          aria-pressed={timelineActive}
-          title={t("schedule.view_timeline")}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 ${
-            timelineActive
-              ? "bg-umber-200 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
-              : "bg-paper-100 text-ink-700 hover:bg-umber-100 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-600"
-          }`}
-        >
-          <Milestone size={13} aria-hidden="true" />
-          {t("schedule.summary_events", { count: events.length })}
-        </button>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs font-medium tabular-nums text-ink-700 dark:bg-umber-700 dark:text-paper-100">
-          <Clock size={13} aria-hidden="true" />
-          {windowLabel}
-        </span>
-        {guests !== null && guests > 0 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3 py-1 text-xs font-medium text-ink-700 dark:bg-umber-700 dark:text-paper-100">
-            <Users size={13} aria-hidden="true" />
-            {t("schedule.summary_guests", { count: guests })}
-          </span>
-        )}
+
+        <div className="mt-5 flex flex-col gap-3 border-t border-paper-300 pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 dark:border-umber-700">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-50 px-3 py-1 text-xs font-medium text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+              <Milestone size={13} aria-hidden="true" />
+              {t("schedule.summary_events", { count: events.length })}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-50 px-3 py-1 text-xs font-medium tabular-nums text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+              <Clock size={13} aria-hidden="true" />
+              {windowLabel}
+            </span>
+            {guests !== null && guests > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-50 px-3 py-1 text-xs font-medium text-ink-700 dark:bg-umber-700 dark:text-paper-100">
+                <Users size={13} aria-hidden="true" />
+                {t("schedule.summary_guests", { count: guests })}
+              </span>
+            )}
+          </div>
+          <SegmentedControl
+            ariaLabel={t("schedule.view_mode")}
+            value={viewMode}
+            onChange={onViewMode}
+            hideLabelsOnMobile
+            options={[
+              {
+                value: "timeline",
+                label: t("schedule.view_timeline"),
+                icon: <Milestone size={14} aria-hidden="true" />,
+              },
+              {
+                value: "list",
+                label: t("schedule.view_list"),
+                icon: <AlignJustify size={14} aria-hidden="true" />,
+              },
+              {
+                value: "proportional",
+                label: t("schedule.view_proportional"),
+                icon: <Clock size={14} aria-hidden="true" />,
+              },
+            ]}
+          />
+        </div>
       </div>
     </section>
   );
 }
 
+/** Loading placeholder for the list view: same row shape as the real thing
+ *  (beat glyph · time pair · label + meta · trailing actions), so the layout
+ *  does not jump when the rows land. */
 function ScheduleListSkeleton() {
   const labelWidths = ["68%", "52%", "78%", "44%", "60%"];
   return (
     <ul className="card divide-y divide-paper-200 p-0 dark:divide-umber-700" aria-hidden="true">
       {labelWidths.map((w, i) => (
-        <li key={i} className="flex items-start gap-4 px-4 py-3">
+        <li key={i} className="flex items-center gap-3 px-4 py-3 sm:gap-4">
+          <Skeleton variant="circle" width={36} height={36} />
           <div className="flex min-w-[4.5rem] shrink-0 flex-col gap-1">
-            <Skeleton variant="block" width={56} height={18} rounded="md" />
+            <Skeleton variant="block" width={56} height={16} rounded="md" />
             <Skeleton variant="block" width={44} height={11} rounded="md" />
           </div>
           <div className="min-w-0 flex-1 space-y-2">
@@ -950,7 +1036,7 @@ function ScheduleListSkeleton() {
               <Skeleton variant="block" width={88} height={11} rounded="md" />
             </div>
           </div>
-          <div className="ml-auto flex shrink-0 items-center gap-1">
+          <div className="ml-auto hidden shrink-0 items-center gap-1 sm:flex">
             <Skeleton variant="circle" width={28} />
             <Skeleton variant="circle" width={28} />
           </div>

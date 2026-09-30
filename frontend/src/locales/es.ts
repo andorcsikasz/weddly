@@ -4659,6 +4659,7 @@ const es: LocaleMessages = {
     open_ended: "Sin hora de fin",
     time_conflict: "Ya está ocupado por «{label}»; elige otra hora.",
     wand_item_conflict: "Coincide con un evento existente",
+    view_mode: "Vista",
     view_proportional: "Proporcional",
     view_timeline: "Cronograma",
     view_list: "Lista",

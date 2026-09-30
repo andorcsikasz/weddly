@@ -4705,6 +4705,7 @@ const de: LocaleMessages = {
     open_ended: "Offenes Ende",
     time_conflict: "Schon belegt durch „{label}“, wählen Sie eine andere Uhrzeit.",
     wand_item_conflict: "Überschneidet sich mit einem vorhandenen Programmpunkt",
+    view_mode: "Ansicht",
     view_proportional: "Proportional",
     view_timeline: "Zeitstrahl",
     view_list: "Liste",
