@@ -56,6 +56,8 @@ function ChecklistHarness({ initial }: { initial: PlanningItem[] }) {
       onItemsChange={(updater) => setItems(updater(items))}
       weddingDate="2027-08-15"
       profile={{}}
+      pace="early_bird"
+      onPaceChange={() => undefined}
     />
   );
 }
@@ -100,6 +102,8 @@ describe("Wedding checklist Planning surface", () => {
             onItemsChange={() => {}}
             weddingDate="2027-08-15"
             profile={{}}
+            pace="early_bird"
+            onPaceChange={() => undefined}
           />
         </AppProviders>
       </I18nProvider>,
@@ -138,6 +142,8 @@ describe("Wedding checklist Planning surface", () => {
             onItemsChange={() => {}}
             weddingDate="2027-08-15"
             profile={{}}
+            pace="early_bird"
+            onPaceChange={() => undefined}
           />
         </AppProviders>
       </I18nProvider>,
@@ -157,7 +163,14 @@ describe("Wedding checklist Planning surface", () => {
     const { rerender } = render(
       <I18nProvider>
         <AppProviders>
-          <WeddingChecklist items={[]} onItemsChange={() => {}} weddingDate={null} profile={{}} />
+          <WeddingChecklist
+            items={[]}
+            onItemsChange={() => {}}
+            weddingDate={null}
+            profile={{}}
+            pace="early_bird"
+            onPaceChange={() => undefined}
+          />
         </AppProviders>
       </I18nProvider>,
     );
@@ -171,6 +184,8 @@ describe("Wedding checklist Planning surface", () => {
             onItemsChange={() => {}}
             weddingDate={weddingDate}
             profile={{}}
+            pace="early_bird"
+            onPaceChange={() => undefined}
           />
         </AppProviders>
       </I18nProvider>,
@@ -189,6 +204,8 @@ describe("Wedding checklist Planning surface", () => {
             onItemsChange={() => {}}
             weddingDate={weddingDate}
             profile={{}}
+            pace="early_bird"
+            onPaceChange={() => undefined}
           />
         </AppProviders>
       </I18nProvider>,
@@ -243,6 +260,8 @@ describe("Wedding checklist Planning surface", () => {
               onItemsChange={() => {}}
               weddingDate={weddingDate}
               profile={{}}
+              pace="early_bird"
+              onPaceChange={() => undefined}
             />
           </AppProviders>
         </I18nProvider>,

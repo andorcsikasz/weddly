@@ -5,7 +5,7 @@
 
 import type { ConditionTag } from "./planning_prompts";
 import type { UiLocale } from "./locales";
-import { timelineDatesFor } from "./planning_timeline";
+import { parseIsoDate, timelineDatesFor } from "./planning_timeline";
 
 // Choosing the date is the one checklist step the couple has usually already
 // taken by the time they open this tab — `couples.wedding_date` records it
@@ -36,9 +36,178 @@ interface ChecklistItemDefinition {
 
 interface ChecklistSectionDefinition {
   id: ChecklistSectionId;
-  /** Due date lead measured before the wedding. Negative values fall after it. */
+  /** Due date lead measured before the wedding, at the EARLY-BIRD pace.
+   *  Negative values fall after it. The five long-range sections are
+   *  re-leaded per pace (`PACE_SECTIONS`); everything from "1 month before"
+   *  down is the same for every couple. */
   leadDays: number;
   items: readonly ChecklistItemDefinition[];
+}
+
+// ─── planning pace ───────────────────────────────────────────────────────────
+// The couple's answer to "how far ahead are you planning?", asked as the first
+// question on the checklist. It re-times the catalog, never its content: the
+// same items in the same order, squeezed into a shorter runway. Early bird is
+// the original 18-month plan; chill fits inside 10 months; last minute inside
+// 4. Only the five long-range sections move, because the final month is the
+// final month whoever you are.
+
+export type PlanningPace = "early_bird" | "relaxed" | "last_minute";
+
+export const PLANNING_PACES: readonly PlanningPace[] = ["early_bird", "relaxed", "last_minute"];
+
+/** What a couple who never answered gets: the plan the catalog always had. */
+export const DEFAULT_PLANNING_PACE: PlanningPace = "early_bird";
+
+export function isPlanningPace(value: unknown): value is PlanningPace {
+  return typeof value === "string" && (PLANNING_PACES as readonly string[]).includes(value);
+}
+
+/** Longest runway each pace plans for, in months. The top of the first
+ *  section's range, and what the picker quotes. */
+export const PACE_HORIZON_MONTHS: Record<PlanningPace, number> = {
+  early_bird: 18,
+  relaxed: 10,
+  last_minute: 4,
+};
+
+/** The pace that fits the runway actually left, for marking one option as the
+ *  suggestion. More than 10 months out is early-bird territory; under 4 is a
+ *  sprint. Null without a date, because then there is nothing to measure. */
+export function recommendedPlanningPace(
+  weddingDate: string | null | undefined,
+  todayIso: string,
+): PlanningPace | null {
+  const wed = parseIsoDate(weddingDate);
+  const today = parseIsoDate(todayIso);
+  if (!wed || !today) return null;
+  const days = Math.round((wed.getTime() - today.getTime()) / 86_400_000);
+  if (days > 305) return "early_bird";
+  if (days > 122) return "relaxed";
+  return "last_minute";
+}
+
+type LongRangeSectionId = "m12_18" | "m9_12" | "m6_9" | "m4_6" | "m2_3";
+
+/** Per pace: each long-range section's due-date lead (roughly the middle of
+ *  its range, as the early-bird numbers always were) and its heading. Leads
+ *  stay strictly above the 30-day "1 month before" section in every pace, so
+ *  the order on screen never inverts. */
+const PACE_SECTIONS: Record<
+  Exclude<PlanningPace, "early_bird">,
+  Record<LongRangeSectionId, { leadDays: number; title: Record<UiLocale, string> }>
+> = {
+  relaxed: {
+    m12_18: {
+      leadDays: 270,
+      title: {
+        en: "8–10 months before",
+        hu: "8–10 hónappal előtte",
+        es: "8–10 meses antes",
+        hr: "8–10 mjeseci prije",
+        de: "8–10 Monate vorher",
+      },
+    },
+    m9_12: {
+      leadDays: 210,
+      title: {
+        en: "6–8 months before",
+        hu: "6–8 hónappal előtte",
+        es: "6–8 meses antes",
+        hr: "6–8 mjeseci prije",
+        de: "6–8 Monate vorher",
+      },
+    },
+    m6_9: {
+      leadDays: 150,
+      title: {
+        en: "4–6 months before",
+        hu: "4–6 hónappal előtte",
+        es: "4–6 meses antes",
+        hr: "4–6 mjeseci prije",
+        de: "4–6 Monate vorher",
+      },
+    },
+    m4_6: {
+      leadDays: 105,
+      title: {
+        en: "3–4 months before",
+        hu: "3–4 hónappal előtte",
+        es: "3–4 meses antes",
+        hr: "3–4 mjeseca prije",
+        de: "3–4 Monate vorher",
+      },
+    },
+    m2_3: {
+      leadDays: 75,
+      title: {
+        en: "2–3 months before",
+        hu: "2–3 hónappal előtte",
+        es: "2–3 meses antes",
+        hr: "2–3 mjeseca prije",
+        de: "2–3 Monate vorher",
+      },
+    },
+  },
+  last_minute: {
+    m12_18: {
+      leadDays: 98,
+      title: {
+        en: "12–16 weeks before",
+        hu: "12–16 héttel előtte",
+        es: "12–16 semanas antes",
+        hr: "12–16 tjedana prije",
+        de: "12–16 Wochen vorher",
+      },
+    },
+    m9_12: {
+      leadDays: 77,
+      title: {
+        en: "10–12 weeks before",
+        hu: "10–12 héttel előtte",
+        es: "10–12 semanas antes",
+        hr: "10–12 tjedana prije",
+        de: "10–12 Wochen vorher",
+      },
+    },
+    m6_9: {
+      leadDays: 63,
+      title: {
+        en: "8–10 weeks before",
+        hu: "8–10 héttel előtte",
+        es: "8–10 semanas antes",
+        hr: "8–10 tjedana prije",
+        de: "8–10 Wochen vorher",
+      },
+    },
+    m4_6: {
+      leadDays: 49,
+      title: {
+        en: "6–8 weeks before",
+        hu: "6–8 héttel előtte",
+        es: "6–8 semanas antes",
+        hr: "6–8 tjedana prije",
+        de: "6–8 Wochen vorher",
+      },
+    },
+    m2_3: {
+      leadDays: 38,
+      title: {
+        en: "5–6 weeks before",
+        hu: "5–6 héttel előtte",
+        es: "5–6 semanas antes",
+        hr: "5–6 tjedana prije",
+        de: "5–6 Wochen vorher",
+      },
+    },
+  },
+};
+
+/** A section's lead at the given pace. */
+function sectionLeadDays(section: ChecklistSectionDefinition, pace: PlanningPace): number {
+  if (pace === "early_bird") return section.leadDays;
+  const override = PACE_SECTIONS[pace][section.id as LongRangeSectionId];
+  return override ? override.leadDays : section.leadDays;
 }
 
 const item = (id: string, condition?: ConditionTag): ChecklistItemDefinition => ({ id, condition });
@@ -892,16 +1061,16 @@ const ITEM_TITLES: Record<UiLocale, readonly string[]> = {
   ],
 };
 
+// An extra is due with the section it sits in, so it follows that section's
+// lead at whatever pace the couple picked.
 const CONDITIONAL_EXTRAS: readonly {
   section: ChecklistSectionId;
-  leadDays: number;
   id: string;
   condition: ConditionTag;
   title: Record<UiLocale, string>;
 }[] = [
   {
     section: "m6_9",
-    leadDays: 225,
     id: "outdoor-weather-backup",
     condition: "outdoor",
     title: {
@@ -914,7 +1083,6 @@ const CONDITIONAL_EXTRAS: readonly {
   },
   {
     section: "m4_6",
-    leadDays: 150,
     id: "outdoor-comfort",
     condition: "outdoor",
     title: {
@@ -927,7 +1095,6 @@ const CONDITIONAL_EXTRAS: readonly {
   },
   {
     section: "m4_6",
-    leadDays: 150,
     id: "children-entertainment",
     condition: "has_children",
     title: {
@@ -940,7 +1107,6 @@ const CONDITIONAL_EXTRAS: readonly {
   },
   {
     section: "m4_6",
-    leadDays: 150,
     id: "book-bar-service",
     condition: "alcohol_served",
     title: {
@@ -953,7 +1119,6 @@ const CONDITIONAL_EXTRAS: readonly {
   },
   {
     section: "m2_3",
-    leadDays: 75,
     id: "alcohol-quantities",
     condition: "alcohol_served",
     title: {
@@ -966,7 +1131,6 @@ const CONDITIONAL_EXTRAS: readonly {
   },
   {
     section: "m2_3",
-    leadDays: 75,
     id: "non-alcoholic-options",
     condition: "alcohol_served",
     title: {
@@ -979,7 +1143,6 @@ const CONDITIONAL_EXTRAS: readonly {
   },
   {
     section: "m9_12",
-    leadDays: 315,
     id: "hotel-blocks",
     condition: "accommodation_needed",
     title: {
@@ -992,7 +1155,6 @@ const CONDITIONAL_EXTRAS: readonly {
   },
   {
     section: "m2_3",
-    leadDays: 75,
     id: "accommodation-information",
     condition: "accommodation_needed",
     title: {
@@ -1043,16 +1205,18 @@ export function checklistSections(
    *  read-only reference (the public/anonymous checklist has no wedding date
    *  to compress against anyway). */
   todayIso?: string,
+  pace: PlanningPace = DEFAULT_PLANNING_PACE,
 ): WeddingChecklistSection[] {
   const titles = ITEM_TITLES[locale];
   let flatIndex = 0;
   return DEFINITIONS.map((section, sectionIndex) => {
+    const leadDays = sectionLeadDays(section, pace);
     const items: WeddingChecklistItem[] = section.items.map((definition) => {
       const title = titles[flatIndex] ?? ITEM_TITLES.en[flatIndex] ?? definition.id;
       flatIndex += 1;
       const dates = timelineDatesFor(
         weddingDate,
-        { lead: { days: section.leadDays }, windowDays: 0 },
+        { lead: { days: leadDays }, windowDays: 0 },
         { todayIso },
       );
       return {
@@ -1066,7 +1230,7 @@ export function checklistSections(
     for (const extra of CONDITIONAL_EXTRAS.filter((entry) => entry.section === section.id)) {
       const dates = timelineDatesFor(
         weddingDate,
-        { lead: { days: extra.leadDays }, windowDays: 0 },
+        { lead: { days: leadDays }, windowDays: 0 },
         { todayIso },
       );
       items.push({
@@ -1077,10 +1241,16 @@ export function checklistSections(
         dueDate: dates?.due_date ?? null,
       });
     }
+    const paced =
+      pace === "early_bird" ? undefined : PACE_SECTIONS[pace][section.id as LongRangeSectionId];
     return {
       id: section.id,
       titleKey: `planning.checklist.sections.${section.id}`,
-      title: SECTION_TITLES[locale][sectionIndex] ?? SECTION_TITLES.en[sectionIndex] ?? section.id,
+      title:
+        paced?.title[locale] ??
+        SECTION_TITLES[locale][sectionIndex] ??
+        SECTION_TITLES.en[sectionIndex] ??
+        section.id,
       items,
     };
   });
@@ -1091,12 +1261,28 @@ export function checklistItemById(
   locale: UiLocale,
   weddingDate?: string | null,
   todayIso?: string,
+  pace: PlanningPace = DEFAULT_PLANNING_PACE,
 ) {
   return (
-    checklistSections(locale, weddingDate, todayIso)
+    checklistSections(locale, weddingDate, todayIso, pace)
       .flatMap((section) => section.items)
       .find((entry) => entry.id === id) ?? null
   );
+}
+
+/** Each template id's due-date lead at the given pace: what the rescheduler
+ *  needs to tell a suggested date from one the couple typed. */
+export function checklistLeadDaysById(pace: PlanningPace): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const section of DEFINITIONS) {
+    const lead = sectionLeadDays(section, pace);
+    for (const definition of section.items) map.set(definition.id, lead);
+  }
+  for (const extra of CONDITIONAL_EXTRAS) {
+    const section = DEFINITIONS.find((entry) => entry.id === extra.section);
+    if (section) map.set(extra.id, sectionLeadDays(section, pace));
+  }
+  return map;
 }
 
 export function isChecklistTemplateId(value: string): boolean {

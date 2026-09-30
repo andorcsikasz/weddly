@@ -15,6 +15,7 @@ import {
   timelineStatus,
   toIsoDate,
 } from "@shared/planning_timeline";
+import { DEFAULT_PLANNING_PACE, type PlanningPace } from "@shared/wedding_checklist";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { Currency, IdeaStatus, IdeaTag, PlanningItem, PlanningKind } from "@shared/types";
 import {
@@ -376,6 +377,26 @@ export default function PlanningPage() {
   // The questions themselves are answered on the standalone /app/decisions
   // page now, not here.
   const [intakeTags, setIntakeTags] = useState<PlanningPromptTags>({});
+
+  // The checklist's planning pace (its first question). `undefined` while
+  // loading; a failed read falls back to the default plan rather than
+  // holding the list behind a question the server may already have answered.
+  const [planningPace, setPlanningPace] = useState<PlanningPace | null | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    planningApi
+      .getChecklistPace()
+      .then((res) => {
+        if (alive) setPlanningPace(res.pace);
+      })
+      .catch(() => {
+        if (alive) setPlanningPace(DEFAULT_PLANNING_PACE);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   useEffect(() => {
     let alive = true;
     void planningApi
@@ -1128,6 +1149,8 @@ export default function PlanningPage() {
             onItemsChange={setItems}
             weddingDate={weddingDate}
             profile={intakeTags}
+            pace={planningPace}
+            onPaceChange={setPlanningPace}
           />
         ) : (
           <>

@@ -5,9 +5,15 @@
 // couple's own to-do list (and counts toward progress) once they approve it by
 // tapping its "+".
 import { timelineStatus } from "@shared/planning_timeline";
-import { checklistSections, isChecklistItemApplicable } from "@shared/wedding_checklist";
+import {
+  checklistSections,
+  DEFAULT_PLANNING_PACE,
+  isChecklistItemApplicable,
+  type PlanningPace,
+} from "@shared/wedding_checklist";
 import type { WeddingChecklistItem } from "@shared/wedding_checklist";
 import type { PlanningItem } from "@shared/types";
+import { PACE_ICON, PlanningPaceQuestion } from "./PlanningPaceQuestion";
 import { CHECKLIST_DEMO_PROGRESS_KEY } from "./PublicWeddingChecklist";
 import {
   CalendarDays,
@@ -39,6 +45,11 @@ interface WeddingChecklistProps {
   onItemsChange: (updater: (items: PlanningItem[]) => PlanningItem[]) => void;
   weddingDate: string | null;
   profile: PlanningPromptTags;
+  /** The couple's planning pace: `undefined` while the page is still loading
+   *  it, `null` when they have never answered, which puts the question in
+   *  place of the checklist. */
+  pace: PlanningPace | null | undefined;
+  onPaceChange: (pace: PlanningPace) => void;
 }
 
 function formatShortDate(value: string, locale: Locale): string {
@@ -105,6 +116,8 @@ export function WeddingChecklist({
   onItemsChange,
   weddingDate,
   profile,
+  pace,
+  onPaceChange,
 }: WeddingChecklistProps) {
   const { t, locale } = useT();
   const toast = useToast();
@@ -134,6 +147,36 @@ export function WeddingChecklist({
 
   useEffect(() => setPdfLocale(locale), [locale]);
 
+  const [savingPace, setSavingPace] = useState<PlanningPace | null>(null);
+  const [paceOpen, setPaceOpen] = useState(false);
+  const effectivePace = pace ?? DEFAULT_PLANNING_PACE;
+
+  async function pickPace(next: PlanningPace) {
+    if (savingPace) return;
+    if (next === pace) {
+      setPaceOpen(false);
+      return;
+    }
+    setSavingPace(next);
+    try {
+      const res = await planningApi.setChecklistPace(next);
+      onPaceChange(res.pace);
+      setPaceOpen(false);
+      // Suggestions not yet added simply re-render at the new pace; typed
+      // edits to them were made against the old schedule, so they go too.
+      setDateOverrides({});
+      if (res.items.length > 0) {
+        const moved = new Map(res.items.map((item) => [item.id, item]));
+        onItemsChange((current) => current.map((entry) => moved.get(entry.id) ?? entry));
+        toast.success(t("planning.checklist.pace_moved", { count: res.items.length }));
+      }
+    } catch {
+      toast.error(t("planning.checklist.pace_error"));
+    } finally {
+      setSavingPace(null);
+    }
+  }
+
   // Computed once per render so the catalog's compressed suggestions and each
   // added row's overdue check agree on what "today" is.
   const today = todayIso();
@@ -149,11 +192,11 @@ export function WeddingChecklist({
   );
   const sections = useMemo(
     () =>
-      checklistSections(locale, weddingDate, today).map((section) => ({
+      checklistSections(locale, weddingDate, today, effectivePace).map((section) => ({
         ...section,
         items: section.items.filter((entry) => isChecklistItemApplicable(entry, profile)),
       })),
-    [locale, weddingDate, profile, today],
+    [locale, weddingDate, profile, today, effectivePace],
   );
   const applicable = sections.flatMap((section) => section.items);
   const added = applicable.filter((entry) => taskByTemplateId.has(entry.id));
@@ -349,6 +392,34 @@ export function WeddingChecklist({
     }
   }
 
+  // Held back until the pace is known, so a couple who has not answered sees
+  // the question first instead of a flash of the early-bird dates.
+  if (pace === undefined) {
+    return (
+      <section
+        className="min-h-[36rem] border-t border-ink-900/10 dark:border-paper-50/10"
+        aria-busy="true"
+        aria-label={t("planning.checklist.title")}
+      />
+    );
+  }
+  if (pace === null) {
+    return (
+      <section
+        className="min-h-[36rem] border-t border-ink-900/10 px-1 dark:border-paper-50/10"
+        data-checklist-surface="pace-question"
+      >
+        <PlanningPaceQuestion
+          weddingDate={weddingDate}
+          current={null}
+          saving={savingPace}
+          onPick={pickPace}
+        />
+      </section>
+    );
+  }
+  const PaceIcon = PACE_ICON[pace];
+
   return (
     <section
       className="min-h-[36rem] border-t border-ink-900/10 py-3 sm:py-4 dark:border-paper-50/10"
@@ -410,6 +481,18 @@ export function WeddingChecklist({
             ))}
           </div>
 
+          <button
+            type="button"
+            onClick={() => setPaceOpen((value) => !value)}
+            aria-expanded={paceOpen}
+            aria-controls="wedding-checklist-pace"
+            title={t("planning.checklist.pace_change")}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-white/10 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950"
+          >
+            <PaceIcon size={14} aria-hidden="true" />
+            {t(`planning.checklist.pace_${pace}`)}
+          </button>
+
           {weddingDate && remaining.length > 0 && (
             <button
               type="button"
@@ -439,6 +522,18 @@ export function WeddingChecklist({
             {t("planning.checklist.download_options")}
           </button>
         </div>
+
+        {paceOpen && (
+          <div id="wedding-checklist-pace">
+            <PlanningPaceQuestion
+              compact
+              weddingDate={weddingDate}
+              current={pace}
+              saving={savingPace}
+              onPick={pickPace}
+            />
+          </div>
+        )}
 
         {downloadOpen && (
           <section

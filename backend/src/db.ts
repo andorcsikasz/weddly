@@ -377,6 +377,10 @@ addColumnIfMissing("planning_items", "board_status", "board_status TEXT");
 // "unanswered" and the prompt resolver keeps their tagged prompts visible
 // (inclusive by design: a missed rain plan is costlier than one extra card).
 addColumnIfMissing("couples", "planning_profile", "planning_profile TEXT");
+// The couple's planning pace ("early_bird" | "relaxed" | "last_minute"), the
+// first question on the /app/planning checklist. NULL = never answered, which
+// both reads as the early-bird plan and is what makes the question appear.
+addColumnIfMissing("couples", "planning_pace", "planning_pace TEXT");
 
 // Run-sheet ("forgatókönyv") fields on the day-of schedule: who runs each beat
 // (free-text, like planning_items.assignee) and which booked supplier it ties

@@ -3766,6 +3766,19 @@ export interface LocaleMessages {
       suggest_deadlines_hint: string;
       suggest_deadlines_action: string;
       suggest_deadlines_done: string;
+      pace_question: string;
+      pace_intro: string;
+      pace_early_bird: string;
+      pace_early_bird_body: string;
+      pace_relaxed: string;
+      pace_relaxed_body: string;
+      pace_last_minute: string;
+      pace_last_minute_body: string;
+      pace_recommended: string;
+      pace_change: string;
+      pace_moved_one: string;
+      pace_moved_other: string;
+      pace_error: string;
     };
   };
   /** Post-wedding follow-up — honeymoon plan + photos shared with guests. */

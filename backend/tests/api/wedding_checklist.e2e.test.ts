@@ -1,6 +1,8 @@
 import "../setup";
 
+import { timelineDatesFor } from "@shared/planning_timeline";
 import type { PlanningItem } from "@shared/types";
+import { checklistLeadDaysById, type PlanningPace } from "@shared/wedding_checklist";
 import { PDFDocument } from "pdf-lib";
 import { beforeEach, describe, expect, test } from "bun:test";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
@@ -276,5 +278,100 @@ describe("wedding checklist", () => {
     });
     expect(otherIp.status).toBe(200);
     await otherIp.arrayBuffer();
+  });
+
+  describe("planning pace", () => {
+    const WEDDING = "2029-06-16";
+    const dueAt = (pace: PlanningPace, id: string) =>
+      timelineDatesFor(WEDDING, {
+        lead: { days: checklistLeadDaysById(pace).get(id) ?? 0 },
+        windowDays: 0,
+      })?.due_date;
+
+    async function coupleWithFarDate() {
+      const { token } = await bootstrapCouple();
+      const patched = await req(
+        "PATCH",
+        "/api/couples/current",
+        { wedding_date_goal: { kind: "exact", exact_date: WEDDING } },
+        { token },
+      );
+      expect(patched.status).toBe(200);
+      return token;
+    }
+
+    test("is unanswered until picked, and a bad value is refused", async () => {
+      const token = await coupleWithFarDate();
+      const before = await req<{ pace: string | null }>(
+        "GET",
+        "/api/planning/checklist/pace",
+        undefined,
+        { token },
+      );
+      expect(before.data.pace).toBeNull();
+      const bad = await req("PUT", "/api/planning/checklist/pace", { pace: "yolo" }, { token });
+      expect(bad.status).toBe(400);
+      const ok = await req("PUT", "/api/planning/checklist/pace", { pace: "relaxed" }, { token });
+      expect(ok.status).toBe(200);
+      const after = await req<{ pace: string | null }>(
+        "GET",
+        "/api/planning/checklist/pace",
+        undefined,
+        { token },
+      );
+      expect(after.data.pace).toBe("relaxed");
+    });
+
+    test("re-times suggested deadlines, never a done task or a date the couple typed", async () => {
+      const token = await coupleWithFarDate();
+      const add = (template_id: string) =>
+        req<AddResponse>(
+          "POST",
+          "/api/planning/checklist/items",
+          { template_id, locale: "en" },
+          { token },
+        );
+      const venue = (await add("book-venue")).data.item;
+      const budget = (await add("set-budget")).data.item;
+      const outfits = (await add("choose-outfits")).data.item;
+      const rehearsal = (await add("send-thanks")).data.item;
+      expect(venue.due_date).toBe(dueAt("early_bird", "book-venue"));
+
+      await req("PATCH", `/api/planning/${budget.id}`, { done: true }, { token });
+      await req("PATCH", `/api/planning/${outfits.id}`, { due_date: "2028-03-03" }, { token });
+
+      const set = await req<{ pace: string; items: PlanningItem[] }>(
+        "PUT",
+        "/api/planning/checklist/pace",
+        { pace: "last_minute" },
+        { token },
+      );
+      expect(set.status).toBe(200);
+      // Only the untouched open suggestion moved; the post-wedding task has the
+      // same lead in every pace.
+      expect(set.data.items.map((item) => item.id)).toEqual([venue.id]);
+      expect(set.data.items[0]?.due_date).toBe(dueAt("last_minute", "book-venue"));
+
+      const list = await req<{ items: PlanningItem[] }>("GET", "/api/planning", undefined, {
+        token,
+      });
+      const byId = new Map(list.data.items.map((item) => [item.id, item]));
+      expect(byId.get(venue.id)?.due_date).toBe(dueAt("last_minute", "book-venue"));
+      expect(byId.get(budget.id)?.due_date).toBe(budget.due_date);
+      expect(byId.get(outfits.id)?.due_date).toBe("2028-03-03");
+      expect(byId.get(rehearsal.id)?.due_date).toBe(rehearsal.due_date);
+
+      // A task added after the answer lands on the new pace directly, and a
+      // round trip back to early bird restores the original suggestion.
+      const later = (await add("research-venues")).data.item;
+      expect(later.due_date).toBe(dueAt("last_minute", "research-venues"));
+      await req("PUT", "/api/planning/checklist/pace", { pace: "early_bird" }, { token });
+      const back = await req<{ items: PlanningItem[] }>("GET", "/api/planning", undefined, {
+        token,
+      });
+      expect(back.data.items.find((item) => item.id === venue.id)?.due_date).toBe(
+        dueAt("early_bird", "book-venue"),
+      );
+    });
   });
 });

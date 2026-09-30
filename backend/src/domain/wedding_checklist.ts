@@ -3,12 +3,16 @@
 // reference — nothing here ever removes a planning_items row. An item only
 // exists on the couple's list once they've explicitly approved adding it.
 import { isUiLocale, type UiLocale } from "@shared/locales";
-import { toIsoDate } from "@shared/planning_timeline";
+import { parseIsoDate, timelineDatesFor, toIsoDate } from "@shared/planning_timeline";
 import type { PlanningItem } from "@shared/types";
 import {
   CHOOSE_DATE_TEMPLATE_ID,
   checklistItemById,
+  checklistLeadDaysById,
+  DEFAULT_PLANNING_PACE,
   isChecklistTemplateId,
+  isPlanningPace,
+  type PlanningPace,
 } from "@shared/wedding_checklist";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
@@ -41,7 +45,8 @@ export function addChecklistItem(
   const locale: UiLocale =
     typeof rawLocale === "string" && isUiLocale(rawLocale) ? rawLocale : "en";
   const todayIso = toIsoDate(new Date(now()));
-  const template = checklistItemById(templateId, locale, weddingDate, todayIso);
+  const pace = getPlanningPace(coupleId) ?? DEFAULT_PLANNING_PACE;
+  const template = checklistItemById(templateId, locale, weddingDate, todayIso, pace);
   if (!template) throw new HttpError(400, "Unknown checklist template id");
   const resolvedDueDate = dueDateOverride !== undefined ? dueDateOverride : template.dueDate;
 
@@ -137,4 +142,99 @@ export function autoCompleteChooseDateItem(coupleId: number): void {
   db.prepare(
     "UPDATE planning_items SET done = 1, updated_at = ? WHERE couple_id = ? AND checklist_template_id = ? AND done = 0",
   ).run(now(), coupleId, CHOOSE_DATE_TEMPLATE_ID);
+}
+
+/** The couple's stored pace, or null when they have never answered. */
+export function getPlanningPace(coupleId: number): PlanningPace | null {
+  const row = db.prepare("SELECT planning_pace FROM couples WHERE id = ?").get(coupleId) as {
+    planning_pace: string | null;
+  } | null;
+  return isPlanningPace(row?.planning_pace) ? row.planning_pace : null;
+}
+
+/** A due date the catalog itself would have written for this item at `pace`:
+ *  the plain calendar lead, or the "due now" clamp, which lands on the day the
+ *  row was added. Anything else was typed by a person and is theirs. */
+function isSuggestedDate(
+  dueDate: string,
+  weddingDate: string,
+  leadDays: number,
+  createdAt: number,
+): boolean {
+  const natural = timelineDatesFor(weddingDate, { lead: { days: leadDays }, windowDays: 0 });
+  if (natural?.due_date === dueDate) return true;
+  return toIsoDate(new Date(createdAt)) === dueDate && dueDate > (natural?.due_date ?? "");
+}
+
+/** Stores the pace and re-times the checklist tasks that are still on the
+ *  catalog's own schedule. A done task, an undated one and one whose date the
+ *  couple edited all stay exactly as they are: a pace is a suggestion about
+ *  the plan, never a reason to overwrite a date somebody chose. Returns the
+ *  rows it moved so the client can patch its list without a refetch. */
+export function setPlanningPace(
+  coupleId: number,
+  userId: number,
+  weddingDate: string | null,
+  pace: PlanningPace,
+): { pace: PlanningPace; items: PlanningItem[] } {
+  const previous = getPlanningPace(coupleId) ?? DEFAULT_PLANNING_PACE;
+  const todayIso = toIsoDate(new Date(now()));
+  const moved: number[] = [];
+
+  db.transaction(() => {
+    db.prepare("UPDATE couples SET planning_pace = ? WHERE id = ?").run(pace, coupleId);
+    if (previous === pace || !weddingDate || !parseIsoDate(weddingDate)) return;
+    const oldLeads = checklistLeadDaysById(previous);
+    const newLeads = checklistLeadDaysById(pace);
+    const rows = db
+      .prepare(
+        `SELECT id, checklist_template_id, due_date, start_date, created_at
+           FROM planning_items
+          WHERE couple_id = ? AND checklist_template_id IS NOT NULL
+            AND done = 0 AND due_date IS NOT NULL`,
+      )
+      .all(coupleId) as {
+      id: number;
+      checklist_template_id: string;
+      due_date: string;
+      start_date: string | null;
+      created_at: number;
+    }[];
+    const update = db.prepare(
+      "UPDATE planning_items SET due_date = ?, start_date = ?, updated_at = ? WHERE id = ?",
+    );
+    const ts = now();
+    for (const row of rows) {
+      const oldLead = oldLeads.get(row.checklist_template_id);
+      const newLead = newLeads.get(row.checklist_template_id);
+      if (oldLead === undefined || newLead === undefined || oldLead === newLead) continue;
+      if (!isSuggestedDate(row.due_date, weddingDate, oldLead, row.created_at)) continue;
+      const next = timelineDatesFor(
+        weddingDate,
+        { lead: { days: newLead }, windowDays: 0 },
+        { todayIso },
+      );
+      if (!next || next.due_date === row.due_date) continue;
+      // The checklist writes start = due; a start the couple moved stays put.
+      const start = row.start_date === row.due_date ? next.due_date : row.start_date;
+      update.run(next.due_date, start, ts, row.id);
+      moved.push(row.id);
+    }
+  })();
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: coupleId,
+    action: "planning.checklist.set_pace",
+    target_kind: "couple",
+    target_id: coupleId,
+    after: { pace, previous, rescheduled: moved.length },
+  });
+  if (moved.length > 0) markCoupleCalendarDirty(coupleId);
+
+  const items = moved
+    .map((id) => getPlanningItemJoined(id, coupleId))
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    .map(toPlanningItem);
+  return { pace, items };
 }

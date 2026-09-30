@@ -3,13 +3,15 @@ import type { ConditionTag, ManualTagAnswers } from "@shared/planning_prompts";
 import { toIsoDate } from "@shared/planning_timeline";
 import {
   checklistSections,
+  DEFAULT_PLANNING_PACE,
   isChecklistItemApplicable,
   isChecklistTemplateId,
+  isPlanningPace,
 } from "@shared/wedding_checklist";
 import { db } from "../db";
 import { getCoupleForUser } from "../domain/couples";
 import { listPlanningItemsByCouple } from "../domain/planning";
-import { addChecklistItem } from "../domain/wedding_checklist";
+import { addChecklistItem, getPlanningPace, setPlanningPace } from "../domain/wedding_checklist";
 import { renderWeddingChecklistPdf } from "../domain/wedding_checklist_pdf";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
@@ -72,6 +74,26 @@ async function handleAddItem(ctx: Ctx): Promise<Response> {
   return json(result);
 }
 
+/** `pace: null` means the couple has not answered yet, which is what makes
+ *  the checklist ask. */
+function handleGetPace(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  return json({ pace: getPlanningPace(couple.id) });
+}
+
+async function handleSetPace(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const body = await readJson<{ pace?: unknown }>(ctx.req);
+  if (!isPlanningPace(body.pace)) {
+    throw new HttpError(400, "pace must be early_bird, relaxed or last_minute");
+  }
+  return json(setPlanningPace(couple.id, userId, couple.wedding_date, body.pace));
+}
+
 async function handlePdf(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -90,7 +112,12 @@ async function handlePdf(ctx: Ctx): Promise<Response> {
       )
       .map((entry) => [entry.checklist_template_id as string, entry]),
   );
-  const sections = checklistSections(locale, couple.wedding_date, toIsoDate(new Date()))
+  const sections = checklistSections(
+    locale,
+    couple.wedding_date,
+    toIsoDate(new Date()),
+    getPlanningPace(couple.id) ?? DEFAULT_PLANNING_PACE,
+  )
     .map((section) => ({
       title: section.title,
       items: section.items
@@ -178,6 +205,8 @@ async function handlePublicPdf(ctx: Ctx): Promise<Response> {
 
 export function registerWeddingChecklistRoutes(router: Router) {
   router.post("/api/planning/checklist/items", handleAddItem, true);
+  router.get("/api/planning/checklist/pace", handleGetPace, true);
+  router.put("/api/planning/checklist/pace", handleSetPace, true);
   router.get("/api/print/wedding-checklist", handlePdf, true);
   router.get("/api/public/checklist/pdf", handlePublicPdf);
 }

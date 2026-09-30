@@ -1,5 +1,8 @@
 import {
+  checklistLeadDaysById,
   checklistSections,
+  PLANNING_PACES,
+  recommendedPlanningPace,
   checklistTemplateSize,
   isChecklistItemApplicable,
   isChecklistTemplateId,
@@ -71,5 +74,46 @@ describe("shared wedding checklist catalogue", () => {
     const sections = checklistSections("en", "2026-09-22");
     const m12_18 = sections.find((s) => s.id === "m12_18");
     expect(m12_18?.items[0]?.dueDate).toBe("2025-06-29");
+  });
+
+  test("each pace keeps every section in runway order and inside its own horizon", () => {
+    const weddingDate = "2029-06-16";
+    const wed = new Date("2029-06-16T00:00:00");
+    const horizonDays = { early_bird: 18 * 31, relaxed: 10 * 31, last_minute: 4 * 31 };
+    for (const pace of PLANNING_PACES) {
+      const sections = checklistSections("en", weddingDate, undefined, pace);
+      const dues = sections.map((section) => section.items[0]?.dueDate ?? "");
+      for (let i = 1; i < dues.length; i++) {
+        expect(dues[i]! > dues[i - 1]!, `${pace} ${sections[i]?.id}`).toBe(true);
+      }
+      const first = new Date(`${dues[0]}T00:00:00`);
+      const lead = Math.round((wed.getTime() - first.getTime()) / 86_400_000);
+      expect(lead <= horizonDays[pace], pace).toBe(true);
+      // The final month is the final month whatever the pace.
+      expect(sections.find((s) => s.id === "m1")?.items[0]?.dueDate).toBe("2029-05-17");
+    }
+  });
+
+  test("early bird is the original plan, and the other paces retitle the long-range sections", () => {
+    const early = checklistSections("en", "2029-06-16", undefined, "early_bird");
+    const byDefault = checklistSections("en", "2029-06-16");
+    expect(early).toEqual(byDefault);
+    expect(early[0]?.title).toBe("12–18 months before");
+    expect(checklistSections("en", null, undefined, "relaxed")[0]?.title).toBe(
+      "8–10 months before",
+    );
+    expect(checklistSections("hr", null, undefined, "last_minute")[0]?.title).toBe(
+      "12–16 tjedana prije",
+    );
+    // A conditional extra moves with the section it sits in.
+    const leads = checklistLeadDaysById("last_minute");
+    expect(leads.get("hotel-blocks")).toBe(leads.get("choose-outfits"));
+  });
+
+  test("recommends the pace that fits the runway left", () => {
+    expect(recommendedPlanningPace("2027-12-01", "2026-09-30")).toBe("early_bird");
+    expect(recommendedPlanningPace("2027-05-01", "2026-09-30")).toBe("relaxed");
+    expect(recommendedPlanningPace("2026-12-01", "2026-09-30")).toBe("last_minute");
+    expect(recommendedPlanningPace(null, "2026-09-30")).toBeNull();
   });
 });

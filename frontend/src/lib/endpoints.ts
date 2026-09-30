@@ -1484,6 +1484,19 @@ export const planningApi = {
         ? { template_id: templateId, locale }
         : { template_id: templateId, locale, due_date: dueDate },
     ),
+  /** `null` = the couple has not picked a pace yet. */
+  getChecklistPace: () =>
+    apiFetch<{ pace: import("@shared/wedding_checklist").PlanningPace | null }>(
+      "GET",
+      "/api/planning/checklist/pace",
+    ),
+  /** Stores the pace; `items` are the checklist tasks whose suggested
+   *  deadline moved with it. */
+  setChecklistPace: (pace: import("@shared/wedding_checklist").PlanningPace) =>
+    apiFetch<{
+      pace: import("@shared/wedding_checklist").PlanningPace;
+      items: import("@shared/types").PlanningItem[];
+    }>("PUT", "/api/planning/checklist/pace", { pace }),
 };
 
 export function weddingChecklistPdfUrl(options: {
