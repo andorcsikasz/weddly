@@ -1771,7 +1771,6 @@ const es: LocaleMessages = {
     country_required: "Elige un país.",
     invite_email_label: "Invita a tu pareja a formar parte de este viaje",
     invite_email_placeholder: "nombre@example.com",
-    invite_skip_hint: "Opcional — déjalo en blanco para omitir. Puedes invitarla más tarde.",
     style_help:
       "Elige tantos como quieras. El estilo es solo una etiqueta del perfil, nada queda fijado.",
     style_classic: "Clásico",
@@ -1796,7 +1795,6 @@ const es: LocaleMessages = {
     date_kind_tbd: "Aún no lo sé",
     date_year_label: "Año previsto",
     date_quarter_label: "Época del año (opcional)",
-    date_quarter_any: "Todo el año",
     date_kind_help_tbd:
       "Sin problema, puedes fijarlo todo más tarde. Seguiremos planificando en torno a «algún día».",
     guest_kind_question: "¿Cuánta certeza tienes sobre el número de invitados?",

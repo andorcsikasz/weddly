@@ -2309,7 +2309,6 @@ export interface LocaleMessages {
     country_required: string;
     invite_email_label: string;
     invite_email_placeholder: string;
-    invite_skip_hint: string;
     // ── Uncertainty: kind selectors and helper copy ───────────────────
     date_kind_question: string;
     date_kind_exact: string;
@@ -2320,7 +2319,6 @@ export interface LocaleMessages {
     date_year_label: string;
     date_quarter_label: string;
     /** The quarter-picker's null state — "sometime that year". */
-    date_quarter_any: string;
     date_kind_help_tbd: string;
     guest_kind_question: string;
     guest_kind_exact: string;

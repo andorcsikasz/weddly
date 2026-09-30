@@ -1365,6 +1365,36 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .onb-fields .input-invalid {
     @apply border-blush-500 focus:border-blush-500 dark:border-blush-400 dark:focus:border-blush-400;
   }
+  /* RangeSlider: two native range inputs stacked on one track. The inputs
+     are invisible and ignore the pointer; only their thumbs catch it, so
+     either thumb can be grabbed wherever it sits. */
+  .range-dual input[type="range"] {
+    @apply pointer-events-none absolute inset-0 h-full w-full appearance-none bg-transparent;
+  }
+  .range-dual input[type="range"]::-webkit-slider-runnable-track {
+    @apply flex h-full items-center bg-transparent;
+  }
+  .range-dual input[type="range"]::-moz-range-track {
+    @apply bg-transparent;
+  }
+  .range-dual input[type="range"]::-webkit-slider-thumb {
+    @apply pointer-events-auto h-6 w-6 cursor-grab appearance-none rounded-full border-2 border-solid border-umber-900 bg-white shadow-md
+      transition-transform active:scale-110 active:cursor-grabbing
+      dark:border-paper-50 dark:bg-umber-900;
+  }
+  .range-dual input[type="range"]::-moz-range-thumb {
+    @apply pointer-events-auto h-5 w-5 cursor-grab rounded-full border-2 border-solid border-umber-900 bg-white shadow-md
+      dark:border-paper-50 dark:bg-umber-900;
+  }
+  .range-dual input[type="range"]:focus-visible {
+    @apply outline-none;
+  }
+  .range-dual input[type="range"]:focus-visible::-webkit-slider-thumb {
+    @apply ring-4 ring-umber-900/15 dark:ring-paper-50/25;
+  }
+  .range-dual input[type="range"]:focus-visible::-moz-range-thumb {
+    @apply ring-4 ring-umber-900/15 dark:ring-paper-50/25;
+  }
   .onb-fields .field-label {
     @apply mb-2 text-sm font-medium normal-case tracking-normal text-umber-900 dark:text-paper-50;
   }

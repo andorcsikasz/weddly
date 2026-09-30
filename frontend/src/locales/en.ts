@@ -1736,7 +1736,6 @@ const en: LocaleMessages = {
     country_required: "Pick a country.",
     invite_email_label: "Invite your partner to be part of your journey",
     invite_email_placeholder: "name@example.com",
-    invite_skip_hint: "Optional — leave blank to skip. You can always invite them later.",
     style_help: "Pick as many as you like. Style is just a tag on the profile, nothing locks in.",
     style_classic: "Classic",
     style_modern: "Modern",
@@ -1759,7 +1758,6 @@ const en: LocaleMessages = {
     date_kind_tbd: "Not sure yet",
     date_year_label: "Target year",
     date_quarter_label: "Time of year (optional)",
-    date_quarter_any: "Whole year",
     date_kind_help_tbd:
       "No problem, you can lock anything in later. We'll keep planning around 'someday'.",
     guest_kind_question: "How sure are you about guest count?",

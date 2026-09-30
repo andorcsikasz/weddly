@@ -24,20 +24,19 @@ import { Link, useNavigate } from "react-router-dom";
 import { Confetti } from "../components/Confetti";
 import { CurrencySelect } from "../components/CurrencySelect";
 import { CountryCombobox } from "../components/CountryCombobox";
+import { RangeSlider, Slider } from "../components/RangeSlider";
 import { Shell } from "../components/Shell";
 import { Skeleton } from "../components/ui";
 import { coupleApi } from "../lib/endpoints";
 import {
-  currencySymbol,
-  digitsOnly,
   formatBudgetGoal,
-  formatGroupedDigits,
   formatGuestCountGoal,
   formatMoney,
   formatMoneyRange,
   formatNumber,
   formatWeddingDateGoal,
   isPlausibleDateIso,
+  moneySliderStep,
   todayIso,
 } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -69,6 +68,19 @@ function budgetDefaults(currency: Currency): BudgetDefaults {
     max: scale(EUR_BUDGET_DEFAULTS.max),
     placeholder: scale(EUR_BUDGET_DEFAULTS.placeholder),
   };
+}
+
+/** Budget sliders span roughly 2 000 to 60 000 EUR, scaled into whatever
+ *  currency the couple picked, with a step fine enough that the tuned
+ *  defaults (HUF 4M to 6M, EUR 10k to 15k) land on it exactly. A bigger budget
+ *  drags to the end ("+") and is refined on the budget page. */
+function budgetSliderScale(currency: Currency): { min: number; max: number; step: number } {
+  const max = scaleFromEur(60000, currency);
+  const step = moneySliderStep(max / 4);
+  // A native range input counts its steps from `min`, so a min off the step
+  // grid would shift every value the thumb can land on.
+  const min = Math.max(step, Math.round(scaleFromEur(2000, currency) / step) * step);
+  return { min, max, step };
 }
 
 const TODAY = new Date();
@@ -123,6 +135,13 @@ function partnerEmailValid(f: FormState): boolean {
 // tracking, not weight — a heavier request would render as faux-bold. The
 // question carries the step; the sub-questions that used to sit beneath it
 // are gone (the segmented control answers them).
+/** Guest sliders run 10 to 300 in steps of 5; a bigger wedding drags to the
+ *  end ("300+") and refines the number later on the guest page. */
+const GUEST_SLIDER_MIN = 10;
+const GUEST_SLIDER_MAX = 300;
+const GUEST_SLIDER_STEP = 5;
+const GUEST_EXACT_DEFAULT = 80;
+
 const STEP_TITLE =
   "text-center font-grotesk text-[2rem] leading-[1.05] tracking-tight sm:text-[2.75rem] sm:leading-[1.03] text-umber-900 dark:text-paper-50";
 
@@ -528,7 +547,7 @@ export default function OnboardingWizard() {
           </div>
         </div>
 
-        <div className="card animate-fade-in-up overflow-hidden sm:p-8">
+        <div className="onb-card card animate-fade-in-up flex min-h-[33rem] flex-col overflow-hidden sm:min-h-[31rem] sm:p-8">
           {/* `key={step}` remounts this wrapper on every step change, which
            *  is what replays `animate-card-deal` — same idiom as the couple
            *  cards elsewhere in the app. Scoped to just the question, not the
@@ -608,9 +627,6 @@ export default function OnboardingWizard() {
                     onChange={(e) => update("partner_email", e.target.value)}
                     aria-invalid={!partnerEmailValid(form)}
                   />
-                  <p className="mt-2 text-sm text-umber-500 dark:text-umber-400">
-                    {t("onboarding.invite_skip_hint")}
-                  </p>
                 </div>
               </>
             )}
@@ -660,12 +676,10 @@ export default function OnboardingWizard() {
                     <YearSelect value={form.date_year} onChange={(v) => update("date_year", v)} />
                     <div className="mt-4">
                       <p className="field-label">{t("onboarding.date_quarter_label")}</p>
-                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                        <KindButton
-                          active={form.date_quarter === ""}
-                          onClick={() => update("date_quarter", "")}
-                          label={t("onboarding.date_quarter_any")}
-                        />
+                      {/* No quarter picked means the whole year; clicking the
+                       *  picked one again clears it, so there is no separate
+                       *  "whole year" option. */}
+                      <div className="grid grid-cols-4 gap-2">
                         {QUARTERS.map((q) => (
                           <KindButton
                             key={q}
@@ -704,75 +718,55 @@ export default function OnboardingWizard() {
                     <KindButton
                       key={k}
                       active={form.guest_kind === k}
-                      onClick={() => update("guest_kind", k)}
+                      onClick={() => {
+                        update("guest_kind", k);
+                        // The slider shows a value from the first frame, so
+                        // the state has to hold that same value or Next would
+                        // save a count the couple never saw.
+                        if (k === "exact" && !form.guest_exact)
+                          update("guest_exact", String(GUEST_EXACT_DEFAULT));
+                      }}
                       label={t(`onboarding.guest_kind_${k}`)}
                     />
                   ))}
                 </div>
 
-                {form.guest_kind === "exact" && (
+                {form.guest_kind !== "tbd" && (
                   <div className="mt-6">
-                    <label htmlFor="guest_exact" className="field-label">
-                      {t("onboarding.target_guest_count_label")}
-                    </label>
-                    <input
-                      id="guest_exact"
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={10000}
-                      className="input"
-                      value={form.guest_exact}
-                      onChange={(e) => update("guest_exact", e.target.value)}
-                      placeholder="80"
-                    />
-                  </div>
-                )}
-
-                {form.guest_kind === "range" && (
-                  <>
-                    <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label htmlFor="guest_min" className="field-label">
-                          {t("onboarding.guest_min_label")}
-                        </label>
-                        <input
-                          id="guest_min"
-                          type="number"
-                          inputMode="numeric"
-                          min={1}
-                          max={10000}
-                          className="input"
-                          value={form.guest_min}
-                          onChange={(e) => update("guest_min", e.target.value)}
+                    <p className="text-center font-grotesk text-2xl sm:text-3xl tracking-tight text-umber-900 dark:text-paper-50">
+                      {formatGuestCountGoal(buildGuestGoal(form), { t, locale })}
+                    </p>
+                    <div className="mt-4">
+                      {form.guest_kind === "exact" ? (
+                        <Slider
+                          min={GUEST_SLIDER_MIN}
+                          max={GUEST_SLIDER_MAX}
+                          step={GUEST_SLIDER_STEP}
+                          value={Number(form.guest_exact) || GUEST_EXACT_DEFAULT}
+                          onChange={(n) => update("guest_exact", String(n))}
+                          label={t("onboarding.target_guest_count_label")}
+                          minCaption={formatNumber(GUEST_SLIDER_MIN, locale)}
+                          maxCaption={`${formatNumber(GUEST_SLIDER_MAX, locale)}+`}
                         />
-                      </div>
-                      <div>
-                        <label htmlFor="guest_max" className="field-label">
-                          {t("onboarding.guest_max_label")}
-                        </label>
-                        <input
-                          id="guest_max"
-                          type="number"
-                          inputMode="numeric"
-                          min={1}
-                          max={10000}
-                          className="input"
-                          value={form.guest_max}
-                          onChange={(e) => update("guest_max", e.target.value)}
+                      ) : (
+                        <RangeSlider
+                          min={GUEST_SLIDER_MIN}
+                          max={GUEST_SLIDER_MAX}
+                          step={GUEST_SLIDER_STEP}
+                          low={Number(form.guest_min) || GUEST_SLIDER_MIN}
+                          high={Number(form.guest_max) || GUEST_SLIDER_MAX}
+                          onChange={(lo, hi) => {
+                            update("guest_min", String(lo));
+                            update("guest_max", String(hi));
+                          }}
+                          lowLabel={t("onboarding.guest_min_label")}
+                          highLabel={t("onboarding.guest_max_label")}
+                          minCaption={formatNumber(GUEST_SLIDER_MIN, locale)}
+                          maxCaption={`${formatNumber(GUEST_SLIDER_MAX, locale)}+`}
                         />
-                      </div>
-                    </div>
-                    {Number(form.guest_min) > 0 &&
-                      Number(form.guest_max) >= Number(form.guest_min) && (
-                        <p className="mt-3 text-sm text-umber-600">
-                          {t("goal.count_range", {
-                            min: formatNumber(Number(form.guest_min), locale),
-                            max: formatNumber(Number(form.guest_max), locale),
-                          })}
-                        </p>
                       )}
-                  </>
+                    </div>
+                  </div>
                 )}
               </>
             )}
@@ -780,11 +774,88 @@ export default function OnboardingWizard() {
             {step === 3 && (
               <>
                 <h1 className={STEP_TITLE}>{t("onboarding.step4_title")}</h1>
-                {/* Currency picker — pinned above the budget inputs so the user
-                 *  picks the unit before typing an amount. Defaults to HUF; flips
-                 *  the preview formatting (and every money field after onboarding). */}
-                <div className="mt-8 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium uppercase tracking-wide text-umber-600">
+                <div
+                  className="mt-8 grid grid-cols-3 gap-2"
+                  role="group"
+                  aria-label={t("onboarding.budget_kind_question")}
+                >
+                  {(["exact", "range", "tbd"] as BudgetKind[]).map((k) => (
+                    <KindButton
+                      key={k}
+                      active={form.budget_kind === k}
+                      onClick={() => {
+                        update("budget_kind", k);
+                        // Same reason as the guest slider: the thumb shows a
+                        // value from the first frame, so the state holds it too.
+                        if (k === "exact" && !form.budget_exact)
+                          update("budget_exact", budgetDefaults(form.currency).placeholder);
+                      }}
+                      label={t(`onboarding.budget_kind_${k}`)}
+                    />
+                  ))}
+                </div>
+
+                {form.budget_kind !== "tbd" && (
+                  <div className="mt-6">
+                    <p className="text-center font-grotesk text-2xl sm:text-3xl tracking-tight text-umber-900 dark:text-paper-50">
+                      {form.budget_kind === "exact"
+                        ? formatMoney(
+                            Number(form.budget_exact) ||
+                              Number(budgetDefaults(form.currency).placeholder),
+                            form.currency,
+                            locale,
+                          )
+                        : formatMoneyRange(
+                            Number(form.budget_min),
+                            Number(form.budget_max),
+                            form.currency,
+                            locale,
+                          )}
+                    </p>
+                    <div className="mt-4">
+                      {form.budget_kind === "exact" ? (
+                        <Slider
+                          {...budgetSliderScale(form.currency)}
+                          value={
+                            Number(form.budget_exact) ||
+                            Number(budgetDefaults(form.currency).placeholder)
+                          }
+                          onChange={(n) => update("budget_exact", String(n))}
+                          label={t("onboarding.budget_label")}
+                          minCaption={formatMoney(
+                            budgetSliderScale(form.currency).min,
+                            form.currency,
+                            locale,
+                          )}
+                          maxCaption={`${formatMoney(budgetSliderScale(form.currency).max, form.currency, locale)}+`}
+                        />
+                      ) : (
+                        <RangeSlider
+                          {...budgetSliderScale(form.currency)}
+                          low={Number(form.budget_min) || budgetSliderScale(form.currency).min}
+                          high={Number(form.budget_max) || budgetSliderScale(form.currency).max}
+                          onChange={(lo, hi) => {
+                            update("budget_min", String(lo));
+                            update("budget_max", String(hi));
+                          }}
+                          lowLabel={t("onboarding.budget_min_label")}
+                          highLabel={t("onboarding.budget_max_label")}
+                          minCaption={formatMoney(
+                            budgetSliderScale(form.currency).min,
+                            form.currency,
+                            locale,
+                          )}
+                          maxCaption={`${formatMoney(budgetSliderScale(form.currency).max, form.currency, locale)}+`}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+                {/* Currency sits under the answer, not above the choice, so the
+                 *  "specific / range / no idea" row lands at the same height as
+                 *  on the guest step. Switching it rebases the slider. */}
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <span className="text-sm text-umber-600 dark:text-umber-300">
                     {t("onboarding.budget_currency_label")}
                   </span>
                   <CurrencySelect
@@ -793,114 +864,6 @@ export default function OnboardingWizard() {
                     label={t("onboarding.budget_currency_label")}
                   />
                 </div>
-
-                <div
-                  className="mt-5 grid grid-cols-3 gap-2"
-                  role="group"
-                  aria-label={t("onboarding.budget_kind_question")}
-                >
-                  {(["exact", "range", "tbd"] as BudgetKind[]).map((k) => (
-                    <KindButton
-                      key={k}
-                      active={form.budget_kind === k}
-                      onClick={() => update("budget_kind", k)}
-                      label={t(`onboarding.budget_kind_${k}`)}
-                    />
-                  ))}
-                </div>
-
-                {form.budget_kind === "exact" && (
-                  <div className="mt-6">
-                    <label htmlFor="budget_exact" className="field-label">
-                      {t("onboarding.budget_label")}
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        id="budget_exact"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        className="input flex-1"
-                        value={formatGroupedDigits(form.budget_exact, locale)}
-                        onChange={(e) => update("budget_exact", digitsOnly(e.target.value))}
-                        placeholder={formatGroupedDigits(
-                          budgetDefaults(form.currency).placeholder,
-                          locale,
-                        )}
-                      />
-                      <span className="text-sm text-umber-600">
-                        {currencySymbol(form.currency, locale)}
-                      </span>
-                    </div>
-                    {Number(form.budget_exact) > 0 && (
-                      <p className="mt-2 text-sm text-umber-600">
-                        {t("onboarding.budget_preview_label")}{" "}
-                        <span className="font-medium text-umber-800">
-                          {formatMoney(Number(form.budget_exact), form.currency, locale)}
-                        </span>
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {form.budget_kind === "range" && (
-                  <>
-                    <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label htmlFor="budget_min" className="field-label">
-                          {t("onboarding.budget_min_label")}
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            id="budget_min"
-                            type="text"
-                            inputMode="numeric"
-                            autoComplete="off"
-                            className="input flex-1"
-                            value={formatGroupedDigits(form.budget_min, locale)}
-                            onChange={(e) => update("budget_min", digitsOnly(e.target.value))}
-                          />
-                          <span className="text-sm text-umber-600">
-                            {currencySymbol(form.currency, locale)}
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <label htmlFor="budget_max" className="field-label">
-                          {t("onboarding.budget_max_label")}
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            id="budget_max"
-                            type="text"
-                            inputMode="numeric"
-                            autoComplete="off"
-                            className="input flex-1"
-                            value={formatGroupedDigits(form.budget_max, locale)}
-                            onChange={(e) => update("budget_max", digitsOnly(e.target.value))}
-                          />
-                          <span className="text-sm text-umber-600">
-                            {currencySymbol(form.currency, locale)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    {Number(form.budget_min) > 0 &&
-                      Number(form.budget_max) >= Number(form.budget_min) && (
-                        <p className="mt-3 text-sm text-umber-600">
-                          {t("onboarding.budget_preview_label")}{" "}
-                          <span className="font-medium text-umber-800">
-                            {formatMoneyRange(
-                              Number(form.budget_min),
-                              Number(form.budget_max),
-                              form.currency,
-                              locale,
-                            )}
-                          </span>
-                        </p>
-                      )}
-                  </>
-                )}
               </>
             )}
 
@@ -932,7 +895,7 @@ export default function OnboardingWizard() {
             </div>
           )}
 
-          <div className="mt-8 flex items-center justify-between">
+          <div className="mt-auto flex items-center justify-between pt-6">
             <button
               type="button"
               className="btn-ghost"
@@ -953,7 +916,7 @@ export default function OnboardingWizard() {
             ) : (
               <button
                 type="submit"
-                className="btn-accent btn-lifted btn-lg"
+                className="btn btn-lifted btn-lg bg-sage-800 text-white hover:bg-sage-900 dark:bg-sage-600 dark:hover:bg-sage-700"
                 disabled={submitting || !stepValid}
               >
                 {submitting ? t("onboarding.saving") : t("onboarding.finish")}
@@ -1235,11 +1198,14 @@ function KindButton({
       type="button"
       onClick={onClick}
       className={[
-        "min-h-tap rounded-xl border px-4 py-3 text-sm font-semibold transition",
-        "duration-150 active:scale-[0.97]",
+        // The chosen option grows and the others step back. It is a
+        // transform, not a size, so the row never reflows and the step
+        // below does not jump when the couple changes their mind.
+        "min-h-tap rounded-xl border px-4 py-3 text-sm font-semibold transition-all",
+        "duration-200 ease-out motion-reduce:transition-none",
         active
-          ? "border-umber-900 bg-umber-900 text-paper-50 shadow-soft"
-          : "border-paper-300 bg-paper-100 text-umber-800 hover:border-umber-500 hover:bg-paper-200 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100 dark:hover:border-umber-500",
+          ? "z-10 scale-[1.05] border-umber-900 bg-umber-900 text-paper-50 shadow-soft"
+          : "scale-[0.94] border-paper-300 bg-paper-100 text-umber-800 opacity-80 hover:scale-[0.97] hover:border-umber-500 hover:bg-paper-200 hover:opacity-100 active:scale-[0.92] dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100 dark:hover:border-umber-500",
       ].join(" ")}
       aria-pressed={active}
     >

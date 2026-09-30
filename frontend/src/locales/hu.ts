@@ -1748,7 +1748,6 @@ const hu: LocaleMessages = {
     country_required: "Válassz egy országot.",
     invite_email_label: "Hívd meg a párodat, hogy együtt tervezzétek",
     invite_email_placeholder: "nev@example.com",
-    invite_skip_hint: "Opcionális — hagyd üresen a kihagyáshoz, később is meghívhatod.",
     style_help: "Több is választható. A stílus csak címkézi a páros profilját, nem korlátoz.",
     style_classic: "Klasszikus",
     style_modern: "Modern",
@@ -1771,7 +1770,6 @@ const hu: LocaleMessages = {
     date_kind_tbd: "Még nem tudjuk",
     date_year_label: "Cél év",
     date_quarter_label: "Évszak (opcionális)",
-    date_quarter_any: "Egész év",
     date_kind_help_tbd:
       "Semmi gond, bármit lerögzíthetsz később. Most csak körülbelülre tervezünk.",
     guest_kind_question: "Mennyire pontos a vendéglétszám?",
