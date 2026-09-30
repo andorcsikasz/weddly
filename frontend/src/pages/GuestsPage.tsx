@@ -38,6 +38,8 @@ import {
   Beef,
   Briefcase,
   Check,
+  ChevronsDownUp,
+  ChevronsUpDown,
   CheckCircle2,
   ChevronDown,
   ClipboardCopy,
@@ -1204,6 +1206,17 @@ export default function GuestsPage() {
   const invitedActive = invitedFilter;
   const householdActive = householdFilter && !flatView;
   const anyStatActive = totalActive || invitedActive || householdActive;
+  // Whichever household cards are on screen, for the collapse-all toggle in
+  // the filter bar. Empty (toggle hidden) in the table and flat-list lenses,
+  // which have no cards, and for a lone card, which has its own chevron.
+  const collapsibleIds =
+    loading || tableView || flatView
+      ? []
+      : householdFilter
+        ? filteredClosedHouseholds.map((hh) => hh.id)
+        : sortedListableHouseholds.length > 1
+          ? sortedListableHouseholds.map((hh) => hh.id)
+          : [];
 
   return (
     <>
@@ -1385,6 +1398,15 @@ export default function GuestsPage() {
           onToggleHousehold={toggleHouseholdView}
           onSetSort={setSort}
           onClearAll={clearAllFilters}
+          trailing={
+            collapsibleIds.length > 0 && (
+              <CollapseAllButton
+                householdIds={collapsibleIds}
+                collapsedHouseholds={collapsedHouseholds}
+                onSetCollapsed={setHouseholdsCollapsed}
+              />
+            )
+          }
         />
       )}
 
@@ -1496,15 +1518,6 @@ export default function GuestsPage() {
         </div>
       ) : householdFilter ? (
         <div ref={listRef} className="space-y-6">
-          {filteredClosedHouseholds.length > 0 && (
-            <div className="flex justify-end">
-              <CollapseAllButton
-                householdIds={filteredClosedHouseholds.map((hh) => hh.id)}
-                collapsedHouseholds={collapsedHouseholds}
-                onSetCollapsed={setHouseholdsCollapsed}
-              />
-            </div>
-          )}
           {(groupSet.size > 0 ? GROUPS.filter((g) => groupSet.has(g)) : activeGroupTags).map(
             (tag, i) => {
               const tagHouseholds = sortHouseholds(
@@ -1577,15 +1590,6 @@ export default function GuestsPage() {
         </div>
       ) : (
         <div ref={listRef} className="space-y-4">
-          {sortedListableHouseholds.length > 1 && (
-            <div className="flex justify-end">
-              <CollapseAllButton
-                householdIds={sortedListableHouseholds.map((hh) => hh.id)}
-                collapsedHouseholds={collapsedHouseholds}
-                onSetCollapsed={setHouseholdsCollapsed}
-              />
-            </div>
-          )}
           {(virtualReveal ? sortedListableHouseholds : sortedListableHouseholds.slice(0, 100)).map(
             (hh) => (
               // `content-visibility: auto` lets the browser skip layout +
@@ -3817,18 +3821,20 @@ function CollapseAllButton({
   const { t } = useT();
   const allCollapsed =
     householdIds.length > 0 && householdIds.every((id) => collapsedHouseholds.has(id));
+  const label = allCollapsed ? t("guests.expand_all") : t("guests.collapse_all");
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs font-medium text-ink-600 transition-all hover:border-paper-400 active:scale-95 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:border-umber-600"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-600 transition-all hover:border-paper-400 hover:text-ink-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:border-umber-600"
       onClick={() => onSetCollapsed(householdIds, !allCollapsed)}
+      aria-label={label}
+      title={label}
     >
-      <ChevronDown
-        size={13}
-        aria-hidden
-        className={`transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${allCollapsed ? "" : "rotate-180"}`}
-      />
-      {allCollapsed ? t("guests.expand_all") : t("guests.collapse_all")}
+      {allCollapsed ? (
+        <ChevronsUpDown size={14} aria-hidden />
+      ) : (
+        <ChevronsDownUp size={14} aria-hidden />
+      )}
     </button>
   );
 }
@@ -6545,6 +6551,7 @@ function GuestFilterBar({
   onToggleHousehold,
   onSetSort,
   onClearAll,
+  trailing,
 }: {
   query: string;
   onQueryChange: (v: string) => void;
@@ -6567,6 +6574,8 @@ function GuestFilterBar({
   onToggleHousehold: () => void;
   onSetSort: (k: SortKey) => void;
   onClearAll: () => void;
+  /** Rendered at the end of the control row (the collapse-all toggle). */
+  trailing?: ReactNode;
 }) {
   const { t } = useT();
   // Auto-open the panel when a filter is already applied (e.g. arriving via a
@@ -6604,7 +6613,7 @@ function GuestFilterBar({
       <div className="flex flex-wrap items-center gap-2">
         <div
           data-tour-target="guests-search"
-          className={`relative min-w-0 sm:w-auto sm:min-w-[200px] sm:flex-1 sm:basis-auto ${
+          className={`relative min-w-0 sm:w-64 sm:shrink-0 lg:w-80 ${
             searchOpen ? "w-full basis-full" : "w-9 shrink-0"
           }`}
         >
@@ -6658,23 +6667,13 @@ function GuestFilterBar({
             )}
           </div>
         </div>
-        <ViewSelect
-          value={sortKey}
-          options={sortOptions.map((k) => ({
-            value: k,
-            label: t(`guests.sort_${k}`),
-            icon: SORT_ICON[k],
-          }))}
-          onChange={onSetSort}
-          ariaLabel={t("guests.sort_label")}
-          compact
-          className="shrink-0"
-        />
-        {/* Cards ↔ table lens. Two icon segments, mirrored to `?view=table`. */}
+        {/* Cards ↔ table lens. Two icon segments, mirrored to `?view=table`.
+            `mx-auto` centres it in the gap between the search field and the
+            sort / filter group on the right. */}
         <div
           role="group"
           aria-label={t("guests.view_label")}
-          className="inline-flex overflow-hidden rounded-full border border-paper-300 dark:border-umber-700"
+          className="inline-flex shrink-0 overflow-hidden rounded-full border border-paper-300 sm:mx-auto dark:border-umber-700"
         >
           <button
             type="button"
@@ -6705,6 +6704,18 @@ function GuestFilterBar({
             <TableIcon size={14} aria-hidden />
           </button>
         </div>
+        <ViewSelect
+          value={sortKey}
+          options={sortOptions.map((k) => ({
+            value: k,
+            label: t(`guests.sort_${k}`),
+            icon: SORT_ICON[k],
+          }))}
+          onChange={onSetSort}
+          ariaLabel={t("guests.sort_label")}
+          compact
+          className="shrink-0"
+        />
         <button
           type="button"
           className="btn-outline shrink-0 px-3"
@@ -6720,6 +6731,7 @@ function GuestFilterBar({
             </span>
           )}
         </button>
+        {trailing}
       </div>
 
       {open && (
