@@ -3412,7 +3412,7 @@ const de: LocaleMessages = {
     collect_saved: "Link gespeichert.",
     collect_removed: "Link entfernt.",
     collect_delete: "Link entfernen",
-    hero_title: "Alle Hochzeitserinnerungen an einem Ort sammeln",
+    hero_title: "Haltet jeden Blickwinkel fest",
     hero_sub:
       "Erstellen Sie einen privaten QR-Code, damit Gäste Fotos von Ihrer Hochzeit teilen können. Keine App, kein Konto, kein Chaos.",
     hero_cta_create: "Gäste-Fotolink erstellen",

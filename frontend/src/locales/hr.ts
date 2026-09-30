@@ -3340,7 +3340,7 @@ const hr: LocaleMessages = {
     collect_saved: "Poveznica je spremljena.",
     collect_removed: "Poveznica je uklonjena.",
     collect_delete: "Uklonite poveznicu",
-    hero_title: "Skupite sve uspomene s vjenčanja na jednom mjestu",
+    hero_title: "Zabilježite pogled svakog gosta",
     hero_sub:
       "Stvorite privatni QR kod da gosti mogu dijeliti fotografije s vašeg vjenčanja. Bez aplikacije, bez računa, bez kaosa.",
     hero_cta_create: "Stvorite poveznicu za fotografije",

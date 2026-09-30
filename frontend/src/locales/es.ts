@@ -3403,7 +3403,7 @@ const es: LocaleMessages = {
     collect_saved: "Enlace guardado.",
     collect_removed: "Enlace eliminado.",
     collect_delete: "Eliminar enlace",
-    hero_title: "Reúne todos los recuerdos de la boda en un solo lugar",
+    hero_title: "Captura la mirada de todos",
     hero_sub:
       "Crea un código QR privado para que los invitados compartan las fotos de tu boda. Sin app, sin cuenta, sin caos.",
     hero_cta_create: "Crear enlace de fotos para invitados",

@@ -3341,7 +3341,7 @@ const en: LocaleMessages = {
     collect_saved: "Link saved.",
     collect_removed: "Link removed.",
     collect_delete: "Remove link",
-    hero_title: "Collect every wedding memory in one place",
+    hero_title: "Capture everyone’s perspective",
     hero_sub:
       "Create a private QR code so guests can share photos from your wedding. No app, no account, no chaos.",
     hero_cta_create: "Create guest photo link",

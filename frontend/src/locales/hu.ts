@@ -3368,7 +3368,7 @@ const hu: LocaleMessages = {
     collect_saved: "Link elmentve.",
     collect_removed: "Link törölve.",
     collect_delete: "Link eltávolítása",
-    hero_title: "Gyűjtsd össze az esküvő minden emlékét egy helyen",
+    hero_title: "Örökítsd meg mindenki nézőpontját",
     hero_sub:
       "Hozz létre egy privát QR-kódot, hogy a vendégek megoszthassák fotóikat. App nélkül, regisztráció nélkül, káosz nélkül.",
     hero_cta_create: "Vendég fotólink létrehozása",
