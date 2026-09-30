@@ -555,7 +555,7 @@ export default function OnboardingWizard() {
            *  cards elsewhere in the app. Scoped to just the question, not the
            *  progress bar or the Back/Finish row below, so only the thing
            *  that actually changed moves. */}
-          <div key={step} className="animate-card-deal">
+          <div key={step} className="flex flex-1 flex-col animate-card-deal">
             {step === 0 && (
               <>
                 <h1 className={STEP_TITLE}>{t("onboarding.step1_title")}</h1>
@@ -719,8 +719,49 @@ export default function OnboardingWizard() {
             {step === 2 && (
               <>
                 <h1 className={STEP_TITLE}>{t("onboarding.step3_title")}</h1>
+                {/* The answer sits above the options, and with "no idea"
+                 *  picked it keeps its space (hidden, so not focusable) so
+                 *  the options never jump. */}
                 <div
-                  className="mt-8 grid grid-cols-3 gap-2"
+                  className={`mt-8 ${form.guest_kind === "tbd" ? "invisible" : ""}`}
+                  aria-hidden={form.guest_kind === "tbd"}
+                >
+                  <p className="text-center font-grotesk text-2xl sm:text-3xl tracking-tight text-umber-900 dark:text-paper-50">
+                    {formatGuestCountGoal(buildGuestGoal(form), { t, locale })}
+                  </p>
+                  <div className="mt-4">
+                    {form.guest_kind === "exact" ? (
+                      <Slider
+                        min={GUEST_SLIDER_MIN}
+                        max={GUEST_SLIDER_MAX}
+                        step={GUEST_SLIDER_STEP}
+                        value={Number(form.guest_exact) || GUEST_EXACT_DEFAULT}
+                        onChange={(n) => update("guest_exact", String(n))}
+                        label={t("onboarding.target_guest_count_label")}
+                        minCaption={formatNumber(GUEST_SLIDER_MIN, locale)}
+                        maxCaption={`${formatNumber(GUEST_SLIDER_MAX, locale)}+`}
+                      />
+                    ) : (
+                      <RangeSlider
+                        min={GUEST_SLIDER_MIN}
+                        max={GUEST_SLIDER_MAX}
+                        step={GUEST_SLIDER_STEP}
+                        low={Number(form.guest_min) || GUEST_SLIDER_MIN}
+                        high={Number(form.guest_max) || GUEST_SLIDER_MAX}
+                        onChange={(lo, hi) => {
+                          update("guest_min", String(lo));
+                          update("guest_max", String(hi));
+                        }}
+                        lowLabel={t("onboarding.guest_min_label")}
+                        highLabel={t("onboarding.guest_max_label")}
+                        minCaption={formatNumber(GUEST_SLIDER_MIN, locale)}
+                        maxCaption={`${formatNumber(GUEST_SLIDER_MAX, locale)}+`}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div
+                  className="mt-6 grid grid-cols-3 gap-2"
                   role="group"
                   aria-label={t("onboarding.guest_kind_question")}
                 >
@@ -740,52 +781,74 @@ export default function OnboardingWizard() {
                     />
                   ))}
                 </div>
-
-                {form.guest_kind !== "tbd" && (
-                  <div className="mt-6">
-                    <p className="text-center font-grotesk text-2xl sm:text-3xl tracking-tight text-umber-900 dark:text-paper-50">
-                      {formatGuestCountGoal(buildGuestGoal(form), { t, locale })}
-                    </p>
-                    <div className="mt-4">
-                      {form.guest_kind === "exact" ? (
-                        <Slider
-                          min={GUEST_SLIDER_MIN}
-                          max={GUEST_SLIDER_MAX}
-                          step={GUEST_SLIDER_STEP}
-                          value={Number(form.guest_exact) || GUEST_EXACT_DEFAULT}
-                          onChange={(n) => update("guest_exact", String(n))}
-                          label={t("onboarding.target_guest_count_label")}
-                          minCaption={formatNumber(GUEST_SLIDER_MIN, locale)}
-                          maxCaption={`${formatNumber(GUEST_SLIDER_MAX, locale)}+`}
-                        />
-                      ) : (
-                        <RangeSlider
-                          min={GUEST_SLIDER_MIN}
-                          max={GUEST_SLIDER_MAX}
-                          step={GUEST_SLIDER_STEP}
-                          low={Number(form.guest_min) || GUEST_SLIDER_MIN}
-                          high={Number(form.guest_max) || GUEST_SLIDER_MAX}
-                          onChange={(lo, hi) => {
-                            update("guest_min", String(lo));
-                            update("guest_max", String(hi));
-                          }}
-                          lowLabel={t("onboarding.guest_min_label")}
-                          highLabel={t("onboarding.guest_max_label")}
-                          minCaption={formatNumber(GUEST_SLIDER_MIN, locale)}
-                          maxCaption={`${formatNumber(GUEST_SLIDER_MAX, locale)}+`}
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
               </>
             )}
 
             {step === 3 && (
               <>
                 <h1 className={STEP_TITLE}>{t("onboarding.step4_title")}</h1>
+                {/* The answer sits above the options, and with "no idea"
+                 *  picked it keeps its space (hidden, so not focusable) so
+                 *  the options never jump. */}
                 <div
-                  className="mt-8 grid grid-cols-3 gap-2"
+                  className={`mt-8 ${form.budget_kind === "tbd" ? "invisible" : ""}`}
+                  aria-hidden={form.budget_kind === "tbd"}
+                >
+                  <p className="text-center font-grotesk text-2xl sm:text-3xl tracking-tight text-umber-900 dark:text-paper-50">
+                    {form.budget_kind === "exact"
+                      ? formatMoney(
+                          Number(form.budget_exact) ||
+                            Number(budgetDefaults(form.currency).placeholder),
+                          form.currency,
+                          locale,
+                        )
+                      : formatMoneyRange(
+                          Number(form.budget_min),
+                          Number(form.budget_max),
+                          form.currency,
+                          locale,
+                        )}
+                  </p>
+                  <div className="mt-4">
+                    {form.budget_kind === "exact" ? (
+                      <Slider
+                        {...budgetSliderScale(form.currency)}
+                        value={
+                          Number(form.budget_exact) ||
+                          Number(budgetDefaults(form.currency).placeholder)
+                        }
+                        onChange={(n) => update("budget_exact", String(n))}
+                        label={t("onboarding.budget_label")}
+                        minCaption={formatMoney(
+                          budgetSliderScale(form.currency).min,
+                          form.currency,
+                          locale,
+                        )}
+                        maxCaption={`${formatMoney(budgetSliderScale(form.currency).max, form.currency, locale)}+`}
+                      />
+                    ) : (
+                      <RangeSlider
+                        {...budgetSliderScale(form.currency)}
+                        low={Number(form.budget_min) || budgetSliderScale(form.currency).min}
+                        high={Number(form.budget_max) || budgetSliderScale(form.currency).max}
+                        onChange={(lo, hi) => {
+                          update("budget_min", String(lo));
+                          update("budget_max", String(hi));
+                        }}
+                        lowLabel={t("onboarding.budget_min_label")}
+                        highLabel={t("onboarding.budget_max_label")}
+                        minCaption={formatMoney(
+                          budgetSliderScale(form.currency).min,
+                          form.currency,
+                          locale,
+                        )}
+                        maxCaption={`${formatMoney(budgetSliderScale(form.currency).max, form.currency, locale)}+`}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div
+                  className="mt-6 grid grid-cols-3 gap-2"
                   role="group"
                   aria-label={t("onboarding.budget_kind_question")}
                 >
@@ -804,63 +867,6 @@ export default function OnboardingWizard() {
                     />
                   ))}
                 </div>
-
-                {form.budget_kind !== "tbd" && (
-                  <div className="mt-6">
-                    <p className="text-center font-grotesk text-2xl sm:text-3xl tracking-tight text-umber-900 dark:text-paper-50">
-                      {form.budget_kind === "exact"
-                        ? formatMoney(
-                            Number(form.budget_exact) ||
-                              Number(budgetDefaults(form.currency).placeholder),
-                            form.currency,
-                            locale,
-                          )
-                        : formatMoneyRange(
-                            Number(form.budget_min),
-                            Number(form.budget_max),
-                            form.currency,
-                            locale,
-                          )}
-                    </p>
-                    <div className="mt-4">
-                      {form.budget_kind === "exact" ? (
-                        <Slider
-                          {...budgetSliderScale(form.currency)}
-                          value={
-                            Number(form.budget_exact) ||
-                            Number(budgetDefaults(form.currency).placeholder)
-                          }
-                          onChange={(n) => update("budget_exact", String(n))}
-                          label={t("onboarding.budget_label")}
-                          minCaption={formatMoney(
-                            budgetSliderScale(form.currency).min,
-                            form.currency,
-                            locale,
-                          )}
-                          maxCaption={`${formatMoney(budgetSliderScale(form.currency).max, form.currency, locale)}+`}
-                        />
-                      ) : (
-                        <RangeSlider
-                          {...budgetSliderScale(form.currency)}
-                          low={Number(form.budget_min) || budgetSliderScale(form.currency).min}
-                          high={Number(form.budget_max) || budgetSliderScale(form.currency).max}
-                          onChange={(lo, hi) => {
-                            update("budget_min", String(lo));
-                            update("budget_max", String(hi));
-                          }}
-                          lowLabel={t("onboarding.budget_min_label")}
-                          highLabel={t("onboarding.budget_max_label")}
-                          minCaption={formatMoney(
-                            budgetSliderScale(form.currency).min,
-                            form.currency,
-                            locale,
-                          )}
-                          maxCaption={`${formatMoney(budgetSliderScale(form.currency).max, form.currency, locale)}+`}
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
                 {/* Currency sits under the answer, not above the choice, so the
                  *  "specific / range / no idea" row lands at the same height as
                  *  on the guest step. Switching it rebases the slider. */}
@@ -880,7 +886,9 @@ export default function OnboardingWizard() {
             {step === 4 && (
               <>
                 <h1 className={STEP_TITLE}>{t("onboarding.step5_title")}</h1>
-                <div className="mt-8">
+                {/* One field on a card sized for the tallest step: centred in
+                 *  the free space rather than hanging under the title. */}
+                <div className="my-auto pt-8">
                   <CountryCombobox
                     value={form.country}
                     onChange={(code) => update("country", code)}
