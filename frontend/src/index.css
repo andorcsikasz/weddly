@@ -1352,6 +1352,22 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .field-error {
     @apply mt-1 block text-xs text-blush-700 dark:text-blush-300;
   }
+  /* Onboarding wizard: Uber-style fields. A filled field with no hairline,
+     a black 2px edge on focus, and a sentence-case label in the body colour.
+     Scoped to the wizard so the rest of the app keeps its bordered inputs. */
+  .onb-fields .input {
+    @apply min-h-[3.25rem] rounded-lg border-2 border-transparent bg-paper-100 px-4 text-base font-medium text-umber-900
+      placeholder:font-normal placeholder:text-umber-400
+      focus:border-umber-900 focus:bg-white focus:ring-0
+      dark:border-transparent dark:bg-umber-800 dark:text-paper-50
+      dark:focus:border-paper-50 dark:focus:bg-umber-900;
+  }
+  .onb-fields .input-invalid {
+    @apply border-blush-500 focus:border-blush-500 dark:border-blush-400 dark:focus:border-blush-400;
+  }
+  .onb-fields .field-label {
+    @apply mb-2 text-sm font-medium normal-case tracking-normal text-umber-900 dark:text-paper-50;
+  }
 
   .card {
     /* Dark border is umber-600 (not -700): shadows are dropped in dark mode, so
