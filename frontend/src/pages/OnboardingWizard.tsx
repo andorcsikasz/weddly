@@ -75,7 +75,9 @@ function budgetDefaults(currency: Currency): BudgetDefaults {
  *  defaults (HUF 4M to 6M, EUR 10k to 15k) land on it exactly. A bigger budget
  *  drags to the end ("+") and is refined on the budget page. */
 function budgetSliderScale(currency: Currency): { min: number; max: number; step: number } {
-  const max = scaleFromEur(60000, currency);
+  // Forint is tuned by hand: 15M covers the typical Hungarian wedding, and a
+  // straight conversion (about 24M) left the defaults crammed at the left end.
+  const max = currency === "HUF" ? 15_000_000 : scaleFromEur(60000, currency);
   const step = moneySliderStep(max / 4);
   // A native range input counts its steps from `min`, so a min off the step
   // grid would shift every value the thumb can land on.
@@ -547,7 +549,7 @@ export default function OnboardingWizard() {
           </div>
         </div>
 
-        <div className="onb-card card animate-fade-in-up flex min-h-[33rem] flex-col overflow-hidden sm:min-h-[31rem] sm:p-8">
+        <div className="onb-card card animate-fade-in-up flex min-h-[33rem] flex-col overflow-x-clip sm:min-h-[31rem] sm:p-8">
           {/* `key={step}` remounts this wrapper on every step change, which
            *  is what replays `animate-card-deal` — same idiom as the couple
            *  cards elsewhere in the app. Scoped to just the question, not the
@@ -700,7 +702,15 @@ export default function OnboardingWizard() {
 
                 {form.date_kind === "tbd" && (
                   <p className="mt-6 animate-fade-in-up rounded-lg bg-paper-200 p-4 text-sm text-umber-700 dark:bg-umber-800 dark:text-umber-200">
-                    {t("onboarding.date_kind_help_tbd")}
+                    {/* One sentence per line. Split here rather than in the
+                     *  copy so every locale gets it without a "\n" in five files. */}
+                    {t("onboarding.date_kind_help_tbd")
+                      .split(/(?<=[.!?])\s+/)
+                      .map((sentence) => (
+                        <span key={sentence} className="block">
+                          {sentence}
+                        </span>
+                      ))}
                   </p>
                 )}
               </>

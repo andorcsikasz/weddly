@@ -1372,12 +1372,15 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     @apply pointer-events-none absolute inset-0 h-full w-full appearance-none bg-transparent;
   }
   .range-dual input[type="range"]::-webkit-slider-runnable-track {
-    @apply flex h-full items-center bg-transparent;
+    @apply h-full bg-transparent;
   }
   .range-dual input[type="range"]::-moz-range-track {
     @apply bg-transparent;
   }
   .range-dual input[type="range"]::-webkit-slider-thumb {
+    /* WebKit pins the thumb to the TOP of its track, so a 24px thumb on the
+       32px track needs (32 - 24) / 2 = 4px to sit on the line's centre. */
+    margin-top: 4px;
     @apply pointer-events-auto h-6 w-6 cursor-grab appearance-none rounded-full border-2 border-solid border-umber-900 bg-white shadow-md
       transition-transform active:scale-110 active:cursor-grabbing
       dark:border-paper-50 dark:bg-umber-900;
@@ -1394,6 +1397,15 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   .range-dual input[type="range"]:focus-visible::-moz-range-thumb {
     @apply ring-4 ring-umber-900/15 dark:ring-paper-50/25;
+  }
+  /* Onboarding Next / finish: a neutral grey rim and drop instead of the
+     colour-matched ones, so the button sits on the card rather than in it. */
+  .onb-fields .btn-lifted {
+    --btn-rim: rgba(110, 110, 110, 0.45);
+    --btn-rim-hover: rgba(110, 110, 110, 0.55);
+    --btn-rim-active: rgba(110, 110, 110, 0.4);
+    --btn-shadow: rgba(110, 110, 110, 0.25);
+    --btn-shadow-hover: rgba(110, 110, 110, 0.32);
   }
   .onb-fields .field-label {
     @apply mb-2 text-sm font-medium normal-case tracking-normal text-umber-900 dark:text-paper-50;
