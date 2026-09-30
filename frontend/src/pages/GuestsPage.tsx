@@ -2309,7 +2309,7 @@ function EmailCell({
       type="email"
       value={text}
       aria-label={t("guests.email")}
-      placeholder={t("guests.table_email_placeholder")}
+      placeholder="@"
       onChange={(e) => setText(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
@@ -2696,7 +2696,7 @@ function GuestTableNewRow({
             <input
               type="email"
               value={email}
-              placeholder={t("guests.table_email_placeholder")}
+              placeholder="@"
               aria-label={t("guests.email")}
               disabled={saving}
               onChange={(e) => setEmail(e.target.value)}
@@ -3418,13 +3418,24 @@ function GuestTableRow({
       case "accommodation":
         return (
           <td key={c} className={`${CELL} text-center`}>
-            <input
-              type="checkbox"
-              className="h-4 w-4 cursor-pointer accent-umber-700 dark:accent-paper-100"
-              checked={g.accommodation_needed}
-              aria-label={t("guests.table_col_accommodation")}
-              onChange={(e) => void onUpdateGuest(g, { accommodation_needed: e.target.checked })}
-            />
+            {/* Drawn rather than native: the native box paints a white fill
+                in dark mode, which reads as "ticked" at a glance. Empty is
+                an outline only, in both themes. */}
+            <span className="relative inline-flex h-4 w-4 align-middle">
+              <input
+                type="checkbox"
+                className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-ink-400 bg-transparent transition-colors checked:border-umber-700 checked:bg-umber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-1 dark:border-umber-400 dark:checked:border-paper-100 dark:checked:bg-paper-100 dark:focus-visible:ring-paper-100"
+                checked={g.accommodation_needed}
+                aria-label={t("guests.table_col_accommodation")}
+                onChange={(e) => void onUpdateGuest(g, { accommodation_needed: e.target.checked })}
+              />
+              <Check
+                size={12}
+                strokeWidth={3}
+                aria-hidden
+                className="pointer-events-none absolute inset-0 m-auto hidden text-paper-50 peer-checked:block dark:text-umber-900"
+              />
+            </span>
           </td>
         );
       case "invited":
@@ -6687,63 +6698,59 @@ function GuestFilterBar({
       <div className="flex flex-wrap items-center gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
         <div
           data-tour-target="guests-search"
-          /* An icon at every width until asked for. Clicking it opens the
-           *  field AND focuses it (the effect on `searchOpen`), so the click
-           *  that opened it behaves like a click into the input. On sm+ it
-           *  grows across its grid column; on phones it takes its own row. */
+          /* ONE element, never swapped: the input itself is the icon button
+           *  while closed (a 36px pill with only the glyph showing) and grows
+           *  into the field when focused. Because nothing mounts or unmounts,
+           *  closing is the same width transition as opening, run backwards.
+           *  Focusing it is what opens it, so the click that opens it is a
+           *  click into the input. On phones the open field takes its own row. */
           className={`relative min-w-0 transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             searchOpen ? "w-full basis-full sm:basis-auto" : "w-9 shrink-0"
           }`}
         >
-          {!searchOpen && (
+          <Search
+            size={14}
+            aria-hidden
+            className={`pointer-events-none absolute left-[11px] top-1/2 z-10 -translate-y-1/2 transition-colors ${
+              searchOpen ? "text-ink-400 dark:text-umber-300" : "text-ink-600 dark:text-paper-100"
+            }`}
+          />
+          <input
+            ref={searchInputRef}
+            type="search"
+            className={`input !min-h-0 h-9 rounded-full !py-0 pl-9 [&::-webkit-search-cancel-button]:appearance-none dark:bg-umber-800 ${
+              searchOpen
+                ? "pr-9"
+                : "cursor-pointer !pr-0 text-transparent caret-transparent placeholder:text-transparent hover:border-paper-400"
+            }`}
+            placeholder={t("guests.search_placeholder")}
+            aria-label={t("guests.search_label")}
+            aria-expanded={searchOpen}
+            value={query}
+            onFocus={() => setSearchOpen(true)}
+            onChange={(e) => onQueryChange(e.target.value)}
+            onBlur={() => {
+              if (!query) setSearchOpen(false);
+            }}
+          />
+          {searchOpen && query !== "" && (
             <button
               type="button"
-              onClick={() => setSearchOpen(true)}
-              aria-label={t("guests.search_label")}
-              aria-expanded={searchOpen}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-600 transition-colors hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+              /* Ground the pointer so the input's blur (which closes the
+               *  field when it is empty) can't fire between the touch and
+               *  the click. Keeping focus in the field while clearing also
+               *  lets the user keep typing. */
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onQueryChange("");
+                if (searchInputRef.current) searchInputRef.current.focus();
+              }}
+              aria-label={t("guests.search_clear")}
+              className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
             >
-              <Search size={14} aria-hidden />
+              <X size={14} aria-hidden />
             </button>
           )}
-          <div className={searchOpen ? undefined : "hidden"}>
-            <Search
-              size={14}
-              aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-            />
-            <input
-              ref={searchInputRef}
-              type="search"
-              className="input pl-9 pr-9 [&::-webkit-search-cancel-button]:appearance-none"
-              placeholder={t("guests.search_placeholder")}
-              aria-label={t("guests.search_label")}
-              value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              onBlur={() => {
-                if (!query) setSearchOpen(false);
-              }}
-            />
-            {searchOpen && query !== "" && (
-              <button
-                type="button"
-                /* Ground the pointer so the input's blur (which closes the
-                 *  panel when the field is empty) can't fire between the
-                 *  touch and the click and unmount this button first — an X
-                 *  that unmounts is an X that never clicks. Keeping focus in
-                 *  the field while clearing also lets the user keep typing. */
-                onPointerDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  onQueryChange("");
-                  if (searchInputRef.current) searchInputRef.current.focus();
-                }}
-                aria-label={t("guests.search_clear")}
-                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-              >
-                <X size={14} aria-hidden />
-              </button>
-            )}
-          </div>
         </div>
         {/* Cards ↔ table lens. Two icon segments, mirrored to `?view=table`.
             Centred by the grid column, not by leftover space. */}
