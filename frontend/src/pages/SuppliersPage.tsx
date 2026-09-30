@@ -3333,6 +3333,7 @@ export default function SuppliersPage() {
               countries={availableCountries}
               onChange={setCountryFilter}
               hideLabel
+              large
             />
           </div>
 

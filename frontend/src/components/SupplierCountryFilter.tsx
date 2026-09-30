@@ -11,7 +11,16 @@
 import { countryName } from "@shared/country_list";
 import type { SupplierCountryCount } from "@shared/suppliers";
 import { ChevronDown, X } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { useT } from "../lib/i18n";
 
 type Props = {
@@ -29,6 +38,9 @@ type Props = {
    *  component that brings its own label can't line up with anything. The
    *  trigger keeps its `aria-label`, so nothing is lost to a screen reader. */
   hideLabel?: boolean;
+  /** Dialog size: the trigger matches the price chips beside it (h-8, text-sm)
+   *  instead of the compact filter-bar pill. */
+  large?: boolean;
 };
 
 export function SupplierCountryFilter({
@@ -37,18 +49,60 @@ export function SupplierCountryFilter({
   countries,
   onChange,
   hideLabel,
+  large,
 }: Props) {
   const { t, locale } = useT();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLUListElement | null>(null);
   const listboxId = useId();
+  const [menuStyle, setMenuStyle] = useState<CSSProperties | null>(null);
+
+  // The menu is portalled and fixed-positioned: inside the filters dialog it
+  // sat in a scrolling body, which clipped it on the right and at the bottom.
+  // It aligns to the trigger's RIGHT edge (the trigger ends on the dialog's
+  // right edge) and opens upward when there is no room below.
+  useLayoutEffect(() => {
+    if (!open) {
+      setMenuStyle(null);
+      return;
+    }
+    const place = () => {
+      const r = wrapRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const gap = 4;
+      const margin = 8;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const below = vh - r.bottom - gap - margin;
+      const above = r.top - gap - margin;
+      const up = below < 224 && above > below;
+      const maxHeight = Math.max(120, Math.min(224, up ? above : below));
+      const right = Math.max(margin, vw - r.right);
+      setMenuStyle({
+        position: "fixed",
+        right,
+        maxHeight,
+        maxWidth: vw - 2 * margin,
+        ...(up ? { bottom: vh - r.top + gap } : { top: r.bottom + gap }),
+      });
+    };
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open]);
 
   // Click-outside + Escape collapse the menu. Pointerdown (not click) so a tap
   // on an option still commits before the outside handler fires.
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (!wrapRef.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -101,8 +155,8 @@ export function SupplierCountryFilter({
         <div
           className={
             activeCountry
-              ? "inline-flex items-center rounded-full border border-ink-700 bg-paper-50 dark:border-paper-50 dark:bg-umber-800"
-              : "inline-flex items-center rounded-full border border-transparent"
+              ? `inline-flex items-center rounded-full border border-ink-700${large ? " h-8" : ""} bg-paper-50 dark:border-paper-50 dark:bg-umber-800`
+              : `inline-flex items-center rounded-full border border-transparent${large ? " h-8" : ""}`
           }
         >
           <button
@@ -113,15 +167,23 @@ export function SupplierCountryFilter({
             aria-controls={listboxId}
             aria-label={t("suppliers.country_filter_label")}
             onClick={() => setOpen((o) => !o)}
-            className="inline-flex items-center gap-1 rounded-full py-0.5 pl-2 pr-1 text-[11px] font-semibold tracking-[0.02em] text-ink-800 transition hover:text-ink-900 dark:text-paper-100"
+            className={`inline-flex items-center gap-1 rounded-full text-ink-800 transition hover:text-ink-900 dark:text-paper-100 ${
+              large
+                ? "h-full pl-3 pr-2 text-sm font-medium"
+                : "py-0.5 pl-2 pr-1 text-[11px] font-semibold tracking-[0.02em]"
+            }`}
           >
             {/* Full localised name on sm+; bare ISO code on mobile to keep the
                 already-busy filter bar from overflowing. */}
-            <span className="hidden sm:inline">{triggerName}</span>
-            <span className="uppercase sm:hidden">
+            <span className={large ? "" : "hidden sm:inline"}>{triggerName}</span>
+            <span className={large ? "hidden" : "uppercase sm:hidden"}>
               {activeCountry ?? t("suppliers.country_filter_all")}
             </span>
-            <ChevronDown size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
+            <ChevronDown
+              size={large ? 14 : 12}
+              aria-hidden
+              className="text-ink-400 dark:text-umber-300"
+            />
           </button>
           {canReset && (
             <button
@@ -138,37 +200,42 @@ export function SupplierCountryFilter({
             </button>
           )}
         </div>
-        {open && (
-          <ul
-            id={listboxId}
-            role="listbox"
-            aria-label={t("suppliers.country_filter_label")}
-            className="absolute left-0 z-[1100] mt-1 max-h-56 min-w-[12rem] overflow-y-auto rounded-xl border border-paper-300 bg-paper-50 py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
-          >
-            <CountryOption
-              label={t("suppliers.country_filter_all")}
-              count={total}
-              selected={isAll}
-              onPick={() => {
-                onChange("all");
-                setOpen(false);
-              }}
-            />
-            <li className="my-1 border-t border-paper-200 dark:border-umber-700" aria-hidden />
-            {ordered.map((o) => (
+        {open &&
+          menuStyle &&
+          createPortal(
+            <ul
+              ref={menuRef}
+              id={listboxId}
+              role="listbox"
+              aria-label={t("suppliers.country_filter_label")}
+              style={menuStyle}
+              className="z-[1100] min-w-[12rem] overflow-y-auto rounded-xl border border-paper-300 bg-paper-50 py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+            >
               <CountryOption
-                key={o.code}
-                label={countryName(o.code, locale)}
-                count={o.count}
-                selected={value === o.code}
+                label={t("suppliers.country_filter_all")}
+                count={total}
+                selected={isAll}
                 onPick={() => {
-                  onChange(o.code);
+                  onChange("all");
                   setOpen(false);
                 }}
               />
-            ))}
-          </ul>
-        )}
+              <li className="my-1 border-t border-paper-200 dark:border-umber-700" aria-hidden />
+              {ordered.map((o) => (
+                <CountryOption
+                  key={o.code}
+                  label={countryName(o.code, locale)}
+                  count={o.count}
+                  selected={value === o.code}
+                  onPick={() => {
+                    onChange(o.code);
+                    setOpen(false);
+                  }}
+                />
+              ))}
+            </ul>,
+            document.body,
+          )}
       </div>
     </div>
   );
