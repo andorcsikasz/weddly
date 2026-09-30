@@ -4865,6 +4865,18 @@ const es: LocaleMessages = {
     checkin_open_rsvp: "Abrir página de confirmación",
     checkin_copy_link: "Copiar enlace",
     checkin_link_copied: "Enlace copiado al portapapeles.",
+    checkin_guide_title: "Cómo funciona",
+    checkin_step_households_title: "Crea los hogares",
+    checkin_step_households_body:
+      "Quienes responden juntos comparten hogar y un código de 8 caracteres.",
+    checkin_step_menu_title: "Comida y alergias",
+    checkin_step_menu_body: "Elige el menú y las preguntas de dieta en Menús.",
+    checkin_step_sent_title: "Una confirmación por hogar",
+    checkin_step_sent_body: "Cada hogar responde una vez por todos sus miembros.",
+    checkin_step_answers_title: "Recoge las respuestas",
+    checkin_step_answers_body: "Respuestas, menús y alergias llegan aquí a medida que responden.",
+    checkin_step_done_title: "Listo",
+    checkin_step_done_body: "Mesas, recuento para el catering y tarjetas salen de esta lista.",
     couple_slug_help_locked:
       "Preimpreso en las invitaciones y en la página pública de registro; bloqueado para que los enlaces que ya has compartido sigan funcionando.",
     invited_check_label: "Marcar como invitado",

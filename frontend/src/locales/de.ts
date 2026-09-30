@@ -4911,6 +4911,19 @@ const de: LocaleMessages = {
     checkin_open_rsvp: "RSVP-Seite öffnen",
     checkin_copy_link: "Link kopieren",
     checkin_link_copied: "Link in die Zwischenablage kopiert.",
+    checkin_guide_title: "So funktioniert es",
+    checkin_step_households_title: "Haushalte anlegen",
+    checkin_step_households_body:
+      "Wer gemeinsam antwortet, teilt einen Haushalt und einen 8-stelligen Code.",
+    checkin_step_menu_title: "Essen und Allergene",
+    checkin_step_menu_body: "Menü und Ernährungsfragen legst du unter Essen fest.",
+    checkin_step_sent_title: "Eine Rückmeldung pro Haushalt",
+    checkin_step_sent_body: "Jeder Haushalt antwortet einmal für alle.",
+    checkin_step_answers_title: "Antworten sammeln",
+    checkin_step_answers_body:
+      "Zusagen, Menüwahl und Allergien landen hier, sobald Gäste antworten.",
+    checkin_step_done_title: "Fertig",
+    checkin_step_done_body: "Sitzplan, Catering-Zahlen und Tischkarten kommen aus dieser Liste.",
     couple_slug_help_locked:
       "Steht schon auf Einladungen und auf der öffentlichen Check-in-Seite, deshalb gesperrt, damit bereits geteilte Links weiter funktionieren.",
     invited_check_label: "Als eingeladen markieren",

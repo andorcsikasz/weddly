@@ -4777,6 +4777,18 @@ const en: LocaleMessages = {
     checkin_open_rsvp: "Open RSVP page",
     checkin_copy_link: "Copy link",
     checkin_link_copied: "Link copied to clipboard.",
+    checkin_guide_title: "How it works",
+    checkin_step_households_title: "Create households",
+    checkin_step_households_body:
+      "Guests who reply together share a household and one 8-character code.",
+    checkin_step_menu_title: "Set food and allergies",
+    checkin_step_menu_body: "Choose the menu and dietary questions under Meals.",
+    checkin_step_sent_title: "Send one RSVP per household",
+    checkin_step_sent_body: "Each household answers once, for everyone in it.",
+    checkin_step_answers_title: "Collect the answers",
+    checkin_step_answers_body: "Replies, meals and allergies arrive here as guests respond.",
+    checkin_step_done_title: "Done",
+    checkin_step_done_body: "Seating, catering counts and place cards all work from this list.",
     couple_slug_help_locked:
       "Pre-printed on invites and the public check-in page, locked so links you've already shared keep working.",
     invited_check_label: "Mark as invited",

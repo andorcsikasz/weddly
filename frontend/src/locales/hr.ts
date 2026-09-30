@@ -4810,6 +4810,19 @@ const hr: LocaleMessages = {
     checkin_open_rsvp: "Otvorite RSVP stranicu",
     checkin_copy_link: "Kopiraj poveznicu",
     checkin_link_copied: "Poveznica je kopirana u međuspremnik.",
+    checkin_guide_title: "Kako funkcionira",
+    checkin_step_households_title: "Stvorite kućanstva",
+    checkin_step_households_body:
+      "Tko odgovara zajedno, dijeli kućanstvo i jedan kod od 8 znakova.",
+    checkin_step_menu_title: "Hrana i alergeni",
+    checkin_step_menu_body: "Jelovnik i pitanja o prehrani postavljate u izborniku Jela.",
+    checkin_step_sent_title: "Jedan odgovor po kućanstvu",
+    checkin_step_sent_body: "Svako kućanstvo odgovara jednom za sve.",
+    checkin_step_answers_title: "Prikupite odgovore",
+    checkin_step_answers_body: "Odgovori, obroci i alergije stižu ovdje kako gosti odgovaraju.",
+    checkin_step_done_title: "Gotovo",
+    checkin_step_done_body:
+      "Raspored sjedenja, broj za catering i kartice s imenima rade iz ovog popisa.",
     couple_slug_help_locked:
       "Otisnut je na pozivnicama i na javnoj stranici za prijavu pa je zaključan kako bi već podijeljene poveznice i dalje radile.",
     invited_check_label: "Označite kao pozvano",

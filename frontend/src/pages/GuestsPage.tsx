@@ -1295,7 +1295,7 @@ export default function GuestsPage() {
         {couple && (
           // Fills the empty gap between the stat counters and the toolbar
           // instead of sitting on its own full-width row below the header.
-          <div className="order-last min-w-[12rem] flex-1 basis-64 sm:order-none">
+          <div className="order-last flex flex-1 justify-end sm:order-none">
             <CheckinTrigger
               couple={couple}
               expanded={checkinExpanded}
@@ -1379,7 +1379,18 @@ export default function GuestsPage() {
 
       {couple && checkinExpanded && (
         <div className="mb-4">
-          <CheckinPanel couple={couple} />
+          <CheckinPanel
+            couple={couple}
+            done={{
+              households: listableHouseholds.length > 0,
+              menu: households.some((h) => h.rsvp_collects_meal),
+              sent: listableGuests.some((g) => g.invited_at != null),
+              answers: listableGuests.some((g) => g.rsvp_status !== "pending"),
+            }}
+            onAddGuest={() => setEditing({ guest: null, defaultHouseholdId: null })}
+            onOpenMeals={() => setMealsOpen(true)}
+            onSendInvites={() => navigate("/app/invites")}
+          />
         </div>
       )}
 
@@ -3888,7 +3899,6 @@ function CollapseAllButton({
  * + URL hint + the household-grouping reminder.
  */
 function CheckinTrigger({
-  couple,
   expanded,
   onToggle,
 }: {
@@ -3897,31 +3907,25 @@ function CheckinTrigger({
   onToggle: () => void;
 }) {
   const { t } = useT();
+  // Just the word: the code and the "+ 8 characters" hint live in the panel
+  // it opens, next to the guide, where they mean something.
   return (
     <button
       type="button"
       onClick={onToggle}
       aria-expanded={expanded}
       aria-label={expanded ? t("guests.checkin_pill_hide") : t("guests.checkin_pill_show")}
-      className="flex w-full min-w-0 items-center gap-3 rounded-lg border border-paper-300 bg-paper-100/40 px-3 py-2 text-left transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-700/60 dark:hover:bg-umber-700"
+      className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 ${
+        expanded
+          ? "border-umber-900 bg-umber-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+          : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+      }`}
     >
-      <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-        {t("guests.checkin_pill_lead")}
-      </span>
-      <span className="shrink-0 font-mono text-base uppercase tracking-[0.3em] text-ink-900 dark:text-paper-50">
-        {couple.slug ?? "-"}
-      </span>
-      <span className="hidden truncate text-sm text-ink-600 dark:text-umber-200 lg:inline">
-        {t("guests.checkin_pill_suffix")}
-      </span>
+      {t("guests.checkin_pill_lead")}
       <ChevronDown
-        size={16}
+        size={14}
         aria-hidden
-        className={
-          expanded
-            ? "ml-auto shrink-0 rotate-180 text-ink-700 transition-transform dark:text-paper-100"
-            : "ml-auto shrink-0 text-ink-500 transition-transform dark:text-umber-300"
-        }
+        className={`transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
       />
     </button>
   );
@@ -3931,9 +3935,34 @@ function CheckinTrigger({
  *  URL + the household-grouping reminder. Rendered full-width below the
  *  header row, since the trigger itself now lives in a width-constrained
  *  slot between the stats and the toolbar. */
-function CheckinPanel({ couple }: { couple: Couple }) {
+type CheckinStepKey = "households" | "menu" | "sent" | "answers";
+
+function CheckinPanel({
+  couple,
+  done,
+  onAddGuest,
+  onOpenMeals,
+  onSendInvites,
+}: {
+  couple: Couple;
+  /** Which steps the list itself already proves are done, so the guide
+   *  ticks along with the couple instead of repeating the same five lines. */
+  done: Record<CheckinStepKey, boolean>;
+  onAddGuest: () => void;
+  onOpenMeals: () => void;
+  onSendInvites: () => void;
+}) {
   const { t } = useT();
   const toast = useToast();
+  const steps: { key: CheckinStepKey | "done"; action?: { label: string; run: () => void } }[] = [
+    { key: "households", action: { label: t("guests.add"), run: onAddGuest } },
+    { key: "menu", action: { label: t("guests.meals_button"), run: onOpenMeals } },
+    { key: "sent", action: { label: t("guests.invite_send"), run: onSendInvites } },
+    { key: "answers" },
+    { key: "done" },
+  ];
+  const allDone = done.households && done.menu && done.sent && done.answers;
+  const isDone = (k: CheckinStepKey | "done") => (k === "done" ? allDone : done[k]);
   // General check-in link: the couple identifier pre-filled, no household code.
   // The couple can open it to preview, or share it so guests land straight on
   // /rsvp with the couple field done and only their own code left to type.
@@ -3958,7 +3987,48 @@ function CheckinPanel({ couple }: { couple: Couple }) {
   // for back-compat / future "rename with full confirm" UI.
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-paper-300 bg-paper-100/40 px-4 py-4 dark:border-umber-700 dark:bg-umber-700/60">
+    <div className="space-y-4 overflow-hidden rounded-2xl border border-paper-300 bg-white px-4 py-4 dark:border-umber-700 dark:bg-umber-800">
+      <div>
+        <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          {t("guests.checkin_guide_title")}
+        </p>
+        <ol className="grid gap-3 sm:grid-cols-5 sm:gap-4">
+          {steps.map((step, i) => {
+            const ok = isDone(step.key);
+            return (
+              <li key={step.key} className="flex gap-3 sm:flex-col sm:gap-2">
+                <span
+                  aria-hidden
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
+                    ok
+                      ? "bg-sage-500 text-white dark:bg-sage-400 dark:text-umber-900"
+                      : "border border-paper-300 text-ink-600 dark:border-umber-600 dark:text-paper-200"
+                  }`}
+                >
+                  {ok ? <Check size={14} strokeWidth={3} /> : i + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+                    {t(`guests.checkin_step_${step.key}_title`)}
+                  </p>
+                  <p className="mt-0.5 text-xs leading-snug text-ink-500 dark:text-umber-300">
+                    {t(`guests.checkin_step_${step.key}_body`)}
+                  </p>
+                  {step.action && !ok && (
+                    <button
+                      type="button"
+                      onClick={step.action.run}
+                      className="mt-1.5 text-xs font-medium text-ink-900 underline decoration-paper-400 underline-offset-2 hover:decoration-ink-900 dark:text-paper-50 dark:decoration-umber-500 dark:hover:decoration-paper-50"
+                    >
+                      {step.action.label}
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
       {generalUrl ? (
         // One focused card: the shareable link is the whole point here.
         // The identifier rides along as a locked chip (its rationale on
@@ -4013,11 +4083,6 @@ function CheckinPanel({ couple }: { couple: Couple }) {
       ) : (
         <p className="text-xs text-ink-500 dark:text-umber-300">{t("guests.couple_slug_help")}</p>
       )}
-
-      <p className="mt-3 flex items-start gap-1.5 text-xs text-ink-500 dark:text-umber-300">
-        <Users size={13} aria-hidden className="mt-0.5 shrink-0" />
-        <span>{t("guests.household_section_help")}</span>
-      </p>
     </div>
   );
 }

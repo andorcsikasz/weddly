@@ -5500,6 +5500,17 @@ export interface LocaleMessages {
     checkin_open_rsvp: string;
     checkin_copy_link: string;
     checkin_link_copied: string;
+    checkin_guide_title: string;
+    checkin_step_households_title: string;
+    checkin_step_households_body: string;
+    checkin_step_menu_title: string;
+    checkin_step_menu_body: string;
+    checkin_step_sent_title: string;
+    checkin_step_sent_body: string;
+    checkin_step_answers_title: string;
+    checkin_step_answers_body: string;
+    checkin_step_done_title: string;
+    checkin_step_done_body: string;
     /** Read-only slug copy — the slug is no longer editable in-app. */
     couple_slug_help_locked: string;
     /** "Invited?" checkbox UX on the household card list. */

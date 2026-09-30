@@ -4814,6 +4814,20 @@ const hu: LocaleMessages = {
     checkin_open_rsvp: "RSVP oldal megnyitása",
     checkin_copy_link: "Link másolása",
     checkin_link_copied: "Link a vágólapra másolva.",
+    checkin_guide_title: "Így működik",
+    checkin_step_households_title: "Háztartások létrehozása",
+    checkin_step_households_body:
+      "Akik együtt válaszolnak, egy háztartásba kerülnek, közös 8 karakteres kóddal.",
+    checkin_step_menu_title: "Étel és allergének",
+    checkin_step_menu_body: "A menüt és az étrendi kérdéseket az Étkezés menüben állítod be.",
+    checkin_step_sent_title: "Egy visszajelző háztartásonként",
+    checkin_step_sent_body: "Minden háztartás egyszer válaszol, mindenki nevében.",
+    checkin_step_answers_title: "Válaszok begyűjtése",
+    checkin_step_answers_body:
+      "A válaszok, menük és allergiák ide érkeznek, ahogy a vendégek felelnek.",
+    checkin_step_done_title: "Kész",
+    checkin_step_done_body:
+      "Az ültetés, a catering-létszám és az ültetőkártyák mind ebből a listából dolgoznak.",
     couple_slug_help_locked:
       "Az azonosító a meghívókra és a check-in oldalra is rákerül, zárolva, hogy a kiosztott linkek továbbra is működjenek.",
     invited_check_label: "Megjelölve meghívottnak",
