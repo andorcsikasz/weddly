@@ -6606,10 +6606,15 @@ function GuestFilterBar({
 
   return (
     <div className="mb-4 space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Three columns on sm+: search fills the left, the view switch owns the
+          exact centre, sort / filters / collapse sit right. A grid rather than
+          `mx-auto` because the right group changes width (the collapse toggle
+          only exists in the card lens), and a centred-in-leftover-space switch
+          jumped every time the couple flipped views. */}
+      <div className="flex flex-wrap items-center gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
         <div
           data-tour-target="guests-search"
-          className={`relative min-w-0 sm:w-64 sm:shrink-0 lg:w-80 ${
+          className={`relative min-w-0 sm:w-full ${
             searchOpen ? "w-full basis-full" : "w-9 shrink-0"
           }`}
         >
@@ -6664,12 +6669,11 @@ function GuestFilterBar({
           </div>
         </div>
         {/* Cards ↔ table lens. Two icon segments, mirrored to `?view=table`.
-            `mx-auto` centres it in the gap between the search field and the
-            sort / filter group on the right. */}
+            Centred by the grid column, not by leftover space. */}
         <div
           role="group"
           aria-label={t("guests.view_label")}
-          className="inline-flex shrink-0 overflow-hidden rounded-full border border-paper-300 sm:mx-auto dark:border-umber-700"
+          className="inline-flex shrink-0 overflow-hidden rounded-full border border-paper-300 dark:border-umber-700"
         >
           <button
             type="button"
@@ -6700,34 +6704,36 @@ function GuestFilterBar({
             <TableIcon size={14} aria-hidden />
           </button>
         </div>
-        <ViewSelect
-          value={sortKey}
-          options={sortOptions.map((k) => ({
-            value: k,
-            label: t(`guests.sort_${k}`),
-            icon: SORT_ICON[k],
-          }))}
-          onChange={onSetSort}
-          ariaLabel={t("guests.sort_label")}
-          compact
-          className="shrink-0"
-        />
-        <button
-          type="button"
-          className="btn-outline shrink-0 px-3"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          aria-label={t("guests.filters_button")}
-        >
-          <Filter size={14} aria-hidden />
-          <span className="hidden sm:inline">{t("guests.filters_button")}</span>
-          {activeFilterCount > 0 && (
-            <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-umber-900 px-1.5 text-xs text-paper-50 dark:bg-paper-100 dark:text-umber-900">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
-        {trailing}
+        <div className="flex items-center gap-2 sm:justify-end">
+          <ViewSelect
+            value={sortKey}
+            options={sortOptions.map((k) => ({
+              value: k,
+              label: t(`guests.sort_${k}`),
+              icon: SORT_ICON[k],
+            }))}
+            onChange={onSetSort}
+            ariaLabel={t("guests.sort_label")}
+            compact
+            className="shrink-0"
+          />
+          <button
+            type="button"
+            className="btn-outline shrink-0 px-3"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            aria-label={t("guests.filters_button")}
+          >
+            <Filter size={14} aria-hidden />
+            <span className="hidden sm:inline">{t("guests.filters_button")}</span>
+            {activeFilterCount > 0 && (
+              <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-umber-900 px-1.5 text-xs text-paper-50 dark:bg-paper-100 dark:text-umber-900">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          {trailing}
+        </div>
       </div>
 
       {open && (
