@@ -891,6 +891,14 @@ export interface Couple {
   /** Custom cover photo uploaded by the couple for the honeymoon destination
    *  widget. When set, takes priority over the auto-generated Wikipedia photo. */
   honeymoon_cover_path: string | null;
+  /** The wedding date the honeymoon dates were saved against. When it no
+   *  longer matches `wedding_date`, /app/honeymoon offers to move the trip
+   *  (`suggestHoneymoonShift` in shared/date_shift.ts). */
+  honeymoon_anchor_wedding_date: string | null;
+  /** Set when the wedding date moved and the couple has not yet said whether
+   *  their open task deadlines should move with it: the date those deadlines
+   *  were planned against. `null` once answered either way. */
+  deadline_shift_from: string | null;
   /** Opt-in toggle for the "needs accommodation?" question on the RSVP flow.
    *  Default `false` — when off, neither the public household RSVP form nor
    *  the in-app GuestDrawer renders the question. Flipping it on from the

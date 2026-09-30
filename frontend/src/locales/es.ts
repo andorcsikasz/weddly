@@ -2064,6 +2064,14 @@ const es: LocaleMessages = {
       "La fecha de tu boda ha cambiado. ¿Quieres avisar a todos por email para que sepan que la fecha anterior ya no es válida?",
     date_changed_button: "Avisar a los invitados",
     date_changed_dismiss_aria: "Descartar, no hace falta avisar",
+    deadline_shift_title: "¿Mover también los plazos?",
+    deadline_shift_body_later:
+      "Tu boda es ahora {days} días más tarde. ¿Movemos los plazos de tus {count} tareas pendientes lo mismo?",
+    deadline_shift_body_earlier:
+      "Tu boda es ahora {days} días antes. ¿Movemos los plazos de tus {count} tareas pendientes lo mismo?",
+    deadline_shift_apply: "Mover plazos",
+    deadline_shift_keep: "Mantener fechas",
+    deadline_shift_done: "{count} plazos movidos",
     date_changed_sending: "Enviando…",
     date_changed_confirm_title: "Enviar aviso de cambio de fecha",
     date_changed_confirm_body:
@@ -3238,6 +3246,12 @@ const es: LocaleMessages = {
     before_wedding_title: "Espera, ¿esto es correcto?",
     before_wedding_body:
       "Tu luna de miel empieza el {honeymoon}, pero la boda es el {wedding}. La mayoría de las parejas se van después de la boda; revisa bien las fechas.",
+    shift_title: "Tu boda ha cambiado de fecha. ¿Movemos también el viaje?",
+    shift_range: "Sugerencia: {start} a {end}",
+    shift_start: "Salida sugerida: {start}",
+    shift_apply: "Mover viaje",
+    shift_keep: "Mantener fechas",
+    shift_done: "Fechas del viaje actualizadas",
     countdown_future_one: "Queda {count} día",
     countdown_future_other: "Quedan {count} días",
     countdown_today: "¡Empieza hoy!",

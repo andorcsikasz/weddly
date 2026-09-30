@@ -545,6 +545,22 @@ addColumnIfMissing("couples", "honeymoon_end_date", "honeymoon_end_date TEXT");
 // at read-time (HU couple → BUD, EN → VIE) so existing rows keep working
 // without a backfill; this column only carries the explicit override.
 addColumnIfMissing("couples", "honeymoon_origin_iata", "honeymoon_origin_iata TEXT");
+// The wedding date the honeymoon dates were last saved against. When the
+// wedding moves away from it, /app/honeymoon offers to slide the trip by the
+// same number of days (`suggestHoneymoonShift` in shared/date_shift.ts). NULL
+// for trips saved before this existed: those only get the "starts before the
+// wedding" suggestion, since nothing says what they were planned around.
+addColumnIfMissing(
+  "couples",
+  "honeymoon_anchor_wedding_date",
+  "honeymoon_anchor_wedding_date TEXT",
+);
+// The wedding date the couple's open task deadlines were planned against,
+// stamped when the date moves and cleared once the couple answers the "move
+// your open deadlines too?" question either way. Kept apart from
+// `previous_wedding_date`, which the guest-notify banner clears on its own
+// schedule: dismissing that banner must not also answer this question.
+addColumnIfMissing("couples", "deadline_shift_from", "deadline_shift_from TEXT");
 
 // Cost-planning scenario count — shared between partners across all devices.
 // Distinct from `target_guest_count` (the onboarding goal): this is the

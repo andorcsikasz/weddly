@@ -2022,6 +2022,14 @@ const en: LocaleMessages = {
       "Your wedding date has changed. Want to email everyone so they know the old date is no longer valid?",
     date_changed_button: "Notify guests",
     date_changed_dismiss_aria: "Dismiss, no notification needed",
+    deadline_shift_title: "Move your deadlines too?",
+    deadline_shift_body_later:
+      "Your wedding is now {days} days later. Move your {count} open task deadlines by the same amount?",
+    deadline_shift_body_earlier:
+      "Your wedding is now {days} days earlier. Move your {count} open task deadlines by the same amount?",
+    deadline_shift_apply: "Move deadlines",
+    deadline_shift_keep: "Keep dates",
+    deadline_shift_done: "{count} deadlines moved",
     date_changed_sending: "Sending…",
     date_changed_confirm_title: "Send date-change notification",
     date_changed_confirm_body:
@@ -3178,6 +3186,12 @@ const en: LocaleMessages = {
     before_wedding_title: "Wait, is this right?",
     before_wedding_body:
       "Your honeymoon starts on {honeymoon}, but the wedding is on {wedding}. Most couples leave after the wedding, double-check the dates.",
+    shift_title: "Your wedding moved. Move the trip too?",
+    shift_range: "Suggested: {start} to {end}",
+    shift_start: "Suggested start: {start}",
+    shift_apply: "Move trip",
+    shift_keep: "Keep dates",
+    shift_done: "Trip dates updated",
     countdown_future_one: "{count} day to go",
     countdown_future_other: "{count} days to go",
     countdown_today: "Starts today!",

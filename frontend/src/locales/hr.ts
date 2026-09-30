@@ -2045,6 +2045,14 @@ const hr: LocaleMessages = {
       "Datum vašeg vjenčanja se promijenio. Želite li svima poslati e-poruku da stari datum više ne vrijedi?",
     date_changed_button: "Obavijestite goste",
     date_changed_dismiss_aria: "Zatvori, obavijest nije potrebna",
+    deadline_shift_title: "Pomaknuti i rokove?",
+    deadline_shift_body_later:
+      "Vjenčanje je sada {days} dana kasnije. Pomaknuti rokove vaših {count} otvorenih zadataka za isto toliko?",
+    deadline_shift_body_earlier:
+      "Vjenčanje je sada {days} dana ranije. Pomaknuti rokove vaših {count} otvorenih zadataka za isto toliko?",
+    deadline_shift_apply: "Pomakni rokove",
+    deadline_shift_keep: "Zadrži datume",
+    deadline_shift_done: "Pomaknuto rokova: {count}",
     date_changed_sending: "Slanje…",
     date_changed_confirm_title: "Pošaljite obavijest o promjeni datuma",
     date_changed_confirm_body:
@@ -3178,6 +3186,12 @@ const hr: LocaleMessages = {
     before_wedding_title: "Čekajte, je li ovo točno?",
     before_wedding_body:
       "Medeni mjesec počinje {honeymoon}, a vjenčanje je {wedding}. Većina parova kreće nakon vjenčanja, provjerite datume.",
+    shift_title: "Datum vjenčanja se promijenio. Pomaknuti i putovanje?",
+    shift_range: "Prijedlog: {start} do {end}",
+    shift_start: "Predloženi polazak: {start}",
+    shift_apply: "Pomakni putovanje",
+    shift_keep: "Zadrži datume",
+    shift_done: "Datumi putovanja ažurirani",
     countdown_future_one: "Još {count} dan",
     countdown_future_other: "Još {count} dana",
     countdown_today: "Počinje danas!",

@@ -2621,6 +2621,12 @@ export interface LocaleMessages {
     date_changed_body: string;
     date_changed_button: string;
     date_changed_dismiss_aria: string;
+    deadline_shift_title: string;
+    deadline_shift_body_later: string;
+    deadline_shift_body_earlier: string;
+    deadline_shift_apply: string;
+    deadline_shift_keep: string;
+    deadline_shift_done: string;
     date_changed_sending: string;
     date_changed_confirm_title: string;
     date_changed_confirm_body: string;
@@ -3771,6 +3777,12 @@ export interface LocaleMessages {
      *  date strings. */
     before_wedding_title: string;
     before_wedding_body: string;
+    shift_title: string;
+    shift_range: string;
+    shift_start: string;
+    shift_apply: string;
+    shift_keep: string;
+    shift_done: string;
     /** Inline countdown pill in the Days tile. The `_future` and `_past`
      *  variants take `{count}` (whole days); plural is handled by `_one` /
      *  `_other` suffixes via the t() helper. */

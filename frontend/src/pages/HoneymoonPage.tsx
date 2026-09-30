@@ -70,6 +70,7 @@ import {
   KONZINFO_INDEX_URL,
   KONZINFO_REGISTER_URL,
 } from "@shared/konzinfo";
+import { suggestHoneymoonShift } from "@shared/date_shift";
 import { ApiError } from "../lib/api";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { type AirportOrigin, searchAirportOrigins } from "../lib/airport_origins";
@@ -454,10 +455,28 @@ export default function HoneymoonPage() {
   // certainly a typo — surface it as a soft warning rather than letting it
   // sit silently in the date tile. ISO YYYY-MM-DD compares lexicographically
   // correctly, so a plain string compare is enough.
-  const honeymoonBeforeWedding = Boolean(
-    couple?.wedding_date &&
-      couple?.honeymoon_start_date &&
-      couple.honeymoon_start_date < couple.wedding_date,
+  // What the trip should become now that the wedding is where it is: slid by
+  // the same number of days when the wedding moved since the dates were saved,
+  // or the day after the wedding when the trip starts before it. "Keep" on a
+  // moved trip re-saves the dates, which pins them to today's wedding date;
+  // it also hides the card for this visit, so keeping a trip that now starts
+  // before the wedding does not immediately ask the second question.
+  const [shiftDismissed, setShiftDismissed] = useState(false);
+  const [shiftSaving, setShiftSaving] = useState(false);
+  const honeymoonShift = useMemo(
+    () =>
+      suggestHoneymoonShift({
+        weddingDate: couple?.wedding_date ?? null,
+        start: couple?.honeymoon_start_date ?? null,
+        end: couple?.honeymoon_end_date ?? null,
+        anchor: couple?.honeymoon_anchor_wedding_date ?? null,
+      }),
+    [
+      couple?.wedding_date,
+      couple?.honeymoon_start_date,
+      couple?.honeymoon_end_date,
+      couple?.honeymoon_anchor_wedding_date,
+    ],
   );
   // Destination + both dates are needed before a flight search makes sense.
   const tripReady = Boolean(
@@ -482,16 +501,18 @@ export default function HoneymoonPage() {
     honeymoon_start_date?: string | null;
     honeymoon_end_date?: string | null;
     honeymoon_origin_iata?: string | null;
-  }) {
-    if (!couple) return;
+  }): Promise<boolean> {
+    if (!couple) return false;
     const prev = couple;
     setCouple({ ...couple, ...patch });
     try {
       const r = await coupleApi.update(patch);
       setCouple(r.couple);
+      return true;
     } catch (e) {
       setCouple(prev);
       toast.error(e instanceof ApiError ? e.message : t("budget.save_failed_retry"));
+      return false;
     }
   }
 
@@ -692,7 +713,9 @@ export default function HoneymoonPage() {
           customCoverPath={couple?.honeymoon_cover_path ?? null}
           countdown={countdown}
           loaded={loaded}
-          onSaveDestination={(v) => saveTrip({ honeymoon_destination: v })}
+          onSaveDestination={async (v) => {
+            await saveTrip({ honeymoon_destination: v });
+          }}
           onCoupleChange={setCouple}
           onCoverReset={() =>
             setCouple((prev) => (prev ? { ...prev, honeymoon_cover_path: null } : prev))
@@ -719,35 +742,88 @@ export default function HoneymoonPage() {
               return next;
             });
           }}
-          onSaveDates={(start, end) =>
-            saveTrip({ honeymoon_start_date: start, honeymoon_end_date: end })
-          }
+          onSaveDates={async (start, end) => {
+            await saveTrip({ honeymoon_start_date: start, honeymoon_end_date: end });
+          }}
         />
       </section>
 
-      {honeymoonBeforeWedding && couple?.wedding_date && couple?.honeymoon_start_date && (
-        <section
-          role="alert"
-          className="mb-4 flex items-start gap-3 rounded-2xl border-2 border-ink-900 bg-white px-4 py-3 dark:border-paper-100/40 dark:bg-umber-800"
-        >
-          <AlertTriangle
-            size={18}
-            className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-100"
-            aria-hidden="true"
-          />
-          <div className="min-w-0 flex-1 text-sm sm:flex sm:items-baseline sm:gap-2">
-            <p className="font-semibold text-ink-900 dark:text-paper-50 sm:shrink-0">
-              {t("honeymoon.before_wedding_title")}
-            </p>
-            <p className="mt-0.5 text-ink-700 dark:text-paper-200 sm:mt-0">
-              {t("honeymoon.before_wedding_body", {
-                wedding: formatDateShort(couple.wedding_date, locale),
-                honeymoon: formatDateShort(couple.honeymoon_start_date, locale),
-              })}
-            </p>
-          </div>
-        </section>
-      )}
+      {honeymoonShift &&
+        !shiftDismissed &&
+        couple?.wedding_date &&
+        couple?.honeymoon_start_date && (
+          <section
+            role="alert"
+            className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border-2 border-ink-900 bg-white px-4 py-3 dark:border-paper-100/40 dark:bg-umber-800"
+          >
+            <AlertTriangle
+              size={18}
+              className="shrink-0 text-ink-900 dark:text-paper-100"
+              aria-hidden="true"
+            />
+            <div className="min-w-0 flex-1 text-sm">
+              <p className="font-semibold text-ink-900 dark:text-paper-50">
+                {honeymoonShift.reason === "moved"
+                  ? t("honeymoon.shift_title")
+                  : t("honeymoon.before_wedding_title")}
+              </p>
+              {honeymoonShift.reason === "before_wedding" && (
+                <p className="mt-0.5 text-ink-700 dark:text-paper-200">
+                  {t("honeymoon.before_wedding_body", {
+                    wedding: formatDateShort(couple.wedding_date, locale),
+                    honeymoon: formatDateShort(couple.honeymoon_start_date, locale),
+                  })}
+                </p>
+              )}
+              <p className="mt-0.5 text-ink-700 dark:text-paper-200">
+                {honeymoonShift.end
+                  ? t("honeymoon.shift_range", {
+                      start: formatDateShort(honeymoonShift.start, locale),
+                      end: formatDateShort(honeymoonShift.end, locale),
+                    })
+                  : t("honeymoon.shift_start", {
+                      start: formatDateShort(honeymoonShift.start, locale),
+                    })}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                disabled={shiftSaving}
+                onClick={async () => {
+                  setShiftDismissed(true);
+                  if (honeymoonShift.reason !== "moved") return;
+                  await saveTrip({
+                    honeymoon_start_date: couple.honeymoon_start_date,
+                    honeymoon_end_date: couple.honeymoon_end_date,
+                  });
+                }}
+              >
+                {t("honeymoon.shift_keep")}
+              </button>
+              <button
+                type="button"
+                className="btn-primary btn-sm"
+                disabled={shiftSaving}
+                onClick={async () => {
+                  setShiftSaving(true);
+                  try {
+                    const ok = await saveTrip({
+                      honeymoon_start_date: honeymoonShift.start,
+                      honeymoon_end_date: honeymoonShift.end,
+                    });
+                    if (ok) toast.success(t("honeymoon.shift_done"));
+                  } finally {
+                    setShiftSaving(false);
+                  }
+                }}
+              >
+                {t("honeymoon.shift_apply")}
+              </button>
+            </div>
+          </section>
+        )}
 
       {/* Flight estimate section — hidden until the plane segment of the trip
        *  bar is toggled on. Auto-fetches on first open; stays cached until

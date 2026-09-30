@@ -113,6 +113,12 @@ import { ensurePartnerGuests, listGuestsByCouple, renamePartnerGuest } from "../
 import { renderSeatingChartPdf } from "../domain/pdf";
 import { purgeOneCouple } from "../domain/purge";
 import { autoCompleteChooseDateItem } from "../domain/wedding_checklist";
+import {
+  countShiftableDeadlines,
+  shiftCameraWithWedding,
+  shiftOpenDeadlines,
+} from "../domain/wedding_date_shift";
+import { daysBetweenIso } from "@shared/date_shift";
 import { deriveSlugBase, uniqueCoupleSlug, validateSlug } from "../domain/slug";
 import { getUserById, normaliseLocale, toUser, type UserRow } from "../domain/users";
 import {
@@ -1886,14 +1892,43 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     });
   }
 
+  // Set when this PATCH moves the wedding from one day to another; the camera
+  // follows after the UPDATE lands (see `shiftCameraWithWedding`).
+  let weddingDayMove: { from: string; to: string } | null = null;
+  let nextWeddingDate = couple.wedding_date;
   if (body.wedding_date_goal !== undefined || body.wedding_date !== undefined) {
     const goal = parseWeddingDateGoal(body as OnboardBody);
+    nextWeddingDate = goal.exact_date;
     // Stash the prior `wedding_date` if (and only if) the exact date is
     // actually changing — gives the wedding-date-changed email a clean
     // before/after pair to render. Cleared dates (going back to TBD) still
     // record the previous value so the notification can say "was X, now TBD".
     if (couple.wedding_date && couple.wedding_date !== goal.exact_date) {
       updates.push({ col: "previous_wedding_date", val: couple.wedding_date });
+    }
+    // A day that moved to another day (not to TBD) is the one case where
+    // "everything planned around it moves too" has an answer. See
+    // `weddingDayMove` below for what rides along.
+    if (couple.wedding_date && goal.exact_date && couple.wedding_date !== goal.exact_date) {
+      const from = couple.wedding_date;
+      const to = goal.exact_date;
+      // The open deadlines were planned against the date they were planned
+      // against, so a second move before the couple answers keeps the FIRST
+      // one: A -> B -> C asks about C - A, not C - B. Moving back to it
+      // leaves nothing to ask.
+      const planFrom = couple.deadline_shift_from ?? from;
+      if (planFrom === to) {
+        updates.push({ col: "deadline_shift_from", val: null });
+      } else if (countShiftableDeadlines(couple.id) > 0) {
+        updates.push({ col: "deadline_shift_from", val: planFrom });
+      }
+      // A trip saved before anchors existed was, as of this second, planned
+      // against the date that is about to go away. Pin that, so the
+      // honeymoon page can offer to move it by the same number of days.
+      if (couple.honeymoon_anchor_wedding_date === null && couple.honeymoon_start_date) {
+        updates.push({ col: "honeymoon_anchor_wedding_date", val: from });
+      }
+      weddingDayMove = { from, to };
     }
     updates.push(
       { col: "wedding_date", val: goal.exact_date },
@@ -1958,6 +1993,14 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     body.honeymoon_start_date !== undefined ||
     body.honeymoon_end_date !== undefined ||
     body.honeymoon_origin_iata !== undefined;
+  // Saving the trip dates (including re-saving them unchanged, which is how
+  // the honeymoon page's "keep my dates" answer is sent) records which
+  // wedding day they were chosen around.
+  if (body.honeymoon_start_date !== undefined || body.honeymoon_end_date !== undefined) {
+    const existing = updates.findIndex((u) => u.col === "honeymoon_anchor_wedding_date");
+    if (existing >= 0) updates.splice(existing, 1);
+    updates.push({ col: "honeymoon_anchor_wedding_date", val: nextWeddingDate });
+  }
 
   if (body.budget_goal !== undefined || body.budget_ceiling_huf !== undefined) {
     const goal = parseBudgetGoal(body as OnboardBody);
@@ -2725,6 +2768,20 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     refreshPartnerFreeWindow(couple.id, ts);
   }
 
+  // The guest camera's reveal and shooting window are times ON the wedding
+  // day, so they move with it without asking: a reveal left on the old date
+  // would open the film before the party, or a week after it.
+  if (weddingDayMove) {
+    const camera = shiftCameraWithWedding(couple.id, weddingDayMove.from, weddingDayMove.to);
+    if (camera) {
+      auditEntries.push({
+        action: "couple.camera_shift_with_date",
+        before: camera.before,
+        after: camera.after,
+      });
+    }
+  }
+
   const refreshed = getCoupleById(couple.id);
   if (!refreshed) throw new HttpError(500, "Couple vanished after update");
 
@@ -3337,6 +3394,60 @@ function handleDismissDateChange(ctx: Ctx): Response {
   });
 
   return json({ ok: true });
+}
+
+// ─── Move open deadlines with the wedding date ──────────────────────────────
+//
+// When the date moves, `deadline_shift_from` remembers what the open task
+// deadlines were planned against, and the app asks whether to move them by
+// the same number of days. GET describes the offer, POST answers it (either
+// way), and both answers clear the question.
+
+/** GET /api/couples/current/deadline-shift */
+function handleGetDeadlineShift(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple found");
+  const from = couple.deadline_shift_from;
+  const to = couple.wedding_date;
+  const days = from && to ? daysBetweenIso(from, to) : null;
+  if (!from || !to || !days) return json({ shift: null });
+  return json({ shift: { from, to, days, count: countShiftableDeadlines(couple.id) } });
+}
+
+/** POST /api/couples/current/deadline-shift `{ apply: boolean }` */
+async function handleAnswerDeadlineShift(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple found");
+  const body = await readJson<{ apply?: unknown }>(ctx.req);
+  if (typeof body.apply !== "boolean") throw new HttpError(400, "apply must be a boolean");
+
+  const from = couple.deadline_shift_from;
+  const to = couple.wedding_date;
+  const days = from && to ? daysBetweenIso(from, to) : null;
+  const ts = now();
+  // An answer to a question that is no longer open (a partner answered first,
+  // or the date went back) moves nothing: replaying it would shift twice.
+  const moved = body.apply && days ? shiftOpenDeadlines(couple.id, days, ts) : 0;
+  db.prepare("UPDATE couples SET deadline_shift_from = NULL, updated_at = ? WHERE id = ?").run(
+    ts,
+    couple.id,
+  );
+  if (from) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: body.apply ? "couple.deadlines_shift" : "couple.deadlines_shift_declined",
+      target_kind: "couple",
+      target_id: couple.id,
+      before: { from, to },
+      after: { days, moved },
+    });
+  }
+  const refreshed = getCoupleById(couple.id);
+  if (!refreshed) throw new HttpError(500, "Couple vanished after update");
+  return json({ moved, couple: toCouple(refreshed) });
 }
 
 /** Returns the OTHER partner's identity + lifecycle state from the calling
@@ -3971,4 +4082,6 @@ export function registerCoupleRoutes(router: Router) {
   router.post("/api/couples/current/archive", handleArchive, true);
   router.post("/api/couples/current/notify-date-change", handleNotifyDateChange, true);
   router.post("/api/couples/current/dismiss-date-change", handleDismissDateChange, true);
+  router.get("/api/couples/current/deadline-shift", handleGetDeadlineShift, true);
+  router.post("/api/couples/current/deadline-shift", handleAnswerDeadlineShift, true);
 }

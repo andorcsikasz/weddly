@@ -55,6 +55,7 @@ import {
 import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { PlannerApprovalBanner } from "../components/PlannerApprovalBanner";
+import { DeadlineShiftPrompt } from "../components/DeadlineShiftPrompt";
 import { KeyInfoCard } from "../components/KeyInfoCard";
 import { RateVendorsCard } from "../components/RateVendorsCard";
 import { UpcomingTasksCard } from "../components/UpcomingTasksCard";
@@ -200,6 +201,9 @@ export default function DashboardPage() {
   // into a dedicated error card with a retry. `reloadTick` re-arms the fetch.
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
+  // Remounts the upcoming-tasks card after the couple moves their deadlines
+  // with the wedding date, since it loads its own rows.
+  const [tasksKey, setTasksKey] = useState(0);
   const [rsvpOpen, setRsvpOpen] = useState(false);
   const [roiOpen, setRoiOpen] = useState(false);
   const [invite, setInvite] = useState<CoupleInvite | null>(null);
@@ -1109,6 +1113,14 @@ export default function DashboardPage() {
         />
       </Dialog>
 
+      <DeadlineShiftPrompt
+        couple={couple}
+        onCoupleChange={(next) =>
+          setData((cur) => (cur === "loading" || cur === null ? cur : { ...cur, couple: next }))
+        }
+        onShifted={() => setTasksKey((k) => k + 1)}
+      />
+
       {/* ── Date-changed banner ──────────────────────────────────────
           Shown when previous_wedding_date is set AND different from the
           current wedding_date. Backend snapshots the prior date the moment
@@ -1450,7 +1462,11 @@ export default function DashboardPage() {
           <KeyInfoCard couple={couple} />
 
           {/* ── Couple's own upcoming tasks — self-fetching; renders its own empty states. ── */}
-          <UpcomingTasksCard weddingDate={couple.wedding_date} nudges={setupNudges} />
+          <UpcomingTasksCard
+            key={tasksKey}
+            weddingDate={couple.wedding_date}
+            nudges={setupNudges}
+          />
 
           {/* ── Cost planning panel — full-width, inline-edit per category. ── */}
           <section data-tour-target="dashboard-budget" className="mb-8">

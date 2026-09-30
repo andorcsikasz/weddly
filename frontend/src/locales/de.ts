@@ -2093,6 +2093,14 @@ const de: LocaleMessages = {
       "Ihr Hochzeitsdatum hat sich geändert. Sollen wir allen eine E-Mail schicken, dass das alte Datum nicht mehr gilt?",
     date_changed_button: "Gäste benachrichtigen",
     date_changed_dismiss_aria: "Schließen, keine Benachrichtigung nötig",
+    deadline_shift_title: "Fristen auch verschieben?",
+    deadline_shift_body_later:
+      "Ihre Hochzeit ist jetzt {days} Tage später. Sollen die Fristen Ihrer {count} offenen Aufgaben um genauso viel verschoben werden?",
+    deadline_shift_body_earlier:
+      "Ihre Hochzeit ist jetzt {days} Tage früher. Sollen die Fristen Ihrer {count} offenen Aufgaben um genauso viel verschoben werden?",
+    deadline_shift_apply: "Fristen verschieben",
+    deadline_shift_keep: "Daten behalten",
+    deadline_shift_done: "{count} Fristen verschoben",
     date_changed_sending: "Wird gesendet…",
     date_changed_confirm_title: "Datumsänderung verschicken",
     date_changed_confirm_body:
@@ -3247,6 +3255,12 @@ const de: LocaleMessages = {
     before_wedding_title: "Moment, stimmt das so?",
     before_wedding_body:
       "Ihre Flitterwochen beginnen am {honeymoon}, die Hochzeit ist aber am {wedding}. Die meisten Paare reisen nach der Hochzeit ab, prüfen Sie die Daten noch einmal.",
+    shift_title: "Ihre Hochzeit wurde verschoben. Die Reise auch?",
+    shift_range: "Vorschlag: {start} bis {end}",
+    shift_start: "Vorgeschlagene Abreise: {start}",
+    shift_apply: "Reise verschieben",
+    shift_keep: "Daten behalten",
+    shift_done: "Reisedaten aktualisiert",
     countdown_future_one: "Noch {count} Tag",
     countdown_future_other: "Noch {count} Tage",
     countdown_today: "Geht heute los!",

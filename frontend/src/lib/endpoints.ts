@@ -1017,6 +1017,15 @@ export const coupleApi = {
    *  next refresh. No emails go out. */
   dismissDateChange: () =>
     apiFetch<{ ok: true }>("POST", "/api/couples/current/dismiss-date-change", {}),
+  /** The open "move your deadlines with the wedding?" question, or null. */
+  deadlineShift: () =>
+    apiFetch<{
+      shift: { from: string; to: string; days: number; count: number } | null;
+    }>("GET", "/api/couples/current/deadline-shift"),
+  answerDeadlineShift: (apply: boolean) =>
+    apiFetch<{ moved: number; couple: Couple }>("POST", "/api/couples/current/deadline-shift", {
+      apply,
+    }),
   updateSlug: (slug: string) =>
     apiFetch<{ couple: Couple }>("PATCH", "/api/couples/slug", { slug }),
   createInvite: (body: { invited_email?: string }) =>

@@ -2036,6 +2036,14 @@ const hu: LocaleMessages = {
       "Új dátumot rögzítettetek. Küldjünk értesítést a vendégeknek, hogy a régi időpont már nem érvényes?",
     date_changed_button: "Vendégek értesítése",
     date_changed_dismiss_aria: "Mégsem szükséges értesítés",
+    deadline_shift_title: "A határidőket is áttegyük?",
+    deadline_shift_body_later:
+      "Az esküvő {days} nappal későbbre került. A {count} nyitott feladat határidejét is toljuk el ugyanennyivel?",
+    deadline_shift_body_earlier:
+      "Az esküvő {days} nappal korábbra került. A {count} nyitott feladat határidejét is hozzuk előre ugyanennyivel?",
+    deadline_shift_apply: "Határidők áttétele",
+    deadline_shift_keep: "Maradjanak",
+    deadline_shift_done: "{count} határidő áttéve",
     date_changed_sending: "Küldés…",
     date_changed_confirm_title: "Dátumváltozás kiküldése",
     date_changed_confirm_body:
@@ -3203,6 +3211,12 @@ const hu: LocaleMessages = {
     before_wedding_title: "Várj, ez biztosan jó?",
     before_wedding_body:
       "A nászút kezdete {honeymoon}, de az esküvő {wedding}. A legtöbb pár az esküvő után indul, nézd át a dátumokat.",
+    shift_title: "Az esküvő dátuma változott. A nászutat is tegyük át?",
+    shift_range: "Javaslat: {start} – {end}",
+    shift_start: "Javasolt indulás: {start}",
+    shift_apply: "Nászút áttétele",
+    shift_keep: "Maradjon így",
+    shift_done: "Nászút dátumai frissítve",
     countdown_future_one: "Még {count} nap",
     countdown_future_other: "Még {count} nap",
     countdown_today: "Ma indul!",
