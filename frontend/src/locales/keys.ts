@@ -5512,6 +5512,9 @@ export interface LocaleMessages {
     stat_total_action: string;
     stat_households_action: string;
     stat_invited_action: string;
+    rsvp_progress: string;
+    rsvp_progress_unit: string;
+    rsvp_progress_filter: string;
     invited_filter_label: string;
     household_filter_label: string;
     household_filter_empty: string;
