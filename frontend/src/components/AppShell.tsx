@@ -1385,13 +1385,29 @@ function SidebarGroupHeader({
         />
       </div>
       {/* Hairline — tablet (icon-only) always, and laptop when collapsed;
-          fades out at lg+ when the labelled header takes over. */}
+          fades out at lg+ when the labelled header takes over. A toggleable
+          section keeps its chevron in the middle of the line, so a bare
+          hairline in the icon rail still reads as something that opens. */}
       <div
-        className={`h-px w-full bg-umber-700 transition-opacity duration-300 ease-in-out ${
+        className={`flex w-full items-center gap-1 transition-opacity duration-300 ease-in-out ${
           collapsed ? "" : "lg:opacity-0"
         }`}
         aria-hidden
-      />
+      >
+        <span className="h-px flex-1 bg-umber-700 transition-colors group-hover/hdr:bg-umber-500" />
+        {onToggle && (
+          <>
+            <span
+              className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center text-umber-300 transition-[color,transform] duration-200 group-hover/hdr:text-blush-600 ${
+                isOpen ? "" : "-rotate-90"
+              }`}
+            >
+              <ChevronDown size={11} strokeWidth={2.5} />
+            </span>
+            <span className="h-px flex-1 bg-umber-700 transition-colors group-hover/hdr:bg-umber-500" />
+          </>
+        )}
+      </div>
     </button>
   );
 }
