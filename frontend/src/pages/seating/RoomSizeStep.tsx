@@ -30,15 +30,6 @@ export function parseRoomSize(draft: RoomSizeDraft): { w: number; h: number } | 
   return { w: clamp(w), h: clamp(h) };
 }
 
-/** One-tap starting points, from a restaurant back room to a large hall.
- *  Values, not copy: "15 × 10" reads the same in every language. */
-const ROOM_PRESETS: ReadonlyArray<RoomSizeDraft> = [
-  { w: "10", h: "8" },
-  { w: "15", h: "10" },
-  { w: "20", h: "12" },
-  { w: "30", h: "15" },
-];
-
 export function RoomSizeStep({
   draft,
   onChange,
@@ -64,13 +55,10 @@ export function RoomSizeStep({
       <h2 className="font-grotesk text-[1.75rem] font-bold leading-tight tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
         {t("seating.room_step_title")}
       </h2>
-      <p className="mt-2 text-base text-ink-500 dark:text-umber-300">
-        {t("seating.room_step_hint")}
-      </p>
 
       <div
         aria-hidden
-        className="mt-7 flex h-52 items-center justify-center rounded-2xl border border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-800"
+        className="mt-8 flex h-52 items-center justify-center rounded-2xl border border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-800"
       >
         <div
           className="relative rounded-md border-2 border-ink-900 bg-paper-100 transition-all duration-300 dark:border-paper-50 dark:bg-umber-700"
@@ -102,27 +90,6 @@ export function RoomSizeStep({
           value={draft.h}
           onChange={(h) => onChange({ ...draft, h })}
         />
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {ROOM_PRESETS.map((preset) => {
-          const on = parsed !== null && fmt(parsed.w) === preset.w && fmt(parsed.h) === preset.h;
-          return (
-            <button
-              key={`${preset.w}x${preset.h}`}
-              type="button"
-              aria-pressed={on}
-              onClick={() => onChange(preset)}
-              className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-medium tabular-nums transition-colors ${
-                on
-                  ? "border-ink-900 text-ink-900 dark:border-paper-50 dark:text-paper-50"
-                  : "border-paper-200 bg-white text-ink-600 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-umber-500"
-              }`}
-            >
-              {preset.w} × {preset.h}
-            </button>
-          );
-        })}
       </div>
     </div>
   );

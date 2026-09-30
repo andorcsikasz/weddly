@@ -41,23 +41,4 @@ describe("RoomSizeStep", () => {
     fireEvent.change(width, { target: { value: "20" } });
     expect(onChange).toHaveBeenCalledWith({ w: "20", h: "9" });
   });
-
-  it("a preset fills both dimensions in one tap and shows as chosen", () => {
-    const onChange = mock(() => {});
-    const { rerender } = render(
-      <I18nProvider>
-        <RoomSizeStep draft={roomDraftFromMm(12_000, 9_000)} onChange={onChange} />
-      </I18nProvider>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "20 × 12" }));
-    expect(onChange).toHaveBeenCalledWith({ w: "20", h: "12" });
-    rerender(
-      <I18nProvider>
-        <RoomSizeStep draft={{ w: "20", h: "12" }} onChange={onChange} />
-      </I18nProvider>,
-    );
-    expect(screen.getByRole("button", { name: "20 × 12" }).getAttribute("aria-pressed")).toBe(
-      "true",
-    );
-  });
 });

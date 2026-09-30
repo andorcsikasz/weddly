@@ -1886,9 +1886,6 @@ export default function SeatingPage() {
         // same shape as the guests first-run flow. Always shows; in seat mode
         // the user needs to switch to Edit first to add tables.
         <section className="mx-auto max-w-xl pb-10 pt-2 sm:pt-8">
-          <p className="mb-2 text-sm font-medium text-ink-500 dark:text-umber-300">
-            {t("seating.no_tables")}
-          </p>
           <RoomSizeStep
             draft={roomDraft}
             onChange={(next) => {
