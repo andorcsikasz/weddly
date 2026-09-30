@@ -5847,203 +5847,228 @@ function MealsDialog({
           flips between live stats and an inline editor), and a dense allergen
           grid. */}
       <div className="space-y-4 font-grotesk">
-        {/* Compact control bar: the bulk "ask for meals on the RSVP" toggle on
-            one line, plus the live summary chips on the right. */}
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-paper-200 bg-paper-50/70 px-3.5 py-2 dark:border-umber-700 dark:bg-umber-800/40">
-          <div
-            className={`flex min-w-0 items-center gap-2.5 ${
+        {/* Control bar: icon, the question + its help + the live summary chips
+            in one column, and the switch pinned to the right edge, centred
+            on the whole box rather than trailing the text. */}
+        <div className="flex items-center gap-3 rounded-xl border border-paper-200 bg-paper-50/70 px-3.5 py-2.5 dark:border-umber-700 dark:bg-umber-800/40">
+          <span
+            aria-hidden
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-paper-200/70 text-ink-600 dark:bg-umber-700 dark:text-paper-100 ${
               households.length === 0 ? "opacity-60" : ""
             }`}
           >
-            <span
-              aria-hidden
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-paper-200/70 text-ink-600 dark:bg-umber-700 dark:text-paper-100"
-            >
-              <Utensils size={16} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-medium leading-tight text-ink-800 dark:text-paper-100">
-                {t("guests.rsvp_collects_meal_label")}
-              </p>
-              <p className="text-[11px] leading-snug text-ink-500 dark:text-umber-300 sm:truncate">
-                {t("guests.rsvp_collects_meal_help")}
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={mealOn}
-              aria-label={t("guests.rsvp_collects_meal_label")}
-              disabled={households.length === 0}
-              onClick={() => void onBulkRsvpToggle("rsvp_collects_meal", !mealOn)}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed ${
-                mealOn ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                  mealOn ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
+            <Utensils size={16} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium leading-tight text-ink-800 dark:text-paper-100">
+              {t("guests.rsvp_collects_meal_label")}
+            </p>
+            <p className="text-[11px] leading-snug text-ink-500 dark:text-umber-300">
+              {t("guests.rsvp_collects_meal_help")}
+            </p>
+            {!editing && stats.totalYes > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-200">
+                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-umber-900">
+                    <Check size={9} strokeWidth={3} aria-hidden />
+                  </span>
+                  {t("guests.meals_total_yes", { count: stats.totalYes })}
+                </span>
+                {stats.pending > 0 && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
+                    {t("guests.meals_pending_chip", { count: stats.pending })}
+                  </span>
+                )}
+                {babyYes > 0 && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
+                    <Baby size={13} aria-hidden />
+                    {t("guests.meals_baby_count", { count: babyYes })}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
-          {!editing && stats.totalYes > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-200">
-                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-umber-900">
-                  <Check size={9} strokeWidth={3} aria-hidden />
-                </span>
-                {t("guests.meals_total_yes", { count: stats.totalYes })}
-              </span>
-              {stats.pending > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
-                  {t("guests.meals_pending_chip", { count: stats.pending })}
-                </span>
-              )}
-              {babyYes > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
-                  <Baby size={13} aria-hidden />
-                  {t("guests.meals_baby_count", { count: babyYes })}
-                </span>
-              )}
-            </div>
-          )}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={mealOn}
+            aria-label={t("guests.rsvp_collects_meal_label")}
+            disabled={households.length === 0}
+            onClick={() => void onBulkRsvpToggle("rsvp_collects_meal", !mealOn)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+              mealOn ? "bg-sage-500 dark:bg-sage-400" : "bg-paper-300 dark:bg-umber-700"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                mealOn ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
         </div>
 
         {/* MEALS — the panel flips between live stats and the inline editor.
             View: a single stacked share-bar + a dense legend (custom labels,
             counts, share). Edit: each slot becomes a label field + an
             offered/hidden switch so couples publish their real menu. */}
-        <section className="space-y-3">
-          <header className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-grotesk text-base font-semibold tracking-tight text-ink-800 dark:text-paper-100">
-                  {t("guests.meals_section_meals")}
-                </h3>
-                {!editing && isCustomMealMenu(activeMenu) && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blush-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blush-600 dark:bg-blush-400/15 dark:text-blush-300">
-                    {t("guests.meals_menu_custom_badge")}
+        {/* Folds away while guests aren't being asked (same 0fr/1fr grid
+            trick as the household cards), and stays open during an edit so
+            flipping the switch can't swallow unsaved menu changes. */}
+        <div
+          className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            mealOn || editing ? "grid-rows-[1fr] opacity-100" : "!mt-0 grid-rows-[0fr] opacity-0"
+          }`}
+          inert={!(mealOn || editing)}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <section className="space-y-3">
+              <header className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-grotesk text-base font-semibold tracking-tight text-ink-800 dark:text-paper-100">
+                      {t("guests.meals_section_meals")}
+                    </h3>
+                    {!editing && isCustomMealMenu(activeMenu) && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blush-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blush-600 dark:bg-blush-400/15 dark:text-blush-300">
+                        {t("guests.meals_menu_custom_badge")}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-ink-500 dark:text-umber-300">
+                    {editing
+                      ? t("guests.meals_menu_edit_help")
+                      : t("guests.meals_section_meals_help")}
                   </span>
+                </div>
+                {!editing && couple && (
+                  <button
+                    type="button"
+                    className="btn-outline btn-sm shrink-0"
+                    onClick={() => setEditing(true)}
+                  >
+                    <Pencil size={14} aria-hidden /> {t("guests.meals_edit_menu")}
+                  </button>
                 )}
-              </div>
-              <span className="text-xs text-ink-500 dark:text-umber-300">
-                {editing ? t("guests.meals_menu_edit_help") : t("guests.meals_section_meals_help")}
-              </span>
-            </div>
-            {!editing && couple && (
-              <button
-                type="button"
-                className="btn-outline btn-sm shrink-0"
-                onClick={() => setEditing(true)}
-              >
-                <Pencil size={14} aria-hidden /> {t("guests.meals_edit_menu")}
-              </button>
-            )}
-          </header>
+              </header>
 
-          {editing ? (
-            <>
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {MEAL_ORDER.map((m) => {
-                  const item = draftMenu.find((x) => x.choice === m);
-                  return (
-                    <MealEditRow
-                      key={m}
-                      meal={m}
-                      value={item?.label ?? ""}
-                      enabled={item?.enabled ?? true}
-                      placeholder={t(`guests.meal_${m}`)}
-                      offeredLabel={t("guests.meals_menu_offered")}
-                      onLabel={(label) => patchSlot(m, { label })}
-                      onToggle={() => patchSlot(m, { enabled: !(item?.enabled ?? true) })}
-                    />
-                  );
-                })}
-                {/* The couple's own options. Same row, one difference: the
+              {editing ? (
+                <>
+                  <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {MEAL_ORDER.map((m) => {
+                      const item = draftMenu.find((x) => x.choice === m);
+                      return (
+                        <MealEditRow
+                          key={m}
+                          meal={m}
+                          value={item?.label ?? ""}
+                          enabled={item?.enabled ?? true}
+                          placeholder={t(`guests.meal_${m}`)}
+                          offeredLabel={t("guests.meals_menu_offered")}
+                          onLabel={(label) => patchSlot(m, { label })}
+                          onToggle={() => patchSlot(m, { enabled: !(item?.enabled ?? true) })}
+                        />
+                      );
+                    })}
+                    {/* The couple's own options. Same row, one difference: the
                     label is the whole option rather than an override, so it
                     has no placeholder default to fall back on and the row can
                     be deleted. */}
-                {draftMenu
-                  .filter((x) => isCustomMealKey(x.choice))
-                  .map((item) => (
-                    <MealEditRow
-                      key={item.choice}
-                      meal={item.choice}
-                      value={item.label ?? ""}
-                      enabled={item.enabled}
-                      placeholder={t("guests.meals_menu_custom_placeholder")}
-                      offeredLabel={t("guests.meals_menu_offered")}
-                      onLabel={(label) => patchSlot(item.choice, { label })}
-                      onToggle={() => patchSlot(item.choice, { enabled: !item.enabled })}
-                      onRemove={() =>
-                        setDraftMenu((prev) => prev.filter((x) => x.choice !== item.choice))
-                      }
-                      removeLabel={t("guests.meals_menu_remove_option")}
-                    />
-                  ))}
-              </ul>
-              {/* Six was not enough for real weddings: halal, a gluten-free
+                    {draftMenu
+                      .filter((x) => isCustomMealKey(x.choice))
+                      .map((item) => (
+                        <MealEditRow
+                          key={item.choice}
+                          meal={item.choice}
+                          value={item.label ?? ""}
+                          enabled={item.enabled}
+                          placeholder={t("guests.meals_menu_custom_placeholder")}
+                          offeredLabel={t("guests.meals_menu_offered")}
+                          onLabel={(label) => patchSlot(item.choice, { label })}
+                          onToggle={() => patchSlot(item.choice, { enabled: !item.enabled })}
+                          onRemove={() =>
+                            setDraftMenu((prev) => prev.filter((x) => x.choice !== item.choice))
+                          }
+                          removeLabel={t("guests.meals_menu_remove_option")}
+                        />
+                      ))}
+                  </ul>
+                  {/* Six was not enough for real weddings: halal, a gluten-free
                   plate, a second main. The cap keeps the RSVP a tap grid
                   rather than a form to read. */}
-              <button
-                type="button"
-                className="btn-outline btn-sm mt-3"
-                disabled={customMealCount(draftMenu) >= MEAL_MAX_CUSTOM}
-                onClick={() =>
-                  setDraftMenu((prev) => [
-                    ...prev,
-                    { choice: nextCustomMealKey(prev), label: "", enabled: true },
-                  ])
-                }
-              >
-                <Plus size={14} aria-hidden /> {t("guests.meals_menu_add_option")}
-              </button>
-            </>
-          ) : stats.totalYes > 0 ? (
-            <>
-              <MealsStackedBar
-                mealCounts={stats.mealCounts}
-                slots={slots}
-                pending={stats.pending}
-                total={mealsDenominator}
-              />
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {slots.map((m) => (
-                  <MealLegendRow
-                    key={m}
-                    meal={m}
-                    label={mealLabel(m)}
-                    count={stats.mealCounts[m] ?? 0}
-                    total={mealsDenominator}
-                  />
-                ))}
-              </ul>
-            </>
-          ) : (
-            // No responses yet — show the menu as read-only chips so couples
-            // still see what they'll offer, with a nudge to personalise it.
-            <div className="rounded-xl border border-dashed border-paper-300 bg-paper-50/60 px-3 py-3 dark:border-umber-700 dark:bg-umber-800/30">
-              <ul className="flex flex-wrap gap-1.5">
-                {MEAL_ORDER.filter(
-                  (m) => activeMenu.find((x) => x.choice === m)?.enabled ?? true,
-                ).map((m) => (
-                  <li
-                    key={m}
-                    className={`inline-flex items-center gap-1.5 rounded-full border border-paper-200 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 ${mealToneText(m)}`}
+                  <button
+                    type="button"
+                    className="btn-outline btn-sm mt-3"
+                    disabled={customMealCount(draftMenu) >= MEAL_MAX_CUSTOM}
+                    onClick={() =>
+                      setDraftMenu((prev) => [
+                        ...prev,
+                        { choice: nextCustomMealKey(prev), label: "", enabled: true },
+                      ])
+                    }
                   >
-                    <MealIcon meal={m} />
-                    <span className="text-ink-700 dark:text-paper-100">{mealLabel(m)}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
-                {t("guests.meals_no_yes_yet")}
-              </p>
-            </div>
-          )}
-        </section>
+                    <Plus size={14} aria-hidden /> {t("guests.meals_menu_add_option")}
+                  </button>
+                </>
+              ) : (
+                // The switch above decides whether guests are asked at all. Off:
+                // the tiles go grey so nobody reads them as a live question. On:
+                // they take their meal's tint so "this is being asked" shows.
+                <div
+                  className={`transition-[filter,opacity] duration-300 ${mealOn ? "" : "opacity-50 grayscale"}`}
+                >
+                  {stats.totalYes > 0 ? (
+                    <>
+                      <MealsStackedBar
+                        mealCounts={stats.mealCounts}
+                        slots={slots}
+                        pending={stats.pending}
+                        total={mealsDenominator}
+                      />
+                      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {slots.map((m) => (
+                          <MealLegendRow
+                            key={m}
+                            meal={m}
+                            label={mealLabel(m)}
+                            count={stats.mealCounts[m] ?? 0}
+                            total={mealsDenominator}
+                            tinted={mealOn}
+                          />
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    // No responses yet — show the menu as read-only chips so couples
+                    // still see what they'll offer, with a nudge to personalise it.
+                    <div className="rounded-xl border border-dashed border-paper-300 bg-paper-50/60 px-3 py-3 dark:border-umber-700 dark:bg-umber-800/30">
+                      <ul className="flex flex-wrap gap-1.5">
+                        {MEAL_ORDER.filter(
+                          (m) => activeMenu.find((x) => x.choice === m)?.enabled ?? true,
+                        ).map((m) => (
+                          <li
+                            key={m}
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium text-ink-700 dark:text-paper-100 ${mealToneText(m)} ${
+                              mealOn
+                                ? `border-transparent ${mealToneSoft(m)}`
+                                : "border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
+                            }`}
+                          >
+                            <MealIcon meal={m} />
+                            <span className="text-ink-700 dark:text-paper-100">{mealLabel(m)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
+                        {t("guests.meals_no_yes_yet")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
 
         {/* ALLERGENS — dense two-column grid of tinted bars, hidden while
             editing the menu so the editor owns the whole view. */}
@@ -6209,28 +6234,36 @@ function MealLegendRow({
   label,
   count,
   total,
+  tinted = false,
 }: {
   meal: MealSlotKey;
   label: string;
   count: number;
   total: number;
+  /** Menu choice is switched on: the card takes its meal's tint, zero count
+   *  or not, since the tint says "offered" rather than "chosen". */
+  tinted?: boolean;
 }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   const dim = count === 0;
   return (
     <li
       className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
-        dim
-          ? "border-paper-200 bg-paper-50/50 dark:border-umber-700/60 dark:bg-umber-800/30"
-          : "border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
+        tinted
+          ? `border-transparent ${mealToneSoft(meal)}`
+          : dim
+            ? "border-paper-200 bg-paper-50/50 dark:border-umber-700/60 dark:bg-umber-800/30"
+            : "border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
       }`}
     >
       <span
         aria-hidden
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-          dim
-            ? "bg-paper-200 text-ink-400 dark:bg-umber-700 dark:text-umber-400"
-            : `${mealToneSoft(meal)} ${mealToneText(meal)}`
+          tinted
+            ? `bg-paper-50/80 dark:bg-umber-900/40 ${mealToneText(meal)}`
+            : dim
+              ? "bg-paper-200 text-ink-400 dark:bg-umber-700 dark:text-umber-400"
+              : `${mealToneSoft(meal)} ${mealToneText(meal)}`
         }`}
       >
         <MealIcon meal={meal} />
