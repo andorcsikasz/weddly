@@ -25,7 +25,6 @@ import {
   ChevronUp,
   CheckCircle2,
   Circle,
-  ClipboardList,
   Disc3,
   Flower2,
   Gem,
@@ -353,21 +352,13 @@ export default function TimelinePage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <h1 className="sr-only">{t("timeline.title")}</h1>
-              <Link
-                to="/app/planning"
-                aria-label={t("planning.title")}
-                title={t("planning.title")}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:h-8 sm:w-8 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
-              >
-                <ClipboardList size={18} aria-hidden="true" />
-              </Link>
+              <PlanningRouteLinks />
             </div>
             <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
               <GoogleCalendarConnect api={googleCalendarApi} keyPrefix="timeline" />
               <CountdownChip weddingDate={weddingDate} />
             </div>
           </div>
-          <PlanningRouteLinks className="mt-3" />
         </header>
 
         <ChartCard

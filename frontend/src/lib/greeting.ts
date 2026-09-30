@@ -116,3 +116,24 @@ function timeOfDay(date: Date): GreetingKey {
 export function greetingKeyFor(date: Date = new Date()): GreetingKey {
   return holidayFor(date) ?? timeOfDay(date);
 }
+
+/** Who the couple dashboard greets: the person signed in, never the pair.
+ *  "Good evening, Anna & Ben" addresses a workspace, and the partner reading
+ *  it is only one of them. The partner names on the couple are the names the
+ *  couple chose to be called, so when one of them is a word of the user's
+ *  own full name ("Kiss Anna" → "Anna") that one wins, whichever slot it was
+ *  typed into. Otherwise the full name stands, which covers a planner in a
+ *  client workspace and a user whose partner-name field holds a nickname. */
+export function greetingNameFor(
+  fullName: string | null | undefined,
+  partnerNames: string[],
+): string {
+  const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+  const own = (fullName ?? "").trim();
+  const words = new Set(own.split(/\s+/).map(fold).filter(Boolean));
+  for (const raw of partnerNames) {
+    const name = raw.trim();
+    if (name && words.has(fold(name))) return name;
+  }
+  return own;
+}

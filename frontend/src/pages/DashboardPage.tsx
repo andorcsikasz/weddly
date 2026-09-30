@@ -78,7 +78,7 @@ import {
   subscribeCostPlanningCount,
   writeCostPlanningCount,
 } from "../lib/cost_planning";
-import { greetingKeyFor } from "../lib/greeting";
+import { greetingKeyFor, greetingNameFor } from "../lib/greeting";
 import {
   budgetApi,
   coupleApi,
@@ -908,7 +908,11 @@ export default function DashboardPage() {
           (`lib/greeting.ts`); only the i18n namespace differs. */}
       <header className="mb-6">
         <h1 className="break-words font-grotesk text-3xl font-semibold leading-[1.05] tracking-[-0.02em] text-ink-900 hyphens-auto sm:text-4xl dark:text-paper-50">
-          {t(`dashboard.greeting.${greetingKeyFor()}`, { name: couple.display_name })}
+          {t(`dashboard.greeting.${greetingKeyFor()}`, {
+            name:
+              greetingNameFor(currentUser?.full_name, [couple.bride_name, couple.groom_name]) ||
+              couple.bride_name,
+          })}
         </h1>
       </header>
 

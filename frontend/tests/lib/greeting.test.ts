@@ -9,7 +9,7 @@ import { describe, expect, it } from "bun:test";
 import en from "@/locales/en";
 import es from "@/locales/es";
 import hu from "@/locales/hu";
-import { type GreetingKey, greetingKeyFor } from "@/lib/greeting";
+import { type GreetingKey, greetingKeyFor, greetingNameFor } from "@/lib/greeting";
 
 /** A local-time date, which is what the greeting reads. Constructing through
  *  the numeric ctor (not an ISO string) is the point: `new Date("2026-06-01")`
@@ -133,4 +133,20 @@ describe("greetingKeyFor: copy", () => {
       }
     });
   }
+});
+
+describe("greetingNameFor (couple dashboard)", () => {
+  it("greets the signed-in partner, never the pair", () => {
+    expect(greetingNameFor("Kiss Anna", ["Anna", "Ben"])).toBe("Anna");
+    expect(greetingNameFor("Ben Smith", ["Anna", "Ben"])).toBe("Ben");
+  });
+
+  it("matches accent- and case-insensitively, whichever slot holds the name", () => {
+    expect(greetingNameFor("csikász andor", ["Réka", "Andor"])).toBe("Andor");
+    expect(greetingNameFor("Kovacs Reka", ["Réka", "Andor"])).toBe("Réka");
+  });
+
+  it("falls back to the user's own full name when no partner name matches", () => {
+    expect(greetingNameFor("Planner Pam", ["Anna", "Ben"])).toBe("Planner Pam");
+  });
 });
