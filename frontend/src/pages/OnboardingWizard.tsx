@@ -509,6 +509,9 @@ export default function OnboardingWizard() {
 
   const stepValid = isStepValid(step, form);
 
+  const dateAnswerCell = (k: WeddingDateKind) =>
+    `[grid-area:1/1] self-center ${form.date_kind === k ? "animate-fade-in-up" : "invisible"}`;
+
   // Placeholder-name verdicts for the two step-0 fields. Computed every render
   // from the SAME shared rule the server enforces, so the wizard can never
   // wave through something the POST is about to refuse.
@@ -569,7 +572,6 @@ export default function OnboardingWizard() {
                       className="input"
                       value={form.bride_name}
                       onChange={(e) => update("bride_name", e.target.value)}
-                      onBlur={() => setNameErrorsShown(true)}
                       aria-invalid={nameErrorsShown && brideVerdict !== null}
                       aria-describedby={
                         nameErrorsShown && brideVerdict ? "bride_name_error" : undefined
@@ -594,7 +596,6 @@ export default function OnboardingWizard() {
                       className="input"
                       value={form.groom_name}
                       onChange={(e) => update("groom_name", e.target.value)}
-                      onBlur={() => setNameErrorsShown(true)}
                       aria-invalid={nameErrorsShown && groomVerdict !== null}
                       aria-describedby={
                         nameErrorsShown && groomVerdict ? "groom_name_error" : undefined
@@ -636,23 +637,11 @@ export default function OnboardingWizard() {
             {step === 1 && (
               <>
                 <h1 className={STEP_TITLE}>{t("onboarding.step2_title")}</h1>
-                <div
-                  className="mt-8 grid grid-cols-3 gap-2"
-                  role="group"
-                  aria-label={t("onboarding.date_kind_question")}
-                >
-                  {(["exact", "quarter", "tbd"] as WeddingDateKind[]).map((k) => (
-                    <KindButton
-                      key={k}
-                      active={form.date_kind === k}
-                      onClick={() => update("date_kind", k)}
-                      label={t(`onboarding.date_kind_${k}`)}
-                    />
-                  ))}
-                </div>
-
-                {form.date_kind === "exact" && (
-                  <div className="mt-6 animate-fade-in-up">
+                {/* All three answers share one grid cell and only the chosen
+                 *  one is visible, so the cell is as tall as the tallest and
+                 *  the options below never move, like on the next two steps. */}
+                <div className="mt-8 grid">
+                  <div className={dateAnswerCell("exact")} aria-hidden={form.date_kind !== "exact"}>
                     <label htmlFor="wedding_date" className="field-label">
                       {t("onboarding.wedding_date_label")}
                     </label>
@@ -671,10 +660,11 @@ export default function OnboardingWizard() {
                       </p>
                     )}
                   </div>
-                )}
 
-                {form.date_kind === "quarter" && (
-                  <div className="mt-6 animate-fade-in-up">
+                  <div
+                    className={dateAnswerCell("quarter")}
+                    aria-hidden={form.date_kind !== "quarter"}
+                  >
                     <YearSelect value={form.date_year} onChange={(v) => update("date_year", v)} />
                     <div className="mt-4">
                       <p className="field-label">{t("onboarding.date_quarter_label")}</p>
@@ -698,10 +688,11 @@ export default function OnboardingWizard() {
                       </div>
                     </div>
                   </div>
-                )}
 
-                {form.date_kind === "tbd" && (
-                  <p className="mt-6 animate-fade-in-up rounded-lg bg-paper-200 p-4 text-sm text-umber-700 dark:bg-umber-800 dark:text-umber-200">
+                  <p
+                    className={`${dateAnswerCell("tbd")} rounded-lg bg-paper-200 p-4 text-sm text-umber-700 dark:bg-umber-800 dark:text-umber-200`}
+                    aria-hidden={form.date_kind !== "tbd"}
+                  >
                     {/* One sentence per line. Split here rather than in the
                      *  copy so every locale gets it without a "\n" in five files. */}
                     {t("onboarding.date_kind_help_tbd")
@@ -712,7 +703,21 @@ export default function OnboardingWizard() {
                         </span>
                       ))}
                   </p>
-                )}
+                </div>
+                <div
+                  className="mt-6 grid grid-cols-3 gap-2"
+                  role="group"
+                  aria-label={t("onboarding.date_kind_question")}
+                >
+                  {(["exact", "quarter", "tbd"] as WeddingDateKind[]).map((k) => (
+                    <KindButton
+                      key={k}
+                      active={form.date_kind === k}
+                      onClick={() => update("date_kind", k)}
+                      label={t(`onboarding.date_kind_${k}`)}
+                    />
+                  ))}
+                </div>
               </>
             )}
 
@@ -871,9 +876,6 @@ export default function OnboardingWizard() {
                  *  "specific / range / no idea" row lands at the same height as
                  *  on the guest step. Switching it rebases the slider. */}
                 <div className="mt-4 flex items-center justify-center gap-2">
-                  <span className="text-sm text-umber-600 dark:text-umber-300">
-                    {t("onboarding.budget_currency_label")}
-                  </span>
                   <CurrencySelect
                     value={form.currency}
                     onChange={setCurrency}
@@ -1223,7 +1225,7 @@ function KindButton({
         "duration-200 ease-out motion-reduce:transition-none",
         active
           ? "z-10 scale-[1.05] border-umber-900 bg-umber-900 text-paper-50 shadow-soft"
-          : "scale-[0.94] border-paper-300 bg-paper-100 text-umber-800 opacity-80 hover:scale-[0.97] hover:border-umber-500 hover:bg-paper-200 hover:opacity-100 active:scale-[0.92] dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100 dark:hover:border-umber-500",
+          : "scale-[0.94] border-neutral-200 bg-neutral-100 text-neutral-500 hover:scale-[0.97] hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-700 active:scale-[0.92] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:text-neutral-200",
       ].join(" ")}
       aria-pressed={active}
     >
