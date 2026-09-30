@@ -1633,7 +1633,9 @@ export default function BudgetPage() {
                 <td className="px-4 py-3 align-middle text-ink-900 dark:text-paper-50">
                   {t("budget.lines_totals_label")}
                 </td>
-                <td className="px-4 py-3 text-center align-middle tabular-nums text-ink-900 dark:text-paper-50">
+                <td
+                  className={`px-4 py-3 text-center align-middle tabular-nums ${tableTotals.planned === 0 ? "text-ink-400 dark:text-umber-400" : "text-ink-900 dark:text-paper-50"}`}
+                >
                   {formatMoney(tableTotals.planned, currency, locale)}
                 </td>
                 <td className="px-4 py-3 text-center align-middle tabular-nums text-ink-900 dark:text-paper-50">
@@ -3056,7 +3058,9 @@ function HoneymoonAggregateRow({
           {t("budget.cat.honeymoon")}
         </Link>
       </td>
-      <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900 dark:text-paper-50">
+      <td
+        className={`px-4 py-2 text-center align-middle text-sm tabular-nums ${planned === 0 ? "text-ink-400 dark:text-umber-400" : "text-ink-900 dark:text-paper-50"}`}
+      >
         {formatMoney(planned, currency, locale)}
       </td>
       <td className="px-4 py-2 text-center align-middle text-sm tabular-nums text-ink-900 dark:text-paper-50">
@@ -3425,7 +3429,9 @@ function HoneymoonAggregateCard({
           <dt className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
             {t("budget.planned")}
           </dt>
-          <dd className="tabular-nums text-ink-900 dark:text-paper-50">
+          <dd
+            className={`tabular-nums ${planned === 0 ? "text-ink-400 dark:text-umber-400" : "text-ink-900 dark:text-paper-50"}`}
+          >
             {formatMoney(planned, currency, locale)}
           </dd>
         </div>
@@ -3989,6 +3995,10 @@ function HufInput({
   // being typed into, so it never sits under a number the couple is mid-way
   // through entering themselves.
   const [isFocused, setIsFocused] = useState(false);
+  // A planned amount of nothing reads as a placeholder, not a figure: greyed
+  // until focused, so the rows that carry real money stand out.
+  const zeroPlanned =
+    dataKey === "planned" && !isFocused && !error && /^[-\s.,\u00a0\u202f0]*$/.test(draft);
   const inputRef = useRef<HTMLInputElement>(null);
   // Set while a pointer-initiated focus is still waiting for its mouseup —
   // see `onFocus` / `onMouseUp` below.
@@ -4136,7 +4146,7 @@ function HufInput({
         aria-label={ariaLabel}
         className={`input h-9 min-h-0 py-1 text-center text-sm tabular-nums ${
           error ? "input-invalid" : ""
-        } ${showCopyButton ? "pr-7" : ""} ${readOnly ? "cursor-not-allowed bg-paper-100 text-ink-500 dark:bg-umber-700/60 dark:text-umber-300" : ""}`}
+        } ${showCopyButton ? "pr-7" : ""} ${readOnly ? "cursor-not-allowed bg-paper-100 text-ink-500 dark:bg-umber-700/60 dark:text-umber-300" : ""} ${zeroPlanned ? "text-ink-400 dark:text-umber-400" : ""}`}
         value={draft}
         onChange={onChange}
         onFocus={onFocus}

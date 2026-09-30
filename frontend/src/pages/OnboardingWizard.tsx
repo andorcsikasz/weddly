@@ -522,7 +522,7 @@ export default function OnboardingWizard() {
           </p>
           <div className="mt-2 h-1.5 w-full rounded-full bg-paper-300 dark:bg-umber-800">
             <div
-              className="h-1.5 rounded-full bg-blush-600 transition-[width] duration-500 ease-out dark:bg-blush-400"
+              className="h-1.5 rounded-full bg-umber-900 transition-[width] duration-500 ease-out dark:bg-paper-50"
               style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }}
             />
           </div>
