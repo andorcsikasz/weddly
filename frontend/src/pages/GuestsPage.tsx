@@ -1310,7 +1310,7 @@ export default function GuestsPage() {
         {couple && (
           // Fills the empty gap between the stat counters and the toolbar
           // instead of sitting on its own full-width row below the header.
-          <div className="order-last flex flex-1 justify-end sm:order-none">
+          <div className="order-last flex flex-1 justify-start sm:order-none sm:justify-end">
             <CheckinTrigger
               couple={couple}
               expanded={checkinExpanded}
@@ -2937,7 +2937,7 @@ function RsvpPicker({
         className={`inline-flex items-center rounded-full border text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${
           iconOnly
             ? `h-7 w-7 justify-center ${RSVP_SOLID[value]}`
-            : `gap-1.5 px-2.5 py-1 ${RSVP_TONE[value]}`
+            : `gap-1.5 px-2.5 py-1 max-sm:min-h-9 ${RSVP_TONE[value]}`
         }`}
       >
         {RSVP_GLYPH[value]}
@@ -3214,7 +3214,11 @@ function GuestTable({
           autoHidden={autoHidden}
         />
       </div>
-      <div className="card overflow-x-auto p-0">
+      {/* `relative` is load-bearing: without a positioned scroller, the
+          absolutely-positioned sr-only labels in the header cells anchor to
+          something outside it, escape the clip and widen the whole page
+          (25px at 360px wide, 152px on a desktop). */}
+      <div className="card relative overflow-x-auto p-0">
         <HouseholdDatalist households={households} />
         <table className="w-full min-w-[920px] border-collapse text-sm">
           <thead>
@@ -3694,7 +3698,7 @@ function HouseholdCard({
             </div>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-0.5 md:gap-1">
+        <div className="flex shrink-0 items-center gap-0.5 md:gap-1 max-md:[&>button]:h-9 max-md:[&>button]:min-w-9 max-md:[&>button]:justify-center">
           {!isHosts && (
             <>
               <AccommodationToggle
@@ -4812,7 +4816,7 @@ function GuestDrawer({
             <div className="flex gap-2 sm:mr-auto">
               <button
                 type="button"
-                className="btn-ghost flex-1 text-blush-700 hover:bg-blush-50 sm:flex-none dark:text-blush-300 dark:hover:bg-blush-400/15"
+                className="btn-ghost flex-1 whitespace-nowrap text-sm text-blush-700 hover:bg-blush-50 sm:flex-none dark:text-blush-300 dark:hover:bg-blush-400/15"
                 onClick={() => void onDelete(guest)}
                 disabled={submitting}
               >
@@ -4820,7 +4824,7 @@ function GuestDrawer({
               </button>
               <button
                 type="button"
-                className="btn-ghost flex-1 sm:flex-none"
+                className="btn-ghost flex-1 whitespace-nowrap text-sm sm:flex-none"
                 onClick={() => void onPrintPlaceCard(guest)}
                 disabled={submitting}
                 title={t("guests.print_place_card")}
@@ -6204,7 +6208,7 @@ function MealsDialog({
             editing the menu so the editor owns the whole view. */}
         {!editing && stats.totalYes > 0 && (
           <section className="space-y-2 rounded-2xl border border-paper-200 bg-paper-100/40 p-3.5 dark:border-umber-700 dark:bg-umber-700/30">
-            <header className="flex items-baseline justify-between gap-2">
+            <header className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
               <h3 className="font-grotesk text-base font-semibold tracking-tight text-ink-800 dark:text-paper-100">
                 {t("guests.meals_section_dietary")}
               </h3>
@@ -6744,7 +6748,10 @@ function GuestFilterBar({
   const { t } = useT();
   // Auto-open the panel when a filter is already applied (e.g. arriving via a
   // shared URL) so the active selection is visible, not hidden behind a chip.
-  const [open, setOpen] = useState(activeFilterCount > 0);
+  // Closed on arrival even with filters applied: the active-chip row below
+  // already names each one, and an open panel on a phone pushed the list
+  // (and the invites center under the invited lens) a whole screen down.
+  const [open, setOpen] = useState(false);
   // Collapses to a tap target on phones (Uber-style: icon in, full-width
   // field out); sm+ keeps the field open since there's room for it there.
   // Starts open when a query is already set (a shared ?q= link), so the
