@@ -3527,6 +3527,16 @@ export interface LocaleMessages {
       setup_label: string;
       setup_done: string;
       setup_continue: string;
+      onb_step: string;
+      onb_skip: string;
+      onb_skip_all: string;
+      onb_summary_eyebrow: string;
+      onb_topics_one: string;
+      onb_topics_other: string;
+      onb_questions_one: string;
+      onb_questions_other: string;
+      onb_summary_body: string;
+      onb_start: string;
       /** Decision-log: add a one-line resolution note to a decided item. */
       action_add_note: string;
     };
@@ -6293,10 +6303,6 @@ export interface LocaleMessages {
     tap_mode_on: string;
     tap_mode_off: string;
     tap_select_help: string;
-    room_step_title: string;
-    room_step_hint: string;
-    room_step_width: string;
-    room_step_length: string;
     /** Hint shown after a guest is tap-selected — uses {guest} placeholder. */
     tap_place_hint: string;
     /** Undo system — toast hints + button labels. */

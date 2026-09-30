@@ -7,6 +7,7 @@
 import { type ConditionTag, INTAKE_DIMENSIONS } from "@shared/planning_prompts";
 import type { PlanningItem } from "@shared/types";
 import { ChevronDown } from "lucide-react";
+import { DecisionsOnboarding } from "../components/DecisionsOnboarding";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PlanningRouteLinks } from "../components/PlanningRouteLinks";
 import { useToast } from "../components/ui";
@@ -14,7 +15,7 @@ import { ApiError } from "../lib/api";
 import { type PlanningPromptTags, planningApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
-import { DecisionsPanel } from "./DecisionsPanel";
+import { computeIntakeTotal, DecisionsPanel } from "./DecisionsPanel";
 
 /** localStorage key for the personalization strip collapse state ("1" =
  *  collapsed, "0" = open). Absent means "no explicit preference yet", so the
@@ -31,6 +32,19 @@ function readIntakeCollapsePref(): boolean | null {
     // localStorage unavailable (private mode / SSR) - fall back to default.
   }
   return null;
+}
+
+/** Set once the couple has finished or skipped the one-question-at-a-time
+ *  intro, so a couple who skipped every question is not walked through it on
+ *  every visit. A couple with any answer on the server never sees it at all,
+ *  which is what covers a new device. */
+const ONBOARDED_KEY = "weddly.decisions.onboarded";
+function readOnboarded(): boolean {
+  try {
+    return localStorage.getItem(ONBOARDED_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 export default function DecisionsPage() {
@@ -62,6 +76,9 @@ export default function DecisionsPage() {
   const [intakeTags, setIntakeTags] = useState<PlanningPromptTags>({});
   const [intakeOpen, setIntakeOpen] = useState<boolean>(() => readIntakeCollapsePref() ?? true);
   const intakeAutoSet = useRef(false);
+  // null until the profile has loaded: deciding before it would flash the
+  // intro at a couple who answered everything months ago.
+  const [onboarding, setOnboarding] = useState<boolean | null>(null);
   useEffect(() => {
     let alive = true;
     void planningApi
@@ -70,13 +87,17 @@ export default function DecisionsPage() {
         if (!alive) return;
         const tags = res.tags ?? {};
         setIntakeTags(tags);
+        const anyAnswered = INTAKE_DIMENSIONS.some((d) => tags[d.tag] != null);
+        setOnboarding(!anyAnswered && !readOnboarded());
         if (readIntakeCollapsePref() === null && !intakeAutoSet.current) {
           intakeAutoSet.current = true;
           const answered = INTAKE_DIMENSIONS.filter((d) => tags[d.tag] != null).length;
           setIntakeOpen(answered === 0);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (alive) setOnboarding(false);
+      });
     return () => {
       alive = false;
     };
@@ -96,6 +117,31 @@ export default function DecisionsPage() {
       return next;
     });
   }
+  // The intro answers in quick succession and every save PUTs the whole map, so
+  // the saves run one after another from the latest map: two in flight at once
+  // could land out of order and drop the newest answer.
+  const tagsRef = useRef<PlanningPromptTags>({});
+  tagsRef.current = intakeTags;
+  const saveChain = useRef<Promise<unknown>>(Promise.resolve());
+  function setTagExact(tag: ConditionTag, value: "yes" | "no") {
+    const next: PlanningPromptTags = { ...tagsRef.current, [tag]: value };
+    tagsRef.current = next;
+    setIntakeTags(next);
+    saveChain.current = saveChain.current
+      .then(() => planningApi.savePromptProfile(tagsRef.current))
+      .catch(() => toast.error(t("planning.decisions.save_error")));
+  }
+  function finishOnboarding() {
+    try {
+      localStorage.setItem(ONBOARDED_KEY, "1");
+    } catch {
+      // best-effort persistence only
+    }
+    // The grid already holds every answer; start the deck with it tucked away.
+    setIntakeOpen(false);
+    setOnboarding(false);
+  }
+
   async function handleSetTag(tag: ConditionTag, value: "yes" | "no") {
     const next: PlanningPromptTags = { ...intakeTags };
     if (next[tag] === value) delete next[tag];
@@ -106,6 +152,20 @@ export default function DecisionsPage() {
     } catch {
       toast.error(t("planning.decisions.save_error"));
     }
+  }
+
+  if (onboarding === null && loading) {
+    return <div className="min-h-[28rem]" aria-busy="true" />;
+  }
+  if (onboarding) {
+    return (
+      <DecisionsOnboarding
+        tags={intakeTags}
+        questionCount={computeIntakeTotal(items, intakeTags)}
+        onAnswer={setTagExact}
+        onDone={finishOnboarding}
+      />
+    );
   }
 
   return (
