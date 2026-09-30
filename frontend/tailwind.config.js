@@ -395,6 +395,12 @@ export default {
         // Its halo: one azure ring expanding out of the badge and fading. Pairs
         // with the pop so the mark reads as switched ON, not just resized.
         "badge-halo": "badgeHalo 720ms ease-out",
+        // Honeymoon hero: the pill turning into the headline-sized field.
+        // Deliberately slow (not the 200-300ms UI cadence) because it is a
+        // scene change on a full-bleed photo, not a control toggling: the
+        // text rises out of a soft blur, then the underline draws after it.
+        "field-open": "fieldOpen 700ms cubic-bezier(0.22, 1, 0.36, 1) both",
+        "underline-draw": "underlineDraw 900ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both",
       },
       keyframes: {
         fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
@@ -424,6 +430,14 @@ export default {
           "45%": { transform: "scale(1.5) rotate(10deg)" },
           "70%": { transform: "scale(0.92) rotate(-4deg)" },
           "100%": { transform: "scale(1) rotate(0deg)" },
+        },
+        fieldOpen: {
+          "0%": { opacity: "0", transform: "translateY(14px)", filter: "blur(6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)", filter: "blur(0)" },
+        },
+        underlineDraw: {
+          "0%": { transform: "scaleX(0)" },
+          "100%": { transform: "scaleX(1)" },
         },
         badgeHalo: {
           "0%": { opacity: "0.85", transform: "scale(0.5)" },

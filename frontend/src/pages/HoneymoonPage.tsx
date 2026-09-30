@@ -1369,14 +1369,14 @@ function DestinationAutocomplete({
   }
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div ref={wrapperRef} className="relative animate-field-open motion-reduce:animate-none">
       {/* Typed at the exact scale of the headline it replaces (same font,
           size and shadow as the <h1> above), so committing a name doesn't
           resize the thing you were just looking at. The only chrome is an
           underline — a boxed field over a photo reads as a form. */}
       <input
         type="text"
-        className="w-full border-0 border-b-2 border-paper-50/40 bg-transparent p-0 pb-1 font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-paper-50 caret-paper-50 outline-none [text-shadow:0_2px_18px_rgba(16,12,8,0.55)] placeholder:text-paper-100/45 focus:border-paper-50/85 focus:outline-none focus:ring-0 sm:text-6xl lg:text-7xl"
+        className="peer w-full border-0 bg-transparent p-0 pb-1.5 font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-paper-50 caret-paper-50 outline-none [text-shadow:0_2px_18px_rgba(16,12,8,0.55)] placeholder:text-paper-100/45 focus:outline-none focus:ring-0 sm:text-6xl lg:text-7xl"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
@@ -1390,6 +1390,12 @@ function DestinationAutocomplete({
         aria-expanded={open}
         autoComplete="off"
         autoFocus
+      />
+      {/* The underline is its own element so it can draw in left to right
+          after the text arrives; a border cannot animate its width. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left animate-underline-draw bg-paper-50/40 transition-colors peer-focus:bg-paper-50/85 motion-reduce:animate-none"
       />
       {open && suggestions.length > 0 && (
         /* Opens UPWARD, over the photo. Downward it fell outside the hero's
