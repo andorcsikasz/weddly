@@ -11,6 +11,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { COUNTRIES, countryName, type CountryEntry } from "@shared/country_list";
+import { guessCountries } from "../lib/guess_country";
 import { useT } from "../lib/i18n";
 import { FieldError } from "./ui/FieldError";
 import { HelperText } from "./ui/HelperText";
@@ -87,12 +88,17 @@ export function CountryCombobox({
   const matches = useMemo<CountryEntry[]>(() => {
     const q = fold(query.trim());
     if (!q) {
-      // No query yet: surface a sensible top-of-list (alphabetised by
-      // current-locale name).
+      // No query yet: the countries this browser points at first (time
+      // zone, then language region), then the rest alphabetised by
+      // current-locale name, so the list never opens on Afghanistan.
+      const guessed = guessCountries(locale);
       const sorted = [...COUNTRIES].sort((a, b) =>
         countryName(a.code, locale).localeCompare(countryName(b.code, locale), locale),
       );
-      return sorted.slice(0, MAX_RESULTS);
+      const top = guessed
+        .map((code) => COUNTRIES.find((c) => c.code === code))
+        .filter((c): c is CountryEntry => c !== undefined);
+      return [...top, ...sorted.filter((c) => !guessed.includes(c.code))].slice(0, MAX_RESULTS);
     }
     // Scored prefix-first, then substring. ISO code prefix (e.g. "HU")
     // beats name substring so a deliberate code lookup lands at index 0.
