@@ -15,18 +15,7 @@ import {
   maxSeatsForTable,
   tableHalfDims,
 } from "@shared/seating";
-import {
-  Baby,
-  Locate,
-  Magnet,
-  Maximize2,
-  Minus,
-  Plus,
-  RotateCw,
-  X,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { Baby, Locate, Maximize2, Minus, Plus, RotateCw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "../../lib/i18n";
@@ -60,10 +49,6 @@ const NUDGE_FINE_MM = 10;
 // plan is a postage stamp.
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 4;
-// Snap grain when the magnet toggle is on: tables land on a 10 cm grid
-// (moves) and sides land on 5 cm steps (resizes).
-const SNAP_MOVE_MM = 100;
-const SNAP_RESIZE_MM = 50;
 // Rotation handle: 15-degree detents by default, free 1-degree with Shift.
 const ROTATE_SNAP_DEG = 15;
 
@@ -250,26 +235,6 @@ export function SeatingMap({
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
   dragRef.current = drag;
-  // Snap-to-grid toggle. Off by default (owner rule: manual placement is
-  // unconstrained); persisted per device. Alt held during a drag inverts it.
-  const [snap, setSnap] = useState<boolean>(() => {
-    try {
-      return window.localStorage.getItem("weddly.seating.snap") === "1";
-    } catch {
-      return false;
-    }
-  });
-  const toggleSnap = useCallback(() => {
-    setSnap((v) => {
-      const next = !v;
-      try {
-        window.localStorage.setItem("weddly.seating.snap", next ? "1" : "0");
-      } catch {
-        /* private mode — session-only toggle */
-      }
-      return next;
-    });
-  }, []);
   // Zoom multiplier on top of the fit-to-contain baseline. Lives in a ref
   // mirror so the non-passive wheel listener reads the current value.
   const [zoom, setZoom] = useState(1);
@@ -630,9 +595,6 @@ export function SeatingMap({
     const p = toSvgPoint(e.clientX, e.clientY);
     if (!p) return;
 
-    // Magnet toggle, inverted while Alt is held ("temporarily the other way").
-    const snapping = snap !== e.altKey;
-
     if (drag.kind === "rotate") {
       // Angle of the pointer around the table centre. The handle sits above
       // the table (local -y), so add 90° to make "handle pointing up" = 0°.
@@ -656,12 +618,8 @@ export function SeatingMap({
       const moving = tables.find((tb) => tb.id === tableId);
       const fallback = moving ? { x: moving.x_mm, y: moving.y_mm } : { x: 0, y: 0 };
       const last = localPos.get(tableId) ?? fallback;
-      let nextX = clamp(Math.round(p.x - drag.grabOffsetX), 0, ROOM_W_MM);
-      let nextY = clamp(Math.round(p.y - drag.grabOffsetY), 0, ROOM_H_MM);
-      if (snapping) {
-        nextX = clamp(Math.round(nextX / SNAP_MOVE_MM) * SNAP_MOVE_MM, 0, ROOM_W_MM);
-        nextY = clamp(Math.round(nextY / SNAP_MOVE_MM) * SNAP_MOVE_MM, 0, ROOM_H_MM);
-      }
+      const nextX = clamp(Math.round(p.x - drag.grabOffsetX), 0, ROOM_W_MM);
+      const nextY = clamp(Math.round(p.y - drag.grabOffsetY), 0, ROOM_H_MM);
       moveHud(e);
       setHud(`${(nextX / 1000).toFixed(2)} · ${(nextY / 1000).toFixed(2)} m`);
       if (nextX === last.x && nextY === last.y) return;
@@ -697,14 +655,7 @@ export function SeatingMap({
     let newWidth = drag.startWidthMm;
     let newLength = drag.startLengthMm;
 
-    // 5 cm steps while the magnet is active so opposite tables end up the
-    // same size without pixel-hunting.
-    const roundDim = (v: number) =>
-      clamp(
-        snapping ? Math.round(v / SNAP_RESIZE_MM) * SNAP_RESIZE_MM : Math.round(v),
-        MIN_DIM_MM,
-        MAX_DIM_MM,
-      );
+    const roundDim = (v: number) => clamp(Math.round(v), MIN_DIM_MM, MAX_DIM_MM);
 
     if (uniform) {
       const side = roundDim(2 * Math.max(dx, dy));
@@ -948,20 +899,6 @@ export function SeatingMap({
             widthAriaLabel={t("seating.room_width_aria")}
             heightAriaLabel={t("seating.room_height_aria")}
           />
-          <button
-            type="button"
-            onClick={toggleSnap}
-            className={`rounded-md border p-1.5 transition-colors ${
-              snap
-                ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                : "border-ink-300 text-ink-700 hover:bg-paper-100 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-800"
-            }`}
-            aria-pressed={snap}
-            aria-label={t("seating.snap_toggle_label")}
-            title={t("seating.snap_toggle_label")}
-          >
-            <Magnet size={14} aria-hidden />
-          </button>
           {expanded && (
             <button
               type="button"

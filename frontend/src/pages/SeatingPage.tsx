@@ -68,7 +68,6 @@ import { publish, subscribe } from "../lib/sync";
 import { computeSymmetricLayout, tableFootprintMm } from "./seating/layout";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
 import { isCurrentSessionDemo } from "../lib/demoSession";
-import { LastUpdatedBy } from "../components/LastUpdatedBy";
 
 // Demo workspace canvas — 10 × 15 m portrait. Sized for the intimate
 // 15-guest fairytale wedding: head table + 3 round tables fit comfortably
@@ -1663,13 +1662,10 @@ export default function SeatingPage() {
       <span aria-live="polite" aria-atomic="true" className="sr-only">
         {a11yMessage}
       </span>
-      {/* Single toolbar row: title (left) → tabs (flex-1) → icon strip + add table (right) */}
+      {/* Single toolbar row: tabs (flex-1) → undo/redo → icon strip + add table (right).
+          Nothing variable-width sits beside the tabs, so they never move. */}
+      <h1 className="sr-only font-grotesk">{t("seating.title")}</h1>
       <div className="seating-toolbar mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div className="shrink-0">
-          <h1 className="sr-only font-grotesk">{t("seating.title")}</h1>
-          <LastUpdatedBy actionPrefixes={["table.", "seat.", "conflict."]} />
-        </div>
-
         {/* Mode tabs — stretch to fill the remaining space */}
         <div
           role="tablist"
@@ -1698,18 +1694,20 @@ export default function SeatingPage() {
           })}
         </div>
 
-        {/* Autosave status — quiet chip that answers "did my change stick?"
-            without a toast per drag. */}
-        <SaveStatusChip
-          pending={pendingSaves > 0}
-          failed={saveFailed}
-          savedFlash={savedFlash}
-          t={t}
-        />
-
         {/* Undo / redo — available in BOTH modes (moves and resizes are just
             as undoable as seat assignments). Icon-only to stay compact. */}
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="relative flex shrink-0 items-center gap-1">
+          {/* Autosave status — quiet chip that answers "did my change stick?"
+              without a toast per drag. Hangs under undo/redo, out of the row's
+              flow, so its changing width can't shift the mode tabs. */}
+          <div className="pointer-events-none absolute right-0 top-full mt-0.5">
+            <SaveStatusChip
+              pending={pendingSaves > 0}
+              failed={saveFailed}
+              savedFlash={savedFlash}
+              t={t}
+            />
+          </div>
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-lg border border-ink-300 p-1.5 text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-umber-600 dark:text-paper-200 dark:hover:bg-umber-700"
@@ -1781,7 +1779,11 @@ export default function SeatingPage() {
                 {t("seating.pdf_cancel")}
               </button>
             )}
-            <button type="button" className="btn-primary" onClick={addTable}>
+            <button
+              type="button"
+              className="btn-primary shrink-0 self-stretch whitespace-nowrap py-0"
+              onClick={addTable}
+            >
               <Plus size={16} /> {t("seating.add_table")}
             </button>
           </div>
