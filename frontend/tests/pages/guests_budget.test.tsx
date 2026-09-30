@@ -436,6 +436,20 @@ function renderAt(url: string) {
   );
 }
 
+/** Answer the empty-list first-run flow: meals "yes", then a list source. */
+async function walkFirstRun(source: "sheet" | "manual") {
+  try {
+    localStorage.removeItem("weddly.guests.first_run_meals");
+  } catch {}
+  fireEvent.click(await screen.findByRole("radio", { name: /yes, guests pick a meal/i }));
+  fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
+  const name = source === "sheet" ? /in a spreadsheet/i : /nowhere yet/i;
+  fireEvent.click(await screen.findByRole("radio", { name }));
+  if (source === "manual") {
+    fireEvent.click(screen.getByRole("button", { name: /add your first guest/i }));
+  }
+}
+
 function renderBudget() {
   return render(
     <Providers>
@@ -449,13 +463,29 @@ function renderBudget() {
 // ===========================================================================
 
 describe("<GuestsPage>", () => {
-  it("renders the empty-state card when guests list is empty", async () => {
+  it("an empty list opens on the first-run flow, meals first", async () => {
     installDefaultEndpoints({ guests: [], households: [] });
     renderGuests();
-    await waitFor(() => {
-      expect(screen.getByText(/no guests yet/i)).toBeInTheDocument();
+    await screen.findByText(/will your rsvp ask about meals/i);
+    // Nothing chosen yet, so there is nothing to continue with.
+    expect(screen.getByRole("button", { name: /^continue$/i })).toBeDisabled();
+    // The toolbar has no subject yet and stays out of the way.
+    expect(screen.queryByRole("button", { name: /^meals$/i })).toBeNull();
+  });
+
+  it("the couple's own two rows do not count as a guest list", async () => {
+    // Every real workspace has these from onboarding. Judging "empty" on the
+    // raw rows skipped the first view entirely and left a lone "0".
+    installDefaultEndpoints({
+      households: [makeHousehold({ id: 1, is_couple_household: true, member_ids: [1, 2] })],
+      guests: [
+        makeGuest({ id: 1, full_name: "Bride", household_id: 1, partner_role: "bride" }),
+        makeGuest({ id: 2, full_name: "Groom", household_id: 1, partner_role: "groom" }),
+      ],
     });
-    expect(screen.getByText(/import the whole list from csv/i)).toBeInTheDocument();
+    renderGuests();
+    await screen.findByText(/will your rsvp ask about meals/i);
+    expect(screen.queryByRole("searchbox")).toBeNull();
   });
 
   it("renders one household card per household", async () => {
@@ -478,11 +508,10 @@ describe("<GuestsPage>", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
-  it("opens the edit drawer when the top-level Add guest button is clicked", async () => {
+  it("the manual route of the first-run flow opens the add-guest drawer", async () => {
     installDefaultEndpoints({ guests: [], households: [] });
     renderGuests();
-    await waitFor(() => expect(screen.getByText(/no guests yet/i)).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: /add guest/i }));
+    await walkFirstRun("manual");
     await waitFor(() => {
       // GuestDrawer renders a Dialog (role="dialog") whose first input carries
       // aria-label="Name". The drawer also contains a "Household name" input
@@ -499,8 +528,7 @@ describe("<GuestsPage>", () => {
       guest: makeGuest({ id: 999, full_name: "Charlie Sample", household_id: null }),
     });
     renderGuests();
-    await waitFor(() => expect(screen.getByText(/no guests yet/i)).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: /add guest/i }));
+    await walkFirstRun("manual");
     const dialog = await screen.findByRole("dialog");
     const nameInput = within(dialog).getByLabelText(/^name$/i) as HTMLInputElement;
     fireEvent.change(nameInput, { target: { value: "Charlie Sample" } });
@@ -576,16 +604,14 @@ describe("<GuestsPage>", () => {
     expect((patchCall?.body as { invited?: boolean }).invited).toBe(true);
   });
 
-  it("Import CSV is exposed as a hidden file input inside a clickable label", async () => {
+  it("the spreadsheet route offers the template before the CSV upload", async () => {
     installDefaultEndpoints({ guests: [], households: [] });
     renderGuests();
-    await waitFor(() => expect(screen.getByText(/no guests yet/i)).toBeInTheDocument());
-    // The CSV input has accept=".csv,text/csv" — find it via that attribute.
+    await walkFirstRun("sheet");
+    expect(screen.getByRole("button", { name: /download template/i })).toBeInTheDocument();
     const fileInput = document.querySelector('input[type="file"][accept*="csv"]');
     expect(fileInput).not.toBeNull();
-    // "Import CSV" label is rendered in both the toolbar and the empty-state
-    // CTA cluster, so multiple matches are expected.
-    expect(screen.getAllByText(/import csv/i).length).toBeGreaterThanOrEqual(1);
+    expect(fileInput?.closest("label")?.textContent).toMatch(/upload csv/i);
   });
 
   it("Per-row Print place card triggers a GET to /api/print/place-cards", async () => {
@@ -608,13 +634,14 @@ describe("<GuestsPage>", () => {
     expect(printCall?.url).toContain("guest_ids=10");
   });
 
-  it("renders the Download template button and a Meals dialog trigger", async () => {
-    installDefaultEndpoints({ guests: [], households: [] });
+  it("renders the Download template button and a Meals dialog trigger once guests exist", async () => {
+    installDefaultEndpoints({
+      households: [makeHousehold({ id: 1, label: "Smith", member_ids: [10] })],
+      guests: [makeGuest({ id: 10, full_name: "Alice", household_id: 1 })],
+    });
     renderGuests();
-    await waitFor(() => expect(screen.getByText(/no guests yet/i)).toBeInTheDocument());
-    // The Download-template button is rendered in both the toolbar and the
-    // empty-state CTA cluster; assert at least one exists.
-    expect(screen.getAllByRole("button", { name: /^template$/i }).length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /^template$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^meals$/i })).toBeInTheDocument();
   });
 

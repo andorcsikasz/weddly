@@ -5726,6 +5726,29 @@ export interface LocaleMessages {
     empty_title: string;
     empty_body: string;
     empty_cta_add: string;
+    /** The empty-list first-run flow (`GuestsFirstRun`): meals, then list source. */
+    first_run: {
+      step_of: string;
+      progress_meals: string;
+      progress_guests: string;
+      progress_invites: string;
+      meals_title: string;
+      meals_yes: string;
+      meals_yes_body: string;
+      meals_no: string;
+      meals_no_body: string;
+      list_title: string;
+      list_sheet: string;
+      list_sheet_body: string;
+      list_manual: string;
+      list_manual_body: string;
+      template_hint: string;
+      template_cta: string;
+      upload_cta: string;
+      add_cta: string;
+      continue: string;
+      back: string;
+    };
     saving: string;
     import_done_one: string;
     import_done_other: string;

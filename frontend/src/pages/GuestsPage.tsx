@@ -16,6 +16,7 @@ import type {
   MealMenu,
   RsvpStatus,
 } from "@shared/types";
+import { GuestsFirstRun, type MealIntent } from "../components/GuestsFirstRun";
 import { intlLocale } from "../lib/format";
 import {
   MEAL_LABEL_MAX,
@@ -37,6 +38,7 @@ import {
   Bed,
   Beef,
   Briefcase,
+  ArrowRight,
   Check,
   ChevronsDownUp,
   ChevronsUpDown,
@@ -990,6 +992,42 @@ export default function GuestsPage() {
     () => households.filter((hh) => !hh.is_couple_household),
     [households],
   );
+  // "No guests yet" has to be judged on the LISTABLE rows. Every couple has
+  // their own two partner rows (and the couple household) from onboarding, so
+  // testing `guests.length` never saw an empty list: the empty card was
+  // skipped and a new couple landed on a bare toolbar over a lone "0".
+  const listEmpty = !loading && listableGuests.length === 0 && listableHouseholds.length === 0;
+
+  // The first-run flow's meals answer. It is asked before any household
+  // exists, so it cannot be written yet: it waits here (and in localStorage,
+  // so a reload between the two questions keeps it) until the first guests
+  // land, then flags every household and opens Meals so the menu gets set.
+  const [mealIntent, setMealIntent] = useState<MealIntent | null>(() => {
+    try {
+      const v = localStorage.getItem(MEAL_INTENT_KEY);
+      return v === "yes" || v === "no" ? v : null;
+    } catch {
+      return null;
+    }
+  });
+  function chooseMealIntent(next: MealIntent) {
+    setMealIntent(next);
+    try {
+      localStorage.setItem(MEAL_INTENT_KEY, next);
+    } catch {}
+  }
+  const applyingMealIntent = useRef(false);
+  useEffect(() => {
+    if (loading || listEmpty || mealIntent === null || applyingMealIntent.current) return;
+    applyingMealIntent.current = true;
+    const intent = mealIntent;
+    setMealIntent(null);
+    try {
+      localStorage.removeItem(MEAL_INTENT_KEY);
+    } catch {}
+    if (intent !== "yes" || listableHouseholds.length === 0) return;
+    void onBulkRsvpToggle("rsvp_collects_meal", true).then(() => setMealsOpen(true));
+  }, [loading, listEmpty, mealIntent, listableHouseholds.length]);
 
   const orphanGuests = useMemo(
     () => listableGuests.filter((g) => g.household_id == null),
@@ -1303,11 +1341,9 @@ export default function GuestsPage() {
                 dimmed={anyStatActive && !invitedActive}
               />
             </dl>
-          ) : (
-            <p className="text-sm text-ink-500 dark:text-umber-300">{listableGuests.length}</p>
-          )}
+          ) : null}
         </div>
-        {couple && (
+        {couple && !listEmpty && (
           // Fills the empty gap between the stat counters and the toolbar
           // instead of sitting on its own full-width row below the header.
           <div className="order-last flex flex-1 justify-start sm:order-none sm:justify-end">
@@ -1318,81 +1354,86 @@ export default function GuestsPage() {
             />
           </div>
         )}
-        <div className="flex flex-wrap gap-2 sm:ml-auto">
-          {/* Icon-only segmented group: collapsed to icons, each expands its
+        {/* With nothing on the list, the empty card below owns every useful
+            move (add, import, template); meals and invites have no subject
+            yet, so the toolbar would only repeat it with less to say. */}
+        {!listEmpty && (
+          <div className="flex flex-wrap gap-2 sm:ml-auto">
+            {/* Icon-only segmented group: collapsed to icons, each expands its
               label on hover (max-width + opacity transition) and surfaces a
               native tooltip via title. Keeps the toolbar compact while the
               primary "Add" CTA stays full beside it. */}
-          <div
-            data-tour-target="guests-tools"
-            className="inline-flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100"
-          >
+            <div
+              data-tour-target="guests-tools"
+              className="inline-flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100"
+            >
+              <button
+                type="button"
+                className={GUEST_TOOL_BTN}
+                onClick={() => downloadCsvTemplate(locale)}
+                title={t("guests.download_template_hint")}
+                aria-label={t("guests.download_template")}
+              >
+                <Download size={16} aria-hidden />
+                <span className={GUEST_TOOL_LABEL}>{t("guests.download_template")}</span>
+              </button>
+              <label
+                className={`${GUEST_TOOL_BTN} cursor-pointer`}
+                title={t("guests.import_csv_hint")}
+                aria-label={t("guests.import_csv")}
+              >
+                <Upload size={16} aria-hidden />
+                <span className={GUEST_TOOL_LABEL}>{t("guests.import_csv")}</span>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) onImport(f);
+                    e.target.value = "";
+                  }}
+                  disabled={importing}
+                />
+              </label>
+              <button
+                type="button"
+                className={GUEST_TOOL_BTN_MEAL}
+                onClick={() => setMealsOpen(true)}
+                title={t("guests.meals_hint")}
+                aria-label={t("guests.meals_button")}
+              >
+                <Utensils size={16} aria-hidden />
+                <span className={GUEST_TOOL_LABEL}>{t("guests.meals_button")}</span>
+              </button>
+              <button
+                type="button"
+                className={GUEST_TOOL_BTN}
+                onClick={openInvites}
+                title={t("guests.invite_send_hint")}
+                aria-label={t("guests.invite_send")}
+              >
+                <Send size={16} aria-hidden />
+                <span className={GUEST_TOOL_LABEL}>
+                  {inviteBreakdown.eligible.length > 0
+                    ? t("guests.invite_send_count", { count: inviteBreakdown.eligible.length })
+                    : t("guests.invite_send")}
+                </span>
+              </button>
+            </div>
             <button
               type="button"
-              className={GUEST_TOOL_BTN}
-              onClick={() => downloadCsvTemplate(locale)}
-              title={t("guests.download_template_hint")}
-              aria-label={t("guests.download_template")}
+              className="btn-primary"
+              onClick={() => setEditing({ guest: null, defaultHouseholdId: null })}
+              title={t("guests.add_hint")}
             >
-              <Download size={16} aria-hidden />
-              <span className={GUEST_TOOL_LABEL}>{t("guests.download_template")}</span>
-            </button>
-            <label
-              className={`${GUEST_TOOL_BTN} cursor-pointer`}
-              title={t("guests.import_csv_hint")}
-              aria-label={t("guests.import_csv")}
-            >
-              <Upload size={16} aria-hidden />
-              <span className={GUEST_TOOL_LABEL}>{t("guests.import_csv")}</span>
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) onImport(f);
-                  e.target.value = "";
-                }}
-                disabled={importing}
-              />
-            </label>
-            <button
-              type="button"
-              className={GUEST_TOOL_BTN_MEAL}
-              onClick={() => setMealsOpen(true)}
-              title={t("guests.meals_hint")}
-              aria-label={t("guests.meals_button")}
-            >
-              <Utensils size={16} aria-hidden />
-              <span className={GUEST_TOOL_LABEL}>{t("guests.meals_button")}</span>
-            </button>
-            <button
-              type="button"
-              className={GUEST_TOOL_BTN}
-              onClick={openInvites}
-              title={t("guests.invite_send_hint")}
-              aria-label={t("guests.invite_send")}
-            >
-              <Send size={16} aria-hidden />
-              <span className={GUEST_TOOL_LABEL}>
-                {inviteBreakdown.eligible.length > 0
-                  ? t("guests.invite_send_count", { count: inviteBreakdown.eligible.length })
-                  : t("guests.invite_send")}
-              </span>
+              <Plus size={16} /> {t("guests.add")}
             </button>
           </div>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => setEditing({ guest: null, defaultHouseholdId: null })}
-            title={t("guests.add_hint")}
-          >
-            <Plus size={16} /> {t("guests.add")}
-          </button>
-        </div>
+        )}
       </div>
 
-      {couple && checkinExpanded && (
+      {couple && checkinExpanded && !listEmpty && (
         <div className="mb-4">
           <CheckinPanel
             couple={couple}
@@ -1414,7 +1455,7 @@ export default function GuestsPage() {
           /group, invited, accommodation), the sort control, and the active
           filter chips with a single "Clear all". Every axis stacks (AND) and
           is mirrored to the URL. */}
-      {(guests.length > 0 || query || activeFilterCount > 0) && (
+      {(!listEmpty || query || activeFilterCount > 0) && (
         <GuestFilterBar
           query={query}
           onQueryChange={setQuery}
@@ -1456,50 +1497,15 @@ export default function GuestsPage() {
 
       {loading ? (
         <HouseholdListSkeleton />
-      ) : households.length === 0 && guests.length === 0 ? (
-        // Empty-state action card. Three inline CTAs covering the three
-        // realistic next moves (manual add, CSV bulk import, template
-        // download) so first-run users never face a passive "no guests yet"
-        // dead end. Header buttons above still work; this is the in-content
-        // mirror that owns the visual focus when the list is genuinely empty.
-        <div className="card stationery">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">{t("guests.empty_title")}</h3>
-            <p className="mx-auto mt-1 max-w-md text-sm text-ink-600 dark:text-umber-200">
-              {t("guests.empty_body")}
-            </p>
-          </div>
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={() => setEditing({ guest: null, defaultHouseholdId: null })}
-            >
-              <UserPlus size={16} aria-hidden /> {t("guests.empty_cta_add")}
-            </button>
-            <label className="btn-outline cursor-pointer">
-              <Upload size={16} aria-hidden /> {t("guests.import_csv")}
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) onImport(f);
-                  e.target.value = "";
-                }}
-                disabled={importing}
-              />
-            </label>
-            <button
-              type="button"
-              className="btn-outline"
-              onClick={() => downloadCsvTemplate(locale)}
-            >
-              <Download size={16} aria-hidden /> {t("guests.download_template")}
-            </button>
-          </div>
-        </div>
+      ) : listEmpty ? (
+        <GuestsFirstRun
+          mealIntent={mealIntent}
+          onMealIntent={chooseMealIntent}
+          onAddGuest={() => setEditing({ guest: null, defaultHouseholdId: null })}
+          onImport={onImport}
+          onDownloadTemplate={() => downloadCsvTemplate(locale)}
+          importing={importing}
+        />
       ) : tableView ? (
         // Spreadsheet lens: every (filtered) guest in one table with inline
         // dropdown editing for group / RSVP / meal / dietary. Search and all
@@ -1789,16 +1795,10 @@ export default function GuestsPage() {
           }}
           onPrintPlaceCard={onPrintPlaceCard}
           onSaved={() => {
-            // Auto-open the meals dialog the very first time the couple adds
-            // a guest — that's where the bulk "ask for meals / accommodation
-            // in the RSVP" toggles live now, and most couples otherwise
-            // never realise the feature is there. Only triggers on ADD
-            // (editing.guest === null) and only when there were no guests
-            // before this save, so subsequent edits don't keep nagging.
-            const isFirstAdd = editing?.guest === null && guests.length === 0;
+            // The meals follow-up for a first guest is the first-run flow's
+            // `mealIntent` effect, not a guess made here.
             setEditing(null);
             refresh();
-            if (isFirstAdd) setMealsOpen(true);
           }}
         />
       )}
@@ -4022,16 +4022,38 @@ function CheckinPanel({
             const ok = isDone(step.key);
             return (
               <li key={step.key} className="flex gap-3 sm:flex-col sm:gap-2">
-                <span
-                  aria-hidden
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
-                    ok
-                      ? "bg-sage-500 text-white dark:bg-sage-400 dark:text-umber-900"
-                      : "border border-paper-300 text-ink-600 dark:border-umber-600 dark:text-paper-200"
-                  }`}
-                >
-                  {ok ? <Check size={14} strokeWidth={3} /> : i + 1}
-                </span>
+                {/* The steps are a sequence, not a menu: a hairline with an
+                    arrowhead runs from each number to the next one, across
+                    on desktop and down the rail on mobile. */}
+                <div className="flex shrink-0 flex-col items-center gap-1 sm:flex-row sm:gap-2">
+                  <span
+                    aria-hidden
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
+                      ok
+                        ? "bg-sage-500 text-white dark:bg-sage-400 dark:text-umber-900"
+                        : "border border-paper-300 text-ink-600 dark:border-umber-600 dark:text-paper-200"
+                    }`}
+                  >
+                    {ok ? <Check size={14} strokeWidth={3} /> : i + 1}
+                  </span>
+                  {i < steps.length - 1 && (
+                    <span
+                      aria-hidden
+                      className={`flex flex-1 flex-col items-center sm:flex-row ${
+                        ok
+                          ? "text-sage-500 dark:text-sage-400"
+                          : "text-paper-400 dark:text-umber-600"
+                      }`}
+                    >
+                      <span className="w-px flex-1 bg-current sm:h-px sm:w-auto" />
+                      <ArrowRight
+                        size={14}
+                        strokeWidth={1.5}
+                        className="-mt-1 shrink-0 rotate-90 sm:-ml-1.5 sm:mt-0 sm:rotate-0"
+                      />
+                    </span>
+                  )}
+                </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-ink-900 dark:text-paper-50">
                     {t(`guests.checkin_step_${step.key}_title`)}
@@ -7169,6 +7191,8 @@ function GuestStat({
     </div>
   );
 }
+
+const MEAL_INTENT_KEY = "weddly.guests.first_run_meals";
 
 function downloadCsvTemplate(locale: Locale) {
   // Sample rows follow the couple's own language, never a fixed Hungarian
