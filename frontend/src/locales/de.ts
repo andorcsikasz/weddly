@@ -1812,6 +1812,7 @@ const de: LocaleMessages = {
       "Speichern hat gerade nicht geklappt. Ihre Antworten sind sicher, versuchen Sie es erneut.",
     submit_retry: "Erneut versuchen",
     all_set_title: "Alles bereit!",
+    all_set_amazing: "Ihr seid großartig!",
     all_set_body: "Ihr Arbeitsbereich steht. Hier beginnt die Planung.",
     all_set_continue: "Zur Übersicht",
     date_kind_question: "Wie sicher ist das Datum?",

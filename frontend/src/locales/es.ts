@@ -1787,6 +1787,7 @@ const es: LocaleMessages = {
       "No hemos podido guardar ahora mismo. Tus respuestas están a salvo, inténtalo de nuevo.",
     submit_retry: "Inténtalo de nuevo",
     all_set_title: "¡Todo listo!",
+    all_set_amazing: "¡Sois increíbles!",
     all_set_body: "Tu espacio de trabajo está listo. Aquí empieza la planificación.",
     all_set_continue: "Ir al panel",
     date_kind_question: "¿Está fijada la fecha?",

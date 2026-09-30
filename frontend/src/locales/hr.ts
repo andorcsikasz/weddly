@@ -1772,6 +1772,7 @@ const hr: LocaleMessages = {
     submit_failed: "Spremanje sada nije uspjelo. Vaši su odgovori sigurni, pokušajte ponovno.",
     submit_retry: "Pokušajte ponovno",
     all_set_title: "Sve je spremno!",
+    all_set_amazing: "Vi ste nevjerojatni!",
     all_set_body: "Vaš je radni prostor spreman. Ovdje počinje planiranje.",
     all_set_continue: "Idite na pregled",
     date_kind_question: "Koliko je datum siguran?",

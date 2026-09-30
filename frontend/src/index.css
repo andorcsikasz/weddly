@@ -1362,6 +1362,10 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       dark:border-transparent dark:bg-umber-800 dark:text-paper-50
       dark:focus:border-paper-50 dark:focus:bg-umber-900;
   }
+  .onb-fields .input.is-filled,
+  .onb-fields .is-filled .input {
+    @apply bg-sage-50 focus:bg-sage-50 dark:bg-sage-900/40 dark:focus:bg-sage-900/40;
+  }
   .onb-fields .input-invalid {
     @apply border-blush-500 focus:border-blush-500 dark:border-blush-400 dark:focus:border-blush-400;
   }

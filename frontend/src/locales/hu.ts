@@ -1762,6 +1762,7 @@ const hu: LocaleMessages = {
     submit_failed: "A mentés most nem sikerült. Az adataid biztonságban vannak, próbáld újra.",
     submit_retry: "Újra",
     all_set_title: "Minden kész!",
+    all_set_amazing: "Csodásak vagytok!",
     all_set_body: "A munkaterületetek elkészült. Innen indul a tervezés.",
     all_set_continue: "Tovább a vezérlőpultra",
     date_kind_question: "Mennyire biztos a dátum?",

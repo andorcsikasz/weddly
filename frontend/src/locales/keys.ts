@@ -2300,6 +2300,7 @@ export interface LocaleMessages {
     submit_retry: string;
     /** "All set" confirmation card shown after onboarding commits. */
     all_set_title: string;
+    all_set_amazing: string;
     all_set_body: string;
     all_set_continue: string;
     // ── Country picker (step 5, repurposed from the deprecated style step) ──

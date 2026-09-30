@@ -1750,6 +1750,7 @@ const en: LocaleMessages = {
     submit_failed: "Couldn't save just now. Your answers are safe, try again.",
     submit_retry: "Try again",
     all_set_title: "All set!",
+    all_set_amazing: "You are amazing!",
     all_set_body: "Your workspace is ready. This is where the planning begins.",
     all_set_continue: "Go to dashboard",
     date_kind_question: "How fixed is the date?",

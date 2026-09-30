@@ -509,6 +509,11 @@ export default function OnboardingWizard() {
 
   const stepValid = isStepValid(step, form);
 
+  /** A field holding a valid answer turns green: quiet positive feedback, the
+   *  same tint as the "decide later" note. Only VALID answers, so a half-typed
+   *  email or a placeholder name never looks approved. */
+  const filled = (ok: boolean) => `input${ok ? " is-filled" : ""}`;
+
   const dateAnswerCell = (k: WeddingDateKind) =>
     `[grid-area:1/1] self-center ${form.date_kind === k ? "animate-fade-in-up" : "invisible"}`;
 
@@ -569,7 +574,7 @@ export default function OnboardingWizard() {
                     </label>
                     <input
                       id="bride_name"
-                      className="input"
+                      className={filled(form.bride_name.trim() !== "" && !brideVerdict)}
                       value={form.bride_name}
                       onChange={(e) => update("bride_name", e.target.value)}
                       aria-invalid={nameErrorsShown && brideVerdict !== null}
@@ -593,7 +598,7 @@ export default function OnboardingWizard() {
                     </label>
                     <input
                       id="groom_name"
-                      className="input"
+                      className={filled(form.groom_name.trim() !== "" && !groomVerdict)}
                       value={form.groom_name}
                       onChange={(e) => update("groom_name", e.target.value)}
                       aria-invalid={nameErrorsShown && groomVerdict !== null}
@@ -622,7 +627,7 @@ export default function OnboardingWizard() {
                   <input
                     id="onb-partner-email"
                     type="email"
-                    className="input"
+                    className={filled(form.partner_email.trim() !== "" && partnerEmailValid(form))}
                     autoComplete="email"
                     inputMode="email"
                     placeholder={t("onboarding.invite_email_placeholder")}
@@ -650,7 +655,7 @@ export default function OnboardingWizard() {
                       type="date"
                       min={todayIso()}
                       aria-invalid={dateExactInvalid}
-                      className="input"
+                      className={filled(form.date_exact !== "" && !dateExactInvalid)}
                       value={form.date_exact}
                       onChange={(e) => update("date_exact", e.target.value)}
                     />
@@ -891,7 +896,7 @@ export default function OnboardingWizard() {
                 <h1 className={STEP_TITLE}>{t("onboarding.step5_title")}</h1>
                 {/* One field on a card sized for the tallest step: centred in
                  *  the free space rather than hanging under the title. */}
-                <div className="my-auto pt-8">
+                <div className={`my-auto pt-8 ${form.country ? "is-filled" : ""}`}>
                   <CountryCombobox
                     value={form.country}
                     onChange={(code) => update("country", code)}
@@ -985,16 +990,23 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
   const continueRef = useRef(onContinue);
   continueRef.current = onContinue;
 
-  // Auto-redirect after 20s; cancelled the moment the user engages with extras.
+  // Auto-redirect after 45s; cancelled the moment the user engages with extras.
   // Long enough to read the celebration and decide whether to add another
   // event — 7s fired before the user could take it in and dumped them on the
   // dashboard skeleton mid-thought.
   const timerRef = useRef<number | null>(null);
   const timerCancelledRef = useRef(false);
+
+  // "You are amazing!" gets a beat on its own before the title settles.
+  const [titleSwapped, setTitleSwapped] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setTitleSwapped(true), 1800);
+    return () => window.clearTimeout(id);
+  }, []);
   useEffect(() => {
     timerRef.current = window.setTimeout(() => {
       if (!timerCancelledRef.current) continueRef.current();
-    }, 20000);
+    }, 45000);
     return () => {
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     };
@@ -1097,7 +1109,32 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
                 <path d="M20 6 9 17l-5-5" />
               </svg>
             </div>
-            <h1 className={`mt-6 ${STEP_TITLE}`}>{t("onboarding.all_set_title")}</h1>
+            <h1 className={`mt-6 ${STEP_TITLE}`}>
+              {/* Two lines in one grid cell: the compliment lands first, then
+               *  blurs up and away as "All set!" rises into its place. Screen
+               *  readers get the final title only. */}
+              <span className="sr-only">{t("onboarding.all_set_title")}</span>
+              <span aria-hidden="true" className="grid">
+                <span
+                  className={`[grid-area:1/1] transition-all duration-700 ease-out motion-reduce:transition-none ${
+                    titleSwapped
+                      ? "-translate-y-4 opacity-0 blur-sm"
+                      : "translate-y-0 opacity-100 blur-0"
+                  }`}
+                >
+                  {t("onboarding.all_set_amazing")}
+                </span>
+                <span
+                  className={`[grid-area:1/1] transition-all duration-700 ease-out motion-reduce:transition-none ${
+                    titleSwapped
+                      ? "translate-y-0 opacity-100 blur-0"
+                      : "translate-y-4 opacity-0 blur-sm"
+                  }`}
+                >
+                  {t("onboarding.all_set_title")}
+                </span>
+              </span>
+            </h1>
 
             {/* ── Add another event? (optional, centered) ──────────────── */}
             <div className="mt-8 w-full border-t border-paper-300 pt-7 dark:border-umber-700">
@@ -1171,7 +1208,7 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
               <div className="mt-8 w-full">
                 <button
                   type="button"
-                  className="btn-accent btn-lg w-full"
+                  className="btn btn-lg w-full bg-sage-800 text-white hover:bg-sage-900 dark:bg-sage-600 dark:hover:bg-sage-700"
                   disabled={!canSubmit || creating}
                   onClick={handleCreateExtras}
                 >
