@@ -10,9 +10,10 @@ import {
   DEFAULT_PLANNING_PACE,
   isChecklistItemApplicable,
   type PlanningPace,
+  planningAnchorDate,
 } from "@shared/wedding_checklist";
 import type { WeddingChecklistItem } from "@shared/wedding_checklist";
-import type { PlanningItem } from "@shared/types";
+import type { PlanningItem, WeddingDateGoal } from "@shared/types";
 import { PACE_ICON, PlanningPaceQuestion } from "./PlanningPaceQuestion";
 import { CHECKLIST_DEMO_PROGRESS_KEY } from "./PublicWeddingChecklist";
 import {
@@ -44,6 +45,9 @@ interface WeddingChecklistProps {
   items: PlanningItem[];
   onItemsChange: (updater: (items: PlanningItem[]) => PlanningItem[]) => void;
   weddingDate: string | null;
+  /** The onboarding date goal, so an undecided date still gets suggested
+   *  deadlines (see `planningAnchorDate`). */
+  weddingDateGoal?: WeddingDateGoal | null;
   profile: PlanningPromptTags;
   /** The couple's planning pace: `undefined` while the page is still loading
    *  it, `null` when they have never answered, which puts the question in
@@ -115,6 +119,7 @@ export function WeddingChecklist({
   items,
   onItemsChange,
   weddingDate,
+  weddingDateGoal = null,
   profile,
   pace,
   onPaceChange,
@@ -190,13 +195,16 @@ export function WeddingChecklist({
       ),
     [items],
   );
+  // Never an empty date field: without a fixed date the suggestions count back
+  // from the couple's approximate date, or from their pace's horizon.
+  const anchorDate = planningAnchorDate(weddingDate, weddingDateGoal, today, effectivePace);
   const sections = useMemo(
     () =>
-      checklistSections(locale, weddingDate, today, effectivePace).map((section) => ({
+      checklistSections(locale, anchorDate, today, effectivePace).map((section) => ({
         ...section,
         items: section.items.filter((entry) => isChecklistItemApplicable(entry, profile)),
       })),
-    [locale, weddingDate, profile, today, effectivePace],
+    [locale, anchorDate, profile, today, effectivePace],
   );
   const applicable = sections.flatMap((section) => section.items);
   const added = applicable.filter((entry) => taskByTemplateId.has(entry.id));
@@ -493,7 +501,7 @@ export function WeddingChecklist({
             {t(`planning.checklist.pace_${pace}`)}
           </button>
 
-          {weddingDate && remaining.length > 0 && (
+          {anchorDate && remaining.length > 0 && (
             <button
               type="button"
               onClick={applySuggestedDeadlines}

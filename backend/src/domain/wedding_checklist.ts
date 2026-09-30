@@ -9,6 +9,7 @@ import {
   CHOOSE_DATE_TEMPLATE_ID,
   checklistItemById,
   checklistLeadDaysById,
+  checklistSectionLeadDaysById,
   DEFAULT_PLANNING_PACE,
   isChecklistTemplateId,
   isPlanningPace,
@@ -186,6 +187,7 @@ export function setPlanningPace(
     if (previous === pace || !weddingDate || !parseIsoDate(weddingDate)) return;
     const oldLeads = checklistLeadDaysById(previous);
     const newLeads = checklistLeadDaysById(pace);
+    const legacyLeads = checklistSectionLeadDaysById(previous);
     const rows = db
       .prepare(
         `SELECT id, checklist_template_id, due_date, start_date, created_at
@@ -207,8 +209,15 @@ export function setPlanningPace(
     for (const row of rows) {
       const oldLead = oldLeads.get(row.checklist_template_id);
       const newLead = newLeads.get(row.checklist_template_id);
-      if (oldLead === undefined || newLead === undefined || oldLead === newLead) continue;
-      if (!isSuggestedDate(row.due_date, weddingDate, oldLead, row.created_at)) continue;
+      if (oldLead === undefined || newLead === undefined) continue;
+      // A task added before items were spread across their section still
+      // carries the section's single date, which is just as much a suggestion.
+      const legacyLead = legacyLeads.get(row.checklist_template_id);
+      const suggested =
+        isSuggestedDate(row.due_date, weddingDate, oldLead, row.created_at) ||
+        (legacyLead !== undefined &&
+          isSuggestedDate(row.due_date, weddingDate, legacyLead, row.created_at));
+      if (!suggested) continue;
       const next = timelineDatesFor(
         weddingDate,
         { lead: { days: newLead }, windowDays: 0 },

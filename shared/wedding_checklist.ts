@@ -5,6 +5,7 @@
 
 import type { ConditionTag } from "./planning_prompts";
 import type { UiLocale } from "./locales";
+import type { WeddingDateGoal } from "./types";
 import { parseIsoDate, timelineDatesFor } from "./planning_timeline";
 
 // Choosing the date is the one checklist step the couple has usually already
@@ -85,6 +86,54 @@ export function recommendedPlanningPace(
   if (days > 305) return "early_bird";
   if (days > 122) return "relaxed";
   return "last_minute";
+}
+
+function isoOf(d: Date): string {
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** Middle month (1..12) of each season, northern hemisphere, matching how the
+ *  rest of the app reads a season goal. */
+const SEASON_MID_MONTH = { spring: 4, summer: 7, fall: 10, winter: 1 } as const;
+
+/** The day the checklist counts back from when it suggests deadlines. The real
+ *  date when there is one; otherwise the middle of whatever the couple said in
+ *  onboarding (a month, a quarter, a season, a year); and with nothing usable
+ *  at all, the pace's own horizon from today, since "18 months to go" is
+ *  exactly what an early bird told us. A suggestion is only ever a prefill the
+ *  couple can edit, so an estimate beats an empty date field. An approximate
+ *  goal that has already gone by falls through to the horizon rather than
+ *  pinning every deadline to today. */
+export function planningAnchorDate(
+  weddingDate: string | null | undefined,
+  goal: WeddingDateGoal | null | undefined,
+  todayIso: string,
+  pace: PlanningPace,
+): string | null {
+  if (parseIsoDate(weddingDate)) return weddingDate as string;
+  const today = parseIsoDate(todayIso);
+  if (!today) return null;
+  let estimate: Date | null = null;
+  const year = goal?.target_year ?? null;
+  if (goal && year) {
+    if (goal.kind === "month" && goal.target_month) {
+      estimate = new Date(year, goal.target_month - 1, 15);
+    } else if (goal.kind === "quarter") {
+      estimate = goal.target_quarter
+        ? new Date(year, (goal.target_quarter - 1) * 3 + 1, 15)
+        : new Date(year, 6, 1);
+    } else if (goal.kind === "season" && goal.target_season) {
+      estimate = new Date(year, SEASON_MID_MONTH[goal.target_season] - 1, 15);
+    } else if (goal.kind === "year") {
+      estimate = new Date(year, 6, 1);
+    }
+  }
+  if (estimate && estimate.getTime() > today.getTime()) return isoOf(estimate);
+  const horizon = new Date(today);
+  horizon.setMonth(horizon.getMonth() + PACE_HORIZON_MONTHS[pace]);
+  return isoOf(horizon);
 }
 
 type LongRangeSectionId = "m12_18" | "m9_12" | "m6_9" | "m4_6" | "m2_3";
@@ -208,6 +257,45 @@ function sectionLeadDays(section: ChecklistSectionDefinition, pace: PlanningPace
   if (pace === "early_bird") return section.leadDays;
   const override = PACE_SECTIONS[pace][section.id as LongRangeSectionId];
   return override ? override.leadDays : section.leadDays;
+}
+
+const LONG_RANGE_SECTIONS: readonly ChecklistSectionId[] = [
+  "m12_18",
+  "m9_12",
+  "m6_9",
+  "m4_6",
+  "m2_3",
+];
+
+/** One lead per item of a section, in list order (base items, then its
+ *  conditional extras). A section that spans a range ("12–18 months before")
+ *  spreads its items across that range instead of stacking every deadline on
+ *  one day: the window reaches halfway to each neighbouring section, so the
+ *  first item lands early in the range, the last late, and no item ever
+ *  crosses into the next section's dates. The fixed short sections (1 month,
+ *  2 weeks, the day itself) keep a single date, which is what their titles say. */
+function itemLeadDays(sectionIndex: number, pace: PlanningPace, count: number): number[] {
+  const section = DEFINITIONS[sectionIndex] as ChecklistSectionDefinition;
+  const lead = sectionLeadDays(section, pace);
+  if (count <= 1 || !LONG_RANGE_SECTIONS.includes(section.id)) {
+    return Array.from({ length: count }, () => lead);
+  }
+  const farther = DEFINITIONS[sectionIndex - 1];
+  const nearer = DEFINITIONS[sectionIndex + 1];
+  const nearHalf = nearer ? (lead - sectionLeadDays(nearer, pace)) / 2 : 0;
+  const farHalf = farther ? (sectionLeadDays(farther, pace) - lead) / 2 : nearHalf;
+  // Keep a day clear of each boundary so two sections never share a date.
+  const far = lead + Math.max(0, farHalf - 1);
+  const near = lead - Math.max(0, nearHalf - 1);
+  return Array.from({ length: count }, (_, i) =>
+    Math.round(far - ((far - near) * i) / (count - 1)),
+  );
+}
+
+function sectionItemCount(section: ChecklistSectionDefinition): number {
+  return (
+    section.items.length + CONDITIONAL_EXTRAS.filter((entry) => entry.section === section.id).length
+  );
 }
 
 const item = (id: string, condition?: ConditionTag): ChecklistItemDefinition => ({ id, condition });
@@ -1197,6 +1285,34 @@ export function isChecklistItemApplicable(
   return !item.condition || answers[item.condition] !== "no";
 }
 
+/** Squeezes the long-range leads into a runway shorter than the plan. Clamping
+ *  alone would pull every overdue deadline up to today, stacking them on one
+ *  day again; instead the ranged sections are compressed proportionally
+ *  between the nearest ranged lead and yesterday's edge of the runway, so the
+ *  order and the spacing survive a late start. The fixed short sections (one
+ *  month and closer) are never moved, and a runway too short even for that
+ *  falls back to the ordinary clamp. */
+function runwayFit(
+  weddingDate: string | null | undefined,
+  todayIso: string | undefined,
+  pace: PlanningPace,
+): (lead: number) => number {
+  const wed = parseIsoDate(weddingDate);
+  const today = parseIsoDate(todayIso);
+  if (!wed || !today) return (lead) => lead;
+  const runway = Math.round((wed.getTime() - today.getTime()) / 86_400_000);
+  const ranged = DEFINITIONS.flatMap((section, index) =>
+    LONG_RANGE_SECTIONS.includes(section.id)
+      ? itemLeadDays(index, pace, sectionItemCount(section))
+      : [],
+  );
+  const max = Math.max(...ranged);
+  const min = Math.min(...ranged);
+  if (runway >= max || runway <= min + 1) return (lead) => lead;
+  const scale = (runway - min) / (max - min);
+  return (lead) => (lead < min ? lead : Math.round(min + (lead - min) * scale));
+}
+
 export function checklistSections(
   locale: UiLocale,
   weddingDate?: string | null,
@@ -1208,10 +1324,13 @@ export function checklistSections(
   pace: PlanningPace = DEFAULT_PLANNING_PACE,
 ): WeddingChecklistSection[] {
   const titles = ITEM_TITLES[locale];
+  const fit = runwayFit(weddingDate, todayIso, pace);
   let flatIndex = 0;
   return DEFINITIONS.map((section, sectionIndex) => {
-    const leadDays = sectionLeadDays(section, pace);
+    const leads = itemLeadDays(sectionIndex, pace, sectionItemCount(section)).map(fit);
+    let slot = 0;
     const items: WeddingChecklistItem[] = section.items.map((definition) => {
+      const leadDays = leads[slot++] ?? sectionLeadDays(section, pace);
       const title = titles[flatIndex] ?? ITEM_TITLES.en[flatIndex] ?? definition.id;
       flatIndex += 1;
       const dates = timelineDatesFor(
@@ -1228,6 +1347,7 @@ export function checklistSections(
       };
     });
     for (const extra of CONDITIONAL_EXTRAS.filter((entry) => entry.section === section.id)) {
+      const leadDays = leads[slot++] ?? sectionLeadDays(section, pace);
       const dates = timelineDatesFor(
         weddingDate,
         { lead: { days: leadDays }, windowDays: 0 },
@@ -1273,6 +1393,23 @@ export function checklistItemById(
 /** Each template id's due-date lead at the given pace: what the rescheduler
  *  needs to tell a suggested date from one the couple typed. */
 export function checklistLeadDaysById(pace: PlanningPace): Map<string, number> {
+  const map = new Map<string, number>();
+  DEFINITIONS.forEach((section, sectionIndex) => {
+    const leads = itemLeadDays(sectionIndex, pace, sectionItemCount(section));
+    const fallback = sectionLeadDays(section, pace);
+    const ids = [
+      ...section.items.map((definition) => definition.id),
+      ...CONDITIONAL_EXTRAS.filter((entry) => entry.section === section.id).map((e) => e.id),
+    ];
+    ids.forEach((id, i) => map.set(id, leads[i] ?? fallback));
+  });
+  return map;
+}
+
+/** Each template id's SECTION lead, the single date every item of a section
+ *  used to share before items were spread across their range. The rescheduler
+ *  still has to recognise those older suggested dates as suggestions. */
+export function checklistSectionLeadDaysById(pace: PlanningPace): Map<string, number> {
   const map = new Map<string, number>();
   for (const section of DEFINITIONS) {
     const lead = sectionLeadDays(section, pace);

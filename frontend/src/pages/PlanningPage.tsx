@@ -17,7 +17,14 @@ import {
 } from "@shared/planning_timeline";
 import { DEFAULT_PLANNING_PACE, type PlanningPace } from "@shared/wedding_checklist";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
-import type { Currency, IdeaStatus, IdeaTag, PlanningItem, PlanningKind } from "@shared/types";
+import type {
+  Currency,
+  IdeaStatus,
+  IdeaTag,
+  PlanningItem,
+  PlanningKind,
+  WeddingDateGoal,
+} from "@shared/types";
 import {
   ArrowRight,
   Calendar,
@@ -306,6 +313,7 @@ export default function PlanningPage() {
   const [taskWandOpen, setTaskWandOpen] = useState(false);
   const [timelineGenOpen, setTimelineGenOpen] = useState(false);
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
+  const [weddingDateGoal, setWeddingDateGoal] = useState<WeddingDateGoal | null>(null);
   const [ideaWandOpen, setIdeaWandOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
   const [bulkApplying, setBulkApplying] = useState(false);
@@ -430,6 +438,7 @@ export default function PlanningPage() {
         setCoupleId(r.couple.id);
         setCurrency(r.couple.currency ?? "HUF");
         setWeddingDate(r.couple.wedding_date ?? null);
+        setWeddingDateGoal(r.couple.wedding_date_goal ?? null);
         const bride = r.couple.bride_name?.trim() || t("planning.assignee_bride");
         const groom = r.couple.groom_name?.trim() || t("planning.assignee_groom");
         setPartnerNames([...new Set([bride, groom].filter(Boolean))]);
@@ -1148,6 +1157,7 @@ export default function PlanningPage() {
             items={items}
             onItemsChange={setItems}
             weddingDate={weddingDate}
+            weddingDateGoal={weddingDateGoal}
             profile={intakeTags}
             pace={planningPace}
             onPaceChange={setPlanningPace}
