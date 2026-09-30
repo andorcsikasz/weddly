@@ -201,6 +201,19 @@ export default function BudgetPage() {
   const [countSaveStatus, setCountSaveStatus] = useState<CostPlanningSaveStatus>("idle");
   const [countChanged, setCountChanged] = useState(false);
   const [countUndo, setCountUndo] = useState<{ from: number; to: number } | null>(null);
+  // Height of the pinned "Költségsorok" title block, which is where the
+  // table's sticky column row has to start.
+  const linesHeadRef = useRef<HTMLDivElement>(null);
+  const [linesHeadHeight, setLinesHeadHeight] = useState(0);
+  useEffect(() => {
+    const el = linesHeadRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => setLinesHeadHeight(el.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const countGestureStartRef = useRef<number | null>(null);
   const countGestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1177,7 +1190,15 @@ export default function BudgetPage() {
       />
 
       <section data-tour-target="budget-lines" className="mt-8">
-        <div className="mb-3">
+        {/* Title and column labels stay pinned under the app header (69px)
+         *  until the last row scrolls past: sticky is bounded by its parent,
+         *  so the title releases at the end of this section and the column
+         *  row at the end of the table. The column row sits right under the
+         *  title, whose height is measured because the subtitle can wrap. */}
+        <div
+          ref={linesHeadRef}
+          className="sticky top-[69px] z-20 bg-paper-100 pb-3 pt-2 dark:bg-umber-900"
+        >
           <h2 className="font-grotesk tracking-tight leading-tight">{t("budget.lines_title")}</h2>
           {/* Before a single amount exists, the table is fifteen zero rows and
               "edit each line" is advice about nothing. Say where the numbers
@@ -1296,9 +1317,17 @@ export default function BudgetPage() {
           <AddCustomRowMobile onAdd={addCustomRow} />
         </div>
 
-        <div data-tour-target="budget-table" className="card hidden overflow-hidden p-0 md:block">
+        {/* overflow-clip, not overflow-hidden: it still rounds the corners
+         *  but is not a scroll container, which would pin the sticky header
+         *  to the card instead of the page. */}
+        <div data-tour-target="budget-table" className="card hidden overflow-clip p-0 md:block">
           <table className="min-w-full text-sm">
-            <thead className="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-ink-500 dark:border-umber-700 dark:text-umber-300">
+            {/* The rule is an inset shadow because a collapsed-border table
+             *  drops a thead border the moment the row goes sticky. */}
+            <thead
+              style={{ top: 69 + linesHeadHeight }}
+              className="sticky z-10 bg-white text-left text-xs uppercase tracking-wide text-ink-500 shadow-[inset_0_-1px_0_theme(colors.paper.200)] dark:bg-umber-800 dark:text-umber-300 dark:shadow-[inset_0_-1px_0_theme(colors.umber.700)]"
+            >
               <tr>
                 <th className="px-4 py-3 font-medium">{t("budget.category")}</th>
                 <th className="px-4 py-3 text-center font-medium">{t("budget.planned")}</th>
