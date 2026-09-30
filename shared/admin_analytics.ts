@@ -464,6 +464,24 @@ export interface AdminHoneymoonAnalytics {
   start_month: Array<{ month: number; count: number }>;
 }
 
+// ─── /api/admin/analytics/map-locate ─────────────────────────────────────
+//
+// "Is the map's my-location button used, and where from?" Only town + district
+// are ever stored (domain/map_locate.ts), so that is all this can say.
+
+export interface AdminMapLocateAnalytics {
+  total_uses: number;
+  unique_users: number;
+  uses_30d: number;
+  users_30d: number;
+  /** Uses whose coordinate resolved to no town (upstream miss, open sea). */
+  unresolved: number;
+  /** By town, counted in distinct PEOPLE (`users`) and taps (`count`). Top 15. */
+  top_cities: Array<{ country: string | null; city: string; count: number; users: number }>;
+  /** By town + district, same counting. Top 15. */
+  top_districts: Array<{ city: string; district: string; count: number; users: number }>;
+}
+
 // ─── /api/admin/analytics/weddings ───────────────────────────────────────
 //
 // "What do the weddings themselves look like?" — date seasonality, day-of-week

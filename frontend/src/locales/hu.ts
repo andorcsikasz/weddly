@@ -5672,6 +5672,17 @@ const hu: LocaleMessages = {
     map_zoom_out: "Kicsinyítés",
     map_locate: "Saját hely mutatása",
     map_locate_failed: "Nem sikerült lekérni a helyzetedet.",
+    map_locate_ask_title: "Megmutassuk a közeli szolgáltatókat?",
+    map_locate_ask_body:
+      "A böngésződ megkérdezi, használhatja-e a Weddly a helyzetedet. Csak arra használjuk, hogy a térképet oda állítsuk, ahol vagy.",
+    map_locate_ask_privacy:
+      "Csak a településedet és a kerületedet tároljuk, hogy lássuk, honnan használják a térképet. A pontos helyzetedet soha.",
+    map_locate_ask_continue: "Tovább",
+    map_locate_ask_later: "Most nem",
+    map_locate_denied_title: "A helymeghatározás tiltva van",
+    map_locate_denied_body:
+      "A böngésződ tiltja a helymeghatározást a Weddly számára. Nyisd meg a webhely beállításait a címsor mellett (lakat vagy csúszka ikon), engedélyezd a Helyadatokat, majd koppints újra a gombra.",
+    map_locate_denied_ok: "Rendben",
     submit: {
       title: "Ajánlj egy szolgáltatót",
       intro: "Pár adat, és más párok is könnyebben rátalálnak.",
@@ -7306,6 +7317,17 @@ const hu: LocaleMessages = {
     analytics_weddings_tags_empty: "Még egy pár sem választott stílust.",
     // Honeymoon
     analytics_section_honeymoon: "Nászút",
+    analytics_nav_map_locate: "Térkép helyzet",
+    analytics_section_map_locate: "Térkép „saját hely”",
+    analytics_map_locate_empty: "Még senki nem használta a térkép helymeghatározás gombját.",
+    analytics_map_locate_uses: "Használat",
+    analytics_map_locate_users: "Felhasználó",
+    analytics_map_locate_30d: "Elmúlt 30 nap",
+    analytics_map_locate_30d_sub: "{n} felhasználó",
+    analytics_map_locate_unresolved: "Nincs település",
+    analytics_map_locate_top_cities: "Település szerint (felhasználó)",
+    analytics_map_locate_top_districts: "Kerület szerint (felhasználó)",
+    analytics_map_locate_uses_sub: "{n} használat",
     analytics_honeymoon_empty: "Még egy pár sem adott meg nászúti célt.",
     analytics_honeymoon_insufficient:
       "Csak {n} pár adott meg nászúti adatot, túl kevés a következtetéshez. A diagramok 10 pártól jelennek meg.",

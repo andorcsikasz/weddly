@@ -5772,6 +5772,17 @@ const de: LocaleMessages = {
     map_zoom_out: "Verkleinern",
     map_locate: "Meinen Standort zeigen",
     map_locate_failed: "Dein Standort konnte nicht ermittelt werden.",
+    map_locate_ask_title: "Dienstleister in deiner Nähe zeigen?",
+    map_locate_ask_body:
+      "Dein Browser fragt, ob Weddly deinen Standort verwenden darf. Wir nutzen ihn nur, um die Karte auf deinen Standort zu zentrieren.",
+    map_locate_ask_privacy:
+      "Wir speichern nur deine Stadt und deinen Bezirk, um zu sehen, wo die Karte genutzt wird. Nie deine genaue Position.",
+    map_locate_ask_continue: "Weiter",
+    map_locate_ask_later: "Nicht jetzt",
+    map_locate_denied_title: "Standort ist blockiert",
+    map_locate_denied_body:
+      "Dein Browser blockiert den Standort für Weddly. Öffne die Website-Einstellungen neben der Adressleiste (Schloss- oder Regler-Symbol), erlaube den Standort und tippe erneut auf den Button.",
+    map_locate_denied_ok: "Verstanden",
     submit: {
       title: "Dienstleister empfehlen",
       intro: "Ein paar Angaben genügen, andere Paare finden ihn dann schneller.",
@@ -7348,6 +7359,17 @@ const de: LocaleMessages = {
     analytics_weddings_empty: "Noch keine Daten.",
     analytics_weddings_tags_empty: "Noch hat kein Paar einen Stil gewählt.",
     analytics_section_honeymoon: "Flitterwochen",
+    analytics_nav_map_locate: "Map location",
+    analytics_section_map_locate: 'Map "my location"',
+    analytics_map_locate_empty: "Nobody has used the map's location button yet.",
+    analytics_map_locate_uses: "Uses",
+    analytics_map_locate_users: "People",
+    analytics_map_locate_30d: "Last 30 days",
+    analytics_map_locate_30d_sub: "{n} people",
+    analytics_map_locate_unresolved: "No town found",
+    analytics_map_locate_top_cities: "By town (people)",
+    analytics_map_locate_top_districts: "By district (people)",
+    analytics_map_locate_uses_sub: "{n} uses",
     analytics_honeymoon_empty: "Noch hat kein Paar ein Flitterwochenziel gesetzt.",
     analytics_honeymoon_insufficient:
       "Nur {n} Paare haben Flitterwochen-Daten eingetragen, zu wenig für eine Aussage. Ab 10 werden die Diagramme freigeschaltet.",

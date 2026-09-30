@@ -22,6 +22,7 @@ import type {
   AdminEngagementAnalytics,
   AdminGuestAnalytics,
   AdminHoneymoonAnalytics,
+  AdminMapLocateAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
   AdminPlannerAnalytics,
@@ -69,6 +70,7 @@ type SectionId =
   | "demo"
   | "weddings"
   | "honeymoon"
+  | "map_locate"
   | "guests"
   | "planners"
   | "campaigns"
@@ -86,6 +88,7 @@ const SECTIONS: ReadonlyArray<SectionDef> = [
   { id: "acquisition", labelKey: "admin.analytics_nav_acquisition" },
   { id: "weddings", labelKey: "admin.analytics_nav_weddings" },
   { id: "honeymoon", labelKey: "admin.analytics_nav_honeymoon" },
+  { id: "map_locate", labelKey: "admin.analytics_nav_map_locate" },
   { id: "guests", labelKey: "admin.analytics_nav_guests" },
   { id: "planners", labelKey: "admin.analytics_nav_planners" },
   { id: "campaigns", labelKey: "admin.analytics_nav_campaigns" },
@@ -130,6 +133,9 @@ export default function AdminAnalyticsPage() {
   const [honeymoon, setHoneymoon] = useState<Loadable<AdminHoneymoonAnalytics>>({
     status: "loading",
   });
+  const [mapLocate, setMapLocate] = useState<Loadable<AdminMapLocateAnalytics>>({
+    status: "loading",
+  });
   const [guests, setGuests] = useState<Loadable<AdminGuestAnalytics>>({ status: "loading" });
   const [acquisition, setAcquisition] = useState<Loadable<AdminAcquisitionAnalytics>>({
     status: "loading",
@@ -164,6 +170,7 @@ export default function AdminAnalyticsPage() {
     traffic.status === "loading" ||
     weddings.status === "loading" ||
     honeymoon.status === "loading" ||
+    mapLocate.status === "loading" ||
     guests.status === "loading" ||
     acquisition.status === "loading" ||
     planners.status === "loading" ||
@@ -179,6 +186,7 @@ export default function AdminAnalyticsPage() {
     setTraffic({ status: "loading" });
     setWeddings({ status: "loading" });
     setHoneymoon({ status: "loading" });
+    setMapLocate({ status: "loading" });
     setGuests({ status: "loading" });
     setAcquisition({ status: "loading" });
     setPlanners({ status: "loading" });
@@ -198,6 +206,7 @@ export default function AdminAnalyticsPage() {
     setEngagement({ status: "loading" });
     setWeddings({ status: "loading" });
     setHoneymoon({ status: "loading" });
+    setMapLocate({ status: "loading" });
     setGuests({ status: "loading" });
     setAcquisition({ status: "loading" });
     setPlanners({ status: "loading" });
@@ -290,6 +299,18 @@ export default function AdminAnalyticsPage() {
       })
       .catch(() => {
         if (!cancelled) setHoneymoon({ status: "error" });
+      });
+
+    adminAnalyticsApi
+      .mapLocate(audience)
+      .then((d) => {
+        if (!cancelled) {
+          setMapLocate({ status: "ok", data: d });
+          setLastLoadedAt(Date.now());
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setMapLocate({ status: "error" });
       });
 
     adminAnalyticsApi
@@ -390,6 +411,9 @@ export default function AdminAnalyticsPage() {
         </SectionAnchor>
         <SectionAnchor id="honeymoon">
           <HoneymoonSection state={honeymoon} locale={locale} />
+        </SectionAnchor>
+        <SectionAnchor id="map_locate">
+          <MapLocateSection state={mapLocate} locale={locale} />
         </SectionAnchor>
         <SectionAnchor id="guests">
           <GuestsSection state={guests} locale={locale} />
@@ -2455,6 +2479,91 @@ function HoneymoonSection({
                 locale={locale}
                 emptyLabel={t("admin.analytics_honeymoon_empty")}
                 labelWidth="3rem"
+              />
+            </InnerCard>
+          </div>
+        </>
+      )}
+    </SectionCard>
+  );
+}
+
+// ─── Map "my location" section ─────────────────────────────────────────────
+
+function MapLocateSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminMapLocateAnalytics>;
+  locale: Locale;
+}) {
+  const { t } = useT();
+  const title = t("admin.analytics_section_map_locate");
+  if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
+  if (state.status === "error")
+    return (
+      <SectionStatus title={title} variant="error" message={t("admin.analytics_load_error")} />
+    );
+
+  const m = state.data;
+  const uses = (n: number) =>
+    t("admin.analytics_map_locate_uses_sub", { n: formatNumber(n, locale) });
+  const cityRows = m.top_cities.map((r) => ({
+    label: r.country ? `${r.city}, ${r.country}` : r.city,
+    count: r.users,
+    sub: uses(r.count),
+  }));
+  const districtRows = m.top_districts.map((r) => ({
+    label: `${r.city} · ${r.district}`,
+    count: r.users,
+    sub: uses(r.count),
+  }));
+
+  return (
+    <SectionCard title={title}>
+      {m.total_uses === 0 ? (
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
+          {t("admin.analytics_map_locate_empty")}
+        </p>
+      ) : (
+        <>
+          <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <KpiTile
+              label={t("admin.analytics_map_locate_users")}
+              value={formatNumber(m.unique_users, locale)}
+              emphasis
+            />
+            <KpiTile
+              label={t("admin.analytics_map_locate_uses")}
+              value={formatNumber(m.total_uses, locale)}
+            />
+            <KpiTile
+              label={t("admin.analytics_map_locate_30d")}
+              value={formatNumber(m.uses_30d, locale)}
+              sub={t("admin.analytics_map_locate_30d_sub", {
+                n: formatNumber(m.users_30d, locale),
+              })}
+            />
+            <KpiTile
+              label={t("admin.analytics_map_locate_unresolved")}
+              value={formatNumber(m.unresolved, locale)}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <InnerCard title={t("admin.analytics_map_locate_top_cities")}>
+              <DistBars
+                rows={cityRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_map_locate_empty")}
+                labelWidth="9rem"
+              />
+            </InnerCard>
+            <InnerCard title={t("admin.analytics_map_locate_top_districts")}>
+              <DistBars
+                rows={districtRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_map_locate_empty")}
+                labelWidth="11rem"
               />
             </InnerCard>
           </div>

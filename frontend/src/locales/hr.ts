@@ -5661,6 +5661,17 @@ const hr: LocaleMessages = {
     map_zoom_out: "Smanji",
     map_locate: "Prikaži moju lokaciju",
     map_locate_failed: "Nismo mogli dohvatiti tvoju lokaciju.",
+    map_locate_ask_title: "Prikazati dobavljače u tvojoj blizini?",
+    map_locate_ask_body:
+      "Preglednik će te pitati smije li Weddly koristiti tvoju lokaciju. Koristimo je samo da centriramo kartu na mjesto gdje se nalaziš.",
+    map_locate_ask_privacy:
+      "Spremamo samo tvoj grad i četvrt, da vidimo odakle se karta koristi. Nikada tvoju točnu poziciju.",
+    map_locate_ask_continue: "Nastavi",
+    map_locate_ask_later: "Ne sada",
+    map_locate_denied_title: "Lokacija je blokirana",
+    map_locate_denied_body:
+      "Tvoj preglednik blokira lokaciju za Weddly. Otvori postavke stranice pokraj adresne trake (ikona lokota ili klizača), dopusti Lokaciju i ponovno dodirni gumb.",
+    map_locate_denied_ok: "U redu",
     submit: {
       title: "Preporučite dobavljača",
       intro: "Dovoljno je nekoliko podataka, drugi će ih parovi brže pronaći.",
@@ -7220,6 +7231,17 @@ const hr: LocaleMessages = {
     analytics_weddings_empty: "Još nema podataka.",
     analytics_weddings_tags_empty: "Nijedan par još nije odabrao stil.",
     analytics_section_honeymoon: "Medeni mjesec",
+    analytics_nav_map_locate: "Map location",
+    analytics_section_map_locate: 'Map "my location"',
+    analytics_map_locate_empty: "Nobody has used the map's location button yet.",
+    analytics_map_locate_uses: "Uses",
+    analytics_map_locate_users: "People",
+    analytics_map_locate_30d: "Last 30 days",
+    analytics_map_locate_30d_sub: "{n} people",
+    analytics_map_locate_unresolved: "No town found",
+    analytics_map_locate_top_cities: "By town (people)",
+    analytics_map_locate_top_districts: "By district (people)",
+    analytics_map_locate_uses_sub: "{n} uses",
     analytics_honeymoon_empty: "Nijedan par još nije odredio odredište medenog mjeseca.",
     analytics_honeymoon_insufficient:
       "Samo {n} parova upisalo je podatke o medenom mjesecu, premalo za zaključke. Grafikoni se otključavaju na 10.",

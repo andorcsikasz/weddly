@@ -190,6 +190,7 @@ export function purgeOneCouple(
       db.prepare(
         `DELETE FROM supplier_comments WHERE author_user_id IN (${exclusiveIdList})`,
       ).run();
+      db.prepare(`DELETE FROM map_locate_events WHERE user_id IN (${exclusiveIdList})`).run();
     }
     db.prepare("DELETE FROM supplier_bookings WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM planning_items WHERE couple_id = ?").run(coupleId);

@@ -184,6 +184,7 @@ import type {
   AdminEngagementAnalytics,
   AdminGuestAnalytics,
   AdminHoneymoonAnalytics,
+  AdminMapLocateAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
   AdminPlannerAnalytics,
@@ -3734,6 +3735,8 @@ export const adminAnalyticsApi = {
     apiFetch<AdminEngagementAnalytics>("GET", `/api/admin/analytics/engagement${audienceQuery(a)}`),
   honeymoon: (a?: AnalyticsAudience) =>
     apiFetch<AdminHoneymoonAnalytics>("GET", `/api/admin/analytics/honeymoon${audienceQuery(a)}`),
+  mapLocate: (a?: AnalyticsAudience) =>
+    apiFetch<AdminMapLocateAnalytics>("GET", `/api/admin/analytics/map-locate${audienceQuery(a)}`),
   weddings: (a?: AnalyticsAudience) =>
     apiFetch<AdminWeddingAnalytics>("GET", `/api/admin/analytics/weddings${audienceQuery(a)}`),
   guests: (a?: AnalyticsAudience) =>
@@ -4398,6 +4401,15 @@ export const geoApi = {
       "GET",
       `/api/geo/reverse?lat=${lat}&lng=${lng}`,
     ),
+  /** The supplier map's "my location" was used. The server keeps only the
+   *  town + district the coordinate falls in, never the coordinate. */
+  mapLocate: (lat: number, lng: number) =>
+    apiFetch<{
+      country: string | null;
+      city: string | null;
+      district: string | null;
+      recorded: boolean;
+    }>("POST", "/api/geo/map-locate", { lat, lng }),
 };
 
 export const plannerApi = {

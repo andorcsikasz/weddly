@@ -5722,6 +5722,17 @@ const es: LocaleMessages = {
     map_zoom_out: "Alejar",
     map_locate: "Mostrar mi ubicación",
     map_locate_failed: "No pudimos obtener tu ubicación.",
+    map_locate_ask_title: "¿Mostrar proveedores cerca de ti?",
+    map_locate_ask_body:
+      "Tu navegador te preguntará si Weddly puede usar tu ubicación. Solo la usamos para centrar el mapa donde estás.",
+    map_locate_ask_privacy:
+      "Solo guardamos tu ciudad y tu distrito, para saber desde dónde se usa el mapa. Nunca tu posición exacta.",
+    map_locate_ask_continue: "Continuar",
+    map_locate_ask_later: "Ahora no",
+    map_locate_denied_title: "La ubicación está bloqueada",
+    map_locate_denied_body:
+      "Tu navegador bloquea la ubicación para Weddly. Abre la configuración del sitio junto a la barra de direcciones (el icono del candado o de ajustes), permite la Ubicación y vuelve a pulsar el botón.",
+    map_locate_denied_ok: "Entendido",
     submit: {
       title: "Recomienda un proveedor",
       intro: "Con unos pocos datos basta, otras parejas los encontrarán más rápido.",
@@ -7293,6 +7304,17 @@ const es: LocaleMessages = {
     analytics_weddings_tags_empty: "Ninguna pareja ha elegido un estilo todavía.",
     // Honeymoon
     analytics_section_honeymoon: "Luna de miel",
+    analytics_nav_map_locate: "Ubicación en mapa",
+    analytics_section_map_locate: 'Mapa "mi ubicación"',
+    analytics_map_locate_empty: "Nadie ha usado todavía el botón de ubicación del mapa.",
+    analytics_map_locate_uses: "Usos",
+    analytics_map_locate_users: "Personas",
+    analytics_map_locate_30d: "Últimos 30 días",
+    analytics_map_locate_30d_sub: "{n} personas",
+    analytics_map_locate_unresolved: "Sin ciudad",
+    analytics_map_locate_top_cities: "Por ciudad (personas)",
+    analytics_map_locate_top_districts: "Por distrito (personas)",
+    analytics_map_locate_uses_sub: "{n} usos",
     analytics_honeymoon_empty: "Ninguna pareja ha fijado un destino de luna de miel todavía.",
     analytics_honeymoon_insufficient:
       "Solo {n} parejas han introducido datos de luna de miel, muy pocas para interpretarlos. Los gráficos se desbloquean con 10.",

@@ -6,10 +6,16 @@
 // Anonymous-allowed like company_lookup: the vendor signup form runs
 // pre-account. Signed-in callers get a roomier bucket via ctx.userId.
 
+import { recordMapLocate, reverseGeocodeArea } from "../domain/map_locate";
 import { reverseGeocode } from "../domain/maps_resolver";
 import { suggestAddresses } from "../lib/address_suggest";
-import { type Ctx, HttpError, json, type Router } from "../lib/http";
-import { ADDRESS_SUGGEST_ANON_BUCKET, ADDRESS_SUGGEST_BUCKET, rateLimit } from "../lib/rate_limit";
+import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import {
+  ADDRESS_SUGGEST_ANON_BUCKET,
+  ADDRESS_SUGGEST_BUCKET,
+  MAP_LOCATE_BUCKET,
+  rateLimit,
+} from "../lib/rate_limit";
 
 const MIN_QUERY_LEN = 3;
 const MAX_QUERY_LEN = 200;
@@ -61,7 +67,27 @@ async function handleReverse(ctx: Ctx): Promise<Response> {
   return json({ address: r.address, city: r.city });
 }
 
+/** "My location" was used on the supplier map. The coordinate is reverse-
+ *  geocoded here and DISCARDED: only town + district are stored (see
+ *  domain/map_locate.ts). Answers the area so the client could show it, and
+ *  never errors on an upstream miss, since analytics must not break the map. */
+async function handleMapLocate(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  rateLimit(`u${userId}`, "geo_map_locate", MAP_LOCATE_BUCKET);
+  const body = await readJson<{ lat?: unknown; lng?: unknown }>(ctx.req);
+  const lat = typeof body.lat === "number" ? body.lat : Number.NaN;
+  const lng = typeof body.lng === "number" ? body.lng : Number.NaN;
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90) throw new HttpError(400, "lat out of range");
+  if (!Number.isFinite(lng) || lng < -180 || lng > 180)
+    throw new HttpError(400, "lng out of range");
+
+  const area = await reverseGeocodeArea(lat, lng);
+  const recorded = recordMapLocate(userId, area);
+  return json({ ...area, recorded });
+}
+
 export function registerGeoRoutes(router: Router) {
   router.get("/api/geo/address-suggest", handleAddressSuggest);
   router.get("/api/geo/reverse", handleReverse);
+  router.post("/api/geo/map-locate", handleMapLocate, true);
 }

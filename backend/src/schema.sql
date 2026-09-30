@@ -2975,3 +2975,19 @@ CREATE TABLE IF NOT EXISTS user_activity_daily (
   PRIMARY KEY (user_id, day)
 );
 CREATE INDEX IF NOT EXISTS idx_user_activity_daily_user ON user_activity_daily(user_id);
+
+-- One row per successful "my location" tap on the /app/suppliers map, so the
+-- admin can see whether the button is used and from where. COARSE ON PURPOSE:
+-- the server reverse-geocodes the coordinate and stores only the town and the
+-- district, never lat/lng, and the pre-permission dialog tells the couple so
+-- before the browser asks (domain/map_locate.ts).
+CREATE TABLE IF NOT EXISTS map_locate_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  country TEXT,                                                -- ISO 3166-1 alpha-2, upper
+  city TEXT,
+  district TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_map_locate_events_created ON map_locate_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_map_locate_events_user ON map_locate_events(user_id);

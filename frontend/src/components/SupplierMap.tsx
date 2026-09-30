@@ -47,10 +47,11 @@ import {
 } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
 import { categoryIcon } from "../lib/category_icons";
+import { geoApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import type { SelectionMap } from "../lib/supplier_selection";
 import { safeExternalHref } from "../lib/url";
-import { useToast } from "./ui";
+import { Button, Dialog, useToast } from "./ui";
 
 type PlacedSupplier = DirectorySupplier & { lat: number; lng: number };
 
@@ -189,11 +190,14 @@ function MapControls() {
     L.DomEvent.disableScrollPropagation(panel);
   }, [panel]);
 
-  const locate = () => {
-    if (!("geolocation" in navigator)) {
-      toast.error(t("suppliers.map_locate_failed"));
-      return;
-    }
+  // The browser's own permission prompt is the only thing that can grant
+  // location, and it appears with no context the moment getCurrentPosition
+  // runs. So a first tap explains first ("ask"), and a blocked permission,
+  // which the browser will never prompt for again, gets instructions instead
+  // of a vague failure toast ("denied").
+  const [prompt, setPrompt] = useState<"ask" | "denied" | null>(null);
+
+  const requestPosition = () => {
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -201,13 +205,34 @@ function MapControls() {
         const here: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setMe(here);
         map.flyTo(here, Math.max(map.getZoom(), 11));
+        // Usage analytics: best-effort, and never allowed to disturb the map.
+        geoApi.mapLocate(here[0], here[1]).catch(() => {});
       },
-      () => {
+      (err) => {
         setLocating(false);
-        toast.error(t("suppliers.map_locate_failed"));
+        if (err.code === err.PERMISSION_DENIED) setPrompt("denied");
+        else toast.error(t("suppliers.map_locate_failed"));
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 },
     );
+  };
+
+  const locate = async () => {
+    if (!("geolocation" in navigator)) {
+      toast.error(t("suppliers.map_locate_failed"));
+      return;
+    }
+    // Safari before 16 has no Permissions API; treat it as "not yet asked",
+    // which costs at most one extra explanation.
+    let state: PermissionState | "unknown" = "unknown";
+    try {
+      state = (await navigator.permissions?.query({ name: "geolocation" }))?.state ?? "unknown";
+    } catch {
+      state = "unknown";
+    }
+    if (state === "granted") requestPosition();
+    else if (state === "denied") setPrompt("denied");
+    else setPrompt("ask");
   };
 
   const btn =
@@ -230,6 +255,57 @@ function MapControls() {
           />
         </>
       )}
+      <Dialog
+        open={prompt === "ask"}
+        role="dialog"
+        closeOnBackdrop
+        onClose={() => setPrompt(null)}
+        title={t("suppliers.map_locate_ask_title")}
+        footer={
+          <div className="flex items-center justify-end gap-3">
+            <Button variant="ghost" onClick={() => setPrompt(null)}>
+              {t("suppliers.map_locate_ask_later")}
+            </Button>
+            <Button
+              onClick={() => {
+                setPrompt(null);
+                requestPosition();
+              }}
+            >
+              {t("suppliers.map_locate_ask_continue")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex gap-3">
+          <LocateFixed
+            size={22}
+            strokeWidth={1.5}
+            aria-hidden
+            className="mt-0.5 shrink-0 text-ink-600 dark:text-umber-200"
+          />
+          <div className="space-y-2">
+            <p>{t("suppliers.map_locate_ask_body")}</p>
+            <p className="text-xs text-ink-500 dark:text-umber-300">
+              {t("suppliers.map_locate_ask_privacy")}
+            </p>
+          </div>
+        </div>
+      </Dialog>
+      <Dialog
+        open={prompt === "denied"}
+        role="dialog"
+        closeOnBackdrop
+        onClose={() => setPrompt(null)}
+        title={t("suppliers.map_locate_denied_title")}
+        footer={
+          <div className="flex justify-end">
+            <Button onClick={() => setPrompt(null)}>{t("suppliers.map_locate_denied_ok")}</Button>
+          </div>
+        }
+      >
+        <p>{t("suppliers.map_locate_denied_body")}</p>
+      </Dialog>
       <div
         ref={setPanel}
         className="leaflet-bottom leaflet-right !bottom-7 !right-3 flex flex-col items-end gap-2 sm:!right-4"

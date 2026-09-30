@@ -6,6 +6,7 @@
 // same ADMIN_EMAILS allowlist as the rest of /api/admin/*.
 
 import type {
+  AdminMapLocateAnalytics,
   AcquisitionDimensionRow,
   AdminAcquisitionAnalytics,
   AdminActivityAnalytics,
@@ -2007,6 +2008,62 @@ function honeymoonAnalytics(audience: AnalyticsAudience): AdminHoneymoonAnalytic
   };
 }
 
+// ─── /api/admin/analytics/map-locate ───────────────────────────────────────
+
+function mapLocateAnalytics(audience: AnalyticsAudience): AdminMapLocateAnalytics {
+  const who = `m.user_id IN (SELECT u.id FROM users u WHERE ${userAudienceSql("u", audience)})`;
+  const since = Date.now() - 30 * DAY_MS;
+  const totals = db
+    .prepare(
+      `SELECT COUNT(*) AS total, COUNT(DISTINCT m.user_id) AS users,
+              SUM(CASE WHEN m.created_at >= ? THEN 1 ELSE 0 END) AS total_30d,
+              COUNT(DISTINCT CASE WHEN m.created_at >= ? THEN m.user_id END) AS users_30d,
+              SUM(CASE WHEN m.city IS NULL THEN 1 ELSE 0 END) AS unresolved
+         FROM map_locate_events m WHERE ${who}`,
+    )
+    .get(since, since) as {
+    total: number;
+    users: number;
+    total_30d: number | null;
+    users_30d: number;
+    unresolved: number | null;
+  };
+  const topCities = db
+    .prepare(
+      `SELECT m.country, m.city, COUNT(*) AS count, COUNT(DISTINCT m.user_id) AS users
+         FROM map_locate_events m
+        WHERE ${who} AND m.city IS NOT NULL
+        GROUP BY m.country, m.city
+        ORDER BY users DESC, count DESC, m.city ASC
+        LIMIT 15`,
+    )
+    .all() as AdminMapLocateAnalytics["top_cities"];
+  const topDistricts = db
+    .prepare(
+      `SELECT m.city, m.district, COUNT(*) AS count, COUNT(DISTINCT m.user_id) AS users
+         FROM map_locate_events m
+        WHERE ${who} AND m.city IS NOT NULL AND m.district IS NOT NULL
+        GROUP BY m.city, m.district
+        ORDER BY users DESC, count DESC, m.city ASC, m.district ASC
+        LIMIT 15`,
+    )
+    .all() as AdminMapLocateAnalytics["top_districts"];
+  return {
+    total_uses: totals.total,
+    unique_users: totals.users,
+    uses_30d: totals.total_30d ?? 0,
+    users_30d: totals.users_30d,
+    unresolved: totals.unresolved ?? 0,
+    top_cities: topCities,
+    top_districts: topDistricts,
+  };
+}
+
+function handleMapLocate(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(mapLocateAnalytics(parseAudience(ctx.url.searchParams)));
+}
+
 function handleHoneymoon(ctx: Ctx): Response {
   requireAdmin(ctx);
   return json(honeymoonAnalytics(parseAudience(ctx.url.searchParams)));
@@ -2820,6 +2877,7 @@ export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/acquisition", handleAcquisition, true);
   router.get("/api/admin/analytics/traffic", handleTraffic, true);
   router.get("/api/admin/analytics/honeymoon", handleHoneymoon, true);
+  router.get("/api/admin/analytics/map-locate", handleMapLocate, true);
   router.get("/api/admin/analytics/weddings", handleWeddings, true);
   router.get("/api/admin/analytics/guests", handleGuests, true);
   router.get("/api/admin/analytics/planners", handlePlanners, true);

@@ -6724,6 +6724,14 @@ export interface LocaleMessages {
     map_zoom_out: string;
     map_locate: string;
     map_locate_failed: string;
+    map_locate_ask_title: string;
+    map_locate_ask_body: string;
+    map_locate_ask_privacy: string;
+    map_locate_ask_continue: string;
+    map_locate_ask_later: string;
+    map_locate_denied_title: string;
+    map_locate_denied_body: string;
+    map_locate_denied_ok: string;
     submit: {
       title: string;
       intro: string;
@@ -8548,6 +8556,17 @@ export interface LocaleMessages {
     analytics_weddings_tags_empty: string;
     // Honeymoon section (destinations, origins, trip length, seasonality).
     analytics_section_honeymoon: string;
+    analytics_nav_map_locate: string;
+    analytics_section_map_locate: string;
+    analytics_map_locate_empty: string;
+    analytics_map_locate_uses: string;
+    analytics_map_locate_users: string;
+    analytics_map_locate_30d: string;
+    analytics_map_locate_30d_sub: string;
+    analytics_map_locate_unresolved: string;
+    analytics_map_locate_top_cities: string;
+    analytics_map_locate_top_districts: string;
+    analytics_map_locate_uses_sub: string;
     analytics_honeymoon_empty: string;
     analytics_honeymoon_insufficient: string;
     analytics_honeymoon_with_destination: string;

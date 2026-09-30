@@ -63,6 +63,11 @@ export const COMPANY_LOOKUP_ANON_BUCKET: BucketConfig = { capacity: 5, refillRat
  *  than clicks: a full address is ~5-8 queries. */
 export const ADDRESS_SUGGEST_BUCKET: BucketConfig = { capacity: 30, refillRate: 1 };
 
+/** "My location" on the supplier map, keyed per USER. Each call is one
+ *  Nominatim lookup (1 req/s fair use), and a real person taps the button a
+ *  handful of times per session at most. */
+export const MAP_LOCATE_BUCKET: BucketConfig = { capacity: 6, refillRate: 1 / 60 };
+
 /** Anonymous address autocomplete (pre-account vendor signup). Enough for
  *  one signup's worth of typing, useless as an open geocoder proxy. */
 export const ADDRESS_SUGGEST_ANON_BUCKET: BucketConfig = { capacity: 20, refillRate: 1 / 3 };

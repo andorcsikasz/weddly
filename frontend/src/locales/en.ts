@@ -5620,6 +5620,17 @@ const en: LocaleMessages = {
     map_zoom_out: "Zoom out",
     map_locate: "Show my location",
     map_locate_failed: "We couldn't get your location.",
+    map_locate_ask_title: "Show vendors near you?",
+    map_locate_ask_body:
+      "Your browser will ask whether Weddly may use your location. We only use it to centre the map on where you are.",
+    map_locate_ask_privacy:
+      "We keep only your town and district, to see where the map is used. Never your exact position.",
+    map_locate_ask_continue: "Continue",
+    map_locate_ask_later: "Not now",
+    map_locate_denied_title: "Location is blocked",
+    map_locate_denied_body:
+      "Your browser is set to block location for Weddly. Open the site settings next to the address bar (the lock or slider icon), allow Location, then tap the button again.",
+    map_locate_denied_ok: "Got it",
     submit: {
       title: "Recommend a supplier",
       intro: "A few details is all it takes, other couples will find them faster.",
@@ -7244,6 +7255,17 @@ const en: LocaleMessages = {
     analytics_weddings_tags_empty: "No couple has picked a style yet.",
     // Honeymoon
     analytics_section_honeymoon: "Honeymoon",
+    analytics_nav_map_locate: "Map location",
+    analytics_section_map_locate: 'Map "my location"',
+    analytics_map_locate_empty: "Nobody has used the map's location button yet.",
+    analytics_map_locate_uses: "Uses",
+    analytics_map_locate_users: "People",
+    analytics_map_locate_30d: "Last 30 days",
+    analytics_map_locate_30d_sub: "{n} people",
+    analytics_map_locate_unresolved: "No town found",
+    analytics_map_locate_top_cities: "By town (people)",
+    analytics_map_locate_top_districts: "By district (people)",
+    analytics_map_locate_uses_sub: "{n} uses",
     analytics_honeymoon_empty: "No couple has set a honeymoon destination yet.",
     analytics_honeymoon_insufficient:
       "Only {n} couples have entered honeymoon data, too few to read into. Charts unlock at 10.",
