@@ -517,7 +517,7 @@ export default function OnboardingWizard() {
     <Shell>
       <form className="mx-auto max-w-xl" onSubmit={onSubmit}>
         <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-umber-600">
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.14em] text-umber-600">
             {step + 1} / {TOTAL_STEPS} · {t(`onboarding.step${step + 1}_short`)}
           </p>
           <div className="mt-2 h-1.5 w-full rounded-full bg-paper-300 dark:bg-umber-800">
