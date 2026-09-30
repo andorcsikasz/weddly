@@ -66,6 +66,12 @@ import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
 import { computeSymmetricLayout, tableFootprintMm } from "./seating/layout";
+import {
+  type RoomSizeDraft,
+  RoomSizeStep,
+  parseRoomSize,
+  roomDraftFromMm,
+} from "./seating/RoomSizeStep";
 import { ROOM_DIMS, SeatingMap } from "./seating/SeatingMap";
 import { isCurrentSessionDemo } from "../lib/demoSession";
 
@@ -336,6 +342,30 @@ export default function SeatingPage() {
     },
     [isDemoSession],
   );
+
+  // Empty-state room sizing. Seeded from whatever the room is now and
+  // re-seeded when hydration from the workspace lands, until the couple
+  // types into it themselves.
+  const [roomDraft, setRoomDraft] = useState<RoomSizeDraft>(() =>
+    roomDraftFromMm(roomWidthMm, roomHeightMm),
+  );
+  const roomDraftTouchedRef = useRef(false);
+  useEffect(() => {
+    if (roomDraftTouchedRef.current) return;
+    setRoomDraft(roomDraftFromMm(roomWidthMm, roomHeightMm));
+  }, [roomWidthMm, roomHeightMm]);
+
+  /** First table from the empty state: save the room they sized, then place
+   *  the table in the middle of THAT room. */
+  function addFirstTable() {
+    const room = parseRoomSize(roomDraft);
+    if (room && (room.w !== roomWidthMm || room.h !== roomHeightMm)) {
+      updateRoom(room.w, room.h);
+      void addTable(room);
+      return;
+    }
+    void addTable();
+  }
 
   // Detect coarse pointer (touch). We listen for changes so a hybrid device
   // (laptop with touch input) flips correctly when the user reaches for the
@@ -1075,16 +1105,20 @@ export default function SeatingPage() {
     });
   }
 
-  async function addTable() {
+  async function addTable(room?: { w: number; h: number }) {
     // Drop new tables near the centre of the room with a small per-table
-    // offset so consecutive adds don't stack on top of each other.
+    // offset so consecutive adds don't stack on top of each other. `room` is
+    // the size the empty state just asked for: the state update from
+    // `updateRoom` has not landed yet in this closure.
+    const roomW = room?.w ?? roomWidthMm;
+    const roomH = room?.h ?? roomHeightMm;
     const offset = (tables.length % 5) * 800;
     const payload = {
       label: nextTableLabel(),
       shape: "round" as TableShape,
       seats: 8,
-      x_mm: roomWidthMm / 2 + offset - 1600,
-      y_mm: roomHeightMm / 2,
+      x_mm: roomW / 2 + offset - 1600,
+      y_mm: roomH / 2,
       width_mm: 1500,
       length_mm: 1500,
     };
@@ -1782,7 +1816,7 @@ export default function SeatingPage() {
             <button
               type="button"
               className="btn-primary shrink-0 self-stretch whitespace-nowrap py-0"
-              onClick={addTable}
+              onClick={() => (tables.length === 0 ? addFirstTable() : void addTable())}
             >
               <Plus size={16} /> {t("seating.add_table")}
             </button>
@@ -1860,18 +1894,25 @@ export default function SeatingPage() {
                 : t("seating.add_first_table")}
             </p>
           </div>
+          <RoomSizeStep
+            draft={roomDraft}
+            onChange={(next) => {
+              roomDraftTouchedRef.current = true;
+              setRoomDraft(next);
+            }}
+          />
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             {guests.length === 0 ? (
               <>
                 <Link to="/app/guests" className="btn-primary">
                   <Users size={16} aria-hidden /> {t("seating.empty_cta_add_guests")}
                 </Link>
-                <button type="button" className="btn-outline" onClick={addTable}>
+                <button type="button" className="btn-outline" onClick={addFirstTable}>
                   <Plus size={16} aria-hidden /> {t("seating.empty_cta_fallback_table")}
                 </button>
               </>
             ) : (
-              <button type="button" className="btn-primary" onClick={addTable}>
+              <button type="button" className="btn-primary" onClick={addFirstTable}>
                 <Plus size={16} aria-hidden /> {t("seating.empty_cta_add_table")}
               </button>
             )}
@@ -1901,7 +1942,7 @@ export default function SeatingPage() {
                 const tbl = tables.find((tb) => tb.id === id);
                 if (tbl) deleteTable(tbl);
               }}
-              onAddTable={addTable}
+              onAddTable={() => void addTable()}
               unassignedHighlight={false}
               roomWidthMm={roomWidthMm}
               roomHeightMm={roomHeightMm}
@@ -1953,7 +1994,7 @@ export default function SeatingPage() {
                   const tbl = tables.find((tb) => tb.id === id);
                   if (tbl) deleteTable(tbl);
                 }}
-                onAddTable={addTable}
+                onAddTable={() => void addTable()}
                 unassignedHighlight={draggingSeatedId !== null && unassignedHover}
                 roomWidthMm={roomWidthMm}
                 roomHeightMm={roomHeightMm}
