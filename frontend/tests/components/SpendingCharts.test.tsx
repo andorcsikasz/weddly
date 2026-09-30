@@ -5,7 +5,7 @@
 
 import type { BudgetCategory, BudgetLine } from "@shared/types";
 import { describe, expect, it } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { SpendingCharts } from "@/components/SpendingCharts";
 import { I18nProvider, useT } from "@/lib/i18n";
@@ -93,5 +93,38 @@ describe("<SpendingCharts>", () => {
   it("shows the empty state when there are no planned costs", () => {
     renderCharts([line("venue", 0)]);
     expect(screen.getByText(/Add planned costs to see/i)).toBeInTheDocument();
+  });
+
+  it("mounts both faces in one box so the card cannot resize on a flip", () => {
+    // The flip used to mount only the active face, so the card resized from
+    // "donut + 3 rows" to "a list of 4+" and the dashboard row jumped out from
+    // under the pointer mid-click. Both faces now share one grid cell with the
+    // inactive one `invisible`, so the box is always the taller of the two.
+    //
+    // happy-dom has no layout engine (every rect is 0×0), so the assertion that
+    // can actually fail here is the STRUCTURE: both faces mounted at once, as
+    // siblings in the same parent, exactly one of them hidden.
+    renderCharts([line("venue", 600, 150), line("catering", 400, 100)]);
+
+    const ring = screen.getByText("25%").closest("div.col-start-1");
+    const details = screen.getByText("Avg per item").closest("div.col-start-1");
+    expect(ring).toBeTruthy();
+    expect(details).toBeTruthy();
+    expect(ring?.parentElement).toBe(details?.parentElement);
+
+    // Before the flip: front readable, back present but invisible.
+    expect(ring?.className).not.toContain("invisible");
+    expect(details?.className).toContain("invisible");
+    // One hidden face, not two: a `hidden` or `display:none` face would take the
+    // box with it, and an `opacity-0` one would stay clickable.
+    expect(screen.getByText("Avg per item").closest(".invisible")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    // After it the roles swap and the card is untouched — still one box, one face.
+    expect(details?.className).not.toContain("invisible");
+    expect(ring?.className).toContain("invisible");
+    expect(screen.getByText("Avg per item")).toBeVisible();
+    expect(ring?.parentElement).toBe(details?.parentElement);
   });
 });

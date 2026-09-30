@@ -405,7 +405,16 @@ function CardHeader({
  *  3-D flip animation, just a content switch (per design: the spin was noise).
  *  The shell is a full-height flex column so, when the grid stretches both cards
  *  to equal height, the active face stays vertically centred instead of clumping
- *  at the top. */
+ *  at the top.
+ *
+ *  BOTH faces stay mounted, stacked in one grid cell, and the inactive one is
+ *  `invisible` — `visibility: hidden` still occupies the box, but removes the
+ *  face from painting, from the tab order and from the a11y tree. The two faces
+ *  have different natural heights (a 132px donut beside three rows vs. a four-to
+ *  six row list), so mounting only the active face resized the card on every
+ *  toggle and moved the whole dashboard row out from under the pointer. Measuring
+ *  both and keeping the taller box means the flip swaps what is inside it and
+ *  nothing else. */
 function FlipCard({
   frontTitle,
   backTitle,
@@ -433,7 +442,18 @@ function FlipCard({
         onFlip={() => setFlipped((v) => !v)}
         flipLabel={flipped ? toFrontLabel : toBackLabel}
       />
-      <div className="flex flex-1 flex-col justify-center">{flipped ? back : front}</div>
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-1">
+        <div
+          className={`col-start-1 row-start-1 flex flex-col justify-center ${flipped ? "invisible" : ""}`}
+        >
+          {front}
+        </div>
+        <div
+          className={`col-start-1 row-start-1 flex flex-col justify-center ${flipped ? "" : "invisible"}`}
+        >
+          {back}
+        </div>
+      </div>
     </section>
   );
 }
