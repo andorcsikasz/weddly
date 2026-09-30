@@ -1470,10 +1470,6 @@ export default function MediaPage() {
       <div className="order-first mb-6 overflow-hidden rounded-3xl border border-paper-200 bg-white shadow-soft">
         {/* ── Photographer row ──────────────────────────────────────── */}
         <div ref={photographerRowRef}>
-          <h2 className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-600">
-            {t("media.photographer_title")}
-          </h2>
-
           {/* Saved gallery links (up to MAX_PHOTOGRAPHER_LINKS). Each is a
               settings-style row: hostname as the confident title, the full URL
               muted beneath, open + remove as quiet round icon buttons. */}
