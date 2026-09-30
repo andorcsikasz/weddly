@@ -105,6 +105,7 @@ import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast, ViewSelect } from "../components/ui";
 import { ApiError } from "../lib/api";
+import { GuestInvitesCenter } from "./GuestInvitesPage";
 import { guestCountBaseline } from "../lib/budget";
 import {
   type GuestUpsert,
@@ -376,6 +377,7 @@ export default function GuestsPage() {
     );
   }, [params]);
   const invitedFilter = params.get("invited") === "1";
+  const invitesRef = useRef<HTMLDivElement>(null);
   const accommodationFilter = params.get("accom") === "1";
   const householdFilter = params.get("household") === "closed";
   // Spreadsheet-style flat table lens. Orthogonal to the filter axes (they all
@@ -1134,6 +1136,19 @@ export default function GuestsPage() {
   }
   const toggleRsvp = (s: RsvpStatus) => toggleSetParam("rsvp", s);
   const toggleGroup = (g: GuestGroupTag) => toggleSetParam("group", g);
+  // The invitations center (formerly /app/invites) lives under this exact
+  // lens: grouped households, invited only. Every "send invites" affordance
+  // opens it in place rather than leaving the page.
+  function openInvites() {
+    patchParams((p) => {
+      p.set("household", "closed");
+      p.set("invited", "1");
+      p.delete("view");
+    });
+    requestAnimationFrame(() =>
+      invitesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }
   function toggleInvited() {
     patchParams((p) => {
       if (invitedFilter) p.delete("invited");
@@ -1354,7 +1369,7 @@ export default function GuestsPage() {
             <button
               type="button"
               className={GUEST_TOOL_BTN}
-              onClick={() => navigate("/app/invites")}
+              onClick={openInvites}
               title={t("guests.invite_send_hint")}
               aria-label={t("guests.invite_send")}
             >
@@ -1389,7 +1404,7 @@ export default function GuestsPage() {
             }}
             onAddGuest={() => setEditing({ guest: null, defaultHouseholdId: null })}
             onOpenMeals={() => setMealsOpen(true)}
-            onSendInvites={() => navigate("/app/invites")}
+            onSendInvites={openInvites}
           />
         </div>
       )}
@@ -1431,6 +1446,12 @@ export default function GuestsPage() {
             )
           }
         />
+      )}
+
+      {invitedFilter && (
+        <div ref={invitesRef} className="scroll-mt-24">
+          <GuestInvitesCenter embedded onGuestsChanged={refresh} />
+        </div>
       )}
 
       {loading ? (

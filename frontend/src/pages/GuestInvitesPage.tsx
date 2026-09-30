@@ -1026,8 +1026,25 @@ function ChannelChip({
   );
 }
 
-/** `/app/invites` — full-screen guest invitations & communication center. */
+/** The standalone page is now only a thin shell (kept so the component can
+ *  be exercised on its own); the route itself redirects to the guest list,
+ *  which embeds the same center under its "invited" lens. */
 export default function GuestInvitesPage() {
+  return <GuestInvitesCenter />;
+}
+
+/** Guest invitations and communication: monitoring, the per-guest channel
+ *  list, the three composers and the broadcast history. Merged into
+ *  `/app/guests?household=closed&invited=1` (owner direction), where it renders
+ *  `embedded`: no full-screen header, no back link, no page title. */
+export function GuestInvitesCenter({
+  embedded = false,
+  onGuestsChanged,
+}: {
+  embedded?: boolean;
+  /** A channel toggle here changes a guest row the host page also renders. */
+  onGuestsChanged?: () => void;
+}) {
   const { t, locale } = useT();
   const confirm = useConfirm();
   const toast = useToast();
@@ -1251,6 +1268,7 @@ export default function GuestInvitesPage() {
         setJustToggled((c) => (c === key ? null : c));
       }, 450);
       await loadGuests();
+      onGuestsChanged?.();
     } catch {
       toast.error(t("common.error_generic"));
     }
@@ -1278,32 +1296,38 @@ export default function GuestInvitesPage() {
   }, [loadMessages]);
 
   return (
-    <div className="min-h-screen bg-paper-50 dark:bg-umber-950">
-      <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
-        <div className="mx-auto flex max-w-5xl items-center px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
-          <Link
-            to="/app/guests"
-            className="inline-flex h-11 items-center gap-2 text-sm text-umber-700 transition-colors hover:text-umber-900 dark:text-umber-200 dark:hover:text-paper-50"
-          >
-            <ArrowLeft size={16} aria-hidden="true" />
-            {t("guest_invites.back_to_guests")}
-          </Link>
-        </div>
-      </header>
+    <div className={embedded ? "mb-8" : "min-h-screen bg-paper-50 dark:bg-umber-950"}>
+      {!embedded && (
+        <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
+          <div className="mx-auto flex max-w-5xl items-center px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
+            <Link
+              to="/app/guests"
+              className="inline-flex h-11 items-center gap-2 text-sm text-umber-700 transition-colors hover:text-umber-900 dark:text-umber-200 dark:hover:text-paper-50"
+            >
+              <ArrowLeft size={16} aria-hidden="true" />
+              {t("guest_invites.back_to_guests")}
+            </Link>
+          </div>
+        </header>
+      )}
 
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+      <main
+        className={embedded ? undefined : "mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10"}
+      >
         {/* The page's own explanation lives behind the "i" rather than as a
             paragraph under every heading — the same treatment the three
             composer cards get. */}
-        <div className="flex items-center gap-2">
-          <h1 className="font-grotesk text-3xl font-semibold text-umber-900 dark:text-paper-50 sm:text-4xl">
-            {t("guest_invites.title")}
-          </h1>
-          <InfoHint
-            text={t("guest_invites.subtitle")}
-            className="text-umber-500 dark:text-umber-300"
-          />
-        </div>
+        {!embedded && (
+          <div className="flex items-center gap-2">
+            <h1 className="font-grotesk text-3xl font-semibold text-umber-900 dark:text-paper-50 sm:text-4xl">
+              {t("guest_invites.title")}
+            </h1>
+            <InfoHint
+              text={t("guest_invites.subtitle")}
+              className="text-umber-500 dark:text-umber-300"
+            />
+          </div>
+        )}
 
         {loading ? (
           <div className="mt-8 flex flex-col gap-4">
@@ -1313,7 +1337,7 @@ export default function GuestInvitesPage() {
         ) : (
           <>
             {/* ── A) Monitoring ── */}
-            <section className="mt-6">
+            <section className={embedded ? undefined : "mt-6"}>
               <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
                 {t("guest_invites.monitoring_title")}
               </h2>

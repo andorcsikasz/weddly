@@ -100,7 +100,6 @@ const DecisionsPage = lazyWithReload(() => import("./pages/DecisionsPage"));
 const DesignPage = lazyWithReload(() => import("./pages/DesignPage"));
 const GuestPageEditorPage = lazyWithReload(() => import("./pages/GuestPageEditorPage"));
 const GuestsPage = lazyWithReload(() => import("./pages/GuestsPage"));
-const GuestInvitesPage = lazyWithReload(() => import("./pages/GuestInvitesPage"));
 const HoneymoonPage = lazyWithReload(() => import("./pages/HoneymoonPage"));
 const RateVendorsPage = lazyWithReload(() => import("./pages/RateVendorsPage"));
 const InvitePage = lazyWithReload(() => import("./pages/InvitePage"));
@@ -1104,19 +1103,12 @@ export default function App() {
             </Page>
           }
         />
-        {/* Guest invitations + communication center. Declared as a SIBLING of
-         *  /app (higher route specificity than the /app parent) so it renders
-         *  full-screen WITHOUT the AppShell sidebar — same shape as
-         *  /app/planner/onboarding. Not in AppShell ITEMS, so no nav entry. */}
+        {/* The invitations + communication center now lives inside the guest
+         *  list's "invited" lens. The old address stays as a redirect because
+         *  mail already sent links to it. */}
         <Route
           path="/app/invites"
-          element={
-            <RequireCoupleAuth>
-              <Page>
-                <GuestInvitesPage />
-              </Page>
-            </RequireCoupleAuth>
-          }
+          element={<Navigate to="/app/guests?household=closed&invited=1" replace />}
         />
         {/* All /app/* routes share one mounted AppShellLayout — the parent
          *  Route element renders <AppShell> + <Outlet/>, so the sidebar,
