@@ -204,6 +204,16 @@ const RSVP_TONE: Record<RsvpStatus, string> = {
     "border-dashed border-paper-300 bg-paper-100 text-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-400",
 };
 
+/** Solid fills for the icon-only RSVP cell (table view). With no word
+ *  beside it the colour carries the whole answer, so it runs at full
+ *  strength: green / yellow / red / grey, white glyph (black on the yellow). */
+const RSVP_SOLID: Record<RsvpStatus, string> = {
+  yes: "border-emerald-500 bg-emerald-500 text-white",
+  maybe: "border-amber-400 bg-amber-400 text-ink-900",
+  no: "border-red-500 bg-red-500 text-white",
+  pending: "border-stone-400 bg-stone-400 text-white dark:border-stone-500 dark:bg-stone-500",
+};
+
 /** One lucide glyph per status for the RSVP chip + menu. The same icons as the
  *  couple-facing RSVP vocabulary: check = coming, ban = declined, minus =
  *  tentative, clock = still waiting. */
@@ -2893,8 +2903,10 @@ function RsvpPicker({
         }}
         title={iconOnly ? t(`guests.rsvp_${value}`) : undefined}
         className={`inline-flex items-center rounded-full border text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${
-          iconOnly ? "h-7 w-7 justify-center" : "gap-1.5 px-2.5 py-1"
-        } ${RSVP_TONE[value]}`}
+          iconOnly
+            ? `h-7 w-7 justify-center ${RSVP_SOLID[value]}`
+            : `gap-1.5 px-2.5 py-1 ${RSVP_TONE[value]}`
+        }`}
       >
         {RSVP_GLYPH[value]}
         {!iconOnly && <span>{t(`guests.rsvp_${value}`)}</span>}
