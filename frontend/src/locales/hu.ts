@@ -1746,7 +1746,7 @@ const hu: LocaleMessages = {
       "Ezt használjuk, hogy ne ajánljunk olyan szolgáltatókat, akik a ti országotokban nem dolgoznak.",
     country_placeholder: "Kezdj el gépelni…",
     country_required: "Válassz egy országot.",
-    invite_email_label: "A párod email címe",
+    invite_email_label: "Hívd meg a párodat, hogy együtt tervezzétek",
     invite_email_placeholder: "nev@example.com",
     invite_skip_hint: "Opcionális — hagyd üresen a kihagyáshoz, később is meghívhatod.",
     style_help: "Több is választható. A stílus csak címkézi a páros profilját, nem korlátoz.",

@@ -1769,7 +1769,7 @@ const es: LocaleMessages = {
     country_helper: "Lo usaremos para no sugerirte proveedores que no puedan trabajar en tu país.",
     country_placeholder: "Empieza a escribir…",
     country_required: "Elige un país.",
-    invite_email_label: "Correo de tu pareja",
+    invite_email_label: "Invita a tu pareja a formar parte de este viaje",
     invite_email_placeholder: "nombre@example.com",
     invite_skip_hint: "Opcional — déjalo en blanco para omitir. Puedes invitarla más tarde.",
     style_help:

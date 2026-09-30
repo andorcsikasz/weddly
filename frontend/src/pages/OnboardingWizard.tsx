@@ -124,7 +124,7 @@ function partnerEmailValid(f: FormState): boolean {
 // question carries the step; the sub-questions that used to sit beneath it
 // are gone (the segmented control answers them).
 const STEP_TITLE =
-  "font-grotesk text-[2rem] leading-[1.05] tracking-tight sm:text-[2.75rem] sm:leading-[1.03] text-umber-900 dark:text-paper-50";
+  "text-center font-grotesk text-[2rem] leading-[1.05] tracking-tight sm:text-[2.75rem] sm:leading-[1.03] text-umber-900 dark:text-paper-50";
 
 const DEFAULT_FORM: FormState = {
   bride_name: "",

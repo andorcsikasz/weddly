@@ -1794,7 +1794,7 @@ const de: LocaleMessages = {
       "Damit schlagen wir Ihnen keine Dienstleister vor, die in Ihrem Land nicht arbeiten.",
     country_placeholder: "Tippen Sie los…",
     country_required: "Wählen Sie ein Land.",
-    invite_email_label: "E-Mail des Partners",
+    invite_email_label: "Lade deinen Partner ein, diesen Weg mit dir zu gehen",
     invite_email_placeholder: "name@example.com",
     invite_skip_hint:
       "Optional, leer lassen zum Überspringen. Sie können später jederzeit einladen.",

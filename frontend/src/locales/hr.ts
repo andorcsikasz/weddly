@@ -1756,7 +1756,7 @@ const hr: LocaleMessages = {
       "To koristimo kako vam ne bismo predlagali dobavljače koji ne rade u vašoj zemlji.",
     country_placeholder: "Počnite tipkati…",
     country_required: "Odaberite zemlju.",
-    invite_email_label: "E-pošta partnera",
+    invite_email_label: "Pozovi partnera da bude dio vašeg putovanja",
     invite_email_placeholder: "name@example.com",
     invite_skip_hint: "Neobavezno, ostavite prazno da preskočite. Pozvati možete i kasnije.",
     style_help: "Odaberite koliko god želite. Stil je samo oznaka na profilu, ništa ne ograničava.",
