@@ -1368,10 +1368,6 @@ export default function GuestsPage() {
         </div>
       )}
 
-      {listableGuests.length > 0 && (
-        <RsvpProgress guests={listableGuests} active={rsvpSet} onToggle={toggleRsvp} />
-      )}
-
       {/* ── Search + stackable filters + sort ───────────────────────────
           One toolbar drives search, the expandable filter panel (RSVP, side
           /group, invited, accommodation), the sort control, and the active
@@ -6886,85 +6882,6 @@ function ActiveChip({
         <X size={12} />
       </button>
     </span>
-  );
-}
-
-const RSVP_BAR: Record<RsvpStatus, string> = {
-  yes: "bg-emerald-500 dark:bg-emerald-400",
-  maybe: "bg-amber-400 dark:bg-amber-300",
-  no: "bg-blush-400 dark:bg-blush-300",
-  pending: "bg-paper-300 dark:bg-umber-600",
-};
-const RSVP_PROGRESS_ORDER: RsvpStatus[] = ["yes", "maybe", "no", "pending"];
-
-/** The one number the header used to leave out: how many guests have
- *  answered. A segmented bar (share of each answer) over a legend whose
- *  entries double as the RSVP filter, so "who haven't we heard from?" is one
- *  click rather than a trip through the Filters panel. An empty status is
- *  skipped in the legend so a fresh list doesn't read as three zeros. */
-function RsvpProgress({
-  guests,
-  active,
-  onToggle,
-}: {
-  guests: Guest[];
-  active: Set<RsvpStatus>;
-  onToggle: (s: RsvpStatus) => void;
-}) {
-  const { t } = useT();
-  const counts: Record<RsvpStatus, number> = { yes: 0, maybe: 0, no: 0, pending: 0 };
-  for (const g of guests) counts[g.rsvp_status] += 1;
-  const total = guests.length;
-  const responded = total - counts.pending;
-  return (
-    <section
-      aria-label={t("guests.rsvp_progress", { responded, total })}
-      className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2"
-    >
-      <p className="order-1 shrink-0 text-sm text-ink-600 dark:text-umber-300">
-        <span className="font-semibold tabular-nums text-ink-900 dark:text-paper-50">
-          {responded}/{total}
-        </span>{" "}
-        {t("guests.rsvp_progress_unit")}
-      </p>
-      <div
-        aria-hidden
-        className="order-3 flex h-1.5 min-w-0 basis-full overflow-hidden rounded-full sm:order-2 sm:flex-1 sm:basis-0 bg-paper-200 dark:bg-umber-700"
-      >
-        {RSVP_PROGRESS_ORDER.map((s) =>
-          counts[s] > 0 ? (
-            <div
-              key={s}
-              className={`${RSVP_BAR[s]} transition-[width] duration-500`}
-              style={{ width: `${(counts[s] / total) * 100}%` }}
-            />
-          ) : null,
-        )}
-      </div>
-      <ul className="order-2 -mr-2.5 ml-auto flex shrink-0 flex-wrap items-center gap-1 sm:order-3 sm:ml-0">
-        {RSVP_PROGRESS_ORDER.map((s) =>
-          counts[s] > 0 ? (
-            <li key={s}>
-              <button
-                type="button"
-                aria-pressed={active.has(s)}
-                onClick={() => onToggle(s)}
-                title={t("guests.rsvp_progress_filter", { status: t(`guests.rsvp_${s}`) })}
-                className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 ${
-                  active.has(s)
-                    ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                    : "border-transparent text-ink-600 hover:border-paper-300 hover:bg-paper-100 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:bg-umber-800"
-                }`}
-              >
-                <span aria-hidden className={`h-2 w-2 rounded-full ${RSVP_BAR[s]}`} />
-                {t(`guests.rsvp_${s}`)}
-                <span className="font-semibold tabular-nums">{counts[s]}</span>
-              </button>
-            </li>
-          ) : null,
-        )}
-      </ul>
-    </section>
   );
 }
 
