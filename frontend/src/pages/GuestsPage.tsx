@@ -992,6 +992,11 @@ export default function GuestsPage() {
     for (const g of listableGuests) counts.set(g.group_tag, (counts.get(g.group_tag) ?? 0) + 1);
     return counts;
   }, [listableGuests]);
+  const guestCountByRsvp = useMemo(() => {
+    const counts = new Map<RsvpStatus, number>();
+    for (const g of listableGuests) counts.set(g.rsvp_status, (counts.get(g.rsvp_status) ?? 0) + 1);
+    return counts;
+  }, [listableGuests]);
 
   // Closed households = multi-member households (explicitly grouped units).
   // Declared up here because the flat-list predicate below needs the id set:
@@ -1380,6 +1385,7 @@ export default function GuestsPage() {
           rsvpSet={rsvpSet}
           groupSet={groupSet}
           guestCountByGroup={guestCountByGroup}
+          guestCountByRsvp={guestCountByRsvp}
           invited={invitedFilter}
           accommodation={accommodationFilter}
           householdView={householdFilter}
@@ -1456,20 +1462,22 @@ export default function GuestsPage() {
         // Spreadsheet lens: every (filtered) guest in one table with inline
         // dropdown editing for group / RSVP / meal / dietary. Search and all
         // stacked filters keep applying; only the presentation changes.
-        <div className="space-y-3">
-          {!(debouncedQuery && searching) && (
-            <p className="text-sm text-ink-500 dark:text-umber-300">
-              {filteredFlatGuests.length === 0
-                ? t("guests.filtered_results_empty")
-                : t(
-                    filteredFlatGuests.length === 1
-                      ? "guests.filtered_results_one"
-                      : "guests.filtered_results_other",
-                    { count: filteredFlatGuests.length },
-                  )}
-            </p>
-          )}
+        <div>
           <GuestTable
+            summary={
+              !(debouncedQuery && searching) && (
+                <p className="text-sm text-ink-500 dark:text-umber-300">
+                  {filteredFlatGuests.length === 0
+                    ? t("guests.filtered_results_empty")
+                    : t(
+                        filteredFlatGuests.length === 1
+                          ? "guests.filtered_results_one"
+                          : "guests.filtered_results_other",
+                        { count: filteredFlatGuests.length },
+                      )}
+                </p>
+              )
+            }
             guests={filteredFlatGuests}
             allGuests={listableGuests}
             households={households}
@@ -2775,10 +2783,14 @@ function RsvpPicker({
   value,
   onChange,
   ariaLabel,
+  iconOnly = false,
 }: {
   value: RsvpStatus;
   onChange: (s: RsvpStatus) => void;
   ariaLabel: string;
+  /** Glyph + tone only, no word (the table column). The status is still in
+   *  the aria-label and the hover title, and the menu spells every option. */
+  iconOnly?: boolean;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -2879,10 +2891,13 @@ function RsvpPicker({
             openMenu();
           }
         }}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${RSVP_TONE[value]}`}
+        title={iconOnly ? t(`guests.rsvp_${value}`) : undefined}
+        className={`inline-flex items-center rounded-full border text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${
+          iconOnly ? "h-7 w-7 justify-center" : "gap-1.5 px-2.5 py-1"
+        } ${RSVP_TONE[value]}`}
       >
         {RSVP_GLYPH[value]}
-        <span>{t(`guests.rsvp_${value}`)}</span>
+        {!iconOnly && <span>{t(`guests.rsvp_${value}`)}</span>}
       </button>
       {open &&
         pos &&
@@ -2973,6 +2988,7 @@ function GroupCellChip({
  *  sort axis. Columns render from the couple's saved layout (see
  *  `GUEST_TABLE_COLS`): headers drag to reorder, the Columns menu hides. */
 function GuestTable({
+  summary,
   guests,
   allGuests,
   households,
@@ -2990,6 +3006,9 @@ function GuestTable({
   onDeleteGuest,
   onToggleGuestInvited,
 }: {
+  /** Result count, drawn on the same row as the Columns menu so the two
+   *  don't each spend a row above the table. */
+  summary?: ReactNode;
   guests: Guest[];
   /** The couple's whole listable roster, NOT narrowed by the active search/
    *  filters. Used for duplicate-name detection in the always-present new-row
@@ -3142,7 +3161,8 @@ function GuestTable({
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-end">
+      <div className="flex min-h-9 items-center justify-between gap-3">
+        <div className="min-w-0">{summary}</div>
         <GuestTableColumnsMenu
           prefs={prefs}
           onChange={setPrefs}
@@ -3327,6 +3347,7 @@ function GuestTableRow({
               value={g.rsvp_status}
               onChange={(v) => void onUpdateGuest(g, { rsvp_status: v })}
               ariaLabel={t("guests.table_col_rsvp")}
+              iconOnly
             />
           </td>
         );
@@ -3821,7 +3842,7 @@ function CollapseAllButton({
   return (
     <button
       type="button"
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-600 transition-all hover:border-paper-400 hover:text-ink-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:border-umber-600"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-600 transition-all hover:border-paper-400 hover:text-ink-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:border-umber-600"
       onClick={() => onSetCollapsed(householdIds, !allCollapsed)}
       aria-label={label}
       title={label}
@@ -6566,6 +6587,7 @@ function GuestFilterBar({
   rsvpSet,
   groupSet,
   guestCountByGroup,
+  guestCountByRsvp,
   invited,
   accommodation,
   householdView,
@@ -6589,6 +6611,10 @@ function GuestFilterBar({
   /** Guest count per side/group tag, shown on each chip so a couple can see
    *  e.g. "His family (12)" before ever opening the grouped view. */
   guestCountByGroup: Map<GuestGroupTag, number>;
+  /** Same, per RSVP answer. An option nobody holds is hidden: a filter that
+   *  can only ever return an empty list is noise. A selected one stays so it
+   *  can still be switched off. */
+  guestCountByRsvp: Map<RsvpStatus, number>;
   invited: boolean;
   accommodation: boolean;
   householdView: boolean;
@@ -6612,7 +6638,9 @@ function GuestFilterBar({
   const [open, setOpen] = useState(activeFilterCount > 0);
   // Collapses to a tap target on phones (Uber-style: icon in, full-width
   // field out); sm+ keeps the field open since there's room for it there.
-  const [searchOpen, setSearchOpen] = useState(false);
+  // Starts open when a query is already set (a shared ?q= link), so the
+  // filter that is narrowing the list is never hidden behind an icon.
+  const [searchOpen, setSearchOpen] = useState(query !== "");
   const searchInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.focus();
@@ -6647,8 +6675,12 @@ function GuestFilterBar({
       <div className="flex flex-wrap items-center gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
         <div
           data-tour-target="guests-search"
-          className={`relative min-w-0 sm:w-full ${
-            searchOpen ? "w-full basis-full" : "w-9 shrink-0"
+          /* An icon at every width until asked for. Clicking it opens the
+           *  field AND focuses it (the effect on `searchOpen`), so the click
+           *  that opened it behaves like a click into the input. On sm+ it
+           *  grows across its grid column; on phones it takes its own row. */
+          className={`relative min-w-0 transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            searchOpen ? "w-full basis-full sm:basis-auto" : "w-9 shrink-0"
           }`}
         >
           {!searchOpen && (
@@ -6657,12 +6689,12 @@ function GuestFilterBar({
               onClick={() => setSearchOpen(true)}
               aria-label={t("guests.search_label")}
               aria-expanded={searchOpen}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-600 transition-colors hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 sm:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 bg-white text-ink-600 transition-colors hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
             >
               <Search size={14} aria-hidden />
             </button>
           )}
-          <div className={searchOpen ? undefined : "hidden sm:block"}>
+          <div className={searchOpen ? undefined : "hidden"}>
             <Search
               size={14}
               aria-hidden
@@ -6671,7 +6703,7 @@ function GuestFilterBar({
             <input
               ref={searchInputRef}
               type="search"
-              className="input pl-9 pr-9 [&::-webkit-search-cancel-button]:appearance-none sm:pr-3"
+              className="input pl-9 pr-9 [&::-webkit-search-cancel-button]:appearance-none"
               placeholder={t("guests.search_placeholder")}
               aria-label={t("guests.search_label")}
               value={query}
@@ -6694,7 +6726,7 @@ function GuestFilterBar({
                   if (searchInputRef.current) searchInputRef.current.focus();
                 }}
                 aria-label={t("guests.search_clear")}
-                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 sm:hidden dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
               >
                 <X size={14} aria-hidden />
               </button>
@@ -6713,7 +6745,7 @@ function GuestFilterBar({
             className={`flex h-9 w-9 items-center justify-center transition-colors ${
               !tableView
                 ? "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                : "bg-paper-50 text-ink-500 hover:text-ink-900 dark:bg-umber-800 dark:text-umber-300 dark:hover:text-paper-100"
+                : "bg-white text-ink-500 hover:text-ink-900 dark:bg-umber-800 dark:text-umber-300 dark:hover:text-paper-100"
             }`}
             aria-pressed={!tableView}
             title={t("guests.view_cards")}
@@ -6727,7 +6759,7 @@ function GuestFilterBar({
             className={`flex h-9 w-9 items-center justify-center transition-colors ${
               tableView
                 ? "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                : "bg-paper-50 text-ink-500 hover:text-ink-900 dark:bg-umber-800 dark:text-umber-300 dark:hover:text-paper-100"
+                : "bg-white text-ink-500 hover:text-ink-900 dark:bg-umber-800 dark:text-umber-300 dark:hover:text-paper-100"
             }`}
             aria-pressed={tableView}
             title={t("guests.view_table")}
@@ -6747,20 +6779,32 @@ function GuestFilterBar({
             }))}
             onChange={onSetSort}
             ariaLabel={t("guests.sort_label")}
-            compact
+            iconOnly
+            solid
+            tone="mono"
             className="shrink-0"
           />
           <button
             type="button"
-            className="btn-outline shrink-0 px-3"
+            className={`flex h-9 min-w-9 shrink-0 items-center justify-center gap-1 rounded-full border px-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-400 ${
+              open
+                ? "border-umber-900 bg-umber-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+                : "border-paper-300 bg-white text-ink-600 hover:border-paper-400 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-200 dark:hover:border-umber-600"
+            }`}
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
             aria-label={t("guests.filters_button")}
+            title={t("guests.filters_button")}
           >
             <Filter size={14} aria-hidden />
-            <span className="hidden sm:inline">{t("guests.filters_button")}</span>
             {activeFilterCount > 0 && (
-              <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-umber-900 px-1.5 text-xs text-paper-50 dark:bg-paper-100 dark:text-umber-900">
+              <span
+                className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-xs ${
+                  open
+                    ? "bg-paper-50 text-umber-900 dark:bg-umber-900 dark:text-paper-50"
+                    : "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                }`}
+              >
                 {activeFilterCount}
               </span>
             )}
@@ -6770,34 +6814,39 @@ function GuestFilterBar({
       </div>
 
       {open && (
-        <div className="space-y-3 rounded-xl border border-paper-200 bg-paper-50/60 p-3 dark:border-umber-700 dark:bg-umber-900/40">
+        <div className="space-y-3 rounded-xl border border-paper-200 bg-white p-3 dark:border-umber-700 dark:bg-umber-900/40">
           <FilterGroup label={t("guests.filter_group_rsvp")}>
-            {rsvpOptions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                className={chip(rsvpSet.has(s))}
-                aria-pressed={rsvpSet.has(s)}
-                onClick={() => onToggleRsvp(s)}
-              >
-                {t(`guests.rsvp_${s}`)}
-              </button>
-            ))}
+            {rsvpOptions
+              .filter((s) => rsvpSet.has(s) || (guestCountByRsvp.get(s) ?? 0) > 0)
+              .map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={chip(rsvpSet.has(s))}
+                  aria-pressed={rsvpSet.has(s)}
+                  onClick={() => onToggleRsvp(s)}
+                >
+                  {t(`guests.rsvp_${s}`)}
+                  <span className="opacity-70">({guestCountByRsvp.get(s) ?? 0})</span>
+                </button>
+              ))}
           </FilterGroup>
           <FilterGroup label={t("guests.filter_group_side")}>
-            {GROUPS.map((g) => (
-              <button
-                key={g}
-                type="button"
-                className={groupChip(g, groupSet.has(g))}
-                aria-pressed={groupSet.has(g)}
-                onClick={() => onToggleGroup(g)}
-              >
-                <GroupIcon group={g} />
-                {t(`guests.group_${g}`)}
-                <span className="opacity-70">({guestCountByGroup.get(g) ?? 0})</span>
-              </button>
-            ))}
+            {GROUPS.filter((g) => groupSet.has(g) || (guestCountByGroup.get(g) ?? 0) > 0).map(
+              (g) => (
+                <button
+                  key={g}
+                  type="button"
+                  className={groupChip(g, groupSet.has(g))}
+                  aria-pressed={groupSet.has(g)}
+                  onClick={() => onToggleGroup(g)}
+                >
+                  <GroupIcon group={g} />
+                  {t(`guests.group_${g}`)}
+                  <span className="opacity-70">({guestCountByGroup.get(g) ?? 0})</span>
+                </button>
+              ),
+            )}
           </FilterGroup>
           <FilterGroup label={t("guests.filter_group_more")}>
             <button

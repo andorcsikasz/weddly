@@ -13,11 +13,13 @@ export type ViewSelectOption<T extends string> = {
 /** Which fill the selected row in the menu wears. Mirrors `SegmentedTone`:
  *  `ink` is the app-wide default (warm, matches the couple workspace), `steel`
  *  belongs to the vendor portal, which has used it since the calendar shipped. */
-export type ViewSelectTone = "ink" | "steel";
+export type ViewSelectTone = "ink" | "steel" | "mono";
 
 const TONE_ACTIVE: Record<ViewSelectTone, string> = {
   ink: "bg-blush-100 text-blush-800 dark:bg-blush-900/40 dark:text-blush-100",
   steel: "bg-steel-100 text-steel-800 dark:bg-steel-900/60 dark:text-steel-100",
+  /** Solid black, matching an active segment in the same toolbar (guests). */
+  mono: "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900",
 };
 
 /** The toolbar view picker: a pill-shaped trigger showing the current view and
@@ -41,6 +43,8 @@ export function ViewSelect<T extends string>({
   tone = "ink",
   className,
   compact = false,
+  iconOnly = false,
+  solid = false,
 }: {
   value: T;
   options: ReadonlyArray<ViewSelectOption<T>>;
@@ -52,6 +56,11 @@ export function ViewSelect<T extends string>({
    *  options carry icons; the label is still announced via `title` and the
    *  trigger's aria-label, and the menu always spells every option out. */
   compact?: boolean;
+  /** Current option's icon alone at EVERY width (the menu still spells each
+   *  option out). For toolbars where every neighbour is already an icon. */
+  iconOnly?: boolean;
+  /** White fill on the trigger, for a toolbar whose other buttons have one. */
+  solid?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -89,12 +98,14 @@ export function ViewSelect<T extends string>({
         aria-label={current ? `${ariaLabel}: ${current.label}` : ariaLabel}
         title={current?.label}
         className={`inline-flex items-center gap-1.5 rounded-full border border-paper-300 py-1.5 text-sm text-ink-700 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100 ${
-          compact ? "px-2.5 sm:px-3.5" : "px-3.5"
-        }`}
+          iconOnly ? "px-2.5" : compact ? "px-2.5 sm:px-3.5" : "px-3.5"
+        }${solid ? " bg-white dark:bg-umber-800" : ""}`}
       >
         {current?.icon}
         {current ? (
-          <span className={compact ? "hidden sm:inline" : undefined}>{current.label}</span>
+          <span className={iconOnly ? "sr-only" : compact ? "hidden sm:inline" : undefined}>
+            {current.label}
+          </span>
         ) : null}
         <ChevronDown size={15} aria-hidden="true" />
       </button>
