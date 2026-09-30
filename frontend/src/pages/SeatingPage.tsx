@@ -20,7 +20,6 @@ import {
   seatingProgress,
 } from "@shared/seating";
 import {
-  Armchair,
   Baby,
   Briefcase,
   Check,
@@ -1882,18 +1881,14 @@ export default function SeatingPage() {
       </div>
 
       {tables.length === 0 ? (
-        // Empty-state action card — always shows; in seat mode the user
-        // needs to switch to Edit first to add tables.
-        <div className="card stationery">
-          <div className="text-center">
-            <Armchair size={28} className="mx-auto text-ink-500 dark:text-umber-300" />
-            <h3 className="mt-3 text-base font-semibold">{t("seating.no_tables")}</h3>
-            <p className="mx-auto mt-1 max-w-md text-sm text-ink-600 dark:text-umber-200">
-              {guests.length === 0
-                ? t("seating.empty_body_no_guests")
-                : t("seating.add_first_table")}
-            </p>
-          </div>
+        // First-run: the room comes first, then the first table lands centred
+        // in it. One question per screen, the answer big, one primary action,
+        // same shape as the guests first-run flow. Always shows; in seat mode
+        // the user needs to switch to Edit first to add tables.
+        <section className="mx-auto max-w-xl pb-10 pt-2 sm:pt-8">
+          <p className="mb-2 text-sm font-medium text-ink-500 dark:text-umber-300">
+            {t("seating.no_tables")}
+          </p>
           <RoomSizeStep
             draft={roomDraft}
             onChange={(next) => {
@@ -1901,23 +1896,37 @@ export default function SeatingPage() {
               setRoomDraft(next);
             }}
           />
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <p className="mt-8 text-sm text-ink-500 dark:text-umber-300">
+            {guests.length === 0 ? t("seating.empty_body_no_guests") : t("seating.add_first_table")}
+          </p>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
             {guests.length === 0 ? (
               <>
-                <Link to="/app/guests" className="btn-primary">
-                  <Users size={16} aria-hidden /> {t("seating.empty_cta_add_guests")}
-                </Link>
-                <button type="button" className="btn-outline" onClick={addFirstTable}>
+                <button
+                  type="button"
+                  className="btn-outline justify-center bg-white py-3.5 text-base sm:flex-1 dark:bg-umber-800"
+                  onClick={addFirstTable}
+                >
                   <Plus size={16} aria-hidden /> {t("seating.empty_cta_fallback_table")}
                 </button>
+                <Link
+                  to="/app/guests"
+                  className="btn-primary justify-center py-3.5 text-base sm:flex-1"
+                >
+                  <Users size={16} aria-hidden /> {t("seating.empty_cta_add_guests")}
+                </Link>
               </>
             ) : (
-              <button type="button" className="btn-primary" onClick={addFirstTable}>
+              <button
+                type="button"
+                className="btn-primary w-full justify-center py-3.5 text-base"
+                onClick={addFirstTable}
+              >
                 <Plus size={16} aria-hidden /> {t("seating.empty_cta_add_table")}
               </button>
             )}
           </div>
-        </div>
+        </section>
       ) : mode === "edit" ? (
         // ── EDIT MODE ────────────────────────────────────────────────────────
         // md+: full-height row, map flex-1 + fixed-width editor column.
