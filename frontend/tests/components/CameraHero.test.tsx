@@ -49,7 +49,7 @@ describe("<CameraHero>", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Collect every wedding memory in one place",
+        name: "Capture everyone’s perspective",
       }),
     ).toBeInTheDocument();
     expect(
