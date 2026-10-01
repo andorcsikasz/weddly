@@ -4172,9 +4172,19 @@ export const photoAlbumApi = {
   filmAccess: (): Promise<{ access: FilmAccessCheck }> =>
     apiFetch<{ access: FilmAccessCheck }>("GET", "/api/photo-albums/film-access"),
 
-  /** Stripe Checkout session for the €7.90, 200-guest unlock. */
-  filmCheckout: (): Promise<{ url: string }> =>
-    apiFetch<{ url: string }>("POST", "/api/photo-albums/checkout", {}),
+  /** Stripe Checkout (EUR) for a film tier (shared/film_pricing.ts). The
+   *  server charges the tier minus what the film has already been paid. */
+  filmCheckout: (cap?: number): Promise<{ url: string }> =>
+    apiFetch<{ url: string }>("POST", "/api/photo-albums/checkout", cap ? { cap } : {}),
+
+  /** Camera-only (non-Weddly) workspace for this account, see
+   *  backend routes/camera_events.ts. Then `create` the film and check out. */
+  createCameraEvent: (body: {
+    bride_name: string;
+    groom_name: string;
+    wedding_date: string | null;
+  }): Promise<{ couple_id: number }> =>
+    apiFetch<{ couple_id: number }>("POST", "/api/camera/events", body),
 
   /** Create (or return existing) the couple's film. */
   create(

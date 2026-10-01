@@ -3567,10 +3567,14 @@ const hu: LocaleMessages = {
     film_full_guest_list_link: "Teljes meghívotti lista",
     film_shots_short: "{{n}} kép",
     film_uploading: "Feltöltés {{done}}/{{total}}",
-    film_activated: "A film feloldva. Akár 200 vendég.",
+    film_activated: "A film feloldva.",
     film_upgrade_body: "{{cap}} vendég fér erre a filmre.",
-    film_upgrade_cta: "200-ra fel",
+    film_upgrade_cta: "Bővítés",
     film_upgrade_unavailable: "A bővítés most nem elérhető",
+    film_tiers_title: "Hány vendég fotózzon?",
+    film_tier_label: "Legfeljebb {n} vendég",
+    film_unpaid_body: "A film még nem fogad vendégeket. Válassz csomagot, és a QR-kód azonnal él.",
+    film_checkout_soon: "A fizetés hamarosan indul. Addig a film nem nyílik meg a vendégeknek.",
     gallery_title: "A film",
     gallery_show: "Fotók megmutatása",
     gallery_hide: "Fotók elrejtése",
@@ -3670,10 +3674,6 @@ const hu: LocaleMessages = {
   },
   design: {
     title: "Arculat",
-    hint: "Válassz egy stílust, színpalettát és betűtípust. Ez jelenik meg a vendégoldalon és a nyomtatható kártyákon.",
-    // A mintaasztal: négy kész stílus, a pár saját nevével.
-    choose: "Válassz stílust",
-    look: { change: "Csere" },
     intro: {
       title: "Készítsd el a weboldalatok",
       sub: "Tartsd naprakészen a vendégeiteket",
@@ -3682,6 +3682,10 @@ const hu: LocaleMessages = {
       step_share: "Oszd meg a linket",
       start: "Kezdjük",
     },
+    hint: "Válassz egy stílust, színpalettát és betűtípust. Ez jelenik meg a vendégoldalon és a nyomtatható kártyákon.",
+    // A mintaasztal: négy kész stílus, a pár saját nevével.
+    choose: "Válassz stílust",
+    look: { change: "Csere" },
     // A bélyeg mindig azt a felületet mutatja, amelyiket éppen nem szerkeszted.
     stamp: { to_print: "Nyomtatványok megnyitása", to_site: "Vendégoldal megnyitása" },
     style_switch_confirm: {
@@ -9041,6 +9045,14 @@ const hu: LocaleMessages = {
     pricing_note: "A foglalás hamarosan nyílik.",
     create_event_cta: "Esemény létrehozása",
     roll_film_name: "Anna & Bálint",
+    start_title: "Hozzátok létre az eseményt",
+    start_body:
+      "Adjátok meg a neveteket és a dátumot, válasszátok ki a vendégszámot, és a fizetés után a QR-kód azonnal él.",
+    start_bride: "Első név",
+    start_groom: "Második név",
+    start_date: "Az esküvő dátuma",
+    start_pay_cta: "Tovább a fizetéshez",
+    start_secure_note: "Biztonságos fizetés a Stripe-on, euróban.",
     share_title: "Osszátok meg így:",
     share_tab_qr: "QR-kód",
     share_tab_link: "Link",

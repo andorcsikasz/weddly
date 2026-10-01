@@ -253,7 +253,18 @@ async function sendKindInner<K extends EmailKind>(
   if (target.user) {
     const prefs = ensurePreferences(target.user.id);
     unsubscribeToken = prefs.unsubscribe_token;
-    if (category === "lifecycle" && prefs.lifecycle_opt_out) {
+    // A camera-only account (users.camera_only, routes/camera_events.ts) came
+    // for one wedding film, not for the planner: the planner's lifecycle
+    // drip (invite your partner, set a budget, countdowns) is not theirs to
+    // receive. Transactional mail about their film still goes out.
+    const cameraOnly =
+      category === "lifecycle" &&
+      (
+        db.prepare("SELECT camera_only FROM users WHERE id = ?").get(target.user.id) as
+          | { camera_only: number }
+          | undefined
+      )?.camera_only === 1;
+    if (category === "lifecycle" && (prefs.lifecycle_opt_out || cameraOnly)) {
       const built = buildEmail(kind, payload, {
         recipientName: recipient.name,
         recipientLocale,

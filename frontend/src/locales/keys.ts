@@ -4169,6 +4169,10 @@ export interface LocaleMessages {
     film_upgrade_body: string;
     film_upgrade_cta: string;
     film_upgrade_unavailable: string;
+    film_tiers_title: string;
+    film_tier_label: string;
+    film_unpaid_body: string;
+    film_checkout_soon: string;
     /** The couple's own view of the film — bypasses the guest reveal lock. */
     gallery_title: string;
     /** Accordion on the couple's own made pictures — collapsed by default so
@@ -4283,10 +4287,6 @@ export interface LocaleMessages {
   /** /app/design — the curated wedding visual-identity editor. */
   design: {
     title: string;
-    /** InfoHint next to the title. */
-    hint: string;
-    /** The Sample Table: four finished looks on the couple's own names. */
-    choose: string;
     /** First-visit intro on /app/design/website. */
     intro: {
       title: string;
@@ -4296,6 +4296,10 @@ export interface LocaleMessages {
       step_share: string;
       start: string;
     };
+    /** InfoHint next to the title. */
+    hint: string;
+    /** The Sample Table: four finished looks on the couple's own names. */
+    choose: string;
     look: { change: string };
     /** The Look Bar stamp always names the surface you are NOT editing. */
     stamp: { to_print: string; to_site: string };
@@ -10363,6 +10367,13 @@ export interface LocaleMessages {
     pricing_note: string;
     create_event_cta: string;
     roll_film_name: string;
+    start_title: string;
+    start_body: string;
+    start_bride: string;
+    start_groom: string;
+    start_date: string;
+    start_pay_cta: string;
+    start_secure_note: string;
     share_title: string;
     share_tab_qr: string;
     share_tab_link: string;

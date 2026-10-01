@@ -3606,10 +3606,16 @@ const es: LocaleMessages = {
     film_full_guest_list_link: "Ver la lista completa de invitados",
     film_shots_short: "{{n}} fotos",
     film_uploading: "Subiendo {{done}}/{{total}}",
-    film_activated: "Película desbloqueada. Hasta 200 invitados.",
+    film_activated: "Película desbloqueada.",
     film_upgrade_body: "{{cap}} invitados en esta película.",
-    film_upgrade_cta: "Ampliar a 200",
+    film_upgrade_cta: "Ampliar",
     film_upgrade_unavailable: "Ampliación no disponible por ahora",
+    film_tiers_title: "¿Cuántos invitados harán fotos?",
+    film_tier_label: "Hasta {n} invitados",
+    film_unpaid_body:
+      "La película aún no admite invitados. Elige un plan y el código QR se activa al momento.",
+    film_checkout_soon:
+      "Los pagos abren pronto. Hasta entonces la película sigue cerrada a los invitados.",
     gallery_title: "La película",
     gallery_show: "Mostrar fotos",
     gallery_hide: "Ocultar fotos",
@@ -3710,12 +3716,6 @@ const es: LocaleMessages = {
   },
   design: {
     title: "Diseño",
-    hint: "Elige un estilo, una paleta y una tipografía. Definen tu página de la boda y tus tarjetas imprimibles.",
-    // The Sample Table: four finished looks on the couple's own names.
-    choose: "Elige un estilo",
-    look: { change: "Cambiar" },
-    // The Look Bar stamp always shows the surface you are NOT editing.
-    stamp: { to_print: "Abrir tarjetas impresas", to_site: "Abrir web de la boda" },
     intro: {
       title: "Crea vuestra web",
       sub: "Mantén a tus invitados al día",
@@ -3724,6 +3724,12 @@ const es: LocaleMessages = {
       step_share: "Comparte el enlace",
       start: "Empezar",
     },
+    hint: "Elige un estilo, una paleta y una tipografía. Definen tu página de la boda y tus tarjetas imprimibles.",
+    // The Sample Table: four finished looks on the couple's own names.
+    choose: "Elige un estilo",
+    look: { change: "Cambiar" },
+    // The Look Bar stamp always shows the surface you are NOT editing.
+    stamp: { to_print: "Abrir tarjetas impresas", to_site: "Abrir web de la boda" },
     style_switch_confirm: {
       title: "¿Cambiar el estilo?",
       body: "Tus colores y tipografías personalizados vuelven al conjunto propio de este estilo.",
@@ -9044,6 +9050,14 @@ const es: LocaleMessages = {
     pricing_note: "Las reservas abren pronto.",
     create_event_cta: "Crear un evento",
     roll_film_name: "Ana & Bruno",
+    start_title: "Crea tu evento",
+    start_body:
+      "Añade vuestros nombres y la fecha, elige cuántos invitados, y el código QR se activa al pagar.",
+    start_bride: "Primer nombre",
+    start_groom: "Segundo nombre",
+    start_date: "Fecha de la boda",
+    start_pay_cta: "Continuar al pago",
+    start_secure_note: "Pago seguro con Stripe, en euros.",
     share_title: "Compártelo con un…",
     share_tab_qr: "Código QR",
     share_tab_link: "Enlace",

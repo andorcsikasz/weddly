@@ -2016,6 +2016,18 @@ addColumnIfMissing("film_devices", "photos_emailed_at", "photos_emailed_at INTEG
 // a curated client-side set; this is the couple's one on/off switch. Defaults
 // on so existing films pick it up without anyone having to opt in.
 addColumnIfMissing("photo_albums", "prompts_enabled", "prompts_enabled INTEGER NOT NULL DEFAULT 1");
+// Weddly Camera tiered pricing (shared/film_pricing.ts). What a film has been
+// paid in total, EUR cents, credited when it is upgraded to a bigger tier.
+// NULL on rows paid before the ladder: those bought the single €7.90 unlock,
+// which `filmPaidCents` reads back from `paid_at`.
+addColumnIfMissing("photo_albums", "paid_amount_cents", "paid_amount_cents INTEGER");
+// The Stripe Checkout session that last paid this film. The webhook skips a
+// session it has already applied, so a redelivered event cannot add the same
+// payment to paid_amount_cents twice.
+addColumnIfMissing("photo_albums", "stripe_session_id", "stripe_session_id TEXT");
+// Camera-only accounts: signed up from /camera's non-Weddly price to run one
+// wedding film. Their workspace hides the planner and pays stand-alone prices.
+addColumnIfMissing("users", "camera_only", "camera_only INTEGER NOT NULL DEFAULT 0");
 
 // planner_clients indexes live here (not schema.sql) per the May 2026 ordering rule.
 db.exec(

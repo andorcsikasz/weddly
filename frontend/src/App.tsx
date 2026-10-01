@@ -35,6 +35,7 @@ const RegisterPage = lazyWithReload(() => import("./pages/RegisterPage"));
 const VendorsPage = lazyWithReload(() => import("./pages/VendorsPage"));
 const PlannersPage = lazyWithReload(() => import("./pages/PlannersPage"));
 const CameraPage = lazyWithReload(() => import("./pages/CameraPage"));
+const CameraStartPage = lazyWithReload(() => import("./pages/CameraStartPage"));
 const MarketingContentPage = lazyWithReload(() => import("./pages/MarketingContentPage"));
 const GamesPage = lazyWithReload(() => import("./pages/GamesPage"));
 const GamesHubPage = lazyWithReload(() => import("./pages/games/GamesHubPage"));
@@ -694,6 +695,15 @@ export default function App() {
           element={
             <Page>
               <CameraPage />
+            </Page>
+          }
+        />
+        {/* The non-Weddly path: name the wedding, pick a tier, pay (EUR). */}
+        <Route
+          path="/camera/start"
+          element={
+            <Page>
+              <CameraStartPage />
             </Page>
           }
         />

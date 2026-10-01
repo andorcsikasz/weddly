@@ -16,7 +16,14 @@ import { ArrowRight, Camera, Hourglass, ScanLine, Wifi } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FILM_FILTERS, FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
+import { FILM_FILTERS } from "@shared/types";
+import {
+  FILM_PRICE_TIERS,
+  type FilmPriceTier,
+  filmTierPriceCents,
+  formatEurCents,
+} from "@shared/film_pricing";
+import { useAuth } from "../lib/auth";
 import { CameraHero, CameraPreview, DEMO_STRIP } from "../components/CameraHero";
 import { CameraReviews } from "../components/CameraReviews";
 import { CameraShare } from "../components/CameraShare";
@@ -57,45 +64,10 @@ const ROLL: { src: string; filter: string; stamp: string; position?: string }[] 
 /** How far (px) the roll drifts sideways over the whole time it is on screen. */
 const ROLL_DRIFT_PX = 520;
 
-interface PricingTier {
-  cap: number;
-  /** Stand-alone price for a wedding that isn't on Weddly. */
-  price: string;
-}
-
-// Anchored to the owner's own 10@50 / 25@100 pricing, extrapolated along
-// pov.camera's published ladder. EUR, the same currency as the in-app film
-// price beside it (owner call 2026-10-01): two currencies on one card made
-// the Weddly discount impossible to read at a glance.
-const TIERS: PricingTier[] = [
-  { cap: 25, price: "€4.99" },
-  { cap: 50, price: "€9.99" },
-  { cap: 100, price: "€24.99" },
-  { cap: 175, price: "€44.99" },
-  { cap: 250, price: "€69.99" },
-  { cap: 400, price: "€99.99" },
-];
-
-/** Headcounts above this get the Weddly price as half the stand-alone price
- *  (owner call 2026-10-01: at 175 guests Weddly is 50% off, not ~83%, and the
- *  same rule carries on to 250 and 400).
- *  NOTE: page copy only. The in-app film unlocks up to `FILM_TIER_CAPS.paid`
- *  (200) for `FILM_TIER_PRICE_EUR_CENTS.paid` and has no tier past that, so
- *  the 175 price disagrees with what the app charges and 250 / 400 are not
- *  purchasable in the app yet. */
-const HALF_PRICE_FROM_CAP = 100;
-
-/** What a Weddly couple pays for a tier: `included` up to the subscription's
- *  film cap, the in-app one-time unlock price up to 100 guests, and half the
- *  stand-alone price above that. */
-function couplePrice(tier: PricingTier): "included" | string {
-  if (tier.cap <= FILM_TIER_CAPS.free) return "included";
-  if (tier.cap <= HALF_PRICE_FROM_CAP) {
-    return `€${(FILM_TIER_PRICE_EUR_CENTS.paid / 100).toFixed(2)}`;
-  }
-  const standalone = Number(tier.price.replace(/[^0-9.]/g, ""));
-  return `€${(Math.round((standalone / 2) * 10) / 10).toFixed(2)}`;
-}
+// The ladder and both audiences' prices come from shared/film_pricing.ts, the
+// same module the checkout charges from, so the page cannot quote a price the
+// payment would not take.
+const TIERS = FILM_PRICE_TIERS;
 
 /** One option row of the pricing stack: label + headcount left, price right.
  *  `muted` is the card tucked behind the stack: smaller and quieter, so the
@@ -149,8 +121,8 @@ export default function CameraPage() {
   const [tierIndex, setTierIndex] = useState(1);
   // TIERS[1] as the fallback: the picker only offers to [0, TIERS.length - 1]
   // so this only ever matters to the type checker, never at runtime.
-  const tier = TIERS[tierIndex] ?? (TIERS[1] as PricingTier);
-  const tierCouplePrice = couplePrice(tier);
+  const tier = TIERS[tierIndex] ?? (TIERS[1] as FilmPriceTier);
+  const { user } = useAuth();
   const [frontCard, setFrontCard] = useState<"couple" | "standalone">("couple");
   const backCard = frontCard === "couple" ? "standalone" : "couple";
   const guestCap = t("camera.pricing_guest_cap", { n: tier.cap });
@@ -159,10 +131,20 @@ export default function CameraPage() {
       label: t("camera.pricing_couple_label"),
       dove: true,
       cap: guestCap,
-      price: tierCouplePrice === "included" ? "€0" : tierCouplePrice,
+      price: formatEurCents(filmTierPriceCents(tier, "couple")),
     },
-    standalone: { label: t("camera.pricing_standard"), cap: guestCap, price: tier.price },
+    standalone: {
+      label: t("camera.pricing_standard"),
+      cap: guestCap,
+      price: formatEurCents(filmTierPriceCents(tier, "standalone")),
+    },
   };
+  // The stand-alone card is a door, not a toggle: it leads straight to naming
+  // the wedding and paying for the chosen tier (CameraStartPage).
+  const standaloneStart = `/camera/start?cap=${tier.cap}`;
+  // The main CTA is the Weddly-couple path: an existing workspace buys the film
+  // from its film page, everyone else signs up first.
+  const coupleStart = user?.couple_id ? "/app/media" : "/signup";
   // The roll animates in once, the first time it scrolls into view.
   const rollRef = useRef<HTMLElement>(null);
   const [rollIn, setRollIn] = useState(false);
@@ -403,8 +385,9 @@ export default function CameraPage() {
                 {/* Two price cards, one on top and one tucked under its bottom
                     edge, tilted away (rotateX from the top) so it reads as
                     sitting BEHIND while its own row stays legible. The Weddly
-                    price starts on top; clicking the back card swaps the two,
-                    and the newly fronted card lifts in so the swap is seen. */}
+                    price is on top. The stand-alone card leads straight into
+                    creating the event and paying; the Weddly card, if it is
+                    ever the back one, swaps forward. */}
                 <div className="group mt-3 [perspective:700px]">
                   <div
                     key={frontCard}
@@ -414,7 +397,9 @@ export default function CameraPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFrontCard(backCard)}
+                    onClick={() =>
+                      backCard === "standalone" ? navigate(standaloneStart) : setFrontCard(backCard)
+                    }
                     aria-label={priceCards[backCard].label}
                     className="relative z-0 mx-auto -mt-4 block w-[93%] origin-top rounded-b-2xl bg-umber-800 pt-4 text-left ring-1 ring-paper-50/15 transition-transform duration-300 ease-out [transform:rotateX(14deg)] hover:bg-umber-700 group-hover:[transform:rotateX(0deg)_translateY(3px)]"
                   >
@@ -422,7 +407,7 @@ export default function CameraPage() {
                   </button>
                 </div>
                 <Link
-                  to="/signup"
+                  to={frontCard === "standalone" ? standaloneStart : coupleStart}
                   className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-paper-50 px-7 py-3.5 text-base font-semibold text-umber-950 transition-[transform,background-color] duration-150 ease-out hover:bg-paper-100 active:scale-[0.98]"
                 >
                   {t("camera.create_event_cta")}

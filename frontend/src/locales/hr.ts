@@ -3543,10 +3543,14 @@ const hr: LocaleMessages = {
     film_full_guest_list_link: "Cijeli popis pozvanih gostiju",
     film_shots_short: "{{n}} snimaka",
     film_uploading: "Prijenos {{done}}/{{total}}",
-    film_activated: "Film je otključan. Do 200 gostiju.",
+    film_activated: "Film je otključan.",
     film_upgrade_body: "{{cap}} gostiju na ovom filmu.",
-    film_upgrade_cta: "Otključajte 200",
+    film_upgrade_cta: "Proširi",
     film_upgrade_unavailable: "Nadogradnja trenutačno nije dostupna",
+    film_tiers_title: "Koliko gostiju će fotografirati?",
+    film_tier_label: "Do {n} gostiju",
+    film_unpaid_body: "Film još ne prima goste. Odaberite paket i QR kod odmah postaje aktivan.",
+    film_checkout_soon: "Plaćanja uskoro počinju. Do tada film ostaje zatvoren za goste.",
     gallery_title: "Film",
     gallery_show: "Prikaži fotografije",
     gallery_hide: "Sakrij fotografije",
@@ -3649,10 +3653,6 @@ const hr: LocaleMessages = {
   },
   design: {
     title: "Dizajn",
-    hint: "Odaberite stil, paletu i font. To određuje vašu stranicu za goste i kartice za ispis.",
-    choose: "Odaberite stil",
-    look: {
-      change: "Promijeni",
     intro: {
       title: "Izradite svoju web stranicu",
       sub: "Neka vaši gosti budu u tijeku",
@@ -3661,6 +3661,10 @@ const hr: LocaleMessages = {
       step_share: "Podijelite poveznicu",
       start: "Započni",
     },
+    hint: "Odaberite stil, paletu i font. To određuje vašu stranicu za goste i kartice za ispis.",
+    choose: "Odaberite stil",
+    look: {
+      change: "Promijeni",
     },
     stamp: {
       to_print: "Otvorite tiskane materijale",
@@ -8952,6 +8956,14 @@ const hr: LocaleMessages = {
     pricing_note: "Rezervacije se otvaraju uskoro.",
     create_event_cta: "Kreirajte događaj",
     roll_film_name: "Ana & Bruno",
+    start_title: "Kreirajte događaj",
+    start_body:
+      "Upišite imena i datum, odaberite broj gostiju, a QR kod postaje aktivan čim platite.",
+    start_bride: "Prvo ime",
+    start_groom: "Drugo ime",
+    start_date: "Datum vjenčanja",
+    start_pay_cta: "Nastavi na plaćanje",
+    start_secure_note: "Sigurno plaćanje putem Stripea, u eurima.",
     share_title: "Podijelite putem…",
     share_tab_qr: "QR kod",
     share_tab_link: "Poveznica",

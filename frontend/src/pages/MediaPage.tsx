@@ -11,8 +11,10 @@ import {
   FILM_AESTHETICS,
   FILM_FILTERS,
   FILM_TIER_CAPS,
+  FILM_TIER_PRICE_EUR_CENTS,
   MAX_PHOTOGRAPHER_LINKS,
 } from "@shared/types";
+import { formatEurCents } from "@shared/film_pricing";
 import {
   AlertTriangle,
   CalendarDays,
@@ -782,7 +784,7 @@ function FilmModal({
       photoAlbumApi
         .filmAccess()
         .then((r) => setAccess(r.access))
-        .catch(() => setAccess({ free: false, reason: null, priceEurCents: 790 }));
+        .catch(() => setAccess(null));
     }
   }, [open]);
 
@@ -823,8 +825,12 @@ function FilmModal({
     }
   }
 
-  const includedGuestCap = access?.free ? FILM_TIER_CAPS.paid : FILM_TIER_CAPS.free;
-  const upgradePrice = `€${((access?.priceEurCents ?? 790) / 100).toFixed(2)}`;
+  const includedGuestCap = access?.free
+    ? FILM_TIER_CAPS.paid
+    : access?.audience === "standalone"
+      ? 0
+      : FILM_TIER_CAPS.free;
+  const upgradePrice = formatEurCents(access?.priceEurCents ?? FILM_TIER_PRICE_EUR_CENTS.paid);
 
   return (
     <Dialog
@@ -1032,6 +1038,7 @@ export default function MediaPage() {
   const [album, setAlbum] = useState<PhotoAlbum | null>(null);
   const [filmAccess, setFilmAccess] = useState<FilmAccessCheck | null>(null);
   const [showFilmModal, setShowFilmModal] = useState(false);
+  const [showTiers, setShowTiers] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -1130,10 +1137,14 @@ export default function MediaPage() {
     window.history.replaceState(null, "", location.pathname);
   }, []);
 
-  async function handleUpgradeFilm() {
+  function handleUpgradeFilm() {
     if (filmAccess?.checkoutEnabled === false) return;
+    setShowTiers(true);
+  }
+
+  async function checkoutTier(cap: number) {
     try {
-      const { url } = await photoAlbumApi.filmCheckout();
+      const { url } = await photoAlbumApi.filmCheckout(cap);
       window.location.href = url;
     } catch {
       toast.error(t("common.error_generic"));
@@ -1251,13 +1262,16 @@ export default function MediaPage() {
   const nearGuestLimit = album !== null && album.participantCount >= album.guestCap - 2;
   const nearPhotoLimit =
     totalCapacity !== null && album !== null && album.photoCount >= Math.floor(totalCapacity * 0.8);
+  // Tiers that still cost something: an upgrade is only offered while there is
+  // a bigger film to buy (shared/film_pricing.ts). `?.` on tiers too: a server
+  // from before the ladder answers without them.
+  const buyableTiers = filmAccess?.tiers?.filter((tier) => tier.chargeCents > 0) ?? [];
+  // A camera-only film starts closed (cap 0): nothing reaches guests until a
+  // plan is paid, so that state always shows the notice.
+  const filmUnpaid = album !== null && album.guestCap === 0;
   const needsUpgrade =
-    album !== null &&
-    album.paidAt === null &&
-    filmAccess !== null &&
-    !filmAccess.free &&
-    (nearGuestLimit || nearPhotoLimit);
-  const filmUpgradePrice = `€${((filmAccess?.priceEurCents ?? 790) / 100).toFixed(2)}`;
+    album !== null && buyableTiers.length > 0 && (filmUnpaid || nearGuestLimit || nearPhotoLimit);
+  const filmUpgradePrice = formatEurCents(buyableTiers[0]?.chargeCents ?? 0);
 
   // Open the "add a link" input (blank draft — each save appends a new gallery
   // link up to MAX_PHOTOGRAPHER_LINKS).
@@ -1392,12 +1406,7 @@ export default function MediaPage() {
   // Raising the guest cap is one tap from the row that shows it, not a banner
   // that only appears once the film is nearly full.
   const canRaiseCap =
-    album !== null &&
-    album.paidAt === null &&
-    album.guestCap < FILM_TIER_CAPS.paid &&
-    filmAccess !== null &&
-    !filmAccess.free &&
-    filmAccess.checkoutEnabled !== false;
+    album !== null && buyableTiers.length > 0 && filmAccess?.checkoutEnabled !== false;
   const settingsRows: SettingsRow[] = album
     ? [
         {
@@ -1426,7 +1435,7 @@ export default function MediaPage() {
           ...(canRaiseCap
             ? {
                 onClick: () => void handleUpgradeFilm(),
-                actionLabel: `${FILM_TIER_CAPS.paid} ${t("media.film_per_person")} · ${filmUpgradePrice}`,
+                actionLabel: `${t("media.film_upgrade_cta")} · ${filmUpgradePrice}`,
               }
             : {}),
         },
@@ -1832,7 +1841,11 @@ export default function MediaPage() {
                 <div className="mx-4 mb-4 flex items-center gap-3 rounded-2xl bg-amber-50 px-4 py-3">
                   <AlertTriangle size={16} className="shrink-0 text-amber-600" aria-hidden />
                   <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-amber-800">
-                    {t("media.film_upgrade_body").replace("{{cap}}", String(album.guestCap))}
+                    {filmUnpaid
+                      ? filmAccess?.checkoutEnabled === false
+                        ? t("media.film_checkout_soon")
+                        : t("media.film_unpaid_body")
+                      : t("media.film_upgrade_body").replace("{{cap}}", String(album.guestCap))}
                   </p>
                   <button
                     type="button"
@@ -2078,6 +2091,12 @@ export default function MediaPage() {
         }}
         onSaved={handleFilmSaved}
       />
+      <FilmTierDialog
+        open={showTiers}
+        tiers={buyableTiers}
+        onPick={(cap) => void checkoutTier(cap)}
+        onClose={() => setShowTiers(false)}
+      />
       {album && guestLinkUrl && (
         <ShareSheet
           open={showShare}
@@ -2087,5 +2106,48 @@ export default function MediaPage() {
         />
       )}
     </div>
+  );
+}
+
+/** Pick a bigger film. Each row is a tier still above the film's cap, priced
+ *  at what it costs NOW (earlier payments credited), straight to Stripe. */
+function FilmTierDialog({
+  open,
+  tiers,
+  onPick,
+  onClose,
+}: {
+  open: boolean;
+  tiers: FilmAccessCheck["tiers"];
+  onPick: (cap: number) => void;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  const [busy, setBusy] = useState<number | null>(null);
+  return (
+    <Dialog open={open} title={t("media.film_tiers_title")} onClose={onClose} role="dialog">
+      <ul className="mt-2 space-y-2">
+        {tiers.map((tier) => (
+          <li key={tier.cap}>
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => {
+                setBusy(tier.cap);
+                onPick(tier.cap);
+              }}
+              className="flex min-h-14 w-full items-center justify-between gap-4 rounded-2xl border border-paper-300 px-4 py-3 text-left transition-colors hover:border-umber-700 disabled:opacity-60 dark:border-umber-700 dark:hover:border-paper-300"
+            >
+              <span className="text-sm font-semibold">
+                {t("media.film_tier_label", { n: tier.cap })}
+              </span>
+              <span className="font-semibold tabular-nums">
+                {busy === tier.cap ? "…" : formatEurCents(tier.chargeCents)}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Dialog>
   );
 }

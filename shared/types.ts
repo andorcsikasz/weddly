@@ -51,6 +51,10 @@ export interface User {
   /** 'couple' (default) or 'planner'. Drives post-login routing — planners
    *  land on /app/planner, couples on /app. */
   user_type: "couple" | "planner";
+  /** A camera-only account: signed up from /camera's non-Weddly price to run
+   *  one wedding film, not to plan with Weddly. Gets a camera-only workspace
+   *  (no planner rail) and the stand-alone film prices. */
+  camera_only: boolean;
   /** When the "share Weddly" prompt was auto-shown to this user, stamped once
    *  and never cleared. Null means it has never fired. Server-side so the
    *  one-shot survives a new device / cleared storage; the frontend keeps a
@@ -804,10 +808,20 @@ export interface FilmAccessCheck {
   free: boolean;
   /** 'loyal_couple' = 5+ months old account with both partners joined. */
   reason: "loyal_couple" | "paid" | null;
-  /** Price in EUR cents if not free. */
+  /** Charge for the smallest tier above the film's current cap, EUR cents
+   *  (0 when nothing is left to buy). Kept for clients that show one price. */
   priceEurCents: number;
   /** Whether a new paid-film Checkout may be created. */
   checkoutEnabled?: boolean;
+  /** Which price ladder applies: a Weddly workspace or a camera-only account
+   *  (shared/film_pricing.ts). */
+  audience: import("./film_pricing").FilmAudience;
+  /** The film's current guest cap, or null before a film exists. */
+  currentCap: number | null;
+  /** What this film has been paid so far, EUR cents (credited on upgrade). */
+  paidCents: number;
+  /** Every tier above the current cap: full price and what it costs NOW. */
+  tiers: { cap: number; priceCents: number; chargeCents: number }[];
 }
 
 export interface Couple {

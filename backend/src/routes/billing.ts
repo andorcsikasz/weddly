@@ -357,7 +357,13 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
           const albumId = Number(s.metadata.album_id);
           if (Number.isInteger(albumId) && albumId > 0) {
             const paymentIntentId = s.payment_intent ? String(s.payment_intent) : null;
-            activateFilmAlbum(albumId, paymentIntentId);
+            const cap = Number(s.metadata.cap);
+            activateFilmAlbum(albumId, paymentIntentId, {
+              sessionId: s.id,
+              cap: Number.isInteger(cap) && cap > 0 ? cap : null,
+              // What Stripe actually collected, not what we asked for.
+              amountCents: typeof s.amount_total === "number" ? s.amount_total : null,
+            });
           }
           break;
         }

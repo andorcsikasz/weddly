@@ -38,7 +38,14 @@ import { addAuditLog } from "../lib/audit";
 import { db, now } from "../db";
 import { stripe } from "../domain/billing";
 import { paymentProductAvailable, requirePaymentLaunch } from "../domain/payment_launch";
-import { activateFilmAlbum } from "../domain/film";
+import { filmPaidCents } from "../domain/film";
+import {
+  FILM_PRICE_TIERS,
+  type FilmAudience,
+  filmTier,
+  filmTierPriceCents,
+  filmUpgradeChargeCents,
+} from "@shared/film_pricing";
 import { validateFilmSlug } from "../domain/film_slug";
 import { getCoupleForUser } from "../domain/couples";
 import { recordConsent } from "../domain/consents";
@@ -86,6 +93,7 @@ interface AlbumRow {
   stripe_payment_id: string | null;
   stripe_tier: string | null;
   paid_at: number | null;
+  paid_amount_cents: number | null;
   prompts_enabled: number;
   created_at: number;
   updated_at: number;
@@ -291,83 +299,156 @@ function toPublicAlbum(row: AlbumWithCouple): PhotoAlbumPublic {
 
 // ─── pricing helpers ──────────────────────────────────────────────────────────
 
-function checkFilmAccess(coupleId: number, coupleCreatedAt: number): FilmAccessCheck {
+/** 5+ months old workspace with both partners in: the €7.90 unlock is on us. */
+function isLoyalCouple(coupleId: number, coupleCreatedAt: number): boolean {
   const memberCount = (
     db.prepare("SELECT COUNT(*) AS c FROM couple_members WHERE couple_id = ?").get(coupleId) as {
       c: number;
     }
   ).c;
-  const ageMs = now() - coupleCreatedAt;
-  const isLoyalCouple = ageMs >= FIVE_MONTHS_MS && memberCount >= 2;
+  return now() - coupleCreatedAt >= FIVE_MONTHS_MS && memberCount >= 2;
+}
 
-  if (isLoyalCouple) {
-    return {
-      free: true,
-      reason: "loyal_couple",
-      priceEurCents: 0,
-      checkoutEnabled: false,
-    };
-  }
+/** Which price ladder this user's film is on (shared/film_pricing.ts). */
+function filmAudienceForUser(userId: number): FilmAudience {
+  const row = db.prepare("SELECT camera_only FROM users WHERE id = ?").get(userId) as
+    | { camera_only: number }
+    | undefined;
+  return row?.camera_only === 1 ? "standalone" : "couple";
+}
+
+/** Pricing for the current user's film: every tier above its cap, at full price
+ *  and at what it costs now once earlier payments are credited. A loyal
+ *  couple's free unlock is credited as if they had paid the €7.90. */
+function checkFilmAccess(
+  userId: number,
+  couple: { id: number; created_at: number },
+  album: AlbumRow | undefined,
+): FilmAccessCheck {
+  const audience = filmAudienceForUser(userId);
+  const loyal = audience === "couple" && isLoyalCouple(couple.id, couple.created_at);
+  const currentCap = album ? album.guest_cap : null;
+  const paidCents =
+    (album ? filmPaidCents(album) : 0) + (loyal ? FILM_TIER_PRICE_EUR_CENTS.paid : 0);
+  const tiers = FILM_PRICE_TIERS.filter((t) => currentCap === null || t.cap > currentCap).map(
+    (t) => ({
+      cap: t.cap,
+      priceCents: filmTierPriceCents(t, audience),
+      chargeCents: filmUpgradeChargeCents(t, audience, paidCents),
+    }),
+  );
   return {
-    free: false,
-    reason: null,
-    priceEurCents: FILM_TIER_PRICE_EUR_CENTS.paid,
+    free: loyal,
+    reason: loyal ? "loyal_couple" : album?.paid_at ? "paid" : null,
+    priceEurCents: tiers.find((t) => t.chargeCents > 0)?.chargeCents ?? 0,
     checkoutEnabled: paymentProductAvailable("film_checkout"),
+    audience,
+    currentCap,
+    paidCents,
+    tiers,
+  };
+}
+
+/** The Checkout Session body for a film tier. Pure, so the amount, currency
+ *  and metadata the webhook relies on are covered without contacting Stripe. */
+export function filmCheckoutParams(input: {
+  albumId: number;
+  coupleId: number;
+  cap: number;
+  chargeCents: number;
+  audience: FilmAudience;
+  frontendBaseUrl: string;
+}) {
+  return {
+    mode: "payment" as const,
+    payment_method_types: ["card" as const],
+    line_items: [
+      {
+        price_data: {
+          currency: "eur",
+          unit_amount: input.chargeCents,
+          product_data: {
+            name: `Weddly Camera · up to ${input.cap} guests`,
+          },
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      type: "film",
+      album_id: String(input.albumId),
+      couple_id: String(input.coupleId),
+      cap: String(input.cap),
+      audience: input.audience,
+    },
+    success_url: `${input.frontendBaseUrl}/app/media?film=activated`,
+    cancel_url: `${input.frontendBaseUrl}/app/media?film=cancelled`,
   };
 }
 
 // ─── authenticated handlers ───────────────────────────────────────────────────
 
-/** POST /api/photo-albums/checkout — Stripe Checkout for the €7.90, 200-guest unlock. */
+/** POST /api/photo-albums/checkout {cap} — Stripe Checkout (EUR) for a film
+ *  tier. Charges the tier's price minus what the film has already been paid. */
 async function handleFilmCheckout(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   requirePaymentLaunch("film_checkout");
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple found");
 
-  const access = checkFilmAccess(couple.id, couple.created_at);
-  if (access.free) throw new HttpError(400, "Film is already free for this couple");
-
   const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
     | AlbumRow
     | undefined;
   if (!row) throw new HttpError(404, "Create the film first");
-  if (row.paid_at !== null) throw new HttpError(400, "Film already activated");
+
+  const body = (await ctx.req.json().catch(() => ({}))) as { cap?: unknown };
+  const access = checkFilmAccess(userId, couple, row);
+  // An older client sends no cap: it means "the next tier that costs money".
+  const requested =
+    body.cap === undefined ? access.tiers.find((t) => t.chargeCents > 0)?.cap : body.cap;
+  if (typeof requested !== "number" || !Number.isInteger(requested)) {
+    throw new HttpError(400, "cap must be one of the film tiers", { code: "invalid_cap" });
+  }
+  const tier = filmTier(requested);
+  if (!tier) throw new HttpError(400, "cap must be one of the film tiers", { code: "invalid_cap" });
+  const option = access.tiers.find((t) => t.cap === tier.cap);
+  if (!option) {
+    throw new HttpError(409, "The film already holds this many guests", {
+      code: "cap_already_covered",
+    });
+  }
+  if (option.chargeCents <= 0) {
+    throw new HttpError(409, "This tier is already covered, nothing to pay", {
+      code: "nothing_to_pay",
+    });
+  }
 
   const session = await stripe().checkout.sessions.create(
-    {
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            unit_amount: FILM_TIER_PRICE_EUR_CENTS.paid,
-            product_data: { name: "Wedding Film — Guest Camera" },
-          },
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        type: "film",
-        album_id: String(row.id),
-        couple_id: String(couple.id),
-      },
-      success_url: `${CONFIG.frontendBaseUrl}/app/media?film=activated`,
-      cancel_url: `${CONFIG.frontendBaseUrl}/app/media`,
-    },
-    { idempotencyKey: `film-checkout-${row.id}-unpaid` },
+    filmCheckoutParams({
+      albumId: row.id,
+      coupleId: couple.id,
+      cap: tier.cap,
+      chargeCents: option.chargeCents,
+      audience: access.audience,
+      frontendBaseUrl: CONFIG.frontendBaseUrl,
+    }),
+    // Scoped to the film, the tier and what is already paid, so a double click
+    // reuses one session while a later upgrade gets a fresh one.
+    { idempotencyKey: `film-checkout-${row.id}-${tier.cap}-${access.paidCents}` },
   );
 
   return json({ url: session.url });
 }
 
-/** GET /api/photo-albums/film-access — pricing eligibility for the current couple. */
+/** GET /api/photo-albums/film-access — pricing for the current user's film. */
 async function handleFilmAccess(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(404, "No couple found");
-  return json({ access: checkFilmAccess(couple.id, couple.created_at) });
+  const row = db.prepare("SELECT * FROM photo_albums WHERE couple_id = ?").get(couple.id) as
+    | AlbumRow
+    | undefined;
+  return json({ access: checkFilmAccess(userId, couple, row) });
 }
 
 /** POST /api/photo-albums — create album (idempotent). */
@@ -426,8 +507,15 @@ async function handleCreateAlbum(ctx: Ctx): Promise<Response> {
 
   // Loyal couples get the full 200-guest capacity. Everyone else starts on
   // the generous included tier and only sees Checkout when they approach it.
-  const access = checkFilmAccess(couple.id, couple.created_at);
-  const guestCap = access.free ? FILM_TIER_CAPS.paid : FILM_TIER_CAPS.free;
+  // A camera-only account starts with nothing included: the film opens to
+  // guests once its tier is paid. A loyal couple's €7.90 unlock is on us.
+  const audience = filmAudienceForUser(userId);
+  const guestCap =
+    audience === "standalone"
+      ? 0
+      : isLoyalCouple(couple.id, couple.created_at)
+        ? FILM_TIER_CAPS.paid
+        : FILM_TIER_CAPS.free;
 
   // Derive reveal_at from wedding date if not supplied.
   let finalRevealAt = typeof revealAt === "number" ? revealAt : null;

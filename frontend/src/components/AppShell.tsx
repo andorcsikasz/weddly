@@ -796,12 +796,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     // still receive the prompt.
   }, [user, inAdminView]);
 
-  const displayItems = inAdminView ? ADMIN_ITEMS : ITEMS;
+  // A camera-only account (User.camera_only) came for one wedding film, so its
+  // workspace is the film page and nothing of the planner around it.
+  const cameraOnly = !inAdminView && user?.camera_only === true;
+  const coupleItems = cameraOnly
+    ? ITEMS.filter((item) => item.to === "/app/media").map((item) => ({
+        ...item,
+        // Its one destination also earns a phone tab, or the bar would be empty.
+        tabKey: item.tabKey ?? item.labelKey,
+      }))
+    : ITEMS;
+  const displayItems = inAdminView ? ADMIN_ITEMS : coupleItems;
 
   // The explore nudge is for couples in their own workspace. A planner sitting
   // in a client's workspace and an admin in the moderation rail would otherwise
   // carry dots they have no reason to clear.
-  const nudgeExplore = !inAdminView && user?.user_type === "couple";
+  const nudgeExplore = !inAdminView && user?.user_type === "couple" && !cameraOnly;
   const explored = useExploredNav(nudgeExplore);
   // The dashboard is never marked: it is where every session lands, so a dot on
   // it would nudge nobody — and it is the one row the floating collapse toggle
@@ -835,7 +845,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <VerifyEmailBanner />
       {/* Read-only billing banner — renders only when the couple's free
           period has lapsed and they aren't subscribed. No-ops otherwise. */}
-      <SubscriptionBanner />
+      {/* No planner subscription behind a camera-only account, so no
+          subscription banner either: its film is paid for on its own. */}
+      {!cameraOnly && <SubscriptionBanner />}
       {/* Placeholder partner names ("x & y"): a notice band with the deadline,
           and a blocking card once that deadline has passed. No-ops for the
           ~92% of workspaces that were never flagged. */}
@@ -1270,7 +1282,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           items={
             inAdminView
               ? (displayItems.filter((item) => !item.tabKey) as NavItem[])
-              : ITEMS.filter((item) => !item.tabKey)
+              : coupleItems.filter((item) => !item.tabKey)
           }
           title={t("nav.more_sheet_title")}
           closeLabel={t("a11y.close")}
@@ -1305,7 +1317,8 @@ export function AppShell({ children }: { children: ReactNode }) {
        *  user hasn't seen them — the component self-gates on localStorage
        *  + viewport. Admin view skips so admins don't see couple-facing
        *  onboarding when they hop in to moderate. */}
-      {!inAdminView && <CoachMarks />}
+      {/* The coach tour walks the planner rail; a camera-only shell has none. */}
+      {!inAdminView && !cameraOnly && <CoachMarks />}
       <FeatureTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );

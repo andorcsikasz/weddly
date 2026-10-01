@@ -69,6 +69,8 @@ export interface UserRow {
    *  ("/app/guests", …). Null on pre-feature rows = nothing explored yet.
    *  Written by POST /api/auth/nav-visited, union-only. */
   visited_nav?: string | null;
+  /** 1 = camera-only account (see User.camera_only). Additive, defaults 0. */
+  camera_only?: number;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var
@@ -97,6 +99,7 @@ export function toUser(row: UserRow): User {
     user_type: row.user_type === "planner" ? "planner" : "couple",
     share_prompt_seen_at: row.share_prompt_seen_at ?? null,
     visited_nav: parseVisitedNav(row.visited_nav),
+    camera_only: row.camera_only === 1,
     created_at: row.created_at,
   };
 }

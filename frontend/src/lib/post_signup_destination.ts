@@ -11,9 +11,15 @@
 // cost is that it does not follow a visitor who opens the verification link on
 // another device, who simply lands on /app like everybody else did before.
 //
-// The destination is an ALLOWLIST of one shape (an internal vendor page),
-// re-checked on read: anything else that ends up in storage is ignored, so this
-// can never become an open redirect.
+// The destination is an ALLOWLIST of two shapes (an internal vendor page, and
+// the /camera non-Weddly start page with its guest tier), re-checked on read:
+// anything else that ends up in storage is ignored, so this can never become
+// an open redirect.
+//
+// The camera start page is the one destination that must be taken BEFORE the
+// onboarding wizard rather than after it: that visitor asked for a camera-only
+// account, so walking them through the planner set-up first would be exactly
+// what they opted out of (see takeCameraStartDestination).
 
 const KEY = "weddly.post_signup_destination";
 
@@ -22,9 +28,26 @@ const KEY = "weddly.post_signup_destination";
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const VENDOR_PAGE = /^\/app\/suppliers\/[A-Za-z0-9][A-Za-z0-9._~%-]{0,119}$/;
+const CAMERA_START = /^\/camera\/start(\?cap=\d{1,3})?$/;
 
 export function isSafeDestination(path: unknown): path is string {
-  return typeof path === "string" && VENDOR_PAGE.test(path);
+  return typeof path === "string" && (VENDOR_PAGE.test(path) || CAMERA_START.test(path));
+}
+
+/** The remembered camera start page, cleared as it is read; any other
+ *  remembered destination is left in place for the wizard's own hand-off. */
+export function takeCameraStartDestination(now: number = Date.now()): string | null {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw === null) return null;
+    const parsed = JSON.parse(raw) as { path?: unknown; at?: unknown };
+    if (typeof parsed.path !== "string" || !CAMERA_START.test(parsed.path)) return null;
+    localStorage.removeItem(KEY);
+    if (typeof parsed.at !== "number" || now - parsed.at > TTL_MS) return null;
+    return parsed.path;
+  } catch {
+    return null;
+  }
 }
 
 export function rememberDestination(path: string, now: number = Date.now()): void {

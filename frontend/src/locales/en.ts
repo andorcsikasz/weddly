@@ -3540,10 +3540,15 @@ const en: LocaleMessages = {
     film_full_guest_list_link: "View the full invited guest list",
     film_shots_short: "{{n}} shots",
     film_uploading: "Uploading {{done}}/{{total}}",
-    film_activated: "Film unlocked. Up to 200 guests.",
+    film_activated: "Film unlocked.",
     film_upgrade_body: "{{cap}} guests on this film.",
-    film_upgrade_cta: "Unlock 200",
+    film_upgrade_cta: "More guests",
     film_upgrade_unavailable: "Upgrade unavailable",
+    film_tiers_title: "How many guests will shoot?",
+    film_tier_label: "Up to {n} guests",
+    film_unpaid_body:
+      "This film is not open to guests yet. Pick a plan and the QR code goes live straight away.",
+    film_checkout_soon: "Payments open soon. Until then the film stays closed to guests.",
     gallery_title: "The film",
     gallery_show: "Show photos",
     gallery_hide: "Hide photos",
@@ -3644,11 +3649,6 @@ const en: LocaleMessages = {
   },
   design: {
     title: "Design",
-    hint: "Pick a style, palette and font. It drives your guest page and printable cards.",
-    // The Sample Table: four finished looks on the couple's own names.
-    choose: "Choose a look",
-    look: { change: "Change" },
-    // The Look Bar stamp always shows the surface you are NOT editing.
     intro: {
       title: "Create your website",
       sub: "Keep your guests updated",
@@ -3657,6 +3657,11 @@ const en: LocaleMessages = {
       step_share: "Share the link",
       start: "Get started",
     },
+    hint: "Pick a style, palette and font. It drives your guest page and printable cards.",
+    // The Sample Table: four finished looks on the couple's own names.
+    choose: "Choose a look",
+    look: { change: "Change" },
+    // The Look Bar stamp always shows the surface you are NOT editing.
     stamp: { to_print: "Open printed cards", to_site: "Open guest site" },
     style_switch_confirm: {
       title: "Change the look?",
@@ -8959,6 +8964,14 @@ const en: LocaleMessages = {
     pricing_note: "Booking opens soon.",
     create_event_cta: "Create an event",
     roll_film_name: "Anna & Ben",
+    start_title: "Create your event",
+    start_body:
+      "Add your names and the date, pick how many guests, and your QR code is live the moment you pay.",
+    start_bride: "First name",
+    start_groom: "Second name",
+    start_date: "Wedding date",
+    start_pay_cta: "Continue to payment",
+    start_secure_note: "Secure payment with Stripe, in euro.",
     share_title: "Share it with a…",
     share_tab_qr: "QR code",
     share_tab_link: "Link",

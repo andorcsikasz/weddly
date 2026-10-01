@@ -41,7 +41,7 @@ import {
 } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { placeholderNameField, realNameErrorKey } from "../lib/real_names";
-import { takeDestination } from "../lib/post_signup_destination";
+import { takeCameraStartDestination, takeDestination } from "../lib/post_signup_destination";
 import { useDocumentMeta } from "../lib/seo";
 
 const DRAFT_KEY = "weddly.onboarding_draft";
@@ -345,6 +345,13 @@ export default function OnboardingWizard() {
   // session can also drop a returning user here. In either case we must
   // not re-render the wizard — it would offer to overwrite partner A's data.
   const [existing, setExisting] = useState<Couple | null | false>(null);
+  // A visitor who signed up from /camera's non-Weddly price asked for a
+  // camera-only account: send them on to name their wedding and pay, never
+  // through the planner set-up below.
+  useEffect(() => {
+    const camera = takeCameraStartDestination();
+    if (camera) navigate(camera, { replace: true });
+  }, [navigate]);
   // Once we've completed onboarding we strip the draft; this guards a
   // late autosave from re-creating it after a successful submit.
   const completedRef = useRef(false);

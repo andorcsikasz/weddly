@@ -72,7 +72,19 @@ describe("<MediaPage> Wedding Film setup", () => {
       if (url === "/api/photo-albums/film-access") {
         return Promise.resolve(
           json({
-            access: { free: false, reason: null, priceEurCents: 790, checkoutEnabled: true },
+            access: {
+              free: false,
+              reason: null,
+              priceEurCents: 790,
+              checkoutEnabled: true,
+              audience: "couple",
+              currentCap: null,
+              paidCents: 0,
+              tiers: [
+                { cap: 100, priceCents: 790, chargeCents: 790 },
+                { cap: 175, priceCents: 2250, chargeCents: 2250 },
+              ],
+            },
           }),
         );
       }
@@ -100,7 +112,7 @@ describe("<MediaPage> Wedding Film setup", () => {
     expect(dialog).toBeVisible();
     expect(screen.getByDisplayValue("24")).toHaveAttribute("type", "number");
     expect(screen.getAllByText("50 Guests").length).toBeGreaterThan(0);
-    expect(screen.getByText("Unlock 200 · €7.90")).toBeVisible();
+    expect(screen.getByText("More guests · €7.90")).toBeVisible();
 
     const dateInputs = Array.from(
       dialog.querySelectorAll<HTMLInputElement>('input[type="datetime-local"]'),

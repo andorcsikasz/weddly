@@ -3613,10 +3613,15 @@ const de: LocaleMessages = {
     film_full_guest_list_link: "Vollständige Einladungsliste",
     film_shots_short: "{{n}} Aufnahmen",
     film_uploading: "Wird hochgeladen {{done}}/{{total}}",
-    film_activated: "Film freigeschaltet. Bis zu 200 Gäste.",
+    film_activated: "Film freigeschaltet.",
     film_upgrade_body: "{{cap}} Gäste auf diesem Film.",
-    film_upgrade_cta: "200 freischalten",
+    film_upgrade_cta: "Erweitern",
     film_upgrade_unavailable: "Erweiterung derzeit nicht verfügbar",
+    film_tiers_title: "Wie viele Gäste fotografieren?",
+    film_tier_label: "Bis zu {n} Gäste",
+    film_unpaid_body:
+      "Der Film ist noch nicht für Gäste offen. Wählt ein Paket, und der QR-Code ist sofort aktiv.",
+    film_checkout_soon: "Zahlungen starten bald. Bis dahin bleibt der Film für Gäste geschlossen.",
     gallery_title: "Der Film",
     gallery_show: "Fotos anzeigen",
     gallery_hide: "Fotos ausblenden",
@@ -3719,11 +3724,6 @@ const de: LocaleMessages = {
   },
   design: {
     title: "Design",
-    hint: "Wählen Sie Stil, Palette und Schrift. Das prägt Ihre Gästeseite und die druckbaren Karten.",
-    choose: "Wählen Sie einen Look",
-    look: {
-      change: "Wechseln",
-    },
     intro: {
       title: "Erstellt eure Website",
       sub: "Haltet eure Gäste auf dem Laufenden",
@@ -3731,6 +3731,11 @@ const de: LocaleMessages = {
       step_details: "Euren Tag eintragen",
       step_share: "Link teilen",
       start: "Los geht’s",
+    },
+    hint: "Wählen Sie Stil, Palette und Schrift. Das prägt Ihre Gästeseite und die druckbaren Karten.",
+    choose: "Wählen Sie einen Look",
+    look: {
+      change: "Wechseln",
     },
     stamp: {
       to_print: "Drucksachen öffnen",
@@ -9098,6 +9103,14 @@ const de: LocaleMessages = {
     pricing_note: "Buchungen öffnen bald.",
     create_event_cta: "Event erstellen",
     roll_film_name: "Anna & Ben",
+    start_title: "Erstellt euer Event",
+    start_body:
+      "Gebt eure Namen und das Datum ein, wählt die Gästezahl, und der QR-Code ist nach der Zahlung sofort aktiv.",
+    start_bride: "Erster Name",
+    start_groom: "Zweiter Name",
+    start_date: "Hochzeitsdatum",
+    start_pay_cta: "Weiter zur Zahlung",
+    start_secure_note: "Sichere Zahlung über Stripe, in Euro.",
     share_title: "Teilt sie per…",
     share_tab_qr: "QR-Code",
     share_tab_link: "Link",

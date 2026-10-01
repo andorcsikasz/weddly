@@ -393,7 +393,7 @@ function parseDisplayName(raw: unknown): string {
   return trimmed;
 }
 
-function parsePartnerName(raw: unknown, field: "bride_name" | "groom_name"): string {
+export function parsePartnerName(raw: unknown, field: "bride_name" | "groom_name"): string {
   if (typeof raw !== "string") throw new HttpError(400, `${field} required`);
   const trimmed = raw.trim();
   if (trimmed.length < 1 || trimmed.length > 100) {

@@ -1,8 +1,8 @@
-// /camera promises Weddly couples a guest cap; the in-app film enforces one.
-// Both read FILM_TIER_CAPS, and this pins that the page says so.
+// /camera quotes film prices; the checkout charges them. Both read
+// shared/film_pricing.ts, and this pins that the page renders that ladder.
 
 import { beforeEach, describe, expect, it } from "bun:test";
-import { FILM_TIER_CAPS } from "@shared/types";
+import { FILM_PRICE_TIERS, filmTierPriceCents, formatEurCents } from "@shared/film_pricing";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth";
@@ -26,22 +26,20 @@ function renderPage() {
   );
 }
 
-describe("/camera pricing stays in sync with the in-app film", () => {
-  it("says the subscription includes the in-app guest cap", () => {
+describe("/camera pricing stays in sync with the checkout", () => {
+  it("quotes every tier at the couple and the stand-alone price the checkout charges", () => {
     renderPage();
-    const line = `Up to ${FILM_TIER_CAPS.free} guests is included with a Weddly subscription.`;
-    expect(screen.getAllByText(line).length).toBeGreaterThan(0);
+    for (const tier of FILM_PRICE_TIERS) {
+      fireEvent.click(screen.getByRole("radio", { name: `Up to ${tier.cap} guests` }));
+      const couple = formatEurCents(filmTierPriceCents(tier, "couple"));
+      const standalone = formatEurCents(filmTierPriceCents(tier, "standalone"));
+      expect(screen.getAllByText(couple).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(standalone).length).toBeGreaterThan(0);
+    }
   });
 
-  it("prices each tier for a couple the way the app does", () => {
+  it("names the stand-alone card so it can lead into creating the event", () => {
     renderPage();
-    // Default tier is 50 guests: inside the included cap.
-    expect(screen.getByText("Included")).toBeInTheDocument();
-    // 100 guests: the one-time unlock to 200.
-    fireEvent.click(screen.getByRole("button", { name: "Up to 100 guests" }));
-    expect(screen.getByText("€7.90")).toBeInTheDocument();
-    // 400 guests: past anything the app offers, so no couple price at all.
-    fireEvent.click(screen.getByRole("button", { name: "Up to 400 guests" }));
-    expect(screen.queryByText("Weddly couples")).toBeNull();
+    expect(screen.getByRole("button", { name: "Non-Weddly users" })).toBeInTheDocument();
   });
 });

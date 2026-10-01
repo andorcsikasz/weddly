@@ -363,6 +363,8 @@ export default function DashboardPage() {
       </div>
     );
   }
+  // A camera-only account's workspace is its film page (User.camera_only).
+  if (currentUser?.camera_only) return <Navigate to="/app/media" replace />;
   if (data === "loading") return <DashboardSkeleton />;
   if (data === null) return <Navigate to="/onboarding" replace />;
 
