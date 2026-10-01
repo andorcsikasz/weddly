@@ -606,7 +606,10 @@ function DeckShowcase({
   if (!selected) return null;
 
   return (
-    <section className="relative">
+    // z-10: on hover the phantom cards fan out past this section's bottom
+    // padding, and the FAQ section below paints its own background, so
+    // without a stacking order above it the fanned cards get sliced flat.
+    <section className="relative z-10">
       <div className="mx-auto max-w-5xl px-4 pt-10 pb-12 sm:px-6 sm:pt-14 sm:pb-16">
         {/* Compact hero: shorter than the original DeckPicker so the full
             showcase (mini row + big card + CTA) lands in one viewport on
