@@ -10825,7 +10825,6 @@ export interface LocaleMessages {
       faq_h2: string;
     };
     rsvp_generator: {
-      page_eyebrow: string;
       page_h1: string;
       page_intro: string;
       form_h2: string;
@@ -10837,6 +10836,20 @@ export interface LocaleMessages {
       form_venue_label: string;
       form_venue_placeholder: string;
       form_deadline_label: string;
+      form_time_label: string;
+      form_contact_label: string;
+      form_contact_placeholder: string;
+      options_h2: string;
+      opt_plus_one: string;
+      opt_dietary: string;
+      opt_adults_only: string;
+      format_invitation: string;
+      format_message: string;
+      format_reminder: string;
+      output_lang_label: string;
+      output_chars: string;
+      share_whatsapp: string;
+      share_email: string;
       style_h2: string;
       style_formal: string;
       style_casual: string;
