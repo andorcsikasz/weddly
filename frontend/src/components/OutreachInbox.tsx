@@ -27,7 +27,7 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Mail, MessageCircle, Send, Plus, Search, Sparkles, X } from "lucide-react";
+import { ArrowUpRight, Mail, MessageCircle, Send, Plus, X } from "lucide-react";
 import { InfoHint } from "./InfoHint";
 import {
   type CreateOutreachCampaignInput,
@@ -46,6 +46,7 @@ import { useToast } from "./ui/ToastProvider";
 import { ApiError } from "../lib/api";
 import { guestCountBaseline } from "../lib/budget";
 import { categoryIcon } from "../lib/category_icons";
+import { fireConfetti } from "../lib/confetti";
 import { coupleApi, outreachApi, supplierApi } from "../lib/endpoints";
 import { formatDate, intlLocale } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -420,7 +421,9 @@ export function ComposeDialog({
   // is filled with the real date + headcount or, failing that, the placeholders.
   const [coupleSettled, setCoupleSettled] = useState(false);
   const [sending, setSending] = useState(false);
+  const [activeTpl, setActiveTpl] = useState<TemplateKey | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const sendRef = useRef<HTMLButtonElement | null>(null);
   const cap = OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP;
 
   // Fetch the directory + the couple's date/guest count once when the
@@ -469,6 +472,7 @@ export function ComposeDialog({
       if (!ok) return;
     }
     lastAppliedBody.current = nextBody;
+    setActiveTpl(key);
     setSubject(nextSubject);
     setBody(nextBody);
   };
@@ -563,6 +567,9 @@ export function ComposeDialog({
     setSending(true);
     try {
       const created = await outreachApi.create(payload);
+      // Celebrate from the button itself, before the dialog unmounts with it.
+      const r = sendRef.current?.getBoundingClientRect();
+      fireConfetti(r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : undefined);
       await onSent(created);
     } catch (err) {
       const code = err instanceof ApiError ? (err.detail as { code?: string })?.code : undefined;
@@ -584,6 +591,10 @@ export function ComposeDialog({
     }
   };
 
+  // Which template the draft is still showing, for the filled pill. Any edit
+  // that moves the body away from what the template wrote clears it.
+  const tplActive = activeTpl !== null && body === lastAppliedBody.current ? activeTpl : null;
+
   return (
     <Dialog
       open
@@ -591,50 +602,42 @@ export function ComposeDialog({
       title={t("outreach.compose_title")}
       size="lg"
       footer={
-        <>
-          <button type="button" className="btn-ghost" onClick={onClose} disabled={sending}>
-            {t("common.cancel")}
-          </button>
-          <button
-            type="submit"
-            form="outreach-compose-form"
-            className="btn-accent"
-            disabled={sending}
-          >
-            <Send size={16} aria-hidden />
-            {sending ? t("outreach.sending") : t("outreach.send")}
-          </button>
-        </>
+        // One action. The dialog's own X is the way out, so a Cancel beside
+        // Send was a second button with nothing to say.
+        <button
+          ref={sendRef}
+          type="submit"
+          form="outreach-compose-form"
+          className="btn w-full justify-center rounded-full bg-sage-800 py-3 text-white hover:bg-sage-900 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-sage-600 dark:hover:bg-sage-700"
+          disabled={sending}
+        >
+          <Send size={16} aria-hidden />
+          {sending ? t("outreach.sending") : t("outreach.send")}
+        </button>
       }
     >
-      <form id="outreach-compose-form" onSubmit={onSubmit} className="space-y-3">
-        {/* Recipients come FIRST, like the To: line of any mail composer — and
+      <form id="outreach-compose-form" onSubmit={onSubmit} className="space-y-5">
+        {/* Recipients come FIRST, like the To: line of any mail composer, and
             because the autocomplete drops DOWNWARD inside the dialog's scroll
-            box. As the last field it opened into the footer and got clipped to
-            one visible row; above the subject and the message it has the whole
-            form to open into. Selected vendors render as chips with an
-            × button; the input below filters the directory by name/city as
-            you type and shows a dropdown of matches. Couples never have to
-            know the internal supplier id — the chip carries the display
-            name and the API request uses the id under the hood. */}
+            box: as the last field it opened into the footer and got clipped.
+            Picked vendors are soft chips; the input filters the directory by
+            name/city. The chip carries the display name, the API the id. */}
         <div>
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="field-label" id="outreach-suppliers-label">
-              {t("outreach.label_suppliers")}
-            </span>
-            <span className="text-[11px] tabular-nums text-ink-500 dark:text-umber-300">
-              {t("outreach.suppliers_count", { n: selected.length, max: cap })}
-            </span>
-          </div>
           <div
-            className="relative mt-1 rounded-xl border border-paper-300 bg-paper-50 px-2 py-1.5 transition focus-within:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-umber-500"
+            className="relative flex items-center gap-3 border-b border-paper-200 pb-2 transition focus-within:border-ink-900 dark:border-umber-700 dark:focus-within:border-paper-100"
             onClick={() => inputRef.current?.focus()}
           >
-            <div className="flex flex-wrap items-center gap-1.5">
+            <span
+              className="shrink-0 text-sm font-semibold text-ink-900 dark:text-paper-50"
+              id="outreach-suppliers-label"
+            >
+              {t("outreach.label_suppliers")}
+            </span>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
               {selected.map((s) => (
                 <span
                   key={s.id}
-                  className="inline-flex items-center gap-1 rounded-full bg-ink-700 px-2.5 py-0.5 text-xs text-paper-100 dark:bg-paper-50 dark:text-umber-900"
+                  className="inline-flex items-center gap-1 rounded-full bg-paper-100 py-1 pl-3 pr-1 text-sm text-ink-900 dark:bg-umber-700 dark:text-paper-50"
                 >
                   <span className="max-w-[14rem] truncate">{s.name}</span>
                   <button
@@ -644,18 +647,13 @@ export function ComposeDialog({
                       removeSupplier(s.id);
                     }}
                     aria-label={t("outreach.suppliers_remove_aria", { name: s.name })}
-                    className="-mr-1 ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-paper-200 transition hover:bg-white/20 hover:text-paper-100 dark:text-umber-700 dark:hover:bg-black/10 dark:hover:text-umber-900"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-300 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-600 dark:hover:text-paper-50"
                   >
-                    <X size={11} aria-hidden />
+                    <X size={12} aria-hidden />
                   </button>
                 </span>
               ))}
-              <span className="relative inline-flex min-w-[12rem] flex-1 items-center">
-                <Search
-                  size={12}
-                  aria-hidden
-                  className="absolute left-1 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
-                />
+              {!capped && (
                 <input
                   ref={inputRef}
                   type="text"
@@ -675,26 +673,35 @@ export function ComposeDialog({
                     window.setTimeout(() => setPickerOpen(false), 120);
                   }}
                   onKeyDown={onPickerKeyDown}
-                  disabled={capped}
                   placeholder={
-                    capped
-                      ? t("outreach.suppliers_picker_capped", { max: cap })
-                      : selected.length === 0
-                        ? t("outreach.suppliers_picker_placeholder")
-                        : ""
+                    selected.length === 0 ? t("outreach.suppliers_picker_placeholder") : ""
                   }
-                  className="w-full bg-transparent pl-5 pr-1 py-1 text-sm text-ink-800 placeholder:text-ink-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:text-paper-100 dark:placeholder:text-umber-300"
+                  className="min-w-[8rem] flex-1 bg-transparent py-1 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400"
                 />
-              </span>
+              )}
             </div>
+            <span className="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums text-ink-400 dark:text-umber-400">
+              {t("outreach.suppliers_count", { n: selected.length, max: cap })}
+              {/* Only once they have actually hit it. A limit stated with no
+                  reason reads either as arbitrary or as a tier that could be
+                  paid off, and it is neither: cold volume burns the same
+                  sending domain that email verification and RSVP run on. */}
+              {capped && (
+                <InfoHint
+                  icon={Mail}
+                  text={t("outreach.suppliers_picker_capped_why")}
+                  label={t("outreach.suppliers_picker_capped_why")}
+                />
+              )}
+            </span>
             {pickerOpen && queryNorm && !capped && (
               <div
                 id="outreach-suppliers-listbox"
                 role="listbox"
-                className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-auto rounded-xl border border-paper-300 bg-white py-1 shadow-lg dark:border-umber-700 dark:bg-umber-800"
+                className="absolute left-0 right-0 top-full z-20 mt-2 max-h-64 overflow-auto rounded-2xl bg-white py-1.5 shadow-lg ring-1 ring-paper-200 dark:bg-umber-800 dark:ring-umber-700"
               >
                 {suggestions.length === 0 ? (
-                  <p className="px-3 py-2 text-xs text-ink-500 dark:text-umber-300">
+                  <p className="px-4 py-2.5 text-sm text-ink-500 dark:text-umber-300">
                     {t("outreach.suppliers_picker_no_matches", { q: supplierQuery.trim() })}
                   </p>
                 ) : (
@@ -706,25 +713,21 @@ export function ComposeDialog({
                         type="button"
                         role="option"
                         aria-selected={active}
-                        // mousedown fires before the input's blur → click would
-                        // race the dropdown's unmount. mousedown wins cleanly.
+                        // mousedown fires before the input's blur, so a click
+                        // would race the dropdown's unmount.
                         onMouseDown={(e) => {
                           e.preventDefault();
                           addSupplier(s);
                         }}
                         onMouseEnter={() => setActiveIdx(idx)}
-                        className={`flex w-full items-baseline justify-between gap-3 px-3 py-1.5 text-left text-sm transition ${
-                          active
-                            ? "bg-paper-100 dark:bg-umber-700"
-                            : "hover:bg-paper-100 dark:hover:bg-umber-700"
+                        className={`flex w-full flex-col items-start px-4 py-2 text-left transition ${
+                          active ? "bg-paper-100 dark:bg-umber-700" : ""
                         }`}
                       >
-                        <span className="truncate font-medium text-ink-800 dark:text-paper-100">
+                        <span className="w-full truncate text-sm font-medium text-ink-900 dark:text-paper-50">
                           {s.name}
                         </span>
-                        <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
-                          {s.city}
-                        </span>
+                        <span className="text-xs text-ink-500 dark:text-umber-300">{s.city}</span>
                       </button>
                     );
                   })
@@ -732,69 +735,53 @@ export function ComposeDialog({
               </div>
             )}
           </div>
-          <p className="field-help">
-            {capped
-              ? t("outreach.suppliers_picker_capped", { max: cap })
-              : t("outreach.suppliers_picker_help", { max: cap })}
-            {/* Only once they have actually hit it. A limit stated with no
-                reason reads either as arbitrary or as a tier that could be paid
-                off, and it is neither: cold volume burns the same sending
-                domain that email verification and RSVP delivery run on. */}
-            {capped && (
-              <InfoHint
-                icon={Mail}
-                text={t("outreach.suppliers_picker_capped_why")}
-                label={t("outreach.suppliers_picker_capped_why")}
-              />
-            )}
-          </p>
-        </div>
-        {/* Quick-fill templates. One row of chips; click replaces subject +
-            body with a friendly draft that already names the wedding date
-            and guest count (or shows a [placeholder] when those aren't set).
-            Not a wizard step — couples can still write from scratch. */}
-        <div>
-          <span className="field-label inline-flex items-center gap-1.5">
-            <Sparkles size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
-            {t("outreach.tpl_section_label")}
-          </span>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {TEMPLATE_KEYS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => void applyTemplate(key)}
-                className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-              >
-                {t(`outreach.tpl_${key}`)}
-              </button>
-            ))}
-          </div>
         </div>
 
-        <label className="block" htmlFor="outreach-subject">
-          <span className="field-label">{t("outreach.label_subject")}</span>
+        {/* Quick-fill templates: one row of pills, the one the draft is still
+            showing filled in. A click replaces subject + body with a draft that
+            already names the date and headcount; couples can still write from
+            scratch, and an edited draft is never overwritten without asking. */}
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+          {TEMPLATE_KEYS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={tplActive === key}
+              onClick={() => void applyTemplate(key)}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition active:scale-95 ${
+                tplActive === key
+                  ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-ink-900"
+                  : "bg-paper-100 text-ink-800 hover:bg-paper-200 dark:bg-umber-700/60 dark:text-umber-100 dark:hover:bg-umber-700"
+              }`}
+            >
+              {t(`outreach.tpl_${key}`)}
+            </button>
+          ))}
+        </div>
+
+        <div className="overflow-hidden rounded-2xl bg-paper-100 transition focus-within:ring-1 focus-within:ring-ink-900 dark:bg-umber-900/60 dark:focus-within:ring-paper-100">
           <input
             id="outreach-subject"
-            className="input"
+            aria-label={t("outreach.label_subject")}
+            placeholder={t("outreach.label_subject")}
+            className="w-full border-b border-paper-200 bg-transparent px-4 py-3 text-base font-semibold text-ink-900 placeholder:font-normal placeholder:text-ink-400 focus:outline-none dark:border-umber-700 dark:text-paper-50 dark:placeholder:text-umber-400"
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             maxLength={OUTREACH_SUBJECT_MAX_LEN}
             required
           />
-        </label>
-        <label className="block" htmlFor="outreach-body">
-          <span className="field-label">{t("outreach.label_body")}</span>
           <textarea
             id="outreach-body"
-            className="input min-h-[10rem]"
+            aria-label={t("outreach.label_body")}
+            placeholder={t("outreach.label_body")}
+            className="block min-h-[12rem] w-full resize-none bg-transparent px-4 py-3 text-sm leading-relaxed text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             maxLength={OUTREACH_BODY_MAX_LEN}
             required
           />
-        </label>
+        </div>
       </form>
     </Dialog>
   );
