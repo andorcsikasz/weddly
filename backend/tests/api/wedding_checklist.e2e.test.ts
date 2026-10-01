@@ -286,7 +286,7 @@ describe("wedding checklist", () => {
       timelineDatesFor(WEDDING, {
         lead: { days: checklistLeadDaysById(pace).get(id) ?? 0 },
         windowDays: 0,
-      })?.due_date;
+      })?.due_date ?? null;
 
     async function coupleWithFarDate() {
       const { token } = await bootstrapCouple();
