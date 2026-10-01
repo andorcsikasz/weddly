@@ -2299,6 +2299,8 @@ const en: LocaleMessages = {
     footer_planners: "For planners",
     footer_planners_waitlist: "Apply for access",
     nav_planners: "for planners",
+    nav_camera: "camera",
+    nav_games: "games",
     footer_band_prompt: "Not planning a wedding?",
     footer_band_cta: "I'm a guest with an invite code",
     footer_band_cta_short: "I'm a guest",

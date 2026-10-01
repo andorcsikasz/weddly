@@ -2930,6 +2930,8 @@ export interface LocaleMessages {
     footer_planners: string;
     footer_planners_waitlist: string;
     nav_planners: string;
+    nav_camera: string;
+    nav_games: string;
     footer_band_prompt: string;
     footer_band_cta: string;
     /** Compact guest-chip label for narrow (phone) viewports. */

@@ -1,6 +1,8 @@
 import {
+  Camera,
   Check,
   ClipboardList,
+  Gamepad2,
   LayoutDashboard,
   Languages,
   LogIn,
@@ -231,10 +233,15 @@ function PublicHeader({ black = false }: { black?: boolean }) {
           aria-label={t("public.nav_audience_aria")}
           className="ml-2 hidden items-center gap-4 font-grotesk md:flex"
         >
+          {/* Camera and games are the two public, no-login products, so they
+              sit in the same row. They only join at lg: at md the row plus the
+              right cluster has no room for four labels. */}
           {[
-            { to: "/suppliers", label: t("landing.nav_vendors") },
-            { to: "/planners", label: t("landing.nav_planners") },
-          ].map(({ to, label }) => {
+            { to: "/suppliers", label: t("landing.nav_vendors"), wide: false },
+            { to: "/planners", label: t("landing.nav_planners"), wide: false },
+            { to: "/camera", label: t("landing.nav_camera"), wide: true },
+            { to: "/games", label: t("landing.nav_games"), wide: true },
+          ].map(({ to, label, wide }) => {
             const active = pathname === to;
             return (
               <Link
@@ -242,7 +249,7 @@ function PublicHeader({ black = false }: { black?: boolean }) {
                 to={to}
                 data-nav-icon
                 aria-current={active ? "page" : undefined}
-                className={`relative px-1 py-1.5 text-sm transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50 ${
+                className={`${wide ? "hidden lg:inline-block" : ""} relative px-1 py-1.5 text-sm transition-colors after:pointer-events-none after:absolute after:bottom-0 after:left-1/2 after:h-px after:-translate-x-1/2 after:bg-current after:transition-[width] after:duration-300 after:ease-out focus-visible:after:w-[calc(100%-0.5rem)] dark:text-paper-100 dark:hover:text-paper-50 ${
                   active
                     ? "font-medium text-umber-900 after:w-[calc(100%-0.5rem)] dark:text-paper-50"
                     : "text-umber-900 after:w-0 hover:text-umber-900 hover:after:w-[calc(100%-0.5rem)]"
@@ -377,6 +384,26 @@ function PublicHeader({ black = false }: { black?: boolean }) {
             >
               <Store size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
               <span>{t("landing.nav_planners")}</span>
+            </Link>
+            <Link
+              to="/camera"
+              className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              onClick={() => setMenuOpen(false)}
+            >
+              <Camera size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
+              <span>{t("landing.nav_camera")}</span>
+            </Link>
+            <Link
+              to="/games"
+              className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              onClick={() => setMenuOpen(false)}
+            >
+              <Gamepad2
+                size={16}
+                aria-hidden="true"
+                className="text-umber-600 dark:text-umber-300"
+              />
+              <span>{t("landing.nav_games")}</span>
             </Link>
             <Link
               to="/rsvp"
