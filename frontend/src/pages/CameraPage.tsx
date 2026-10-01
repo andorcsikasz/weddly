@@ -21,6 +21,7 @@ import { CameraHero, CameraPreview, DEMO_STRIP } from "../components/CameraHero"
 import { CameraReviews } from "../components/CameraReviews";
 import { CameraShare } from "../components/CameraShare";
 import { PublicShell } from "../components/PublicShell";
+import { WeddlyDove } from "../components/WeddlyDove";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -104,8 +105,11 @@ function PriceRow({
   cap,
   price,
   muted = false,
+  dove = false,
 }: {
   label: string;
+  /** The Weddly dove before the label, on the Weddly couples' price. */
+  dove?: boolean;
   cap: string;
   price: string;
   muted?: boolean;
@@ -114,8 +118,9 @@ function PriceRow({
     <div className={`flex items-center justify-between gap-4 px-5 ${muted ? "pb-3 pt-1" : "py-4"}`}>
       <div>
         <p
-          className={`font-semibold ${muted ? "text-sm text-paper-300" : "text-base text-paper-50"}`}
+          className={`flex items-center gap-1.5 font-semibold ${muted ? "text-sm text-paper-300" : "text-base text-paper-50"}`}
         >
+          {dove && <WeddlyDove className={`shrink-0 ${muted ? "h-3.5 w-3.5" : "h-4 w-4"}`} />}
           {label}
         </p>
         <p
@@ -152,6 +157,7 @@ export default function CameraPage() {
   const priceCards = {
     couple: {
       label: t("camera.pricing_couple_label"),
+      dove: true,
       cap: guestCap,
       price: tierCouplePrice === "included" ? "€0" : tierCouplePrice,
     },
