@@ -2777,3 +2777,105 @@ html.dark .trace-frame {
     animation: none;
   }
 }
+
+/* ── Landing scroll motion ─────────────────────────────────────────────────
+   Pure CSS scroll-driven animations (`animation-timeline`), so nothing runs on
+   the main thread and there is no observer to forget to disconnect. Each block
+   rises into place as it ENTERS the viewport and then stays put: the range
+   ends at `entry 70%`, so nothing animates while the visitor is reading it, and
+   scrolling back up replays the rise rather than fading text out under them.
+   Gated twice on purpose: a browser without scroll timelines and a visitor who
+   asked for reduced motion both get the page exactly as it was, fully visible,
+   rather than content parked at opacity 0 waiting for an animation that never
+   runs. Only `opacity` and the individual `translate` / `rotate` properties
+   move, which compose with (never replace) Tailwind's `transform` utilities,
+   so the polaroid keeps its -2deg tilt underneath its own settle. */
+.landing-progress {
+  display: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal,
+    .reveal-settle,
+    .reveal-slide {
+      animation: landing-rise linear both;
+      animation-timeline: view();
+      /* `--reveal-i` staggers siblings (cards in one row) by sliding each
+         one's window a little later, so they land one after another. */
+      animation-range: entry calc(var(--reveal-i, 0) * 10%) entry calc(70% + var(--reveal-i, 0) * 10%);
+    }
+    /* The budget polaroid drops onto the table: a touch more tilt and lift
+       than it ends with, settling into the -2deg the markup gives it. */
+    .reveal-settle {
+      animation-name: landing-settle;
+    }
+    /* The seating plan bleeds off the right edge, so it arrives from there. */
+    .reveal-slide {
+      animation-name: landing-slide;
+    }
+
+    /* Reading-progress hairline under the header. Driven by the root scroller,
+       so it is the page's own scroll position and nothing else. */
+    .landing-progress {
+      display: block;
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 60;
+      height: 2px;
+      pointer-events: none;
+      transform-origin: 0 50%;
+      background-color: theme("colors.umber.700");
+      animation: landing-progress linear both;
+      animation-timeline: scroll(root block);
+    }
+    .dark .landing-progress {
+      background-color: theme("colors.paper.200");
+    }
+    /* The header floats transparent over the hero photo; a line drawn across
+       the top of that photo reads as a header border. The bar only appears
+       once the header has its own background again. */
+    html.landing-hero-active .landing-progress {
+      opacity: 0;
+    }
+  }
+}
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    translate: 0 28px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes landing-settle {
+  from {
+    opacity: 0;
+    translate: 0 40px;
+    rotate: -5deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes landing-slide {
+  from {
+    opacity: 0;
+    translate: 64px 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes landing-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

@@ -227,6 +227,10 @@ export default function LandingPage() {
 
   return (
     <PublicShell>
+      {/* Reading-progress hairline, pure CSS (see `.landing-progress` in
+          index.css). Renders nothing where scroll timelines are unsupported
+          or reduced motion is on. */}
+      <div className="landing-progress" aria-hidden="true" />
       {/* ════════════════════════ 01 · HERO ════════════════════════
           Uber-Eats-style: bold white title straight on a full-bleed photo
           under a dark scrim (see .hero-overlay), not a cream panel the photo
@@ -362,7 +366,7 @@ export default function LandingPage() {
           {/* Decorative: the heading and the search box carry the meaning, so
               this stays out of the accessibility tree. width/height are the
               real pixels so the row reserves its space before the file lands. */}
-          <picture>
+          <picture className="reveal block" style={{ "--reveal-i": 1 } as React.CSSProperties}>
             <source
               type="image/avif"
               srcSet="/suppliers-illustration-400.avif?v=20260825 400w, /suppliers-illustration-665.avif?v=20260825 665w, /suppliers-illustration-900.avif?v=20260825 900w"
@@ -446,7 +450,7 @@ export default function LandingPage() {
       <section id="phases" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
-            <div>
+            <div className="reveal">
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
@@ -457,7 +461,7 @@ export default function LandingPage() {
               </ul>
             </div>
             <div className="relative">
-              <div className="relative rotate-[-2deg] bg-white dark:bg-umber-800 p-5 ring-1 ring-paper-300 dark:ring-umber-700 shadow-pop sm:p-6">
+              <div className="reveal-settle relative rotate-[-2deg] bg-white dark:bg-umber-800 p-5 ring-1 ring-paper-300 dark:ring-umber-700 shadow-pop sm:p-6">
                 <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
                   <BudgetMockup className="h-auto w-full" />
                 </LazyMount>
@@ -478,7 +482,7 @@ export default function LandingPage() {
       <section className="relative bg-paper-100/70 dark:bg-umber-900/70">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-16">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12">
-            <div>
+            <div className="reveal">
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
@@ -507,7 +511,7 @@ export default function LandingPage() {
                 </Link>
               </div>
             </div>
-            <div>
+            <div className="reveal" style={{ "--reveal-i": 1 } as React.CSSProperties}>
               {/* Decorative: the heading and bullets carry the meaning, so this
                   stays out of the accessibility tree. width/height are the real
                   pixels so the row reserves its space before the file lands. */}
@@ -534,7 +538,7 @@ export default function LandingPage() {
       <section className="stationery-light relative overflow-hidden">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:items-center lg:gap-10">
-            <div className="max-w-sm">
+            <div className="reveal max-w-sm">
               <h2 className="whitespace-pre-line font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
@@ -550,7 +554,7 @@ export default function LandingPage() {
                 </IconRow>
               </ul>
             </div>
-            <div className="lg:-mr-32 xl:-mr-48">
+            <div className="reveal-slide lg:-mr-32 xl:-mr-48">
               <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
                 <SeatingMockup className="h-auto w-full drop-shadow-[0_30px_50px_rgba(16,24,48,0.15)]" />
               </LazyMount>
@@ -562,7 +566,7 @@ export default function LandingPage() {
       {/* ════════════════════════ 08 · Reviews ════════════════════════ */}
       <section className="relative overflow-hidden bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <div className="flex flex-col items-center text-center">
+          <div className="reveal flex flex-col items-center text-center">
             <h2 className="max-w-2xl font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
               {t("landing.testimonials_title")}
             </h2>
@@ -584,16 +588,19 @@ export default function LandingPage() {
           </div>
           <ul className="mt-10 grid gap-5 sm:grid-cols-3 sm:gap-6">
             <TestimonialCard
+              revealIndex={0}
               quote={t("landing.t1_quote")}
               name={t("landing.t1_name")}
               meta={t("landing.t1_meta")}
             />
             <TestimonialCard
+              revealIndex={1}
               quote={t("landing.t2_quote")}
               name={t("landing.t2_name")}
               meta={t("landing.t2_meta")}
             />
             <TestimonialCard
+              revealIndex={2}
               quote={t("landing.t3_quote")}
               name={t("landing.t3_name")}
               meta={t("landing.t3_meta")}
@@ -606,7 +613,7 @@ export default function LandingPage() {
           Replaced 3 cards with a 3-row ledger: row label, body, → link.
           Reads like a directory page in a printed program. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-20">
+        <div className="reveal mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-20">
           <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
             {t("landing.audience_title")}
           </h2>
@@ -648,7 +655,7 @@ export default function LandingPage() {
           and planners peeking out behind. Opens on the value proposition
           rather than on a number, because the number is not the argument. */}
       <section id="pricing" className="relative stationery scroll-mt-20">
-        <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6">
+        <div className="reveal mx-auto max-w-5xl px-4 py-20 sm:px-6">
           <PricingDeck />
         </div>
       </section>
@@ -674,7 +681,7 @@ export default function LandingPage() {
           Two rows pointing at the other public product pages, same
           SupplierAction row used in the suppliers block above. */}
       <section className="relative bg-white dark:bg-umber-900">
-        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="reveal mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
           <h2 className="text-center font-grotesk text-2xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-3xl">
             {t("landing.extras_title")}
           </h2>
@@ -706,7 +713,7 @@ export default function LandingPage() {
             doesn't pull the headline off center. py-24 reserves the room those
             absolute elements need (their gap + height stays under the 96px
             pads). */}
-        <div className="relative w-full max-w-4xl">
+        <div className="reveal relative w-full max-w-4xl">
           <Wordmark
             size="md"
             className="absolute inset-x-0 bottom-full mb-8 text-paper-400 dark:text-umber-600"
@@ -2349,17 +2356,22 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
  *  hairline border — the old blush quote-glyph, hover lift, monogram-plus-divider
  *  and five-star row read as decoration stacked on decoration. */
 function TestimonialCard({
+  revealIndex,
   quote,
   name,
   meta,
 }: {
+  revealIndex: number;
   quote: string;
   name: string;
   meta: string;
 }) {
   const { t } = useT();
   return (
-    <li className="flex flex-col rounded-2xl border border-paper-300 bg-white p-5 dark:border-umber-700 dark:bg-umber-800 sm:p-6">
+    <li
+      style={{ "--reveal-i": revealIndex } as React.CSSProperties}
+      className="reveal flex flex-col rounded-2xl border border-paper-300 bg-white p-5 dark:border-umber-700 dark:bg-umber-800 sm:p-6"
+    >
       <div className="flex items-start justify-between gap-3">
         <footer>
           <p className="font-grotesk text-sm font-semibold text-umber-900 dark:text-paper-50">
