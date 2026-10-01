@@ -131,4 +131,34 @@ describe("<SupplierCompareDialog> distance / rating / available rows", () => {
       globalThis.fetch = realFetch;
     }
   });
+
+  it("shows progress while the details load and clears it once every column settles", async () => {
+    const realFetch = globalThis.fetch;
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    globalThis.fetch = mock(async () => {
+      await gate;
+      return new Response(JSON.stringify({ error: "Not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }) as unknown as typeof fetch;
+    try {
+      renderDialog([makeSupplier({ id: "a" }), makeSupplier({ id: "b", name: "Foto Two" })], {
+        lat: null,
+        lng: null,
+      });
+      // Held requests: the couple sees a running count, not a frozen table.
+      expect(screen.getByRole("status")).toHaveTextContent(/0 of 2/i);
+      expect(screen.queryByText(/no ratings yet/i)).not.toBeInTheDocument();
+      release();
+      // A failed fetch still settles: the bar goes and the fallback copy lands.
+      await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+      expect(screen.getAllByText(/no ratings yet/i).length).toBe(2);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
 });

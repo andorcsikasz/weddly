@@ -5900,6 +5900,7 @@ const hr: LocaleMessages = {
       floating_open: "Otvorite",
       floating_clear: "Očisti",
       floating_min_hint: "Odaberite barem 2 dobavljača za usporedbu.",
+      loading_details: "Učitavanje ocjena i datuma, {done} od {total}",
       dialog_title: "Usporedite dobavljače",
       dialog_intro:
         "Brojke su prilagođene vašim podacima, broju gostiju i proračunu, pa se ustupci vide na prvi pogled.",

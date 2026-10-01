@@ -5857,6 +5857,7 @@ const en: LocaleMessages = {
       floating_open: "Open",
       floating_clear: "Clear",
       floating_min_hint: "Pick at least 2 suppliers to compare.",
+      loading_details: "Loading ratings and dates, {done} of {total}",
       dialog_title: "Compare suppliers",
       dialog_intro:
         "Numbers are dialled in to your data, guest count, budget, so the trade-offs are obvious at a glance.",

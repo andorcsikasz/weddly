@@ -6014,6 +6014,7 @@ const de: LocaleMessages = {
       floating_open: "Öffnen",
       floating_clear: "Leeren",
       floating_min_hint: "Wählen Sie mindestens 2 Dienstleister zum Vergleichen.",
+      loading_details: "Bewertungen und Termine werden geladen, {done} von {total}",
       dialog_title: "Dienstleister vergleichen",
       dialog_intro:
         "Die Zahlen sind auf Ihre Daten abgestimmt, Gästezahl, Budget, damit die Abwägungen auf einen Blick klar sind.",

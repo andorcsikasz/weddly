@@ -5910,6 +5910,7 @@ const hu: LocaleMessages = {
       floating_open: "Megnyitás",
       floating_clear: "Törlés",
       floating_min_hint: "Legalább 2 szolgáltatót válassz az összehasonlításhoz.",
+      loading_details: "Értékelések és időpontok betöltése: {done}/{total}",
       dialog_title: "Szolgáltatók összehasonlítása",
       dialog_intro:
         "A számok a ti adataitokra szabva, vendégszám, budget, így rögtön látszik, hol éri meg többet fizetni.",

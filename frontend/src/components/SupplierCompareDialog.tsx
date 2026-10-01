@@ -29,6 +29,7 @@ import { formatMoney, intlLocale } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import { haversineKm } from "../lib/geo";
 import { Dialog } from "./ui/Dialog";
+import { Skeleton } from "./ui/Skeleton";
 
 /** The detail-only facts the comparison needs that aren't on the list DTO:
  *  the published rating + how many reviews back it, and the earliest free
@@ -199,7 +200,7 @@ function availableCell(
   locale: Locale,
   t: Props["t"],
 ): { text: string; tone: "ok" | "muted" } {
-  if (loading && detail === undefined) return { text: "…", tone: "muted" };
+  if (loading) return { text: "", tone: "muted" };
   const iso = detail?.next_available ?? null;
   if (!iso) return { text: t("suppliers.compare.available_ask"), tone: "muted" };
   const d = new Date(`${iso}T00:00:00`);
@@ -256,40 +257,44 @@ export function SupplierCompareDialog({
   }, [compareIds, items]);
 
   // Rating + earliest-free-date live on the detail payload, not the list DTO.
-  // Fetch them per column when the dialog opens (≤15 small requests). The map
-  // keeps whatever has resolved so far; rows render a dash until each lands.
+  // Fetch them per column when the dialog opens (≤15 small requests). Each
+  // column fills in the moment ITS request settles rather than waiting on the
+  // slowest of fifteen, and `settled` (success or failure) is what stops a
+  // cell shimmering: a failed fetch reads as the unclaimed fallback, never as
+  // a skeleton that runs forever.
   const [details, setDetails] = useState<Map<string, CompareDetail>>(new Map());
-  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [settled, setSettled] = useState<Set<string>>(new Set());
   const columnIds = useMemo(() => columns.map((s) => s.id).join(","), [columns]);
   useEffect(() => {
     if (!open || columns.length === 0) return;
     let cancelled = false;
-    setDetailsLoading(true);
-    Promise.all(
-      columns.map((s) =>
-        supplierApi
-          .detail(s.id)
-          .then((d): [string, CompareDetail] => [
-            s.id,
-            {
+    setDetails(new Map());
+    setSettled(new Set());
+    for (const s of columns) {
+      supplierApi
+        .detail(s.id)
+        .then((d) => {
+          if (cancelled) return;
+          setDetails((prev) =>
+            new Map(prev).set(s.id, {
               avg_rating: d.reviews_summary.avg_rating,
               reviews_count: d.reviews_summary.reviews_count,
               next_available: d.next_available ?? null,
-            },
-          ])
-          .catch((): [string, CompareDetail] | null => null),
-      ),
-    ).then((entries) => {
-      if (cancelled) return;
-      const next = new Map<string, CompareDetail>();
-      for (const e of entries) if (e) next.set(e[0], e[1]);
-      setDetails(next);
-      setDetailsLoading(false);
-    });
+            }),
+          );
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled) setSettled((prev) => new Set(prev).add(s.id));
+        });
+    }
     return () => {
       cancelled = true;
     };
   }, [open, columnIds, columns]);
+  const settledCount = columns.filter((s) => settled.has(s.id)).length;
+  const detailsLoading = open && settledCount < columns.length;
+  const isLoading = (id: string) => open && !settled.has(id);
 
   // Nearest column among those we can actually measure — only used to tint a
   // "winner" when there's more than one measurable distance to compare.
@@ -321,6 +326,22 @@ export function SupplierCompareDialog({
       <p className="mb-4 text-sm text-ink-500 dark:text-umber-300">
         {t("suppliers.compare.dialog_intro")}
       </p>
+      {columns.length > 0 && detailsLoading && (
+        <div className="mb-4" role="status" aria-live="polite">
+          <p className="mb-1.5 text-[11px] text-ink-500 dark:text-umber-300">
+            {t("suppliers.compare.loading_details", {
+              done: settledCount,
+              total: columns.length,
+            })}
+          </p>
+          <div className="h-1 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+            <div
+              className="skeleton h-full rounded-full motion-safe:animate-shimmer motion-safe:transition-[width] motion-safe:duration-300"
+              style={{ width: `${Math.max(8, (settledCount / columns.length) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
       {columns.length === 0 ? (
         <p className="py-8 text-center text-sm text-ink-500 dark:text-umber-300">
           {t("suppliers.compare.floating_min_hint")}
@@ -416,8 +437,8 @@ export function SupplierCompareDialog({
               const rating = d?.avg_rating ?? null;
               return (
                 <Cell key={`r-${s.id}`}>
-                  {detailsLoading && d === undefined ? (
-                    <span className="text-sm text-ink-400 dark:text-umber-400">…</span>
+                  {isLoading(s.id) ? (
+                    <CellSkeleton />
                   ) : rating === null ? (
                     <span className="text-[11px] text-ink-500 dark:text-umber-300">
                       {t("suppliers.compare.rating_none")}
@@ -541,18 +562,23 @@ export function SupplierCompareDialog({
               label={t("suppliers.compare.row_available")}
             />
             {columns.map((s) => {
-              const cell = availableCell(details.get(s.id), detailsLoading, locale, t);
+              const loading = isLoading(s.id);
+              const cell = availableCell(details.get(s.id), loading, locale, t);
               return (
                 <Cell key={`av-${s.id}`}>
-                  <span
-                    className={
-                      cell.tone === "ok"
-                        ? "text-sm text-ink-800 dark:text-paper-100"
-                        : "text-[11px] text-ink-500 dark:text-umber-300"
-                    }
-                  >
-                    {cell.text}
-                  </span>
+                  {loading ? (
+                    <CellSkeleton />
+                  ) : (
+                    <span
+                      className={
+                        cell.tone === "ok"
+                          ? "text-sm text-ink-800 dark:text-paper-100"
+                          : "text-[11px] text-ink-500 dark:text-umber-300"
+                      }
+                    >
+                      {cell.text}
+                    </span>
+                  )}
                 </Cell>
               );
             })}
@@ -636,6 +662,17 @@ function RowLabel({ icon, label }: { icon?: ReactElement; label: string }) {
     <div className="sticky left-0 z-10 flex items-center gap-2 self-stretch bg-white text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:bg-umber-800 dark:text-umber-300">
       {icon}
       {label}
+    </div>
+  );
+}
+
+/** Placeholder for a value still on its way: two shimmering bars the size of
+ *  the text that replaces them, so the row doesn't jump when it lands. */
+function CellSkeleton() {
+  return (
+    <div className="flex flex-col gap-1.5 py-0.5">
+      <Skeleton variant="line" height={12} width="55%" />
+      <Skeleton variant="line" height={8} width="80%" />
     </div>
   );
 }

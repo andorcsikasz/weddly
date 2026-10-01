@@ -5961,6 +5961,7 @@ const es: LocaleMessages = {
       floating_open: "Abrir",
       floating_clear: "Borrar",
       floating_min_hint: "Elige al menos 2 proveedores para comparar.",
+      loading_details: "Cargando valoraciones y fechas, {done} de {total}",
       dialog_title: "Comparar proveedores",
       dialog_intro:
         "Los números se ajustan a tus datos, número de invitados y presupuesto, para que las diferencias se vean a simple vista.",

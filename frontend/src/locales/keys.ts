@@ -6964,6 +6964,7 @@ export interface LocaleMessages {
       floating_clear: string;
       /** Tooltip when n < 2 — need at least 2 to compare. */
       floating_min_hint: string;
+      loading_details: string;
       /** Dialog. */
       dialog_title: string;
       dialog_intro: string;
