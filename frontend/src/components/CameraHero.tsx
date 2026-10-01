@@ -448,11 +448,11 @@ export function CameraHero({
             <p className="mt-1.5 font-grotesk text-[7px] font-bold uppercase tracking-[0.18em] sm:text-[8px]">
               {tryQr ? (
                 <>
-                  <span className="lg:hidden">{t("media.film_how_2_title")}</span>
+                  <span className="lg:hidden">{t("media.film_qr_title")}</span>
                   <span className="hidden lg:inline">{tryQr.label}</span>
                 </>
               ) : (
-                t("media.film_how_2_title")
+                t("media.film_qr_title")
               )}
             </p>
           </div>

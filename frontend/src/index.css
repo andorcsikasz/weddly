@@ -2879,3 +2879,33 @@ html.dark .trace-frame {
     transform: scaleX(1);
   }
 }
+
+/* Page-to-page transition (lib/page_transition.ts). The page being left fades
+   and drifts up a few pixels while the next one rises into place, so a jump
+   from the landing to /camera reads as one surface turning a page rather than
+   a hard cut. The public header is named for the duration so it holds still
+   across both pages instead of crossfading with them. Scoped to
+   `html.page-vt` so the couple-deck morph and the theme reveal keep their own
+   root animations. Reduced motion never gets here (the helper navigates
+   plainly), and the global reduce rule above clamps it regardless. */
+html.page-vt header[data-scroll-hide] {
+  view-transition-name: public-header;
+}
+html.page-vt::view-transition-old(root) {
+  animation: page-vt-out 280ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+html.page-vt::view-transition-new(root) {
+  animation: page-vt-in 520ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+@keyframes page-vt-out {
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+@keyframes page-vt-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}

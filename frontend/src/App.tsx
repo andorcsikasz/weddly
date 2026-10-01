@@ -355,6 +355,7 @@ export function RedirectIfAuthed({ children }: { children: JSX.Element }) {
 function FullScreenLoader() {
   return (
     <div
+      data-route-loader
       className="flex min-h-[60vh] items-center justify-center"
       role="status"
       aria-label="Loading"

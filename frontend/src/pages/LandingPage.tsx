@@ -26,7 +26,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LazyMount } from "../components/LazyMount";
 
 // Below-the-fold SVG mockups (Budget, Guests, Seating, Suppliers) are
@@ -54,6 +54,7 @@ import { publicStatsApi } from "../lib/endpoints";
 import { currencySymbol, formatNumber, intlLocale, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
+import { navigateWithTransition } from "../lib/page_transition";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
 import { toolPathFor } from "@shared/tool_faq";
@@ -691,12 +692,14 @@ export default function LandingPage() {
               label={t("landing.footer_couples_camera")}
               sub={t("landing.extras_camera_sub")}
               to="/camera"
+              load={() => import("./CameraPage")}
             />
             <SupplierAction
               icon={<Gamepad2 size={18} strokeWidth={1.6} />}
               label={t("landing.footer_couples_games")}
               sub={t("landing.extras_games_sub")}
               to="/games"
+              load={() => import("./GamesPage")}
             />
           </div>
         </div>
@@ -2401,13 +2404,19 @@ function SupplierAction({
   sub,
   to,
   onClick,
+  load,
 }: {
   icon: ReactNode;
   label: string;
   sub: string;
   to?: string;
   onClick?: () => void;
+  /** The target route's lazy chunk. When given, the row navigates through a
+   *  page transition (see lib/page_transition.ts) and starts fetching the
+   *  chunk on hover/focus so the click has nothing left to wait for. */
+  load?: () => Promise<unknown>;
 }) {
+  const navigate = useNavigate();
   const className =
     "group flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50 sm:gap-5 sm:py-5";
   const inner = (
@@ -2432,7 +2441,22 @@ function SupplierAction({
     </>
   );
   return to ? (
-    <Link to={to} className={className}>
+    <Link
+      to={to}
+      className={className}
+      onPointerEnter={load ? () => void load().catch(() => {}) : undefined}
+      onFocus={load ? () => void load().catch(() => {}) : undefined}
+      onClick={
+        load
+          ? (e) => {
+              // Let new-tab / new-window clicks behave like any link.
+              if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+              e.preventDefault();
+              void navigateWithTransition(navigate, to, load);
+            }
+          : undefined
+      }
+    >
       {inner}
     </Link>
   ) : (

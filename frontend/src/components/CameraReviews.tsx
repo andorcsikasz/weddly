@@ -29,7 +29,7 @@ export function CameraReviews() {
     <section aria-roledescription="carousel" aria-label={t("camera.reviews_title")}>
       <div className="flex items-end justify-between gap-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
+          <h2 className="text-xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
             {t("camera.reviews_title")}
           </h2>
         </div>
