@@ -11,9 +11,11 @@
 // preference: "light" for the public marketing pages (warm paper aesthetic),
 // "dark" for the authenticated workspaces.
 //
-// A user-initiated switch is a circle spreading up from the bottom edge
-// (View Transitions API: the new theme's snapshot is clipped to a growing
-// circle anchored at bottom centre). Browsers without the API, and
+// A user-initiated switch is a circle spreading out from the moon / sun
+// button that was pressed (View Transitions API: the new theme's snapshot is
+// clipped to a growing circle centred on the toggle). The origin is the last
+// pointer press, or the focused button for a keyboard toggle, or bottom
+// centre when neither is known. Browsers without the API, and
 // reduced-motion users, get the instant swap they always had. The CSS side
 // lives under `html.theme-vt` in index.css.
 
@@ -21,7 +23,31 @@ import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 
 const THEME_KEY = "weddly.theme";
-const REVEAL_MS = 650;
+const REVEAL_MS = 1000;
+
+// Callers only pass the next theme, so the origin comes from the press that
+// triggered the switch. Captured at the document level so no toggle button
+// needs to know about the animation.
+let lastPress: { x: number; y: number; at: number } | null = null;
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      lastPress = { x: e.clientX, y: e.clientY, at: Date.now() };
+    },
+    { capture: true, passive: true },
+  );
+}
+
+function revealOrigin(): { x: number; y: number } {
+  if (lastPress && Date.now() - lastPress.at < 1500) return lastPress;
+  const el = document.activeElement;
+  if (el instanceof HTMLElement && el !== document.body) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  return { x: window.innerWidth / 2, y: window.innerHeight };
+}
 
 export type Theme = "dark" | "light";
 
@@ -58,6 +84,8 @@ export function useTheme(defaultTheme: Theme): [Theme, (theme: Theme) => void] {
       return;
     }
     const root = document.documentElement;
+    const origin = revealOrigin();
+    lastPress = null;
     root.classList.add("theme-vt");
     const transition = doc.startViewTransition(() => {
       applyThemeClass(next);
@@ -65,13 +93,15 @@ export function useTheme(defaultTheme: Theme): [Theme, (theme: Theme) => void] {
     });
     transition.ready
       .then(() => {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        // Farthest viewport corner from the bottom-centre origin.
-        const radius = Math.hypot(w / 2, h);
+        const { x, y } = origin;
+        // Distance to the farthest viewport corner, so the circle covers it all.
+        const radius = Math.hypot(
+          Math.max(x, window.innerWidth - x),
+          Math.max(y, window.innerHeight - y),
+        );
         root.animate(
           {
-            clipPath: [`circle(0px at 50% 100%)`, `circle(${radius}px at 50% 100%)`],
+            clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`],
           },
           {
             duration: REVEAL_MS,

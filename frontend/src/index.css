@@ -2247,7 +2247,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
 }
 
-/* Theme switch: circle reveal from the bottom edge (lib/useTheme.ts).
+/* Theme switch: circle reveal from the moon / sun toggle (lib/useTheme.ts).
  * Scoped to `html.theme-vt` so the couple-deck morph above keeps its own
  * root crossfade. The new snapshot sits on top and is clipped by a
  * script-driven circle, so the default fade is switched off here, and
