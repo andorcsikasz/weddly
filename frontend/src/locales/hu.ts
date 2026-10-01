@@ -7997,6 +7997,7 @@ const hu: LocaleMessages = {
     confirm_submit_body:
       "Ezzel elküldöd a válaszokat a házigazdáknak. Bármikor visszajöhetsz, hogy módosítsd.",
     confirm_submit_yes: "Igen, beküldöm",
+    confirm_submit_edit: "Módosítom a választ",
     offline_pending_one: "1 visszajelzés vár elküldésre",
     offline_pending_other: "{n} visszajelzés vár elküldésre",
     offline_saved: "Mentve, elküldjük, amint van internet.",

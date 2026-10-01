@@ -7986,6 +7986,7 @@ const es: LocaleMessages = {
     confirm_submit_body:
       "Enviaremos tus respuestas a los anfitriones ahora. Puedes volver cuando quieras para actualizarlas.",
     confirm_submit_yes: "Sí, enviar",
+    confirm_submit_edit: "Editar mi respuesta",
     offline_pending_one: "1 respuesta esperando a enviarse",
     offline_pending_other: "{n} respuestas esperando a enviarse",
     offline_saved: "Guardado, lo enviaremos en cuanto volvamos a estar en línea.",

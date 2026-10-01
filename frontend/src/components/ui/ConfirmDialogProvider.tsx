@@ -17,6 +17,12 @@ export type ConfirmOptions = {
   cancelLabel: string;
   /** Renders confirm in the accent / blush variant for destructive actions. */
   destructive?: boolean;
+  /** Extra classes on the confirm button, e.g. a colour that suits the action. */
+  confirmClassName?: string;
+  /** Both buttons share the footer 50/50 instead of sitting right-aligned. */
+  fullWidth?: boolean;
+  /** Heading typography override, for a dialog whose "title" is a quiet note. */
+  titleClassName?: string;
 };
 
 type Pending = {
@@ -55,20 +61,31 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
       <Dialog
         open={pending !== null}
         title={pending?.opts.title ?? ""}
+        titleClassName={pending?.opts.titleClassName}
         describedById={bodyId}
         onClose={onClose}
         footer={
-          <>
-            <Button variant="outline" onClick={() => settle(false)}>
+          <div className={pending?.opts.fullWidth ? "flex w-full gap-2" : "contents"}>
+            <Button
+              variant="outline"
+              className={pending?.opts.fullWidth ? "flex-1 justify-center" : undefined}
+              onClick={() => settle(false)}
+            >
               {pending?.opts.cancelLabel}
             </Button>
             <Button
               variant={pending?.opts.destructive ? "accent" : "primary"}
+              className={[
+                pending?.opts.fullWidth ? "flex-1 justify-center" : "",
+                pending?.opts.confirmClassName ?? "",
+              ]
+                .join(" ")
+                .trim()}
               onClick={() => settle(true)}
             >
               {pending?.opts.confirmLabel}
             </Button>
-          </>
+          </div>
         }
       >
         {pending?.opts.body && <div id={bodyId}>{pending.opts.body}</div>}

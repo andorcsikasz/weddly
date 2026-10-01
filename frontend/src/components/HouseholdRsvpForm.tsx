@@ -20,7 +20,7 @@ import {
   Baby,
   Ban,
   Beef,
-  CircleCheckBig,
+  Check,
   Cookie,
   Egg,
   Fish,
@@ -625,10 +625,15 @@ export function HouseholdRsvpForm({
     // Double-confirm — the user explicitly asked for a "dupla leokézás"
     // before submission lands so accidental taps don't fire off the RSVP.
     const ok = await confirm({
-      title: t("rsvp.confirm_submit_title"),
-      body: t("rsvp.confirm_submit_body"),
+      // No question, just the note: the buttons are the decision.
+      title: t("rsvp.confirm_submit_body"),
+      titleClassName:
+        "font-sans text-sm font-normal not-italic leading-relaxed text-ink-600 dark:text-paper-200",
       confirmLabel: t("rsvp.confirm_submit_yes"),
-      cancelLabel: t("common.cancel"),
+      cancelLabel: t("rsvp.confirm_submit_edit"),
+      confirmClassName:
+        "bg-sage-800 text-white [--btn-rim:theme(colors.sage.900)] hover:bg-sage-900 dark:bg-sage-600 dark:text-white dark:hover:bg-sage-700",
+      fullWidth: true,
     });
     if (!ok) return;
 
@@ -1274,39 +1279,28 @@ export function HouseholdRsvpForm({
       {done && !editingAfterDone && (
         <>
           {/* ── Confirmation card ─────────────────────────────────────── */}
-          <div className="mt-4 overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 shadow-[0_1px_2px_rgba(15,17,30,0.04),0_12px_32px_-12px_rgba(15,17,30,0.12)] dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
-            {/* Success hero. The couple's names lead, with the wedding's
-              MM-DD set beside them as a quiet mono stamp, so the card reads
-              like a keepsake of WHOSE wedding this was rather than a form
-              receipt. */}
-            <div className="flex flex-col items-center px-6 pb-7 pt-9 text-center">
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full ring-1 ring-sage-300 dark:ring-sage-700">
-                <CircleCheckBig
-                  size={22}
-                  strokeWidth={1.5}
-                  className="text-sage-700 dark:text-sage-400"
-                  aria-hidden
-                />
+          <div className="mt-4 overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-800">
+            {/* Success hero, flat and centred: one solid tick, one heavy
+              headline, then WHOSE wedding as a plain row with its MM-DD
+              beside it. No serif, no ornament, no shadow. */}
+            <div className="flex flex-col items-center px-5 pb-5 pt-6 text-center">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sage-800 dark:bg-sage-600">
+                <Check size={22} strokeWidth={2.5} className="text-white" aria-hidden />
               </div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-sage-700 dark:text-sage-400">
+              <p className="mt-4 font-grotesk text-[1.75rem] font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50">
                 {t("rsvp.checkin_done_title")}
               </p>
-              <p className="mt-3 flex max-w-full flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
-                <span className="break-words font-serif text-[1.75rem] font-semibold italic leading-tight tracking-tight text-ink-900 dark:text-paper-50">
+              <div className="mt-4 flex w-full flex-wrap items-baseline justify-center gap-x-3 border-t border-paper-300 pt-3 dark:border-umber-700">
+                <span className="min-w-0 break-words font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
                   {view.couple_display_name}
                 </span>
                 {view.wedding_date && (
-                  <span className="font-mono text-xs tracking-[0.2em] text-ink-500 dark:text-umber-300">
+                  <span className="shrink-0 font-grotesk text-base font-semibold tabular-nums text-ink-500 dark:text-umber-300">
                     {view.wedding_date.slice(5, 10)}
                   </span>
                 )}
-              </p>
-              <div className="my-5 flex w-24 items-center gap-2" aria-hidden>
-                <span className="h-px flex-1 bg-paper-300 dark:bg-umber-600" />
-                <span className="h-1 w-1 rotate-45 bg-ink-300 dark:bg-umber-500" />
-                <span className="h-px flex-1 bg-paper-300 dark:bg-umber-600" />
               </div>
-              <p className="max-w-xs text-sm leading-relaxed text-ink-600 dark:text-paper-200">
+              <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
                 {t("rsvp.thanks_body")}
               </p>
             </div>
@@ -1415,11 +1409,11 @@ export function HouseholdRsvpForm({
             )}
 
             {/* Email hint footer */}
-            <div className="flex items-start justify-center gap-2 border-t border-paper-300 bg-paper-100/60 px-5 py-4 dark:border-umber-700 dark:bg-umber-900/40">
+            <div className="flex items-start justify-center gap-3 border-t border-paper-300 px-5 py-4 dark:border-umber-700">
               <Mail
-                size={14}
-                strokeWidth={1.5}
-                className="mt-0.5 shrink-0 text-ink-400 dark:text-umber-400"
+                size={16}
+                strokeWidth={2}
+                className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-100"
                 aria-hidden
               />
               <p className="max-w-xs text-left text-xs leading-relaxed text-ink-500 dark:text-umber-300">

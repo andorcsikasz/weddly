@@ -7931,6 +7931,7 @@ const en: LocaleMessages = {
     confirm_submit_body:
       "We'll send your answers to the hosts now. You can come back any time to update.",
     confirm_submit_yes: "Yes, send it",
+    confirm_submit_edit: "Edit my answer",
     offline_pending_one: "1 response waiting to send",
     offline_pending_other: "{n} responses waiting to send",
     offline_saved: "Saved, we'll send it as soon as we're back online.",

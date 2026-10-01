@@ -9326,6 +9326,7 @@ export interface LocaleMessages {
     confirm_submit_title: string;
     confirm_submit_body: string;
     confirm_submit_yes: string;
+    confirm_submit_edit: string;
     /** Offline-queue UX — venue WiFi is patchy at the door, so we let the
      *  RSVP form persist a submit to localStorage and flush it on the next
      *  "online" event. Plural pair: _one + _other. */

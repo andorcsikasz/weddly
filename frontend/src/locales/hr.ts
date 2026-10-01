@@ -7909,6 +7909,7 @@ const hr: LocaleMessages = {
     confirm_submit_body:
       "Sada šaljemo vaše odgovore domaćinima. Možete se vratiti u bilo kojem trenutku i promijeniti ih.",
     confirm_submit_yes: "Da, pošalji",
+    confirm_submit_edit: "Uredi odgovor",
     offline_pending_one: "1 odgovor čeka slanje",
     offline_pending_other: "{n} odgovora čeka slanje",
     offline_saved: "Spremljeno, šaljemo čim se vratimo na mrežu.",

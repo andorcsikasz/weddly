@@ -8043,6 +8043,7 @@ const de: LocaleMessages = {
     confirm_submit_body:
       "Wir schicken Ihre Antworten jetzt an die Gastgeber. Sie können jederzeit zurückkommen und sie ändern.",
     confirm_submit_yes: "Ja, senden",
+    confirm_submit_edit: "Antwort bearbeiten",
     offline_pending_one: "1 Antwort wartet auf den Versand",
     offline_pending_other: "{n} Antworten warten auf den Versand",
     offline_saved: "Gespeichert, wir senden es, sobald wir wieder online sind.",
