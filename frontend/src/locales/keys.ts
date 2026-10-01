@@ -6965,9 +6965,11 @@ export interface LocaleMessages {
       /** Tooltip when n < 2 — need at least 2 to compare. */
       floating_min_hint: string;
       loading_details: string;
+      show_on_map: string;
+      map_close: string;
+      map_venue: string;
       /** Dialog. */
       dialog_title: string;
-      dialog_intro: string;
       dialog_close_aria: string;
       /** Row labels. */
       row_quote: string;
@@ -6978,7 +6980,6 @@ export interface LocaleMessages {
       row_distance: string;
       row_available: string;
       row_votes: string;
-      row_contact: string;
       row_about: string;
       /** Per-cell helpers. `{amount}` formatted HUF, `{n}` is a count. */
       quote_none: string;
@@ -7002,10 +7003,6 @@ export interface LocaleMessages {
       distance_unknown: string;
       distance_km: string;
       available_ask: string;
-      contact_website: string;
-      contact_email: string;
-      contact_phone: string;
-      contact_none: string;
       /** Per-column actions on the comparison card header. */
       remove_column: string;
     };

@@ -1,24 +1,12 @@
-// Side-by-side supplier comparison. Couples tick 2–4 suppliers on
+// Side-by-side supplier comparison. Couples tick 2–15 suppliers on
 // /app/suppliers and this dialog lines them up as columns, with each row
 // of facts annotated against the couple's known params (target guest
 // count, per-category budget, the city they're filtering to). The point
 // is to surface trade-offs at a glance — like comparing two iPhones and
 // realising the cheaper one's camera is good enough.
 
-import {
-  CalendarCheck,
-  Check,
-  Mail,
-  MapPin,
-  Navigation,
-  Phone,
-  ScanEye,
-  Star,
-  Users,
-  Wallet,
-  X,
-} from "lucide-react";
-import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Check, Star, X } from "lucide-react";
+import { type ReactNode, Suspense, useEffect, useMemo, useState } from "react";
 import { pickListingBlurb } from "@shared/listing_language";
 import type { DirectorySupplier } from "@shared/suppliers";
 import { SUPPLIER_TO_BUDGET, capacityKindFor } from "@shared/suppliers";
@@ -28,8 +16,12 @@ import { supplierApi } from "../lib/endpoints";
 import { formatMoney, intlLocale } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import { haversineKm } from "../lib/geo";
+import { lazyWithReload } from "../lib/lazy_reload";
 import { Dialog } from "./ui/Dialog";
 import { Skeleton } from "./ui/Skeleton";
+
+// Leaflet is ~150KB; it ships only when a couple clicks a city.
+const CompareMap = lazyWithReload(() => import("./CompareMap"));
 
 /** The detail-only facts the comparison needs that aren't on the list DTO:
  *  the published rating + how many reviews back it, and the earliest free
@@ -214,25 +206,6 @@ function availableCell(
   return { text, tone: "ok" };
 }
 
-function VerdictIcon({ kind }: { kind: "ok" | "warn" | "info" | "none" }) {
-  if (kind === "ok")
-    return <Check size={14} aria-hidden className="text-sage-600 dark:text-sage-300" />;
-  if (kind === "warn")
-    return <X size={14} aria-hidden className="text-blush-600 dark:text-blush-300" />;
-  if (kind === "info")
-    return <ScanEye size={14} aria-hidden className="text-ink-400 dark:text-umber-300" />;
-  return null;
-}
-
-function PriceBandRow({ band }: { band: number | null }) {
-  if (band === null) return <span className="text-ink-400 dark:text-umber-400">-</span>;
-  return (
-    <span className="font-mono text-ink-700 dark:text-paper-100">
-      {"$".repeat(Math.max(0, Math.min(5, band)))}
-    </span>
-  );
-}
-
 export function SupplierCompareDialog({
   open,
   onClose,
@@ -292,6 +265,13 @@ export function SupplierCompareDialog({
       cancelled = true;
     };
   }, [open, columnIds, columns]);
+  // The supplier whose city the couple clicked, or null while the map is shut.
+  // Reset on close so the next opening starts on the table, not a stale map.
+  const [mapFor, setMapFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open) setMapFor(null);
+  }, [open]);
+  const mapActive = mapFor !== null && columns.some((s) => s.id === mapFor) ? mapFor : null;
   const settledCount = columns.filter((s) => settled.has(s.id)).length;
   const detailsLoading = open && settledCount < columns.length;
   const isLoading = (id: string) => open && !settled.has(id);
@@ -302,6 +282,239 @@ export function SupplierCompareDialog({
     .map((s) => supplierDistanceKm(s, coupleLocation))
     .filter((d): d is number => d !== null);
   const closestKm = measuredDistances.length > 1 ? Math.min(...measuredDistances) : null;
+
+  // Every row is a list of cells, one per column, and a cell is either a value
+  // or an EMPTY state carrying the sentence that explains it. Rendering from
+  // that shape is what lets a row whose every cell is the same empty state
+  // ("Set your venue to see distance" fifteen times) collapse into ONE line
+  // across the table, while a mixed row shows a quiet dash with the sentence
+  // in its tooltip. The sentence never disappears, it just stops repeating.
+  const rows: CompareRow[] = [
+    {
+      key: "quote",
+      label: t("suppliers.compare.row_quote"),
+      cells: columns.map((s) => {
+        const cell = quoteCell(s, supplierCosts, budgetLines, currency, locale, t);
+        if (!cell.primary) return { empty: cell.secondary ?? "" };
+        return {
+          node: (
+            <>
+              <span className="text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                {cell.primary}
+              </span>
+              {cell.secondary && (
+                <span
+                  className={`mt-0.5 text-[11px] ${
+                    cell.tone === "ok"
+                      ? "text-sage-700 dark:text-sage-300"
+                      : cell.tone === "warn"
+                        ? "text-blush-700 dark:text-blush-300"
+                        : "text-ink-500 dark:text-umber-300"
+                  }`}
+                >
+                  {cell.secondary}
+                </span>
+              )}
+            </>
+          ),
+        };
+      }),
+    },
+    {
+      key: "price",
+      label: t("suppliers.compare.row_price_band"),
+      cells: columns.map((s) =>
+        s.price_band === null
+          ? { empty: t("suppliers.compare.row_price_band") }
+          : {
+              node: (
+                <span className="text-sm font-semibold tracking-wider text-ink-900 dark:text-paper-50">
+                  {"$".repeat(Math.max(0, Math.min(5, s.price_band)))}
+                </span>
+              ),
+            },
+      ),
+    },
+    {
+      key: "rating",
+      label: t("suppliers.compare.row_rating"),
+      cells: columns.map((s) => {
+        if (isLoading(s.id)) return { node: <CellSkeleton /> };
+        const d = details.get(s.id);
+        const rating = d?.avg_rating ?? null;
+        if (rating === null) return { empty: t("suppliers.compare.rating_none") };
+        return {
+          node: (
+            <span className="inline-flex items-baseline gap-1.5 text-sm font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+              <Star size={12} aria-hidden className="fill-current self-center" />
+              {rating.toFixed(1)}
+              <span className="text-[11px] font-normal text-ink-500 dark:text-umber-300">
+                {t("suppliers.compare.rating_count", { n: d?.reviews_count ?? 0 })}
+              </span>
+            </span>
+          ),
+        };
+      }),
+    },
+    {
+      key: "capacity",
+      label: t("suppliers.compare.row_capacity"),
+      cells: columns.map((s) => {
+        const cap = capacityCell(s, targetGuestCount, t);
+        if (!cap.range) return { empty: cap.line };
+        const verdict = cap.icon === "ok" || cap.icon === "warn";
+        return {
+          node: (
+            <span
+              title={verdict ? undefined : cap.line}
+              className="inline-flex items-center gap-1.5 text-sm tabular-nums text-ink-900 dark:text-paper-50"
+            >
+              {cap.range}
+              {verdict && (
+                <span
+                  className={`inline-flex items-center gap-0.5 text-[11px] ${
+                    cap.icon === "ok"
+                      ? "text-sage-700 dark:text-sage-300"
+                      : "text-blush-700 dark:text-blush-300"
+                  }`}
+                >
+                  {cap.icon === "ok" ? (
+                    <Check size={12} aria-hidden />
+                  ) : (
+                    <X size={12} aria-hidden />
+                  )}
+                  {cap.line}
+                </span>
+              )}
+            </span>
+          ),
+        };
+      }),
+    },
+    {
+      key: "city",
+      label: t("suppliers.compare.row_city"),
+      cells: columns.map((s) => {
+        const filtering = coupleCityFilter.length > 0;
+        const match = filtering && s.city.toLowerCase() === coupleCityFilter.toLowerCase();
+        const title = filtering
+          ? match
+            ? t("suppliers.compare.same_city")
+            : t("suppliers.compare.different_city")
+          : undefined;
+        const text = (
+          <>
+            {match && <Check size={12} aria-hidden />}
+            {s.city}
+          </>
+        );
+        const tone = match
+          ? "font-semibold text-sage-700 dark:text-sage-300"
+          : "text-ink-900 dark:text-paper-50";
+        // A city with a coordinate opens the map with every compared place
+        // on it. One without stays plain text: a button that opens a map
+        // with this supplier missing from it would answer nothing.
+        if (s.lat === null || s.lng === null)
+          return {
+            node: (
+              <span title={title} className={`inline-flex items-center gap-1 text-sm ${tone}`}>
+                {text}
+              </span>
+            ),
+          };
+        const isOn = mapActive === s.id;
+        return {
+          node: (
+            <button
+              type="button"
+              onClick={() => setMapFor(isOn ? null : s.id)}
+              aria-pressed={isOn}
+              title={title ?? t("suppliers.compare.show_on_map")}
+              aria-label={`${s.city}, ${t("suppliers.compare.show_on_map")}`}
+              className={`-mx-1.5 inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-left text-sm underline decoration-1 underline-offset-4 transition ${tone} ${
+                isOn
+                  ? "bg-ink-900 text-white no-underline dark:bg-paper-50 dark:text-ink-900"
+                  : "decoration-ink-300 hover:bg-paper-100 hover:decoration-ink-900 dark:decoration-umber-500 dark:hover:bg-umber-700"
+              }`}
+            >
+              {text}
+            </button>
+          ),
+        };
+      }),
+    },
+    {
+      key: "distance",
+      label: t("suppliers.compare.row_distance"),
+      cells: columns.map((s) => {
+        if (coupleLocation.lat === null || coupleLocation.lng === null)
+          return { empty: t("suppliers.compare.distance_no_origin") };
+        const km = supplierDistanceKm(s, coupleLocation);
+        if (km === null) return { empty: t("suppliers.compare.row_distance") };
+        const isClosest = closestKm !== null && Math.abs(km - closestKm) < 0.5;
+        return {
+          node: (
+            <span
+              className={`inline-flex items-center gap-1 text-sm tabular-nums ${
+                isClosest
+                  ? "font-semibold text-sage-700 dark:text-sage-300"
+                  : "text-ink-900 dark:text-paper-50"
+              }`}
+            >
+              {isClosest && <Check size={12} aria-hidden />}
+              {t("suppliers.compare.distance_km", { km: Math.max(0, Math.round(km)) })}
+            </span>
+          ),
+        };
+      }),
+    },
+    {
+      key: "available",
+      label: t("suppliers.compare.row_available"),
+      cells: columns.map((s) => {
+        const loading = isLoading(s.id);
+        if (loading) return { node: <CellSkeleton /> };
+        const cell = availableCell(details.get(s.id), false, locale, t);
+        if (cell.tone === "muted") return { empty: cell.text };
+        return {
+          node: (
+            <span className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+              {cell.text}
+            </span>
+          ),
+        };
+      }),
+    },
+    {
+      key: "votes",
+      label: t("suppliers.compare.row_votes"),
+      cells: columns.map((s) => ({
+        node: (
+          <span className="text-sm tabular-nums text-ink-900 dark:text-paper-50">
+            {s.votes_score > 0 ? `+${s.votes_score}` : s.votes_score}
+          </span>
+        ),
+      })),
+    },
+    {
+      key: "about",
+      label: t("suppliers.compare.row_about"),
+      cells: columns.map((s) => {
+        const blurb = pickListingBlurb(s, locale);
+        if (!blurb) return { empty: t("suppliers.compare.row_about") };
+        return {
+          node: (
+            <p
+              title={blurb}
+              className="line-clamp-4 text-xs leading-relaxed text-ink-600 dark:text-paper-200"
+            >
+              {blurb}
+            </p>
+          ),
+        };
+      }),
+    },
+  ];
 
   return (
     <Dialog
@@ -316,16 +529,13 @@ export function SupplierCompareDialog({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 items-center rounded-full border border-paper-300 bg-paper-50 px-4 text-sm text-ink-700 transition hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500"
+            className="inline-flex h-10 items-center rounded-full bg-ink-900 px-5 text-sm font-semibold text-white transition hover:bg-ink-800 dark:bg-paper-50 dark:text-ink-900 dark:hover:bg-paper-200"
           >
             {t("suppliers.compare.dialog_close_aria")}
           </button>
         </div>
       }
     >
-      <p className="mb-4 text-sm text-ink-500 dark:text-umber-300">
-        {t("suppliers.compare.dialog_intro")}
-      </p>
       {columns.length > 0 && detailsLoading && (
         <div className="mb-4" role="status" aria-live="polite">
           <p className="mb-1.5 text-[11px] text-ink-500 dark:text-umber-300">
@@ -334,9 +544,9 @@ export function SupplierCompareDialog({
               total: columns.length,
             })}
           </p>
-          <div className="h-1 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+          <div className="h-0.5 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
             <div
-              className="skeleton h-full rounded-full motion-safe:animate-shimmer motion-safe:transition-[width] motion-safe:duration-300"
+              className="h-full rounded-full bg-ink-900 motion-safe:transition-[width] motion-safe:duration-300 dark:bg-paper-50"
               style={{ width: `${Math.max(8, (settledCount / columns.length) * 100)}%` }}
             />
           </div>
@@ -347,322 +557,127 @@ export function SupplierCompareDialog({
           {t("suppliers.compare.floating_min_hint")}
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          {/* Column headers: name + category + remove ×. Each header pins
-           *  to the top of its column inside the scrollable wrapper. */}
-          <div
-            className="grid gap-3"
-            style={{
-              gridTemplateColumns: `9rem repeat(${columns.length}, minmax(11rem, 1fr))`,
-            }}
-          >
-            {/* Row labels pin to the left edge: with up to 15 columns the
-             *  grid scrolls sideways and a cell without its label is a number
-             *  about nothing. */}
-            <div className="sticky left-0 z-10 bg-white dark:bg-umber-800" />
-            {columns.map((s) => (
-              <div
-                key={s.id}
-                className="rounded-2xl border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-700/60"
+        <>
+          {mapActive && (
+            <div className="relative mb-4 h-64 overflow-hidden rounded-2xl border border-paper-200 bg-paper-100 dark:border-umber-700 dark:bg-umber-900">
+              <Suspense fallback={<Skeleton className="h-full w-full" />}>
+                <CompareMap
+                  suppliers={columns}
+                  activeId={mapActive}
+                  onSelect={setMapFor}
+                  venue={coupleLocation}
+                  venueLabel={t("suppliers.compare.map_venue")}
+                />
+              </Suspense>
+              <button
+                type="button"
+                onClick={() => setMapFor(null)}
+                aria-label={t("suppliers.compare.map_close")}
+                title={t("suppliers.compare.map_close")}
+                className="absolute right-2 top-2 z-[500] inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink-900 shadow-soft transition hover:bg-paper-100 dark:bg-umber-800 dark:text-paper-50 dark:hover:bg-umber-700"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
-                      {s.name}
-                    </h3>
-                    <p className="mt-0.5 text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                      {t(`suppliers.cat.${s.category}`)}
-                    </p>
+                <X size={16} aria-hidden />
+              </button>
+            </div>
+          )}
+          <div className="-mx-1 overflow-x-auto pb-1">
+            <div
+              className="grid"
+              style={{
+                gridTemplateColumns: `8rem repeat(${columns.length}, minmax(10.5rem, 1fr))`,
+              }}
+            >
+              {/* Row labels pin to the left edge: with up to 15 columns the
+               *  grid scrolls sideways and a cell without its label is a number
+               *  about nothing. */}
+              <div className="sticky left-0 z-10 bg-white dark:bg-umber-800" />
+              {columns.map((s) => (
+                <div key={s.id} className="px-1 pb-3">
+                  {/* The name tile is the one solid block in the table: every
+                   *  column is anchored by it, and everything under it is flat
+                   *  type on hairlines. */}
+                  <div className="flex h-full items-start justify-between gap-2 rounded-xl bg-ink-900 p-3 text-white dark:bg-paper-50 dark:text-ink-900">
+                    <div className="min-w-0">
+                      <h3
+                        className="line-clamp-2 text-sm font-semibold leading-snug [overflow-wrap:anywhere]"
+                        title={s.name}
+                      >
+                        {s.name}
+                      </h3>
+                      <p className="mt-1 text-[11px] text-white/60 dark:text-ink-500">
+                        {t(`suppliers.cat.${s.category}`)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(s.id)}
+                      aria-label={t("suppliers.compare.remove_column")}
+                      title={t("suppliers.compare.remove_column")}
+                      className="-mr-1 -mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/60 transition hover:bg-white/15 hover:text-white dark:text-ink-500 dark:hover:bg-ink-900/10 dark:hover:text-ink-900"
+                    >
+                      <X size={14} aria-hidden />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onRemove(s.id)}
-                    aria-label={t("suppliers.compare.remove_column")}
-                    title={t("suppliers.compare.remove_column")}
-                    className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                  >
-                    <X size={14} aria-hidden />
-                  </button>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {/* Row: quote (planned_huf) vs category budget. */}
-            <RowLabel
-              icon={<Wallet size={14} aria-hidden />}
-              label={t("suppliers.compare.row_quote")}
-            />
-            {columns.map((s) => {
-              const cell = quoteCell(s, supplierCosts, budgetLines, currency, locale, t);
-              return (
-                <Cell key={`q-${s.id}`}>
-                  {cell.primary ? (
-                    <span className="text-base font-semibold text-ink-900 dark:text-paper-50">
-                      {cell.primary}
-                    </span>
-                  ) : null}
-                  {cell.secondary && (
-                    <span
-                      className={
-                        cell.tone === "ok"
-                          ? "mt-0.5 text-[11px] text-sage-700 dark:text-sage-300"
-                          : cell.tone === "warn"
-                            ? "mt-0.5 text-[11px] text-blush-700 dark:text-blush-300"
-                            : "mt-0.5 text-[11px] text-ink-500 dark:text-umber-300"
-                      }
-                    >
-                      {cell.secondary}
-                    </span>
-                  )}
-                </Cell>
-              );
-            })}
-
-            {/* Row: declared price band. */}
-            <RowLabel label={t("suppliers.compare.row_price_band")} />
-            {columns.map((s) => (
-              <Cell key={`p-${s.id}`}>
-                <PriceBandRow band={s.price_band} />
-              </Cell>
-            ))}
-
-            {/* Row: published rating + review count. Null below the 3-review
-                cold-start gate → "no ratings yet". */}
-            <RowLabel
-              icon={<Star size={14} aria-hidden />}
-              label={t("suppliers.compare.row_rating")}
-            />
-            {columns.map((s) => {
-              const d = details.get(s.id);
-              const rating = d?.avg_rating ?? null;
-              return (
-                <Cell key={`r-${s.id}`}>
-                  {isLoading(s.id) ? (
-                    <CellSkeleton />
-                  ) : rating === null ? (
-                    <span className="text-[11px] text-ink-500 dark:text-umber-300">
-                      {t("suppliers.compare.rating_none")}
-                    </span>
-                  ) : (
-                    <>
-                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-ink-900 dark:text-paper-50">
-                        <Star
-                          size={13}
-                          aria-hidden
-                          className="fill-current text-amber-500 dark:text-amber-300"
-                        />
-                        {rating.toFixed(1)}
-                      </span>
-                      <span className="mt-0.5 text-[11px] text-ink-500 dark:text-umber-300">
-                        {t("suppliers.compare.rating_count", { n: d?.reviews_count ?? 0 })}
-                      </span>
-                    </>
-                  )}
-                </Cell>
-              );
-            })}
-
-            {/* Row: capacity (with tailored verdict against target). */}
-            <RowLabel
-              icon={<Users size={14} aria-hidden />}
-              label={t("suppliers.compare.row_capacity")}
-            />
-            {columns.map((s) => {
-              const cap = capacityCell(s, targetGuestCount, t);
-              return (
-                <Cell key={`c-${s.id}`}>
-                  {cap.range ? (
-                    <span className="text-sm text-ink-800 dark:text-paper-100">{cap.range}</span>
-                  ) : null}
-                  <span
-                    className={
-                      cap.icon === "ok"
-                        ? "mt-0.5 inline-flex items-center gap-1 text-[11px] text-sage-700 dark:text-sage-300"
-                        : cap.icon === "warn"
-                          ? "mt-0.5 inline-flex items-center gap-1 text-[11px] text-blush-700 dark:text-blush-300"
-                          : "mt-0.5 inline-flex items-center gap-1 text-[11px] text-ink-500 dark:text-umber-300"
-                    }
-                  >
-                    <VerdictIcon kind={cap.icon} />
-                    {cap.line}
-                  </span>
-                </Cell>
-              );
-            })}
-
-            {/* Row: city (with same/different verdict if the couple is
-                actively filtering to a city). */}
-            <RowLabel
-              icon={<MapPin size={14} aria-hidden />}
-              label={t("suppliers.compare.row_city")}
-            />
-            {columns.map((s) => {
-              const match =
-                coupleCityFilter.length > 0 &&
-                s.city.toLowerCase() === coupleCityFilter.toLowerCase();
-              return (
-                <Cell key={`city-${s.id}`}>
-                  <span className="text-sm text-ink-800 dark:text-paper-100">{s.city}</span>
-                  {coupleCityFilter.length > 0 && (
-                    <span
-                      className={
-                        match
-                          ? "mt-0.5 inline-flex items-center gap-1 text-[11px] text-sage-700 dark:text-sage-300"
-                          : "mt-0.5 inline-flex items-center gap-1 text-[11px] text-ink-500 dark:text-umber-300"
-                      }
-                    >
-                      <VerdictIcon kind={match ? "ok" : "info"} />
-                      {match
-                        ? t("suppliers.compare.same_city")
-                        : t("suppliers.compare.different_city")}
-                    </span>
-                  )}
-                </Cell>
-              );
-            })}
-
-            {/* Row: distance from the couple's venue pin. Falls back to a
-                "set your venue" hint when the couple has no pin, or "-" when a
-                supplier lacks coordinates. */}
-            <RowLabel
-              icon={<Navigation size={14} aria-hidden />}
-              label={t("suppliers.compare.row_distance")}
-            />
-            {columns.map((s) => {
-              const km = supplierDistanceKm(s, coupleLocation);
-              const noOrigin = coupleLocation.lat === null || coupleLocation.lng === null;
-              const isClosest = km !== null && closestKm !== null && Math.abs(km - closestKm) < 0.5;
-              return (
-                <Cell key={`d-${s.id}`}>
-                  {noOrigin ? (
-                    <span className="text-[11px] text-ink-500 dark:text-umber-300">
-                      {t("suppliers.compare.distance_no_origin")}
-                    </span>
-                  ) : km === null ? (
-                    <span className="text-ink-400 dark:text-umber-400">-</span>
-                  ) : (
-                    <span
-                      className={
-                        isClosest
-                          ? "inline-flex items-center gap-1 text-sm font-semibold text-sage-700 dark:text-sage-300"
-                          : "text-sm text-ink-800 dark:text-paper-100"
-                      }
-                    >
-                      {isClosest && <VerdictIcon kind="ok" />}
-                      {t("suppliers.compare.distance_km", { km: Math.max(0, Math.round(km)) })}
-                    </span>
-                  )}
-                </Cell>
-              );
-            })}
-
-            {/* Row: earliest available date (claimed vendors only). */}
-            <RowLabel
-              icon={<CalendarCheck size={14} aria-hidden />}
-              label={t("suppliers.compare.row_available")}
-            />
-            {columns.map((s) => {
-              const loading = isLoading(s.id);
-              const cell = availableCell(details.get(s.id), loading, locale, t);
-              return (
-                <Cell key={`av-${s.id}`}>
-                  {loading ? (
-                    <CellSkeleton />
-                  ) : (
-                    <span
-                      className={
-                        cell.tone === "ok"
-                          ? "text-sm text-ink-800 dark:text-paper-100"
-                          : "text-[11px] text-ink-500 dark:text-umber-300"
-                      }
-                    >
-                      {cell.text}
-                    </span>
-                  )}
-                </Cell>
-              );
-            })}
-
-            {/* Row: community votes. */}
-            <RowLabel label={t("suppliers.compare.row_votes")} />
-            {columns.map((s) => (
-              <Cell key={`v-${s.id}`}>
-                <span className="text-sm tabular-nums text-ink-800 dark:text-paper-100">
-                  {s.votes_score > 0 ? `+${s.votes_score}` : s.votes_score}
-                </span>
-              </Cell>
-            ))}
-
-            {/* Row: contact channels. */}
-            <RowLabel label={t("suppliers.compare.row_contact")} />
-            {columns.map((s) => {
-              const channels: { icon: ReactElement; label: string }[] = [];
-              if (s.website)
-                channels.push({
-                  icon: <MapPin size={12} aria-hidden />,
-                  label: t("suppliers.compare.contact_website"),
-                });
-              {
-                /* Which channels EXIST, which is all this row ever showed: the
-                   labels are "e-mail" and "telefon", never the values. The
-                   catalogue stopped shipping the values themselves, so the two
-                   flags are what the row reads now. */
-              }
-              if (s.has_contact_email)
-                channels.push({
-                  icon: <Mail size={12} aria-hidden />,
-                  label: t("suppliers.compare.contact_email"),
-                });
-              if (s.has_contact_phone)
-                channels.push({
-                  icon: <Phone size={12} aria-hidden />,
-                  label: t("suppliers.compare.contact_phone"),
-                });
-              return (
-                <Cell key={`co-${s.id}`}>
-                  {channels.length === 0 ? (
-                    <span className="text-[11px] text-ink-500 dark:text-umber-300">
-                      {t("suppliers.compare.contact_none")}
-                    </span>
-                  ) : (
-                    <ul className="flex flex-col gap-1">
-                      {channels.map((c) => (
-                        <li
-                          key={c.label}
-                          className="inline-flex items-center gap-1 text-[11px] text-ink-700 dark:text-paper-100"
-                        >
-                          {c.icon}
-                          {c.label}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </Cell>
-              );
-            })}
-
-            {/* Row: about (blurb). Locale-aware. */}
-            <RowLabel label={t("suppliers.compare.row_about")} />
-            {columns.map((s) => (
-              <Cell key={`a-${s.id}`}>
-                <p className="text-xs leading-relaxed text-ink-700 dark:text-paper-100">
-                  {pickListingBlurb(s, locale)}
-                </p>
-              </Cell>
-            ))}
+              {rows.map((row) => (
+                <CompareRowView key={row.key} row={row} span={columns.length} />
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </Dialog>
   );
 }
 
-function RowLabel({ icon, label }: { icon?: ReactElement; label: string }) {
+type CompareCell = { node: ReactNode } | { empty: string };
+interface CompareRow {
+  key: string;
+  label: string;
+  cells: CompareCell[];
+}
+
+function CompareRowView({ row, span }: { row: CompareRow; span: number }) {
+  const first = row.cells[0];
+  const uniformEmpty =
+    first !== undefined &&
+    "empty" in first &&
+    row.cells.every((c) => "empty" in c && c.empty === first.empty);
   return (
-    <div className="sticky left-0 z-10 flex items-center gap-2 self-stretch bg-white text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:bg-umber-800 dark:text-umber-300">
-      {icon}
-      {label}
-    </div>
+    <>
+      <div className="sticky left-0 z-10 flex items-center border-b border-paper-200 bg-white py-3 pr-3 text-xs text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300">
+        {row.label}
+      </div>
+      {uniformEmpty ? (
+        <div
+          className="flex items-center border-b border-paper-200 px-1 py-3 dark:border-umber-700"
+          style={{ gridColumn: `span ${span}` }}
+        >
+          {/* Sticky so the one sentence stays in view while the columns
+           *  scroll under it. */}
+          <span className="sticky left-[8.25rem] text-xs text-ink-400 dark:text-umber-400">
+            {first.empty}
+          </span>
+        </div>
+      ) : (
+        row.cells.map((c, i) => (
+          <div
+            key={i}
+            className="flex flex-col justify-center border-b border-paper-200 px-1 py-3 dark:border-umber-700"
+          >
+            {"node" in c ? (
+              c.node
+            ) : (
+              <span title={c.empty} className="text-sm text-ink-300 dark:text-umber-500">
+                -<span className="sr-only">{c.empty}</span>
+              </span>
+            )}
+          </div>
+        ))
+      )}
+    </>
   );
 }
 
@@ -673,14 +688,6 @@ function CellSkeleton() {
     <div className="flex flex-col gap-1.5 py-0.5">
       <Skeleton variant="line" height={12} width="55%" />
       <Skeleton variant="line" height={8} width="80%" />
-    </div>
-  );
-}
-
-function Cell({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex flex-col rounded-xl border border-paper-200 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-700/40">
-      {children}
     </div>
   );
 }

@@ -7,7 +7,7 @@
 
 import type { DirectorySupplier } from "@shared/suppliers";
 import { describe, expect, it, mock } from "bun:test";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SupplierCompareDialog } from "@/components/SupplierCompareDialog";
 import { I18nProvider, useT } from "@/lib/i18n";
 
@@ -156,9 +156,32 @@ describe("<SupplierCompareDialog> distance / rating / available rows", () => {
       release();
       // A failed fetch still settles: the bar goes and the fallback copy lands.
       await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
-      expect(screen.getAllByText(/no ratings yet/i).length).toBe(2);
+      // Both columns land on the same empty state, so the row says it ONCE
+      // across the table instead of repeating it per column.
+      expect(screen.getAllByText(/no ratings yet/i).length).toBe(1);
     } finally {
       globalThis.fetch = realFetch;
     }
+  });
+
+  it("opens the map from a city that has a coordinate, and has no contact row", () => {
+    const pinned = makeSupplier({ id: "p", name: "Pinned", city: "Győr", lat: 47.68, lng: 17.63 });
+    const unpinned = makeSupplier({ id: "u", name: "Unpinned", city: "Heves" });
+    renderDialog([pinned, unpinned], { lat: null, lng: null });
+
+    // Only the city we can actually place is a button.
+    const gyor = screen.getByRole("button", { name: /győr, show on map/i });
+    expect(screen.queryByRole("button", { name: /heves/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Heves")).toBeInTheDocument();
+
+    expect(gyor).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(gyor);
+    expect(gyor).toHaveAttribute("aria-pressed", "true");
+    const close = screen.getByRole("button", { name: /close map/i });
+    fireEvent.click(close);
+    expect(screen.queryByRole("button", { name: /close map/i })).not.toBeInTheDocument();
+
+    // Contact channels are not something to compare suppliers on.
+    expect(screen.queryByText(/^contact$/i)).not.toBeInTheDocument();
   });
 });
