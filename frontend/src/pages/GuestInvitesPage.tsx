@@ -9,6 +9,7 @@ import {
   CalendarClock,
   Check,
   CheckCheck,
+  ChevronDown,
   CircleCheck,
   CircleDashed,
   CircleHelp,
@@ -1157,6 +1158,9 @@ export function GuestInvitesCenter({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>(readStoredSort);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Sending is an occasional act, not the page's job, so the composers stay
+  // folded until asked for and the guest list gets the screen.
+  const [commOpen, setCommOpen] = useState(false);
   const [rsvpFilter, setRsvpFilter] = useState<ReadonlySet<RsvpStatus>>(() => new Set());
   const [channelFilter, setChannelFilter] = useState<ReadonlySet<ChannelState>>(() => new Set());
   const [kindFilter, setKindFilter] = useState<ReadonlySet<GuestKind>>(() => new Set());
@@ -1430,6 +1434,20 @@ export function GuestInvitesCenter({
                         label: `${t(f === "not_invited" ? "guest_invites.not_invited" : `guest_invites.filter_${f}`)} ${filterCount[f]}`,
                       }))}
                     />
+                    {/* The search sits in the middle of the row and, once
+                        opened, takes its width from the row itself, so the
+                        filters and order picker shift aside (or wrap) to
+                        make room rather than the field opening a line below. */}
+                    <div className="flex min-w-0 flex-1 justify-center">
+                      <ExpandingSearch
+                        value={query}
+                        onChange={setQuery}
+                        placeholder={t("guest_invites.search_placeholder")}
+                        ariaLabel={t("guest_invites.search_label")}
+                        clearLabel={t("guests.search_clear")}
+                        openClassName="w-full min-w-[12rem] max-w-xs"
+                      />
+                    </div>
                     <div className="ml-auto flex shrink-0 items-center gap-2">
                       <ViewSelect
                         compact
@@ -1473,15 +1491,6 @@ export function GuestInvitesCenter({
                       </button>
                     </div>
                   </div>
-
-                  <ExpandingSearch
-                    value={query}
-                    onChange={setQuery}
-                    placeholder={t("guest_invites.search_placeholder")}
-                    ariaLabel={t("guest_invites.search_label")}
-                    clearLabel={t("guests.search_clear")}
-                    openClassName="w-full sm:max-w-xs"
-                  />
 
                   {filtersOpen && (
                     <div className="animate-fade-in-up flex flex-col gap-2.5 rounded-xl border border-paper-300 bg-paper-50/60 p-3 motion-reduce:animate-none dark:border-umber-700 dark:bg-umber-900/40">
@@ -1733,110 +1742,128 @@ export function GuestInvitesCenter({
             {/* ── B) Communication ── */}
             <section className="mt-10">
               <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-                {t("guest_invites.comm_title")}
+                <button
+                  type="button"
+                  onClick={() => setCommOpen((o) => !o)}
+                  aria-expanded={commOpen}
+                  aria-controls="gi-comm-body"
+                  className="flex items-center gap-2 rounded-lg text-left"
+                >
+                  {t("guest_invites.comm_title")}
+                  <ChevronDown
+                    size={18}
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                    className={`text-umber-500 transition-transform duration-200 dark:text-umber-300 ${commOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
               </h2>
 
-              <div className="mt-4 grid gap-4 lg:grid-cols-3">
-                <InviteCard counts={audienceCounts} onSent={onSent} />
-                <MajorUpdateCard counts={audienceCounts} onSent={onSent} />
-                <PreWeddingCard couple={couple} counts={audienceCounts} onSent={onSent} />
-              </div>
+              {commOpen && (
+                <div id="gi-comm-body">
+                  <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                    <InviteCard counts={audienceCounts} onSent={onSent} />
+                    <MajorUpdateCard counts={audienceCounts} onSent={onSent} />
+                    <PreWeddingCard couple={couple} counts={audienceCounts} onSent={onSent} />
+                  </div>
 
-              {/* Past + scheduled broadcasts */}
-              <h3 className="mt-8 font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
-                {t("guest_invites.broadcasts_title")}
-              </h3>
-              {messages.length === 0 ? (
-                <div className="mt-3 flex flex-col items-center gap-2 rounded-xl border border-paper-300 px-4 py-10 dark:border-umber-700">
-                  <Megaphone
-                    size={20}
-                    aria-hidden="true"
-                    className="text-umber-300 dark:text-umber-600"
-                    strokeWidth={1.5}
-                  />
-                  <p className="text-sm text-umber-500 dark:text-umber-400">
-                    {t("guest_invites.broadcasts_empty")}
-                  </p>
-                </div>
-              ) : (
-                <ul className="mt-3 flex flex-col gap-2">
-                  {messages.map((m, i) => {
-                    const Icon = TEMPLATE_ICON[m.template];
-                    const StatusIcon = BROADCAST_ICON[m.status];
-                    const statusLabel = t(`guest_invites.status_${m.status}`);
-                    return (
-                      <li
-                        key={m.id}
-                        className="animate-card-deal flex flex-wrap items-center justify-between gap-3 rounded-xl border border-paper-300 bg-paper-50 px-4 py-3 motion-reduce:animate-none dark:border-umber-700 dark:bg-umber-900"
-                        style={{ animationDelay: `${staggerMs(i, 26)}ms` }}
-                      >
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span
-                            aria-hidden="true"
-                            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-paper-200 text-umber-600 dark:bg-umber-800 dark:text-umber-200"
+                  {/* Past + scheduled broadcasts */}
+                  <h3 className="mt-8 font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
+                    {t("guest_invites.broadcasts_title")}
+                  </h3>
+                  {messages.length === 0 ? (
+                    <div className="mt-3 flex flex-col items-center gap-2 rounded-xl border border-paper-300 px-4 py-10 dark:border-umber-700">
+                      <Megaphone
+                        size={20}
+                        aria-hidden="true"
+                        className="text-umber-300 dark:text-umber-600"
+                        strokeWidth={1.5}
+                      />
+                      <p className="text-sm text-umber-500 dark:text-umber-400">
+                        {t("guest_invites.broadcasts_empty")}
+                      </p>
+                    </div>
+                  ) : (
+                    <ul className="mt-3 flex flex-col gap-2">
+                      {messages.map((m, i) => {
+                        const Icon = TEMPLATE_ICON[m.template];
+                        const StatusIcon = BROADCAST_ICON[m.status];
+                        const statusLabel = t(`guest_invites.status_${m.status}`);
+                        return (
+                          <li
+                            key={m.id}
+                            className="animate-card-deal flex flex-wrap items-center justify-between gap-3 rounded-xl border border-paper-300 bg-paper-50 px-4 py-3 motion-reduce:animate-none dark:border-umber-700 dark:bg-umber-900"
+                            style={{ animationDelay: `${staggerMs(i, 26)}ms` }}
                           >
-                            <Icon size={16} strokeWidth={1.5} />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="font-medium text-umber-900 dark:text-paper-50">
-                              {t(`guest_invites.template_${m.template}`)}
-                            </p>
-                            <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
-                              {t(`guest_invites.audience_${m.audience}`)}
-                              {" · "}
-                              {t("guest_invites.recipients", { count: m.recipient_count })}
-                              {" · "}
-                              {m.status === "scheduled" && m.scheduled_at !== null
-                                ? t("guest_invites.scheduled_for", {
-                                    date: formatTimestamp(m.scheduled_at, locale),
-                                  })
-                                : m.sent_at !== null
-                                  ? t("guest_invites.sent_on", {
-                                      date: formatTimestamp(m.sent_at, locale),
-                                    })
-                                  : statusLabel}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-3">
-                          {/* Same treatment as the guest rows: a shape, a
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span
+                                aria-hidden="true"
+                                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-paper-200 text-umber-600 dark:bg-umber-800 dark:text-umber-200"
+                              >
+                                <Icon size={16} strokeWidth={1.5} />
+                              </span>
+                              <div className="min-w-0">
+                                <p className="font-medium text-umber-900 dark:text-paper-50">
+                                  {t(`guest_invites.template_${m.template}`)}
+                                </p>
+                                <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
+                                  {t(`guest_invites.audience_${m.audience}`)}
+                                  {" · "}
+                                  {t("guest_invites.recipients", { count: m.recipient_count })}
+                                  {" · "}
+                                  {m.status === "scheduled" && m.scheduled_at !== null
+                                    ? t("guest_invites.scheduled_for", {
+                                        date: formatTimestamp(m.scheduled_at, locale),
+                                      })
+                                    : m.sent_at !== null
+                                      ? t("guest_invites.sent_on", {
+                                          date: formatTimestamp(m.sent_at, locale),
+                                        })
+                                      : statusLabel}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-3">
+                              {/* Same treatment as the guest rows: a shape, a
                               colour, and the full word as the accessible name.
                               `sending` is the one status that MOVES, so it is
                               the one that gets a spinner — the only animated
                               glyph on the page that is reporting work still in
                               flight. */}
-                          <span
-                            className={`inline-grid h-8 w-8 place-items-center rounded-full ${BROADCAST_SURFACE[m.status]}`}
-                            title={statusLabel}
-                          >
-                            <StatusIcon
-                              size={16}
-                              strokeWidth={1.75}
-                              role="img"
-                              aria-label={statusLabel}
-                              className={
-                                m.status === "sending"
-                                  ? "animate-spin motion-reduce:animate-none"
-                                  : undefined
-                              }
-                            />
-                          </span>
-                          {m.status === "scheduled" && (
-                            <button
-                              type="button"
-                              aria-label={t("guest_invites.cancel_button")}
-                              title={t("guest_invites.cancel_button")}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-umber-500 transition-colors hover:bg-paper-200 hover:text-umber-900 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50"
-                              onClick={() => void handleCancel(m.id)}
-                            >
-                              <X size={16} aria-hidden="true" />
-                            </button>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                              <span
+                                className={`inline-grid h-8 w-8 place-items-center rounded-full ${BROADCAST_SURFACE[m.status]}`}
+                                title={statusLabel}
+                              >
+                                <StatusIcon
+                                  size={16}
+                                  strokeWidth={1.75}
+                                  role="img"
+                                  aria-label={statusLabel}
+                                  className={
+                                    m.status === "sending"
+                                      ? "animate-spin motion-reduce:animate-none"
+                                      : undefined
+                                  }
+                                />
+                              </span>
+                              {m.status === "scheduled" && (
+                                <button
+                                  type="button"
+                                  aria-label={t("guest_invites.cancel_button")}
+                                  title={t("guest_invites.cancel_button")}
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-umber-500 transition-colors hover:bg-paper-200 hover:text-umber-900 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+                                  onClick={() => void handleCancel(m.id)}
+                                >
+                                  <X size={16} aria-hidden="true" />
+                                </button>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
               )}
             </section>
           </>
