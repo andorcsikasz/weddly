@@ -27,7 +27,6 @@ import {
   Globe,
   Info,
   Leaf,
-  Mail,
   Milk,
   Nut,
   Plus,
@@ -1407,19 +1406,6 @@ export function HouseholdRsvpForm({
                 </div>
               </>
             )}
-
-            {/* Email hint footer */}
-            <div className="flex items-start justify-center gap-3 border-t border-paper-300 px-5 py-4 dark:border-umber-700">
-              <Mail
-                size={16}
-                strokeWidth={2}
-                className="mt-0.5 shrink-0 text-ink-900 dark:text-paper-100"
-                aria-hidden
-              />
-              <p className="max-w-xs text-left text-xs leading-relaxed text-ink-500 dark:text-umber-300">
-                {t("rsvp.thanks_email_hint")}
-              </p>
-            </div>
           </div>
 
           {/* Tertiary actions — below the card */}

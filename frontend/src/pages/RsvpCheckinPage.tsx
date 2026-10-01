@@ -244,8 +244,8 @@ export default function RsvpCheckinPage() {
                 ref={coupleInputRef}
                 className={
                   errorField === "couple" || errorField === "both"
-                    ? "input font-mono uppercase tracking-[0.3em] text-center text-lg min-h-14 border-blush-400 focus:border-blush-500 placeholder:text-ink-300 placeholder:font-normal placeholder:opacity-40"
-                    : "input font-mono uppercase tracking-[0.3em] text-center text-lg min-h-14 placeholder:text-ink-300 placeholder:font-normal placeholder:opacity-40"
+                    ? "input font-mono uppercase tracking-[0.3em] indent-[0.3em] text-center text-lg min-h-14 border-blush-400 focus:border-blush-500 placeholder:text-ink-300 placeholder:font-normal placeholder:opacity-40"
+                    : "input font-mono uppercase tracking-[0.3em] indent-[0.3em] text-center text-lg min-h-14 placeholder:text-ink-300 placeholder:font-normal placeholder:opacity-40"
                 }
                 value={coupleInput}
                 autoCapitalize="characters"
@@ -273,8 +273,8 @@ export default function RsvpCheckinPage() {
                 id="rsvp-code"
                 className={
                   errorField === "code" || errorField === "both"
-                    ? "input font-mono uppercase tracking-[0.25em] text-center text-2xl min-h-14 border-blush-400 focus:border-blush-500 placeholder:text-ink-300"
-                    : "input font-mono uppercase tracking-[0.25em] text-center text-2xl min-h-14 placeholder:text-ink-300"
+                    ? "input font-mono uppercase tracking-[0.25em] indent-[0.25em] text-center text-2xl min-h-14 border-blush-400 focus:border-blush-500 placeholder:text-ink-300"
+                    : "input font-mono uppercase tracking-[0.25em] indent-[0.25em] text-center text-2xl min-h-14 placeholder:text-ink-300"
                 }
                 value={codeInput}
                 inputMode="text"
