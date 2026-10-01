@@ -334,9 +334,11 @@ export function CameraHero({
         }`}
       >
         <div className="relative z-10 max-w-2xl">
-          <div className={`mb-6 ${rise(0).className}`} style={rise(0).style}>
-            <HeroEyebrow label={t("media.film_title")} bare={minimal} />
-          </div>
+          {!minimal && (
+            <div className={`mb-6 ${rise(0).className}`} style={rise(0).style}>
+              <HeroEyebrow label={t("media.film_title")} />
+            </div>
+          )}
 
           <h1
             className={`font-semibold !text-paper-50 ${
@@ -459,9 +461,9 @@ export function CameraHero({
 
       {minimal ? (
         // The three steps as a flow, Uber-style: solid numbered stops,
-        // centred, each with its line under it, joined by a connector that a
-        // highlight keeps travelling along (left to right from sm up, top to
-        // bottom on a phone), so 1 → 2 → 3 reads as one sequence.
+        // centred, each with its line under it, joined by a hairline connector
+        // (horizontal from sm up, vertical on a phone), so 1 → 2 → 3 reads as
+        // one sequence.
         <ol className="relative mt-10 grid border-t border-paper-50/10 pt-8 sm:grid-cols-3">
           {[
             t("media.film_how_1_title"),
@@ -477,21 +479,11 @@ export function CameraHero({
               </p>
               {i < all.length - 1 && (
                 <>
+                  <span aria-hidden="true" className="my-3 h-8 w-px bg-paper-50/15 sm:hidden" />
                   <span
                     aria-hidden="true"
-                    className="flow-line my-3 h-8 w-px sm:hidden"
-                    style={{ "--flow-delay": `${i * 1.2}s` } as CSSProperties}
-                  />
-                  <span
-                    aria-hidden="true"
-                    className="flow-line absolute top-5 hidden h-px sm:block"
-                    style={
-                      {
-                        left: "calc(50% + 2rem)",
-                        right: "calc(-50% + 2rem)",
-                        "--flow-delay": `${i * 1.2}s`,
-                      } as CSSProperties
-                    }
+                    className="absolute top-5 hidden h-px bg-paper-50/15 sm:block"
+                    style={{ left: "calc(50% + 2rem)", right: "calc(-50% + 2rem)" }}
                   />
                 </>
               )}

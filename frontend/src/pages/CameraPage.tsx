@@ -119,7 +119,6 @@ export default function CameraPage() {
   // so this only ever matters to the type checker, never at runtime.
   const tier = TIERS[tierIndex] ?? (TIERS[1] as PricingTier);
   const tierCouplePrice = couplePrice(tier.cap);
-  const includedLine = t("camera.already_included", { n: FILM_TIER_CAPS.free });
   // The roll animates in once, the first time it scrolls into view.
   const rollRef = useRef<HTMLElement>(null);
   const [rollIn, setRollIn] = useState(false);
@@ -164,7 +163,6 @@ export default function CameraPage() {
             minimal
             title={t("camera.hero_title")}
             subtitle={t("camera.hero_sub")}
-            finePrint={includedLine}
             tryQr={{ src: "/camera-try-qr.svg", label: t("camera.try_title") }}
             secondaryAction={
               // On a phone the visitor IS on the device, so a link beats a QR.
@@ -315,16 +313,6 @@ export default function CameraPage() {
               </p>
             </div>
           </section>
-
-          <p className="mt-24 text-center text-sm text-paper-400">
-            {includedLine}{" "}
-            <Link
-              to="/app/media"
-              className="font-semibold text-paper-100 underline decoration-paper-50/25 underline-offset-4 transition-colors hover:decoration-paper-50/60"
-            >
-              {t("camera.already_included_cta")}
-            </Link>
-          </p>
         </div>
       </div>
     </PublicShell>

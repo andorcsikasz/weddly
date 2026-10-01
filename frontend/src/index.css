@@ -1795,48 +1795,6 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     }
   }
 
-  /* /camera how-it-works: the connector between steps 1-2-3. A faint base
-     line with a soft highlight sweeping along it, vertical on a phone and
-     horizontal from sm up; `--flow-delay` staggers the second segment so the
-     pulse reads as travelling from one step on to the next. */
-  .flow-line {
-    position: relative;
-    overflow: hidden;
-    background-color: rgba(251, 250, 245, 0.14);
-  }
-  .flow-line::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, transparent, theme("colors.paper.100"), transparent);
-    transform: translateY(-100%);
-    animation: flowY 2.4s ease-in-out infinite;
-    animation-delay: var(--flow-delay, 0s);
-  }
-  @media (min-width: 640px) {
-    .flow-line::after {
-      background: linear-gradient(to right, transparent, theme("colors.paper.100"), transparent);
-      transform: translateX(-100%);
-      animation-name: flowX;
-    }
-  }
-  @keyframes flowY {
-    to {
-      transform: translateY(100%);
-    }
-  }
-  @keyframes flowX {
-    to {
-      transform: translateX(100%);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .flow-line::after {
-      animation: none;
-      opacity: 0;
-    }
-  }
-
   /* Subtle diagonal hairline texture for "stationery" surfaces. */
   .stationery {
     background-color: theme("colors.paper.200");
