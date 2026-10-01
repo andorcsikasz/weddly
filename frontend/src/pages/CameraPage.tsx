@@ -225,7 +225,7 @@ export default function CameraPage() {
   ];
 
   return (
-    <PublicShell>
+    <PublicShell flushFooter>
       <div className="dark overflow-x-clip bg-umber-950 font-grotesk text-paper-100">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20" lang={locale}>
           <CameraHero

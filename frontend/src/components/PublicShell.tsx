@@ -97,7 +97,17 @@ function useHeaderState(): { hidden: boolean; atTop: boolean } {
  *  the public site keeps the brown until that is decided for it too), so it is
  *  a prop on the shell rather than a retune of `umber-900`, which the whole app
  *  shares. The light theme is untouched. */
-export function PublicShell({ children, black = false }: { children: ReactNode; black?: boolean }) {
+export function PublicShell({
+  children,
+  black = false,
+  flushFooter = false,
+}: {
+  children: ReactNode;
+  black?: boolean;
+  /** For a page whose own ground is already dark (/camera): the footer sits
+   *  directly under it, without the cream gap that would read as a stray band. */
+  flushFooter?: boolean;
+}) {
   const { t } = useT();
   const { pathname } = useLocation();
   return (
@@ -121,7 +131,7 @@ export function PublicShell({ children, black = false }: { children: ReactNode; 
       >
         {children}
       </main>
-      <PublicFooter />
+      <PublicFooter flush={flushFooter} />
     </div>
   );
 }
@@ -484,7 +494,7 @@ function PublicHeader({ black = false }: { black?: boolean }) {
   );
 }
 
-function PublicFooter() {
+function PublicFooter({ flush = false }: { flush?: boolean }) {
   const { t, locale } = useT();
   const { pathname } = useLocation();
   const onVendorPage = pathname === "/suppliers";
@@ -508,7 +518,7 @@ function PublicFooter() {
     // without a single duplicated colour. One tone for the whole slab, band
     // included — the two-shade split read as a seam rather than a section.
     <footer
-      className="dark mt-16 bg-umber-950 font-grotesk sm:mt-24"
+      className={`dark bg-umber-950 font-grotesk ${flush ? "" : "mt-16 sm:mt-24"}`}
       // The landing page's mobile sticky CTA stands down once the footer is on
       // screen: its backdrop is a cream scrim sized for the cream page, and
       // over this black slab it paints a smear instead of a separation. Inert
