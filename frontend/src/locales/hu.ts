@@ -9536,13 +9536,10 @@ const hu: LocaleMessages = {
       faq_h2: "Gyakori kérdések a vendéglistáról",
     },
     seating_chart: {
-      page_eyebrow: "Eszközök · Ültetési rend készítő",
       page_h1: "Ültetési rend készítő",
       page_intro:
         "Egy vászon, asztalok, vendégek; húzd a vendégeket az asztalokra, és a Wēddly egy kattintással nyomtatható ültetési rendet készít A4, A6 (ültetőkártya) és A3 (a nagy tábla a bejárathoz) méretben. Egyenesen a nyomdába vihető, pontos mm méretben.",
       planner_h2: "Hány asztal kell?",
-      planner_caption:
-        "Húzd a csúszkát a vendégszámotokra, válassz asztalméretet, és máris látod a számolást, regisztráció nélkül.",
       planner_guests_label: "Vendégek",
       planner_size_label: "Asztal mérete",
       planner_size_round8: "Kerek · 8 fő",
@@ -9553,9 +9550,22 @@ const hu: LocaleMessages = {
       planner_seats_label: "Összes ülőhely",
       planner_spare_label: "Szabad ülőhely",
       planner_spare_none: "Pont kijön, nincs felesleg",
-      planner_grid_more: "+{n} további",
       planner_note:
         "A valóságban vegyítitek az asztalméreteket, ez csak egy kiindulópont. A pontos elrendezést a vásznon finomíthatjátok regisztráció után.",
+      hero_cta: "Tervezd meg a termet",
+      wizard_step: "{n}. lépés / 3",
+      wizard_guests_q: "Hány vendéget vártok?",
+      wizard_size_q: "Milyen asztalokkal?",
+      wizard_result_q: "Így néz ki a termetek",
+      wizard_next: "Tovább",
+      wizard_back: "Vissza",
+      wizard_restart: "Újrakezdés",
+      wizard_tables_for: "{n} asztal",
+      room_dance_floor: "Tánctér",
+      room_table: "{n}. asztal",
+      room_guests_at: "{n} vendég",
+      room_legend_taken: "Vendég",
+      room_legend_empty: "Üres hely",
       what_h2: "Mit kapsz",
       what_body:
         "Egy interaktív vásznat, ahol asztalokat (kerek, szögletes, főasztal) helyezel el, és a vendéglistádról húzod őket a helyükre. A vászon konfliktusokat is jelez, ha két vendég ki nem állhatja egymást, vagy ha egy asztal kerek méretarány-szabálysértést szenved.",

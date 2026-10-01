@@ -9545,13 +9545,10 @@ const es: LocaleMessages = {
       faq_h2: "Preguntas sobre la lista de invitados",
     },
     seating_chart: {
-      page_eyebrow: "Herramientas · Creador de planos de mesas",
       page_h1: "Creador de planos de mesas para boda",
       page_intro:
         "Un lienzo, mesas, invitados, arrastra invitados a las mesas y Weddly exporta un plano de mesas imprimible en tamaños A4, A6 (tarjetas de sitio) y A3 (cartel de entrada). Va directo a la imprenta con milímetros exactos.",
       planner_h2: "¿Cuántas mesas necesitas?",
-      planner_caption:
-        "Mueve el control deslizante a tu número de invitados, elige el tamaño de mesa y ve el cálculo, sin registro.",
       planner_guests_label: "Invitados",
       planner_size_label: "Tamaño de mesa",
       planner_size_round8: "Redonda · 8",
@@ -9562,9 +9559,22 @@ const es: LocaleMessages = {
       planner_seats_label: "Asientos totales",
       planner_spare_label: "Asientos de sobra",
       planner_spare_none: "Encaja justo, sin sobras",
-      planner_grid_more: "+{n} más",
       planner_note:
         "En una boda real se mezclan tamaños de mesa; esto es solo un punto de partida. Ajusta la combinación exacta en el lienzo después de registrarte.",
+      hero_cta: "Planifica tu sala",
+      wizard_step: "Paso {n} de 3",
+      wizard_guests_q: "¿Cuántos invitados esperáis?",
+      wizard_size_q: "¿Qué mesas?",
+      wizard_result_q: "Así queda vuestra sala",
+      wizard_next: "Siguiente",
+      wizard_back: "Atrás",
+      wizard_restart: "Empezar de nuevo",
+      wizard_tables_for: "{n} mesas",
+      room_dance_floor: "Pista de baile",
+      room_table: "Mesa {n}",
+      room_guests_at: "{n} invitados",
+      room_legend_taken: "Invitado",
+      room_legend_empty: "Silla libre",
       what_h2: "Qué obtienes",
       what_body:
         "Un lienzo interactivo donde colocas mesas (redondas, rectangulares, mesa presidencial) y arrastras invitados de tu lista a los asientos. El lienzo señala conflictos, si dos invitados no se soportan, o si una mesa redonda supera una capacidad razonable.",

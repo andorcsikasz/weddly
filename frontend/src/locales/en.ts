@@ -9458,13 +9458,10 @@ const en: LocaleMessages = {
       faq_h2: "Guest list questions",
     },
     seating_chart: {
-      page_eyebrow: "Tools · Seating chart maker",
       page_h1: "Wedding seating chart maker",
       page_intro:
         "A canvas, tables, guests, drag guests onto tables and Weddly exports a printable seating chart at A4, A6 (place cards) and A3 (entrance display) sizes. Goes straight to the printer at exact mm.",
       planner_h2: "How many tables do you need?",
-      planner_caption:
-        "Move the slider to your headcount, pick a table size, and see the math, no signup needed.",
       planner_guests_label: "Guests",
       planner_size_label: "Table size",
       planner_size_round8: "Round · 8",
@@ -9475,9 +9472,22 @@ const en: LocaleMessages = {
       planner_seats_label: "Seats total",
       planner_spare_label: "Spare seats",
       planner_spare_none: "Exact fit, no spares",
-      planner_grid_more: "+{n} more",
       planner_note:
         "Real receptions mix table sizes; this is a starting point. Fine-tune the exact mix on the canvas after signup.",
+      hero_cta: "Plan your room",
+      wizard_step: "Step {n} of 3",
+      wizard_guests_q: "How many guests are you expecting?",
+      wizard_size_q: "Which tables?",
+      wizard_result_q: "Here is your room",
+      wizard_next: "Next",
+      wizard_back: "Back",
+      wizard_restart: "Start over",
+      wizard_tables_for: "{n} tables",
+      room_dance_floor: "Dance floor",
+      room_table: "Table {n}",
+      room_guests_at: "{n} guests",
+      room_legend_taken: "Guest",
+      room_legend_empty: "Empty seat",
       what_h2: "What you get",
       what_body:
         "An interactive canvas where you place tables (round, rectangular, head table) and drag guests from your list to seats. The canvas flags conflicts, if two guests can't stand each other, or if a round table is exceeding sensible capacity.",

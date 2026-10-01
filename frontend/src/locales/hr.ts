@@ -9445,13 +9445,10 @@ const hr: LocaleMessages = {
       faq_h2: "Pitanja o popisu gostiju",
     },
     seating_chart: {
-      page_eyebrow: "Alati · Izrada rasporeda sjedenja",
       page_h1: "Izrada rasporeda sjedenja za vjenčanje",
       page_intro:
         "Platno, stolovi, gosti: povucite goste na stolove i Weddly izvozi raspored sjedenja spreman za tisak u formatima A4, A6 (kartice za stol) i A3 (ploča na ulazu). Ide ravno u tiskaru, u točnim milimetrima.",
       planner_h2: "Koliko vam stolova treba?",
-      planner_caption:
-        "Pomaknite klizač na broj gostiju, odaberite veličinu stola i pogledajte izračun, bez registracije.",
       planner_guests_label: "Gosti",
       planner_size_label: "Veličina stola",
       planner_size_round8: "Okrugli · 8",
@@ -9462,9 +9459,22 @@ const hr: LocaleMessages = {
       planner_seats_label: "Ukupno mjesta",
       planner_spare_label: "Slobodna mjesta",
       planner_spare_none: "Točno se poklapa, bez viška",
-      planner_grid_more: "+{n} više",
       planner_note:
         "Na pravom vjenčanju obično se miješaju veličine stolova; ovo je samo polazna točka. Točan raspored dorađujete na platnu nakon registracije.",
+      hero_cta: "Isplanirajte dvoranu",
+      wizard_step: "Korak {n} od 3",
+      wizard_guests_q: "Koliko gostiju očekujete?",
+      wizard_size_q: "Kakvi stolovi?",
+      wizard_result_q: "Ovako izgleda vaša dvorana",
+      wizard_next: "Dalje",
+      wizard_back: "Natrag",
+      wizard_restart: "Ispočetka",
+      wizard_tables_for: "{n} stolova",
+      room_dance_floor: "Plesni podij",
+      room_table: "Stol {n}",
+      room_guests_at: "{n} gostiju",
+      room_legend_taken: "Gost",
+      room_legend_empty: "Slobodno mjesto",
       what_h2: "Što dobivate",
       what_body:
         "Interaktivno platno na kojem postavljate stolove (okrugle, pravokutne, glavni stol) i povlačite goste s popisa na njihova mjesta. Platno javlja sukobe, kad se dvoje gostiju ne podnosi ili kad okrugli stol premašuje razumnu popunjenost.",

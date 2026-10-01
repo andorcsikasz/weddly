@@ -10790,11 +10790,9 @@ export interface LocaleMessages {
       faq_h2: string;
     };
     seating_chart: {
-      page_eyebrow: string;
       page_h1: string;
       page_intro: string;
       planner_h2: string;
-      planner_caption: string;
       planner_guests_label: string;
       planner_size_label: string;
       planner_size_round8: string;
@@ -10805,8 +10803,21 @@ export interface LocaleMessages {
       planner_seats_label: string;
       planner_spare_label: string;
       planner_spare_none: string;
-      planner_grid_more: string;
       planner_note: string;
+      hero_cta: string;
+      wizard_step: string;
+      wizard_guests_q: string;
+      wizard_size_q: string;
+      wizard_result_q: string;
+      wizard_next: string;
+      wizard_back: string;
+      wizard_restart: string;
+      wizard_tables_for: string;
+      room_dance_floor: string;
+      room_table: string;
+      room_guests_at: string;
+      room_legend_taken: string;
+      room_legend_empty: string;
       what_h2: string;
       what_body: string;
       print_h2: string;

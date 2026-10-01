@@ -9597,13 +9597,10 @@ const de: LocaleMessages = {
       faq_h2: "Fragen zur Gästeliste",
     },
     seating_chart: {
-      page_eyebrow: "Tools · Sitzplan-Editor",
       page_h1: "Sitzplan-Editor für die Hochzeit",
       page_intro:
         "Eine Fläche, Tische, Gäste: Ziehen Sie die Gäste an die Tische, und Weddly exportiert einen druckfertigen Sitzplan in A4, A6 (Platzkarten) und A3 (Aushang am Eingang). Geht millimetergenau direkt in die Druckerei.",
       planner_h2: "Wie viele Tische brauchen Sie?",
-      planner_caption:
-        "Stellen Sie den Regler auf Ihre Gästezahl, wählen Sie eine Tischgröße und sehen Sie die Rechnung, ohne Registrierung.",
       planner_guests_label: "Gäste",
       planner_size_label: "Tischgröße",
       planner_size_round8: "Rund · 8",
@@ -9614,9 +9611,22 @@ const de: LocaleMessages = {
       planner_seats_label: "Plätze insgesamt",
       planner_spare_label: "Freie Plätze",
       planner_spare_none: "Passt genau, keine übrig",
-      planner_grid_more: "+{n} weitere",
       planner_note:
         "Echte Hochzeiten mischen Tischgrößen; das hier ist nur ein Ausgangspunkt. Die genaue Aufteilung feilen Sie nach der Registrierung auf der Fläche aus.",
+      hero_cta: "Plant euren Saal",
+      wizard_step: "Schritt {n} von 3",
+      wizard_guests_q: "Wie viele Gäste erwartet ihr?",
+      wizard_size_q: "Welche Tische?",
+      wizard_result_q: "So sieht euer Saal aus",
+      wizard_next: "Weiter",
+      wizard_back: "Zurück",
+      wizard_restart: "Neu starten",
+      wizard_tables_for: "{n} Tische",
+      room_dance_floor: "Tanzfläche",
+      room_table: "Tisch {n}",
+      room_guests_at: "{n} Gäste",
+      room_legend_taken: "Gast",
+      room_legend_empty: "Freier Platz",
       what_h2: "Was Sie bekommen",
       what_body:
         "Eine interaktive Fläche, auf der Sie Tische platzieren (rund, eckig, Haupttisch) und Gäste aus Ihrer Liste auf die Plätze ziehen. Die Fläche meldet Konflikte, wenn zwei Gäste sich nicht ausstehen können oder ein runder Tisch über eine sinnvolle Besetzung hinausgeht.",
