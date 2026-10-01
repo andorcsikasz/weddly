@@ -202,7 +202,7 @@ export function ReviewsSection({
             <div className="mt-5 space-y-5 animate-fade-in-up motion-reduce:animate-none">
               <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
               <textarea
-                className="w-full resize-none rounded-xl border border-transparent bg-paper-100 p-3.5 text-sm text-ink-900 placeholder:text-ink-400 transition focus:border-ink-900 focus:bg-white focus:outline-none dark:bg-umber-900/60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100 dark:focus:bg-umber-900"
+                className="w-full resize-none rounded-xl border border-transparent bg-paper-100 p-3.5 text-base text-ink-900 sm:text-sm placeholder:text-ink-400 transition focus:border-ink-900 focus:bg-white focus:outline-none dark:bg-umber-900/60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100 dark:focus:bg-umber-900"
                 placeholder={t("suppliers.detail.reviews.bodyPlaceholder")}
                 maxLength={REVIEW_BODY_MAX_CHARS}
                 rows={3}

@@ -50,7 +50,7 @@ export function ReviewSpendFields({
             onAmount(digits === "" ? null : Number(digits));
           }}
           placeholder={t("suppliers.detail.reviews.amountPlaceholder")}
-          className="w-full pr-3 pl-9 rounded-xl border border-transparent bg-paper-100 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 transition focus:border-ink-900 focus:bg-white focus:outline-none dark:bg-umber-900/60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100 dark:focus:bg-umber-900"
+          className="w-full pr-3 pl-9 rounded-xl border border-transparent bg-paper-100 py-2.5 text-base text-ink-900 sm:text-sm placeholder:text-ink-400 transition focus:border-ink-900 focus:bg-white focus:outline-none dark:bg-umber-900/60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100 dark:focus:bg-umber-900"
         />
       </div>
       <input
@@ -59,7 +59,7 @@ export function ReviewSpendFields({
         maxLength={REVIEW_AMOUNT_NOTE_MAX_CHARS}
         onChange={(e) => onNote(e.target.value)}
         placeholder={t("suppliers.detail.reviews.amountNotePlaceholder")}
-        className="flex-1 px-3.5 rounded-xl border border-transparent bg-paper-100 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 transition focus:border-ink-900 focus:bg-white focus:outline-none dark:bg-umber-900/60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100 dark:focus:bg-umber-900"
+        className="flex-1 px-3.5 rounded-xl border border-transparent bg-paper-100 py-2.5 text-base text-ink-900 sm:text-sm placeholder:text-ink-400 transition focus:border-ink-900 focus:bg-white focus:outline-none dark:bg-umber-900/60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100 dark:focus:bg-umber-900"
       />
     </div>
   );

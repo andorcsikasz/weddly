@@ -624,11 +624,11 @@ export function ComposeDialog({
             name/city. The chip carries the display name, the API the id. */}
         <div>
           <div
-            className="relative flex items-center gap-3 border-b border-paper-200 pb-2 transition focus-within:border-ink-900 dark:border-umber-700 dark:focus-within:border-paper-100"
+            className="relative flex items-start gap-3 border-b border-paper-200 pb-2 transition focus-within:border-ink-900 dark:border-umber-700 dark:focus-within:border-paper-100"
             onClick={() => inputRef.current?.focus()}
           >
             <span
-              className="shrink-0 text-sm font-semibold text-ink-900 dark:text-paper-50"
+              className="shrink-0 text-sm font-semibold leading-8 text-ink-900 dark:text-paper-50"
               id="outreach-suppliers-label"
             >
               {t("outreach.label_suppliers")}
@@ -676,11 +676,11 @@ export function ComposeDialog({
                   placeholder={
                     selected.length === 0 ? t("outreach.suppliers_picker_placeholder") : ""
                   }
-                  className="min-w-[8rem] flex-1 bg-transparent py-1 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400"
+                  className="min-w-[8rem] flex-1 bg-transparent py-1 text-base sm:text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400"
                 />
               )}
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums text-ink-400 dark:text-umber-400">
+            <span className="inline-flex h-8 shrink-0 items-center gap-1 text-xs tabular-nums text-ink-400 dark:text-umber-400">
               {t("outreach.suppliers_count", { n: selected.length, max: cap })}
               {/* Only once they have actually hit it. A limit stated with no
                   reason reads either as arbitrary or as a tier that could be
@@ -775,7 +775,7 @@ export function ComposeDialog({
             id="outreach-body"
             aria-label={t("outreach.label_body")}
             placeholder={t("outreach.label_body")}
-            className="block min-h-[12rem] w-full resize-none bg-transparent px-4 py-3 text-sm leading-relaxed text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400"
+            className="block min-h-[12rem] w-full resize-none bg-transparent px-4 py-3 text-base leading-relaxed sm:text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             maxLength={OUTREACH_BODY_MAX_LEN}

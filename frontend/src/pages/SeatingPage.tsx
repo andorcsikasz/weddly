@@ -1703,7 +1703,7 @@ export default function SeatingPage() {
         <div
           role="tablist"
           data-tour-target="seating-modes"
-          className="flex flex-1 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:border-umber-600 dark:bg-umber-800"
+          className="flex min-w-fit flex-1 overflow-hidden rounded-xl border border-ink-300 bg-paper-50 dark:border-umber-600 dark:bg-umber-800"
         >
           {(["edit", "seat"] as const).map((m) => {
             const label = m === "edit" ? t("seating.mode_edit_tab") : t("seating.mode_seat_tab");
@@ -1715,7 +1715,7 @@ export default function SeatingPage() {
                 aria-selected={mode === m}
                 onClick={() => setMode(m)}
                 title={label}
-                className={`flex-1 whitespace-nowrap px-4 py-2 text-sm font-medium transition-colors ${
+                className={`flex-1 whitespace-nowrap px-3 py-2 sm:px-4 text-sm font-medium transition-colors ${
                   mode === m
                     ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
                     : "text-ink-600 hover:bg-paper-100 dark:text-umber-200 dark:hover:bg-umber-700"

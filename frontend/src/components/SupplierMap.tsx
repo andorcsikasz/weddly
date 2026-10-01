@@ -147,8 +147,11 @@ export default function SupplierMap({
   const missing = suppliers.length - placed.length;
 
   return (
+    // `isolate` keeps Leaflet's pane z-indexes (400-1000) and the missing-count
+    // pill inside the map, so a z-50 dialog opened over it (the location
+    // explainer, the filters sheet) is never drawn under them.
     <div
-      className={`supplier-map relative overflow-hidden bg-paper-200 dark:bg-umber-800 ${className}`}
+      className={`supplier-map relative isolate overflow-hidden bg-paper-200 dark:bg-umber-800 ${className}`}
     >
       <MapContainer
         center={HUNGARY_CENTER}
