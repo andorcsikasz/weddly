@@ -8957,7 +8957,7 @@ const en: LocaleMessages = {
     share_link_body:
       "The same film also lives at a link. Send it to guests in a message or an email and they are taking photos in one tap.",
     reviews_title: "People love Weddly Cam.",
-    reviews_summary: "{avg} stars · {n} early-tester ratings",
+    reviews_disclosure: "Reviews written by our early testers.",
     reviews_prev: "Previous reviews",
     reviews_next: "Next reviews",
     try_title: "Try it on your phone",

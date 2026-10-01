@@ -8950,7 +8950,7 @@ const hr: LocaleMessages = {
     share_link_body:
       "Isti film dostupan je i putem poveznice. Pošaljite je gostima porukom ili e-poštom i fotografiraju jednim dodirom.",
     reviews_title: "People love Weddly Cam.",
-    reviews_summary: "{avg} zvjezdica · {n} ocjena prvih testera",
+    reviews_disclosure: "Recenzije su napisali naši prvi testeri.",
     reviews_prev: "Prethodne recenzije",
     reviews_next: "Sljedeće recenzije",
     try_title: "Isprobaj na mobitelu",

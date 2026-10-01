@@ -9042,7 +9042,7 @@ const es: LocaleMessages = {
     share_link_body:
       "La misma película también está en un enlace. Envíalo a los invitados por mensaje o correo y en un toque ya están haciendo fotos.",
     reviews_title: "People love Weddly Cam.",
-    reviews_summary: "{avg} estrellas · {n} valoraciones de primeros usuarios",
+    reviews_disclosure: "Opiniones escritas por nuestros primeros usuarios de prueba.",
     reviews_prev: "Opiniones anteriores",
     reviews_next: "Siguientes opiniones",
     try_title: "Pruébala en tu móvil",

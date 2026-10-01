@@ -10358,7 +10358,7 @@ export interface LocaleMessages {
     share_qr_body: string;
     share_link_body: string;
     reviews_title: string;
-    reviews_summary: string;
+    reviews_disclosure: string;
     reviews_prev: string;
     reviews_next: string;
     try_title: string;

@@ -1,7 +1,7 @@
 // Early-tester reviews for Weddly Camera, shown on /camera.
 //
 // Written by people close to the team who used the camera at a wedding, so the
-// section is labelled as early testers (`camera.reviews_summary`) and must stay
+// section is labelled as early testers (`camera.reviews_disclosure`) and must stay
 // labelled that way: a review from someone connected to the business has to say
 // so, or it reads as an independent customer's verdict. Only add text a real
 // user actually wrote.
@@ -12,7 +12,7 @@
 export interface CameraReview {
   title?: string;
   body: string;
-  /** Stars the writer gave, 1-5. The header average is computed from these. */
+  /** Stars the writer gave, 1-5. */
   rating: number;
 }
 

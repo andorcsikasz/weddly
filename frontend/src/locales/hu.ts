@@ -9039,7 +9039,7 @@ const hu: LocaleMessages = {
     share_link_body:
       "Ugyanez a film egy linken is elérhető. Küldjétek el a vendégeknek üzenetben vagy e-mailben, és egy koppintással már fotózhatnak is.",
     reviews_title: "People love Weddly Cam.",
-    reviews_summary: "{avg} csillag · {n} korai tesztelő értékelése",
+    reviews_disclosure: "A véleményeket korai tesztelőink írták.",
     reviews_prev: "Előző vélemények",
     reviews_next: "Következő vélemények",
     try_title: "Próbáld ki telefonon",

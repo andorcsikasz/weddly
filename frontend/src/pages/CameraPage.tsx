@@ -76,21 +76,19 @@ const TIERS: PricingTier[] = [
 ];
 
 /** Headcounts above this get the Weddly price as half the stand-alone price
- *  (owner call 2026-10-01: at 175 guests Weddly is 50% off, not ~83%).
- *  NOTE: page copy only. The in-app film still unlocks up to
- *  `FILM_TIER_CAPS.paid` for `FILM_TIER_PRICE_EUR_CENTS.paid`, so a 175-guest
- *  couple is charged less in the app than this page quotes until a matching
- *  in-app tier exists. */
+ *  (owner call 2026-10-01: at 175 guests Weddly is 50% off, not ~83%, and the
+ *  same rule carries on to 250 and 400).
+ *  NOTE: page copy only. The in-app film unlocks up to `FILM_TIER_CAPS.paid`
+ *  (200) for `FILM_TIER_PRICE_EUR_CENTS.paid` and has no tier past that, so
+ *  the 175 price disagrees with what the app charges and 250 / 400 are not
+ *  purchasable in the app yet. */
 const HALF_PRICE_FROM_CAP = 100;
 
-/** What a Weddly couple pays for a tier, anchored to the constants the in-app
- *  film enforces, so this page cannot promise a cap the product does not
- *  grant: `included` up to the subscription's cap, the one-time unlock up to
- *  100 guests, half the stand-alone price above that, and null past the
- *  in-app cap (the app has no tier that large). */
-function couplePrice(tier: PricingTier): "included" | string | null {
+/** What a Weddly couple pays for a tier: `included` up to the subscription's
+ *  film cap, the in-app one-time unlock price up to 100 guests, and half the
+ *  stand-alone price above that. */
+function couplePrice(tier: PricingTier): "included" | string {
   if (tier.cap <= FILM_TIER_CAPS.free) return "included";
-  if (tier.cap > FILM_TIER_CAPS.paid) return null;
   if (tier.cap <= HALF_PRICE_FROM_CAP) {
     return `€${(FILM_TIER_PRICE_EUR_CENTS.paid / 100).toFixed(2)}`;
   }
@@ -348,8 +346,9 @@ export default function CameraPage() {
               {/* Uber-style: a segmented headcount picker, then the price as
                   an option row, label left and number right. */}
               <div className="mt-8 w-full max-w-lg text-left">
-                {/* One pill slides between the stops rather than each chip
-                    repainting, so moving 25 → 400 reads as a single motion. */}
+                {/* The fill always runs from the start of the track to the
+                    chosen stop and grows or shrinks as the headcount changes,
+                    so "how many guests" reads as an amount, not a tab. */}
                 <div
                   role="radiogroup"
                   aria-label={t("camera.standalone_title")}
@@ -357,10 +356,10 @@ export default function CameraPage() {
                 >
                   <span
                     aria-hidden="true"
-                    className="absolute inset-y-1 left-1 rounded-full bg-paper-50 shadow-[0_2px_10px_rgba(0,0,0,0.35)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                    className="absolute inset-y-1 left-1 rounded-full bg-paper-50 shadow-[0_2px_10px_rgba(0,0,0,0.35)] transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
                     style={{
-                      width: `calc((100% - 0.5rem - ${TIERS.length - 1} * 0.25rem) / ${TIERS.length})`,
-                      transform: `translateX(calc(${tierIndex} * (100% + 0.25rem)))`,
+                      // (i + 1) chips plus the i gaps between them.
+                      width: `calc(${tierIndex + 1} * (100% - 0.5rem - ${TIERS.length - 1} * 0.25rem) / ${TIERS.length} + ${tierIndex} * 0.25rem)`,
                     }}
                   />
                   {TIERS.map((tw, i) => (
@@ -372,7 +371,11 @@ export default function CameraPage() {
                       aria-label={t("camera.pricing_guest_cap", { n: tw.cap })}
                       onClick={() => setTierIndex(i)}
                       className={`relative z-10 min-h-10 rounded-full text-sm font-semibold tabular-nums transition-colors duration-300 ${
-                        i === tierIndex ? "text-umber-950" : "text-paper-300 hover:text-paper-50"
+                        i === tierIndex
+                          ? "text-umber-950"
+                          : i < tierIndex
+                            ? "text-umber-950/40 hover:text-umber-950/70"
+                            : "text-paper-50/35 hover:text-paper-50/70"
                       }`}
                     >
                       {tw.cap}
