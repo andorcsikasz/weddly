@@ -14,12 +14,12 @@
    app default). Generalized primitives below (`.gc-card`, `.gc-btn*`,
    `.gc-label`, `.gc-pill*`) are shared by every page in the console. */
 
+/* The canvas paint lives on the document (see `html:has(.gc-page)` below),
+   not on this box, so the faded blue reads as ONE surface edge to edge
+   rather than a gradient panel sitting on flat black. */
 .gc-page {
   min-height: 100%;
-  background:
-    radial-gradient(1100px 520px at 82% -12%, rgba(124, 92, 255, 0.07), transparent 62%),
-    radial-gradient(900px 460px at 8% 108%, rgba(35, 136, 255, 0.05), transparent 60%),
-    #0c1019;
+  background: transparent;
   color: white;
 }
 
@@ -54,6 +54,24 @@
     margin-left: -2.5rem;
     margin-right: -2.5rem;
   }
+}
+
+/* The negative margins above only cancel the shell's PADDING, but the shell
+   column itself is capped (`max-w-7xl` / `xl:max-w-screen-2xl`), so on a
+   wide monitor paper still showed left, right and below the console. While
+   a console page is mounted the document canvas itself takes the console's faded
+   blue (fixed to the viewport), so every pixel outside the capped column is
+   the same surface as the page. `:has()` keeps this scoped to
+   the console: leaving the page restores the paper body on the next paint. */
+html:has(.gc-page) {
+  background: #0c1019;
+}
+html:has(.gc-page) body {
+  background:
+    radial-gradient(1400px 700px at 82% -12%, rgba(124, 92, 255, 0.09), transparent 62%),
+    radial-gradient(1200px 640px at 8% 108%, rgba(35, 136, 255, 0.08), transparent 60%),
+    linear-gradient(180deg, #0f1524 0%, #0c1019 55%, #0b0f18 100%);
+  background-attachment: fixed;
 }
 
 /* The app shell's warm-text retint (index.css) recolours every h1/h2 inside
@@ -243,7 +261,7 @@
     box-shadow 180ms ease;
 }
 .gc-tile:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
 }
 /* Kahoot's own purple — restrained tint over the deep base, not a wash. */
 .gc-tile-quiz {
@@ -536,7 +554,219 @@
   background: white;
 }
 
+/* ── Hub motion ──────────────────────────────────────────────────────────
+   The hub is a game lobby, so it moves a little: the header and tiles rise
+   in on a stagger, each tile tilts toward the pointer with a spotlight that
+   follows it (GamesHubPage writes --mx/--my/--rx/--ry on pointermove), the
+   quiz shapes drift and scatter on hover, and the markets sparkline draws
+   itself in and redraws on hover. Everything here is switched off under
+   prefers-reduced-motion at the bottom of the file. */
+
+@keyframes gc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.gc-rise {
+  animation: gc-rise 620ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--gc-delay, 0ms);
+}
+
+.gc-tile.gc-tilt {
+  --rx: 0deg;
+  --ry: 0deg;
+  --lift: 0px;
+  transform: perspective(1000px) rotateX(var(--ry)) rotateY(var(--rx)) translateY(var(--lift));
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    box-shadow 220ms ease;
+}
+.gc-tile.gc-tilt:hover {
+  --lift: -4px;
+  transform: perspective(1000px) rotateX(var(--ry)) rotateY(var(--rx)) translateY(var(--lift));
+}
+.gc-tile.gc-tilt.gc-tracking {
+  transition:
+    transform 80ms linear,
+    border-color 180ms ease,
+    box-shadow 220ms ease;
+}
+
+/* Pointer spotlight: a soft white bloom under the cursor, above the tile
+   background and below the copy. */
+.gc-tile-spot {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.09),
+    transparent 60%
+  );
+  transition: opacity 260ms ease;
+}
+.gc-tile:hover .gc-tile-spot {
+  opacity: 1;
+}
+
+/* The corner glow breathes slowly, and swells on hover. */
+@keyframes gc-breathe {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.2;
+    transform: scale(1.12);
+  }
+}
+.gc-tile-glow {
+  animation: gc-breathe 6s ease-in-out infinite;
+  transition: filter 300ms ease;
+}
+.gc-tile-markets .gc-tile-glow {
+  animation-delay: -3s;
+}
+.gc-tile:hover .gc-tile-glow {
+  animation-duration: 2.4s;
+}
+
+/* Quiz shapes float on their own rhythm, then scatter and spin on hover. */
+@keyframes gc-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -7px;
+  }
+}
+.gc-shape {
+  animation: gc-float 4.2s ease-in-out infinite;
+  transition:
+    transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 300ms ease;
+}
+.gc-shape-triangle {
+  animation-delay: -0.6s;
+}
+.gc-shape-diamond {
+  animation-delay: -1.7s;
+  animation-duration: 5s;
+}
+.gc-shape-circle {
+  animation-delay: -2.4s;
+  animation-duration: 3.6s;
+}
+.gc-shape-square {
+  animation-delay: -3.1s;
+  animation-duration: 4.8s;
+}
+.gc-tile:hover .gc-shape {
+  opacity: 1;
+}
+.gc-tile:hover .gc-shape-triangle {
+  transform: translate(-14px, -8px) rotate(-25deg) scale(1.25);
+}
+.gc-tile:hover .gc-shape-diamond {
+  transform: translate(12px, 8px) rotate(90deg) scale(1.2);
+}
+.gc-tile:hover .gc-shape-circle {
+  transform: translate(10px, -10px) scale(1.35);
+}
+.gc-tile:hover .gc-shape-square {
+  transform: translate(-10px, 12px) rotate(45deg) scale(1.2);
+}
+
+/* Markets sparkline draws itself in once, then redraws on every hover. */
+@keyframes gc-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.gc-spark-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: gc-draw 1.4s cubic-bezier(0.65, 0, 0.35, 1) 400ms both;
+}
+.gc-tile:hover .gc-spark-line {
+  animation: gc-draw 900ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+@keyframes gc-ping {
+  0% {
+    r: 3.5;
+    opacity: 0.8;
+  }
+  100% {
+    r: 11;
+    opacity: 0;
+  }
+}
+.gc-spark-ping {
+  animation: gc-ping 1.8s ease-out 1.8s infinite;
+  opacity: 0;
+}
+.gc-tile-markets .gc-tile-deco {
+  transition: opacity 300ms ease;
+}
+.gc-tile-markets:hover .gc-tile-deco {
+  opacity: 0.6;
+}
+
+/* CTA gets a passing sheen on hover. */
+.gc-tile-cta {
+  position: relative;
+  overflow: hidden;
+}
+.gc-tile-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.gc-tile:hover .gc-tile-cta::after {
+  transform: translateX(120%);
+  transition: transform 700ms ease;
+}
+
+/* The eyebrow sparkle twinkles. */
+@keyframes gc-twinkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.25) rotate(20deg);
+    opacity: 1;
+  }
+}
+.gc-twinkle {
+  animation: gc-twinkle 2.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .gc-rise,
+  .gc-tile-glow,
+  .gc-shape,
+  .gc-spark-line,
+  .gc-spark-ping,
+  .gc-twinkle,
+  .gc-tile-cta::after,
   .gc-tile,
   .gc-btn,
   .gc-outcome-btn,
