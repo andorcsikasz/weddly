@@ -25,7 +25,9 @@ import {
   Egg,
   Fish,
   Globe,
+  Info,
   Leaf,
+  Mail,
   Milk,
   Nut,
   Plus,
@@ -969,9 +971,30 @@ export function HouseholdRsvpForm({
                     <div
                       className={`${view.rsvp_collects_meal ? "border-t border-paper-200 pt-3 dark:border-umber-700" : ""}`}
                     >
-                      <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                        {t("rsvp.dietary_section_title")}
-                      </p>
+                      {/* The health-data notice sits behind an "i" next to the
+                        title: it is a disclosure guests may want, not copy
+                        every guest has to read past to reach the chips. */}
+                      <details className="group mb-2">
+                        <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300 [&::-webkit-details-marker]:hidden">
+                          {t("rsvp.dietary_section_title")}
+                          <Info
+                            className="h-3.5 w-3.5 group-open:text-ink-800 dark:group-open:text-paper-100"
+                            strokeWidth={1.75}
+                            aria-label={t("rsvp.dietary_privacy_link")}
+                          />
+                        </summary>
+                        <p className="mt-1.5 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
+                          {t("rsvp.dietary_privacy_notice")}{" "}
+                          <a
+                            href="/privacy#guest-data"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline underline-offset-2"
+                          >
+                            {t("rsvp.dietary_privacy_link")}
+                          </a>
+                        </p>
+                      </details>
                       <div className="grid grid-cols-3 gap-1.5 [&>button]:w-full [&>button]:justify-center">
                         {(
                           [
@@ -1006,17 +1029,6 @@ export function HouseholdRsvpForm({
                         aria-label={t("rsvp.dietary_other_placeholder")}
                         onChange={(e) => updateMember(d.id, { dietary_free: e.target.value })}
                       />
-                      <p className="mt-2 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
-                        {t("rsvp.dietary_privacy_notice")}{" "}
-                        <a
-                          href="/privacy#guest-data"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="underline underline-offset-2"
-                        >
-                          {t("rsvp.dietary_privacy_link")}
-                        </a>
-                      </p>
                     </div>
 
                     {/* Two shapes of one question. With no published lodgings
@@ -1262,27 +1274,41 @@ export function HouseholdRsvpForm({
       {done && !editingAfterDone && (
         <>
           {/* ── Confirmation card ─────────────────────────────────────── */}
-          <div className="mt-4 overflow-hidden rounded-2xl border border-paper-300 dark:border-umber-700">
-            {/* Success hero */}
-            <div className="flex flex-col items-center px-6 pb-6 pt-8 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-sage-100 dark:bg-sage-900/40">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 shadow-[0_1px_2px_rgba(15,17,30,0.04),0_12px_32px_-12px_rgba(15,17,30,0.12)] dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
+            {/* Success hero. The couple's names lead, with the wedding's
+              MM-DD set beside them as a quiet mono stamp, so the card reads
+              like a keepsake of WHOSE wedding this was rather than a form
+              receipt. */}
+            <div className="flex flex-col items-center px-6 pb-7 pt-9 text-center">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full ring-1 ring-sage-300 dark:ring-sage-700">
                 <CircleCheckBig
-                  size={26}
-                  className="text-sage-600 dark:text-sage-400"
+                  size={22}
+                  strokeWidth={1.5}
+                  className="text-sage-700 dark:text-sage-400"
                   aria-hidden
                 />
               </div>
-              <p className="font-grotesk text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+              <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-sage-700 dark:text-sage-400">
                 {t("rsvp.checkin_done_title")}
               </p>
-              <p className="mt-1.5 text-sm text-ink-500 dark:text-umber-300">
+              <p className="mt-3 flex max-w-full flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
+                <span className="break-words font-serif text-[1.75rem] font-semibold italic leading-tight tracking-tight text-ink-900 dark:text-paper-50">
+                  {view.couple_display_name}
+                </span>
+                {view.wedding_date && (
+                  <span className="font-mono text-xs tracking-[0.2em] text-ink-500 dark:text-umber-300">
+                    {view.wedding_date.slice(5, 10)}
+                  </span>
+                )}
+              </p>
+              <div className="my-5 flex w-24 items-center gap-2" aria-hidden>
+                <span className="h-px flex-1 bg-paper-300 dark:bg-umber-600" />
+                <span className="h-1 w-1 rotate-45 bg-ink-300 dark:bg-umber-500" />
+                <span className="h-px flex-1 bg-paper-300 dark:bg-umber-600" />
+              </div>
+              <p className="max-w-xs text-sm leading-relaxed text-ink-600 dark:text-paper-200">
                 {t("rsvp.thanks_body")}
               </p>
-              {view.wedding_date && (
-                <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-400 dark:text-umber-400">
-                  {formatDate(view.wedding_date, locale)}
-                </p>
-              )}
             </div>
 
             {/* Calendar section */}
@@ -1389,8 +1415,14 @@ export function HouseholdRsvpForm({
             )}
 
             {/* Email hint footer */}
-            <div className="border-t border-paper-300 px-5 pb-5 pt-4 text-center dark:border-umber-700">
-              <p className="text-xs text-ink-400 dark:text-umber-400">
+            <div className="flex items-start justify-center gap-2 border-t border-paper-300 bg-paper-100/60 px-5 py-4 dark:border-umber-700 dark:bg-umber-900/40">
+              <Mail
+                size={14}
+                strokeWidth={1.5}
+                className="mt-0.5 shrink-0 text-ink-400 dark:text-umber-400"
+                aria-hidden
+              />
+              <p className="max-w-xs text-left text-xs leading-relaxed text-ink-500 dark:text-umber-300">
                 {t("rsvp.thanks_email_hint")}
               </p>
             </div>
