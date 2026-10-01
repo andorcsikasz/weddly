@@ -213,7 +213,7 @@ export function FeedbackDialog({
                   // event, so an untouched slider would never register it.
                   if (rating === null) setRating(Number(e.currentTarget.value));
                 }}
-                className={`${RANGE_INPUT} ${rating === null ? "[&::-moz-range-thumb]:opacity-60 [&::-webkit-slider-thumb]:opacity-60" : ""}`}
+                className={RANGE_INPUT}
               />
             </div>
             {lowLabel && highLabel ? (
@@ -284,7 +284,7 @@ const SECTION_LABEL = "block text-sm font-semibold text-ink-900 dark:text-paper-
 /** Transparent native range over the drawn track: keeps keyboard + touch
  *  behaviour for free, only the thumb is restyled. */
 const RANGE_INPUT =
-  "relative w-full cursor-pointer appearance-none bg-transparent focus:outline-none [&::-moz-range-thumb]:h-7 [&::-moz-range-thumb]:w-7 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-ink-900 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-soft [&::-moz-range-track]:bg-transparent [&::-webkit-slider-thumb]:h-7 [&::-webkit-slider-thumb]:w-7 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-ink-900 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-soft [&::-webkit-slider-thumb]:transition-transform active:[&::-webkit-slider-thumb]:scale-110 focus-visible:[&::-webkit-slider-thumb]:ring-4 focus-visible:[&::-webkit-slider-thumb]:ring-ink-900/15 dark:[&::-moz-range-thumb]:border-paper-50 dark:[&::-webkit-slider-thumb]:border-paper-50";
+  "relative w-full cursor-pointer appearance-none bg-transparent focus:outline-none [&::-moz-range-thumb]:h-7 [&::-moz-range-thumb]:w-7 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-solid [&::-moz-range-thumb]:border-ink-900 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-soft [&::-moz-range-track]:bg-transparent [&::-webkit-slider-thumb]:h-7 [&::-webkit-slider-thumb]:w-7 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-solid [&::-webkit-slider-thumb]:border-ink-900 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-soft [&::-webkit-slider-thumb]:transition-transform active:[&::-webkit-slider-thumb]:scale-110 focus-visible:[&::-webkit-slider-thumb]:ring-4 focus-visible:[&::-webkit-slider-thumb]:ring-ink-900/15 dark:[&::-moz-range-thumb]:border-paper-50 dark:[&::-webkit-slider-thumb]:border-paper-50";
 
 /** Borderless grey well, black ring on focus. */
 const FILLED_FIELD =
