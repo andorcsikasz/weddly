@@ -146,6 +146,17 @@ export default function CameraPage() {
   // so this only ever matters to the type checker, never at runtime.
   const tier = TIERS[tierIndex] ?? (TIERS[1] as PricingTier);
   const tierCouplePrice = couplePrice(tier);
+  const [frontCard, setFrontCard] = useState<"couple" | "standalone">("couple");
+  const backCard = frontCard === "couple" ? "standalone" : "couple";
+  const guestCap = t("camera.pricing_guest_cap", { n: tier.cap });
+  const priceCards = {
+    couple: {
+      label: t("camera.pricing_couple_label"),
+      cap: guestCap,
+      price: tierCouplePrice === "included" ? "€0" : tierCouplePrice,
+    },
+    standalone: { label: t("camera.pricing_standard"), cap: guestCap, price: tier.price },
+  };
   // The roll animates in once, the first time it scrolls into view.
   const rollRef = useRef<HTMLElement>(null);
   const [rollIn, setRollIn] = useState(false);
@@ -383,33 +394,26 @@ export default function CameraPage() {
                   ))}
                 </div>
 
-                {/* The Weddly price is the card on top; the stand-alone price
-                    is a second, narrower card tucked under its bottom edge and
-                    tilted away (rotateX from the top), so it reads as sitting
-                    BEHIND the Weddly card while its own row stays legible.
-                    Past the in-app cap the stand-alone card is the only one. */}
+                {/* Two price cards, one on top and one tucked under its bottom
+                    edge, tilted away (rotateX from the top) so it reads as
+                    sitting BEHIND while its own row stays legible. The Weddly
+                    price starts on top; clicking the back card swaps the two,
+                    and the newly fronted card lifts in so the swap is seen. */}
                 <div className="group mt-3 [perspective:700px]">
-                  <div className="relative z-10 rounded-2xl bg-umber-900 shadow-[0_14px_30px_-10px_rgba(0,0,0,0.85)] ring-2 ring-paper-50">
-                    <PriceRow
-                      label={t(
-                        tierCouplePrice ? "camera.pricing_couple_label" : "camera.pricing_standard",
-                      )}
-                      cap={t("camera.pricing_guest_cap", { n: tier.cap })}
-                      price={
-                        tierCouplePrice === "included" ? "€0" : (tierCouplePrice ?? tier.price)
-                      }
-                    />
+                  <div
+                    key={frontCard}
+                    className="relative z-10 animate-card-lift rounded-2xl bg-umber-900 shadow-[0_14px_30px_-10px_rgba(0,0,0,0.85)] ring-2 ring-paper-50 motion-reduce:animate-none"
+                  >
+                    <PriceRow {...priceCards[frontCard]} />
                   </div>
-                  {tierCouplePrice && (
-                    <div className="relative z-0 mx-auto -mt-4 w-[93%] origin-top rounded-b-2xl bg-umber-800 pt-4 ring-1 ring-paper-50/15 transition-transform duration-300 ease-out [transform:rotateX(14deg)] group-hover:[transform:rotateX(0deg)_translateY(3px)]">
-                      <PriceRow
-                        label={t("camera.pricing_standard")}
-                        cap={t("camera.pricing_guest_cap", { n: tier.cap })}
-                        price={tier.price}
-                        muted
-                      />
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setFrontCard(backCard)}
+                    aria-label={priceCards[backCard].label}
+                    className="relative z-0 mx-auto -mt-4 block w-[93%] origin-top rounded-b-2xl bg-umber-800 pt-4 text-left ring-1 ring-paper-50/15 transition-transform duration-300 ease-out [transform:rotateX(14deg)] hover:bg-umber-700 group-hover:[transform:rotateX(0deg)_translateY(3px)]"
+                  >
+                    <PriceRow {...priceCards[backCard]} muted />
+                  </button>
                 </div>
                 <Link
                   to="/signup"
