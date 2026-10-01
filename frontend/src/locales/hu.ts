@@ -9030,7 +9030,7 @@ const hu: LocaleMessages = {
     pricing_standard: "Nem Weddly felhasználóknak",
     pricing_note: "A foglalás hamarosan nyílik.",
     create_event_cta: "Esemény létrehozása",
-    roll_film_name: "Anna & Bence",
+    roll_film_name: "Anna & Bálint",
     share_title: "Osszátok meg így:",
     share_tab_qr: "QR-kód",
     share_tab_link: "Link",
