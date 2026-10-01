@@ -49,6 +49,34 @@ function couplePrice(cap: number): "included" | string | null {
   return null;
 }
 
+/** One option row of the pricing stack: label + headcount left, price right.
+ *  `hidden` renders the card behind the stack, where only its edge shows. */
+function PriceRow({
+  label,
+  cap,
+  price,
+  hidden = false,
+}: {
+  label: string;
+  cap: string;
+  price: string;
+  hidden?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-4 px-5 py-4 ${hidden ? "invisible" : ""}`}
+    >
+      <div>
+        <p className="text-base font-semibold text-paper-50">{label}</p>
+        <p className="mt-0.5 text-sm text-paper-400">{cap}</p>
+      </div>
+      <span className="stat-num text-2xl font-semibold tabular-nums tracking-[-0.02em] text-paper-50">
+        {price}
+      </span>
+    </div>
+  );
+}
+
 export default function CameraPage() {
   const { t, locale } = useT();
   const navigate = useNavigate();
@@ -121,10 +149,8 @@ export default function CameraPage() {
               </h2>
               <p className="mt-2 text-sm text-paper-400">{t("camera.standalone_body")}</p>
 
-              {/* Uber-style: a segmented headcount picker, then the prices as
-                  option rows, label left and number right. The Weddly row
-                  leads and is the selected one; past the in-app cap it is
-                  simply absent and the stand-alone row takes its place. */}
+              {/* Uber-style: a segmented headcount picker, then the price as
+                  an option row, label left and number right. */}
               <div className="mt-8 w-full max-w-lg text-left">
                 <div
                   role="radiogroup"
@@ -150,48 +176,35 @@ export default function CameraPage() {
                   ))}
                 </div>
 
-                <ul className="mt-3 space-y-2">
+                {/* The Weddly price is the card on top; the stand-alone price
+                    is a second card tucked behind it, only its edge showing,
+                    so the number a couple pays is the only one read. Both
+                    cards share one grid cell so the stack is as tall as a
+                    single row. Past the in-app cap the stand-alone card is
+                    the only one and sits on top. */}
+                <div className="group mt-3 mb-4 grid">
                   {tierCouplePrice && (
-                    <li className="flex items-center justify-between gap-4 rounded-2xl bg-paper-50/[0.04] px-5 py-4 ring-2 ring-paper-50">
-                      <div>
-                        <p className="text-base font-semibold text-paper-50">
-                          {t("camera.pricing_couple_label")}
-                        </p>
-                        <p className="mt-0.5 text-sm text-paper-400">
-                          {t("camera.pricing_guest_cap", { n: tier.cap })}
-                        </p>
-                      </div>
-                      <span className="stat-num text-2xl font-semibold tabular-nums tracking-[-0.02em] text-paper-50">
-                        {tierCouplePrice === "included" ? "€0" : tierCouplePrice}
-                      </span>
-                    </li>
-                  )}
-                  <li
-                    className={`flex items-center justify-between gap-4 rounded-2xl px-5 py-4 ${
-                      tierCouplePrice
-                        ? "bg-paper-50/[0.04]"
-                        : "bg-paper-50/[0.04] ring-2 ring-paper-50"
-                    }`}
-                  >
-                    <div>
-                      <p
-                        className={`text-base font-semibold ${tierCouplePrice ? "text-paper-300" : "text-paper-50"}`}
-                      >
-                        {t("camera.pricing_standard")}
-                      </p>
-                      <p className="mt-0.5 text-sm text-paper-500">
-                        {t("camera.pricing_guest_cap", { n: tier.cap })}
-                      </p>
+                    <div className="col-start-1 row-start-1 rounded-2xl bg-umber-600 ring-1 ring-paper-50/30 transition-transform duration-300 ease-out [transform:translateY(14px)_scale(0.92)] group-hover:[transform:translateY(20px)_scale(0.92)]">
+                      <PriceRow
+                        label={t("camera.pricing_standard")}
+                        cap={t("camera.pricing_guest_cap", { n: tier.cap })}
+                        price={tier.price}
+                        hidden
+                      />
                     </div>
-                    <span
-                      className={`stat-num text-2xl font-semibold tabular-nums tracking-[-0.02em] ${
-                        tierCouplePrice ? "text-paper-300" : "text-paper-50"
-                      }`}
-                    >
-                      {tier.price}
-                    </span>
-                  </li>
-                </ul>
+                  )}
+                  <div className="relative col-start-1 row-start-1 rounded-2xl bg-umber-900 shadow-[0_12px_28px_-12px_rgba(0,0,0,0.8)] ring-2 ring-paper-50">
+                    <PriceRow
+                      label={t(
+                        tierCouplePrice ? "camera.pricing_couple_label" : "camera.pricing_standard",
+                      )}
+                      cap={t("camera.pricing_guest_cap", { n: tier.cap })}
+                      price={
+                        tierCouplePrice === "included" ? "€0" : (tierCouplePrice ?? tier.price)
+                      }
+                    />
+                  </div>
+                </div>
               </div>
 
               <p className="mt-5 text-xs text-paper-500">
