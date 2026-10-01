@@ -2250,6 +2250,8 @@ function PlanningRow({
   const [draftStartDate, setDraftStartDate] = useState(item.start_date ?? "");
   const [draftDueDate, setDraftDueDate] = useState(item.due_date ?? "");
   const [draftAssignee, setDraftAssignee] = useState(item.assignee ?? "");
+  // Opening the editor from the date chip lands on the date input, not the title.
+  const [focusDates, setFocusDates] = useState(false);
   // Unique id so each row's datalist doesn't collide with siblings.
   const assigneeListId = useId();
 
@@ -2335,7 +2337,7 @@ function PlanningRow({
               type="text"
               value={draftTitle}
               onChange={(e) => setDraftTitle(e.target.value)}
-              autoFocus
+              autoFocus={!focusDates}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -2368,6 +2370,7 @@ function PlanningRow({
                   <input
                     type="date"
                     value={draftStartDate}
+                    autoFocus={focusDates}
                     onChange={(e) => {
                       const next = e.target.value;
                       setDraftStartDate(next);
@@ -2414,7 +2417,10 @@ function PlanningRow({
             <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
               <button
                 type="button"
-                onClick={() => setEditing(true)}
+                onClick={() => {
+                  setFocusDates(false);
+                  setEditing(true);
+                }}
                 className="min-w-0 w-full flex-1 text-left sm:w-auto"
               >
                 <p
@@ -2425,12 +2431,21 @@ function PlanningRow({
               </button>
               <div className="flex w-full min-w-0 flex-wrap items-center gap-2 text-[11px] text-ink-500 sm:w-auto sm:shrink-0 dark:text-umber-300">
                 {item.kind === "task" && (item.start_date || item.due_date) && (
-                  <span className="inline-flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftStartDate(item.start_date ?? "");
+                      setDraftDueDate(item.due_date ?? "");
+                      setFocusDates(true);
+                      setEditing(true);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 transition-colors hover:bg-paper-100 hover:text-ink-700 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                  >
                     <Calendar size={12} aria-hidden="true" />
                     {item.start_date && item.due_date
                       ? `${item.start_date} → ${item.due_date}`
                       : (item.start_date ?? item.due_date)}
-                  </span>
+                  </button>
                 )}
                 {item.kind === "task" && <TaskStatusPill item={item} />}
                 {item.kind === "task" &&
@@ -2501,7 +2516,10 @@ function PlanningRow({
             {item.body && (
               <button
                 type="button"
-                onClick={() => setEditing(true)}
+                onClick={() => {
+                  setFocusDates(false);
+                  setEditing(true);
+                }}
                 className="mt-1 block w-full text-left"
               >
                 <p className="whitespace-pre-wrap text-xs text-ink-600 dark:text-umber-200">
