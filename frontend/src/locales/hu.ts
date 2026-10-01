@@ -9025,6 +9025,7 @@ const hu: LocaleMessages = {
     pricing_couple_label: "Weddly pároknak",
     pricing_standard: "Nem Weddly felhasználóknak",
     pricing_note: "A foglalás hamarosan nyílik.",
+    create_event_cta: "Esemény létrehozása",
     try_title: "Próbáld ki a telefonodon",
     try_body: "Olvasd be, és fotózz. Semmi nem töltődik fel.",
     try_cta: "Kamera kipróbálása",

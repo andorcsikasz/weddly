@@ -10350,6 +10350,7 @@ export interface LocaleMessages {
     pricing_couple_label: string;
     pricing_standard: string;
     pricing_note: string;
+    create_event_cta: string;
     try_title: string;
     try_body: string;
     try_cta: string;

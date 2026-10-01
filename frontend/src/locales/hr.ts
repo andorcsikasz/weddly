@@ -8940,6 +8940,7 @@ const hr: LocaleMessages = {
     pricing_couple_label: "Weddly parovi",
     pricing_standard: "Bez Weddly računa",
     pricing_note: "Rezervacije se otvaraju uskoro.",
+    create_event_cta: "Kreirajte događaj",
     try_title: "Isprobaj na mobitelu",
     try_body: "Skeniraj i snimaj. Ništa se ne učitava.",
     try_cta: "Isprobaj kameru",

@@ -8947,6 +8947,7 @@ const en: LocaleMessages = {
     pricing_couple_label: "Weddly couples",
     pricing_standard: "Non-Weddly users",
     pricing_note: "Booking opens soon.",
+    create_event_cta: "Create an event",
     try_title: "Try it on your phone",
     try_body: "Scan and shoot. Nothing is uploaded.",
     try_cta: "Try the camera",

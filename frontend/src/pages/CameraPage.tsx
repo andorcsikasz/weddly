@@ -12,7 +12,7 @@
 // technique PublicFooter uses to stay a black slab in both themes), and
 // every heading and body line on it is font-grotesk, so the hero's h1 opts
 // out of the workspace's usual Cormorant serif via `headingFont`.
-import { Camera, Hourglass, ScanLine, Wifi } from "lucide-react";
+import { ArrowRight, Camera, Hourglass, ScanLine, Wifi } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
@@ -205,6 +205,13 @@ export default function CameraPage() {
                     />
                   </div>
                 </div>
+                <Link
+                  to="/signup"
+                  className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-paper-50 px-7 py-3.5 text-base font-semibold text-umber-950 transition-[transform,background-color] duration-150 ease-out hover:bg-paper-100 active:scale-[0.98]"
+                >
+                  {t("camera.create_event_cta")}
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Link>
               </div>
 
               <p className="mt-5 text-xs text-paper-500">

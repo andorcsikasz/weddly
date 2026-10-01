@@ -9032,6 +9032,7 @@ const es: LocaleMessages = {
     pricing_couple_label: "Parejas de Weddly",
     pricing_standard: "Sin cuenta de Weddly",
     pricing_note: "Las reservas abren pronto.",
+    create_event_cta: "Crear un evento",
     try_title: "Pruébala en tu móvil",
     try_body: "Escanea y dispara. No se sube nada.",
     try_cta: "Probar la cámara",

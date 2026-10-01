@@ -9086,6 +9086,7 @@ const de: LocaleMessages = {
     pricing_couple_label: "Weddly-Paare",
     pricing_standard: "Ohne Weddly-Konto",
     pricing_note: "Buchungen öffnen bald.",
+    create_event_cta: "Event erstellen",
     try_title: "Probier es auf dem Handy",
     try_body: "Scannen und fotografieren. Nichts wird hochgeladen.",
     try_cta: "Kamera ausprobieren",
