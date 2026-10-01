@@ -2316,7 +2316,7 @@ const hu: LocaleMessages = {
     footer_planners: "Szervezőknek",
     footer_planners_waitlist: "Jelentkezés",
     nav_planners: "szervezőknek",
-    nav_camera: "kamera",
+    nav_camera: "W-Cam",
     nav_games: "játékok",
     footer_band_prompt: "Nem esküvőt szervezel?",
     footer_band_cta: "Vendég vagyok, van meghívókódom",

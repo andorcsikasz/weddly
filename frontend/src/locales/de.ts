@@ -2367,7 +2367,7 @@ const de: LocaleMessages = {
     footer_planners: "Für Planer",
     footer_planners_waitlist: "Zugang beantragen",
     nav_planners: "für Planer",
-    nav_camera: "Kamera",
+    nav_camera: "W-Cam",
     nav_games: "Spiele",
     footer_band_prompt: "Sie planen keine Hochzeit?",
     footer_band_cta: "Ich bin Gast und habe einen Einladungscode",

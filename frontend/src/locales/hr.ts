@@ -2316,7 +2316,7 @@ const hr: LocaleMessages = {
     footer_planners: "Za organizatore",
     footer_planners_waitlist: "Zatražite pristup",
     nav_planners: "za organizatore",
-    nav_camera: "kamera",
+    nav_camera: "W-Cam",
     nav_games: "igre",
     footer_band_prompt: "Ne planirate vjenčanje?",
     footer_band_cta: "Ja sam gost s pozivnim kodom",

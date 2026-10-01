@@ -391,7 +391,7 @@ function PublicHeader({ black = false }: { black?: boolean }) {
               onClick={() => setMenuOpen(false)}
             >
               <Camera size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
-              <span>{t("landing.nav_camera")}</span>
+              <span className="normal-case">{t("landing.nav_camera")}</span>
             </Link>
             <Link
               to="/games"

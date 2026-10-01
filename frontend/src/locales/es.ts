@@ -2346,7 +2346,7 @@ const es: LocaleMessages = {
     footer_planners: "Para wedding planners",
     footer_planners_waitlist: "Solicita acceso",
     nav_planners: "para wedding planners",
-    nav_camera: "cámara",
+    nav_camera: "W-Cam",
     nav_games: "juegos",
     footer_band_prompt: "¿No estás planeando una boda?",
     footer_band_cta: "Soy un invitado con código de invitación",
