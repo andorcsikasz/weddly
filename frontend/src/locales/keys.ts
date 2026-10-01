@@ -6316,6 +6316,10 @@ export interface LocaleMessages {
     drop_to_unassign_active: string;
     room_width_aria: string;
     room_height_aria: string;
+    room_step_title: string;
+    room_step_hint: string;
+    room_step_width: string;
+    room_step_length: string;
     preview_open_in_new_tab: string;
     /** Position readout: "Pozíció: {x} m balról, {y} m fentről". */
     position_label_full: string;
@@ -6326,10 +6330,6 @@ export interface LocaleMessages {
     tap_mode_on: string;
     tap_mode_off: string;
     tap_select_help: string;
-    room_step_title: string;
-    room_step_hint: string;
-    room_step_width: string;
-    room_step_length: string;
     /** Hint shown after a guest is tap-selected — uses {guest} placeholder. */
     tap_place_hint: string;
     /** Undo system — toast hints + button labels. */
