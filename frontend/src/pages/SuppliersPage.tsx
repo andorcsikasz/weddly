@@ -474,11 +474,12 @@ export default function SuppliersPage() {
     const n = Number(raw);
     return Number.isInteger(n) && n >= 1 && n <= 5 ? (n as 1 | 2 | 3 | 4 | 5) : null;
   })();
-  // Comparison set: 1–4 supplier ids the couple ticked for side-by-side
+  // Comparison set: 1–15 supplier ids the couple ticked for side-by-side
   // comparison. Lives in URL (`?compare=id1,id2,id3`) so back-button and
-  // bookmarks keep the set; cap at 4 so columns stay readable inside the
-  // dialog.
-  const COMPARE_MAX = 4;
+  // bookmarks keep the set. Past 4 columns the dialog scrolls sideways
+  // (fixed min column width), so the cap is about the URL and the detail
+  // fetches per open, not about fitting the viewport.
+  const COMPARE_MAX = 15;
   const compareIds = useMemo<string[]>(() => {
     const raw = params.get("compare");
     if (!raw) return [];

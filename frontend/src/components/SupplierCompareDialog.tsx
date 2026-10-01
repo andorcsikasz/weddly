@@ -256,7 +256,7 @@ export function SupplierCompareDialog({
   }, [compareIds, items]);
 
   // Rating + earliest-free-date live on the detail payload, not the list DTO.
-  // Fetch them per column when the dialog opens (≤4 small requests). The map
+  // Fetch them per column when the dialog opens (≤15 small requests). The map
   // keeps whatever has resolved so far; rows render a dash until each lands.
   const [details, setDetails] = useState<Map<string, CompareDetail>>(new Map());
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -335,7 +335,10 @@ export function SupplierCompareDialog({
               gridTemplateColumns: `9rem repeat(${columns.length}, minmax(11rem, 1fr))`,
             }}
           >
-            <div />
+            {/* Row labels pin to the left edge: with up to 15 columns the
+             *  grid scrolls sideways and a cell without its label is a number
+             *  about nothing. */}
+            <div className="sticky left-0 z-10 bg-white dark:bg-umber-800" />
             {columns.map((s) => (
               <div
                 key={s.id}
@@ -630,7 +633,7 @@ export function SupplierCompareDialog({
 
 function RowLabel({ icon, label }: { icon?: ReactElement; label: string }) {
   return (
-    <div className="flex items-center gap-2 self-center text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+    <div className="sticky left-0 z-10 flex items-center gap-2 self-stretch bg-white text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:bg-umber-800 dark:text-umber-300">
       {icon}
       {label}
     </div>
