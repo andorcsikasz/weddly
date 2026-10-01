@@ -4287,6 +4287,15 @@ export interface LocaleMessages {
     hint: string;
     /** The Sample Table: four finished looks on the couple's own names. */
     choose: string;
+    /** First-visit intro on /app/design/website. */
+    intro: {
+      title: string;
+      sub: string;
+      step_look: string;
+      step_details: string;
+      step_share: string;
+      start: string;
+    };
     look: { change: string };
     /** The Look Bar stamp always names the surface you are NOT editing. */
     stamp: { to_print: string; to_site: string };

@@ -3674,6 +3674,14 @@ const hu: LocaleMessages = {
     // A mintaasztal: négy kész stílus, a pár saját nevével.
     choose: "Válassz stílust",
     look: { change: "Csere" },
+    intro: {
+      title: "Készítsd el a weboldalatok",
+      sub: "Tartsd naprakészen a vendégeiteket",
+      step_look: "Válassz stílust",
+      step_details: "Add meg a napotokat",
+      step_share: "Oszd meg a linket",
+      start: "Kezdjük",
+    },
     // A bélyeg mindig azt a felületet mutatja, amelyiket éppen nem szerkeszted.
     stamp: { to_print: "Nyomtatványok megnyitása", to_site: "Vendégoldal megnyitása" },
     style_switch_confirm: {

@@ -3716,6 +3716,14 @@ const es: LocaleMessages = {
     look: { change: "Cambiar" },
     // The Look Bar stamp always shows the surface you are NOT editing.
     stamp: { to_print: "Abrir tarjetas impresas", to_site: "Abrir web de la boda" },
+    intro: {
+      title: "Crea vuestra web",
+      sub: "Mantén a tus invitados al día",
+      step_look: "Elige un estilo",
+      step_details: "Añade vuestro día",
+      step_share: "Comparte el enlace",
+      start: "Empezar",
+    },
     style_switch_confirm: {
       title: "¿Cambiar el estilo?",
       body: "Tus colores y tipografías personalizados vuelven al conjunto propio de este estilo.",

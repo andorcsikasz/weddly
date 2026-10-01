@@ -3653,6 +3653,14 @@ const hr: LocaleMessages = {
     choose: "Odaberite stil",
     look: {
       change: "Promijeni",
+    intro: {
+      title: "Izradite svoju web stranicu",
+      sub: "Neka vaši gosti budu u tijeku",
+      step_look: "Odaberite izgled",
+      step_details: "Dodajte svoj dan",
+      step_share: "Podijelite poveznicu",
+      start: "Započni",
+    },
     },
     stamp: {
       to_print: "Otvorite tiskane materijale",

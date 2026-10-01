@@ -83,6 +83,11 @@ import { ProofCard } from "../components/design/ProofCard";
 import { TuneRail, TuneRow, type TuneRowId, TuneSwitchRow } from "../components/design/TuneRow";
 import { PaletteBar, roleColors } from "../components/design/PaletteBar";
 import { SampleTable } from "../components/design/SampleTable";
+import {
+  readWebsiteIntroSeen,
+  WEBSITE_INTRO_KEY,
+  WebsiteIntro,
+} from "../components/design/WebsiteIntro";
 import { headingTreatmentCss, OrnamentDivider } from "../components/ornaments";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
 import {
@@ -357,6 +362,16 @@ export default function DesignPage() {
   const tab: "website" | "print" = pathname.endsWith("/print") ? "print" : "website";
   // Which printable the live print preview shows (Print tab only).
   const [printTemplate, setPrintTemplate] = useState<PrintTemplate>("place_card");
+  // First-visit intro on the website surface; dismissed once per device.
+  const [introSeen, setIntroSeen] = useState(readWebsiteIntroSeen);
+  function finishIntro() {
+    try {
+      localStorage.setItem(WEBSITE_INTRO_KEY, "1");
+    } catch {
+      // localStorage unavailable (private mode): the intro just closes for now.
+    }
+    setIntroSeen(true);
+  }
   // On-demand exact-PDF preview (blob: URL shown in an iframe under the live
   // card). Null until the couple asks for it; revoked + recomputed per request.
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
@@ -1409,6 +1424,8 @@ export default function DesignPage() {
 
       {loading ? (
         <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
+      ) : tab === "website" && !introSeen && couple && !couple.is_public ? (
+        <WebsiteIntro onDone={finishIntro} />
       ) : (
         <div className="space-y-6">
           {/* Surface switcher: Guest site vs Cards. Full-page width, above the

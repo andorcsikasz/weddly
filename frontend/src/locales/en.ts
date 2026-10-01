@@ -3649,6 +3649,14 @@ const en: LocaleMessages = {
     choose: "Choose a look",
     look: { change: "Change" },
     // The Look Bar stamp always shows the surface you are NOT editing.
+    intro: {
+      title: "Create your website",
+      sub: "Keep your guests updated",
+      step_look: "Pick a look",
+      step_details: "Add your day",
+      step_share: "Share the link",
+      start: "Get started",
+    },
     stamp: { to_print: "Open printed cards", to_site: "Open guest site" },
     style_switch_confirm: {
       title: "Change the look?",

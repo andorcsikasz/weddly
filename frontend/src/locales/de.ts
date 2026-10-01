@@ -3724,6 +3724,14 @@ const de: LocaleMessages = {
     look: {
       change: "Wechseln",
     },
+    intro: {
+      title: "Erstellt eure Website",
+      sub: "Haltet eure Gäste auf dem Laufenden",
+      step_look: "Look wählen",
+      step_details: "Euren Tag eintragen",
+      step_share: "Link teilen",
+      start: "Los geht’s",
+    },
     stamp: {
       to_print: "Drucksachen öffnen",
       to_site: "Gästeseite öffnen",
