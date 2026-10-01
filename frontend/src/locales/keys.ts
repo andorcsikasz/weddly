@@ -10352,6 +10352,9 @@ export interface LocaleMessages {
     pricing_note: string;
     create_event_cta: string;
     roll_film_name: string;
+    reviews_eyebrow: string;
+    reviews_prev: string;
+    reviews_next: string;
     try_title: string;
     try_body: string;
     try_cta: string;
