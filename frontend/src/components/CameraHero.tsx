@@ -16,6 +16,7 @@ import { FILM_FILTERS } from "@shared/types";
 import {
   ArrowRight,
   Camera,
+  ChevronRight,
   GalleryHorizontalEnd,
   Lock,
   QrCode,
@@ -460,17 +461,37 @@ export function CameraHero({
       </div>
 
       {minimal ? (
-        <ol className="relative mt-10 grid gap-4 border-t border-paper-50/10 pt-6 sm:grid-cols-3 sm:gap-6">
+        // The three steps as a flow: numbered stops joined by a line that a
+        // highlight keeps travelling along, left to right on desktop and top
+        // to bottom on a phone, so 1 → 2 → 3 reads as one sequence.
+        <ol className="relative mt-10 grid border-t border-paper-50/10 pt-6 sm:grid-cols-3">
           {[
             t("media.film_how_1_title"),
             t("media.film_how_2_title"),
             t("media.film_how_3_title"),
-          ].map((step, i) => (
-            <li key={step} className="flex items-baseline gap-3 text-sm text-paper-200">
-              <span className="font-grotesk text-[11px] font-semibold tabular-nums tracking-[0.2em] text-paper-500">
-                0{i + 1}
-              </span>
-              {step}
+          ].map((step, i, all) => (
+            <li key={step} className="flex gap-4 sm:flex-col sm:gap-3">
+              <div className="flex flex-col items-center sm:flex-row">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-paper-50/25 font-grotesk text-[11px] font-semibold tabular-nums text-paper-100">
+                  0{i + 1}
+                </span>
+                {i < all.length - 1 && (
+                  <>
+                    <span
+                      aria-hidden="true"
+                      className="flow-line my-2 min-h-5 w-px flex-1 sm:mx-3 sm:my-0 sm:h-px sm:min-h-0 sm:w-auto"
+                      style={{ "--flow-delay": `${i * 1.2}s` } as CSSProperties}
+                    />
+                    <ChevronRight
+                      size={14}
+                      strokeWidth={1.8}
+                      className="mr-3 hidden shrink-0 text-paper-400 sm:block"
+                      aria-hidden="true"
+                    />
+                  </>
+                )}
+              </div>
+              <p className="pb-5 pt-1.5 text-sm text-paper-200 sm:pb-0 sm:pr-6 sm:pt-0">{step}</p>
             </li>
           ))}
         </ol>

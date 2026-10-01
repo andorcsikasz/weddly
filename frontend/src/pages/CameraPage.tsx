@@ -51,7 +51,7 @@ interface PricingTier {
 // pov.camera's published ladder. USD on purpose: this half's audience is not
 // scoped to a couple's workspace currency.
 const TIERS: PricingTier[] = [
-  { cap: 25, price: "$0" },
+  { cap: 25, price: "$4.99" },
   { cap: 50, price: "$9.99" },
   { cap: 100, price: "$24.99" },
   { cap: 175, price: "$44.99" },
@@ -91,10 +91,16 @@ function PriceRow({
         >
           {label}
         </p>
-        <p className={`mt-0.5 text-paper-400 ${muted ? "text-xs" : "text-sm"}`}>{cap}</p>
+        <p
+          key={cap}
+          className={`mt-0.5 animate-card-lift text-paper-400 motion-reduce:animate-none ${muted ? "text-xs" : "text-sm"}`}
+        >
+          {cap}
+        </p>
       </div>
       <span
-        className={`stat-num font-semibold tabular-nums tracking-[-0.02em] ${
+        key={price}
+        className={`stat-num animate-card-lift font-semibold tabular-nums tracking-[-0.02em] motion-reduce:animate-none ${
           muted ? "text-lg text-paper-300" : "text-2xl text-paper-50"
         }`}
       >
@@ -230,16 +236,25 @@ export default function CameraPage() {
               <h2 className="max-w-lg text-xl font-semibold tracking-tight text-paper-50 sm:text-2xl">
                 {t("camera.standalone_title")}
               </h2>
-              <p className="mt-2 text-sm text-paper-400">{t("camera.standalone_body")}</p>
 
               {/* Uber-style: a segmented headcount picker, then the price as
                   an option row, label left and number right. */}
               <div className="mt-8 w-full max-w-lg text-left">
+                {/* One pill slides between the stops rather than each chip
+                    repainting, so moving 25 → 400 reads as a single motion. */}
                 <div
                   role="radiogroup"
                   aria-label={t("camera.standalone_title")}
-                  className="grid grid-cols-6 gap-1 rounded-full bg-paper-50/[0.06] p-1"
+                  className="relative grid grid-cols-6 gap-1 rounded-full bg-paper-50/[0.06] p-1"
                 >
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-y-1 left-1 rounded-full bg-paper-50 shadow-[0_2px_10px_rgba(0,0,0,0.35)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                    style={{
+                      width: `calc((100% - 0.5rem - ${TIERS.length - 1} * 0.25rem) / ${TIERS.length})`,
+                      transform: `translateX(calc(${tierIndex} * (100% + 0.25rem)))`,
+                    }}
+                  />
                   {TIERS.map((tw, i) => (
                     <button
                       key={tw.cap}
@@ -248,10 +263,8 @@ export default function CameraPage() {
                       aria-checked={i === tierIndex}
                       aria-label={t("camera.pricing_guest_cap", { n: tw.cap })}
                       onClick={() => setTierIndex(i)}
-                      className={`min-h-10 rounded-full text-sm font-semibold tabular-nums transition-colors duration-150 ${
-                        i === tierIndex
-                          ? "bg-paper-50 text-umber-950"
-                          : "text-paper-300 hover:bg-paper-50/[0.06] hover:text-paper-50"
+                      className={`relative z-10 min-h-10 rounded-full text-sm font-semibold tabular-nums transition-colors duration-300 ${
+                        i === tierIndex ? "text-umber-950" : "text-paper-300 hover:text-paper-50"
                       }`}
                     >
                       {tw.cap}

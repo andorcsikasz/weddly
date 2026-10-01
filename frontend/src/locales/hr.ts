@@ -8932,7 +8932,7 @@ const hr: LocaleMessages = {
     feature_3_body: "Fotografije se učitavaju čim se signal vrati.",
     feature_4_title: "Jedno otkrivanje",
     feature_4_body: "Galerija se otvara svima odjednom.",
-    standalone_title: "Planirate drugdje?",
+    standalone_title: "Cijene",
     standalone_body: "Jednokratno po vjenčanju. Bez pretplate.",
     pricing_guest_cap: "Do {n} gostiju",
     pricing_custom_cap: "400+ gostiju",

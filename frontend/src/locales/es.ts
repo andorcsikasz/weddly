@@ -9024,7 +9024,7 @@ const es: LocaleMessages = {
     feature_3_body: "Las fotos se suben cuando vuelve la señal.",
     feature_4_title: "Una revelación",
     feature_4_body: "La galería se abre para todos a la vez.",
-    standalone_title: "¿Organizáis en otro sitio?",
+    standalone_title: "Precios",
     standalone_body: "Un pago único por boda. Sin suscripción.",
     pricing_guest_cap: "Hasta {n} invitados",
     pricing_custom_cap: "Más de 400 invitados",

@@ -9078,7 +9078,7 @@ const de: LocaleMessages = {
     feature_3_body: "Fotos laden hoch, sobald wieder Signal da ist.",
     feature_4_title: "Eine Enthüllung",
     feature_4_body: "Die Galerie öffnet sich für alle gleichzeitig.",
-    standalone_title: "Plant ihr woanders?",
+    standalone_title: "Preise",
     standalone_body: "Einmalig pro Hochzeit. Kein Abo.",
     pricing_guest_cap: "Bis zu {n} Gäste",
     pricing_custom_cap: "400+ Gäste",

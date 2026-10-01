@@ -8939,7 +8939,7 @@ const en: LocaleMessages = {
     feature_3_body: "Shots upload when signal returns.",
     feature_4_title: "One reveal",
     feature_4_body: "The gallery opens for everyone at once.",
-    standalone_title: "Planning elsewhere?",
+    standalone_title: "Pricing",
     standalone_body: "One price per wedding. No subscription.",
     pricing_guest_cap: "Up to {n} guests",
     pricing_custom_cap: "400+ guests",
