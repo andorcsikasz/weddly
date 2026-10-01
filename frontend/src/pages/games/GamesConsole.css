@@ -63,15 +63,18 @@
    blue (fixed to the viewport), so every pixel outside the capped column is
    the same surface as the page. `:has()` keeps this scoped to
    the console: leaving the page restores the paper body on the next paint. */
+/* The paint lives on <html> ONLY and body goes transparent: once <html> has
+   a background, body's no longer propagates to the canvas and paints as an
+   ordinary block, which would cover GamesAmbient's z-index -1 layer. */
 html:has(.gc-page) {
-  background: #0c1019;
-}
-html:has(.gc-page) body {
   background:
     radial-gradient(1400px 700px at 82% -12%, rgba(124, 92, 255, 0.09), transparent 62%),
     radial-gradient(1200px 640px at 8% 108%, rgba(35, 136, 255, 0.08), transparent 60%),
-    linear-gradient(180deg, #0f1524 0%, #0c1019 55%, #0b0f18 100%);
+    linear-gradient(180deg, #0f1524 0%, #0c1019 55%, #0b0f18 100%) #0c1019;
   background-attachment: fixed;
+}
+html:has(.gc-page) body {
+  background: transparent;
 }
 
 /* The app shell's warm-text retint (index.css) recolours every h1/h2 inside
@@ -555,51 +558,251 @@ html:has(.gc-page) body {
 }
 
 /* ── Hub motion ──────────────────────────────────────────────────────────
-   The hub is a game lobby, so it moves a little: the header and tiles rise
-   in on a stagger, each tile tilts toward the pointer with a spotlight that
-   follows it (GamesHubPage writes --mx/--my/--rx/--ry on pointermove), the
-   quiz shapes drift and scatter on hover, and the markets sparkline draws
-   itself in and redraws on hover. Everything here is switched off under
+   The hub is a game lobby, so it is alive. Behind everything sits the
+   ambient layer (GamesAmbient: aurora, cursor glow, particle
+   constellation). Each tile rises in, tilts toward the pointer with a
+   spotlight + glare that follow it, wears a spinning brand-coloured border
+   on hover, and floats its decoration on a parallax offset above the copy
+   (GamesHubPage writes --mx/--my/--dx/--dy/--rx/--ry on pointermove). A
+   press bursts a ripple. Everything is switched off under
    prefers-reduced-motion at the bottom of the file. */
 
+/* Ambient layer: portalled to <body>, z -1, so above the canvas paint and
+   below the whole app. */
+.gc-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.gc-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.gc-aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.gc-aurora-a {
+  width: 46vw;
+  height: 46vw;
+  top: -14vw;
+  right: -8vw;
+  background: radial-gradient(circle, rgba(124, 72, 255, 0.5), transparent 65%);
+  animation: gc-drift-a 26s ease-in-out infinite alternate;
+}
+.gc-aurora-b {
+  width: 52vw;
+  height: 52vw;
+  bottom: -22vw;
+  left: -10vw;
+  background: radial-gradient(circle, rgba(30, 110, 255, 0.42), transparent 65%);
+  animation: gc-drift-b 32s ease-in-out infinite alternate;
+}
+.gc-aurora-c {
+  width: 30vw;
+  height: 30vw;
+  top: 38%;
+  left: 42%;
+  background: radial-gradient(circle, rgba(70, 200, 255, 0.18), transparent 65%);
+  animation: gc-drift-c 21s ease-in-out infinite alternate;
+}
+@keyframes gc-drift-a {
+  to {
+    transform: translate(-12vw, 10vh) scale(1.15);
+  }
+}
+@keyframes gc-drift-b {
+  to {
+    transform: translate(14vw, -12vh) scale(1.1);
+  }
+}
+@keyframes gc-drift-c {
+  to {
+    transform: translate(-18vw, -16vh) scale(1.3);
+  }
+}
+.gc-cursor-glow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 560px;
+  height: 560px;
+  margin: -280px 0 0 -280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(130, 110, 255, 0.13), transparent 62%);
+  transform: translate(var(--gx, -1000px), var(--gy, -1000px));
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.gc-amb-live .gc-cursor-glow {
+  opacity: 1;
+}
+
+/* Entrance: rise out of a slight backward lean, unblurring. `backwards`
+   (not `both`) so the finished animation lets go of `transform` and the
+   pointer tilt below can take it. */
 @keyframes gc-rise {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    filter: blur(8px);
+    transform: perspective(900px) translateY(36px) rotateX(16deg) scale(0.97);
   }
   to {
     opacity: 1;
+    filter: blur(0);
     transform: none;
   }
 }
 .gc-rise {
-  animation: gc-rise 620ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: gc-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
   animation-delay: var(--gc-delay, 0ms);
 }
 
+/* Title: a slow light sweep across the letters. */
+.gc-shimmer {
+  background: linear-gradient(
+    100deg,
+    #ffffff 0%,
+    #ffffff 38%,
+    #c9b6ff 46%,
+    #9cc4ff 52%,
+    #ffffff 60%,
+    #ffffff 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gc-sweep 6s ease-in-out 1.2s infinite;
+}
+@keyframes gc-sweep {
+  0% {
+    background-position: 100% 0;
+  }
+  45%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/* Tilt */
 .gc-tile.gc-tilt {
   --rx: 0deg;
   --ry: 0deg;
+  --dx: 0;
+  --dy: 0;
   --lift: 0px;
-  transform: perspective(1000px) rotateX(var(--ry)) rotateY(var(--rx)) translateY(var(--lift));
+  transform: perspective(1000px) rotateX(var(--ry)) rotateY(var(--rx)) translateY(var(--lift))
+    scale(var(--press, 1));
   transition:
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 180ms ease,
-    box-shadow 220ms ease;
+    transform 500ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 200ms ease,
+    box-shadow 300ms ease;
 }
 .gc-tile.gc-tilt:hover {
-  --lift: -4px;
-  transform: perspective(1000px) rotateX(var(--ry)) rotateY(var(--rx)) translateY(var(--lift));
+  --lift: -6px;
+}
+.gc-tile.gc-tilt:active {
+  --press: 0.985;
 }
 .gc-tile.gc-tilt.gc-tracking {
   transition:
-    transform 80ms linear,
-    border-color 180ms ease,
-    box-shadow 220ms ease;
+    transform 90ms linear,
+    border-color 200ms ease,
+    box-shadow 300ms ease;
+}
+.gc-tile-quiz:hover {
+  box-shadow:
+    0 40px 90px -30px rgba(139, 61, 255, 0.65),
+    0 0 0 1px rgba(139, 61, 255, 0.25);
+}
+.gc-tile-markets:hover {
+  box-shadow:
+    0 40px 90px -30px rgba(35, 120, 255, 0.65),
+    0 0 0 1px rgba(35, 120, 255, 0.25);
 }
 
-/* Pointer spotlight: a soft white bloom under the cursor, above the tile
-   background and below the copy. */
+/* Parallax: decoration drifts with the pointer, copy leans the other way,
+   which reads as the shapes floating in front of the card. */
+.gc-depth {
+  translate: calc(var(--dx, 0) * 26px) calc(var(--dy, 0) * 20px);
+  transition: translate 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.gc-tracking .gc-depth {
+  transition: translate 90ms linear;
+}
+.gc-tilt .gc-tile-content {
+  translate: calc(var(--dx, 0) * -6px) calc(var(--dy, 0) * -4px);
+  transition: translate 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.gc-tracking .gc-tile-content {
+  transition: translate 90ms linear;
+}
+
+/* Spinning brand-coloured border, drawn as a masked conic ring. */
+@property --gc-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.gc-tile-border {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  opacity: 0;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  transition: opacity 300ms ease;
+  animation: gc-spin 3.2s linear infinite;
+}
+.gc-tile-quiz .gc-tile-border {
+  background: conic-gradient(
+    from var(--gc-angle),
+    transparent 0deg,
+    #e21b3c 60deg,
+    #d89e00 120deg,
+    transparent 170deg,
+    transparent 190deg,
+    #26890c 240deg,
+    #1368ce 300deg,
+    transparent 360deg
+  );
+}
+.gc-tile-markets .gc-tile-border {
+  background: conic-gradient(
+    from var(--gc-angle),
+    transparent 0deg,
+    #2388ff 80deg,
+    #a7d0ff 130deg,
+    transparent 180deg,
+    transparent 200deg,
+    #1652f0 280deg,
+    transparent 360deg
+  );
+}
+.gc-tile:hover .gc-tile-border {
+  opacity: 1;
+}
+@keyframes gc-spin {
+  to {
+    --gc-angle: 360deg;
+  }
+}
+
+/* Pointer spotlight (soft bloom) and glare (sharper diagonal streak). */
 .gc-tile-spot {
   position: absolute;
   inset: 0;
@@ -607,140 +810,244 @@ html:has(.gc-page) body {
   pointer-events: none;
   opacity: 0;
   background: radial-gradient(
-    420px circle at var(--mx, 50%) var(--my, 50%),
-    rgba(255, 255, 255, 0.09),
+    460px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.11),
     transparent 60%
   );
-  transition: opacity 260ms ease;
+  transition: opacity 300ms ease;
 }
-.gc-tile:hover .gc-tile-spot {
+.gc-tile-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: overlay;
+  background: linear-gradient(
+    115deg,
+    transparent calc(var(--mx, 50%) - 22%),
+    rgba(255, 255, 255, 0.28) var(--mx, 50%),
+    transparent calc(var(--mx, 50%) + 22%)
+  );
+  transition: opacity 300ms ease;
+}
+.gc-tile:hover :is(.gc-tile-spot, .gc-tile-glare) {
   opacity: 1;
 }
 
-/* The corner glow breathes slowly, and swells on hover. */
+/* The corner glow breathes, and swells on hover. */
 @keyframes gc-breathe {
   0%,
   100% {
-    opacity: 0.12;
+    opacity: 0.14;
     transform: scale(1);
   }
   50% {
-    opacity: 0.2;
-    transform: scale(1.12);
+    opacity: 0.26;
+    transform: scale(1.2);
   }
 }
 .gc-tile-glow {
   animation: gc-breathe 6s ease-in-out infinite;
-  transition: filter 300ms ease;
+  transition: width 500ms ease, height 500ms ease;
 }
 .gc-tile-markets .gc-tile-glow {
   animation-delay: -3s;
 }
 .gc-tile:hover .gc-tile-glow {
+  width: 360px;
+  height: 360px;
   animation-duration: 2.4s;
 }
 
-/* Quiz shapes float on their own rhythm, then scatter and spin on hover. */
+/* Kahoot shapes, in Kahoot colours: each floats on its own phase (the
+   wrapper), and scatters + spins on hover (the shape itself). */
+.gc-shape-float {
+  position: absolute;
+  animation: gc-float calc(3.6s + var(--i, 0) * 0.45s) ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * -0.7s);
+}
 @keyframes gc-float {
   0%,
   100% {
-    translate: 0 0;
+    transform: translateY(0) rotate(0deg);
   }
   50% {
-    translate: 0 -7px;
+    transform: translateY(-10px) rotate(8deg);
   }
 }
+.gc-tile-quiz .gc-tile-deco {
+  opacity: 0.7;
+}
 .gc-shape {
-  animation: gc-float 4.2s ease-in-out infinite;
+  position: static;
+  display: block;
+  opacity: 0.85;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
   transition:
-    transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    opacity 300ms ease;
+    transform 650ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 300ms ease,
+    filter 300ms ease;
 }
 .gc-shape-triangle {
-  animation-delay: -0.6s;
+  border-left-width: 13px;
+  border-right-width: 13px;
+  border-bottom: 22px solid #e21b3c;
 }
 .gc-shape-diamond {
-  animation-delay: -1.7s;
-  animation-duration: 5s;
+  width: 19px;
+  height: 19px;
+  background: #1368ce;
+  rotate: 45deg;
+  border-radius: 3px;
 }
 .gc-shape-circle {
-  animation-delay: -2.4s;
-  animation-duration: 3.6s;
+  width: 22px;
+  height: 22px;
+  background: #d89e00;
 }
 .gc-shape-square {
-  animation-delay: -3.1s;
-  animation-duration: 4.8s;
+  width: 19px;
+  height: 19px;
+  background: #26890c;
+  border-radius: 3px;
 }
 .gc-tile:hover .gc-shape {
   opacity: 1;
+  filter: drop-shadow(0 0 12px currentColor) brightness(1.15);
 }
-.gc-tile:hover .gc-shape-triangle {
-  transform: translate(-14px, -8px) rotate(-25deg) scale(1.25);
+.gc-tile:hover .gc-shape-n0 {
+  transform: translate(-26px, -10px) rotate(-200deg) scale(1.45);
 }
-.gc-tile:hover .gc-shape-diamond {
-  transform: translate(12px, 8px) rotate(90deg) scale(1.2);
+.gc-tile:hover .gc-shape-n1 {
+  transform: translate(22px, 14px) rotate(180deg) scale(1.35);
 }
-.gc-tile:hover .gc-shape-circle {
-  transform: translate(10px, -10px) scale(1.35);
+.gc-tile:hover .gc-shape-n2 {
+  transform: translate(18px, -16px) scale(1.5);
 }
-.gc-tile:hover .gc-shape-square {
-  transform: translate(-10px, 12px) rotate(45deg) scale(1.2);
+.gc-tile:hover .gc-shape-n3 {
+  transform: translate(-22px, 22px) rotate(135deg) scale(1.4);
+}
+.gc-tile:hover .gc-shape-n4 {
+  transform: translate(14px, 18px) scale(1.6);
+}
+.gc-tile:hover .gc-shape-n5 {
+  transform: translate(-18px, -14px) rotate(-90deg) scale(1.5);
 }
 
-/* Markets sparkline draws itself in once, then redraws on every hover. */
+/* Markets chart: the line draws itself, holds, and redraws on a loop like a
+   live feed; the area under it fills in behind; the head pings. Hover
+   speeds the feed up. */
+.gc-tile-markets .gc-tile-deco {
+  opacity: 0.7;
+  transition:
+    opacity 300ms ease,
+    translate 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.gc-tile-markets:hover .gc-tile-deco {
+  opacity: 1;
+}
 @keyframes gc-draw {
-  from {
+  0% {
     stroke-dashoffset: 1;
   }
-  to {
+  45%,
+  100% {
     stroke-dashoffset: 0;
+  }
+}
+@keyframes gc-area {
+  0%,
+  20% {
+    opacity: 0;
+    transform: scaleY(0.4);
+  }
+  50%,
+  92% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(1);
   }
 }
 .gc-spark-line {
   stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  animation: gc-draw 1.4s cubic-bezier(0.65, 0, 0.35, 1) 400ms both;
+  stroke-dashoffset: 1;
+  animation: gc-draw 5s cubic-bezier(0.65, 0, 0.35, 1) 400ms infinite;
 }
-.gc-tile:hover .gc-spark-line {
-  animation: gc-draw 900ms cubic-bezier(0.65, 0, 0.35, 1) both;
+.gc-spark-area {
+  transform-origin: 50% 100%;
+  transform-box: fill-box;
+  animation: gc-area 5s ease-out 400ms infinite;
+}
+.gc-tile:hover :is(.gc-spark-line, .gc-spark-area) {
+  animation-duration: 2.6s;
 }
 @keyframes gc-ping {
   0% {
     r: 3.5;
-    opacity: 0.8;
+    opacity: 0.9;
   }
   100% {
-    r: 11;
+    r: 14;
     opacity: 0;
   }
 }
 .gc-spark-ping {
-  animation: gc-ping 1.8s ease-out 1.8s infinite;
+  animation: gc-ping 1.6s ease-out 1.8s infinite;
   opacity: 0;
 }
-.gc-tile-markets .gc-tile-deco {
-  transition: opacity 300ms ease;
-}
-.gc-tile-markets:hover .gc-tile-deco {
-  opacity: 0.6;
+.gc-spark-dot {
+  filter: drop-shadow(0 0 4px rgba(160, 200, 255, 0.9));
 }
 
-/* CTA gets a passing sheen on hover. */
+/* Press ripple */
+.gc-ripple {
+  position: absolute;
+  z-index: 3;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 70%);
+  animation: gc-ripple 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes gc-ripple {
+  to {
+    transform: scale(40);
+    opacity: 0;
+  }
+}
+
+/* CTA: a sheen passes over it on hover. */
 .gc-tile-cta {
   position: relative;
   overflow: hidden;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 300ms ease;
+}
+.gc-tile:hover .gc-tile-cta {
+  box-shadow: 0 0 24px -4px rgba(255, 255, 255, 0.35);
 }
 .gc-tile-cta::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.32) 50%, transparent 70%);
   transform: translateX(-120%);
   pointer-events: none;
 }
 .gc-tile:hover .gc-tile-cta::after {
   transform: translateX(120%);
-  transition: transform 700ms ease;
+  transition: transform 750ms ease;
+}
+.gc-tile:hover .gc-arrow {
+  transform: translateX(5px);
 }
 
 /* The eyebrow sparkle twinkles. */
@@ -751,7 +1058,7 @@ html:has(.gc-page) body {
     opacity: 0.75;
   }
   50% {
-    transform: scale(1.25) rotate(20deg);
+    transform: scale(1.3) rotate(25deg);
     opacity: 1;
   }
 }
@@ -761,9 +1068,13 @@ html:has(.gc-page) body {
 
 @media (prefers-reduced-motion: reduce) {
   .gc-rise,
+  .gc-aurora,
+  .gc-shimmer,
+  .gc-tile-border,
   .gc-tile-glow,
+  .gc-shape-float,
   .gc-shape,
-  .gc-spark-line,
+  .gc-spark-area,
   .gc-spark-ping,
   .gc-twinkle,
   .gc-tile-cta::after,
@@ -773,5 +1084,12 @@ html:has(.gc-page) body {
   .gc-arrow {
     animation: none !important;
     transition: none !important;
+  }
+  .gc-spark-line {
+    animation: none !important;
+    stroke-dashoffset: 0;
+  }
+  .gc-tile.gc-tilt {
+    transform: none !important;
   }
 }

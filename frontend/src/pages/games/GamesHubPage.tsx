@@ -15,42 +15,85 @@ import { ArrowRight, Gamepad2, Sparkles, TrendingUp } from "lucide-react";
 import type { CSSProperties, PointerEvent } from "react";
 import { Link } from "react-router-dom";
 import { useT } from "../../lib/i18n";
+import { GamesAmbient } from "./GamesAmbient";
 import "./GamesConsole.css";
+
+// Kahoot's four answer shapes in Kahoot's four answer colours. Each sits in
+// its own wrapper so the float (wrapper) and the hover scatter (shape) are
+// separate transforms and never fight each other.
+const SHAPES = [
+  { kind: "triangle", top: 26, right: 150, size: 1 },
+  { kind: "diamond", top: 78, right: 70, size: 1 },
+  { kind: "circle", top: 18, right: 64, size: 1 },
+  { kind: "square", top: 118, right: 160, size: 1 },
+  { kind: "circle", top: 140, right: 40, size: 0.6 },
+  { kind: "diamond", top: 30, right: 220, size: 0.55 },
+] as const;
 
 function ShapeCluster() {
   return (
-    <div className="gc-tile-deco" aria-hidden="true">
-      <span className="gc-shape gc-shape-triangle" style={{ top: 24, right: 112 }} />
-      <span className="gc-shape gc-shape-diamond" style={{ top: 66, right: 58 }} />
-      <span className="gc-shape gc-shape-circle" style={{ top: 14, right: 54 }} />
-      <span className="gc-shape gc-shape-square" style={{ top: 96, right: 122 }} />
+    <div className="gc-tile-deco gc-depth" aria-hidden="true">
+      {SHAPES.map((sh, i) => (
+        <span
+          key={i}
+          className="gc-shape-float"
+          style={
+            {
+              top: sh.top,
+              right: sh.right,
+              "--i": i,
+              scale: String(sh.size),
+            } as CSSProperties
+          }
+        >
+          <span className={`gc-shape gc-shape-${sh.kind} gc-shape-n${i}`} />
+        </span>
+      ))}
     </div>
   );
 }
 
+const SPARK = "0,46 20,40 40,44 60,30 80,34 100,20 120,24 140,12 160,8";
+
 function SparkDeco() {
   return (
     <svg
-      className="gc-tile-deco"
+      className="gc-tile-deco gc-depth gc-spark"
       viewBox="0 0 160 60"
       preserveAspectRatio="none"
       // `left`/`bottom` reset: .gc-tile-deco is `inset: 0`, which otherwise
       // pins this box to the tile's left edge, over the kicker chip.
-      style={{ top: 28, right: 32, left: "auto", bottom: "auto", width: 150, height: 56 }}
+      style={{ top: 26, right: 32, left: "auto", bottom: "auto", width: 230, height: 90 }}
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient id="gc-spark-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgb(86, 150, 255)" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="rgb(86, 150, 255)" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="gc-spark-stroke" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.15)" />
+          <stop offset="100%" stopColor="rgba(160,200,255,1)" />
+        </linearGradient>
+      </defs>
+      <polygon
+        className="gc-spark-area"
+        points={`${SPARK} 160,60 0,60`}
+        fill="url(#gc-spark-fill)"
+      />
       <polyline
         className="gc-spark-line"
         pathLength={1}
-        points="0,46 24,40 48,44 72,26 96,30 120,14 144,20 160,8"
+        points={SPARK}
         fill="none"
-        stroke="rgba(255,255,255,0.55)"
+        stroke="url(#gc-spark-stroke)"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
       />
-      <circle className="gc-spark-ping" cx="160" cy="8" r="3.5" fill="white" />
+      <circle className="gc-spark-ping" cx="160" cy="8" r="3.5" fill="rgb(160, 200, 255)" />
+      <circle className="gc-spark-dot" cx="160" cy="8" r="3" fill="white" />
     </svg>
   );
 }
@@ -58,8 +101,9 @@ function SparkDeco() {
 const reducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-/** Tilt the tile toward the pointer and park the spotlight under it. Mouse
- *  only: on touch the tilt would just flicker under a tap. */
+/** Tilt the tile toward the pointer, park the spotlight and glare under it,
+ *  and hand the decoration a parallax offset so it floats above the copy.
+ *  Mouse only: on touch the tilt would just flicker under a tap. */
 function trackPointer(e: PointerEvent<HTMLAnchorElement>) {
   if (e.pointerType !== "mouse" || reducedMotion()) return;
   const el = e.currentTarget;
@@ -69,15 +113,30 @@ function trackPointer(e: PointerEvent<HTMLAnchorElement>) {
   el.classList.add("gc-tracking");
   el.style.setProperty("--mx", `${(x * 100).toFixed(1)}%`);
   el.style.setProperty("--my", `${(y * 100).toFixed(1)}%`);
-  el.style.setProperty("--rx", `${((x - 0.5) * 5).toFixed(2)}deg`);
-  el.style.setProperty("--ry", `${((0.5 - y) * 5).toFixed(2)}deg`);
+  el.style.setProperty("--dx", (x - 0.5).toFixed(3));
+  el.style.setProperty("--dy", (y - 0.5).toFixed(3));
+  el.style.setProperty("--rx", `${((x - 0.5) * 9).toFixed(2)}deg`);
+  el.style.setProperty("--ry", `${((0.5 - y) * 9).toFixed(2)}deg`);
 }
 
 function resetPointer(e: PointerEvent<HTMLAnchorElement>) {
   const el = e.currentTarget;
   el.classList.remove("gc-tracking");
-  el.style.setProperty("--rx", "0deg");
-  el.style.setProperty("--ry", "0deg");
+  for (const v of ["--rx", "--ry"]) el.style.setProperty(v, "0deg");
+  for (const v of ["--dx", "--dy"]) el.style.setProperty(v, "0");
+}
+
+/** A ring of light bursts from where the tile was pressed. */
+function ripple(e: PointerEvent<HTMLAnchorElement>) {
+  if (reducedMotion()) return;
+  const el = e.currentTarget;
+  const r = el.getBoundingClientRect();
+  const dot = document.createElement("span");
+  dot.className = "gc-ripple";
+  dot.style.left = `${e.clientX - r.left}px`;
+  dot.style.top = `${e.clientY - r.top}px`;
+  dot.addEventListener("animationend", () => dot.remove(), { once: true });
+  el.appendChild(dot);
 }
 
 function GameTile({
@@ -105,7 +164,10 @@ function GameTile({
       style={{ "--gc-delay": `${delay}ms` } as CSSProperties}
       onPointerMove={trackPointer}
       onPointerLeave={resetPointer}
+      onPointerDown={ripple}
     >
+      <span className="gc-tile-border" aria-hidden="true" />
+      <span className="gc-tile-glare" aria-hidden="true" />
       <span className="gc-tile-spot" aria-hidden="true" />
       <span className="gc-tile-glow" style={{ color: accent }} aria-hidden="true" />
       {tone === "quiz" ? <ShapeCluster /> : <SparkDeco />}
@@ -134,6 +196,7 @@ export default function GamesHubPage() {
 
   return (
     <div className="gc-page min-h-screen px-4 pb-16 pt-8 sm:px-6 sm:pt-10 lg:px-8 xl:px-10">
+      <GamesAmbient />
       <div className="mx-auto w-full max-w-5xl">
         <header className="mb-12">
           <span className="gc-eyebrow gc-rise">
@@ -143,7 +206,7 @@ export default function GamesHubPage() {
             className="gc-rise mt-4 font-space text-3xl font-bold text-white sm:text-4xl"
             style={{ "--gc-delay": "80ms" } as CSSProperties}
           >
-            {t("games_hub.title")}
+            <span className="gc-shimmer">{t("games_hub.title")}</span>
           </h1>
           <p
             className="gc-rise mt-3 max-w-xl text-base text-white/70"
