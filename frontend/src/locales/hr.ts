@@ -8938,7 +8938,7 @@ const hr: LocaleMessages = {
     pricing_custom_cap: "400+ gostiju",
     pricing_custom_price: "Kontaktirajte nas",
     pricing_couple_label: "Weddly parovi",
-    pricing_standard: "Svi ostali: {price}",
+    pricing_standard: "Bez Weddly računa: {price}",
     pricing_note: "Rezervacije se otvaraju uskoro.",
     try_title: "Isprobaj na mobitelu",
     try_body: "Skeniraj i snimaj. Ništa se ne učitava.",

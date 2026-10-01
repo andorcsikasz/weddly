@@ -9023,7 +9023,7 @@ const hu: LocaleMessages = {
     pricing_custom_cap: "400+ vendég",
     pricing_custom_price: "Kérj ajánlatot",
     pricing_couple_label: "Weddly pároknak",
-    pricing_standard: "Mindenki másnak: {price}",
+    pricing_standard: "Nem Weddly felhasználóknak: {price}",
     pricing_note: "A foglalás hamarosan nyílik.",
     try_title: "Próbáld ki a telefonodon",
     try_body: "Olvasd be, és fotózz. Semmi nem töltődik fel.",

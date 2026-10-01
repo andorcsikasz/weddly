@@ -136,26 +136,24 @@ export default function CameraPage() {
               </h2>
               <p className="mt-2 text-sm text-paper-400">{t("camera.standalone_body")}</p>
 
-              <div className="mt-7 w-full max-w-xs rounded-3xl border border-paper-50/10 bg-paper-50/[0.03] p-6 sm:p-7">
+              <div className="mt-7 w-full max-w-lg rounded-3xl border border-paper-50/10 bg-paper-50/[0.03] px-6 py-5 sm:px-10 sm:py-6">
                 {/* The Weddly price leads; the stand-alone price is the
                     footnote. Both rows keep their height on the free tier so
                     the card doesn't jump while the slider moves. */}
                 <p className="h-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-paper-300">
                   {tierCouplePrice && t("camera.pricing_couple_label")}
                 </p>
-                <span className="stat-num mt-2 block text-5xl font-semibold tabular-nums tracking-[-0.04em] text-paper-50 sm:text-6xl">
-                  {tierCouplePrice === "included"
-                    ? t("media.film_price_free")
-                    : (tierCouplePrice ?? tier.price)}
+                <span className="stat-num mt-1.5 block text-4xl font-semibold tabular-nums tracking-[-0.04em] text-paper-50 sm:text-5xl">
+                  {tierCouplePrice === "included" ? "€0" : (tierCouplePrice ?? tier.price)}
                 </span>
-                <p className="mt-3 text-sm text-paper-400">
+                <p className="mt-2 text-sm text-paper-400">
                   {t("camera.pricing_guest_cap", { n: tier.cap })}
                 </p>
-                <p className="mt-1 h-5 text-sm tabular-nums text-paper-500">
+                <p className="mt-0.5 h-5 text-sm tabular-nums text-paper-500">
                   {tierCouplePrice && t("camera.pricing_standard", { price: tier.price })}
                 </p>
 
-                <div className="mt-6 text-left">
+                <div className="mt-4 text-left">
                   <input
                     type="range"
                     min={0}

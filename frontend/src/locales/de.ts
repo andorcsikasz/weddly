@@ -9084,7 +9084,7 @@ const de: LocaleMessages = {
     pricing_custom_cap: "400+ Gäste",
     pricing_custom_price: "Kontaktiert uns",
     pricing_couple_label: "Weddly-Paare",
-    pricing_standard: "Alle anderen: {price}",
+    pricing_standard: "Ohne Weddly-Konto: {price}",
     pricing_note: "Buchungen öffnen bald.",
     try_title: "Probier es auf dem Handy",
     try_body: "Scannen und fotografieren. Nichts wird hochgeladen.",

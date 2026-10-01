@@ -9030,7 +9030,7 @@ const es: LocaleMessages = {
     pricing_custom_cap: "Más de 400 invitados",
     pricing_custom_price: "Contactadnos",
     pricing_couple_label: "Parejas de Weddly",
-    pricing_standard: "Para los demás: {price}",
+    pricing_standard: "Sin cuenta de Weddly: {price}",
     pricing_note: "Las reservas abren pronto.",
     try_title: "Pruébala en tu móvil",
     try_body: "Escanea y dispara. No se sube nada.",
