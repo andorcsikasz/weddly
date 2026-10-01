@@ -38,6 +38,7 @@ export function CameraPreview({
   objectPosition,
   stamp,
   inline = false,
+  shootDelay,
 }: {
   src: string;
   filmName: string;
@@ -50,6 +51,9 @@ export function CameraPreview({
   stamp?: string;
   /** In normal flow instead of absolutely placed in the hero collage. */
   inline?: boolean;
+  /** Turns on the /camera roll's live loop (Ken Burns, flash, shutter dip);
+   *  the value offsets this phone's shot within the shared cycle. */
+  shootDelay?: string;
 }) {
   return (
     <div
@@ -60,9 +64,16 @@ export function CameraPreview({
           src={src}
           alt=""
           loading={inline ? "lazy" : undefined}
-          className="h-full w-full object-cover"
+          className={`h-full w-full object-cover ${shootDelay ? "roll-kenburns" : ""}`}
           style={{ filter, objectPosition }}
         />
+        {shootDelay && (
+          <span
+            aria-hidden="true"
+            className="roll-flash pointer-events-none absolute inset-0 z-10 bg-white"
+            style={{ "--roll-delay": shootDelay } as CSSProperties}
+          />
+        )}
         {stamp && (
           <span className="absolute bottom-[26%] right-3 font-mono text-[9px] font-semibold tracking-wider text-amber-400 opacity-90 [text-shadow:0_0_4px_theme(colors.amber.500)] sm:text-[10px]">
             {stamp}
@@ -93,7 +104,10 @@ export function CameraPreview({
               {shotsLabel}
             </span>
             <span className="flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-white bg-white/20 shadow-lg sm:h-12 sm:w-12">
-              <span className="h-7 w-7 rounded-full bg-white sm:h-9 sm:w-9" />
+              <span
+                className={`h-7 w-7 rounded-full bg-white sm:h-9 sm:w-9 ${shootDelay ? "roll-shutter" : ""}`}
+                style={shootDelay ? ({ "--roll-delay": shootDelay } as CSSProperties) : undefined}
+              />
             </span>
             <span className="ml-auto h-7 w-7 overflow-hidden rounded-md border border-white/20 sm:h-8 sm:w-8">
               <img src={src} alt="" className="h-full w-full object-cover" style={{ filter }} />

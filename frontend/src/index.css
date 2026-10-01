@@ -1708,94 +1708,97 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     }
   }
 
-  /* /camera pricing slider. Self-contained rather than reusing `.range-fill`:
-     that component's fill colours live on `--range-fill-*`, scoped to
-     `html.dark`, but this page forces dark via a local wrapper div (see
-     CameraPage's own note on the technique), so `html.dark` never matches
-     here. Colours are the page's fixed dark palette, not a var pair, since
-     the page has no light variant to invert for. JS supplies only the fill
-     percentage via `--camera-slider-fill`; the thumb glow is what makes the
-     six discrete stops feel like a dial rather than a form control. */
-  .camera-slider {
-    --camera-slider-fill: 0%;
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 4px;
-    border-radius: 9999px;
-    cursor: pointer;
-    background: linear-gradient(
-      to right,
-      theme("colors.paper.400") 0%,
-      theme("colors.paper.400") var(--camera-slider-fill),
-      rgba(251, 250, 245, 0.12) var(--camera-slider-fill),
-      rgba(251, 250, 245, 0.12) 100%
-    );
-  }
-  .camera-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 9999px;
-    background: theme("colors.paper.50");
-    border: 3px solid theme("colors.paper.400");
-    box-shadow:
-      0 0 0 4px rgba(211, 198, 159, 0.22),
-      0 2px 8px rgba(0, 0, 0, 0.45);
-    cursor: grab;
+  /* /camera "guest's roll": five viewfinders that feel like a room full of
+     guests shooting. Each phone rises in once when the row scrolls into
+     view (`.is-in` on the section), then bobs on its own phase, the photo
+     drifts in a slow Ken Burns push, and every few seconds one phone after
+     another fires: a white flash over the frame while its shutter button
+     dips. All five share one 7.5s cycle, offset by `--roll-delay`, so the
+     flashes travel along the row instead of going off together. */
+  .roll-item {
+    opacity: 0;
+    transform: translateY(28px);
     transition:
-      transform 0.15s ease,
-      box-shadow 0.15s ease;
+      opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: calc(var(--roll-i, 0) * 90ms);
   }
-  .camera-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 9999px;
-    background: theme("colors.paper.50");
-    border: 3px solid theme("colors.paper.400");
-    box-shadow:
-      0 0 0 4px rgba(211, 198, 159, 0.22),
-      0 2px 8px rgba(0, 0, 0, 0.45);
-    cursor: grab;
-    transition:
-      transform 0.15s ease,
-      box-shadow 0.15s ease;
+  .is-in .roll-item {
+    opacity: 1;
+    transform: none;
   }
-  .camera-slider::-moz-range-progress {
-    height: 4px;
-    border-radius: 9999px;
-    background: theme("colors.paper.400");
+  .is-in .roll-bob {
+    animation: rollBob 6s ease-in-out infinite;
+    animation-delay: calc(var(--roll-i, 0) * -1.3s);
   }
-  .camera-slider::-moz-range-track {
-    height: 4px;
-    border-radius: 9999px;
-    background: rgba(251, 250, 245, 0.12);
+  .roll-kenburns {
+    animation: rollKenBurns 14s ease-in-out infinite alternate;
+    animation-delay: calc(var(--roll-i, 0) * -2.7s);
   }
-  .camera-slider:hover::-webkit-slider-thumb,
-  .camera-slider:focus-visible::-webkit-slider-thumb {
-    transform: scale(1.12);
+  .roll-flash {
+    opacity: 0;
+    animation: rollFlash 7.5s linear infinite;
+    animation-delay: var(--roll-delay, 0s);
   }
-  .camera-slider:hover::-moz-range-thumb,
-  .camera-slider:focus-visible::-moz-range-thumb {
-    transform: scale(1.12);
+  .roll-shutter {
+    animation: rollShutter 7.5s linear infinite;
+    animation-delay: var(--roll-delay, 0s);
   }
-  .camera-slider:active::-webkit-slider-thumb {
-    cursor: grabbing;
-    transform: scale(1.2);
-    box-shadow:
-      0 0 0 7px rgba(211, 198, 159, 0.28),
-      0 2px 8px rgba(0, 0, 0, 0.45);
+  @keyframes rollBob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
-  .camera-slider:active::-moz-range-thumb {
-    cursor: grabbing;
-    transform: scale(1.2);
-    box-shadow:
-      0 0 0 7px rgba(211, 198, 159, 0.28),
-      0 2px 8px rgba(0, 0, 0, 0.45);
+  @keyframes rollKenBurns {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.09);
+    }
   }
-  .camera-slider:focus-visible {
-    outline: none;
+  @keyframes rollFlash {
+    0%,
+    90% {
+      opacity: 0;
+    }
+    91% {
+      opacity: 0.9;
+    }
+    96%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes rollShutter {
+    0%,
+    89.5% {
+      transform: scale(1);
+    }
+    91% {
+      transform: scale(0.78);
+    }
+    94%,
+    100% {
+      transform: scale(1);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .roll-item {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+    .is-in .roll-bob,
+    .roll-kenburns,
+    .roll-flash,
+    .roll-shutter {
+      animation: none;
+    }
   }
 
   /* Subtle diagonal hairline texture for "stationery" surfaces. */

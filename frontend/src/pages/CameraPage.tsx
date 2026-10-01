@@ -13,7 +13,8 @@
 // every heading and body line on it is font-grotesk, so the hero's h1 opts
 // out of the workspace's usual Cormorant serif via `headingFont`.
 import { ArrowRight, Camera, Hourglass, ScanLine, Wifi } from "lucide-react";
-import { useState } from "react";
+import type { CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FILM_FILTERS, FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
 import { CameraHero, CameraPreview, DEMO_STRIP } from "../components/CameraHero";
@@ -69,27 +70,34 @@ function couplePrice(cap: number): "included" | string | null {
 }
 
 /** One option row of the pricing stack: label + headcount left, price right.
- *  `hidden` renders the card behind the stack, where only its edge shows. */
+ *  `muted` is the card tucked behind the stack: smaller and quieter, so the
+ *  Weddly price reads first and the stand-alone price reads second. */
 function PriceRow({
   label,
   cap,
   price,
-  hidden = false,
+  muted = false,
 }: {
   label: string;
   cap: string;
   price: string;
-  hidden?: boolean;
+  muted?: boolean;
 }) {
   return (
-    <div
-      className={`flex items-center justify-between gap-4 px-5 py-4 ${hidden ? "invisible" : ""}`}
-    >
+    <div className={`flex items-center justify-between gap-4 px-5 ${muted ? "pb-3 pt-1" : "py-4"}`}>
       <div>
-        <p className="text-base font-semibold text-paper-50">{label}</p>
-        <p className="mt-0.5 text-sm text-paper-400">{cap}</p>
+        <p
+          className={`font-semibold ${muted ? "text-sm text-paper-300" : "text-base text-paper-50"}`}
+        >
+          {label}
+        </p>
+        <p className={`mt-0.5 text-paper-400 ${muted ? "text-xs" : "text-sm"}`}>{cap}</p>
       </div>
-      <span className="stat-num text-2xl font-semibold tabular-nums tracking-[-0.02em] text-paper-50">
+      <span
+        className={`stat-num font-semibold tabular-nums tracking-[-0.02em] ${
+          muted ? "text-lg text-paper-300" : "text-2xl text-paper-50"
+        }`}
+      >
         {price}
       </span>
     </div>
@@ -106,6 +114,27 @@ export default function CameraPage() {
   const tier = TIERS[tierIndex] ?? (TIERS[1] as PricingTier);
   const tierCouplePrice = couplePrice(tier.cap);
   const includedLine = t("camera.already_included", { n: FILM_TIER_CAPS.free });
+  // The roll animates in once, the first time it scrolls into view.
+  const rollRef = useRef<HTMLElement>(null);
+  const [rollIn, setRollIn] = useState(false);
+  useEffect(() => {
+    const el = rollRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setRollIn(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setRollIn(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const features = [
     { Icon: ScanLine, title: t("camera.feature_1_title"), body: t("camera.feature_1_body") },
@@ -159,22 +188,35 @@ export default function CameraPage() {
 
           {/* A guest's roll: five viewfinders, scrolling sideways on a phone,
               a gently staggered row on desktop. */}
-          <section className="-mx-4 mt-20 overflow-x-auto px-4 pb-6 [scrollbar-width:none] sm:mx-0 sm:mt-24 sm:overflow-visible sm:px-0">
+          <section
+            ref={rollRef}
+            className={`-mx-4 mt-20 overflow-x-auto px-4 pb-6 pt-3 [scrollbar-width:none] sm:mx-0 sm:mt-24 sm:overflow-visible sm:px-0 ${
+              rollIn ? "is-in" : ""
+            }`}
+          >
             <div className="flex w-max snap-x snap-mandatory gap-4 sm:grid sm:w-auto sm:grid-cols-5 sm:gap-5">
               {ROLL.map((shot, i) => (
-                <CameraPreview
+                <div
                   key={shot.src}
-                  inline
-                  src={shot.src}
-                  filter={shot.filter}
-                  objectPosition={"position" in shot ? shot.position : undefined}
-                  stamp={shot.stamp}
-                  filmName={t("camera.roll_film_name")}
-                  shotsLabel={t("media.film_shots_short").replace("{{n}}", String(24 - i * 3))}
-                  className={`w-40 shrink-0 snap-center sm:w-auto ${
-                    i % 2 === 1 ? "sm:translate-y-8" : ""
-                  } ${i % 2 === 0 ? "-rotate-1" : "rotate-1"}`}
-                />
+                  className={`roll-item w-40 shrink-0 snap-center sm:w-auto ${
+                    i % 2 === 1 ? "sm:mt-8" : ""
+                  }`}
+                  style={{ "--roll-i": i } as CSSProperties}
+                >
+                  <div className="roll-bob">
+                    <CameraPreview
+                      inline
+                      src={shot.src}
+                      filter={shot.filter}
+                      objectPosition={"position" in shot ? shot.position : undefined}
+                      stamp={shot.stamp}
+                      shootDelay={`${i * 1.5}s`}
+                      filmName={t("camera.roll_film_name")}
+                      shotsLabel={t("media.film_shots_short").replace("{{n}}", String(24 - i * 3))}
+                      className={i % 2 === 0 ? "-rotate-1" : "rotate-1"}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           </section>
@@ -218,23 +260,12 @@ export default function CameraPage() {
                 </div>
 
                 {/* The Weddly price is the card on top; the stand-alone price
-                    is a second card tucked behind it, only its edge showing,
-                    so the number a couple pays is the only one read. Both
-                    cards share one grid cell so the stack is as tall as a
-                    single row. Past the in-app cap the stand-alone card is
-                    the only one and sits on top. */}
-                <div className="group mt-3 mb-4 grid">
-                  {tierCouplePrice && (
-                    <div className="col-start-1 row-start-1 rounded-2xl bg-umber-600 ring-1 ring-paper-50/30 transition-transform duration-300 ease-out [transform:translateY(14px)_scale(0.92)] group-hover:[transform:translateY(20px)_scale(0.92)]">
-                      <PriceRow
-                        label={t("camera.pricing_standard")}
-                        cap={t("camera.pricing_guest_cap", { n: tier.cap })}
-                        price={tier.price}
-                        hidden
-                      />
-                    </div>
-                  )}
-                  <div className="relative col-start-1 row-start-1 rounded-2xl bg-umber-900 shadow-[0_12px_28px_-12px_rgba(0,0,0,0.8)] ring-2 ring-paper-50">
+                    is a second, narrower card tucked under its bottom edge and
+                    tilted away (rotateX from the top), so it reads as sitting
+                    BEHIND the Weddly card while its own row stays legible.
+                    Past the in-app cap the stand-alone card is the only one. */}
+                <div className="group mt-3 [perspective:700px]">
+                  <div className="relative z-10 rounded-2xl bg-umber-900 shadow-[0_14px_30px_-10px_rgba(0,0,0,0.85)] ring-2 ring-paper-50">
                     <PriceRow
                       label={t(
                         tierCouplePrice ? "camera.pricing_couple_label" : "camera.pricing_standard",
@@ -245,6 +276,16 @@ export default function CameraPage() {
                       }
                     />
                   </div>
+                  {tierCouplePrice && (
+                    <div className="relative z-0 mx-auto -mt-4 w-[93%] origin-top rounded-b-2xl bg-umber-800 pt-4 ring-1 ring-paper-50/15 transition-transform duration-300 ease-out [transform:rotateX(14deg)] group-hover:[transform:rotateX(0deg)_translateY(3px)]">
+                      <PriceRow
+                        label={t("camera.pricing_standard")}
+                        cap={t("camera.pricing_guest_cap", { n: tier.cap })}
+                        price={tier.price}
+                        muted
+                      />
+                    </div>
+                  )}
                 </div>
                 <Link
                   to="/signup"
