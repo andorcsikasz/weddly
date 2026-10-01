@@ -9031,6 +9031,13 @@ const hu: LocaleMessages = {
     pricing_note: "A foglalás hamarosan nyílik.",
     create_event_cta: "Esemény létrehozása",
     roll_film_name: "Anna & Bence",
+    share_title: "Osszátok meg így:",
+    share_tab_qr: "QR-kód",
+    share_tab_link: "Link",
+    share_qr_body:
+      "Minden esküvői filmnek saját QR-kódja van. Mentsétek el képként, és tegyétek ki az asztalokra, a vendégkönyv mellé vagy a meghívóra.",
+    share_link_body:
+      "Ugyanez a film egy linken is elérhető. Küldjétek el a vendégeknek üzenetben vagy e-mailben, és egy koppintással már fotózhatnak is.",
     reviews_title: "People love Weddly Cam.",
     reviews_summary: "{avg} csillag · {n} korai tesztelő értékelése",
     reviews_prev: "Előző vélemények",

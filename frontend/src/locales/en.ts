@@ -8949,6 +8949,13 @@ const en: LocaleMessages = {
     pricing_note: "Booking opens soon.",
     create_event_cta: "Create an event",
     roll_film_name: "Anna & Ben",
+    share_title: "Share it with a…",
+    share_tab_qr: "QR code",
+    share_tab_link: "Link",
+    share_qr_body:
+      "Every wedding film has its own QR code. Save it as an image and put it on the tables, beside the guest book or on your invitations.",
+    share_link_body:
+      "The same film also lives at a link. Send it to guests in a message or an email and they are taking photos in one tap.",
     reviews_title: "People love Weddly Cam.",
     reviews_summary: "{avg} stars · {n} early-tester ratings",
     reviews_prev: "Previous reviews",

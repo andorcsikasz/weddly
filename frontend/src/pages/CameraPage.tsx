@@ -19,6 +19,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { FILM_FILTERS, FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
 import { CameraHero, CameraPreview, DEMO_STRIP } from "../components/CameraHero";
 import { CameraReviews } from "../components/CameraReviews";
+import { CameraShare } from "../components/CameraShare";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -325,6 +326,10 @@ export default function CameraPage() {
               ))}
             </div>
           </section>
+
+          <div className="mt-32 sm:mt-48">
+            <CameraShare coupleName={t("camera.roll_film_name")} />
+          </div>
 
           <div className="mt-32 sm:mt-48">
             <CameraReviews />

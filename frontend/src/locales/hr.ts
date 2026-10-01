@@ -8942,6 +8942,13 @@ const hr: LocaleMessages = {
     pricing_note: "Rezervacije se otvaraju uskoro.",
     create_event_cta: "Kreirajte događaj",
     roll_film_name: "Ana & Bruno",
+    share_title: "Podijelite putem…",
+    share_tab_qr: "QR kod",
+    share_tab_link: "Poveznica",
+    share_qr_body:
+      "Svaki vjenčani film ima svoj QR kod. Spremite ga kao sliku i stavite na stolove, pokraj knjige gostiju ili u pozivnice.",
+    share_link_body:
+      "Isti film dostupan je i putem poveznice. Pošaljite je gostima porukom ili e-poštom i fotografiraju jednim dodirom.",
     reviews_title: "People love Weddly Cam.",
     reviews_summary: "{avg} zvjezdica · {n} ocjena prvih testera",
     reviews_prev: "Prethodne recenzije",

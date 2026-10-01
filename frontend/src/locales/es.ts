@@ -9034,6 +9034,13 @@ const es: LocaleMessages = {
     pricing_note: "Las reservas abren pronto.",
     create_event_cta: "Crear un evento",
     roll_film_name: "Ana & Bruno",
+    share_title: "Compártelo con un…",
+    share_tab_qr: "Código QR",
+    share_tab_link: "Enlace",
+    share_qr_body:
+      "Cada película de boda tiene su propio código QR. Guárdalo como imagen y ponlo en las mesas, junto al libro de firmas o en las invitaciones.",
+    share_link_body:
+      "La misma película también está en un enlace. Envíalo a los invitados por mensaje o correo y en un toque ya están haciendo fotos.",
     reviews_title: "People love Weddly Cam.",
     reviews_summary: "{avg} estrellas · {n} valoraciones de primeros usuarios",
     reviews_prev: "Opiniones anteriores",
