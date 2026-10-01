@@ -1727,11 +1727,19 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     opacity: 1;
     transform: none;
   }
+  .roll-bob {
+    will-change: transform;
+  }
   .is-in .roll-bob {
     animation: rollBob 11s ease-in-out infinite;
     animation-delay: calc(var(--roll-i, 0) * -2.2s);
   }
+  /* Each image and phone gets its own compositor layer: eleven filtered
+     photos scaling and bobbing while the strip slides would otherwise be
+     repainted every frame, which is what made the scroll drift stutter. */
   .roll-kenburns {
+    will-change: transform;
+    backface-visibility: hidden;
     animation: rollKenBurns 26s ease-in-out infinite alternate;
     animation-delay: calc(var(--roll-i, 0) * -5s);
   }

@@ -170,26 +170,44 @@ export default function CameraPage() {
   }, []);
 
   // ...and drifts sideways with the page scroll: right to left as the row
-  // travels up through the viewport. Written straight to the track's style
-  // in a rAF, so scrolling never re-renders the page.
+  // travels up through the viewport. Scroll only moves the TARGET; a rAF loop
+  // eases the track toward it (a lerp), so wheel notches and trackpad jitter
+  // turn into one gliding motion instead of a jump per scroll event. The loop
+  // stops once it has settled and the next scroll restarts it. Written
+  // straight to the track's style, so scrolling never re-renders the page.
   const rollTrackRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const section = rollRef.current;
     const track = rollTrackRef.current;
     if (!section || !track) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
+    const targetX = () => {
       const rect = section.getBoundingClientRect();
       const vh = window.innerHeight;
       const progress = Math.min(1, Math.max(0, (vh - rect.top) / (vh + rect.height)));
-      track.style.transform = `translate3d(${((0.5 - progress) * ROLL_DRIFT_PX).toFixed(1)}px,0,0)`;
+      return (0.5 - progress) * ROLL_DRIFT_PX;
+    };
+    let current = targetX();
+    let target = current;
+    let frame = 0;
+    const paint = () => {
+      track.style.transform = `translate3d(${current.toFixed(2)}px,0,0)`;
+    };
+    const tick = () => {
+      current += (target - current) * 0.08;
+      if (Math.abs(target - current) < 0.1) {
+        current = target;
+        frame = 0;
+      } else {
+        frame = requestAnimationFrame(tick);
+      }
+      paint();
     };
     const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
+      target = targetX();
+      if (!frame) frame = requestAnimationFrame(tick);
     };
-    update();
+    paint();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
