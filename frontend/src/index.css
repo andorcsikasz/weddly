@@ -1710,39 +1710,39 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
 
   /* /camera "guest's roll": five viewfinders that feel like a room full of
      guests shooting. Each phone rises in once when the row scrolls into
-     view (`.is-in` on the section), then bobs on its own phase, the photo
-     drifts in a slow Ken Burns push, and every few seconds one phone after
-     another fires: a white flash over the frame while its shutter button
-     dips. All five share one 7.5s cycle, offset by `--roll-delay`, so the
-     flashes travel along the row instead of going off together. */
+     view (`.is-in` on the section), then bobs slowly on its own phase while
+     the photo drifts in a slow Ken Burns push. The shot itself (a white
+     flash over the frame and a dip of the shutter button) fires only when
+     the cursor lands on a phone, once per hover, so the row stays calm
+     until someone reaches for it. */
   .roll-item {
     opacity: 0;
     transform: translateY(28px);
     transition:
-      opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
-    transition-delay: calc(var(--roll-i, 0) * 90ms);
+      opacity 900ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: calc(var(--roll-i, 0) * 120ms);
   }
   .is-in .roll-item {
     opacity: 1;
     transform: none;
   }
   .is-in .roll-bob {
-    animation: rollBob 6s ease-in-out infinite;
-    animation-delay: calc(var(--roll-i, 0) * -1.3s);
+    animation: rollBob 11s ease-in-out infinite;
+    animation-delay: calc(var(--roll-i, 0) * -2.2s);
   }
   .roll-kenburns {
-    animation: rollKenBurns 14s ease-in-out infinite alternate;
-    animation-delay: calc(var(--roll-i, 0) * -2.7s);
+    animation: rollKenBurns 26s ease-in-out infinite alternate;
+    animation-delay: calc(var(--roll-i, 0) * -5s);
   }
   .roll-flash {
     opacity: 0;
-    animation: rollFlash 7.5s linear infinite;
-    animation-delay: var(--roll-delay, 0s);
   }
-  .roll-shutter {
-    animation: rollShutter 7.5s linear infinite;
-    animation-delay: var(--roll-delay, 0s);
+  .roll-item:hover .roll-flash {
+    animation: rollFlash 650ms ease-out;
+  }
+  .roll-item:hover .roll-shutter {
+    animation: rollShutter 380ms ease-out;
   }
   @keyframes rollBob {
     0%,
@@ -1750,7 +1750,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       transform: translateY(0);
     }
     50% {
-      transform: translateY(-10px);
+      transform: translateY(-8px);
     }
   }
   @keyframes rollKenBurns {
@@ -1758,33 +1758,27 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       transform: scale(1);
     }
     to {
-      transform: scale(1.09);
+      transform: scale(1.07);
     }
   }
   @keyframes rollFlash {
-    0%,
-    90% {
+    0% {
       opacity: 0;
     }
-    91% {
+    12% {
       opacity: 0.9;
     }
-    96%,
     100% {
       opacity: 0;
     }
   }
   @keyframes rollShutter {
     0%,
-    89.5% {
-      transform: scale(1);
-    }
-    91% {
-      transform: scale(0.78);
-    }
-    94%,
     100% {
       transform: scale(1);
+    }
+    35% {
+      transform: scale(0.78);
     }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -1795,8 +1789,8 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     }
     .is-in .roll-bob,
     .roll-kenburns,
-    .roll-flash,
-    .roll-shutter {
+    .roll-item:hover .roll-flash,
+    .roll-item:hover .roll-shutter {
       animation: none;
     }
   }

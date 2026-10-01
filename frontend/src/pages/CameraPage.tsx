@@ -216,7 +216,7 @@ export default function CameraPage() {
                       filter={shot.filter}
                       objectPosition={"position" in shot ? shot.position : undefined}
                       stamp={shot.stamp}
-                      shootDelay={`${i * 1.5}s`}
+                      live
                       filmName={t("camera.roll_film_name")}
                       shotsLabel={t("media.film_shots_short").replace("{{n}}", String(24 - i * 3))}
                       className={i % 2 === 0 ? "-rotate-1" : "rotate-1"}

@@ -16,7 +16,6 @@ import { FILM_FILTERS } from "@shared/types";
 import {
   ArrowRight,
   Camera,
-  ChevronRight,
   GalleryHorizontalEnd,
   Lock,
   QrCode,
@@ -39,7 +38,7 @@ export function CameraPreview({
   objectPosition,
   stamp,
   inline = false,
-  shootDelay,
+  live = false,
 }: {
   src: string;
   filmName: string;
@@ -52,9 +51,9 @@ export function CameraPreview({
   stamp?: string;
   /** In normal flow instead of absolutely placed in the hero collage. */
   inline?: boolean;
-  /** Turns on the /camera roll's live loop (Ken Burns, flash, shutter dip);
-   *  the value offsets this phone's shot within the shared cycle. */
-  shootDelay?: string;
+  /** Turns on the /camera roll's motion: Ken Burns drift, plus the flash and
+   *  shutter dip that fire when the cursor lands on the phone. */
+  live?: boolean;
 }) {
   return (
     <div
@@ -65,14 +64,13 @@ export function CameraPreview({
           src={src}
           alt=""
           loading={inline ? "lazy" : undefined}
-          className={`h-full w-full object-cover ${shootDelay ? "roll-kenburns" : ""}`}
+          className={`h-full w-full object-cover ${live ? "roll-kenburns" : ""}`}
           style={{ filter, objectPosition }}
         />
-        {shootDelay && (
+        {live && (
           <span
             aria-hidden="true"
             className="roll-flash pointer-events-none absolute inset-0 z-10 bg-white"
-            style={{ "--roll-delay": shootDelay } as CSSProperties}
           />
         )}
         {stamp && (
@@ -106,8 +104,7 @@ export function CameraPreview({
             </span>
             <span className="flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-white bg-white/20 shadow-lg sm:h-12 sm:w-12">
               <span
-                className={`h-7 w-7 rounded-full bg-white sm:h-9 sm:w-9 ${shootDelay ? "roll-shutter" : ""}`}
-                style={shootDelay ? ({ "--roll-delay": shootDelay } as CSSProperties) : undefined}
+                className={`h-7 w-7 rounded-full bg-white sm:h-9 sm:w-9 ${live ? "roll-shutter" : ""}`}
               />
             </span>
             <span className="ml-auto h-7 w-7 overflow-hidden rounded-md border border-white/20 sm:h-8 sm:w-8">
@@ -461,37 +458,43 @@ export function CameraHero({
       </div>
 
       {minimal ? (
-        // The three steps as a flow: numbered stops joined by a line that a
-        // highlight keeps travelling along, left to right on desktop and top
-        // to bottom on a phone, so 1 → 2 → 3 reads as one sequence.
-        <ol className="relative mt-10 grid border-t border-paper-50/10 pt-6 sm:grid-cols-3">
+        // The three steps as a flow, Uber-style: solid numbered stops,
+        // centred, each with its line under it, joined by a connector that a
+        // highlight keeps travelling along (left to right from sm up, top to
+        // bottom on a phone), so 1 → 2 → 3 reads as one sequence.
+        <ol className="relative mt-10 grid border-t border-paper-50/10 pt-8 sm:grid-cols-3">
           {[
             t("media.film_how_1_title"),
             t("media.film_how_2_title"),
             t("media.film_how_3_title"),
           ].map((step, i, all) => (
-            <li key={step} className="flex gap-4 sm:flex-col sm:gap-3">
-              <div className="flex flex-col items-center sm:flex-row">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-paper-50/25 font-grotesk text-[11px] font-semibold tabular-nums text-paper-100">
-                  0{i + 1}
-                </span>
-                {i < all.length - 1 && (
-                  <>
-                    <span
-                      aria-hidden="true"
-                      className="flow-line my-2 min-h-5 w-px flex-1 sm:mx-3 sm:my-0 sm:h-px sm:min-h-0 sm:w-auto"
-                      style={{ "--flow-delay": `${i * 1.2}s` } as CSSProperties}
-                    />
-                    <ChevronRight
-                      size={14}
-                      strokeWidth={1.8}
-                      className="mr-3 hidden shrink-0 text-paper-400 sm:block"
-                      aria-hidden="true"
-                    />
-                  </>
-                )}
-              </div>
-              <p className="pb-5 pt-1.5 text-sm text-paper-200 sm:pb-0 sm:pr-6 sm:pt-0">{step}</p>
+            <li key={step} className="relative flex flex-col items-center px-4 text-center">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-50 font-grotesk text-sm font-bold tabular-nums text-umber-950">
+                {i + 1}
+              </span>
+              <p className="mt-3 max-w-[15rem] text-base font-semibold leading-snug text-paper-50">
+                {step}
+              </p>
+              {i < all.length - 1 && (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="flow-line my-3 h-8 w-px sm:hidden"
+                    style={{ "--flow-delay": `${i * 1.2}s` } as CSSProperties}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="flow-line absolute top-5 hidden h-px sm:block"
+                    style={
+                      {
+                        left: "calc(50% + 2rem)",
+                        right: "calc(-50% + 2rem)",
+                        "--flow-delay": `${i * 1.2}s`,
+                      } as CSSProperties
+                    }
+                  />
+                </>
+              )}
             </li>
           ))}
         </ol>
