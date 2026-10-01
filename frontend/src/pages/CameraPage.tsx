@@ -60,26 +60,40 @@ interface PricingTier {
   price: string;
 }
 
-// Anchored to the owner's own $10@50 / $25@100 pricing, extrapolated along
-// pov.camera's published ladder. USD on purpose: this half's audience is not
-// scoped to a couple's workspace currency.
+// Anchored to the owner's own 10@50 / 25@100 pricing, extrapolated along
+// pov.camera's published ladder. EUR, the same currency as the in-app film
+// price beside it (owner call 2026-10-01): two currencies on one card made
+// the Weddly discount impossible to read at a glance.
 const TIERS: PricingTier[] = [
-  { cap: 25, price: "$4.99" },
-  { cap: 50, price: "$9.99" },
-  { cap: 100, price: "$24.99" },
-  { cap: 175, price: "$44.99" },
-  { cap: 250, price: "$69.99" },
-  { cap: 400, price: "$99.99" },
+  { cap: 25, price: "€4.99" },
+  { cap: 50, price: "€9.99" },
+  { cap: 100, price: "€24.99" },
+  { cap: 175, price: "€44.99" },
+  { cap: 250, price: "€69.99" },
+  { cap: 400, price: "€99.99" },
 ];
 
-/** What a Weddly couple pays for a tier, derived from the SAME constants the
- *  in-app film enforces, so this page cannot promise a cap the product does
- *  not grant. `included` up to the subscription's cap, the one-time unlock up
- *  to its cap, and null past it (the app has no tier that large). */
-function couplePrice(cap: number): "included" | string | null {
-  if (cap <= FILM_TIER_CAPS.free) return "included";
-  if (cap <= FILM_TIER_CAPS.paid) return `€${(FILM_TIER_PRICE_EUR_CENTS.paid / 100).toFixed(2)}`;
-  return null;
+/** Headcounts above this get the Weddly price as half the stand-alone price
+ *  (owner call 2026-10-01: at 175 guests Weddly is 50% off, not ~83%).
+ *  NOTE: page copy only. The in-app film still unlocks up to
+ *  `FILM_TIER_CAPS.paid` for `FILM_TIER_PRICE_EUR_CENTS.paid`, so a 175-guest
+ *  couple is charged less in the app than this page quotes until a matching
+ *  in-app tier exists. */
+const HALF_PRICE_FROM_CAP = 100;
+
+/** What a Weddly couple pays for a tier, anchored to the constants the in-app
+ *  film enforces, so this page cannot promise a cap the product does not
+ *  grant: `included` up to the subscription's cap, the one-time unlock up to
+ *  100 guests, half the stand-alone price above that, and null past the
+ *  in-app cap (the app has no tier that large). */
+function couplePrice(tier: PricingTier): "included" | string | null {
+  if (tier.cap <= FILM_TIER_CAPS.free) return "included";
+  if (tier.cap > FILM_TIER_CAPS.paid) return null;
+  if (tier.cap <= HALF_PRICE_FROM_CAP) {
+    return `€${(FILM_TIER_PRICE_EUR_CENTS.paid / 100).toFixed(2)}`;
+  }
+  const standalone = Number(tier.price.replace(/[^0-9.]/g, ""));
+  return `€${(Math.round((standalone / 2) * 10) / 10).toFixed(2)}`;
 }
 
 /** One option row of the pricing stack: label + headcount left, price right.
@@ -131,7 +145,7 @@ export default function CameraPage() {
   // TIERS[1] as the fallback: the picker only offers to [0, TIERS.length - 1]
   // so this only ever matters to the type checker, never at runtime.
   const tier = TIERS[tierIndex] ?? (TIERS[1] as PricingTier);
-  const tierCouplePrice = couplePrice(tier.cap);
+  const tierCouplePrice = couplePrice(tier);
   // The roll animates in once, the first time it scrolls into view.
   const rollRef = useRef<HTMLElement>(null);
   const [rollIn, setRollIn] = useState(false);
