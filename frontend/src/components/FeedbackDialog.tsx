@@ -4,6 +4,7 @@ import { feedbackApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { Button } from "./ui/Button";
 import { Dialog } from "./ui/Dialog";
+import { Switch } from "./ui/Switch";
 
 /**
  * Public feedback dialog. Two visible segments — message + 1–10 rating —
@@ -100,16 +101,25 @@ export function FeedbackDialog({
     }
   }
 
+  // The hint reads "1 = not for us, 10 = exactly what we needed" in every
+  // locale; the scale wants its two ends under its two ends, so split it there
+  // and fall back to the whole sentence if a translation ever drops the shape.
+  const hintEnds = t("landing.feedback_rating_hint")
+    .split(/,\s*(?=\d+\s*=)/)
+    .map((part) => part.replace(/^\d+\s*=\s*/, "").trim());
+  const [lowLabel, highLabel] = hintEnds.length === 2 ? hintEnds : [null, null];
+
   return (
     <Dialog
       open={open}
       title={done ? t("landing.feedback_success_title") : t("landing.feedback_title")}
+      titleClassName="text-2xl font-bold tracking-tight"
       role="dialog"
       onClose={resetAndClose}
       closeOnBackdrop={!submitting}
       footer={
         done ? (
-          <Button variant="primary" onClick={resetAndClose}>
+          <Button variant="primary" onClick={resetAndClose} className={SOLID_BUTTON}>
             OK
           </Button>
         ) : (
@@ -117,7 +127,13 @@ export function FeedbackDialog({
             <Button variant="ghost" onClick={resetAndClose} disabled={submitting}>
               {t("landing.feedback_cancel")}
             </Button>
-            <Button variant="primary" type="submit" form="feedback-form" disabled={submitting}>
+            <Button
+              variant="primary"
+              type="submit"
+              form="feedback-form"
+              disabled={submitting}
+              className={SOLID_BUTTON}
+            >
               {submitting ? t("landing.feedback_submitting") : t("landing.feedback_submit")}
             </Button>
           </>
@@ -125,27 +141,34 @@ export function FeedbackDialog({
       }
     >
       {done ? (
-        <div className="flex flex-col items-center gap-3 py-4 text-center">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300">
-            <CheckCircle2 size={26} />
-          </span>
-          <p className="text-base text-ink-800 dark:text-paper-100">
+        <div className="flex flex-col items-start gap-4 py-2">
+          <CheckCircle2
+            size={40}
+            strokeWidth={1.5}
+            className="text-ink-900 dark:text-paper-50"
+            aria-hidden
+          />
+          <p className="text-base text-ink-700 dark:text-paper-100">
             {t("landing.feedback_success_body")}
           </p>
         </div>
       ) : (
-        <form id="feedback-form" onSubmit={onSubmit} className="space-y-6" noValidate>
-          {preface && <p className="text-base text-ink-800 dark:text-paper-100">{preface}</p>}
-          <p className="text-sm text-ink-600 dark:text-umber-200">{t("landing.feedback_intro")}</p>
+        <form id="feedback-form" onSubmit={onSubmit} className="space-y-7" noValidate>
+          <div className="space-y-1">
+            {preface && <p className="text-base text-ink-900 dark:text-paper-50">{preface}</p>}
+            <p className="text-sm text-ink-500 dark:text-umber-300">
+              {t("landing.feedback_intro")}
+            </p>
+          </div>
 
           {/* Segment 1 — free text */}
-          <div>
-            <label htmlFor="fb-message" className="field-label">
+          <div className="space-y-2">
+            <label htmlFor="fb-message" className={SECTION_LABEL}>
               {t("landing.feedback_message_label")}
             </label>
             <textarea
               id="fb-message"
-              className="input min-h-[7rem] resize-y"
+              className={`${FILLED_FIELD} min-h-[7.5rem] resize-y`}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={t("landing.feedback_message_placeholder")}
@@ -153,75 +176,94 @@ export function FeedbackDialog({
             />
           </div>
 
-          {/* Segment 2 — 1–10 rating. Buttons sit on a single row at all
-              breakpoints; we shrink the chip size and gap so the full set
-              fits even on a 320 px iPhone SE without wrapping. */}
-          <div>
-            <p className="field-label">{t("landing.feedback_rating_label")}</p>
-            <div
-              role="radiogroup"
-              aria-label={t("landing.feedback_rating_label")}
-              className="mt-1 grid grid-cols-10 gap-1 sm:gap-1.5"
-            >
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-                const selected = rating === n;
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setRating(selected ? null : n)}
-                    className={
-                      selected
-                        ? "aspect-square w-full rounded-full bg-ink-900 text-xs font-medium text-paper-100 transition-colors sm:text-sm dark:bg-umber-600 dark:text-paper-50"
-                        : "aspect-square w-full rounded-full border border-paper-300 bg-white text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 sm:text-sm dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-700"
-                    }
-                  >
-                    {n}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="mt-1.5 flex justify-between text-xs text-ink-500 dark:text-umber-300">
-              <span>
-                {t("landing.feedback_rating_low")}, {t("landing.feedback_rating_hint")}
+          {/* Segment 2 — 1–10 rating on a slider. Unanswered is a real state
+              (the rating is optional), so the thumb sits mid-track, faded, with
+              no number until the visitor touches it. */}
+          <div className="space-y-3">
+            <div className="flex items-baseline justify-between gap-4">
+              <label htmlFor="fb-rating" className={SECTION_LABEL}>
+                {t("landing.feedback_rating_label")}
+              </label>
+              <span
+                className="min-w-[2ch] text-right text-3xl font-bold tabular-nums leading-none text-ink-900 dark:text-paper-50"
+                aria-hidden
+              >
+                {rating ?? ""}
               </span>
-            </p>
+            </div>
+            <div className="relative flex h-8 items-center">
+              <div className="absolute inset-x-0 h-1.5 rounded-full bg-paper-200 dark:bg-umber-700" />
+              {rating !== null && (
+                <div
+                  className="absolute left-0 h-1.5 rounded-full bg-ink-900 dark:bg-paper-50"
+                  style={{ width: `${((rating - 1) / 9) * 100}%` }}
+                />
+              )}
+              <input
+                id="fb-rating"
+                type="range"
+                min={1}
+                max={10}
+                step={1}
+                value={rating ?? 5}
+                aria-valuetext={rating === null ? "" : String(rating)}
+                onChange={(e) => setRating(Number(e.target.value))}
+                onPointerDown={(e) => {
+                  // A click on the thumb at its resting 5 fires no change
+                  // event, so an untouched slider would never register it.
+                  if (rating === null) setRating(Number(e.currentTarget.value));
+                }}
+                className={`${RANGE_INPUT} ${rating === null ? "[&::-moz-range-thumb]:opacity-60 [&::-webkit-slider-thumb]:opacity-60" : ""}`}
+              />
+            </div>
+            {lowLabel && highLabel ? (
+              <div className="flex justify-between gap-4 text-xs text-ink-500 dark:text-umber-300">
+                <span>{lowLabel}</span>
+                <span className="text-right">{highLabel}</span>
+              </div>
+            ) : (
+              <p className="text-xs text-ink-500 dark:text-umber-300">
+                {t("landing.feedback_rating_hint")}
+              </p>
+            )}
           </div>
 
           {/* Reply opt-in. The email field is hidden by default so the form
               reads as "two questions" instead of three — most visitors want
               to drop a thought, not start a thread, and surfacing the email
               up-front was a measurable friction point. */}
-          <div>
-            <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-paper-400 accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600"
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4 border-t border-paper-200 pt-5 dark:border-umber-700">
+              <span className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                {t("landing.feedback_reply_optin")}
+              </span>
+              <Switch
                 checked={wantReply}
-                onChange={(e) => {
-                  setWantReply(e.target.checked);
-                  if (!e.target.checked) setEmail("");
+                label={t("landing.feedback_reply_optin")}
+                onChange={(next) => {
+                  setWantReply(next);
+                  if (!next) setEmail("");
                 }}
               />
-              {t("landing.feedback_reply_optin")}
-            </label>
+            </div>
             {wantReply && (
-              <div className="mt-3">
-                <label htmlFor="fb-email" className="field-label">
+              <div className="space-y-1.5">
+                <label htmlFor="fb-email" className="sr-only">
                   {t("landing.feedback_email_label")}
                 </label>
                 <input
                   id="fb-email"
                   type="email"
-                  className="input"
+                  className={FILLED_FIELD}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t("landing.feedback_email_label")}
                   autoComplete="email"
                   maxLength={200}
                 />
-                <p className="field-help">{t("landing.feedback_email_help")}</p>
+                <p className="text-xs text-ink-500 dark:text-umber-300">
+                  {t("landing.feedback_email_help")}
+                </p>
               </div>
             )}
           </div>
@@ -236,3 +278,18 @@ export function FeedbackDialog({
     </Dialog>
   );
 }
+
+const SECTION_LABEL = "block text-sm font-semibold text-ink-900 dark:text-paper-50";
+
+/** Transparent native range over the drawn track: keeps keyboard + touch
+ *  behaviour for free, only the thumb is restyled. */
+const RANGE_INPUT =
+  "relative w-full cursor-pointer appearance-none bg-transparent focus:outline-none [&::-moz-range-thumb]:h-7 [&::-moz-range-thumb]:w-7 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-ink-900 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-soft [&::-moz-range-track]:bg-transparent [&::-webkit-slider-thumb]:h-7 [&::-webkit-slider-thumb]:w-7 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-ink-900 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-soft [&::-webkit-slider-thumb]:transition-transform active:[&::-webkit-slider-thumb]:scale-110 focus-visible:[&::-webkit-slider-thumb]:ring-4 focus-visible:[&::-webkit-slider-thumb]:ring-ink-900/15 dark:[&::-moz-range-thumb]:border-paper-50 dark:[&::-webkit-slider-thumb]:border-paper-50";
+
+/** Borderless grey well, black ring on focus. */
+const FILLED_FIELD =
+  "block w-full rounded-xl border-0 bg-paper-100 px-4 py-3 text-base text-ink-900 placeholder:text-ink-400 transition-shadow focus:bg-white focus:outline-none focus:ring-2 focus:ring-ink-900 dark:bg-umber-900 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:bg-umber-900 dark:focus:ring-paper-50";
+
+/** Monochrome primary: this dialog is black-on-white end to end. */
+const SOLID_BUTTON =
+  "!border-ink-900 !bg-ink-900 !text-paper-50 hover:!bg-ink-800 dark:!border-paper-50 dark:!bg-paper-50 dark:!text-ink-900 dark:hover:!bg-paper-200";
