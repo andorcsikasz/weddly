@@ -6,15 +6,15 @@
 // so, or it reads as an independent customer's verdict. Only add text a real
 // user actually wrote.
 //
-// HU readers get the Hungarian set, everyone else the English one (which also
-// carries a title per review).
+// English for every locale (owner call 2026-10-01): the reviews were written in
+// English and read as quotes, so they are not translated per UI language.
 
 export interface CameraReview {
   title?: string;
   body: string;
 }
 
-export const CAMERA_REVIEWS_EN: CameraReview[] = [
+export const CAMERA_REVIEWS: CameraReview[] = [
   {
     title: "Every candid moment in one place",
     body: "The Weddly Cam became one of our favourite parts of the wedding. We saw so many spontaneous moments the next day that we would have otherwise missed.",
@@ -136,36 +136,3 @@ export const CAMERA_REVIEWS_EN: CameraReview[] = [
     body: "If we were planning our wedding again, Weddly Cam would be on the list from day one.",
   },
 ];
-
-export const CAMERA_REVIEWS_HU: CameraReview[] = [
-  "A Weddly Cam lett az egyik kedvenc emlékünk az esküvőnkről. Másnap annyi spontán, őszinte pillanatot láttunk vissza, amiről nem is tudtunk.",
-  "A QR-kódot kiraktuk az asztalokra, és a vendégek azonnal értették, mit kell csinálni. Nem kellett appot letölteniük.",
-  "Sokkal személyesebb képeket kaptunk, mint amire számítottunk. A barátaink szemszögéből láttuk újra a napot.",
-  "A nagyszüleink is egyszerűen tudták használni, ez szerintem mindent elmond. Beolvasták, fotóztak, kész.",
-  "Imádtuk, hogy a galéria csak az esküvő után nyílt meg. Olyan volt, mintha még egy ajándékot kapnánk a vendégeinktől.",
-  "A profi fotós képei gyönyörűek, de a Weddly Cam adta vissza igazán a buli hangulatát.",
-  "A vendégeink folyamatosan küldték a képeket egész este. Rengeteg vicces, megható és teljesen váratlan pillanat került bele.",
-  "Nagyon jó, hogy nem kellett külön fotómegosztó csoportot kezelni Messengeren vagy WhatsAppon.",
-  "A Weddly Cam egyszerű, szép és tényleg működik. Pont erre volt szükségünk.",
-  "Külön öröm volt látni azokat a pillanatokat, amikor mi épp máshol voltunk. A készülődésről és a vacsoráról is rengeteg kép lett.",
-  "A vendégeknek szórakoztató program volt, nekünk pedig egy teljesen egyedi emlékgyűjtemény.",
-  "Attól féltünk, hogy kevesen fogják használni, de végül szinte mindenki feltöltött legalább egy képet.",
-  "A telefonos kameraélmény nagyon jópofa volt, főleg a fiatalabb vendégek imádták a vaku és a kameraváltás funkcióját.",
-  "Az egyik legjobb döntésünk volt az esküvőre. Sokkal több közös emlékünk maradt így.",
-  "A képek sokkal természetesebbek lettek, mint a beállított fotók. Igazi nevetések, táncok és ölelések.",
-  "A QR-kódot a vendégkönyv mellé tettük, és tökéletesen működött. Mindenki hozzá tudott tenni valamit a napunkhoz.",
-  "Végre nem kellett utólag heteken át kérdezgetni a vendégeket, hogy küldjék át a képeiket.",
-  "Nagyon tetszett, hogy nem csak egy fotóalbum lett, hanem egy közös történet a teljes napról.",
-  "A Weddly Cam miatt olyan fotóink is lettek a buliról, amiket a fotós biztosan nem tudott volna elkapni.",
-  "Letisztult, gyors és intuitív. A vendégeinknek nem kellett semmit magyarázni.",
-  "Minden párnak ajánlanám, aki nem csak szép, hanem valódi, spontán esküvői emlékeket szeretne.",
-  "A lagzi végére már versenyeztek a barátaink, ki készít jobb képet. Nagyon feldobta a hangulatot.",
-  "A galéria megnyitása után órákig nézegettük a képeket. Rengeteget nevettünk és párszor meg is hatódtunk.",
-  "A Weddly Cam megmutatta az esküvőnket úgy, ahogy a vendégeink megélték. Ez felbecsülhetetlen.",
-  "Még azokat a vendégeket is bevonta, akik nem szeretnek szerepelni a kamerák előtt. Nekik is volt kedvük megörökíteni másokat.",
-  "Kifejezetten jó volt, hogy a vendégek regisztráció nélkül használhatták. Ettől tényleg sokkal többen csatlakoztak.",
-  "A legjobb képeink közül több nem is a hivatalos fotóstól, hanem a Weddly Camből érkezett.",
-  "Egyetlen QR-kód, és máris mindenki részese lett az emlékgyűjtésnek. Ennyire egyszerű.",
-  "Nem gondoltuk volna, mennyit jelent majd visszanézni a napot a családunk és a barátaink szemén keresztül.",
-  "Ha újra szerveznénk az esküvőnket, a Weddly Camet biztosan újra kérnénk. A nap után is továbbadja az élményt.",
-].map((body) => ({ body }));
