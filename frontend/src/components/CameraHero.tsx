@@ -29,25 +29,45 @@ import { Wordmark } from "./Wordmark";
 
 export const DEMO_STRIP = ["/demo/film-01.jpg", "/demo/film-02.jpg", "/demo/film-03.jpg"] as const;
 
-function CameraPreview({
+export function CameraPreview({
   src,
   filmName,
   shotsLabel,
   filter,
   className,
+  objectPosition,
+  stamp,
+  inline = false,
 }: {
   src: string;
   filmName: string;
   shotsLabel: string;
   filter: string;
   className: string;
+  /** Where the crop sits inside the 9:17 viewfinder, for landscape sources. */
+  objectPosition?: string;
+  /** Orange disposable-camera date print burned into the corner of the shot. */
+  stamp?: string;
+  /** In normal flow instead of absolutely placed in the hero collage. */
+  inline?: boolean;
 }) {
   return (
     <div
-      className={`absolute rounded-[2rem] border border-paper-50/15 bg-umber-950 p-[5px] shadow-[0_28px_70px_rgba(0,0,0,0.55)] ${className}`}
+      className={`${inline ? "relative" : "absolute"} rounded-[2rem] border border-paper-50/15 bg-umber-950 p-[5px] shadow-[0_28px_70px_rgba(0,0,0,0.55)] ${className}`}
     >
       <div className="relative aspect-[9/17] overflow-hidden rounded-[1.65rem] bg-umber-800">
-        <img src={src} alt="" className="h-full w-full object-cover" style={{ filter }} />
+        <img
+          src={src}
+          alt=""
+          loading={inline ? "lazy" : undefined}
+          className="h-full w-full object-cover"
+          style={{ filter, objectPosition }}
+        />
+        {stamp && (
+          <span className="absolute bottom-[26%] right-3 font-mono text-[9px] font-semibold tracking-wider text-amber-400 opacity-90 [text-shadow:0_0_4px_theme(colors.amber.500)] sm:text-[10px]">
+            {stamp}
+          </span>
+        )}
 
         <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/75 via-black/25 to-transparent px-3 pb-10 pt-3 text-center">
           <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-black/70" />

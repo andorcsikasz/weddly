@@ -10351,6 +10351,7 @@ export interface LocaleMessages {
     pricing_standard: string;
     pricing_note: string;
     create_event_cta: string;
+    roll_film_name: string;
     try_title: string;
     try_body: string;
     try_cta: string;

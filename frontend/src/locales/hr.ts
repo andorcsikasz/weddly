@@ -8941,6 +8941,7 @@ const hr: LocaleMessages = {
     pricing_standard: "Bez Weddly računa",
     pricing_note: "Rezervacije se otvaraju uskoro.",
     create_event_cta: "Kreirajte događaj",
+    roll_film_name: "Ana & Bruno",
     try_title: "Isprobaj na mobitelu",
     try_body: "Skeniraj i snimaj. Ništa se ne učitava.",
     try_cta: "Isprobaj kameru",

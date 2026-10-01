@@ -15,11 +15,30 @@
 import { ArrowRight, Camera, Hourglass, ScanLine, Wifi } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
-import { CameraHero, DEMO_STRIP } from "../components/CameraHero";
+import { FILM_FILTERS, FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
+import { CameraHero, CameraPreview, DEMO_STRIP } from "../components/CameraHero";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+/** What a guest's roll looks like: wedding shots through the in-app camera's
+ *  own analog looks, each with the orange date print a disposable burns in. */
+const ROLL = [
+  { src: "/design-photos/12-ceremony-aisle.jpg", filter: FILM_FILTERS.vintage, stamp: "'26 09 12" },
+  {
+    src: "/demo/wedding-party-hero.jpg",
+    filter: FILM_FILTERS.warm,
+    stamp: "'26 09 12",
+    position: "60% 50%",
+  },
+  { src: "/design-photos/01-reception-pergola.jpg", filter: FILM_FILTERS.bw, stamp: "'26 09 12" },
+  {
+    src: "/design-photos/02-reception-candlelit.jpg",
+    filter: FILM_FILTERS.cinematic,
+    stamp: "'26 09 13",
+  },
+  { src: "/design-photos/11-wedding-cake.jpg", filter: FILM_FILTERS.vintage, stamp: "'26 09 13" },
+] as const;
 
 interface PricingTier {
   cap: number;
@@ -134,6 +153,28 @@ export default function CameraPage() {
                   <h3 className="mt-4 text-base font-semibold text-paper-50">{title}</h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-paper-400">{body}</p>
                 </div>
+              ))}
+            </div>
+          </section>
+
+          {/* A guest's roll: five viewfinders, scrolling sideways on a phone,
+              a gently staggered row on desktop. */}
+          <section className="-mx-4 mt-20 overflow-x-auto px-4 pb-6 [scrollbar-width:none] sm:mx-0 sm:mt-24 sm:overflow-visible sm:px-0">
+            <div className="flex w-max snap-x snap-mandatory gap-4 sm:grid sm:w-auto sm:grid-cols-5 sm:gap-5">
+              {ROLL.map((shot, i) => (
+                <CameraPreview
+                  key={shot.src}
+                  inline
+                  src={shot.src}
+                  filter={shot.filter}
+                  objectPosition={"position" in shot ? shot.position : undefined}
+                  stamp={shot.stamp}
+                  filmName={t("camera.roll_film_name")}
+                  shotsLabel={t("media.film_shots_short").replace("{{n}}", String(24 - i * 3))}
+                  className={`w-40 shrink-0 snap-center sm:w-auto ${
+                    i % 2 === 1 ? "sm:translate-y-8" : ""
+                  } ${i % 2 === 0 ? "-rotate-1" : "rotate-1"}`}
+                />
               ))}
             </div>
           </section>

@@ -9026,6 +9026,7 @@ const hu: LocaleMessages = {
     pricing_standard: "Nem Weddly felhasználóknak",
     pricing_note: "A foglalás hamarosan nyílik.",
     create_event_cta: "Esemény létrehozása",
+    roll_film_name: "Anna & Bence",
     try_title: "Próbáld ki a telefonodon",
     try_body: "Olvasd be, és fotózz. Semmi nem töltődik fel.",
     try_cta: "Kamera kipróbálása",
