@@ -16,6 +16,8 @@ import type {
   MealMenu,
   RsvpStatus,
 } from "@shared/types";
+import { familyHouseholdLabel } from "@shared/household_label";
+import { ExpandingSearch } from "../components/ExpandingSearch";
 import { GuestsFirstRun, type MealIntent } from "../components/GuestsFirstRun";
 import { intlLocale } from "../lib/format";
 import {
@@ -76,7 +78,6 @@ import {
   Plus,
   Printer,
   RotateCcw,
-  Search,
   Send,
   Shell,
   Sprout,
@@ -957,7 +958,7 @@ export default function GuestsPage() {
       // guest into it. Done sequentially so a single mid-loop failure leaves
       // the rest intact and surfaces a clean error.
       for (const g of orphans) {
-        const r = await householdApi.create({ label: g.full_name });
+        const r = await householdApi.create({ label: familyHouseholdLabel(g.full_name, locale) });
         await guestApi.update(g.id, { household_id: r.household.id });
       }
       // Re-uses the import_done copy ("Imported N guests" / "Importálva: N
@@ -5093,7 +5094,12 @@ function GuestDrawer({
                 <div className="mt-2">
                   <input
                     className="input"
-                    placeholder={t("guests.household_new_label")}
+                    placeholder={
+                      form.full_name?.trim()
+                        ? familyHouseholdLabel(form.full_name, locale)
+                        : t("guests.household_new_label")
+                    }
+                    aria-label={t("guests.household_new_label")}
                     value={newHouseholdLabel}
                     onChange={(e) => setNewHouseholdLabel(e.target.value)}
                   />
@@ -6774,15 +6780,6 @@ function GuestFilterBar({
   // already names each one, and an open panel on a phone pushed the list
   // (and the invites center under the invited lens) a whole screen down.
   const [open, setOpen] = useState(false);
-  // Collapses to a tap target on phones (Uber-style: icon in, full-width
-  // field out); sm+ keeps the field open since there's room for it there.
-  // Starts open when a query is already set (a shared ?q= link), so the
-  // filter that is narrowing the list is never hidden behind an icon.
-  const [searchOpen, setSearchOpen] = useState(query !== "");
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (searchOpen) searchInputRef.current?.focus();
-  }, [searchOpen]);
   const rsvpOptions: RsvpStatus[] = ["pending", "yes", "maybe", "no"];
   const sortOptions: SortKey[] = ["default", "name", "added", "rsvp", "certainty", "group"];
   const chip = (on: boolean) =>
@@ -6811,62 +6808,14 @@ function GuestFilterBar({
           only exists in the card lens), and a centred-in-leftover-space switch
           jumped every time the couple flipped views. */}
       <div className="flex flex-wrap items-center gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
-        <div
-          data-tour-target="guests-search"
-          /* ONE element, never swapped: the input itself is the icon button
-           *  while closed (a 36px pill with only the glyph showing) and grows
-           *  into the field when focused. Because nothing mounts or unmounts,
-           *  closing is the same width transition as opening, run backwards.
-           *  Focusing it is what opens it, so the click that opens it is a
-           *  click into the input. On phones the open field takes its own row. */
-          className={`relative min-w-0 transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            searchOpen ? "w-full basis-full sm:basis-auto" : "w-9 shrink-0"
-          }`}
-        >
-          <Search
-            size={14}
-            aria-hidden
-            className={`pointer-events-none absolute left-[11px] top-1/2 z-10 -translate-y-1/2 transition-colors ${
-              searchOpen ? "text-ink-400 dark:text-umber-300" : "text-ink-600 dark:text-paper-100"
-            }`}
-          />
-          <input
-            ref={searchInputRef}
-            type="search"
-            className={`input !min-h-0 h-9 rounded-full !py-0 pl-9 [&::-webkit-search-cancel-button]:appearance-none dark:bg-umber-800 ${
-              searchOpen
-                ? "pr-9"
-                : "cursor-pointer !pr-0 text-transparent caret-transparent placeholder:text-transparent hover:border-paper-400"
-            }`}
-            placeholder={t("guests.search_placeholder")}
-            aria-label={t("guests.search_label")}
-            aria-expanded={searchOpen}
-            value={query}
-            onFocus={() => setSearchOpen(true)}
-            onChange={(e) => onQueryChange(e.target.value)}
-            onBlur={() => {
-              if (!query) setSearchOpen(false);
-            }}
-          />
-          {searchOpen && query !== "" && (
-            <button
-              type="button"
-              /* Ground the pointer so the input's blur (which closes the
-               *  field when it is empty) can't fire between the touch and
-               *  the click. Keeping focus in the field while clearing also
-               *  lets the user keep typing. */
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={() => {
-                onQueryChange("");
-                if (searchInputRef.current) searchInputRef.current.focus();
-              }}
-              aria-label={t("guests.search_clear")}
-              className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-            >
-              <X size={14} aria-hidden />
-            </button>
-          )}
-        </div>
+        <ExpandingSearch
+          tourTarget="guests-search"
+          value={query}
+          onChange={onQueryChange}
+          placeholder={t("guests.search_placeholder")}
+          ariaLabel={t("guests.search_label")}
+          clearLabel={t("guests.search_clear")}
+        />
         {/* Cards ↔ table lens. Two icon segments, mirrored to `?view=table`.
             Centred by the grid column, not by leftover space. */}
         <div

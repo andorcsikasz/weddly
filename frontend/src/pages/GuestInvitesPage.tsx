@@ -55,6 +55,7 @@ import {
   ViewSelect,
 } from "../components/ui";
 import { AnimatedNumber } from "../components/AnimatedNumber";
+import { ExpandingSearch } from "../components/ExpandingSearch";
 import { InfoHint } from "../components/InfoHint";
 import { MoneyInput } from "../components/MoneyInput";
 import { coupleApi, guestApi, guestMessageApi } from "../lib/endpoints";
@@ -1473,21 +1474,14 @@ export function GuestInvitesCenter({
                     </div>
                   </div>
 
-                  <div className="relative w-full sm:max-w-xs">
-                    <Search
-                      size={14}
-                      aria-hidden="true"
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-umber-400"
-                    />
-                    <input
-                      type="search"
-                      className="input h-9 py-1 pl-9"
-                      placeholder={t("guest_invites.search_placeholder")}
-                      aria-label={t("guest_invites.search_label")}
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                    />
-                  </div>
+                  <ExpandingSearch
+                    value={query}
+                    onChange={setQuery}
+                    placeholder={t("guest_invites.search_placeholder")}
+                    ariaLabel={t("guest_invites.search_label")}
+                    clearLabel={t("guests.search_clear")}
+                    openClassName="w-full sm:max-w-xs"
+                  />
 
                   {filtersOpen && (
                     <div className="animate-fade-in-up flex flex-col gap-2.5 rounded-xl border border-paper-300 bg-paper-50/60 p-3 motion-reduce:animate-none dark:border-umber-700 dark:bg-umber-900/40">

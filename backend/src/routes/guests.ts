@@ -35,7 +35,9 @@ import {
   getHouseholdById,
   getOrCreateSupplierHousehold,
 } from "../domain/households";
-import { getUserById } from "../domain/users";
+import { getUserById, normaliseLocale } from "../domain/users";
+import { familyHouseholdLabel } from "@shared/household_label";
+import type { UiLocale } from "@shared/locales";
 import {
   type Ctx,
   HttpError,
@@ -301,11 +303,18 @@ function handleList(ctx: Ctx): Response {
  *  body spawns a new household (explicit or implicit), the new household is
  *  seeded with the guest's own group_tag so the household + member stay in
  *  lock-step from the first row. */
+/** Language for a household label the server names itself: the UI locale of
+ *  the person adding the guest, EN when they never picked one. */
+function householdLabelLocale(userId: number): UiLocale {
+  return normaliseLocale(getUserById(userId)?.locale) ?? "en";
+}
+
 function resolveHouseholdForCreate(
   body: UpsertBody,
   coupleId: number,
   guestName: string,
   guestGroupTag: GuestGroupTag,
+  locale: UiLocale,
 ): { id: number; group_tag: GuestGroupTag } {
   if (typeof body.household_id === "number" && Number.isFinite(body.household_id)) {
     const hh = getHouseholdById(body.household_id, coupleId);
@@ -322,7 +331,10 @@ function resolveHouseholdForCreate(
   const labelRaw =
     typeof body.new_household_label === "string" ? body.new_household_label.trim() : "";
   const autoCreated = labelRaw === "";
-  const label = labelRaw || guestName;
+  // An unnamed household is "<guest>'s family", in the language of whoever
+  // added the guest (EN when unknown, as everywhere else): a bare guest name
+  // reads as a person and turns wrong the moment a second member joins.
+  const label = labelRaw || familyHouseholdLabel(guestName, locale);
   // Only honour the accommodation opt-in for explicit new-household creates —
   // the auto-spawned household-of-one path is a backend convenience and
   // shouldn't pick up an RSVP-form flag the user never saw a toggle for.
@@ -420,6 +432,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       couple.id,
       parsed.full_name,
       parsed.group_tag,
+      householdLabelLocale(userId),
     );
     // Household is the source of truth for group_tag — override the per-guest
     // value the client may have sent. (Matches existing-household join; for new
@@ -902,6 +915,7 @@ async function handleBulkCreate(ctx: Ctx): Promise<Response> {
     }
   }
 
+  const labelLocale = householdLabelLocale(userId);
   const createdIds = db.transaction((): number[] => {
     const ts = now();
     const ids: number[] = [];
@@ -914,7 +928,13 @@ async function handleBulkCreate(ctx: Ctx): Promise<Response> {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?, ?)`,
     );
     for (const { parsed: p, body: b } of parsed) {
-      const household = resolveHouseholdForCreate(b, couple.id, p.full_name, p.group_tag);
+      const household = resolveHouseholdForCreate(
+        b,
+        couple.id,
+        p.full_name,
+        p.group_tag,
+        labelLocale,
+      );
       p.group_tag = household.group_tag;
       const result = insert.run(
         couple.id,

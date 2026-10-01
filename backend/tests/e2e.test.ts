@@ -1981,7 +1981,7 @@ describe("households + airport check-in", () => {
     // The only household here is the household-of-one for Anna Solo.
     expect(list.data.households.length).toBe(1);
     const solo = list.data.households[0]!;
-    expect(solo.label).toBe("Anna Solo");
+    expect(solo.label).toBe("Anna Solo's family");
     // Post-May-2026 the code generator produces an 8-char Crockford string.
     // Pre-bump rows would still match a `[1-9]\d{3}` shape — the explicit
     // OR captures both so legacy fixtures don't choke.
@@ -2025,7 +2025,7 @@ describe("households + airport check-in", () => {
     expect(all.status).toBe(200);
     expect(all.data.households.length).toBe(3);
     const byLabel = new Map(all.data.households.map((h) => [h.label, h]));
-    expect(byLabel.get("Stub Singleton")!.auto_created).toBe(true);
+    expect(byLabel.get("Stub Singleton's family")!.auto_created).toBe(true);
     expect(byLabel.get("Smith family")!.auto_created).toBe(false);
     expect(byLabel.get("Friends")!.auto_created).toBe(false);
 
@@ -2046,7 +2046,7 @@ describe("households + airport check-in", () => {
     // Move a second guest into the auto-spawned household — the filter must
     // stop hiding it (it represents a real party now, even though the row was
     // bootstrapped from a name).
-    const stub = byLabel.get("Stub Singleton")!;
+    const stub = byLabel.get("Stub Singleton's family")!;
     await req("POST", "/api/guests", { full_name: "Plus one", household_id: stub.id }, { token });
     const refiltered = await req<{ households: H[] }>(
       "GET",
@@ -2057,7 +2057,7 @@ describe("households + airport check-in", () => {
     expect(refiltered.data.households.map((h) => h.label).sort()).toEqual([
       "Friends",
       "Smith family",
-      "Stub Singleton",
+      "Stub Singleton's family",
     ]);
   });
 
@@ -2388,7 +2388,7 @@ describe("households + airport check-in", () => {
       rsvp: { household_label: string; members: { full_name: string }[] };
     }>("GET", `/api/rsvp/${g.data.guest.invite_code}`);
     expect(r.status).toBe(200);
-    expect(r.data.rsvp.household_label).toBe("Old Linker");
+    expect(r.data.rsvp.household_label).toBe("Old Linker's family");
     expect(r.data.rsvp.members.length).toBe(1);
   });
 
