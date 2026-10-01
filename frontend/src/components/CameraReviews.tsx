@@ -2,8 +2,8 @@
 // phone), stepped sideways with the arrows or a swipe. The
 // cards slide as one strip so moving a page reads as a single motion.
 //
-// The eyebrow names the writers as early testers on purpose; see the note in
-// lib/camera_reviews.ts before changing it.
+// The summary line names the writers as early testers on purpose; see the
+// note in lib/camera_reviews.ts before changing it.
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useRef, useState } from "react";
 import { CAMERA_REVIEWS } from "../lib/camera_reviews";
@@ -15,6 +15,7 @@ const GAP_REM = 1.25;
 export function CameraReviews() {
   const { t } = useT();
   const reviews = CAMERA_REVIEWS;
+  const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
   const wide = useMediaQuery("(min-width: 768px)");
   const perView = wide ? 3 : 1;
   const pageCount = Math.ceil(reviews.length / perView);
@@ -26,11 +27,21 @@ export function CameraReviews() {
   const swipeX = useRef<number | null>(null);
 
   return (
-    <section aria-roledescription="carousel" aria-label={t("camera.reviews_eyebrow")}>
+    <section aria-roledescription="carousel" aria-label={t("camera.reviews_title")}>
       <div className="flex items-end justify-between gap-6">
-        <h2 className="text-2xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
-          {t("camera.reviews_eyebrow")}
-        </h2>
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
+            {t("camera.reviews_title")}
+          </h2>
+          {/* Derived from the reviews on this page, never typed in: an
+              average quoted beside thirty five-star cards has to be theirs. */}
+          <p className="mt-1.5 text-sm text-paper-400">
+            {t("camera.reviews_summary", {
+              avg: averageRating.toFixed(1),
+              n: reviews.length,
+            })}
+          </p>
+        </div>
         <div className="flex shrink-0 gap-2">
           <button
             type="button"
@@ -89,8 +100,12 @@ export function CameraReviews() {
                 {r.title && (
                   <p className="text-base font-semibold leading-snug text-paper-50">{r.title}</p>
                 )}
-                <div className="mt-2 flex gap-0.5 text-star" role="img" aria-label="5/5">
-                  {[0, 1, 2, 3, 4].map((s) => (
+                <div
+                  className="mt-2 flex gap-0.5 text-star"
+                  role="img"
+                  aria-label={`${r.rating}/5`}
+                >
+                  {Array.from({ length: r.rating }, (_, s) => (
                     <Star
                       key={s}
                       size={16}

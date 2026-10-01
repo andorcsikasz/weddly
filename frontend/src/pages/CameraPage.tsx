@@ -170,50 +170,73 @@ export default function CameraPage() {
   }, []);
 
   // ...and drifts sideways with the page scroll: right to left as the row
-  // travels up through the viewport. Scroll only moves the TARGET; a rAF loop
-  // eases the track toward it (a lerp), so wheel notches and trackpad jitter
-  // turn into one gliding motion instead of a jump per scroll event. The loop
-  // stops once it has settled and the next scroll restarts it. Written
-  // straight to the track's style, so scrolling never re-renders the page.
+  // travels up through the viewport. While the row is on screen a rAF loop
+  // re-reads its position EVERY frame and eases the track toward it (a lerp).
+  // Driving it from scroll events instead made phones tremble on mobile: iOS
+  // and Android deliver scroll events in bursts during momentum scrolling, so
+  // the target jumped in steps the lerp then chased. The viewport height is
+  // also pinned (re-read only on a real resize of the width or an orientation
+  // change), because the mobile address bar collapsing changes innerHeight
+  // mid-scroll and nudged every phone sideways. Written straight to the
+  // track's style, so scrolling never re-renders the page.
   const rollTrackRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const section = rollRef.current;
     const track = rollTrackRef.current;
     if (!section || !track) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    let vh = window.innerHeight;
+    let vw = window.innerWidth;
     const targetX = () => {
       const rect = section.getBoundingClientRect();
-      const vh = window.innerHeight;
       const progress = Math.min(1, Math.max(0, (vh - rect.top) / (vh + rect.height)));
       return (0.5 - progress) * ROLL_DRIFT_PX;
     };
     let current = targetX();
-    let target = current;
     let frame = 0;
     const paint = () => {
       track.style.transform = `translate3d(${current.toFixed(2)}px,0,0)`;
     };
     const tick = () => {
-      current += (target - current) * 0.08;
-      if (Math.abs(target - current) < 0.1) {
-        current = target;
-        frame = 0;
-      } else {
-        frame = requestAnimationFrame(tick);
-      }
+      const target = targetX();
+      const delta = target - current;
+      current = Math.abs(delta) < 0.05 ? target : current + delta * 0.12;
       paint();
+      frame = requestAnimationFrame(tick);
     };
-    const onScroll = () => {
-      target = targetX();
+    const start = () => {
       if (!frame) frame = requestAnimationFrame(tick);
     };
-    paint();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+    const stop = () => {
       if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    };
+    const onResize = () => {
+      if (window.innerWidth !== vw) {
+        vw = window.innerWidth;
+        vh = window.innerHeight;
+      }
+    };
+    const onOrientation = () => {
+      vw = window.innerWidth;
+      vh = window.innerHeight;
+    };
+    paint();
+    const io =
+      typeof IntersectionObserver === "undefined"
+        ? null
+        : new IntersectionObserver(([entry]) => (entry?.isIntersecting ? start() : stop()), {
+            rootMargin: "200px 0px",
+          });
+    if (io) io.observe(section);
+    else start();
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onOrientation);
+    return () => {
+      stop();
+      io?.disconnect();
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onOrientation);
     };
   }, []);
 

@@ -1752,6 +1752,15 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   .roll-item:hover .roll-shutter {
     animation: rollShutter 380ms ease-out;
   }
+  /* On a touch screen the strip's sideways drift IS the motion; the bob and
+     the Ken Burns on top of it, on eleven rotated layers, are what made the
+     phones shimmer while a finger scrolled. Hover-only flash is moot there. */
+  @media (hover: none) {
+    .is-in .roll-bob,
+    .roll-kenburns {
+      animation: none;
+    }
+  }
   @keyframes rollBob {
     0%,
     100% {
