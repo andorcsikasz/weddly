@@ -8945,7 +8945,7 @@ const en: LocaleMessages = {
     pricing_custom_cap: "400+ guests",
     pricing_custom_price: "Contact us",
     pricing_couple_label: "Weddly couples",
-    pricing_standard: "Non-Weddly users: {price}",
+    pricing_standard: "Non-Weddly users",
     pricing_note: "Booking opens soon.",
     try_title: "Try it on your phone",
     try_body: "Scan and shoot. Nothing is uploaded.",

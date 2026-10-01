@@ -13,7 +13,6 @@
 // every heading and body line on it is font-grotesk, so the hero's h1 opts
 // out of the workspace's usual Cormorant serif via `headingFont`.
 import { Camera, Hourglass, ScanLine, Wifi } from "lucide-react";
-import type { CSSProperties } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FILM_TIER_CAPS, FILM_TIER_PRICE_EUR_CENTS } from "@shared/types";
@@ -50,23 +49,12 @@ function couplePrice(cap: number): "included" | string | null {
   return null;
 }
 
-/** Thumb-aware fill offset for `.camera-slider`'s `--camera-slider-fill` var,
- *  same idiom as the budget sliders' `rangeFillStyle`: the raw step
- *  percentage overshoots near the middle and undershoots near the ends
- *  because the native thumb travels between `thumbPx/2` and
- *  `width - thumbPx/2`, not edge to edge. */
-function cameraSliderStyle(index: number, max: number, thumbPx = 20): CSSProperties {
-  const pct = max > 0 ? (index / max) * 100 : 0;
-  const offsetPx = thumbPx * (0.5 - pct / 100);
-  return { "--camera-slider-fill": `calc(${pct}% + ${offsetPx.toFixed(3)}px)` } as CSSProperties;
-}
-
 export default function CameraPage() {
   const { t, locale } = useT();
   const navigate = useNavigate();
   useDocumentMeta("camera.seo_title", "camera.seo_description");
   const [tierIndex, setTierIndex] = useState(1);
-  // TIERS[1] as the fallback: the slider is clamped to [0, TIERS.length - 1]
+  // TIERS[1] as the fallback: the picker only offers to [0, TIERS.length - 1]
   // so this only ever matters to the type checker, never at runtime.
   const tier = TIERS[tierIndex] ?? (TIERS[1] as PricingTier);
   const tierCouplePrice = couplePrice(tier.cap);
@@ -111,10 +99,7 @@ export default function CameraPage() {
           {/* Feature highlights — icon, title, one short line. No cards, no
               counters: four plain columns read calmer than four boxes. */}
           <section className="mt-24 sm:mt-32">
-            <h2 className="text-2xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
-              {t("camera.features_title")}
-            </h2>
-            <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
               {features.map(({ Icon, title, body }) => (
                 <div key={title}>
                   <Icon size={20} strokeWidth={1.5} className="text-paper-300" aria-hidden="true" />
@@ -136,56 +121,80 @@ export default function CameraPage() {
               </h2>
               <p className="mt-2 text-sm text-paper-400">{t("camera.standalone_body")}</p>
 
-              <div className="mt-7 w-full max-w-lg rounded-3xl border border-paper-50/10 bg-paper-50/[0.03] px-6 py-5 sm:px-10 sm:py-6">
-                {/* The Weddly price leads; the stand-alone price is the
-                    footnote. Both rows keep their height on the free tier so
-                    the card doesn't jump while the slider moves. */}
-                <p className="h-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-paper-300">
-                  {tierCouplePrice && t("camera.pricing_couple_label")}
-                </p>
-                <span className="stat-num mt-1.5 block text-4xl font-semibold tabular-nums tracking-[-0.04em] text-paper-50 sm:text-5xl">
-                  {tierCouplePrice === "included" ? "€0" : (tierCouplePrice ?? tier.price)}
-                </span>
-                <p className="mt-2 text-sm text-paper-400">
-                  {t("camera.pricing_guest_cap", { n: tier.cap })}
-                </p>
-                <p className="mt-0.5 h-5 text-sm tabular-nums text-paper-500">
-                  {tierCouplePrice && t("camera.pricing_standard", { price: tier.price })}
-                </p>
-
-                <div className="mt-4 text-left">
-                  <input
-                    type="range"
-                    min={0}
-                    max={TIERS.length - 1}
-                    step={1}
-                    value={tierIndex}
-                    onChange={(e) => setTierIndex(Number(e.target.value))}
-                    className="camera-slider"
-                    style={cameraSliderStyle(tierIndex, TIERS.length - 1)}
-                    aria-label={t("camera.standalone_title")}
-                    aria-valuetext={t("camera.pricing_guest_cap", { n: tier.cap })}
-                  />
-                  <div className="mt-3 flex justify-between">
-                    {TIERS.map((tw, i) => (
-                      <button
-                        key={tw.cap}
-                        type="button"
-                        onClick={() => setTierIndex(i)}
-                        aria-label={t("camera.pricing_guest_cap", { n: tw.cap })}
-                        aria-current={i === tierIndex}
-                        className={`min-h-6 min-w-6 text-xs font-semibold tabular-nums transition-colors ${
-                          i === tierIndex ? "text-paper-50" : "text-paper-500 hover:text-paper-300"
-                        }`}
-                      >
-                        {tw.cap}
-                      </button>
-                    ))}
-                  </div>
+              {/* Uber-style: a segmented headcount picker, then the prices as
+                  option rows, label left and number right. The Weddly row
+                  leads and is the selected one; past the in-app cap it is
+                  simply absent and the stand-alone row takes its place. */}
+              <div className="mt-8 w-full max-w-lg text-left">
+                <div
+                  role="radiogroup"
+                  aria-label={t("camera.standalone_title")}
+                  className="grid grid-cols-6 gap-1 rounded-full bg-paper-50/[0.06] p-1"
+                >
+                  {TIERS.map((tw, i) => (
+                    <button
+                      key={tw.cap}
+                      type="button"
+                      role="radio"
+                      aria-checked={i === tierIndex}
+                      aria-label={t("camera.pricing_guest_cap", { n: tw.cap })}
+                      onClick={() => setTierIndex(i)}
+                      className={`min-h-10 rounded-full text-sm font-semibold tabular-nums transition-colors duration-150 ${
+                        i === tierIndex
+                          ? "bg-paper-50 text-umber-950"
+                          : "text-paper-300 hover:bg-paper-50/[0.06] hover:text-paper-50"
+                      }`}
+                    >
+                      {tw.cap}
+                    </button>
+                  ))}
                 </div>
+
+                <ul className="mt-3 space-y-2">
+                  {tierCouplePrice && (
+                    <li className="flex items-center justify-between gap-4 rounded-2xl bg-paper-50/[0.04] px-5 py-4 ring-2 ring-paper-50">
+                      <div>
+                        <p className="text-base font-semibold text-paper-50">
+                          {t("camera.pricing_couple_label")}
+                        </p>
+                        <p className="mt-0.5 text-sm text-paper-400">
+                          {t("camera.pricing_guest_cap", { n: tier.cap })}
+                        </p>
+                      </div>
+                      <span className="stat-num text-2xl font-semibold tabular-nums tracking-[-0.02em] text-paper-50">
+                        {tierCouplePrice === "included" ? "€0" : tierCouplePrice}
+                      </span>
+                    </li>
+                  )}
+                  <li
+                    className={`flex items-center justify-between gap-4 rounded-2xl px-5 py-4 ${
+                      tierCouplePrice
+                        ? "bg-paper-50/[0.04]"
+                        : "bg-paper-50/[0.04] ring-2 ring-paper-50"
+                    }`}
+                  >
+                    <div>
+                      <p
+                        className={`text-base font-semibold ${tierCouplePrice ? "text-paper-300" : "text-paper-50"}`}
+                      >
+                        {t("camera.pricing_standard")}
+                      </p>
+                      <p className="mt-0.5 text-sm text-paper-500">
+                        {t("camera.pricing_guest_cap", { n: tier.cap })}
+                      </p>
+                    </div>
+                    <span
+                      className={`stat-num text-2xl font-semibold tabular-nums tracking-[-0.02em] ${
+                        tierCouplePrice ? "text-paper-300" : "text-paper-50"
+                      }`}
+                    >
+                      {tier.price}
+                    </span>
+                  </li>
+                </ul>
               </div>
 
-              <p className="mt-6 text-xs text-paper-500">
+              <p className="mt-5 text-xs text-paper-500">
                 {t("camera.pricing_custom_cap")} · {t("camera.pricing_custom_price")} ·{" "}
                 {t("camera.pricing_note")}
               </p>

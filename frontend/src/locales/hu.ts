@@ -9004,7 +9004,7 @@ const hu: LocaleMessages = {
     seo_title: "Weddly Camera",
     seo_description:
       "A ti esküvőtök saját közös kamerája: a vendégek beolvasnak egy QR-kódot, megörökítik, amit ti lemaradnátok róla, és a teljes galéria egyszerre tárul fel az esküvő után. Applikáció és regisztráció nélkül, minden Weddly esküvőhöz ingyen jár.",
-    hero_title: "Örökítsétek meg a napot mindenki szemével.",
+    hero_title: "Örökítsétek meg a napot mindenki szemszögéből.",
     hero_sub: "A vendégek beolvassák a QR-kódot, és fotóznak. A galéria az esküvő után nyílik meg.",
     already_included: "{n} vendégig benne van a Weddly-előfizetésben.",
     already_included_cta: "Ugrás a fiókomba",
@@ -9023,7 +9023,7 @@ const hu: LocaleMessages = {
     pricing_custom_cap: "400+ vendég",
     pricing_custom_price: "Kérj ajánlatot",
     pricing_couple_label: "Weddly pároknak",
-    pricing_standard: "Nem Weddly felhasználóknak: {price}",
+    pricing_standard: "Nem Weddly felhasználóknak",
     pricing_note: "A foglalás hamarosan nyílik.",
     try_title: "Próbáld ki a telefonodon",
     try_body: "Olvasd be, és fotózz. Semmi nem töltődik fel.",
