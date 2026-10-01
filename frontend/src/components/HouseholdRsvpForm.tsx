@@ -1251,7 +1251,11 @@ export function HouseholdRsvpForm({
             <span>{t("rsvp.dietary_consent_label")}</span>
           </label>
         )}
-        <button type="submit" className="btn-accent btn-lg mt-4 w-full" disabled={submitting}>
+        <button
+          type="submit"
+          className="btn btn-lg mt-4 w-full bg-sage-800 text-white [--btn-rim:theme(colors.sage.900)] hover:bg-sage-900 dark:bg-sage-600 dark:hover:bg-sage-700"
+          disabled={submitting}
+        >
           {submitting ? t("common.loading") : t("rsvp.checkin_complete")}
         </button>
       </div>

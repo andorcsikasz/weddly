@@ -13,7 +13,7 @@
 import type { DirectorySupplier } from "@shared/suppliers";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from "react-leaflet";
 
 type Placed = DirectorySupplier & { lat: number; lng: number };
@@ -28,8 +28,8 @@ const TILE_ATTRIBUTION =
 // off the edge of a 260px-tall map.
 const FIT_MAX_ZOOM = 12;
 
-/** Frames every pin once, then keeps the ACTIVE one in view without zooming,
- *  so switching between cities never throws away the overview. */
+/** Frames every pin once, then glides to whichever one is selected without
+ *  zooming, so switching between suppliers never throws away the overview. */
 function Framing({ points, active }: { points: [number, number][]; active: Placed | null }) {
   const map = useMap();
   const key = points.map((p) => p.join(",")).join("|");
@@ -37,9 +37,20 @@ function Framing({ points, active }: { points: [number, number][]; active: Place
     if (points.length === 0) return;
     map.fitBounds(L.latLngBounds(points), { padding: [36, 36], maxZoom: FIT_MAX_ZOOM });
   }, [map, key]);
+  // Glide to the newly selected pin at the current zoom: a visible move is what
+  // tells the couple the map followed their click, and keeping the zoom keeps
+  // the neighbours on screen.
+  const activeKey = active ? `${active.id}` : "";
+  const first = useRef(true);
   useEffect(() => {
-    if (active) map.panInside([active.lat, active.lng], { padding: [48, 48] });
-  }, [map, active]);
+    if (!active) return;
+    // The opening frame is fitBounds' job; centring on top of it would undo it.
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    map.panTo([active.lat, active.lng], { animate: true, duration: 0.5 });
+  }, [map, activeKey]);
   return null;
 }
 

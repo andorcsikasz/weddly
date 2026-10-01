@@ -5,8 +5,8 @@
 // is to surface trade-offs at a glance — like comparing two iPhones and
 // realising the cheaper one's camera is good enough.
 
-import { Check, Star, X } from "lucide-react";
-import { type ReactNode, Suspense, useEffect, useMemo, useState } from "react";
+import { Check, MapPin, Star, X } from "lucide-react";
+import { type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { pickListingBlurb } from "@shared/listing_language";
 import type { DirectorySupplier } from "@shared/suppliers";
 import { SUPPLIER_TO_BUDGET, capacityKindFor } from "@shared/suppliers";
@@ -272,6 +272,23 @@ export function SupplierCompareDialog({
     if (!open) setMapFor(null);
   }, [open]);
   const mapActive = mapFor !== null && columns.some((s) => s.id === mapFor) ? mapFor : null;
+  const template = `8rem repeat(${columns.length}, minmax(10.5rem, 1fr))`;
+  const headRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  // Whichever way a supplier gets selected (its tile, its city, its pin on the
+  // map), bring its column into view beside the pinned label column.
+  useEffect(() => {
+    const body = bodyRef.current;
+    const col = headRef.current?.querySelector<HTMLElement>(
+      `[data-compare-col="${CSS.escape(mapActive ?? "")}"]`,
+    );
+    if (!mapActive || !body || !col) return;
+    const labelWidth = col.parentElement?.firstElementChild?.getBoundingClientRect().width ?? 0;
+    const left = col.offsetLeft - labelWidth;
+    const right = col.offsetLeft + col.offsetWidth - body.clientWidth;
+    if (body.scrollLeft > left || body.scrollLeft < right)
+      body.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  }, [mapActive]);
   const settledCount = columns.filter((s) => settled.has(s.id)).length;
   const detailsLoading = open && settledCount < columns.length;
   const isLoading = (id: string) => open && !settled.has(id);
@@ -580,47 +597,82 @@ export function SupplierCompareDialog({
               </button>
             </div>
           )}
-          <div className="-mx-1 overflow-x-auto pb-1">
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: `8rem repeat(${columns.length}, minmax(10.5rem, 1fr))`,
-              }}
-            >
-              {/* Row labels pin to the left edge: with up to 15 columns the
-               *  grid scrolls sideways and a cell without its label is a number
-               *  about nothing. */}
+          {/* The name row lives OUTSIDE the table's scroller so it can stick
+           *  to the top of the dialog while the rows scroll under it: a
+           *  sideways scroller is also a vertical scroll container, and
+           *  `sticky top` inside it would pin to the scroller, not the
+           *  dialog. The two halves share one column template and their
+           *  horizontal scroll is mirrored both ways. */}
+          <div
+            ref={headRef}
+            onScroll={() => mirrorScroll(headRef.current, bodyRef.current)}
+            className="sticky top-0 z-20 -mx-1 overflow-x-auto bg-white [scrollbar-width:none] dark:bg-umber-800 [&::-webkit-scrollbar]:hidden"
+          >
+            <div className="grid" style={{ gridTemplateColumns: template }}>
               <div className="sticky left-0 z-10 bg-white dark:bg-umber-800" />
-              {columns.map((s) => (
-                <div key={s.id} className="px-1 pb-3">
-                  {/* The name tile is the one solid block in the table: every
-                   *  column is anchored by it, and everything under it is flat
-                   *  type on hairlines. */}
-                  <div className="flex h-full items-start justify-between gap-2 rounded-xl bg-ink-900 p-3 text-white dark:bg-paper-50 dark:text-ink-900">
-                    <div className="min-w-0">
-                      <h3
-                        className="line-clamp-2 text-sm font-semibold leading-snug [overflow-wrap:anywhere]"
-                        title={s.name}
-                      >
-                        {s.name}
-                      </h3>
-                      <p className="mt-1 text-[11px] text-white/60 dark:text-ink-500">
-                        {t(`suppliers.cat.${s.category}`)}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => onRemove(s.id)}
-                      aria-label={t("suppliers.compare.remove_column")}
-                      title={t("suppliers.compare.remove_column")}
-                      className="-mr-1 -mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/60 transition hover:bg-white/15 hover:text-white dark:text-ink-500 dark:hover:bg-ink-900/10 dark:hover:text-ink-900"
+              {columns.map((s) => {
+                const isOn = mapActive === s.id;
+                const placeable = s.lat !== null && s.lng !== null;
+                return (
+                  <div key={s.id} data-compare-col={s.id} className="px-1 pb-3 pt-1">
+                    {/* The name tile is the one solid block in the table: every
+                     *  column is anchored by it, and everything under it is
+                     *  flat type on hairlines. Clicking it puts that supplier
+                     *  on the map, and a pin clicked on the map lights the tile
+                     *  up, so the two always point at the same place. */}
+                    <div
+                      className={`relative flex h-full items-start justify-between gap-2 rounded-xl bg-ink-900 p-3 text-white transition dark:bg-paper-50 dark:text-ink-900 ${
+                        isOn
+                          ? "ring-2 ring-ink-900 ring-offset-2 ring-offset-white dark:ring-paper-50 dark:ring-offset-umber-800"
+                          : ""
+                      }`}
                     >
-                      <X size={14} aria-hidden />
-                    </button>
+                      <button
+                        type="button"
+                        disabled={!placeable}
+                        onClick={() => setMapFor(s.id)}
+                        aria-pressed={isOn}
+                        title={placeable ? t("suppliers.compare.show_on_map") : s.name}
+                        className="min-w-0 flex-1 text-left after:absolute after:inset-0 after:rounded-xl disabled:cursor-default"
+                      >
+                        <h3 className="line-clamp-2 text-sm font-semibold leading-snug [overflow-wrap:anywhere]">
+                          {s.name}
+                        </h3>
+                        <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-white/60 dark:text-ink-500">
+                          {isOn && (
+                            <MapPin
+                              size={11}
+                              aria-hidden
+                              className="text-white dark:text-ink-900"
+                            />
+                          )}
+                          {t(`suppliers.cat.${s.category}`)}
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemove(s.id)}
+                        aria-label={t("suppliers.compare.remove_column")}
+                        title={t("suppliers.compare.remove_column")}
+                        className="relative z-10 -mr-1 -mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/60 transition hover:bg-white/15 hover:text-white dark:text-ink-500 dark:hover:bg-ink-900/10 dark:hover:text-ink-900"
+                      >
+                        <X size={14} aria-hidden />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-
+                );
+              })}
+            </div>
+          </div>
+          <div
+            ref={bodyRef}
+            onScroll={() => mirrorScroll(bodyRef.current, headRef.current)}
+            className="-mx-1 overflow-x-auto pb-1"
+          >
+            {/* Row labels pin to the left edge: with up to 15 columns the
+             *  grid scrolls sideways and a cell without its label is a number
+             *  about nothing. */}
+            <div className="grid" style={{ gridTemplateColumns: template }}>
               {rows.map((row) => (
                 <CompareRowView key={row.key} row={row} span={columns.length} />
               ))}
@@ -630,6 +682,12 @@ export function SupplierCompareDialog({
       )}
     </Dialog>
   );
+}
+
+/** Copy one scroller's horizontal offset onto its twin. Guarded so the echo
+ *  from the twin's own scroll event is a no-op rather than a feedback loop. */
+function mirrorScroll(from: HTMLElement | null, to: HTMLElement | null) {
+  if (from && to && to.scrollLeft !== from.scrollLeft) to.scrollLeft = from.scrollLeft;
 }
 
 type CompareCell = { node: ReactNode } | { empty: string };
