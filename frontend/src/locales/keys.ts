@@ -7101,6 +7101,13 @@ export interface LocaleMessages {
         /** Tooltip shown on the disabled Beküldés button when the rater
          *  hasn't picked a star yet. */
         pickStarFirst: string;
+        ratingPrompt: string;
+        ratingWord1: string;
+        ratingWord2: string;
+        ratingWord3: string;
+        ratingWord4: string;
+        ratingWord5: string;
+        tagsPrompt: string;
         empty: string;
         alreadyReviewed: string;
         deleted: string;

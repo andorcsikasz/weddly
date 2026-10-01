@@ -1101,7 +1101,7 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
               // `lg`, which includes hover-capable narrow desktops, so a greyed
               // CTA that says nothing is avoidable here too.
               title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
-              className="btn-accent flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn bg-sage-800 text-white hover:bg-sage-900 dark:bg-sage-600 dark:text-white dark:hover:bg-sage-700 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Send size={16} aria-hidden />
               {inquireLabel}
@@ -1716,7 +1716,7 @@ function BookingCard({
           onClick={onInquire}
           disabled={!canInquire || readOnly}
           title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
-          className="btn-accent w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn bg-sage-800 text-white hover:bg-sage-900 dark:bg-sage-600 dark:text-white dark:hover:bg-sage-700 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Send size={16} aria-hidden />
           {inquireLabel}

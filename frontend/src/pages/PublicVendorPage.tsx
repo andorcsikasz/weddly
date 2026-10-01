@@ -32,6 +32,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { ReviewSnippets } from "../components/ReviewSnippets";
+import { ReviewRatingPicker } from "../components/ReviewRatingPicker";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
@@ -59,37 +60,6 @@ function StarRow({ value, size = 14 }: { value: number; size?: number }) {
             n <= value ? "fill-star stroke-star" : "stroke-paper-300 dark:stroke-umber-500"
           }
         />
-      ))}
-    </span>
-  );
-}
-
-/** Interactive rating picker for the public composer. 0 = nothing chosen yet
- *  (submit stays disabled) so we never seed a default 5-star. */
-function StarPicker({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (v: 1 | 2 | 3 | 4 | 5) => void;
-}) {
-  return (
-    <span className="inline-flex items-center gap-1">
-      {([1, 2, 3, 4, 5] as const).map((n) => (
-        <button
-          key={n}
-          type="button"
-          onClick={() => onChange(n)}
-          aria-label={String(n)}
-          className="p-0.5"
-        >
-          <Star
-            size={22}
-            className={
-              n <= value ? "fill-star stroke-star" : "stroke-paper-300 dark:stroke-umber-500"
-            }
-          />
-        </button>
       ))}
     </span>
   );
@@ -246,7 +216,7 @@ function PublicReviewComposer({
   }
 
   return (
-    <div className="mt-6 rounded-xl border border-ink-200/60 bg-white p-5 dark:border-umber-700/60 dark:bg-umber-900">
+    <div className="mt-6 rounded-2xl border border-paper-200 bg-white p-5 sm:p-6 dark:border-umber-700/60 dark:bg-umber-900">
       <h3 className="mb-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
         {t("suppliers.detail.reviews.visitorComposerTitle")}
       </h3>
@@ -260,48 +230,41 @@ function PublicReviewComposer({
         </div>
       ) : (
         <div>
-          <div className="mb-3 flex items-center gap-3">
-            <span className="text-sm text-ink-600 dark:text-umber-200">
-              {t("suppliers.detail.reviews.yourRating")}:
-            </span>
-            <StarPicker value={rating} onChange={setRating} />
-          </div>
-          <textarea
-            className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
-            placeholder={t("suppliers.detail.reviews.bodyPlaceholder")}
-            maxLength={REVIEW_BODY_MAX_CHARS}
-            rows={4}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-          />
-          <ReviewSpendFields
-            amount={amount}
-            note={amountNote}
-            onAmount={setAmount}
-            onNote={setAmountNote}
-            locale={locale}
-            t={t}
-          />
-          <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
-          <div className="flex items-center justify-between gap-3">
-            {error ? (
-              <span className="text-xs text-rose-600 dark:text-rose-300">{error}</span>
-            ) : (
-              <span />
-            )}
-            <button
-              type="button"
-              disabled={submitting || rating === 0}
-              onClick={submit}
-              className="rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-paper-100 dark:text-ink-900"
-            >
-              {submitting
-                ? "…"
-                : ownReview
-                  ? t("common.save")
-                  : t("suppliers.detail.reviews.submit")}
-            </button>
-          </div>
+          <ReviewRatingPicker value={rating} onChange={setRating} t={t} />
+          {rating > 0 && (
+            <div className="mt-5 space-y-5 animate-fade-in-up motion-reduce:animate-none">
+              <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
+              <textarea
+                className="w-full resize-none rounded-xl border border-transparent bg-paper-100 p-3.5 text-sm text-ink-900 placeholder:text-ink-400 transition focus:border-ink-900 focus:bg-white focus:outline-none dark:bg-umber-800/60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100 dark:focus:bg-umber-900"
+                placeholder={t("suppliers.detail.reviews.bodyPlaceholder")}
+                maxLength={REVIEW_BODY_MAX_CHARS}
+                rows={3}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+              />
+              <ReviewSpendFields
+                amount={amount}
+                note={amountNote}
+                onAmount={setAmount}
+                onNote={setAmountNote}
+                locale={locale}
+                t={t}
+              />
+              {error && <p className="text-xs text-rose-600 dark:text-rose-300">{error}</p>}
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={submit}
+                className="btn w-full justify-center rounded-full bg-ink-900 py-3 text-paper-50 hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+              >
+                {submitting
+                  ? "…"
+                  : ownReview
+                    ? t("common.save")
+                    : t("suppliers.detail.reviews.submit")}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -7,7 +7,7 @@
 // So the subject is a prop and everything else is written once, mirroring the
 // backend, where `ReviewSubject` is the only thing the two kinds don't share.
 
-import { MoreVertical, Star, Trash2 } from "lucide-react";
+import { MoreVertical, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Currency } from "@shared/currency";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@shared/suppliers";
 import { Pill } from "./admin";
 import { StarRow } from "./StarRow";
+import { ReviewRatingPicker } from "./ReviewRatingPicker";
 import { ReviewSpendFields } from "./ReviewSpendFields";
 import { ReviewSpendLine } from "./ReviewSpendLine";
 import { ReviewTagPicker } from "./ReviewTagPicker";
@@ -45,37 +46,6 @@ function formatDate(unixMs: number, locale: Locale): string {
     month: "short",
     day: "numeric",
   }).format(d);
-}
-
-function StarPicker({
-  value,
-  onChange,
-}: {
-  /** 0 = nothing picked yet (all glyphs hollow). Once the user clicks a
-   *  star, `value` becomes that number and the submit button unlocks. */
-  value: 0 | 1 | 2 | 3 | 4 | 5;
-  onChange: (n: 1 | 2 | 3 | 4 | 5) => void;
-}) {
-  return (
-    <div className="inline-flex items-center gap-1" role="radiogroup" aria-label="Rating">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <button
-          key={n}
-          type="button"
-          role="radio"
-          aria-checked={value === n}
-          onClick={() => onChange(n as 1 | 2 | 3 | 4 | 5)}
-          className="p-0.5 leading-none transition"
-        >
-          <Star
-            size={24}
-            aria-hidden
-            className={n <= value ? "fill-star stroke-star" : "stroke-paper-300 hover:stroke-star"}
-          />
-        </button>
-      ))}
-    </div>
-  );
 }
 
 export function ReviewsSection({
@@ -216,70 +186,67 @@ export function ReviewsSection({
         </p>
       )}
       {(isAdmin || canReview) && (
-        <div className="mb-6 rounded-xl border border-ink-200/60 bg-paper-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
-          <div className="mb-3 flex items-center gap-3">
-            <span className="text-sm text-ink-600 dark:text-umber-200">
-              {t("suppliers.detail.reviews.yourRating")}:
-            </span>
-            <StarPicker value={rating} onChange={setRating} />
-          </div>
-          <textarea
-            className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
-            placeholder={t("suppliers.detail.reviews.bodyPlaceholder")}
-            maxLength={REVIEW_BODY_MAX_CHARS}
-            rows={4}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-          />
-          <ReviewSpendFields
-            amount={amount}
-            note={amountNote}
-            onAmount={setAmount}
-            onNote={setAmountNote}
-            locale={locale as Locale}
-            currency={currency}
-            t={t}
-          />
-          <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {/* Two admin-only levers, and the second depends on the first: the
-                editorial voice is a choice (an admin who hired this supplier
-                writes as themselves), and draft/publish only means anything for
-                an editorial row, since every other review goes live at once. */}
-            {isAdmin ? (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
-                  <input
-                    type="checkbox"
-                    checked={asEditorial}
-                    onChange={(e) => setAsEditorial(e.target.checked)}
-                  />
-                  {t("suppliers.detail.reviews.asEditorialLabel")}
-                </label>
-                {asEditorial && (
+        // Uber-style rating flow: the stars are the whole first screen, and
+        // the rest (what stood out, a comment, what it cost) only unfolds once
+        // a star is picked, so the card never opens as a form.
+        <div className="mb-6 rounded-2xl border border-paper-200 bg-white p-5 sm:p-6 dark:border-umber-700/60 dark:bg-umber-800/40">
+          <ReviewRatingPicker value={rating} onChange={setRating} t={t} />
+          {rating > 0 && (
+            <div className="mt-5 space-y-5 animate-fade-in-up motion-reduce:animate-none">
+              <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
+              <textarea
+                className="w-full resize-none rounded-xl border border-transparent bg-paper-100 p-3.5 text-sm text-ink-900 placeholder:text-ink-400 transition focus:border-ink-900 focus:bg-white focus:outline-none dark:bg-umber-900/60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100 dark:focus:bg-umber-900"
+                placeholder={t("suppliers.detail.reviews.bodyPlaceholder")}
+                maxLength={REVIEW_BODY_MAX_CHARS}
+                rows={3}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+              />
+              <ReviewSpendFields
+                amount={amount}
+                note={amountNote}
+                onAmount={setAmount}
+                onNote={setAmountNote}
+                locale={locale as Locale}
+                currency={currency}
+                t={t}
+              />
+              {/* Two admin-only levers, and the second depends on the first: the
+                  editorial voice is a choice (an admin who hired this supplier
+                  writes as themselves), and draft/publish only means anything for
+                  an editorial row, since every other review goes live at once. */}
+              {isAdmin && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                   <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
                     <input
                       type="checkbox"
-                      checked={published}
-                      onChange={(e) => setPublished(e.target.checked)}
+                      checked={asEditorial}
+                      onChange={(e) => setAsEditorial(e.target.checked)}
                     />
-                    {t("suppliers.detail.reviews.publishedLabel")}
+                    {t("suppliers.detail.reviews.asEditorialLabel")}
                   </label>
-                )}
-              </div>
-            ) : (
-              <span />
-            )}
-            <button
-              type="button"
-              disabled={submitting || rating === 0}
-              onClick={submit}
-              title={rating === 0 ? t("suppliers.detail.reviews.pickStarFirst") : undefined}
-              className="btn-accent disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {submitting ? "…" : t("suppliers.detail.reviews.submit")}
-            </button>
-          </div>
+                  {asEditorial && (
+                    <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
+                      <input
+                        type="checkbox"
+                        checked={published}
+                        onChange={(e) => setPublished(e.target.checked)}
+                      />
+                      {t("suppliers.detail.reviews.publishedLabel")}
+                    </label>
+                  )}
+                </div>
+              )}
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={submit}
+                className="btn w-full justify-center rounded-full bg-ink-900 py-3 text-paper-50 hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+              >
+                {submitting ? "…" : t("suppliers.detail.reviews.submit")}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
