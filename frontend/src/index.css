@@ -2247,6 +2247,29 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
 }
 
+/* Theme switch: circle reveal from the bottom edge (lib/useTheme.ts).
+ * Scoped to `html.theme-vt` so the couple-deck morph above keeps its own
+ * root crossfade. The new snapshot sits on top and is clipped by a
+ * script-driven circle, so the default fade is switched off here, and
+ * colour transitions are frozen while the live new view is being shown
+ * so it lands already settled. */
+html.theme-vt::view-transition-old(root),
+html.theme-vt::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.theme-vt::view-transition-old(root) {
+  z-index: 1;
+}
+html.theme-vt::view-transition-new(root) {
+  z-index: 2;
+}
+html.theme-vt *,
+html.theme-vt *::before,
+html.theme-vt *::after {
+  transition: none !important;
+}
+
 /* Onboarding "All set" celebration. Motion is split across two layers for an
    organic, paper-like flutter: the outer `.confetti-piece` does the graceful
    vertical descent + fade, while the inner `<i>` sways side to side and turns
