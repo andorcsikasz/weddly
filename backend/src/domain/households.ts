@@ -248,7 +248,7 @@ export function householdContactMember(members: GuestRow[]): GuestRow | null {
 }
 
 /** Stamp the household as invited and propagate to its members' `invited_at`
- *  (only where still null) so the per-guest 3-state chip on /app/guests reflects
+ *  and online channel (only where still null) so the per-guest 3-state chip on /app/guests reflects
  *  the digital send. Idempotent: a re-send keeps the original member stamps. */
 export function markHouseholdInvited(householdId: number, coupleId: number, ts: number): void {
   db.prepare(
@@ -256,6 +256,11 @@ export function markHouseholdInvited(householdId: number, coupleId: number, ts: 
   ).run(ts, ts, householdId, coupleId);
   db.prepare(
     "UPDATE guests SET invited_at = ?, updated_at = ? WHERE household_id = ? AND couple_id = ? AND invited_at IS NULL",
+  ).run(ts, ts, householdId, coupleId);
+  // The send IS the online channel, so the invited view counts these guests
+  // too (see reconcileInviteState for the rule both pages follow).
+  db.prepare(
+    "UPDATE guests SET invited_online_at = ?, updated_at = ? WHERE household_id = ? AND couple_id = ? AND invited_online_at IS NULL",
   ).run(ts, ts, householdId, coupleId);
 }
 

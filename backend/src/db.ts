@@ -273,6 +273,20 @@ addColumnIfMissing("guests", "invitation_opened_at", "invitation_opened_at INTEG
 addColumnIfMissing("guests", "invited_online_at", "invited_online_at INTEGER");
 addColumnIfMissing("guests", "invited_physical_at", "invited_physical_at INTEGER");
 
+// Repair rows written before both views shared one rule (reconcileInviteState
+// in domain/guests.ts): invited on the guest list with no channel, a channel
+// with no invited stamp, or delivered and in-person out of step. Each UPDATE
+// only touches rows still in breach, so this is a no-op on every later boot.
+db.run(`UPDATE guests SET invited_physical_at = invitation_delivered_at
+         WHERE invitation_delivered_at IS NOT NULL AND invited_physical_at IS NULL`);
+db.run(`UPDATE guests SET invitation_delivered_at = invited_physical_at
+         WHERE invited_physical_at IS NOT NULL AND invitation_delivered_at IS NULL`);
+db.run(`UPDATE guests SET invited_online_at = invited_at
+         WHERE invited_at IS NOT NULL AND invited_online_at IS NULL AND invited_physical_at IS NULL`);
+db.run(`UPDATE guests SET invited_at = MIN(COALESCE(invited_online_at, invited_physical_at),
+                                          COALESCE(invited_physical_at, invited_online_at))
+         WHERE invited_at IS NULL AND (invited_online_at IS NOT NULL OR invited_physical_at IS NOT NULL)`);
+
 // Planning items: tasks carry an optional free-text `assignee` (e.g. "Anna",
 // "Apa", "Tanú1"). Ideas carry `suggested_by_user_id` — stamped at create time
 // from the current session — so the UI can render "— Anna javasolta". Both

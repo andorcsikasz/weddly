@@ -409,3 +409,63 @@ export function toPublicRsvpView(
 export function touchGuestUpdated(id: number) {
   db.prepare("UPDATE guests SET updated_at = ? WHERE id = ?").run(now(), id);
 }
+
+/** A guest's invite state as stored. Two pages read it two ways: /app/guests
+ *  shows the legacy pair (`invited_at`, `invitation_delivered_at`) as one
+ *  invited toggle, the invited view (/app/guests?invited=1) shows the two
+ *  channels (online link, in person). They used to drift: marking someone
+ *  invited on the guest list left the invited view saying "not invited", and
+ *  clearing both channels there left the guest list saying "invited". */
+export interface InviteState {
+  invited_at: number | null;
+  invitation_delivered_at: number | null;
+  invitation_opened_at: number | null;
+  invited_online_at: number | null;
+  invited_physical_at: number | null;
+}
+
+/** The one rule both views obey: a guest is invited exactly when at least one
+ *  channel is set, and "delivered" IS the in-person channel.
+ *
+ *  `from` names the side the write came from, which is the side that wins:
+ *  - "legacy" (the guest-list toggle, create flags): no invite clears both
+ *    channels; an invite with no channel recorded counts as ONLINE, because
+ *    the RSVP link is what an invite without a handed-over card means here;
+ *    delivered maps onto in person.
+ *  - "channels" (the invited view): the legacy pair is re-derived from them.
+ *  Either way the result satisfies the invariant, so the other page agrees on
+ *  its next read. Pure; callers persist the result. */
+export function reconcileInviteState(
+  s: InviteState,
+  ts: number,
+  from: "legacy" | "channels",
+): InviteState {
+  let online = s.invited_online_at;
+  let physical = s.invited_physical_at;
+  if (from === "legacy") {
+    if (s.invited_at === null) {
+      online = null;
+      physical = null;
+    } else {
+      physical =
+        s.invitation_delivered_at !== null ? (physical ?? s.invitation_delivered_at) : null;
+      if (online === null && physical === null) online = s.invited_at;
+    }
+  }
+  if (online === null && physical === null) {
+    return {
+      invited_at: null,
+      invitation_delivered_at: null,
+      invitation_opened_at: null,
+      invited_online_at: null,
+      invited_physical_at: null,
+    };
+  }
+  return {
+    invited_at: s.invited_at ?? Math.min(online ?? ts, physical ?? ts),
+    invitation_delivered_at: physical !== null ? (s.invitation_delivered_at ?? physical) : null,
+    invitation_opened_at: s.invitation_opened_at,
+    invited_online_at: online,
+    invited_physical_at: physical,
+  };
+}

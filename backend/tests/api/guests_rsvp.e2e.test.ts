@@ -2003,7 +2003,7 @@ describe("rsvp legacy per-guest code", () => {
     }>("GET", `/api/rsvp/${g.data.guest.invite_code}`);
     expect(r.status).toBe(200);
     expect(r.data.rsvp.couple_slug).toBeTruthy();
-    expect(r.data.rsvp.household_label).toBe("Anna");
+    expect(r.data.rsvp.household_label).toBe("Anna's family");
     // Crockford 8-char post-May-2026; legacy 4-digit form preserved by OR.
     expect(r.data.rsvp.household_code).toMatch(/^([1-9]\d{3}|[0-9A-HJKMNP-TV-Z]{8})$/);
     expect(r.data.rsvp.members.length).toBe(1);

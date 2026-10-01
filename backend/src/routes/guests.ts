@@ -26,6 +26,7 @@ import {
   isMealSlotKey,
   isRsvpStatus,
   listGuestsByCouple,
+  reconcileInviteState,
   toGuest,
   uniqueInviteCode,
 } from "../domain/guests";
@@ -464,14 +465,27 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const willSendInvite = body.send_invite === true && parsed.email !== null;
   const deliveredAt = body.delivered === true ? ts : null;
   const invitedAt = body.invited === true || deliveredAt !== null || willSendInvite ? ts : null;
+  // The same rule as an edit: the invite email is the online channel, a
+  // handed-over card is in person, and a bare "invited" counts as online.
+  const createInvite = reconcileInviteState(
+    {
+      invited_at: invitedAt,
+      invitation_delivered_at: deliveredAt,
+      invitation_opened_at: null,
+      invited_online_at: willSendInvite ? ts : null,
+      invited_physical_at: null,
+    },
+    ts,
+    "legacy",
+  );
   const result = db
     .prepare(
       `INSERT INTO guests
         (couple_id, full_name, email, phone, group_tag, invite_code, kind, is_supplier, is_plus_one, plus_one_of, certainty, rsvp_status,
          meal_choice, dietary, plus_one_name, plus_one_meal, accommodation_needed,
          song_request, notes, rsvp_responded_at, invited_at, invitation_delivered_at,
-         created_at, updated_at, household_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         invited_online_at, invited_physical_at, created_at, updated_at, household_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       couple.id,
@@ -494,8 +508,10 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       parsed.song_request,
       parsed.notes,
       respondedAt,
-      invitedAt,
-      deliveredAt,
+      createInvite.invited_at,
+      createInvite.invitation_delivered_at,
+      createInvite.invited_online_at,
+      createInvite.invited_physical_at,
       ts,
       ts,
       householdId,
@@ -715,6 +731,29 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     nextPhysicalAt = null;
   }
 
+  // One fact, two views: whichever side this request wrote wins, and the other
+  // is re-derived from it so /app/guests and the invited view never disagree.
+  const channelsTouched = body.invited_online !== undefined || body.invited_physical !== undefined;
+  const legacyTouched = body.invited !== undefined || body.delivered !== undefined;
+  if (channelsTouched || legacyTouched) {
+    const r = reconcileInviteState(
+      {
+        invited_at: nextInvitedAt,
+        invitation_delivered_at: nextDeliveredAt,
+        invitation_opened_at: nextOpenedAt,
+        invited_online_at: nextOnlineAt,
+        invited_physical_at: nextPhysicalAt,
+      },
+      ts,
+      channelsTouched ? "channels" : "legacy",
+    );
+    nextInvitedAt = r.invited_at;
+    nextDeliveredAt = r.invitation_delivered_at;
+    nextOpenedAt = r.invitation_opened_at;
+    nextOnlineAt = r.invited_online_at;
+    nextPhysicalAt = r.invited_physical_at;
+  }
+
   // The move and the empty-household cleanup are one atomic step: if this guest
   // vacated its previous household and left it with no members, that household
   // is deleted in the same transaction so the guest list, the household picker,
@@ -793,12 +832,23 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   // double check = delivered). Only fires when the request actually touched the
   // invite flags, so a plain name/meal edit never disturbs a +1's own state.
   // Runs after materializePlusOne so a +1 added in the same save inherits too.
+  // Channels ride along, so a +1 reads the same on both pages as its host.
   const inviteFlagsTouched = body.invited !== undefined || body.delivered !== undefined;
   if (inviteFlagsTouched && !nextIsPlusOne) {
     db.prepare(
-      `UPDATE guests SET invited_at = ?, invitation_delivered_at = ?, invitation_opened_at = ?, updated_at = ?
+      `UPDATE guests SET invited_at = ?, invitation_delivered_at = ?, invitation_opened_at = ?,
+              invited_online_at = ?, invited_physical_at = ?, updated_at = ?
          WHERE plus_one_of = ? AND couple_id = ?`,
-    ).run(nextInvitedAt, nextDeliveredAt, nextOpenedAt, ts, id, couple.id);
+    ).run(
+      nextInvitedAt,
+      nextDeliveredAt,
+      nextOpenedAt,
+      nextOnlineAt,
+      nextPhysicalAt,
+      ts,
+      id,
+      couple.id,
+    );
   }
 
   const row = getGuestByIdScoped(id, couple.id) as GuestRow;

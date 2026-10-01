@@ -1042,10 +1042,14 @@ export default function GuestInvitesPage() {
 export function GuestInvitesCenter({
   embedded = false,
   onGuestsChanged,
+  syncKey,
 }: {
   embedded?: boolean;
   /** A channel toggle here changes a guest row the host page also renders. */
   onGuestsChanged?: () => void;
+  /** Changes when the host page wrote invite state (e.g. the guest-list
+   *  invited toggle); the center re-reads its rows so both agree. */
+  syncKey?: number;
 }) {
   const { t, locale } = useT();
   const confirm = useConfirm();
@@ -1060,6 +1064,13 @@ export function GuestInvitesCenter({
     const r = await guestApi.list();
     setGuests(r.guests);
   }, []);
+
+  const syncSeenRef = useRef(syncKey);
+  useEffect(() => {
+    if (syncKey === syncSeenRef.current) return;
+    syncSeenRef.current = syncKey;
+    void loadGuests().catch(() => {});
+  }, [syncKey, loadGuests]);
 
   const loadMessages = useCallback(async () => {
     const r = await guestMessageApi.list();

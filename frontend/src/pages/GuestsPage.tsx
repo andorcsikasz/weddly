@@ -554,7 +554,13 @@ export default function GuestsPage() {
     return undefined;
   }, [households.length]);
 
-  async function refresh() {
+  // Bumped after the guest list writes or reloads, so the invites center above
+  // it re-reads the same rows: the two show one invite state and must not
+  // drift until a page reload. The center's own changes come back through
+  // `fromInvites`, which skips the bump so they don't echo.
+  const [inviteSync, setInviteSync] = useState(0);
+  const loadedOnceRef = useRef(false);
+  async function refresh({ fromInvites = false }: { fromInvites?: boolean } = {}) {
     try {
       const [c, g, h] = await Promise.all([
         coupleApi.current(),
@@ -564,6 +570,8 @@ export default function GuestsPage() {
       setCouple(c.couple);
       setGuests(g.guests);
       setHouseholds(h.households);
+      if (loadedOnceRef.current && !fromInvites) setInviteSync((n) => n + 1);
+      loadedOnceRef.current = true;
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
@@ -879,6 +887,7 @@ export default function GuestsPage() {
       // goes false, so there's nothing else to send. PATCH revalidates the row
       // and cascades the same flag onto this guest's +1s.
       await guestApi.update(g.id, { ...g, invited: nextInvited });
+      setInviteSync((n) => n + 1);
     } catch (e) {
       // Roll back host + +1s on failure so the UI doesn't lie.
       const rollback = (list: Guest[]) =>
@@ -1492,7 +1501,11 @@ export default function GuestsPage() {
 
       {invitedFilter && (
         <div ref={invitesRef} className="scroll-mt-24">
-          <GuestInvitesCenter embedded onGuestsChanged={refresh} />
+          <GuestInvitesCenter
+            embedded
+            syncKey={inviteSync}
+            onGuestsChanged={() => void refresh({ fromInvites: true })}
+          />
         </div>
       )}
 
