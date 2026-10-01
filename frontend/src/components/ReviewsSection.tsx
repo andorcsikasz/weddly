@@ -17,7 +17,7 @@ import {
 } from "@shared/suppliers";
 import { Pill } from "./admin";
 import { StarRow } from "./StarRow";
-import { ReviewRatingPicker } from "./ReviewRatingPicker";
+import { type ReviewRating, ReviewRatingPicker } from "./ReviewRatingPicker";
 import { ReviewSpendFields } from "./ReviewSpendFields";
 import { ReviewSpendLine } from "./ReviewSpendLine";
 import { ReviewTagPicker } from "./ReviewTagPicker";
@@ -60,6 +60,7 @@ export function ReviewsSection({
   isAdmin,
   onChange,
   hideHeader = false,
+  initialRating = 0,
 }: {
   subject: ReviewSubject;
   reviews: SupplierReview[];
@@ -76,6 +77,9 @@ export function ReviewsSection({
    *  already show that summary elsewhere — the ReviewSummaryCard bars, or a
    *  modal's own title bar — so the count isn't drawn twice on one screen. */
   hideHeader?: boolean;
+  /** A star the couple already picked on the summary card; the composer
+   *  opens with it set, so the rest of the form unfolds immediately. */
+  initialRating?: 0 | ReviewRating;
 }) {
   const { t, locale } = useT();
   const toast = useToast();
@@ -85,7 +89,10 @@ export function ReviewsSection({
   // Default 0 = no rating picked yet. Stars render as hollow glyphs and the
   // Beküldés button stays disabled until the user actually clicks one.
   // Avoids the "everyone defaults to 5 stars" trap that inflates aggregates.
-  const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(initialRating);
+  useEffect(() => {
+    if (initialRating) setRating(initialRating);
+  }, [initialRating]);
   const [body, setBody] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [amount, setAmount] = useState<number | null>(null);

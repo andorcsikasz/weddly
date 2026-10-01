@@ -14,15 +14,20 @@ export function ReviewRatingPicker({
   value,
   onChange,
   t,
+  align = "center",
 }: {
   value: 0 | ReviewRating;
   onChange: (n: ReviewRating) => void;
+  /** "start" when the picker sits in a left-aligned card (the summary). */
+  align?: "center" | "start";
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
   const [hover, setHover] = useState<0 | ReviewRating>(0);
   const shown = hover || value;
   return (
-    <div className="flex flex-col items-center gap-2 py-1">
+    <div
+      className={`flex flex-col gap-2 py-1 ${align === "start" ? "items-start" : "items-center"}`}
+    >
       <div
         className="inline-flex items-center gap-1.5"
         role="radiogroup"

@@ -4,9 +4,11 @@
 // with an "Add your own" chip that becomes a field.
 
 import { describe, expect, it, mock } from "bun:test";
+import type { ReviewSummary } from "@shared/suppliers";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { ReviewRatingPicker } from "@/components/ReviewRatingPicker";
+import { ReviewSummaryCard } from "@/components/ReviewSummaryCard";
 import { ReviewTagPicker } from "@/components/ReviewTagPicker";
 import { I18nProvider, useT } from "@/lib/i18n";
 
@@ -64,5 +66,42 @@ describe("ReviewTagPicker", () => {
     fireEvent.keyDown(field, { key: "Enter" });
     expect(screen.getByText("Calm")).toBeTruthy();
     expect(screen.getByText("2/5")).toBeTruthy();
+  });
+});
+
+describe("ReviewSummaryCard", () => {
+  const empty: ReviewSummary = {
+    avg_rating: null,
+    reviews_count: 0,
+    histogram: [0, 0, 0, 0, 0],
+    top_tags: [],
+  };
+  function Card({ onRate }: { onRate?: (n: number) => void }) {
+    const { t } = useT();
+    return (
+      <ReviewSummaryCard summary={empty} locale="en" t={t} onOpen={() => {}} onRate={onRate} />
+    );
+  }
+
+  it("rates straight from the card, with no 'be the first' button", () => {
+    const onRate = mock(() => {});
+    render(
+      <I18nProvider>
+        <Card onRate={onRate} />
+      </I18nProvider>,
+    );
+    expect(screen.queryByText("Be the first to review")).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: "Excellent" }));
+    expect(onRate).toHaveBeenCalledWith(5);
+  });
+
+  it("shows no stars to a viewer who cannot review", () => {
+    render(
+      <I18nProvider>
+        <Card />
+      </I18nProvider>,
+    );
+    expect(screen.queryByRole("radio")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 });

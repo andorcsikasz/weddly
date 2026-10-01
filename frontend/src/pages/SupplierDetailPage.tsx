@@ -93,6 +93,7 @@ import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewsSection } from "../components/ReviewsSection";
 import { ReviewSnippets } from "../components/ReviewSnippets";
 import { SectionNav } from "../components/SectionNav";
+import type { ReviewRating } from "../components/ReviewRatingPicker";
 import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
 import { StarRow } from "../components/StarRow";
 import { statedGuestCount } from "../lib/budget";
@@ -222,6 +223,8 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
   // The reviews list + composer live behind this modal now (see
   // ReviewSummaryCard); `wantsReview` opens it on arrival.
   const [reviewsOpen, setReviewsOpen] = useState(wantsReview);
+  // The star picked on the summary card, handed to the composer in the modal.
+  const [pickedRating, setPickedRating] = useState<0 | ReviewRating>(0);
   // Report dialog (community listings only). Holds the numeric id + name.
   const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
 
@@ -916,6 +919,14 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
               locale={locale}
               t={t}
               onOpen={() => setReviewsOpen(true)}
+              onRate={
+                canReview || isAdmin
+                  ? (n) => {
+                      setPickedRating(n);
+                      setReviewsOpen(true);
+                    }
+                  : undefined
+              }
             />
             <ReviewSnippets
               reviews={reviews ?? []}
@@ -944,6 +955,7 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
               currency={coupleCurrency}
               isAdmin={isAdmin}
               hideHeader
+              initialRating={pickedRating}
             />
           </Dialog>
 

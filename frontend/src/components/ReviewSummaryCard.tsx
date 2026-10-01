@@ -1,11 +1,13 @@
 // Google-style ratings summary: a big average, the 5→1★ distribution bars,
-// and a single CTA that opens the full review list + composer in a modal
+// the five rating stars for a viewer who may review (a click opens the composer
+// with that rating set), and a "see all" CTA once there is anything to see
 // (see ReviewsSection's `hideHeader` mode and PublicVendorPage's own modal).
 // Shared between the public (/suppliers/:id) and in-app (/app/suppliers/:id)
 // vendor pages so the two histograms are drawn once, not redrawn twice.
 
 import type { ReviewSummary } from "@shared/suppliers";
 import type { Locale } from "../lib/i18n";
+import { type ReviewRating, ReviewRatingPicker } from "./ReviewRatingPicker";
 import { StarRow } from "./StarRow";
 
 export function ReviewSummaryCard({
@@ -13,11 +15,17 @@ export function ReviewSummaryCard({
   locale,
   t,
   onOpen,
+  onRate,
 }: {
   summary: ReviewSummary;
   locale: Locale;
   t: (k: string, vars?: Record<string, string | number>) => string;
   onOpen: () => void;
+  /** Present when this viewer may write a review: the card then carries the
+   *  five stars itself, and a click opens the composer with that rating
+   *  already picked, so rating is one tap instead of a button and a dialog
+   *  before the first question. */
+  onRate?: (n: ReviewRating) => void;
 }) {
   const { avg_rating, reviews_count, histogram } = summary;
   const avgDisplay =
@@ -68,20 +76,32 @@ export function ReviewSummaryCard({
           </div>
         </div>
       ) : (
-        <p className="text-sm italic text-ink-500 dark:text-umber-300">
-          {t("suppliers.detail.info.ratingEmpty")}
-        </p>
+        !onRate && (
+          <p className="text-sm italic text-ink-500 dark:text-umber-300">
+            {t("suppliers.detail.info.ratingEmpty")}
+          </p>
+        )
       )}
 
-      <button
-        type="button"
-        onClick={onOpen}
-        className="btn-accent mt-5 w-full justify-center sm:w-auto"
-      >
-        {reviews_count > 0
-          ? t("suppliers.detail.reviews.seeAllCta", { n: reviews_count })
-          : t("suppliers.detail.reviews.writeFirstCta")}
-      </button>
+      {onRate && (
+        <div
+          className={
+            avgDisplay !== null ? "mt-5 border-t border-paper-200 pt-4 dark:border-umber-700" : ""
+          }
+        >
+          <ReviewRatingPicker value={0} onChange={onRate} t={t} align="start" />
+        </div>
+      )}
+
+      {reviews_count > 0 && (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="btn-accent mt-5 w-full justify-center sm:w-auto"
+        >
+          {t("suppliers.detail.reviews.seeAllCta", { n: reviews_count })}
+        </button>
+      )}
     </div>
   );
 }

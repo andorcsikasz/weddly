@@ -27,12 +27,12 @@ import { pickListingBlurb } from "@shared/listing_language";
 import { REVIEW_BODY_MAX_CHARS } from "@shared/suppliers";
 import { vendorPublicId } from "@shared/vendor_slug";
 import { ArrowLeft, CalendarCheck, Lock, MapPin, Send, Star, Tag } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { ReviewSnippets } from "../components/ReviewSnippets";
-import { ReviewRatingPicker } from "../components/ReviewRatingPicker";
+import { type ReviewRating, ReviewRatingPicker } from "../components/ReviewRatingPicker";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
@@ -75,16 +75,25 @@ function PublicReviewComposer({
   locale,
   t,
   onSubmitted,
+  initialRating = 0,
 }: {
   supplierId: string;
   category: SupplierCategory;
   locale: Locale;
   t: (k: string, vars?: Record<string, string | number>) => string;
   onSubmitted: () => void;
+  /** The star picked on the summary card. Wins over a stored review's
+   *  rating, since it is the newer statement. */
+  initialRating?: 0 | ReviewRating;
 }) {
   const confirm = useConfirm();
   const [verified, setVerified] = useState<boolean>(() => Boolean(getVisitorToken()));
-  const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(initialRating);
+  const pickedRef = useRef(initialRating);
+  useEffect(() => {
+    pickedRef.current = initialRating;
+    if (initialRating) setRating(initialRating);
+  }, [initialRating]);
   const [body, setBody] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [amount, setAmount] = useState<number | null>(null);
@@ -96,7 +105,7 @@ function PublicReviewComposer({
 
   const loadReview = (review: SupplierReview) => {
     setOwnReview(review);
-    setRating(review.rating);
+    setRating(pickedRef.current || review.rating);
     setBody(review.body ?? "");
     setTags(review.tags);
     setAmount(review.amount_paid);
@@ -497,6 +506,8 @@ export default function PublicVendorPage() {
   // The reviews list + composer live behind this modal (see ReviewSummaryCard);
   // `wantsReview` opens it straight to the composer.
   const [reviewsOpen, setReviewsOpen] = useState(wantsReview);
+  // The star picked on the summary card, handed to the composer in the modal.
+  const [pickedRating, setPickedRating] = useState<0 | ReviewRating>(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -681,6 +692,10 @@ export default function PublicVendorPage() {
                 locale={locale}
                 t={t}
                 onOpen={() => setReviewsOpen(true)}
+                onRate={(n) => {
+                  setPickedRating(n);
+                  setReviewsOpen(true);
+                }}
               />
               <ReviewSnippets
                 reviews={reviews}
@@ -714,6 +729,7 @@ export default function PublicVendorPage() {
                 locale={locale}
                 t={t}
                 onSubmitted={reloadDetail}
+                initialRating={pickedRating}
               />
             </Dialog>
 
