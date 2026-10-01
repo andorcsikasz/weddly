@@ -24,22 +24,35 @@ import { useDocumentMeta } from "../lib/seo";
 
 /** What a guest's roll looks like: wedding shots through the in-app camera's
  *  own analog looks, each with the orange date print a disposable burns in. */
-const ROLL = [
+const ROLL: { src: string; filter: string; stamp: string; position?: string }[] = [
+  { src: "/demo/film-01.jpg", filter: FILM_FILTERS.warm, stamp: "'26 09 12" },
   { src: "/design-photos/12-ceremony-aisle.jpg", filter: FILM_FILTERS.vintage, stamp: "'26 09 12" },
+  { src: "/design-photos/04-greenery-arch.jpg", filter: FILM_FILTERS.bw, stamp: "'26 09 12" },
   {
     src: "/demo/wedding-party-hero.jpg",
     filter: FILM_FILTERS.warm,
     stamp: "'26 09 12",
     position: "60% 50%",
   },
+  { src: "/demo/film-02.jpg", filter: FILM_FILTERS.vintage, stamp: "'26 09 12" },
   { src: "/design-photos/01-reception-pergola.jpg", filter: FILM_FILTERS.bw, stamp: "'26 09 12" },
+  { src: "/design-photos/05-draped-arch.jpg", filter: FILM_FILTERS.warm, stamp: "'26 09 12" },
   {
     src: "/design-photos/02-reception-candlelit.jpg",
     filter: FILM_FILTERS.cinematic,
     stamp: "'26 09 13",
   },
+  { src: "/demo/film-03.jpg", filter: FILM_FILTERS.bw, stamp: "'26 09 13" },
   { src: "/design-photos/11-wedding-cake.jpg", filter: FILM_FILTERS.vintage, stamp: "'26 09 13" },
-] as const;
+  {
+    src: "/design-photos/06-pampas-candles.jpg",
+    filter: FILM_FILTERS.cinematic,
+    stamp: "'26 09 13",
+  },
+];
+
+/** How far (px) the roll drifts sideways over the whole time it is on screen. */
+const ROLL_DRIFT_PX = 520;
 
 interface PricingTier {
   cap: number;
@@ -141,6 +154,36 @@ export default function CameraPage() {
     return () => io.disconnect();
   }, []);
 
+  // ...and drifts sideways with the page scroll: right to left as the row
+  // travels up through the viewport. Written straight to the track's style
+  // in a rAF, so scrolling never re-renders the page.
+  const rollTrackRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const section = rollRef.current;
+    const track = rollTrackRef.current;
+    if (!section || !track) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const rect = section.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const progress = Math.min(1, Math.max(0, (vh - rect.top) / (vh + rect.height)));
+      track.style.transform = `translate3d(${((0.5 - progress) * ROLL_DRIFT_PX).toFixed(1)}px,0,0)`;
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
   const features = [
     { Icon: ScanLine, title: t("camera.feature_1_title"), body: t("camera.feature_1_body") },
     { Icon: Camera, title: t("camera.feature_2_title"), body: t("camera.feature_2_body") },
@@ -150,7 +193,7 @@ export default function CameraPage() {
 
   return (
     <PublicShell>
-      <div className="dark bg-umber-950 font-grotesk text-paper-100">
+      <div className="dark overflow-x-clip bg-umber-950 font-grotesk text-paper-100">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20" lang={locale}>
           <CameraHero
             album={null}
@@ -178,7 +221,7 @@ export default function CameraPage() {
 
           {/* Feature highlights — icon, title, one short line. No cards, no
               counters: four plain columns read calmer than four boxes. */}
-          <section className="mt-24 sm:mt-32">
+          <section className="mt-32 sm:mt-48">
             <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
               {features.map(({ Icon, title, body }) => (
                 <div key={title}>
@@ -190,21 +233,23 @@ export default function CameraPage() {
             </div>
           </section>
 
-          {/* A guest's roll: five viewfinders, scrolling sideways on a phone,
-              a gently staggered row on desktop. */}
+          {/* A guest's roll: a full-bleed strip of viewfinders, wider than
+              the screen and centred on it, drifting sideways as the page
+              scrolls. */}
           <section
             ref={rollRef}
-            className={`-mx-4 mt-20 overflow-x-auto px-4 pb-6 pt-3 [scrollbar-width:none] sm:mx-0 sm:mt-24 sm:overflow-visible sm:px-0 ${
+            className={`relative left-1/2 mt-32 flex w-screen -translate-x-1/2 justify-center overflow-hidden py-6 sm:mt-48 ${
               rollIn ? "is-in" : ""
             }`}
           >
-            <div className="flex w-max snap-x snap-mandatory gap-4 sm:grid sm:w-auto sm:grid-cols-5 sm:gap-5">
+            <div
+              ref={rollTrackRef}
+              className="flex w-max shrink-0 gap-4 will-change-transform sm:gap-5"
+            >
               {ROLL.map((shot, i) => (
                 <div
                   key={shot.src}
-                  className={`roll-item w-40 shrink-0 snap-center sm:w-auto ${
-                    i % 2 === 1 ? "sm:mt-8" : ""
-                  }`}
+                  className={`roll-item w-40 shrink-0 sm:w-52 ${i % 2 === 1 ? "mt-8" : ""}`}
                   style={{ "--roll-i": i } as CSSProperties}
                 >
                   <div className="roll-bob">
@@ -212,11 +257,11 @@ export default function CameraPage() {
                       inline
                       src={shot.src}
                       filter={shot.filter}
-                      objectPosition={"position" in shot ? shot.position : undefined}
+                      objectPosition={shot.position}
                       stamp={shot.stamp}
                       live
                       filmName={t("camera.roll_film_name")}
-                      shotsLabel={t("media.film_shots_short").replace("{{n}}", String(24 - i * 3))}
+                      shotsLabel={t("media.film_shots_short").replace("{{n}}", String(36 - i * 3))}
                       className={i % 2 === 0 ? "-rotate-1" : "rotate-1"}
                     />
                   </div>
@@ -228,7 +273,7 @@ export default function CameraPage() {
           {/* Stand-alone product */}
           <section
             id="standalone"
-            className="mt-20 scroll-mt-20 border-t border-paper-50/10 pt-14 sm:mt-24 sm:pt-16"
+            className="mt-32 scroll-mt-20 border-t border-paper-50/10 pt-20 sm:mt-48 sm:pt-24"
           >
             <div className="flex flex-col items-center text-center">
               <h2 className="max-w-lg text-xl font-semibold tracking-tight text-paper-50 sm:text-2xl">

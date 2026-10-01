@@ -464,7 +464,7 @@ export function CameraHero({
         // centred, each with its line under it, joined by a hairline connector
         // (horizontal from sm up, vertical on a phone), so 1 → 2 → 3 reads as
         // one sequence.
-        <ol className="relative mt-10 grid border-t border-paper-50/10 pt-8 sm:grid-cols-3">
+        <ol className="relative mt-14 grid border-t border-paper-50/10 pt-10 sm:mt-20 sm:grid-cols-3">
           {[
             t("media.film_how_1_title"),
             t("media.film_how_2_title"),
