@@ -24,10 +24,23 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  Fragment,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import { Wordmark } from "../components/Wordmark";
+import { fireConfetti } from "../lib/confetti";
 import { usePublicPageMeta } from "../lib/seo";
+import { GamesAmbient } from "./games/GamesAmbient";
 import "./GamesPage.css";
 
 type Answer = {
@@ -293,6 +306,103 @@ function LiveChart({
   );
 }
 
+const KAHOOT_CONFETTI = ["#e21b3c", "#1368ce", "#d89e00", "#26890c", "#ffffff"];
+const MARKET_CONFETTI = ["#2388ff", "#1769e0", "#7fb8ff", "#2dbf7d", "#ffffff"];
+const QUIZ_SECONDS = 20;
+const HERO_CONFETTI_COUNT = 16;
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+function centerOf(el: Element) {
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+/** Ease a displayed number toward `value` instead of jumping, so a balance
+ *  or a price visibly rolls when it changes. */
+function useTweened(value: number, ms = 650): number {
+  const [shown, setShown] = useState(value);
+  const fromRef = useRef(value);
+  useEffect(() => {
+    const from = fromRef.current;
+    if (from === value || prefersReducedMotion()) {
+      fromRef.current = value;
+      setShown(value);
+      return;
+    }
+    const start = performance.now();
+    let raf = 0;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / ms);
+      const eased = 1 - (1 - t) ** 3;
+      const next = Math.round(from + (value - from) * eased);
+      fromRef.current = next;
+      setShown(next);
+      if (t < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value, ms]);
+  return shown;
+}
+
+function Tweened({ value, ms }: { value: number; ms?: number }) {
+  return <>{useTweened(value, ms).toLocaleString()}</>;
+}
+
+/** Fade-and-rise every `[data-reveal]` under the page root as it scrolls
+ *  into view; children of a `[data-reveal-group]` stagger by their `--i`. */
+function useScrollReveal(rootRef: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const targets = Array.from(root.querySelectorAll<HTMLElement>("[data-reveal]"));
+    if (prefersReducedMotion() || !("IntersectionObserver" in window)) {
+      for (const el of targets) el.classList.add("is-in");
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-in");
+          io.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" },
+    );
+    for (const el of targets) io.observe(el);
+    return () => io.disconnect();
+  }, [rootRef]);
+}
+
+/** Kahoot-style countdown ring around the seconds left. */
+function QuizTimer({ left }: { left: number }) {
+  const r = 26;
+  const c = 2 * Math.PI * r;
+  return (
+    <div
+      className={`games-timer ${left <= 5 ? "is-urgent" : ""}`}
+      role="timer"
+      aria-label={`${left} seconds left`}
+    >
+      <svg viewBox="0 0 60 60" aria-hidden="true">
+        <circle cx="30" cy="30" r={r} className="games-timer-track" />
+        <circle
+          cx="30"
+          cy="30"
+          r={r}
+          className="games-timer-ring"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - left / QUIZ_SECONDS)}
+        />
+      </svg>
+      <span key={left}>{left}</span>
+    </div>
+  );
+}
+
 function Shape({ type }: { type: Answer["shape"] }) {
   if (type === "triangle") return <span className="games-shape games-shape-triangle" />;
   if (type === "diamond") return <span className="games-shape games-shape-diamond" />;
@@ -329,10 +439,23 @@ export default function GamesPage() {
   const [sortBy, setSortBy] = useState<"volume" | "chance">("volume");
   const toastTimer = useRef<number | null>(null);
   const betSeq = useRef(0);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const quizShellRef = useRef<HTMLDivElement>(null);
+  const [timeLeft, setTimeLeft] = useState(QUIZ_SECONDS);
+  const [quizInView, setQuizInView] = useState(false);
+  const [players, setPlayers] = useState(84);
+  const [rank, setRank] = useState(6);
+  const [wrongShake, setWrongShake] = useState(0);
+  const [walletFx, setWalletFx] = useState<{ dir: "up" | "down"; key: number } | null>(null);
+  const prevBalance = useRef(balance);
+  const shownBalance = useTweened(balance);
+  useScrollReveal(pageRef);
   const activeMarket = markets.find((m) => m.id === activeMarketId) ?? null;
 
   const question = QUIZ_QUESTIONS[questionIndex]!;
   const isCorrect = selectedAnswer === question.correct;
+  const timedOut = selectedAnswer === null && timeLeft === 0;
+  const revealed = selectedAnswer !== null || timedOut;
   const maxStake = Math.max(0, balance);
   const activeYes = activeMarket ? marketProbability(activeMarket.pool) : 50;
   const potentialReturn = activeMarket
@@ -391,6 +514,50 @@ export default function GamesPage() {
     return () => window.clearInterval(timer);
   }, []);
 
+  // The quiz clock only runs while the quiz is actually on screen, so a
+  // visitor reading the hero doesn't scroll down to a question that already
+  // timed out without them.
+  useEffect(() => {
+    const el = quizShellRef.current;
+    if (!el || !("IntersectionObserver" in window)) {
+      setQuizInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => setQuizInView(entry?.isIntersecting ?? false),
+      {
+        threshold: 0.4,
+      },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!quizInView || revealed) return;
+    const timer = window.setInterval(() => {
+      if (document.hidden) return;
+      setTimeLeft((t) => Math.max(0, t - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [quizInView, revealed]);
+
+  // The room is busy: the lobby count wanders a little while you watch.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.hidden) return;
+      setPlayers((p) => Math.min(96, Math.max(78, p + (Math.random() < 0.6 ? 1 : -1))));
+    }, 3200);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // Flash the header wallet green or red whenever the balance moves.
+  useEffect(() => {
+    if (balance === prevBalance.current) return;
+    setWalletFx({ dir: balance > prevBalance.current ? "up" : "down", key: Date.now() });
+    prevBalance.current = balance;
+  }, [balance]);
+
   useEffect(() => {
     if (!activeMarketId) return;
     const onKey = (event: KeyboardEvent) => {
@@ -407,18 +574,44 @@ export default function GamesPage() {
     [],
   );
 
-  function chooseAnswer(index: number) {
-    if (selectedAnswer !== null) return;
+  function chooseAnswer(index: number, el: HTMLElement) {
+    if (revealed) return;
     setSelectedAnswer(index);
     if (index === question.correct) {
       setBalance((current) => current + 50);
       setQuizPoints((current) => current + 50);
+      setRank((r) => Math.max(1, r - 2));
+      fireConfetti(centerOf(el), { colors: KAHOOT_CONFETTI, count: 70 });
+    } else {
+      setRank((r) => Math.min(players, r + 3));
+      setWrongShake((n) => n + 1);
     }
   }
 
   function nextQuestion() {
     setQuestionIndex((current) => (current + 1) % QUIZ_QUESTIONS.length);
     setSelectedAnswer(null);
+    setTimeLeft(QUIZ_SECONDS);
+  }
+
+  /** Tilt the hero's floating confetti toward the pointer. */
+  function heroParallax(event: ReactPointerEvent<HTMLElement>) {
+    if (event.pointerType !== "mouse" || prefersReducedMotion()) return;
+    const r = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.style.setProperty(
+      "--px",
+      ((event.clientX - r.left) / r.width - 0.5).toFixed(3),
+    );
+    event.currentTarget.style.setProperty(
+      "--py",
+      ((event.clientY - r.top) / r.height - 0.5).toFixed(3),
+    );
+  }
+
+  /** A click on empty hero space throws a handful of confetti from there. */
+  function heroBurst(event: ReactMouseEvent<HTMLElement>) {
+    if ((event.target as HTMLElement).closest("a, button")) return;
+    fireConfetti({ x: event.clientX, y: event.clientY }, { colors: KAHOOT_CONFETTI, count: 36 });
   }
 
   function openTrade(market: Market, nextSide: Side) {
@@ -441,13 +634,15 @@ export default function GamesPage() {
     setBalance((current) => current - stake);
     setPredictionCount((current) => current + 1);
     setToast(`${stake} pts on ${side} moved the odds ${before}% → ${after}%`);
+    const placeBtn = document.querySelector(".games-place-button");
+    if (placeBtn) fireConfetti(centerOf(placeBtn), { colors: MARKET_CONFETTI, count: 50 });
     setActiveMarketId(null);
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 3600);
   }
 
   return (
-    <div className="games-page min-h-screen bg-[#080b12] text-white">
+    <div ref={pageRef} className="games-page min-h-screen bg-[#080b12] text-white">
       <header className="games-header">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center gap-3 px-4 sm:px-7 lg:px-10">
           <Link to="/" className="games-logo" aria-label="Weddly home">
@@ -474,11 +669,15 @@ export default function GamesPage() {
           </nav>
 
           <div className="ml-auto flex items-center gap-2 md:ml-4">
-            <div className="games-wallet" title="Your demo balance">
+            <div
+              key={walletFx?.key ?? 0}
+              className={`games-wallet ${walletFx ? `is-${walletFx.dir}` : ""}`}
+              title="Your demo balance"
+            >
               <span className="games-wallet-coin">
                 <Coins size={14} aria-hidden />
               </span>
-              <strong>{balance}</strong>
+              <strong>{shownBalance}</strong>
               <span>PTS</span>
             </div>
             <RegisterLink dark />
@@ -487,25 +686,36 @@ export default function GamesPage() {
       </header>
 
       <main>
-        <section className="games-hero relative overflow-hidden px-4 pb-24 pt-20 sm:px-7 sm:pb-32 sm:pt-28 lg:px-10">
+        <section
+          className="games-hero relative overflow-hidden px-4 pb-24 pt-20 sm:px-7 sm:pb-32 sm:pt-28 lg:px-10"
+          onPointerMove={heroParallax}
+          onClick={heroBurst}
+        >
+          <GamesAmbient inline />
           <div className="games-orb games-orb-one" />
           <div className="games-orb games-orb-two" />
           <div className="games-confetti" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
+            {Array.from({ length: HERO_CONFETTI_COUNT }, (_, i) => (
+              <i key={i} style={{ "--d": (i % 4) + 1 } as CSSProperties} />
+            ))}
           </div>
           <div className="relative z-10 mx-auto max-w-[1240px] text-center">
             <div className="games-lab-pill mx-auto">
               <Sparkles size={14} aria-hidden /> Wēddly Games Lab · early preview
             </div>
             <h1 className="games-hero-title mx-auto mt-8 max-w-5xl">
-              The reception just became <span>a sport.</span>
+              {["The", "reception", "just", "became"].map((word, i) => (
+                // The space sits OUTSIDE the inline-block word: inside it, a
+                // trailing space collapses and the words run together.
+                <Fragment key={word}>
+                  <span className="games-word" style={{ "--i": i } as CSSProperties}>
+                    {word}
+                  </span>{" "}
+                </Fragment>
+              ))}
+              <span className="games-word games-word-accent" style={{ "--i": 4 } as CSSProperties}>
+                a sport.
+              </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-white/58 sm:text-lg">
               Break the ice, test who really knows the couple, and predict the night’s biggest
@@ -521,13 +731,17 @@ export default function GamesPage() {
             </div>
           </div>
 
-          <div className="relative z-10 mx-auto mt-20 grid max-w-[1120px] gap-3 sm:grid-cols-3">
+          <div
+            className="relative z-10 mx-auto mt-20 grid max-w-[1120px] gap-3 sm:grid-cols-3"
+            data-reveal
+            data-reveal-group
+          >
             {[
               { icon: Users, value: "Everyone", label: "plays from their phone" },
               { icon: Zap, value: "Live", label: "questions & market odds" },
               { icon: Trophy, value: "One", label: "ultimate wedding champion" },
-            ].map(({ icon: Icon, value, label }) => (
-              <div key={value} className="games-stat-card">
+            ].map(({ icon: Icon, value, label }, i) => (
+              <div key={value} className="games-stat-card" style={{ "--i": i } as CSSProperties}>
                 <Icon size={18} aria-hidden />
                 <div>
                   <strong>{value}</strong>
@@ -543,7 +757,10 @@ export default function GamesPage() {
           className="games-quiz-section scroll-mt-20 px-4 py-24 sm:px-7 sm:py-32 lg:px-10"
         >
           <div className="mx-auto max-w-[1240px]">
-            <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div
+              className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
+              data-reveal
+            >
               <div>
                 <p className="games-section-kicker text-[#bfa2ff]">01 · Live quiz</p>
                 <h2 className="games-section-title mt-3">Who knows them best?</h2>
@@ -555,11 +772,16 @@ export default function GamesPage() {
                 <span className="games-live-pill">
                   <span /> Live preview
                 </span>
-                <span className="games-score-pill">+{quizPoints} pts earned</span>
+                <span
+                  key={quizPoints}
+                  className={`games-score-pill ${quizPoints ? "is-bumped" : ""}`}
+                >
+                  +{quizPoints} pts earned
+                </span>
               </div>
             </div>
 
-            <div className="games-quiz-shell">
+            <div className="games-quiz-shell" ref={quizShellRef} data-reveal>
               <div className="games-quiz-topbar">
                 <span className="games-pin">
                   <span>GAME PIN</span> 14 09 26
@@ -568,40 +790,46 @@ export default function GamesPage() {
                   {questionIndex + 1} / {QUIZ_QUESTIONS.length}
                 </span>
                 <span className="flex items-center gap-2">
-                  <Users size={15} aria-hidden /> 84 players
+                  <Users size={15} aria-hidden /> <Tweened value={players} /> players
                 </span>
               </div>
               <div className="games-question-wrap">
-                <div className="games-timer" aria-label="18 seconds left">
-                  <span>18</span>
-                </div>
-                <div className="text-center">
+                <QuizTimer left={timeLeft} />
+                <div key={questionIndex} className="games-question-in text-center">
                   <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#6b21a8]">
                     {question.kicker}
                   </p>
                   <h3>{question.question}</h3>
                 </div>
                 <div className="games-place-chip">
-                  <strong>6</strong>
-                  <span>of 84</span>
+                  <strong key={rank} className="games-rank-pop">
+                    {rank}
+                  </strong>
+                  <span>of {players}</span>
                 </div>
               </div>
 
-              <div className="games-answers-grid">
+              <div key={questionIndex} className="games-answers-grid">
                 {question.answers.map((answer, index) => {
                   const chosen = selectedAnswer === index;
-                  const correct = selectedAnswer !== null && question.correct === index;
-                  const muted = selectedAnswer !== null && !chosen && !correct;
+                  const correct = revealed && question.correct === index;
+                  const muted = revealed && !chosen && !correct;
                   return (
                     <button
-                      key={answer.label}
+                      key={chosen && !correct ? `${answer.label}-${wrongShake}` : answer.label}
                       type="button"
-                      disabled={selectedAnswer !== null}
-                      onClick={() => chooseAnswer(index)}
-                      className={`${ANSWER_STYLES[index]} ${chosen ? "is-chosen" : ""} ${correct ? "is-correct" : ""} ${muted ? "is-muted" : ""}`}
+                      disabled={revealed}
+                      onClick={(event) => chooseAnswer(index, event.currentTarget)}
+                      style={{ "--i": index } as CSSProperties}
+                      className={`${ANSWER_STYLES[index]} ${chosen ? "is-chosen" : ""} ${correct ? "is-correct" : ""} ${muted ? "is-muted" : ""} ${chosen && !correct ? "is-wrong" : ""}`}
                     >
                       <Shape type={answer.shape} />
                       <span>{answer.label}</span>
+                      {chosen && correct && (
+                        <span className="games-points-float" aria-hidden="true">
+                          +50
+                        </span>
+                      )}
                       {correct && (
                         <Check className="ml-auto" size={24} strokeWidth={3} aria-hidden />
                       )}
@@ -615,16 +843,18 @@ export default function GamesPage() {
 
               <div className="games-quiz-footer">
                 <div>
-                  {selectedAnswer === null ? (
-                    <span>Pick an answer to play the preview</span>
+                  {timedOut ? (
+                    <strong className="text-amber-700">Time’s up! The room got there first.</strong>
+                  ) : selectedAnswer === null ? (
+                    <span>Pick an answer before the clock runs out</span>
                   ) : isCorrect ? (
                     <strong className="text-emerald-700">Correct! +50 points</strong>
                   ) : (
                     <strong className="text-rose-700">Not quite — the room knows.</strong>
                   )}
                 </div>
-                {selectedAnswer !== null && (
-                  <button type="button" onClick={nextQuestion}>
+                {revealed && (
+                  <button type="button" onClick={nextQuestion} className="games-next-in">
                     {questionIndex === QUIZ_QUESTIONS.length - 1 ? "Play again" : "Next question"}{" "}
                     <ArrowRight size={16} aria-hidden />
                   </button>
@@ -639,7 +869,7 @@ export default function GamesPage() {
           className="games-market-section scroll-mt-16 px-4 py-24 text-[#111827] sm:px-7 sm:py-32 lg:px-10"
         >
           <div className="mx-auto max-w-[1240px]">
-            <div className="games-market-heading">
+            <div className="games-market-heading" data-reveal>
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="games-section-kicker whitespace-nowrap text-[#1769e0]">
@@ -656,7 +886,7 @@ export default function GamesPage() {
                 <span>Available to predict</span>
                 <strong>
                   <span className="games-blue-coin">W</span>
-                  {balance.toLocaleString()} <small>PTS</small>
+                  {shownBalance.toLocaleString()} <small>PTS</small>
                 </strong>
               </div>
             </div>
@@ -686,15 +916,26 @@ export default function GamesPage() {
               </button>
             </div>
 
-            <div className="games-markets-grid">
-              {visibleMarkets.map((market) => {
+            <div className="games-markets-grid" data-reveal data-reveal-group>
+              {visibleMarkets.map((market, cardIndex) => {
                 const Icon = market.icon;
                 const yes = marketProbability(market.pool);
                 const opened = market.history[0] ?? yes;
                 const delta = yes - opened;
                 const moved = yes - (market.history[market.history.length - 2] ?? yes);
                 return (
-                  <article key={market.id} className="games-market-card">
+                  <article
+                    key={market.id}
+                    className="games-market-card"
+                    style={{ "--i": cardIndex } as CSSProperties}
+                  >
+                    {market.lastBet && (
+                      <span
+                        key={market.lastBet.id}
+                        className={`games-card-ping ${market.lastBet.side === "YES" ? "is-yes" : "is-no"}`}
+                        aria-hidden="true"
+                      />
+                    )}
                     <div className="games-market-meta">
                       <span className="games-market-icon" aria-hidden="true">
                         <Icon size={18} strokeWidth={1.75} />
@@ -713,7 +954,7 @@ export default function GamesPage() {
                           }
                           aria-live="polite"
                         >
-                          {yes}%
+                          <Tweened value={yes} ms={500} />%
                         </strong>
                         <span>chance</span>
                         {delta !== 0 && (
@@ -779,11 +1020,11 @@ export default function GamesPage() {
           className="games-how-section px-4 py-24 sm:px-7 sm:py-32 lg:px-10"
         >
           <div className="mx-auto max-w-[1240px]">
-            <div className="games-how-header">
+            <div className="games-how-header" data-reveal>
               <p className="games-section-kicker text-[#f6bf54]">From “I do” to final score</p>
               <h2 className="games-section-title mt-3">One link. A room full of players.</h2>
             </div>
-            <div className="games-steps-grid">
+            <div className="games-steps-grid" data-reveal data-reveal-group>
               {[
                 {
                   number: "01",
@@ -803,8 +1044,8 @@ export default function GamesPage() {
                   title: "Champion crowned",
                   body: "Points settle live and the leaderboard reveals the sharpest guest.",
                 },
-              ].map(({ number, icon: Icon, title, body }) => (
-                <article key={number}>
+              ].map(({ number, icon: Icon, title, body }, i) => (
+                <article key={number} style={{ "--i": i } as CSSProperties}>
                   <span className="games-step-number">{number}</span>
                   <div className="games-step-icon">
                     <Icon size={24} aria-hidden />
@@ -815,7 +1056,7 @@ export default function GamesPage() {
               ))}
             </div>
 
-            <div className="games-coming-card">
+            <div className="games-coming-card" data-reveal>
               <div className="games-coming-art" aria-hidden="true">
                 <span>W</span>
                 <Heart size={32} fill="currentColor" />

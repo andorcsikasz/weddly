@@ -2,14 +2,18 @@
 // a glow that follows the cursor, and a constellation of drifting particles
 // that link up near each other and lean away from the pointer.
 //
-// Portalled to <body> at z-index -1, so it sits above the console's canvas
-// paint (GamesConsole.css, `html:has(.gc-page) body`) and below everything
-// else, including the sidebar, without depending on what the app shell's
-// wrappers do to stacking. Under prefers-reduced-motion only the static
-// aurora renders: no canvas, no animation loop.
+// By default it is portalled to <body> at z-index -1, so it sits above the
+// console's canvas paint (GamesConsole.css, `html:has(.gc-page)`) and below
+// everything else, including the sidebar, without depending on what the app
+// shell's wrappers do to stacking. `inline` instead fills the nearest
+// positioned parent and measures/tracks against it: the public /games hero
+// paints its own background, so a body-level layer would be hidden behind
+// it. Under prefers-reduced-motion only the static aurora renders: no
+// canvas, no animation loop.
 
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import "./GamesAmbient.css";
 
 type Particle = { x: number; y: number; vx: number; vy: number; r: number; hue: 0 | 1 | 2 };
 
@@ -18,7 +22,7 @@ const HUES = ["167, 120, 255", "86, 150, 255", "230, 236, 255"] as const;
 const LINK_DIST = 130;
 const POINTER_DIST = 170;
 
-export function GamesAmbient() {
+export function GamesAmbient({ inline = false }: { inline?: boolean } = {}) {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -34,11 +38,14 @@ export function GamesAmbient() {
     let h = 0;
     let particles: Particle[] = [];
     const pointer = { x: -9999, y: -9999, active: false };
+    // Inline: everything is measured against the host box, which scrolls.
+    const origin = () => (inline ? root.getBoundingClientRect() : { left: 0, top: 0 });
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = window.innerWidth;
-      h = window.innerHeight;
+      const box = inline ? root.getBoundingClientRect() : null;
+      w = box ? box.width : window.innerWidth;
+      h = box ? box.height : window.innerHeight;
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -55,12 +62,14 @@ export function GamesAmbient() {
     };
 
     const onMove = (e: PointerEvent) => {
-      pointer.x = e.clientX;
-      pointer.y = e.clientY;
-      pointer.active = true;
-      root.style.setProperty("--gx", `${e.clientX}px`);
-      root.style.setProperty("--gy", `${e.clientY}px`);
-      root.classList.add("gc-amb-live");
+      const o = origin();
+      pointer.x = e.clientX - o.left;
+      pointer.y = e.clientY - o.top;
+      pointer.active =
+        !inline || (pointer.x >= 0 && pointer.y >= 0 && pointer.x <= w && pointer.y <= h);
+      root.style.setProperty("--gx", `${pointer.x}px`);
+      root.style.setProperty("--gy", `${pointer.y}px`);
+      root.classList.toggle("gc-amb-live", pointer.active);
     };
     const onLeave = () => {
       pointer.active = false;
@@ -139,10 +148,23 @@ export function GamesAmbient() {
       raf = requestAnimationFrame(frame);
     };
 
-    const onVisibility = () => {
+    // Run only while the tab is visible and (inline) the host is on screen.
+    let onScreen = true;
+    const sync = () => {
       cancelAnimationFrame(raf);
-      if (!document.hidden) raf = requestAnimationFrame(frame);
+      if (!document.hidden && onScreen) raf = requestAnimationFrame(frame);
     };
+    const onVisibility = sync;
+    const io =
+      inline && "IntersectionObserver" in window
+        ? new IntersectionObserver(([entry]) => {
+            onScreen = entry?.isIntersecting ?? true;
+            sync();
+          })
+        : null;
+    io?.observe(root);
+    const ro = inline && "ResizeObserver" in window ? new ResizeObserver(resize) : null;
+    ro?.observe(root);
 
     resize();
     raf = requestAnimationFrame(frame);
@@ -152,21 +174,27 @@ export function GamesAmbient() {
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
       cancelAnimationFrame(raf);
+      io?.disconnect();
+      ro?.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onMove);
       document.documentElement.removeEventListener("pointerleave", onLeave);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+  }, [inline]);
 
-  return createPortal(
-    <div ref={rootRef} className="gc-ambient" aria-hidden="true">
+  const layer = (
+    <div
+      ref={rootRef}
+      className={`gc-ambient ${inline ? "gc-ambient-inline" : ""}`}
+      aria-hidden="true"
+    >
       <span className="gc-aurora gc-aurora-a" />
       <span className="gc-aurora gc-aurora-b" />
       <span className="gc-aurora gc-aurora-c" />
       <span className="gc-cursor-glow" />
       <canvas ref={canvasRef} className="gc-particles" />
-    </div>,
-    document.body,
+    </div>
   );
+  return inline ? layer : createPortal(layer, document.body);
 }

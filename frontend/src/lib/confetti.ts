@@ -9,8 +9,13 @@
 const COLORS = ["#FFD000", "#2f9c52", "#d35d42", "#4F6D7A", "#bfae7b"];
 
 /** Fire a small confetti burst from `origin` (defaults to upper-centre of the
- *  viewport, roughly where the supplier chain sits). Safe to call repeatedly. */
-export function fireConfetti(origin?: { x: number; y: number }): void {
+ *  viewport, roughly where the supplier chain sits). Safe to call repeatedly.
+ *  `colors` / `count` let a page with its own palette (the Games teaser's
+ *  Kahoot colours) burst in it; omitted, the festive default stands. */
+export function fireConfetti(
+  origin?: { x: number; y: number },
+  opts?: { colors?: readonly string[]; count?: number },
+): void {
   if (typeof window === "undefined" || typeof document === "undefined") return;
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -31,7 +36,8 @@ export function fireConfetti(origin?: { x: number; y: number }): void {
   const GRAVITY = 0.18;
   const MAX_LIFE = 90; // ~1.5s at 60fps
 
-  const particles = Array.from({ length: 28 }, () => {
+  const palette = opts?.colors?.length ? opts.colors : COLORS;
+  const particles = Array.from({ length: opts?.count ?? 28 }, () => {
     // Upward fan: centred on straight-up (-90°) with a ~160° spread.
     const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
     const speed = 4 + Math.random() * 6;
@@ -41,7 +47,7 @@ export function fireConfetti(origin?: { x: number; y: number }): void {
       vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 2,
       vy: Math.sin(angle) * speed,
       size: 5 + Math.random() * 5,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)] ?? "#FFD000",
+      color: palette[Math.floor(Math.random() * palette.length)] ?? "#FFD000",
       rot: Math.random() * Math.PI,
       spin: (Math.random() - 0.5) * 0.3,
       life: 0,

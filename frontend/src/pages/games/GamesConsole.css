@@ -581,84 +581,6 @@ html:has(.gc-page) body {
    press bursts a ripple. Everything is switched off under
    prefers-reduced-motion at the bottom of the file. */
 
-/* Ambient layer: portalled to <body>, z -1, so above the canvas paint and
-   below the whole app. */
-.gc-ambient {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
-}
-.gc-particles {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.gc-aurora {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.55;
-  will-change: transform;
-}
-.gc-aurora-a {
-  width: 46vw;
-  height: 46vw;
-  top: -14vw;
-  right: -8vw;
-  background: radial-gradient(circle, rgba(124, 72, 255, 0.5), transparent 65%);
-  animation: gc-drift-a 26s ease-in-out infinite alternate;
-}
-.gc-aurora-b {
-  width: 52vw;
-  height: 52vw;
-  bottom: -22vw;
-  left: -10vw;
-  background: radial-gradient(circle, rgba(30, 110, 255, 0.42), transparent 65%);
-  animation: gc-drift-b 32s ease-in-out infinite alternate;
-}
-.gc-aurora-c {
-  width: 30vw;
-  height: 30vw;
-  top: 38%;
-  left: 42%;
-  background: radial-gradient(circle, rgba(70, 200, 255, 0.18), transparent 65%);
-  animation: gc-drift-c 21s ease-in-out infinite alternate;
-}
-@keyframes gc-drift-a {
-  to {
-    transform: translate(-12vw, 10vh) scale(1.15);
-  }
-}
-@keyframes gc-drift-b {
-  to {
-    transform: translate(14vw, -12vh) scale(1.1);
-  }
-}
-@keyframes gc-drift-c {
-  to {
-    transform: translate(-18vw, -16vh) scale(1.3);
-  }
-}
-.gc-cursor-glow {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 560px;
-  height: 560px;
-  margin: -280px 0 0 -280px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(130, 110, 255, 0.13), transparent 62%);
-  transform: translate(var(--gx, -1000px), var(--gy, -1000px));
-  opacity: 0;
-  transition: opacity 400ms ease;
-}
-.gc-amb-live .gc-cursor-glow {
-  opacity: 1;
-}
-
 /* Entrance: rise out of a slight backward lean, unblurring. `backwards`
    (not `both`) so the finished animation lets go of `transform` and the
    pointer tilt below can take it. */
@@ -1097,7 +1019,6 @@ html:has(.gc-page) body {
 
 @media (prefers-reduced-motion: reduce) {
   .gc-rise,
-  .gc-aurora,
   .gc-shimmer,
   .gc-tile-border,
   .gc-tile-glow,
