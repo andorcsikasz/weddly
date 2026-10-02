@@ -4483,6 +4483,16 @@ const hu: LocaleMessages = {
     power_boost_body: "Egy ideig sokkal magasabbra ugrasz.",
     power_board: "Gördeszka",
     power_board_body: "Egy ideig ezzel suhansz, és egy ütközést elnyel helyetted.",
+    venue_garden: "Kert",
+    venue_castle: "Kastély",
+    venue_vineyard: "Szőlőbirtok",
+    venue_lakeside: "Tópart",
+    venue_barn: "Pajta",
+    fork_prompt: "Válassz helyszínt",
+    venue_arrived: "Új helyszín",
+    tip_jump: "Ugorj!",
+    tip_slide: "Csússz alatta!",
+    tip_lane: "Válts sávot!",
   },
   quiz: {
     list: {

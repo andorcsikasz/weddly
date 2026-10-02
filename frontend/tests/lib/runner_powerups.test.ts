@@ -17,6 +17,7 @@ import {
   isStreakStep,
   streakBonus,
 } from "@shared/runner";
+import type { VenueId } from "@shared/runner";
 import { RunEngine } from "@/pages/games/runner/engine/RunEngine";
 
 const FRAME = 1 / 60;
@@ -275,5 +276,47 @@ describe("gift box", () => {
     engine.advance(FRAME);
     expect(engine.state.lastGift?.n).toBe(1);
     expect(engine.drainEvents().some((e) => e.type === "gift")).toBe(true);
+  });
+});
+
+describe("venue forks", () => {
+  function runToFork(lane: 0 | 1 | 2) {
+    const engine = new RunEngine("bride", "EUR");
+    engine.start(9);
+    let turned: { dir: number; venue: VenueId } | null = null;
+    let sawFork = false;
+    for (let i = 0; i < 60 * 60 && !turned; i++) {
+      engine.state.invuln = 10;
+      if (engine.state.lane !== lane) engine.moveLane(lane < engine.state.lane ? -1 : 1);
+      engine.advance(FRAME);
+      if (engine.state.fork) sawFork = true;
+      for (const e of engine.drainEvents()) if (e.type === "turn") turned = e;
+    }
+    return { engine, turned, sawFork };
+  }
+
+  it("announces the fork, and the left lane turns into the left venue", () => {
+    const { engine, turned, sawFork } = runToFork(0);
+    expect(sawFork).toBe(true);
+    expect(turned?.dir).toBe(-1);
+    expect(engine.state.venue).toBe(turned?.venue ?? "garden");
+    expect(engine.state.venue).not.toBe("garden");
+    expect(engine.state.fork).toBeNull();
+    // The signpost is taken off the road at the turn, so it cannot cross the lens.
+    expect(engine.obstacles.some((o) => o.active && o.id === "fork_sign")).toBe(false);
+  });
+
+  it("the right lane turns right", () => {
+    const { turned } = runToFork(2);
+    expect(turned?.dir).toBe(1);
+  });
+
+  it("leaves the track clear right after the turn", () => {
+    const { engine } = runToFork(0);
+    for (const o of engine.obstacles) {
+      if (!o.active || o.id === "fork_sign") continue;
+      // Nothing between the runner and the end of the clear stretch.
+      expect(o.z < -20 || o.z > 0).toBe(true);
+    }
   });
 });

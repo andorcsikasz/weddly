@@ -16,6 +16,23 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
+import type { ComponentType } from "react";
+import { VENUE_IDS, type VenueId } from "@shared/runner";
+import {
+  Barn,
+  Barrel,
+  CastleWall,
+  Cypress,
+  Fence,
+  HayBale,
+  Jetty,
+  Reeds,
+  StringLights,
+  Topiary,
+  Tower,
+  VineRow,
+  Willow,
+} from "./VenueScenery";
 import * as THREE from "three";
 import { FOG_COLOR, PALETTE, SKY_HORIZON, SKY_MID, SKY_TOP, SUN } from "../constants/palette";
 import { M, box, cone, cylinder, sphere } from "../constants/materials";
@@ -47,7 +64,140 @@ function lcg(seed: number) {
 /** What a scattered prop IS, not how many there are. A union rather than an open
  *  number, so the switch that draws them is exhaustively checked and a new kind
  *  cannot be added without deciding how it looks. */
-type PropKind = "tree" | "treeRound" | "treeSpire" | "treeBlossom" | "shrub" | "lamp" | "bench";
+type PropKind =
+  | "tree"
+  | "treeRound"
+  | "treeSpire"
+  | "treeBlossom"
+  | "shrub"
+  | "lamp"
+  | "bench"
+  | "tower"
+  | "castleWall"
+  | "topiary"
+  | "vineRow"
+  | "barrel"
+  | "cypress"
+  | "willow"
+  | "reeds"
+  | "jetty"
+  | "barn"
+  | "hay"
+  | "fence"
+  | "stringLights";
+
+/** How each venue tints the lawn and the path. White is the texture as drawn. */
+const VENUE_TINT: Readonly<Record<VenueId, { lawn: string; path: string }>> = {
+  garden: { lawn: PALETTE.white, path: PALETTE.white },
+  castle: { lawn: PALETTE.venueCastleLawn, path: PALETTE.venueCastlePath },
+  vineyard: { lawn: PALETTE.venueVineyardLawn, path: PALETTE.venueVineyardPath },
+  lakeside: { lawn: PALETTE.venueLakeLawn, path: PALETTE.white },
+  barn: { lawn: PALETTE.venueBarnLawn, path: PALETTE.venueBarnPath },
+};
+
+/** The scatter for one venue: one list of props per road segment. Seeded per
+ *  venue so each place is the same place every visit. */
+function scatterFor(venue: VenueId): Prop[][] {
+  const rand = lcg(0x5eed1a + VENUE_IDS.indexOf(venue) * 7919);
+  const side = () => (rand() < 0.5 ? -1 : 1);
+  return Array.from({ length: SEGMENTS }, () => {
+    const out: Prop[] = [];
+    const push = (kind: PropKind, z: number, x: number, scale = 1, spin = 0) =>
+      out.push({ kind, z, x, scale, spin });
+    if (venue === "garden") {
+      const TREES: readonly PropKind[] = ["tree", "treeRound", "treeSpire", "treeBlossom"];
+      for (let i = 0; i < 9; i++) {
+        const kind = TREES[Math.floor(rand() * TREES.length)] ?? "tree";
+        push(
+          kind,
+          (i / 9) * SPAN + rand() * 2,
+          side() * (3.6 + rand() * 7),
+          0.8 + rand() * 0.6,
+          rand() * 6.28,
+        );
+      }
+      for (let i = 0; i < 5; i++)
+        push(
+          "shrub",
+          (i / 5) * SPAN + rand() * 3,
+          side() * (2.9 + rand() * 0.7),
+          0.8 + rand() * 0.5,
+        );
+      push("lamp", 8, -4.3);
+      push("lamp", 21, 4.3);
+      push("bench", 4, 5.4);
+      push("bench", 17, -5.4);
+    } else if (venue === "castle") {
+      for (const z of [6, 22]) {
+        push("castleWall", z, -5.2);
+        push("castleWall", z, 5.2);
+      }
+      push("tower", 14, side() * 9, 0.9 + rand() * 0.3);
+      push("tower", 28, side() * 11, 0.8 + rand() * 0.3);
+      for (let i = 0; i < 6; i++) push("topiary", (i / 6) * SPAN + 2, (i % 2 ? -1 : 1) * 3.4, 0.9);
+      for (let i = 0; i < 3; i++) push("treeSpire", rand() * SPAN, side() * (13 + rand() * 6), 1.1);
+    } else if (venue === "vineyard") {
+      for (let i = 0; i < 6; i++) {
+        push("vineRow", (i / 6) * SPAN + 1, -9);
+        push("vineRow", (i / 6) * SPAN + 3, 9);
+      }
+      for (let i = 0; i < 4; i++)
+        push("cypress", (i / 4) * SPAN + rand() * 3, side() * (3.8 + rand()), 0.9 + rand() * 0.4);
+      for (let i = 0; i < 3; i++)
+        push("barrel", rand() * SPAN, side() * (3.4 + rand() * 0.6), 1, rand() * 3);
+    } else if (venue === "lakeside") {
+      for (let i = 0; i < 4; i++)
+        push(
+          "willow",
+          (i / 4) * SPAN + rand() * 4,
+          side() * (4.2 + rand() * 1.4),
+          0.9 + rand() * 0.3,
+          rand() * 3,
+        );
+      for (let i = 0; i < 6; i++)
+        push("reeds", (i / 6) * SPAN + rand() * 2, side() * (5.8 + rand() * 1.2));
+      push("jetty", 15, side() * 9, 1, Math.PI / 2);
+      push("lamp", 10, -4.3);
+      push("lamp", 25, 4.3);
+    } else {
+      push("barn", 12, side() * 11, 1, rand() < 0.5 ? -Math.PI / 2 : Math.PI / 2);
+      for (let i = 0; i < 4; i++)
+        push("hay", (i / 4) * SPAN + rand() * 3, side() * (3.8 + rand() * 2), 1, rand() * 2);
+      for (const z of [6, 20]) {
+        push("fence", z, -3.3);
+        push("fence", z, 3.3);
+      }
+      push("stringLights", 13, -3.9);
+      push("stringLights", 27, 3.9);
+      for (let i = 0; i < 3; i++)
+        push("tree", rand() * SPAN, side() * (14 + rand() * 6), 1.1, rand() * 3);
+    }
+    return out;
+  });
+}
+
+const PROP_BODY: Readonly<Record<PropKind, ComponentType>> = {
+  tree: () => <Tree variant="open" />,
+  treeRound: () => <Tree variant="round" />,
+  treeSpire: () => <Tree variant="spire" />,
+  treeBlossom: () => <Tree variant="blossom" />,
+  shrub: Shrub,
+  lamp: Lamp,
+  bench: Bench,
+  tower: Tower,
+  castleWall: CastleWall,
+  topiary: Topiary,
+  vineRow: VineRow,
+  barrel: Barrel,
+  cypress: Cypress,
+  willow: Willow,
+  reeds: Reeds,
+  jetty: Jetty,
+  barn: Barn,
+  hay: HayBale,
+  fence: Fence,
+  stringLights: StringLights,
+};
 
 interface Prop {
   readonly z: number;
@@ -141,59 +291,49 @@ function Bench() {
 export interface EnvironmentProps {
   /** Metres travelled. Read once a frame from the engine. */
   distance: () => number;
+  /** Which venue lines the road right now. */
+  venue: () => VenueId;
 }
 
-export function Environment({ distance }: EnvironmentProps) {
+export function Environment({ distance, venue }: EnvironmentProps) {
   const segments = useRef<(THREE.Group | null)[]>([]);
 
-  /** The scatter, built once. Trees outside the path, alternating sides, never
-   *  in a lane; the lane count is `LANE_WIDTH * 3` wide and everything here is
-   *  at |x| > 3.4. */
-  const props = useMemo<Prop[][]>(() => {
-    const rand = lcg(0x5eed1a);
-    return Array.from({ length: SEGMENTS }, (_unused, s) => {
-      const out: Prop[] = [];
-      const TREES: readonly PropKind[] = ["tree", "treeRound", "treeSpire", "treeBlossom"];
-      for (let i = 0; i < 9; i++) {
-        const side = rand() < 0.5 ? -1 : 1;
-        out.push({
-          z: (i / 9) * SPAN + rand() * 2,
-          x: side * (3.6 + rand() * 7),
-          kind: TREES[Math.floor(rand() * TREES.length)] ?? "tree",
-          scale: 0.8 + rand() * 0.6,
-          spin: rand() * Math.PI * 2,
-        });
-      }
-      for (let i = 0; i < 5; i++) {
-        const side = rand() < 0.5 ? -1 : 1;
-        out.push({
-          z: (i / 5) * SPAN + rand() * 3,
-          x: side * (2.9 + rand() * 0.7),
-          kind: "shrub",
-          scale: 0.8 + rand() * 0.5,
-          spin: 0,
-        });
-      }
-      out.push({ z: 8, x: -4.3, kind: "lamp", scale: 1, spin: 0 });
-      out.push({ z: 21, x: 4.3, kind: "lamp", scale: 1, spin: 0 });
-      out.push({ z: 4, x: 5.4, kind: "bench", scale: 1, spin: 0 });
-      out.push({ z: 17, x: -5.4, kind: "bench", scale: 1, spin: 0 });
-      return out;
-    });
-  }, []);
+  /** Every venue's scatter, built once. Only the current venue's groups are
+   *  visible; the switch happens at a fork, under the camera whip. */
+  const props = useMemo(
+    () => Object.fromEntries(VENUE_IDS.map((v) => [v, scatterFor(v)])) as Record<VenueId, Prop[][]>,
+    [],
+  );
+  const venueGroups = useRef<Partial<Record<VenueId, THREE.Group | null>>>({});
+  const lawnMat = useRef<THREE.MeshStandardMaterial>(null);
+  const pathMat = useRef<THREE.MeshStandardMaterial>(null);
+  const water = useRef<THREE.Group>(null);
+  const tint = useMemo(() => ({ lawn: new THREE.Color(), path: new THREE.Color() }), []);
 
   const path = useMemo(() => pathTexture(), []);
   const lawn = useMemo(() => lawnTexture(), []);
   const sky = useMemo(() => skyGradient(), []);
 
-  useFrame(() => {
+  useFrame((_, dt) => {
     const d = distance();
-    for (let s = 0; s < SEGMENTS; s++) {
+    const current = venue();
+    for (const v of VENUE_IDS) {
+      const g = venueGroups.current[v];
+      if (g) g.visible = v === current;
+    }
+    if (water.current) water.current.visible = current === "lakeside";
+    const k = 1 - Math.exp(-dt / 0.25);
+    tint.lawn.set(VENUE_TINT[current].lawn);
+    tint.path.set(VENUE_TINT[current].path);
+    lawnMat.current?.color.lerp(tint.lawn, k);
+    pathMat.current?.color.lerp(tint.path, k);
+    for (let s = 0; s < SEGMENTS * VENUE_IDS.length; s++) {
       const node = segments.current[s];
       if (!node) continue;
       // The modulo is per segment, so each one slides forward a segment's worth
       // at a time and jumps back — which happens behind the fog.
-      const z = ((s * SPAN + d) % (SPAN * SEGMENTS)) - SPAN * (SEGMENTS - 1);
+      const seg = s % SEGMENTS;
+      const z = ((seg * SPAN + d) % (SPAN * SEGMENTS)) - SPAN * (SEGMENTS - 1);
       node.position.z = z;
     }
   });
@@ -220,33 +360,56 @@ export function Environment({ distance }: EnvironmentProps) {
           texture, no geometry to stream: a flat plane cannot be a bottleneck
           and it never has to be recycled because it is infinitely long. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, -FOG_FAR]}>
-        <planeGeometry args={[90, FOG_FAR * 2.4]} />
-        <meshStandardMaterial map={lawn} roughness={0.95} />
+        <planeGeometry args={[90, FOG_FAR * 2.4, 24, 140]} />
+        <meshStandardMaterial ref={lawnMat} map={lawn} roughness={0.95} />
       </mesh>
 
       {/* The path. Three lane-widths of gravel with the seams from
           `pathTexture` landing between the lanes. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.0, -FOG_FAR]}>
-        <planeGeometry args={[5.4, FOG_FAR * 2.4]} />
-        <meshStandardMaterial map={path} roughness={0.92} />
+        <planeGeometry args={[5.4, FOG_FAR * 2.4, 3, 140]} />
+        <meshStandardMaterial ref={pathMat} map={path} roughness={0.92} />
       </mesh>
 
-      {props.map((list, s) => (
+      {/* The lake, both sides of the road, only at the lakeside venue. */}
+      <group ref={water} visible={false}>
+        {[-1, 1].map((side) => (
+          <mesh key={side} rotation={[-Math.PI / 2, 0, 0]} position={[side * 27, 0.03, -FOG_FAR]}>
+            <planeGeometry args={[40, FOG_FAR * 2.4, 10, 140]} />
+            <meshStandardMaterial
+              color={PALETTE.water}
+              roughness={0.1}
+              metalness={0.3}
+              emissive={PALETTE.water}
+              emissiveIntensity={0.2}
+            />
+          </mesh>
+        ))}
+      </group>
+
+      {VENUE_IDS.map((v, vi) => (
         <group
-          key={s}
+          key={v}
           ref={(node) => {
-            segments.current[s] = node;
+            venueGroups.current[v] = node;
           }}
+          visible={v === "garden"}
         >
-          {list.map((p, i) => (
-            <group key={i} position={[p.x, 0, p.z]} rotation={[0, p.spin, 0]} scale={p.scale}>
-              {p.kind === "tree" && <Tree variant="open" />}
-              {p.kind === "treeRound" && <Tree variant="round" />}
-              {p.kind === "treeSpire" && <Tree variant="spire" />}
-              {p.kind === "treeBlossom" && <Tree variant="blossom" />}
-              {p.kind === "shrub" && <Shrub />}
-              {p.kind === "lamp" && <Lamp />}
-              {p.kind === "bench" && <Bench />}
+          {props[v].map((list, seg) => (
+            <group
+              key={seg}
+              ref={(node) => {
+                segments.current[vi * SEGMENTS + seg] = node;
+              }}
+            >
+              {list.map((p, i) => {
+                const Body = PROP_BODY[p.kind];
+                return (
+                  <group key={i} position={[p.x, 0, p.z]} rotation={[0, p.spin, 0]} scale={p.scale}>
+                    <Body />
+                  </group>
+                );
+              })}
             </group>
           ))}
         </group>

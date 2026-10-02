@@ -15,10 +15,11 @@
  * expensive thing this screen could do. See `components/RunnerUI.tsx`.
  */
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { JUMP_APEX, SLIDE, laneX } from "@shared/runner";
+import type { VenueId } from "@shared/runner";
 import type { UiLocale } from "@shared/locales";
 import type { Currency } from "@shared/types";
 import { RunEngine, type RunState } from "./engine/RunEngine";
@@ -29,10 +30,12 @@ import { Obstacles } from "./entities/Obstacles";
 import { FloatingMoney } from "./entities/FloatingMoney";
 import { Particles } from "./entities/Particles";
 import { PlayerAura, PowerUps } from "./entities/PowerUps";
+import { ForkContext } from "./entities/ForkSign";
 import { RunnerModel, type RigInput } from "./entities/RunnerModel";
 import { PALETTE } from "./constants/palette";
 import { expenseFor, runMoney } from "./utils/format";
 import { weddlyLogoTexture } from "./utils/textures";
+import { bendAt, bendMaterial, bendUniforms } from "./utils/worldBend";
 
 export interface RunnerSceneProps {
   engine: RunEngine;
@@ -44,10 +47,12 @@ export interface RunnerSceneProps {
    *  over the five shipped locales — a bare `string` here is how a
    *  `UiLocale`-typed function ends up being handed a widened argument. */
   locale: UiLocale;
+  /** Translated venue names for the fork signposts. */
+  venueNames: Readonly<Record<VenueId, string>>;
 }
 
 /** The scene, mounted inside the page's `<Canvas>`. */
-export function RunnerScene({ engine, currency, locale }: RunnerSceneProps) {
+export function RunnerScene({ engine, currency, locale, venueNames }: RunnerSceneProps) {
   // Narrow read closures, so nothing below can reach into the engine and mutate
   // it by accident. The engine is handed in once, here, and from this point on
   // the view treats it as read-only.
@@ -57,6 +62,7 @@ export function RunnerScene({ engine, currency, locale }: RunnerSceneProps) {
   const readBags = useCallback(() => engine.bags, [engine]);
   const readPowerUps = useCallback(() => engine.powerups, [engine]);
   const readDistance = useCallback(() => engine.state.distance, [engine]);
+  const readVenue = useCallback(() => engine.state.venue, [engine]);
   const drainSparks = useCallback(() => engine.drainSparks(), [engine]);
   const drainFloats = useCallback(() => engine.drainFloats(), [engine]);
   const readClock = useCallback(() => engine.clock, [engine]);
@@ -80,10 +86,15 @@ export function RunnerScene({ engine, currency, locale }: RunnerSceneProps) {
 
   const mark = useMemo(() => weddlyLogoTexture(), []);
 
+  const fork = useMemo(
+    () => ({ read: () => engine.state.fork, names: venueNames }),
+    [engine, venueNames],
+  );
+
   return (
-    <>
+    <ForkContext.Provider value={fork}>
       <Lights />
-      <Environment distance={readDistance} />
+      <Environment distance={readDistance} venue={readVenue} />
       <PlayerRig engine={engine} />
       <Obstacles read={readObstacles} expenseLabel={expenseLabel} />
       <Collectibles readCash={readCash} readBags={readBags} mark={mark} />
@@ -93,7 +104,8 @@ export function RunnerScene({ engine, currency, locale }: RunnerSceneProps) {
       <Particles drain={drainSparks} />
       <FloatingMoney drain={drainFloats} readClock={readClock} format={formatFloat} />
       <CameraRig readState={readState} />
-    </>
+      <WorldBend readDistance={readDistance} />
+    </ForkContext.Provider>
   );
 }
 
@@ -176,22 +188,36 @@ function ContactShadow({ readState }: { readState: () => RunState }) {
   );
 }
 
-/** The canvas. The page owns nothing inside it. */
-export function RunnerCanvas({ engine, currency, locale }: RunnerSceneProps) {
-  return (
-    <Canvas
-      dpr={[1, 2]}
-      // A camera specified up front so the FIRST frame is already the shot the
-      // rig takes over on frame one: no establishing wide shot, no jump-cut on
-      // mount.
-      camera={{ position: [0, 3.1, 6.4], fov: 62, near: 0.1, far: 260 }}
-      gl={{ antialias: true, powerPreference: "high-performance" }}
-    >
-      <Suspense fallback={null}>
-        <RunnerScene engine={engine} currency={currency} locale={locale} />
-      </Suspense>
-    </Canvas>
-  );
+/**
+ * Drives the bent world (see `utils/worldBend.ts`): eases the curve toward the
+ * one the current distance asks for, and patches any material that has appeared
+ * since the last sweep. The sweep runs a few times a second rather than every
+ * frame, because new materials only arrive when a prop first mounts.
+ */
+function WorldBend({ readDistance }: { readDistance: () => number }) {
+  const { scene } = useThree();
+  const sweep = useRef(0);
+  useFrame((_, dt) => {
+    sweep.current -= dt;
+    if (sweep.current <= 0) {
+      sweep.current = 0.25;
+      scene.traverse((node) => {
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of list) {
+          // Unfogged materials are the sky (dome, sun, clouds): it stays put.
+          if (!m || (m as THREE.MeshBasicMaterial).fog === false) continue;
+          bendMaterial(m);
+        }
+      });
+    }
+    const target = bendAt(readDistance());
+    const k = 1 - Math.exp(-dt / 0.6);
+    bendUniforms.uBendX.value += (target.x - bendUniforms.uBendX.value) * k;
+    bendUniforms.uBendY.value += (target.y - bendUniforms.uBendY.value) * k;
+  });
+  return null;
 }
 
 /**

@@ -83,6 +83,14 @@ export function CameraRig({ readState }: CameraRigProps) {
 
     camera.position.set(cur.x + jx, cur.y + jy, cur.z);
     camera.lookAt(cur.x * 0.4, cur.look, -6);
+    // The turn into a venue: the shot starts swung toward the side the road
+    // turned to and settles back onto the new road, so a fork reads as a real
+    // corner even though the simulation never left its straight line.
+    if (s.turnT > 0) {
+      const ease = s.turnT * s.turnT * (3 - 2 * s.turnT);
+      camera.rotation.y += s.turnDir * -0.95 * ease;
+      camera.rotation.z += s.turnDir * 0.12 * ease;
+    }
 
     // A little roll into the shake, so a hit is felt in the frame's GEOMETRY and
     // not only in its position.

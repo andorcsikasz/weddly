@@ -5238,6 +5238,18 @@ export interface LocaleMessages {
     power_boost_body: string;
     power_board: string;
     power_board_body: string;
+    /** Venues the road forks into, and the fork / arrival copy. */
+    venue_garden: string;
+    venue_castle: string;
+    venue_vineyard: string;
+    venue_lakeside: string;
+    venue_barn: string;
+    fork_prompt: string;
+    venue_arrived: string;
+    /** First-runs coaching: the move the next obstacle asks for. */
+    tip_jump: string;
+    tip_slide: string;
+    tip_lane: string;
   };
   /** Live wedding quiz game — /app/games/quiz (list + builder),
    *  /app/games/quiz/:id/host (the host console), and /play/:code (the

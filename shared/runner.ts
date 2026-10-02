@@ -119,7 +119,10 @@ export type ObstacleId =
   | "luggage_cart"
   | "ring_box"
   | "nail_polish"
-  | "invitation_stack";
+  | "invitation_stack"
+  // The fork signpost in the centre lane at a venue junction. Its own
+  // component draws it (with the two venue names), not the prop table.
+  | "fork_sign";
 
 /**
  * The obstacle catalogue. Collision boxes are authored against
@@ -375,6 +378,15 @@ export const OBSTACLES: Readonly<Record<ObstacleId, ObstacleSpec>> = {
     footprint: 0.68,
     weight: 0.9,
   },
+  fork_sign: {
+    id: "fork_sign",
+    gate: "lane",
+    half: { x: 0.5, y: 1.4, z: 0.2 },
+    base: 0,
+    footprint: 1,
+    // Never drawn by the row picker: weight 0 and placed only by a fork.
+    weight: 0,
+  },
   invitation_stack: {
     id: "invitation_stack",
     gate: "jump",
@@ -400,6 +412,7 @@ export interface ObstacleCost {
 }
 
 export const OBSTACLE_COST: Readonly<Record<ObstacleId, ObstacleCost>> = {
+  fork_sign: { category: "venue", share: 0.25 },
   photographer: { category: "photography", share: 0.08 },
   videographer: { category: "videography", share: 0.06 },
   dj_booth: { category: "dj", share: 0.04 },
@@ -463,6 +476,38 @@ export function hitCost(id: ObstacleId, currency: Currency, budget: number | nul
   return niceAmount(Math.min(flat * 3, Math.max(flat * 0.25, raw)));
 }
 
+/* ── Venues and forks ────────────────────────────────────────────────────── */
+
+/**
+ * The places the road can turn into. The run starts in the garden; every
+ * `JUNCTION_EVERY` metres the road forks in front of a signpost naming two
+ * other venues, and the lane the runner is in when the fork arrives decides
+ * which one the road turns into (left lane: the left sign, right lane: the
+ * right sign). The centre lane is the signpost itself: hit it and you pay the
+ * venue's deposit and the road picks for you.
+ *
+ * The simulation stays one straight track: a venue is a THEME (what lines the
+ * road) and the turn is a camera move, so a fork can never strand a lane or
+ * break the difficulty curve.
+ */
+export type VenueId = "garden" | "castle" | "vineyard" | "lakeside" | "barn";
+export const VENUE_IDS: readonly VenueId[] = ["garden", "castle", "vineyard", "lakeside", "barn"];
+
+/** First fork, then one every this many metres. */
+export const JUNCTION_FIRST = 380;
+export const JUNCTION_EVERY = 520;
+/** Clear track after a fork, so the turn never lands the runner on a wall. */
+export const JUNCTION_CLEAR = 34;
+
+/** The two venues a fork offers: never the one the runner is already in. */
+export function pickForkVenues(rng: Rng, current: VenueId): [VenueId, VenueId] {
+  const pool = VENUE_IDS.filter((v) => v !== current);
+  const a = pool[Math.floor(rng() * pool.length)] ?? "castle";
+  const rest = pool.filter((v) => v !== a);
+  const b = rest[Math.floor(rng() * rest.length)] ?? "vineyard";
+  return [a, b];
+}
+
 /** Every obstacle id, in catalogue order. */
 export const OBSTACLE_IDS = Object.keys(OBSTACLES) as readonly ObstacleId[];
 
@@ -473,7 +518,9 @@ const JUMP_IDS = OBSTACLE_IDS.filter((id) => OBSTACLES[id].gate === "jump");
 /** `slide`-gated ids. */
 const SLIDE_IDS = OBSTACLE_IDS.filter((id) => OBSTACLES[id].gate === "slide");
 /** `lane`-gated ids — full-height, so only a lane change threads them. */
-const LANE_IDS = OBSTACLE_IDS.filter((id) => OBSTACLES[id].gate === "lane");
+const LANE_IDS = OBSTACLE_IDS.filter(
+  (id) => OBSTACLES[id].gate === "lane" && OBSTACLES[id].weight > 0,
+);
 
 export const OBSTACLES_BY_GATE = {
   jump: JUMP_IDS,

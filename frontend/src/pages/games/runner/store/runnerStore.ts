@@ -74,6 +74,10 @@ export interface RunnerHud {
   fly: number;
   boost: number;
   board: number;
+  venue: RunState["venue"];
+  fork: RunState["fork"];
+  lane: RunState["lane"];
+  hint: RunState["hint"];
   /** What the guests gave (cash and totes, multiplier applied) and what the
    *  vendors billed. Profit is exactly the first minus the second. */
   gross: number;
@@ -105,6 +109,8 @@ export interface RunnerStore extends RunnerHud {
   /** How the player plays. Decided by what the device reports; the HUD's control
    *  hints read this rather than running their own media query. */
   touch: boolean;
+  /** Finished runs on this device: the coaching tips stop after a few. */
+  runsPlayed: number;
 
   setReady: (currency: Currency, touch: boolean) => void;
   /** Called from `onTick`. Recomputes the whole snapshot. */
@@ -117,6 +123,24 @@ export interface RunnerStore extends RunnerHud {
 }
 
 const BEST_KEY = "weddly.runner.best";
+const RUNS_KEY = "weddly.runner.runs";
+
+function readRuns(): number {
+  try {
+    const n = Number(localStorage.getItem(RUNS_KEY) ?? "0");
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeRuns(n: number) {
+  try {
+    localStorage.setItem(RUNS_KEY, String(n));
+  } catch {
+    /* best effort */
+  }
+}
 const CHARACTER_KEY = "weddly.runner.character";
 
 /** The remembered character. A corrupt or absent value falls back to the bride
@@ -181,6 +205,10 @@ export type HudCounters = Pick<
       | "fly"
       | "boost"
       | "board"
+      | "venue"
+      | "fork"
+      | "lane"
+      | "hint"
     >
   >;
 
@@ -232,6 +260,10 @@ export function deriveHud(
     fly: Math.min(1, (state.fly ?? 0) / POWERUP_SECONDS.fly),
     boost: Math.min(1, (state.boost ?? 0) / POWERUP_SECONDS.boost),
     board: Math.min(1, (state.board ?? 0) / POWERUP_SECONDS.board),
+    venue: state.venue ?? "garden",
+    fork: state.fork ? { ...state.fork } : null,
+    lane: state.lane ?? 1,
+    hint: state.hint ?? null,
     expenses: expensesFor({ hits: state.hits, currency, expenses: state.expenses }),
     gross: grossCollected(
       { cash: state.cash, bags: state.bags, hits: state.hits, currency },
@@ -271,6 +303,10 @@ const BLANK: RunnerHud = {
   fly: 0,
   boost: 0,
   board: 0,
+  venue: "garden",
+  fork: null,
+  lane: 1,
+  hint: null,
   gross: 0,
   expenses: 0,
 };
@@ -315,8 +351,17 @@ export const useRunnerStore = createStore<RunnerStore>((set, get) => ({
   touch: false,
   character: "bride",
 
+  runsPlayed: 0,
+
   setReady: (currency, touch) =>
-    set({ currency, ready: true, touch, best: readBest(currency), character: readCharacter() }),
+    set({
+      currency,
+      ready: true,
+      touch,
+      best: readBest(currency),
+      character: readCharacter(),
+      runsPlayed: readRuns(),
+    }),
 
   setCharacter: (character) => {
     // Mirrored straight into localStorage rather than through the engine alone:
@@ -333,6 +378,8 @@ export const useRunnerStore = createStore<RunnerStore>((set, get) => ({
   tick: (state, extra, currency) => set(deriveHud(state, currency, extra.milestonePulse)),
 
   finish: (summary) => {
+    const runsPlayed = get().runsPlayed + 1;
+    writeRuns(runsPlayed);
     const previous = get().best;
     const isBest = previous === null || summary.profit > previous;
     // Bank it the moment the run ends, not when the card is dismissed: closing
@@ -340,6 +387,7 @@ export const useRunnerStore = createStore<RunnerStore>((set, get) => ({
     if (isBest) writeBest(summary.currency, summary.profit);
     set({
       summary,
+      runsPlayed,
       best: isBest ? summary.profit : previous,
       firstRun: previous === null,
       // The SAME derivation as the live tick. A finished run has no hearts left
@@ -370,6 +418,7 @@ export const useRunnerStore = createStore<RunnerStore>((set, get) => ({
       touch: get().touch,
       character: get().character,
       ready: true,
+      runsPlayed: get().runsPlayed,
       summary: null,
       firstRun: false,
     }),

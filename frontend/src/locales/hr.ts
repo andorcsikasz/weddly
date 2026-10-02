@@ -4480,6 +4480,16 @@ const hr: LocaleMessages = {
     power_boost_body: "Neko vrijeme skačeš puno više.",
     power_board: "Skateboard",
     power_board_body: "Vozi ga neko vrijeme; prima jedan udarac umjesto tebe.",
+    venue_garden: "Vrt",
+    venue_castle: "Dvorac",
+    venue_vineyard: "Vinograd",
+    venue_lakeside: "Uz jezero",
+    venue_barn: "Štala",
+    fork_prompt: "Odaberi mjesto",
+    venue_arrived: "Novo mjesto",
+    tip_jump: "Skoči!",
+    tip_slide: "Provuci se ispod!",
+    tip_lane: "Promijeni traku!",
   },
   quiz: {
     list: {

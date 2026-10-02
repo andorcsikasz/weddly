@@ -34,6 +34,10 @@ import {
   ROW_GAP_TIGHT,
   BOOST_JUMP,
   FLY_HEIGHT,
+  JUNCTION_CLEAR,
+  JUNCTION_EVERY,
+  JUNCTION_FIRST,
+  pickForkVenues,
   SKY_COIN_SPACING,
   STREAK_WINDOW,
   giftEnvelopeValue,
@@ -78,6 +82,7 @@ import type {
   PowerUpId,
   RowLayout,
   Rng,
+  VenueId,
   Verdict,
 } from "@shared/runner";
 import type { Currency } from "@shared/types";
@@ -205,6 +210,7 @@ export type RunEvent =
   | { type: "gift"; outcome: GiftOutcome }
   | { type: "liftoff" }
   | { type: "board_break" }
+  | { type: "turn"; dir: -1 | 1; venue: VenueId }
   | { type: "trick" }
   | { type: "shield_break" }
   | { type: "streak"; count: number; value: number }
@@ -316,6 +322,16 @@ export interface RunState {
   board: number;
   /** 0 → 1 over a jump taken on the board: the rig spins the deck through it. */
   trick: number;
+  /** The venue the road is running through now. */
+  venue: VenueId;
+  /** The fork ahead, if one is on the track: its two venues and how far. */
+  fork: { left: VenueId; right: VenueId; ahead: number } | null;
+  /** 1 → 0 just after a turn, and which way it went: drives the camera whip. */
+  turnT: number;
+  turnDir: -1 | 1;
+  /** What the next obstacle in the runner's own lane asks for, if one is close:
+   *  the first-run coaching reads it. Null when the lane ahead is clear. */
+  hint: "jump" | "slide" | "lane" | null;
   /** Seconds of the 3-2-1 left before the track starts moving. */
   countdown: number;
   /** The bill so far: each hit priced by its vendor against the couple's budget. */
@@ -353,6 +369,10 @@ export class RunEngine {
   /** Last whole second of the countdown announced, so each number fires once. */
   private lastCount = 0;
   private giftCount = 0;
+  /** The fork travelling toward the runner: its z and the two venues. */
+  private junction: { z: number; left: VenueId; right: VenueId } | null = null;
+  /** Run distance at which the next fork is laid. */
+  private nextJunctionAt = JUNCTION_FIRST;
   /** Metres of travel until the next sky coin is laid during a flight. */
   private skyCursor = 0;
   private key = 1;
@@ -429,6 +449,11 @@ export class RunEngine {
       boost: 0,
       board: 0,
       trick: 0,
+      venue: "garden",
+      fork: null,
+      turnT: 0,
+      turnDir: 1,
+      hint: null,
     };
     for (let i = 0; i < OBSTACLE_POOL; i++) {
       this.obstacles.push({
@@ -495,6 +520,12 @@ export class RunEngine {
     s.boost = 0;
     s.board = 0;
     s.trick = 0;
+    s.venue = "garden";
+    s.fork = null;
+    s.turnT = 0;
+    s.hint = null;
+    this.junction = null;
+    this.nextJunctionAt = JUNCTION_FIRST;
     this.giftCount = 0;
     this.skyCursor = 0;
     this.lastCount = Math.ceil(countdown);
@@ -756,6 +787,7 @@ export class RunEngine {
     this.spawnCursor -= travel;
     this.spawn();
     this.skyTrail(travel);
+    this.advanceJunction(travel, dt);
     for (const o of this.obstacles) {
       if (!o.active) continue;
       if (o.charge && !o.charging && -o.z < CHARGE_TRIGGER) {
@@ -795,6 +827,7 @@ export class RunEngine {
 
     /* Contacts. */
     this.collide();
+    this.updateHint();
   }
 
   /* ── Track generation ───────────────────────────────────────────────── */
@@ -805,6 +838,12 @@ export class RunEngine {
     // player. The cursor is metres-ahead and the window is metres too, so this
     // test is exact and needs no per-row position bookkeeping.
     while (this.spawnCursor <= SPAWN_AHEAD) {
+      if (!this.junction && s.distance + this.spawnCursor >= this.nextJunctionAt) {
+        this.placeFork(this.spawnCursor);
+        this.spawnCursor += JUNCTION_CLEAR;
+        this.nextJunctionAt += JUNCTION_EVERY;
+        continue;
+      }
       const template = pickRow(this.rng, s.distance);
       const layout = template.build(this.rng);
       this.placeRow(this.spawnCursor, layout);
@@ -872,6 +911,79 @@ export class RunEngine {
     if (height >= 1.05) return "envelope";
     if (height >= 0.6) return "bundle";
     return "coin";
+  }
+
+  /** A fork: the signpost in the centre lane and a line of coins down each
+   *  side, so the two answers are drawn on the track before they are asked. */
+  private placeFork(spawn: number) {
+    const s = this.state;
+    const [left, right] = pickForkVenues(this.rng, s.venue);
+    const sign = this.freeObstacle();
+    if (sign) {
+      sign.id = "fork_sign";
+      sign.lane = 1;
+      sign.x = 0;
+      sign.z = -spawn;
+      sign.spent = false;
+      sign.charge = false;
+      sign.charging = false;
+      sign.active = true;
+    }
+    for (const lane of [0, 2] as const) {
+      for (let i = 0; i < 6; i++) {
+        const c = this.freeCash();
+        if (!c) break;
+        c.tier = i === 5 ? "envelope" : "coin";
+        c.x = laneX(lane);
+        c.y = 0.85;
+        c.z = -spawn + 4 + i * 1.6;
+        c.active = true;
+      }
+    }
+    this.junction = { z: -spawn, left, right };
+  }
+
+  /** The nearest unspent obstacle in the runner's lane, inside the window a
+   *  tip is still useful (not so far it is noise, not so near it is too late). */
+  private updateHint() {
+    const s = this.state;
+    let best: ObstacleInstance | null = null;
+    for (const o of this.obstacles) {
+      if (!o.active || o.spent || o.lane !== s.lane) continue;
+      const ahead = -o.z;
+      if (ahead < 3 || ahead > 26) continue;
+      if (!best || o.z > best.z) best = o;
+    }
+    s.hint = best ? OBSTACLES[best.id].gate : null;
+  }
+
+  /** Move the pending fork; when it reaches the runner, turn. */
+  private advanceJunction(travel: number, dt: number) {
+    const s = this.state;
+    if (s.turnT > 0) s.turnT = Math.max(0, s.turnT - dt * 1.5);
+    const j = this.junction;
+    if (!j) {
+      s.fork = null;
+      return;
+    }
+    j.z += travel;
+    if (j.z < 0) {
+      if (s.fork && s.fork.left === j.left) s.fork.ahead = -j.z;
+      else s.fork = { left: j.left, right: j.right, ahead: -j.z };
+      return;
+    }
+    // The lane decides; the centre is the signpost, and the road picks.
+    const dir: -1 | 1 = s.lane === 0 ? -1 : s.lane === 2 ? 1 : this.rng() < 0.5 ? -1 : 1;
+    const venue = dir < 0 ? j.left : j.right;
+    s.venue = venue;
+    s.turnDir = dir;
+    s.turnT = 1;
+    s.fork = null;
+    this.junction = null;
+    // The signpost belongs to the road we just left: take it away now, or it
+    // sweeps across the lens during the camera's turn.
+    for (const o of this.obstacles) if (o.active && o.id === "fork_sign") o.active = false;
+    this.events.push({ type: "turn", dir, venue });
   }
 
   /** During a flight, lay a weaving trail of coins at cruising height far

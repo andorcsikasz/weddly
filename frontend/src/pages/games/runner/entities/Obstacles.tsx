@@ -37,6 +37,7 @@ import {
   SpeakerStack,
   TailorMannequin,
 } from "./VendorProps";
+import { ForkSign } from "./ForkSign";
 
 /** One prop's collision volume, flattened the same way the engine does it, so a
  *  mesh cannot be drawn somewhere the engine does not test. */
@@ -769,4 +770,5 @@ const PROPS: Readonly<Record<ObstacleId, ComponentType | null>> = {
   ring_box: RingBox,
   nail_polish: NailPolish,
   invitation_stack: InvitationStack,
+  fork_sign: ForkSign,
 };

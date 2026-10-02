@@ -4532,6 +4532,16 @@ const es: LocaleMessages = {
     power_boost_body: "Saltas mucho más alto durante un rato.",
     power_board: "Monopatín",
     power_board_body: "Llévalo un rato; recibe un golpe por ti.",
+    venue_garden: "Jardín",
+    venue_castle: "Castillo",
+    venue_vineyard: "Viñedo",
+    venue_lakeside: "Junto al lago",
+    venue_barn: "Granero",
+    fork_prompt: "Elige tu lugar",
+    venue_arrived: "Nuevo lugar",
+    tip_jump: "¡Salta!",
+    tip_slide: "¡Deslízate!",
+    tip_lane: "¡Cambia de carril!",
   },
   quiz: {
     list: {

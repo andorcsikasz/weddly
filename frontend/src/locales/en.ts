@@ -4450,6 +4450,16 @@ const en: LocaleMessages = {
     power_boost_body: "Jump much higher for a while.",
     power_board: "Skateboard",
     power_board_body: "Ride it for a while; it takes one hit for you.",
+    venue_garden: "Garden",
+    venue_castle: "Castle",
+    venue_vineyard: "Vineyard",
+    venue_lakeside: "Lakeside",
+    venue_barn: "Barn",
+    fork_prompt: "Pick your venue",
+    venue_arrived: "New venue",
+    tip_jump: "Jump!",
+    tip_slide: "Slide under!",
+    tip_lane: "Change lane!",
   },
   quiz: {
     list: {

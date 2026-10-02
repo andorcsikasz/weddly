@@ -37,6 +37,7 @@ import { useRunnerStore } from "./store/runnerStore";
 import { coupleApi } from "@/lib/endpoints";
 import { useT } from "@/lib/i18n";
 import type { BudgetGoal, Currency } from "@shared/types";
+import { VENUE_IDS, type VenueId } from "@shared/runner";
 import "./runner.css";
 
 /** The five things a player can ask for. Every input device below maps onto this
@@ -90,7 +91,15 @@ function Loop({ engine }: { engine: RunEngine }) {
 }
 
 export default function RunnerGamePage() {
-  const { locale } = useT();
+  const { locale, t } = useT();
+  const venueNames = useMemo(
+    () =>
+      Object.fromEntries(VENUE_IDS.map((v) => [v, t(`runner.venue_${v}`)])) as Record<
+        VenueId,
+        string
+      >,
+    [t],
+  );
   const setReady = useRunnerStore((s) => s.setReady);
   const tick = useRunnerStore((s) => s.tick);
   const finish = useRunnerStore((s) => s.finish);
@@ -219,6 +228,9 @@ export default function RunnerGamePage() {
     sync();
   }, [audio, engine, resetHud, sync]);
 
+  const startRef = useRef(start);
+  startRef.current = start;
+
   const pause = useCallback(() => {
     engine.pause();
     sync();
@@ -263,6 +275,13 @@ export default function RunnerGamePage() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Straight back into a run from the verdict card: R (or Enter, which the
+      // focused button already handles).
+      if (e.code === "KeyR" && engine.state.phase === "over") {
+        e.preventDefault();
+        startRef.current();
+        return;
+      }
       const intent = KEY_INTENTS[e.code];
       if (!intent) return;
       // Off the track, a focused Start / Run again button must keep Space as its
@@ -321,7 +340,12 @@ export default function RunnerGamePage() {
           gl={{ antialias: true, powerPreference: "high-performance" }}
         >
           <Loop engine={engine} />
-          <RunnerScene engine={engine} currency={currency.current} locale={locale} />
+          <RunnerScene
+            engine={engine}
+            currency={currency.current}
+            locale={locale}
+            venueNames={venueNames}
+          />
         </Canvas>
       ) : null}
       <RunnerUI

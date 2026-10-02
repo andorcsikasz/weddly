@@ -182,6 +182,9 @@ export const M = {
   /** Satin: the sash, the bow and the groom's trouser stripe catch the light. */
   satin: () => mat("satin", PALETTE.blush300, { roughness: 0.3, metalness: 0.15 }),
   satinInk: () => mat("satinInk", PALETTE.ink700, { roughness: 0.25, metalness: 0.2 }),
+  barnRed: () => mat("barnRed", PALETTE.barnRed, { roughness: 0.85, flatShading: true }),
+  barnRoof: () => mat("barnRoof", PALETTE.barnRoof, { roughness: 0.9, flatShading: true }),
+  hay: () => mat("hay", PALETTE.hay, { roughness: 1, flatShading: true }),
   /** Velvet: the ring box and the polish. Deep blush, fully matte. */
   blushVelvet: () => mat("blushVelvet", PALETTE.blush600, { roughness: 1 }),
   magnet: () => mat("magnet", PALETTE.magnet, { roughness: 0.35, emissive: PALETTE.magnet }),

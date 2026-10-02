@@ -67,6 +67,18 @@ export const PALETTE = {
   gold: "#f0c66b",
   goldDeep: "#c9992f",
   champagne: "#f7e3b8",
+  /** Venue scenery, and how each venue tints the lawn and the path. */
+  barnRed: "#b2412f",
+  barnRoof: "#5b3a2a",
+  hay: "#e4c062",
+  water: "#4fa6d8",
+  venueCastleLawn: "#d6e6cc",
+  venueCastlePath: "#c9c6c0",
+  venueVineyardLawn: "#eadc98",
+  venueVineyardPath: "#e8cfa6",
+  venueLakeLawn: "#cdeedd",
+  venueBarnLawn: "#e9d79b",
+  venueBarnPath: "#d6b083",
   /** Golden-hour light: the sky fill and the low warm sun. */
   hemiSky: "#bfe0ff",
   sunLight: "#ffdcae",

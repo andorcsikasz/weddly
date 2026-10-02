@@ -18,7 +18,11 @@
 
 import {
   AlertTriangle,
+  ArrowDown,
   ArrowLeft,
+  ArrowLeftRight,
+  ArrowRight,
+  ArrowUp,
   Cloud,
   Footprints,
   Gift,
@@ -382,6 +386,11 @@ function Hud(props: { muted: boolean; onToggleMute: () => void; onPause: () => v
   const boost = useRunnerStore((s) => s.boost);
   const board = useRunnerStore((s) => s.board);
   const lastGift = useRunnerStore((s) => s.lastGift);
+  const venue = useRunnerStore((s) => s.venue);
+  const fork = useRunnerStore((s) => s.fork);
+  const lane = useRunnerStore((s) => s.lane);
+  const hint = useRunnerStore((s) => s.hint);
+  const runsPlayed = useRunnerStore((s) => s.runsPlayed);
   const countdown = useRunnerStore((s) => s.countdown);
   const lastHit = useRunnerStore((s) => s.lastHit);
   const speedT = useRunnerStore((s) => s.speedT);
@@ -407,14 +416,14 @@ function Hud(props: { muted: boolean; onToggleMute: () => void; onPause: () => v
           <div className="rn-stat rn-stat--lead">
             <span className="rn-stat-label">{t("runner.profit_label")}</span>
             <span
-              key={profitKey}
+              key={`profit-${profitKey}`}
               className={`rn-stat-value${profitKey > 0 ? " rn-bump" : ""}${profit < 0 ? " rn-negative" : ""}`}
             >
               <Money amount={profit} currency={currency} />
             </span>
             {gain ? (
               <span
-                key={gain.key}
+                key={`gain-${gain.key}`}
                 className={`rn-gain${gain.amount < 0 ? " rn-gain--loss" : ""}`}
                 aria-hidden
               >
@@ -469,6 +478,38 @@ function Hud(props: { muted: boolean; onToggleMute: () => void; onPause: () => v
         </div>
       </div>
 
+      {fork && fork.ahead < 75 ? (
+        <div className="rn-fork" aria-live="polite">
+          <span className="rn-fork-title">{t("runner.fork_prompt")}</span>
+          <div className="rn-fork-row">
+            <span className={`rn-fork-pick${lane === 0 ? " rn-fork-pick--on" : ""}`}>
+              <ArrowLeft size={16} strokeWidth={2.25} aria-hidden />
+              {t(`runner.venue_${fork.left}`)}
+            </span>
+            <span className={`rn-fork-pick${lane === 2 ? " rn-fork-pick--on" : ""}`}>
+              {t(`runner.venue_${fork.right}`)}
+              <ArrowRight size={16} strokeWidth={2.25} aria-hidden />
+            </span>
+          </div>
+        </div>
+      ) : null}
+      <VenueBanner venue={venue} />
+      {/* Coaching for the first few runs only: the move the next obstacle in
+          your lane asks for, as it comes into reach. */}
+      {runsPlayed < 3 && hint && countdown === 0 ? (
+        <div className="rn-tip-wrap" aria-live="polite">
+          <span key={hint} className={`rn-tip rn-tip--${hint}`}>
+            {hint === "jump" ? (
+              <ArrowUp size={22} strokeWidth={2.5} aria-hidden />
+            ) : hint === "slide" ? (
+              <ArrowDown size={22} strokeWidth={2.5} aria-hidden />
+            ) : (
+              <ArrowLeftRight size={22} strokeWidth={2.5} aria-hidden />
+            )}
+            {t(`runner.tip_${hint}`)}
+          </span>
+        </div>
+      ) : null}
       <HitToast hit={lastHit} currency={currency} />
       <GiftToast gift={lastGift} currency={currency} />
 
@@ -565,6 +606,34 @@ function GiftToast({ gift, currency }: { gift: RunnerHud["lastGift"]; currency: 
         ) : null}
       </div>
     </div>
+  );
+}
+
+/** "New venue: Castle" for a beat after the road turns, with a white sweep
+ *  across the screen that sells the corner. Seeded with the current venue so a
+ *  resume does not replay it. */
+function VenueBanner({ venue }: { venue: RunnerHud["venue"] }) {
+  const { t } = useT();
+  const prev = useRef(venue);
+  const [shown, setShown] = useState<{ venue: RunnerHud["venue"]; key: number } | null>(null);
+  useEffect(() => {
+    if (venue === prev.current) return;
+    prev.current = venue;
+    setShown((s) => ({ venue, key: (s?.key ?? 0) + 1 }));
+    const id = window.setTimeout(() => setShown(null), 2000);
+    return () => window.clearTimeout(id);
+  }, [venue]);
+  if (!shown) return null;
+  return (
+    <>
+      <div key={`sweep-${shown.key}`} className="rn-sweep" aria-hidden />
+      <div className="rn-center rn-center--high" aria-live="polite">
+        <span key={shown.key} className="rn-venue">
+          <span className="rn-venue-kicker">{t("runner.venue_arrived")}</span>
+          <span className="rn-venue-name">{t(`runner.venue_${shown.venue}`)}</span>
+        </span>
+      </div>
+    </>
   );
 }
 
@@ -741,6 +810,7 @@ function GameOver({ onStart }: { onStart: () => void }) {
         >
           <RotateCcw size={16} strokeWidth={1.75} aria-hidden />
           {t("runner.run_again")}
+          <kbd className="rn-btn-kbd">R</kbd>
         </button>
         {/* "Back to games" is a LINK, not a quit-to-menu: the key says games, and
          *  the hub is also how the couple leaves the route. */}
