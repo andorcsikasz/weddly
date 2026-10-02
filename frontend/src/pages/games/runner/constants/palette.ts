@@ -84,13 +84,14 @@ export const PALETTE = {
   sunLight: "#ffdcae",
   cloud: "#ffffff",
   cloudWarm: "#fff6ea",
+  iris: "#5a3b26",
   /** The rig's skin and hair, with the sheen tint each one catches. */
   skinTone: "#eab996",
   skinToneDeep: "#d59a74",
   skinSheen: "#ffcfb5",
   hairSheen: "#a07a55",
-  hairLight: "#a5733f",
-  hairLightSheen: "#f0c890",
+  hairLight: "#9a7048",
+  hairLightSheen: "#e8c99a",
   /** Pickups: a bright yellow coin and a vivid green banknote. */
   coin: "#ffd21a",
   coinDeep: "#f2a900",

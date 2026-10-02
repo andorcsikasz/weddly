@@ -44,6 +44,7 @@ import {
   listBoardsForCouple,
   parseBoardTitle,
   parseClosesAt,
+  parseOpeningProbability,
   parseQuestionPrompt,
   resolveQuestion,
   startBoard,
@@ -223,14 +224,15 @@ async function handleCreateQuestion(ctx: Ctx): Promise<Response> {
   const body = await readJson<Record<string, unknown>>(ctx.req);
   const prompt = parseQuestionPrompt(body.prompt);
   const closesAt = parseClosesAt(body.closesAt);
-  const question = createQuestion(board.id, { prompt, closesAt });
+  const openingProbability = parseOpeningProbability(body.openingProbability);
+  const question = createQuestion(board.id, { prompt, closesAt, openingProbability });
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
     action: "markets.question.create",
     target_kind: "market_question",
     target_id: question.id,
-    after: { prompt, closesAt },
+    after: { prompt, closesAt, openingProbability },
   });
   return json({ board: toMarketBoardDetail(board) }, { status: 201 });
 }

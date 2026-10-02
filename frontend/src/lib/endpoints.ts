@@ -4771,10 +4771,11 @@ export const marketsApi = {
   leaderboard: (id: number) =>
     apiFetch<{ leaderboard: MarketLeaderboardEntry[] }>("GET", `/api/markets/${id}/leaderboard`),
 
-  addQuestion: (id: number, prompt: string, closesAt: number) =>
+  addQuestion: (id: number, prompt: string, closesAt: number, openingProbability: number) =>
     apiFetch<{ board: MarketBoardDetail }>("POST", `/api/markets/${id}/questions`, {
       prompt,
       closesAt,
+      openingProbability,
     }),
   updateQuestion: (id: number, questionId: number, patch: { prompt?: string; closesAt?: number }) =>
     apiFetch<{ board: MarketBoardDetail }>(

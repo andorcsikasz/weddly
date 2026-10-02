@@ -15,7 +15,7 @@
 // Polymarket-flavoured probability bar + pool numbers rather than the plain
 // paper-app card list it used to be.
 
-import { trendSinceOpen } from "@shared/markets";
+import { MARKET_DEFAULT_OPENING, MARKET_OPENING_OPTIONS, trendSinceOpen } from "@shared/markets";
 import type { MarketBoardDetail, MarketLeaderboardEntry, MarketQuestion } from "@shared/markets";
 import type { UiLocale } from "@shared/locales";
 import {
@@ -228,6 +228,7 @@ export default function MarketsPage() {
 
   const [prompt, setPrompt] = useState("");
   const [closesAt, setClosesAt] = useState("");
+  const [opening, setOpening] = useState(MARKET_DEFAULT_OPENING);
   const [submitting, setSubmitting] = useState(false);
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
 
@@ -326,9 +327,10 @@ export default function MarketsPage() {
     if (!Number.isFinite(ms)) return;
     setSubmitting(true);
     try {
-      const res = await marketsApi.addQuestion(board.id, prompt.trim(), ms);
+      const res = await marketsApi.addQuestion(board.id, prompt.trim(), ms, opening);
       setBoard(res.board);
       setPrompt("");
+      setOpening(MARKET_DEFAULT_OPENING);
       setClosesAt(defaultClosesAt(weddingDate));
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("markets.save_error"));
@@ -551,6 +553,30 @@ export default function MarketsPage() {
                 className="gc-input"
                 value={closesAt}
                 onChange={(e) => setClosesAt(e.target.value)}
+              />
+            </div>
+            <div>
+              <div className="mb-1 flex items-baseline justify-between gap-3">
+                <label htmlFor="markets-opening" className="gc-label">
+                  {t("markets.opening_label")}
+                </label>
+                <span className="text-sm tabular-nums text-white/70">
+                  <span className="text-[#6ff0b7]">
+                    {t("markets.opening_yes", { pct: opening })}
+                  </span>
+                  {" · "}
+                  <span>{t("markets.opening_no", { pct: 100 - opening })}</span>
+                </span>
+              </div>
+              <input
+                id="markets-opening"
+                type="range"
+                className="w-full accent-[#45e39e]"
+                min={MARKET_OPENING_OPTIONS[0]}
+                max={MARKET_OPENING_OPTIONS[MARKET_OPENING_OPTIONS.length - 1]}
+                step={10}
+                value={opening}
+                onChange={(e) => setOpening(Number(e.target.value))}
               />
             </div>
             <button

@@ -8,10 +8,12 @@
 import { randomBytes } from "node:crypto";
 import {
   MARKET_JOIN_CODE_ALPHABET,
+  MARKET_DEFAULT_OPENING,
   MARKET_JOIN_CODE_LENGTH,
   MARKET_PROMPT_MAX,
   MARKET_STARTING_BALANCE,
   MARKET_TITLE_MAX,
+  isMarketOpening,
   marketProbability,
   marketQuestionStatus,
   settleMarketQuestion,
@@ -48,6 +50,7 @@ export interface MarketQuestionRow {
   board_id: number;
   prompt: string;
   closes_at: number;
+  opening_probability: number;
   outcome: MarketOutcome | null;
   resolved_at: number | null;
   voided_at: number | null;
@@ -112,11 +115,16 @@ export function questionPriceHistory(questionId: number): MarketPriceTick[] {
  *  a tick can never exist without the write that produced it or vice versa.
  *  See `MarketPriceTick` in shared/markets.ts for why this table exists at
  *  all instead of deriving history from market_positions. */
-export function recordPriceTick(questionId: number, pool: MarketPool, at: number): void {
+export function recordPriceTick(
+  questionId: number,
+  pool: MarketPool,
+  opening: number,
+  at: number,
+): void {
   db.prepare(
     `INSERT INTO market_price_ticks (question_id, probability, pool_yes, pool_no, at)
      VALUES (?, ?, ?, ?, ?)`,
-  ).run(questionId, marketProbability(pool), pool.yes, pool.no, at);
+  ).run(questionId, marketProbability(pool, opening), pool.yes, pool.no, at);
 }
 
 export function toMarketQuestion(row: MarketQuestionRow): MarketQuestion {
@@ -126,6 +134,7 @@ export function toMarketQuestion(row: MarketQuestionRow): MarketQuestion {
     boardId: row.board_id,
     prompt: row.prompt,
     closesAt: row.closes_at,
+    openingProbability: row.opening_probability,
     outcome: row.outcome,
     resolvedAt: row.resolved_at,
     voidedAt: row.voided_at,
@@ -136,7 +145,7 @@ export function toMarketQuestion(row: MarketQuestionRow): MarketQuestion {
       { closesAt: row.closes_at, outcome: row.outcome, voidedAt: row.voided_at },
       now(),
     ),
-    probability: marketProbability(pool),
+    probability: marketProbability(pool, row.opening_probability),
     priceHistory: questionPriceHistory(row.id),
   };
 }
@@ -197,6 +206,17 @@ export function parseClosesAt(raw: unknown): number {
     throw new HttpError(400, "closesAt must be a unix-ms integer");
   }
   if (raw <= now()) throw new HttpError(400, "closesAt must be in the future");
+  return raw;
+}
+
+/** Optional on the body: absent means the coin flip. Anything else must be
+ *  one of the offered steps, so a hand-rolled request can't open a question
+ *  at 0% or 100%. */
+export function parseOpeningProbability(raw: unknown): number {
+  if (raw === undefined || raw === null) return MARKET_DEFAULT_OPENING;
+  if (!isMarketOpening(raw)) {
+    throw new HttpError(400, "openingProbability must be one of 10, 20, ... 90");
+  }
   return raw;
 }
 
@@ -332,23 +352,32 @@ export function endBoard(board: MarketBoardRow): MarketBoardRow {
     .get(now(), board.id) as MarketBoardRow;
 }
 
-/** The initial tick (always 50/0/0, stamped at creation) is what guarantees
- *  a question's chart always starts flat at the coin-flip line — without it
- *  a question that opens strongly one-sided would chart as starting there,
- *  which isn't what happened; nobody had bet yet. */
+/** The initial tick (the opening line, pool 0/0, stamped at creation) is
+ *  what guarantees a question's chart always starts flat at the line the
+ *  couple set — without it the chart would begin wherever the first bet
+ *  moved it, which isn't what happened; nobody had bet yet. The opening is
+ *  fixed for the question's life: moving it after bets exist would reprice
+ *  every position guests already took. */
 export function createQuestion(
   boardId: number,
-  input: { prompt: string; closesAt: number },
+  input: { prompt: string; closesAt: number; openingProbability: number },
 ): MarketQuestionRow {
   const ts = now();
   const tx = db.transaction(() => {
     const row = db
       .prepare(
-        `INSERT INTO market_questions (board_id, prompt, closes_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?) RETURNING *`,
+        `INSERT INTO market_questions (board_id, prompt, closes_at, opening_probability, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?) RETURNING *`,
       )
-      .get(boardId, input.prompt, input.closesAt, ts, ts) as MarketQuestionRow;
-    recordPriceTick(row.id, { yes: 0, no: 0 }, ts);
+      .get(
+        boardId,
+        input.prompt,
+        input.closesAt,
+        input.openingProbability,
+        ts,
+        ts,
+      ) as MarketQuestionRow;
+    recordPriceTick(row.id, { yes: 0, no: 0 }, row.opening_probability, ts);
     return row;
   });
   return tx();

@@ -5388,6 +5388,9 @@ export interface LocaleMessages {
     prompt_label: string;
     prompt_placeholder: string;
     closes_label: string;
+    opening_label: string;
+    opening_yes: string;
+    opening_no: string;
     add_button: string;
     empty_title: string;
     empty_body: string;

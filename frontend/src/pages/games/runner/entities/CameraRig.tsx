@@ -58,6 +58,31 @@ export function CameraRig({ readState }: CameraRigProps) {
     const cur = p.current;
     const t = speedFraction(s.cruiseSpeed);
 
+    // THE MENU IS A SHOWCASE. In play the camera only ever sees the runner's
+    // back, so the menu swings round to the FRONT and slowly sways, framing the
+    // character on the left so the menu card does not cover them. The rig
+    // faces -z, so "in front" is negative z.
+    if (s.phase === "menu") {
+      const sway = Math.sin(performance.now() / 2600) * 0.45;
+      const R = 2.9;
+      const tx = s.x - 1.1 + Math.sin(sway) * R * 0.35;
+      const ty = 1.45;
+      const tz = -Math.cos(sway) * R;
+      const km = damp(dt, 0.35);
+      cur.x += (tx - cur.x) * km;
+      cur.y += (ty - cur.y) * km;
+      cur.z += (tz - cur.z) * km;
+      camera.position.set(cur.x, cur.y, cur.z);
+      camera.lookAt(s.x - 1.1, 1.0, 0);
+      cur.fov += (44 - cur.fov) * damp(dt, 0.3);
+      const pc = camera as THREE.PerspectiveCamera;
+      if (pc.isPerspectiveCamera && Math.abs(pc.fov - cur.fov) > 0.01) {
+        pc.fov = cur.fov;
+        pc.updateProjectionMatrix();
+      }
+      return;
+    }
+
     // The dolly. `over` widens the targets a little and drops the follow rate,
     // so the last frame of a run is a slower, wider, held shot.
     const settle = s.phase === "over" ? 0.55 : 1;

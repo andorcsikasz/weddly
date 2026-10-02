@@ -146,7 +146,9 @@ describe("markets: guest join + betting", () => {
     expect(bet.data.result.balance).toBe(400);
     expect(bet.data.result.totalStakeOnSide).toBe(100);
     expect(bet.data.state.questions[0]!.pool).toEqual({ yes: 100, no: 0 });
-    expect(bet.data.state.questions[0]!.probability).toBe(100);
+    // 100 real YES points against the 50/50 opening seed (50 + 50 virtual):
+    // (100 + 50) / (100 + 100) = 75%, not a straight jump to 100.
+    expect(bet.data.state.questions[0]!.probability).toBe(75);
     expect(bet.data.state.myBalance).toBe(400);
 
     // The bet added a second tick (creation + this bet) reflecting the new
@@ -154,9 +156,9 @@ describe("markets: guest join + betting", () => {
     const history = bet.data.state.questions[0]!.priceHistory;
     expect(history).toHaveLength(2);
     expect(history[0]!.probability).toBe(50);
-    expect(history[1]!.probability).toBe(100);
-    // 50 -> 100 since the opening tick: a real, non-zero move to report.
-    expect(trendSinceOpen(history)).toBe(50);
+    expect(history[1]!.probability).toBe(75);
+    // 50 -> 75 since the opening tick: a real, non-zero move to report.
+    expect(trendSinceOpen(history)).toBe(25);
 
     // A live position, not yet settled, values at the current pool ratio —
     // Alice is the only YES stake against an empty NO pool, so her whole
@@ -490,5 +492,88 @@ describe("markets: leaderboard", () => {
     expect(leaderboard.data.leaderboard[0]!.player.name).toBe("Grace");
     expect(leaderboard.data.leaderboard[0]!.rank).toBe(1);
     expect(leaderboard.data.leaderboard[1]!.player.name).toBe("Heidi");
+  });
+});
+
+describe("markets: opening odds", () => {
+  test("a question opens at the couple's line, holds it, and payouts ignore the seed", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("markets-opening@weddly.test");
+    const created = await req<BoardResp>("POST", "/api/markets", { title: "Odds" }, { token });
+    const boardId = created.data.board.id;
+    const closesAt = Date.now() + 60 * 60 * 1000;
+
+    // Only the offered steps: no 0/100 (unwinnable), no off-step values.
+    for (const bad of [0, 100, 35, "30"]) {
+      const r = await req(
+        "POST",
+        `/api/markets/${boardId}/questions`,
+        { prompt: "Bad line?", closesAt, openingProbability: bad },
+        { token },
+      );
+      expect(r.status).toBe(400);
+    }
+
+    const q = await req<BoardResp>(
+      "POST",
+      `/api/markets/${boardId}/questions`,
+      {
+        prompt: "Will the best man's speech run over 10 minutes?",
+        closesAt,
+        openingProbability: 30,
+      },
+      { token },
+    );
+    expect(q.status).toBe(201);
+    const question = q.data.board.questions[0]!;
+    expect(question.openingProbability).toBe(30);
+    expect(question.probability).toBe(30);
+    // The chart starts flat at the opening line, not at a coin flip.
+    expect(question.priceHistory[0]!.probability).toBe(30);
+    expect(trendSinceOpen(question.priceHistory)).toBeNull();
+
+    await req("POST", `/api/markets/${boardId}/start`, undefined, { token });
+    const joinCode = q.data.board.joinCode;
+    const alice = await joinAs(joinCode, "Alice");
+    const bob = await joinAs(joinCode, "Bob");
+
+    // A small bet nudges the line rather than swinging it to 100%:
+    // (20 + 30 virtual) / (20 + 100) = 42%.
+    const small = await req<BetResp>(
+      "POST",
+      `/api/play/markets/${joinCode}/questions/${question.id}/bet`,
+      { side: "yes", stake: 20 },
+      { headers: { "X-Market-Player-Token": alice.token } },
+    );
+    expect(small.data.state.questions[0]!.probability).toBe(42);
+    expect(trendSinceOpen(small.data.state.questions[0]!.priceHistory)).toBe(12);
+
+    await req(
+      "POST",
+      `/api/play/markets/${joinCode}/questions/${question.id}/bet`,
+      { side: "no", stake: 80 },
+      { headers: { "X-Market-Player-Token": bob.token } },
+    );
+
+    // The seed is display only: YES wins and Alice takes exactly the real
+    // pool (20 + 80), no virtual points minted on top.
+    const resolve = await req(
+      "POST",
+      `/api/markets/${boardId}/questions/${question.id}/resolve`,
+      { outcome: "yes" },
+      { token },
+    );
+    expect(resolve.status).toBe(200);
+    const aliceRow = db
+      .prepare("SELECT balance FROM market_players WHERE id = ?")
+      .get(alice.player.id) as { balance: number };
+    expect(aliceRow.balance).toBe(500 - 20 + 100);
+  });
+
+  test("omitting the line opens at 50/50", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("markets-opening-default@weddly.test");
+    const { board } = await createLiveBoard(token);
+    expect(board.questions[0]!.openingProbability).toBe(50);
   });
 });

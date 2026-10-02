@@ -262,7 +262,7 @@ export function placeBet(
     }
     // Same transaction as the pool write above — see recordPriceTick's own
     // comment for why a tick can never exist without its bet or vice versa.
-    recordPriceTick(questionId, questionPool(questionId), ts);
+    recordPriceTick(questionId, questionPool(questionId), questionRow.opening_probability, ts);
   });
   tx();
 

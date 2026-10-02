@@ -54,12 +54,15 @@ export interface MarketQuestion {
   pool: MarketPool;
   /** Derived from closesAt/outcome/voidedAt — see `marketQuestionStatus`. */
   status: MarketQuestionStatus;
-  /** Derived from `pool` — see `marketProbability`. */
+  /** The couple's opening line for YES, one of `MARKET_OPENING_OPTIONS`
+   *  (50 = a coin flip). Fixed at creation — see `marketProbability`. */
+  openingProbability: number;
+  /** Derived from `pool` + `openingProbability` — see `marketProbability`. */
   probability: number;
   /** The probability's own history, oldest first — one tick recorded at
-   *  question creation (always 50, pool 0/0, see `createQuestion`) and one
-   *  more on every bet (see `placeBet`), so a chart always starts flat at
-   *  the 50/50 coin-flip and bends toward whichever side the room backs.
+   *  question creation (the opening line, pool 0/0, see `createQuestion`) and
+   *  one more on every bet (see `placeBet`), so a chart always starts flat at
+   *  the opening line and bends toward whichever side the room backs.
    *  Capped server-side (`questionPriceHistory`) — a display trend, not a
    *  full audit ledger. */
   priceHistory: MarketPriceTick[];
@@ -137,6 +140,26 @@ export const MARKET_PROMPT_MAX = 200;
 export const MARKET_TITLE_MAX = 80;
 export const MARKET_PLAYER_NAME_MAX = 40;
 
+/** The opening lines a couple can start a question at, as YES's percent:
+ *  50/50 by default, or tilted either way in steps of ten down to 10/90.
+ *  Never 0 or 100 — a question nobody could win isn't a bet. */
+export const MARKET_OPENING_OPTIONS: readonly number[] = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+export const MARKET_DEFAULT_OPENING = 50;
+
+/** How much the opening line weighs against real stakes, in points: it acts
+ *  like this many VIRTUAL points already sitting in the pool, split at the
+ *  opening odds. Without it the opening would be meaningless — one 5-point
+ *  bet would swing a pure pool share straight to 100%. A fifth of one
+ *  guest's starting balance holds the line until the room has actually
+ *  spoken, and fades to nothing once a few hundred points are in. The seed
+ *  is DISPLAY ONLY: it never enters a payout, so the no-house rule below
+ *  (`settleMarketQuestion`) is untouched. */
+export const MARKET_OPENING_WEIGHT = 100;
+
+export function isMarketOpening(value: unknown): value is number {
+  return typeof value === "number" && MARKET_OPENING_OPTIONS.includes(value);
+}
+
 // Same alphabet as quiz.ts's QUIZ_JOIN_CODE_ALPHABET (avoids 0/O/1/I/L — read
 // off a phone across a room and typed by hand) and invite_codes.ts's
 // household codes, so every "read this code out loud" surface in the app
@@ -171,12 +194,18 @@ export function marketQuestionStatus(q: MarketQuestionFacts, nowMs: UnixMs): Mar
 // ─── the math ─────────────────────────────────────────────────────────────────
 
 /** The pool's implied probability: YES's share of everything staked on this
- *  question so far, as a whole percent. 50 (a coin flip) is the "nobody has
- *  bet yet" default — there is no signal to report, not a 0% chance. */
-export function marketProbability(pool: MarketPool): number {
+ *  question so far, as a whole percent, with the couple's opening line
+ *  mixed in as `MARKET_OPENING_WEIGHT` virtual points. Before anyone bets it
+ *  IS the opening line (50 unless the couple tilted it); as real stakes
+ *  arrive they outweigh the seed and the number becomes the room's. */
+export function marketProbability(
+  pool: MarketPool,
+  opening: number = MARKET_DEFAULT_OPENING,
+): number {
   const total = pool.yes + pool.no;
-  if (total <= 0) return 50;
-  return Math.round((pool.yes / total) * 100);
+  if (total <= 0) return opening;
+  const seedYes = (MARKET_OPENING_WEIGHT * opening) / 100;
+  return Math.round(((pool.yes + seedYes) / (total + MARKET_OPENING_WEIGHT)) * 100);
 }
 
 /** What `stake` more points on `side` would be worth back if the pools froze
@@ -213,7 +242,7 @@ export function currentPositionValue(pool: MarketPool, side: MarketSide, stake: 
 }
 
 /** How far the probability has moved from the question's own opening line
- *  (always 50 — see `createQuestion`), in percentage points. This is the
+ *  (the first tick — see `createQuestion`), in percentage points. This is the
  *  "since open" momentum shown next to the big number on both the couple's
  *  board and the guest's play screen. Null before anyone has bet, or if the
  *  room has moved it right back to 50/50, so the chip has something real to

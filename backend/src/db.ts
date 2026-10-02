@@ -2862,6 +2862,15 @@ addColumnIfMissing("listings", "vendor_published_at", "vendor_published_at INTEG
 addColumnIfMissing("listings", "pre_quarantine_hero_url", "pre_quarantine_hero_url TEXT");
 addColumnIfMissing("listings", "pre_quarantine_photo_urls", "pre_quarantine_photo_urls TEXT");
 
+// Prediction markets: the couple's opening line for YES (10..90 in steps of
+// ten, 50 = coin flip). Every question before this opened at 50, so that is
+// the honest default for them. See `marketProbability` in shared/markets.ts.
+addColumnIfMissing(
+  "market_questions",
+  "opening_probability",
+  "opening_probability INTEGER NOT NULL DEFAULT 50",
+);
+
 // ── Review-summary cold-start gate lowered to 1 (was 3, 2026-08-25) ────────
 // recomputeSupplierAggregate only writes avg_rating on the review write path,
 // so a supplier already sitting at 1-2 published reviews keeps the NULL an
