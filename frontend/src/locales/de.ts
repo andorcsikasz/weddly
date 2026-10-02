@@ -4508,6 +4508,9 @@ const de: LocaleMessages = {
     how_title: "So funktioniert es",
     how_body:
       "Alles auf dieser Strecke ist eine Hochzeitskosten: ein Blumenwagen, eine Rechnung im letzten Moment, ein DJ-Pult, das du dir nicht leisten kannst. Weiche ihnen aus, sammle das Geld ein, und der Gewinn am Ende ist, was der Tag übrig lässt.",
+    choose_title: "Wer bist du?",
+    play_as_bride: "Die Braut",
+    play_as_groom: "Der Bräutigam",
     controls_title: "Steuerung",
     control_left: "Nach links",
     control_right: "Nach rechts",

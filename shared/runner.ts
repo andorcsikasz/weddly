@@ -684,9 +684,20 @@ export const SPEED_MAX = 27;
 /** Speed gained per metre travelled. */
 export const SPEED_PER_METRE = 0.0042;
 
-/** Metres between consecutive rows: 34 early (a row every ~3 s), 15 late. */
-export const ROW_GAP_EASY = 34;
-export const ROW_GAP_TIGHT = 15;
+/** Metres between consecutive rows: 22 early (a row every ~1.9 s), 12 late.
+ *
+ *  THESE WENT DOWN twice and the reason to keep them together is the pool.
+ *
+ *  Rows in the spawn window is `SPAWN_AHEAD / gap`, and a row can block all three
+ *  lanes, so the number of live obstacles the generator can need is
+ *  `SPAWN_AHEAD / gap * 3`. At the old 34/15 that peaked at exactly the pool
+ *  size — one row from one lane and `freeObstacle()` starts returning null, which
+ *  drops the rest of that row SILENTLY. A denser track does not fail loudly, it
+ *  just stops spawning, and the symptom reads as "the obstacles thinned out later
+ *  on". So a gap change and a pool change are the same edit: see `OBSTACLE_POOL`
+ *  in the engine, which is sized from this arithmetic rather than guessed. */
+export const ROW_GAP_EASY = 22;
+export const ROW_GAP_TIGHT = 12;
 
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
 

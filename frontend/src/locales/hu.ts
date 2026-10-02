@@ -4418,6 +4418,9 @@ const hu: LocaleMessages = {
     how_title: "Hogyan működik",
     how_body:
       "Minden ezen a pályán egy esküvői költség van: virágkocsi, utolsó pillanatban érkező számla, DJ-pult, amit nem engedhetsz meg. Kerüld ki őket, szedd fel a készpénzt, és a végén látod, mi maradt.",
+    choose_title: "Ki vagy?",
+    play_as_bride: "Az menyasszony",
+    play_as_groom: "Az öröklegény",
     controls_title: "Irányítás",
     control_left: "Balra",
     control_right: "Jobbra",

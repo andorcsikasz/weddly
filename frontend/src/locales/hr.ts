@@ -4415,6 +4415,9 @@ const hr: LocaleMessages = {
     how_title: "Kako radi",
     how_body:
       "Sve je na ovoj stazi trošak vjenčanja: cvjetna kolica, račun u posljednji tren, DJ pult koji ne možeš priuštiti. Izbjegni ih, pokupi gotovinu, a završna dobit je ono što ostane tom danu.",
+    choose_title: "Tko si?",
+    play_as_bride: "Nevjesta",
+    play_as_groom: "Ženik",
     controls_title: "Upravljanje",
     control_left: "Ulijevo",
     control_right: "Udesno",

@@ -5159,6 +5159,9 @@ export interface LocaleMessages {
     ready_title: string;
     how_title: string;
     how_body: string;
+    choose_title: string;
+    play_as_bride: string;
+    play_as_groom: string;
     controls_title: string;
     control_left: string;
     control_right: string;

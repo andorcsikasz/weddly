@@ -451,3 +451,72 @@ function wrapText(ctx: Ctx, text: string, x: number, y: number, width: number, l
   }
   if (line) ctx.fillText(line, x, yy);
 }
+
+/**
+ * A money label for the pickup burst — the amount, drawn on a transparent ground.
+ *
+ * Sized to the TEXT rather than to a fixed canvas, because the strings come in two
+ * shapes (`10 000` and `500 000`, and `1 500 000` once a multiplier is running) and
+ * a fixed canvas either clips the long ones or wastes half its width on the short
+ * ones. Measuring first costs one layout pass per DISTINCT string, and the cache
+ * below means it happens once per string for the life of the process.
+ *
+ * `big` is the bag variant: heavier and gold rather than cream, so the one pickup
+ * worth a fifth of the run's income reads differently at a glance from the ones
+ * that are not.
+ */
+export function moneyLabelTexture(text: string, big: boolean): THREE.CanvasTexture | null {
+  const key = `money:${big ? "b" : "s"}:${text}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+
+  const fontSize = big ? 96 : 76;
+  const probe = typeof document === "undefined" ? null : document.createElement("canvas");
+  if (!probe) return null;
+  const probeCtx = probe.getContext("2d");
+  if (!probeCtx) return null;
+  probeCtx.font = `800 ${fontSize}px "Georgia", "Times New Roman", serif`;
+  const textWidth = Math.ceil(probeCtx.measureText(text).width);
+
+  const padX = Math.round(fontSize * 0.34);
+  const padY = Math.round(fontSize * 0.3);
+  const width = textWidth + padX * 2;
+  const height = Math.round(fontSize * 1.5);
+
+  const made = makeCanvas(width, height);
+  if (!made) return null;
+  const { canvas, ctx } = made;
+
+  // A dark plate behind the digits. The label flies over a bright lawn AND over a
+  // pale path, and cream-on-cream over the path is exactly the case that would
+  // otherwise be unreadable in the second half of a run.
+  const radius = height * 0.34;
+  ctx.fillStyle = big ? "rgba(58, 36, 12, 0.86)" : "rgba(24, 30, 44, 0.78)";
+  ctx.beginPath();
+  ctx.moveTo(radius, 0);
+  ctx.arcTo(width, 0, width, height, radius);
+  ctx.arcTo(width, height, 0, height, radius);
+  ctx.arcTo(0, height, 0, 0, radius);
+  ctx.arcTo(0, 0, width, 0, radius);
+  ctx.closePath();
+  ctx.fill();
+
+  if (big) {
+    ctx.strokeStyle = PALETTE.gold;
+    ctx.lineWidth = Math.max(2, fontSize * 0.045);
+    ctx.stroke();
+  }
+
+  ctx.font = `800 ${fontSize}px "Georgia", "Times New Roman", serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = big ? PALETTE.gold : PALETTE.paper50;
+  ctx.fillText(text, width / 2, height / 2 + fontSize * 0.03);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  cache.set(key, texture);
+  return texture;
+}

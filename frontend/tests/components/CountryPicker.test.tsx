@@ -4,11 +4,15 @@
 // and every country must stay reachable without a swipe.
 
 import { describe, expect, it, mock } from "bun:test";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach } from "bun:test";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { CountryPicker } from "@/components/CountryPicker";
 
-afterEach(cleanup);
+// No `afterEach(cleanup)` here. `tests/setup.ts` wipes `document.body.innerHTML`
+// from a preload-registered hook, which runs first — so a `cleanup()` here finds
+// its containers already detached and throws "The node to be removed is not a child
+// of this node", failing every test in the file from teardown. The body wipe is
+// the teardown; a test that needs to unmount mid-way calls its own render
+// result's `unmount()`.
 
 const OPTIONS = [
   { code: "HU", label: "Magyarország", count: 145 },
@@ -18,7 +22,7 @@ const OPTIONS = [
 
 function setup(value: string | null = null) {
   const onChange = mock((_: string | null) => {});
-  render(
+  const view = render(
     <CountryPicker
       value={value}
       options={OPTIONS}
@@ -27,7 +31,11 @@ function setup(value: string | null = null) {
       ariaLabel="Ország"
     />,
   );
-  return { onChange, trigger: screen.getByRole("button", { name: "Ország" }) };
+  // `view` is returned so a test that re-renders can unmount THIS picker through
+  // its own render result. The module-level `cleanup()` walks every container
+  // registered in the process, so it reaches into other tests' DOM and fails on
+  // entries the body wipe has already detached.
+  return { onChange, view, trigger: screen.getByRole("button", { name: "Ország" }) };
 }
 
 describe("CountryPicker", () => {
@@ -60,7 +68,7 @@ describe("CountryPicker", () => {
     fireEvent.click(first.trigger);
     fireEvent.click(screen.getByText("Albánia"));
     expect(first.onChange).toHaveBeenCalledWith("AL");
-    cleanup();
+    first.view.unmount();
 
     // With a country picked, the trigger shows that country, so the only
     // "Mind" on screen is the all row inside the open list.

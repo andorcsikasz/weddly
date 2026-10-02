@@ -111,7 +111,13 @@ describe("<MediaPage> Wedding Film setup", () => {
     const dialog = await screen.findByRole("dialog", { name: "Set up your guest photo album" });
     expect(dialog).toBeVisible();
     expect(screen.getByDisplayValue("24")).toHaveAttribute("type", "number");
-    expect(screen.getAllByText("50 Guests").length).toBeGreaterThan(0);
+    // Matched on the line, not on the exact string. The number and the unit are
+    // separate JSX text nodes, so WHICH element testing-library resolves them into
+    // depends on the footer's layout — and a selector that silently depended on
+    // the old layout failed while the dialog still read "50 Guests · Included"
+    // word for word. What matters is that the couple is told the included
+    // capacity, so ask that rather than asking about a DOM shape.
+    expect(screen.getAllByText(/50\s+Guests/).length).toBeGreaterThan(0);
     expect(screen.getByText("More guests · €7.90")).toBeVisible();
 
     const dateInputs = Array.from(

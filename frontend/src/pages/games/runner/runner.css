@@ -348,3 +348,63 @@
   color: #ffd9e0;
   font-weight: 600;
 }
+/* ── Character picker ──────────────────────────────────────────────────────
+   Two tiles in a row. The selected tile is marked THREE ways at once — the ring,
+   the fill and the mark's own `currentColor` — because the ring alone is easy to
+   miss on a small phone, and this is the first decision the game asks for. The
+   unselected tile keeps a transparent fill so the row does not read as two
+   buttons of equal weight. */
+.rn-choices {
+  margin-top: 0.6rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.rn-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.85rem 0.5rem 0.7rem;
+  border-radius: 14px;
+  border: 1.5px solid rgb(255 255 255 / 0.22);
+  background: transparent;
+  color: rgb(255 255 255 / 0.72);
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+
+.rn-choice svg {
+  fill: currentColor;
+}
+
+.rn-choice:hover {
+  border-color: rgb(255 255 255 / 0.45);
+  color: rgb(255 255 255 / 0.92);
+}
+
+.rn-choice--on {
+  border-color: #d9738a;
+  background: rgb(255 255 255 / 0.1);
+  color: #d9738a;
+}
+
+.rn-choice:focus-visible {
+  outline: 2px solid #d9738a;
+  outline-offset: 2px;
+}
+
+.rn-choice-label {
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* A touch player gets a bigger target than a mouse player needs, and the menu
+   is the one screen a phone opens first. */
+@media (pointer: coarse) {
+  .rn-choice {
+    padding: 1.05rem 0.5rem 0.9rem;
+  }
+}

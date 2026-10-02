@@ -19,7 +19,7 @@
 import { useSyncExternalStore } from "react";
 import { START_HEARTS, verdictFor, weddingProfit } from "@shared/runner";
 import type { Currency } from "@shared/types";
-import type { RunState, RunSummary, TickExtras } from "../engine/RunEngine";
+import type { RunnerCharacter, RunState, RunSummary, TickExtras } from "../engine/RunEngine";
 
 /** Everything the HUD renders. Derived in ONE place per tick, so the live HUD and
  *  the game-over card cannot show a profit and a verdict computed from different
@@ -58,6 +58,12 @@ export interface RunnerStore extends RunnerHud {
   currency: Currency;
   /** True once the couple lookup has resolved either way. */
   ready: boolean;
+  /** Which half of the couple the player is. Picked on the menu, and REMEMBERED
+   *  between visits for the same reason the best score is: it is an identity
+   *  choice, not a per-run toggle, and asking again on every visit would read as
+   *  the app having forgotten. */
+  character: RunnerCharacter;
+  setCharacter: (character: RunnerCharacter) => void;
   /** How the player plays. Decided by what the device reports; the HUD's control
    *  hints read this rather than running their own media query. */
   touch: boolean;
@@ -73,6 +79,18 @@ export interface RunnerStore extends RunnerHud {
 }
 
 const BEST_KEY = "weddly.runner.best";
+const CHARACTER_KEY = "weddly.runner.character";
+
+/** The remembered character. A corrupt or absent value falls back to the bride
+ *  rather than throwing, on the same grounds as `readBest`: a bad localStorage
+ *  entry must never be the reason the game will not start. */
+function readCharacter(): RunnerCharacter {
+  try {
+    return localStorage.getItem(CHARACTER_KEY) === "groom" ? "groom" : "bride";
+  } catch {
+    return "bride";
+  }
+}
 
 /** The stored best is PER CURRENCY, not one global number. A best of 412 000
  *  forints is meaningless beside a €40 best: comparing the two raw numbers would
@@ -189,8 +207,22 @@ export const useRunnerStore = createStore<RunnerStore>((set, get) => ({
   currency: "HUF",
   ready: false,
   touch: false,
+  character: "bride",
 
-  setReady: (currency, touch) => set({ currency, ready: true, touch, best: readBest(currency) }),
+  setReady: (currency, touch) =>
+    set({ currency, ready: true, touch, best: readBest(currency), character: readCharacter() }),
+
+  setCharacter: (character) => {
+    // Mirrored straight into localStorage rather than through the engine alone:
+    // the engine is thrown away on every reload, so without this the choice
+    // would silently reset to the bride every time the page is opened.
+    try {
+      localStorage.setItem(CHARACTER_KEY, character);
+    } catch {
+      /* best effort, same reason as writeBest */
+    }
+    set({ character });
+  },
 
   tick: (state, extra, currency) => set(deriveHud(state, currency, extra.milestonePulse)),
 
@@ -229,10 +261,11 @@ export const useRunnerStore = createStore<RunnerStore>((set, get) => ({
       currency: get().currency,
       best: get().best,
       touch: get().touch,
+      character: get().character,
       ready: true,
       summary: null,
       firstRun: false,
     }),
 }));
 
-export { bestKey as runnerBestKey };
+export { bestKey as runnerBestKey, CHARACTER_KEY };

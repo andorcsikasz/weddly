@@ -19,6 +19,7 @@
 import { ArrowLeft, Heart, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { Link } from "react-router-dom";
 import { VERDICT_I18N } from "@shared/runner";
+import type { RunnerCharacter } from "../engine/RunEngine";
 import type { Currency } from "@shared/types";
 import { formatMoney } from "@/lib/format";
 import { useT } from "@/lib/i18n";
@@ -29,6 +30,81 @@ import { runDistance } from "../utils/format";
 function Money({ amount, currency }: { amount: number; currency: Currency }) {
   const locale = useT().locale;
   return <>{formatMoney(amount, currency, locale)}</>;
+}
+
+/* ── Character picker ───────────────────────────────────────────────────── */
+
+/**
+ * Bride or groom, chosen before the run rather than buried in settings.
+ *
+ * Two tiles, not a dropdown: the choice is the first thing the game asks, it has
+ * exactly two answers, and the partner figure in the scene is DERIVED from it as
+ * "the one you are not". A dropdown would hide that relationship behind a caret.
+ *
+ * The marks are drawn SVGs rather than emoji for the same reason the vendor portal
+ * has no emoji: an emoji is a typeface picked by the OS, so it renders at a
+ * different weight on every platform and cannot take the tile's selected colour —
+ * which here is the ONLY thing that marks the selection besides the ring. Two
+ * tiny silhouettes are also a truer preview than a word, since what changes is who
+ * you see running.
+ *
+ * Selecting writes to the store AND to the engine, so the idle runner visible
+ * behind the menu changes with the choice: the player sees the answer before they
+ * press Start.
+ */
+function CharacterPicker() {
+  const { t } = useT();
+  const character = useRunnerStore((s) => s.character);
+  const setCharacter = useRunnerStore((s) => s.setCharacter);
+  // The picker writes ONLY to the store. Telling the engine is the page's job —
+  // the engine is not in the store, so this component has no business reaching
+  // into it, and the page mirrors the change into the rig in one effect.
+  return (
+    <section className="rn-block">
+      <h2 className="rn-block-title">{t("runner.choose_title")}</h2>
+      <div className="rn-choices" role="radiogroup" aria-label={t("runner.choose_title")}>
+        {(["bride", "groom"] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="radio"
+            aria-checked={character === id}
+            className={`rn-choice${character === id ? " rn-choice--on" : ""}`}
+            onClick={() => setCharacter(id)}
+          >
+            <CharacterMark kind={id} />
+            <span className="rn-choice-label">{t(`runner.play_as_${id}`)}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** The two silhouettes. `currentColor` throughout, so the selected tile's own
+ *  colour IS the mark — there is no second palette to keep in step. */
+function CharacterMark({ kind }: { kind: RunnerCharacter }) {
+  if (kind === "groom") {
+    return (
+      <svg viewBox="0 0 24 32" width="26" height="34" aria-hidden focusable="false">
+        <circle cx="12" cy="5" r="3.4" />
+        {/* Shoulders and lapels. */}
+        <path d="M12 9.4 6.2 12.2 7.6 22h8.8l1.4-9.8Z" />
+        {/* Trousers. */}
+        <path d="M8.2 22h7.6l-.7 8.4H10.8L12 25l-1.2 5.4H8.9Z" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 32" width="26" height="34" aria-hidden focusable="false">
+      <circle cx="12" cy="5" r="3.4" />
+      {/* The bun, which is what makes the silhouette read at this size. */}
+      <circle cx="15.4" cy="2.6" r="1.9" />
+      {/* Bodice, then the skirt widening to the hem. */}
+      <path d="M12 9.4 8.4 13.4h7.2Z" />
+      <path d="M8.4 13.4h7.2l3.2 17.2H5.2Z" />
+    </svg>
+  );
 }
 
 /* ── Menu ──────────────────────────────────────────────────────────────── */
@@ -111,6 +187,8 @@ export function RunnerUI({
               </ul>
             )}
           </section>
+
+          <CharacterPicker />
 
           <button type="button" className="rn-btn rn-btn--primary" onClick={onStart} autoFocus>
             {t("runner.start")}

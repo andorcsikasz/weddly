@@ -66,11 +66,19 @@ const STEP = 1 / 120;
 /** Longest real frame the accumulator will honour (≈ 4 substeps at 30 fps). */
 const MAX_SUBSTEPS = 12;
 
-/** Obstacle pool size. Sized from the spawn window rather than guessed: at the
- *  tightest row gap there are at most `SPAWN_AHEAD / ROW_GAP_TIGHT` ≈ 5 rows
- *  alive, and the densest row blocks all three lanes, so 18 leaves real
- *  headroom without keeping dead objects alive. */
-const OBSTACLE_POOL = 18;
+/** Obstacle pool size. Sized from the spawn window rather than guessed.
+ *
+ *  The worst case is `SPAWN_AHEAD / ROW_GAP_TIGHT` rows alive at once, each of
+ *  which may block all three lanes. At the current gaps that is 82 / 12 ≈ 6.8
+ *  rows → ~21 obstacles, plus whatever the spawn cursor overshoots by on the
+ *  frame a run starts, so the pool is 32.
+ *
+ *  This number is NOT free to be small. `freeObstacle()` returning null breaks
+ *  out of the row loop and the remaining obstacles of that row are simply never
+ *  created — the generator fails SILENTLY and the track gets emptier the denser
+ *  it is meant to be. A player sees a thinning obstacle field and blames the
+ *  difficulty ramp. If `ROW_GAP_TIGHT` ever drops again, this must come with it. */
+const OBSTACLE_POOL = 32;
 /** Cash is instanced, so the pool is just memory and a loop bound. */
 const CASH_POOL = 120;
 const BAG_POOL = 8;
@@ -111,6 +119,35 @@ export interface BagInstance {
   active: boolean;
   phase: number;
 }
+
+/** One rising money label, handed to the scene when something is collected.
+ *
+ *  This is the animation's DATA, not its look: the amount and the world position
+ *  are decided here because this is the only place that knows both the tier that
+ *  was collected and where it was, and a label that has to be reconstructed by the
+ *  renderer would eventually disagree with the score about what was picked up.
+ *
+ *  `value` is the amount the MULTIPLIER actually paid, not the tier's face value —
+ *  at ×3 a coin is worth three coins, and a label reading the face value is the
+ *  one number on screen that would be wrong exactly when the player feels richest. */
+export interface FloatRequest {
+  x: number;
+  y: number;
+  z: number;
+  value: number;
+  currency: Currency;
+  /** A bag gets a bigger label and a longer life, because it is a bigger event. */
+  big: boolean;
+}
+
+/** Handed back when nothing is queued, so the common frame allocates nothing. */
+const EMPTY_FLOATS: readonly FloatRequest[] = Object.freeze([]);
+
+/** Ceiling on labels in one frame. A whole row crossed at once is five pickups,
+ *  and five labels climbing over each other is a wall of digits that hides the
+ *  track. Past this the extras are dropped deliberately: the HUD counter and the
+ *  burst already said they were collected. */
+const MAX_FLOATS_PER_ADVANCE = 3;
 
 export type RunEvent =
   | { type: "coin"; x: number; y: number; z: number; tier: CashId; value: number }
@@ -336,6 +373,7 @@ export class RunEngine {
     // game is haunted" and is impossible to reproduce afterwards.
     this.events.length = 0;
     this.sparks = [];
+    this.floats = [];
     this.accum = 0;
     this.tickAccum = 0;
     this.clock = 0;
@@ -424,10 +462,12 @@ export class RunEngine {
   /** Advance by real elapsed seconds. Fixed substeps, capped. */
   advance(realDt: number) {
     const s = this.state;
-    // The frame boundary for the spark batch — see MAX_SPARKS_PER_ADVANCE. It is
-    // cleared on EVERY call, including the paused one, so a burst queued by the
-    // final tick of a run cannot survive into the game-over card.
+    // The frame boundary for the per-frame batches — see MAX_SPARKS_PER_ADVANCE
+    // and MAX_FLOATS_PER_ADVANCE. Both are cleared on EVERY call, including the
+    // paused one, so a burst or a money label queued by the final tick of a run
+    // cannot survive into the game-over card.
     this.sparks = [];
+    this.floats = [];
     if (s.phase !== "running") {
       // Still tick the UI at the menu/pause/over screens so the HUD mirror and
       // the character's idle pose keep breathing, but never simulate.
@@ -676,6 +716,7 @@ export class RunEngine {
       // was collected here", and a bundle burst that looks identical to a coin
       // burst teaches the player nothing the counter has not already said.
       this.spark("coin", c.x, c.y, c.z);
+      this.float(c.x, c.y + 0.35, c.z, value * s.multiplier, false);
     }
 
     for (const b of this.bags) {
@@ -695,6 +736,7 @@ export class RunEngine {
       // The bag is the only pickup with its own burst, because it is the only
       // one whose value is worth a distinct sound AND a distinct colour.
       this.spark("coin", b.x, b.y + 0.2, b.z);
+      this.float(b.x, b.y + 0.75, b.z, economyFor(this.currency).bag * s.multiplier, true);
     }
   }
 
@@ -776,6 +818,23 @@ export class RunEngine {
   }
 
   private sparks: SparkRequest[] = [];
+  /** Rising money labels, drained by the scene on the same beat as the sparks. */
+  private floats: FloatRequest[] = [];
+
+  /** Take everything queued since the last call. Swapped rather than emptied, for
+   *  the same reason as `drainSparks`: a consumer walking the array must not be
+   *  disturbed by the engine pushing more while it reads. */
+  drainFloats(): readonly FloatRequest[] {
+    if (this.floats.length === 0) return EMPTY_FLOATS;
+    const out = this.floats;
+    this.floats = [];
+    return out;
+  }
+
+  private float(x: number, y: number, z: number, value: number, big: boolean) {
+    if (this.floats.length >= MAX_FLOATS_PER_ADVANCE) return;
+    this.floats.push({ x, y, z, value, currency: this.currency, big });
+  }
 
   /** Take everything queued since the last call. The array is swapped rather than
    *  emptied so a consumer iterating it cannot be disturbed by the engine pushing
@@ -837,6 +896,20 @@ export class RunEngine {
     const phase = this.state.phase;
     if (phase === "running" || phase === "paused") return;
     this.currency = currency;
+  }
+
+  /** Which half of the couple the player is, set from the menu.
+   *
+   *  Same guard as `setCurrency`, for the same reason: the rig is built around
+   *  this choice and the partner is derived from it as "the one you are not", so
+   *  swapping it with a run on screen would change who the second figure is four
+   *  lines below the player's own, mid-stride. The menu is the only place the
+   *  choice belongs — and it is a choice, not a setting, so there is no reason to
+   *  let it change later. */
+  setCharacter(character: RunnerCharacter): void {
+    const phase = this.state.phase;
+    if (phase === "running" || phase === "paused") return;
+    this.state.character = character;
   }
 
   /* ── Cosmetics the renderer reads ──────────────────────────────────── */

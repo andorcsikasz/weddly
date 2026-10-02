@@ -27,6 +27,7 @@ import { Collectibles } from "./entities/Collectibles";
 import { Environment } from "./entities/Environment";
 import { Obstacles } from "./entities/Obstacles";
 import { Partner } from "./entities/Partner";
+import { FloatingMoney } from "./entities/FloatingMoney";
 import { Particles } from "./entities/Particles";
 import { RunnerModel, type RigInput } from "./entities/RunnerModel";
 import { PALETTE } from "./constants/palette";
@@ -56,6 +57,16 @@ export function RunnerScene({ engine, currency, locale }: RunnerSceneProps) {
   const readBags = useCallback(() => engine.bags, [engine]);
   const readDistance = useCallback(() => engine.state.distance, [engine]);
   const drainSparks = useCallback(() => engine.drainSparks(), [engine]);
+  const drainFloats = useCallback(() => engine.drainFloats(), [engine]);
+  const readClock = useCallback(() => engine.clock, [engine]);
+
+  // The rising money labels are formatted HERE, for the same reason the printed
+  // props are: the string has to be finished before the texture is rasterised, and
+  // only this component knows the locale the scene is rendering for.
+  const formatFloat = useCallback(
+    (amount: number, forCurrency: Currency) => runMoney(amount, forCurrency, locale),
+    [locale],
+  );
 
   // The printed props quote one hit's bill. Formatted here rather than in the
   // props themselves because a canvas texture is cached by its CONTENT, so the
@@ -78,6 +89,7 @@ export function RunnerScene({ engine, currency, locale }: RunnerSceneProps) {
       <Collectibles readCash={readCash} readBags={readBags} mark={mark} />
       <ContactShadow readState={readState} />
       <Particles drain={drainSparks} />
+      <FloatingMoney drain={drainFloats} readClock={readClock} format={formatFloat} />
       <CameraRig readState={readState} />
     </>
   );

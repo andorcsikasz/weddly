@@ -105,6 +105,15 @@ export default function RunnerGamePage() {
 
   const currency = useRef<Currency | null>(null);
 
+  /* ── Who you are ────────────────────────────────────────────────────────── */
+  const character = useRunnerStore((s) => s.character);
+  // The store owns the CHOICE, the engine owns the RIG, and this is the one place
+  // the two meet. `setCharacter` is a no-op once a run is under way, so the
+  // effect firing again on a phase change cannot swap the model mid-stride.
+  useEffect(() => {
+    engine.setCharacter(character);
+  }, [engine, character]);
+
   /* ── The couple's currency ─────────────────────────────────────────────── */
   useEffect(() => {
     let live = true;

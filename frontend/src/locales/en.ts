@@ -4385,6 +4385,9 @@ const en: LocaleMessages = {
     how_title: "How it works",
     how_body:
       "Everything on this track is a wedding cost: a florist's cart, a last-minute bill, a DJ booth you cannot afford. Dodge them, collect the cash, and the profit at the end is what the whole day leaves you.",
+    choose_title: "Who are you?",
+    play_as_bride: "The bride",
+    play_as_groom: "The groom",
     controls_title: "Controls",
     control_left: "Move left",
     control_right: "Move right",

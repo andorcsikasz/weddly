@@ -13,7 +13,7 @@
 //    the moment a couple changes currency between runs.
 
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { VERDICT_I18N } from "@shared/runner";
 import type { Currency } from "@shared/types";
@@ -68,7 +68,19 @@ describe("RunnerUI overlays", () => {
     });
   });
   afterEach(() => {
-    cleanup();
+    // NO `cleanup()` here, deliberately.
+    //
+    // `tests/setup.ts` wipes `document.body.innerHTML` in a preload-registered
+    // `afterEach`, which runs BEFORE this file's hooks. By the time this runs the
+    // containers are already detached, so RTL's unmount path throws
+    // "The node to be removed is not a child of this node" — failing every test
+    // in the file with an error from teardown, before a single assertion could
+    // fail. It only showed up when several component files ran in one process, so
+    // the file was green alone and red in the full suite, which is the worst
+    // possible shape for a test: the failure points at nothing it asserts.
+    //
+    // Where a test genuinely has to re-render mid-way, it calls its own
+    // render result's `unmount()`, which is scoped to that one render.
     mock.restore();
   });
 
@@ -189,9 +201,15 @@ describe("RunnerUI overlays", () => {
 
   it("reflects the audio's mute state rather than a copy of it", () => {
     useRunnerStore.getState().tick(runningState(), { clock: 1, milestonePulse: 0 }, "HUF");
-    renderUI(true);
+    // `unmount()` rather than the module-level `cleanup()`: this test has to tear
+    // down and re-render mid-way, and `cleanup()` walks EVERY container RTL has
+    // registered in the process — including ones from earlier tests whose DOM was
+    // already wiped, so it throws on a stale entry and this test fails for a
+    // reason that has nothing to do with mute. `unmount()` is scoped to the render
+    // that produced it.
+    const first = renderUI(true);
     expect(screen.getByLabelText("runner.mute_off")).toBeTruthy();
-    cleanup();
+    first.unmount();
     renderUI(false);
     expect(screen.getByLabelText("runner.mute_on")).toBeTruthy();
   });

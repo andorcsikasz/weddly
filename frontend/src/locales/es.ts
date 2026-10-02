@@ -4466,6 +4466,9 @@ const es: LocaleMessages = {
     how_title: "Cómo funciona",
     how_body:
       "Todo en esta pista es un coste de boda: el carro de flores, una factura a última hora, una cabina de DJ que no puedes permitirte. Esquívalos, recoge el dinero y el beneficio final es lo que le queda al día.",
+    choose_title: "¿Quién eres?",
+    play_as_bride: "La novia",
+    play_as_groom: "El novio",
     controls_title: "Controles",
     control_left: "Izquierda",
     control_right: "Derecha",
