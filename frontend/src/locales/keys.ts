@@ -5226,6 +5226,16 @@ export interface LocaleMessages {
     best_combo_label: string;
     /** Second line of the hit toast under the vendor's category name. */
     hit_toast_sub: string;
+    /** Game-over breakdown, gift-box toast and the two later power-ups. */
+    bills_label: string;
+    gift_title: string;
+    gift_heart: string;
+    gift_envelope: string;
+    gift_bag: string;
+    power_fly: string;
+    power_fly_body: string;
+    power_boost: string;
+    power_boost_body: string;
   };
   /** Live wedding quiz game — /app/games/quiz (list + builder),
    *  /app/games/quiz/:id/host (the host console), and /play/:code (the

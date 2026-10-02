@@ -19,6 +19,9 @@
 import {
   AlertTriangle,
   ArrowLeft,
+  Cloud,
+  Footprints,
+  Gift,
   Coins,
   Flame,
   Heart,
@@ -34,7 +37,14 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { OBSTACLE_COST, VERDICT_I18N, isStreakStep, streakBonus } from "@shared/runner";
+import {
+  OBSTACLE_COST,
+  VERDICT_I18N,
+  expensesFor,
+  grossCollected,
+  isStreakStep,
+  streakBonus,
+} from "@shared/runner";
 import type { RunnerCharacter } from "../engine/RunEngine";
 import type { Currency } from "@shared/types";
 import { formatMoney } from "@/lib/format";
@@ -146,7 +156,7 @@ export interface RunnerUIProps {
 /** The three power-ups, in one table, so the menu legend and the HUD timers
  *  cannot name them differently. */
 const POWERS: readonly {
-  id: "magnet" | "doubler" | "shield";
+  id: "magnet" | "doubler" | "shield" | "fly" | "boost";
   icon: LucideIcon;
   name: string;
   body: string;
@@ -154,6 +164,8 @@ const POWERS: readonly {
   { id: "magnet", icon: Magnet, name: "runner.power_magnet", body: "runner.power_magnet_body" },
   { id: "doubler", icon: Coins, name: "runner.power_double", body: "runner.power_double_body" },
   { id: "shield", icon: Shield, name: "runner.power_shield", body: "runner.power_shield_body" },
+  { id: "fly", icon: Cloud, name: "runner.power_fly", body: "runner.power_fly_body" },
+  { id: "boost", icon: Footprints, name: "runner.power_boost", body: "runner.power_boost_body" },
 ];
 
 export function RunnerUI({
@@ -341,6 +353,9 @@ function Hud(props: { muted: boolean; onToggleMute: () => void; onPause: () => v
   const magnet = useRunnerStore((s) => s.magnet);
   const doubler = useRunnerStore((s) => s.doubler);
   const shield = useRunnerStore((s) => s.shield);
+  const fly = useRunnerStore((s) => s.fly);
+  const boost = useRunnerStore((s) => s.boost);
+  const lastGift = useRunnerStore((s) => s.lastGift);
   const countdown = useRunnerStore((s) => s.countdown);
   const lastHit = useRunnerStore((s) => s.lastHit);
   const speedT = useRunnerStore((s) => s.speedT);
@@ -354,7 +369,7 @@ function Hud(props: { muted: boolean; onToggleMute: () => void; onPause: () => v
   // A streak banner fires on the exact counts the engine pays a bonus for.
   const streakStep = isStreakStep(combo) ? combo : 0;
   const streak = useRiseBanner(streakStep, 1500);
-  const timers = { magnet, doubler, shield };
+  const timers = { magnet, doubler, shield, fly, boost };
 
   return (
     <>
@@ -365,7 +380,10 @@ function Hud(props: { muted: boolean; onToggleMute: () => void; onPause: () => v
         <div className="rn-hud-row">
           <div className="rn-stat rn-stat--lead">
             <span className="rn-stat-label">{t("runner.profit_label")}</span>
-            <span key={profitKey} className={`rn-stat-value${profitKey > 0 ? " rn-bump" : ""}`}>
+            <span
+              key={profitKey}
+              className={`rn-stat-value${profitKey > 0 ? " rn-bump" : ""}${profit < 0 ? " rn-negative" : ""}`}
+            >
               <Money amount={profit} currency={currency} />
             </span>
             {gain ? (
@@ -426,6 +444,7 @@ function Hud(props: { muted: boolean; onToggleMute: () => void; onPause: () => v
       </div>
 
       <HitToast hit={lastHit} currency={currency} />
+      <GiftToast gift={lastGift} currency={currency} />
 
       {countdown > 0 ? (
         <div className="rn-center" aria-live="assertive">
@@ -480,6 +499,44 @@ function HitToast({ hit, currency }: { hit: RunnerHud["lastHit"]; currency: Curr
         <span className="rn-toast-amount">
           −<Money amount={hit.amount} currency={currency} />
         </span>
+      </div>
+    </div>
+  );
+}
+
+/** A wedding gift just opened: what was inside. Gold where the hit toast is red. */
+function GiftToast({ gift, currency }: { gift: RunnerHud["lastGift"]; currency: Currency }) {
+  const { t } = useT();
+  const shown = useRiseBanner(gift?.n ?? 0, 2000);
+  if (shown === null || !gift || gift.n !== shown) return null;
+  const power = gift.power
+    ? POWERS.find((p) => (p.id === "doubler" ? "double" : p.id) === gift.power)
+    : null;
+  const sub =
+    gift.outcome === "heart"
+      ? t("runner.gift_heart")
+      : gift.outcome === "bag"
+        ? t("runner.gift_bag")
+        : gift.outcome === "envelope"
+          ? t("runner.gift_envelope")
+          : power
+            ? t(power.name)
+            : "";
+  return (
+    <div className="rn-toast-wrap rn-toast-wrap--top">
+      <div key={gift.n} className="rn-toast rn-toast--gift">
+        <span className="rn-toast-icon" aria-hidden>
+          <Gift size={18} strokeWidth={2} />
+        </span>
+        <span className="rn-toast-text">
+          <span className="rn-toast-title">{t("runner.gift_title")}</span>
+          <span className="rn-toast-sub">{sub}</span>
+        </span>
+        {gift.amount > 0 ? (
+          <span className="rn-toast-amount">
+            +<Money amount={gift.amount} currency={currency} />
+          </span>
+        ) : null}
       </div>
     </div>
   );
@@ -597,18 +654,37 @@ function GameOver({ onStart }: { onStart: () => void }) {
 
         <div className="rn-final">
           <span className="rn-stat-label">{t("runner.final_profit_label")}</span>
-          <span className={`rn-final-value${good ? " rn-shine" : ""}`}>
+          <span
+            className={`rn-final-value${good ? " rn-shine" : ""}${summary.profit < 0 ? " rn-negative" : ""}`}
+          >
             <Money amount={summary.profit} currency={summary.currency} />
           </span>
         </div>
 
-        <dl className="rn-tiles">
-          <div className="rn-tile">
-            <dt>{t("runner.collected_label")}</dt>
-            <dd>
-              <Money amount={summary.cash} currency={summary.currency} />
-            </dd>
+        {/* The whole story in two numbers: what the guests gave, what the vendors
+            billed. Profit above is exactly the first minus the second. */}
+        <div className="rn-ledger">
+          <div className="rn-ledger-row rn-ledger-row--in">
+            <span>{t("runner.collected_label")}</span>
+            <span>
+              +
+              <Money
+                amount={grossCollected(summary, summary.multiplier)}
+                currency={summary.currency}
+              />
+            </span>
           </div>
+          <div className="rn-ledger-row rn-ledger-row--out">
+            <span>
+              {t("runner.bills_label")} · {summary.hits}×
+            </span>
+            <span>
+              −<Money amount={expensesFor(summary)} currency={summary.currency} />
+            </span>
+          </div>
+        </div>
+
+        <dl className="rn-tiles">
           <div className="rn-tile">
             <dt>{t("runner.distance_label")}</dt>
             <dd>{runDistance(summary.distance, locale)}</dd>
@@ -616,14 +692,6 @@ function GameOver({ onStart }: { onStart: () => void }) {
           <div className="rn-tile">
             <dt>{t("runner.best_combo_label")}</dt>
             <dd>{summary.bestCombo ?? 0}</dd>
-          </div>
-          <div className="rn-tile">
-            <dt>{t("runner.bags_label")}</dt>
-            <dd>{summary.bags}</dd>
-          </div>
-          <div className="rn-tile">
-            <dt>{t("runner.hits_label")}</dt>
-            <dd>{summary.hits}</dd>
           </div>
           <div className="rn-tile">
             <dt>{t("runner.multiplier_label")}</dt>

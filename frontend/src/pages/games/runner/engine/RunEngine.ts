@@ -32,8 +32,14 @@ import {
   POWERUP_FROM,
   POWERUP_SECONDS,
   ROW_GAP_TIGHT,
+  BOOST_JUMP,
+  FLY_HEIGHT,
+  SKY_COIN_SPACING,
   STREAK_WINDOW,
+  giftEnvelopeValue,
   hitCost,
+  pickGiftPower,
+  rollGift,
   isStreakStep,
   pickPowerUp,
   streakBonus,
@@ -66,6 +72,7 @@ import {
 } from "@shared/runner";
 import type {
   CashId,
+  GiftOutcome,
   LaneIndex,
   ObstacleId,
   PowerUpId,
@@ -195,6 +202,8 @@ export type RunEvent =
   | { type: "expense"; amount: number; obstacle: ObstacleId }
   | { type: "milestone"; multiplier: number }
   | { type: "power"; kind: PowerUpId }
+  | { type: "gift"; outcome: GiftOutcome }
+  | { type: "liftoff" }
   | { type: "shield_break" }
   | { type: "streak"; count: number; value: number }
   | { type: "charge" }
@@ -298,6 +307,9 @@ export interface RunState {
   magnet: number;
   doubler: number;
   shield: number;
+  /** Seconds of balloon flight / super sneakers left. */
+  fly: number;
+  boost: number;
   /** Seconds of the 3-2-1 left before the track starts moving. */
   countdown: number;
   /** The bill so far: each hit priced by its vendor against the couple's budget. */
@@ -305,6 +317,8 @@ export interface RunState {
   /** The most recent hit, for the toast. `n` is the hit count it was, so the
    *  HUD can tell a new hit from a re-render of the same one. */
   lastHit: { id: ObstacleId; amount: number; n: number } | null;
+  /** The most recent gift box, for its toast; `n` counts gifts this run. */
+  lastGift: { outcome: GiftOutcome; power: PowerUpId | null; amount: number; n: number } | null;
 }
 
 const clamp = (n: number, lo: number, hi: number) => (n < lo ? lo : n > hi ? hi : n);
@@ -332,6 +346,9 @@ export class RunEngine {
   private jumpBuffer = 0;
   /** Last whole second of the countdown announced, so each number fires once. */
   private lastCount = 0;
+  private giftCount = 0;
+  /** Metres of travel until the next sky coin is laid during a flight. */
+  private skyCursor = 0;
   private key = 1;
   /** Wall-clock seconds since the run started; drives the run cycle, the camera
    *  and the partner's idle animation. Public because THREE separate rigs read
@@ -401,6 +418,9 @@ export class RunEngine {
       countdown: 0,
       expenses: 0,
       lastHit: null,
+      lastGift: null,
+      fly: 0,
+      boost: 0,
     };
     for (let i = 0; i < OBSTACLE_POOL; i++) {
       this.obstacles.push({
@@ -462,6 +482,11 @@ export class RunEngine {
     s.countdown = countdown;
     s.expenses = 0;
     s.lastHit = null;
+    s.lastGift = null;
+    s.fly = 0;
+    s.boost = 0;
+    this.giftCount = 0;
+    this.skyCursor = 0;
     this.lastCount = Math.ceil(countdown);
 
     for (const o of this.obstacles) o.active = false;
@@ -524,6 +549,7 @@ export class RunEngine {
   jump(): boolean {
     const s = this.state;
     if (s.phase !== "running" || s.countdown > 0) return false;
+    if (s.fly > 0) return false;
     // Coyote time covers the handful of frames between leaving the ground and
     // the jump landing, which is the classic "I pressed jump and nothing
     // happened" complaint. The buffer does the same for a press that arrives
@@ -538,7 +564,7 @@ export class RunEngine {
 
   private doJump() {
     const s = this.state;
-    s.vy = JUMP.velocity;
+    s.vy = JUMP.velocity * (s.boost > 0 ? BOOST_JUMP : 1);
     s.airborne = true;
     s.sliding = false;
     s.slideTime = 0;
@@ -629,6 +655,17 @@ export class RunEngine {
     if (s.magnet > 0) s.magnet = Math.max(0, s.magnet - dt);
     if (s.doubler > 0) s.doubler = Math.max(0, s.doubler - dt);
     if (s.shield > 0) s.shield = Math.max(0, s.shield - dt);
+    if (s.boost > 0) s.boost = Math.max(0, s.boost - dt);
+    if (s.fly > 0) {
+      s.fly = Math.max(0, s.fly - dt);
+      if (s.fly === 0) {
+        // The balloons let go: fall back under gravity, briefly untouchable so
+        // the landing cannot be onto a wall the player could not see coming.
+        s.vy = 0;
+        s.airborne = true;
+        s.invuln = Math.max(s.invuln, 1.1);
+      }
+    }
     if (s.comboTimer > 0) {
       s.comboTimer = Math.max(0, s.comboTimer - dt);
       if (s.comboTimer === 0) s.combo = 0;
@@ -678,7 +715,13 @@ export class RunEngine {
     const targetX = laneX(s.lane);
     s.x += (targetX - s.x) * ease(dt, LANE_SETTLE * 0.42);
 
-    if (s.airborne) {
+    if (s.fly > 0) {
+      s.y += (FLY_HEIGHT - s.y) * ease(dt, 0.32);
+      s.vy = 0;
+      s.airborne = true;
+      s.sliding = false;
+      s.slideTime = 0;
+    } else if (s.airborne) {
       s.vy -= JUMP.gravity * dt;
       s.y += s.vy * dt;
       if (s.y <= 0) {
@@ -696,6 +739,7 @@ export class RunEngine {
      * window and the track goes empty after the first handful of rows. */
     this.spawnCursor -= travel;
     this.spawn();
+    this.skyTrail(travel);
     for (const o of this.obstacles) {
       if (!o.active) continue;
       if (o.charge && !o.charging && -o.z < CHARGE_TRIGGER) {
@@ -814,6 +858,28 @@ export class RunEngine {
     return "coin";
   }
 
+  /** During a flight, lay a weaving trail of coins at cruising height far
+   *  enough ahead to arrive while the balloons still hold. */
+  private skyTrail(travel: number) {
+    const s = this.state;
+    if (s.fly <= 0) return;
+    const ahead = 46;
+    if (s.fly * Math.max(1, s.speed) < ahead + 4) return;
+    this.skyCursor -= travel;
+    while (this.skyCursor <= 0) {
+      this.skyCursor += SKY_COIN_SPACING;
+      const slot = this.freeCash();
+      if (!slot) return;
+      const wave = Math.sin((s.distance + ahead) * 0.09);
+      const lane = (wave > 0.4 ? 2 : wave < -0.4 ? 0 : 1) as LaneIndex;
+      slot.tier = this.rng() < 0.15 ? "envelope" : this.rng() < 0.4 ? "bundle" : "coin";
+      slot.x = laneX(lane);
+      slot.y = FLY_HEIGHT + 0.7;
+      slot.z = -ahead;
+      slot.active = true;
+    }
+  }
+
   /** A power-up a few metres before a row, on one of its safe lanes. */
   private placePowerUp(spawn: number, lane: LaneIndex) {
     const slot = this.powerups.find((p) => !p.active);
@@ -847,6 +913,7 @@ export class RunEngine {
     const reach = height / 2 + 0.42;
 
     for (const o of this.obstacles) {
+      if (s.fly > 0) break;
       if (!o.active || o.spent) continue;
       if (Math.abs(o.z) > 0.7) continue;
       const spec = OBSTACLE_GEOM[o.id];
@@ -913,12 +980,56 @@ export class RunEngine {
       if (Math.abs(p.x - s.x) > 0.8) continue;
       if (Math.abs(p.y - centerY) > reach + 0.2) continue;
       p.active = false;
-      if (p.kind === "magnet") s.magnet = POWERUP_SECONDS.magnet;
-      else if (p.kind === "double") s.doubler = POWERUP_SECONDS.double;
-      else s.shield = POWERUP_SECONDS.shield;
-      this.events.push({ type: "power", kind: p.kind });
+      if (p.kind === "gift") {
+        this.openGift(p.x, p.y, p.z);
+      } else {
+        this.grant(p.kind);
+        this.events.push({ type: "power", kind: p.kind });
+      }
       this.spark("power", p.x, p.y, p.z);
     }
+  }
+
+  /** Switch a power-up on. One place, so a gift and a pickup cannot disagree. */
+  private grant(kind: Exclude<PowerUpId, "gift">) {
+    const s = this.state;
+    if (kind === "magnet") s.magnet = POWERUP_SECONDS.magnet;
+    else if (kind === "double") s.doubler = POWERUP_SECONDS.double;
+    else if (kind === "shield") s.shield = POWERUP_SECONDS.shield;
+    else if (kind === "boost") s.boost = POWERUP_SECONDS.boost;
+    else {
+      s.fly = POWERUP_SECONDS.fly;
+      this.skyCursor = 0;
+      this.events.push({ type: "liftoff" });
+    }
+  }
+
+  /** A wedding gift: an envelope of cash, a power-up, a heart back, or a tote. */
+  private openGift(x: number, y: number, z: number) {
+    const s = this.state;
+    const outcome = rollGift(this.rng, s.hearts < START_HEARTS);
+    let power: PowerUpId | null = null;
+    let amount = 0;
+    if (outcome === "envelope") {
+      const raw = giftEnvelopeValue(this.currency);
+      s.cash += raw;
+      amount = raw * s.multiplier;
+      this.floats.push({ x, y: y + 0.8, z, value: amount, currency: this.currency, big: true });
+    } else if (outcome === "bag") {
+      s.bags += 1;
+      amount = economyFor(this.currency).bag * s.multiplier;
+      this.floats.push({ x, y: y + 0.8, z, value: amount, currency: this.currency, big: true });
+    } else if (outcome === "heart") {
+      s.hearts = Math.min(START_HEARTS, s.hearts + 1);
+    } else {
+      const kind = pickGiftPower(this.rng);
+      power = kind;
+      this.grant(kind);
+    }
+    this.giftCount += 1;
+    s.lastGift = { outcome, power, amount, n: this.giftCount };
+    this.events.push({ type: "gift", outcome });
+    this.spark("confetti", x, y + 0.5, z);
   }
 
   /** One more pickup in the streak, and the bonus when it lands on a step. The

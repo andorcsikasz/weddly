@@ -130,17 +130,14 @@ describe("weddingProfit", () => {
     expect(one - two).toBe(economyFor("HUF").expensePerHit);
   });
 
-  it("is FLOORED AT ZERO, so a run cannot end up ahead by taking hits", () => {
-    // `weddingProfit` clamps at 0 rather than going negative. That is a scoring
-    // DECISION, not a rounding artefact: an unclamped score would make hitting an
-    // obstacle the highest-value action in the game whenever the bill exceeds the
-    // cash, because the couple would be racing toward bankruptcy. The clamp has to
-    // be pinned here or a future "let me show the real shortfall" change would
-    // quietly hand every player a strategy.
+  it("goes NEGATIVE when the bills beat the gifts, and every hit only lowers it", () => {
+    // Owner direction: a wedding can run at a loss and the score says so. The old
+    // floor at zero hid the shortfall; it never protected anything, because a hit
+    // only ever SUBTRACTS, so no amount of hitting can raise the number.
     const broke = { cash: 0, bags: 0, hits: 3, currency: "HUF" as Currency };
-    expect(weddingProfit(broke, 1)).toBe(0);
-    const deep = { cash: 0, bags: 0, hits: 9, currency: "HUF" as Currency };
-    expect(weddingProfit(deep, 1)).toBe(0);
+    expect(weddingProfit(broke, 1)).toBe(-3 * economyFor("HUF").expensePerHit);
+    const deeper = { ...broke, hits: 4 };
+    expect(weddingProfit(deeper, 1)).toBeLessThan(weddingProfit(broke, 1));
   });
 
   it("is below the collected cash once the bill is paid", () => {
@@ -163,7 +160,8 @@ describe("verdictFor", () => {
       expect(verdictFor(comfortable - 1, currency)).toBe("tight");
       expect(verdictFor(tight, currency)).toBe("tight");
       expect(verdictFor(tight - 1, currency)).toBe("over_budget");
-      expect(verdictFor(0, currency)).toBe("bankrupt");
+      // Breaking exactly even is not a loss; a single unit short is.
+      expect(verdictFor(0, currency)).toBe("over_budget");
       expect(verdictFor(-1, currency)).toBe("bankrupt");
     }
   });

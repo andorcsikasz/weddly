@@ -1071,8 +1071,18 @@ export const CHARGE_SPEED = 7;
 
 /* ── Power-ups ──────────────────────────────────────────────────────────── */
 
-export type PowerUpId = "magnet" | "double" | "shield";
-export const POWERUP_IDS: readonly PowerUpId[] = ["magnet", "double", "shield"];
+/** `fly` is the balloon flight (the jetpack moment: up over the track along a
+ *  sky trail of coins), `boost` the super sneakers (higher jumps), and `gift` a
+ *  wrapped wedding present that opens into a random surprise. */
+export type PowerUpId = "magnet" | "double" | "shield" | "fly" | "boost" | "gift";
+export const POWERUP_IDS: readonly PowerUpId[] = [
+  "magnet",
+  "double",
+  "shield",
+  "fly",
+  "boost",
+  "gift",
+];
 
 /** Seconds each power-up lasts. The shield lasts until it absorbs a hit OR this
  *  runs out, whichever comes first, so it cannot be banked for the late game. */
@@ -1080,21 +1090,58 @@ export const POWERUP_SECONDS: Readonly<Record<PowerUpId, number>> = {
   magnet: 9,
   double: 8,
   shield: 14,
+  fly: 6,
+  boost: 10,
+  gift: 0,
 };
 
+/** Cruising height of the balloon flight, metres: above every prop's top. */
+export const FLY_HEIGHT = 3.1;
+/** Metres between coins on the sky trail. */
+export const SKY_COIN_SPACING = 3;
+/** Super sneakers multiply the jump's launch speed by this. */
+export const BOOST_JUMP = 1.32;
+
+/** What a gift box opens into. */
+export type GiftOutcome = "envelope" | "power" | "heart" | "bag";
+
+/** Roll a gift. A heart is only offered to a runner who is missing one; the
+ *  caller passes that in so the roll never wastes itself on a full row. */
+export function rollGift(rng: Rng, canHeal: boolean): GiftOutcome {
+  const r = rng();
+  if (canHeal && r < 0.2) return "heart";
+  if (r < 0.55) return "envelope";
+  if (r < 0.85) return "power";
+  return "bag";
+}
+
+/** Raw cash in a gift envelope: ten envelopes' worth. */
+export function giftEnvelopeValue(currency: Currency): number {
+  return economyFor(currency).envelope * 10;
+}
+
 /** Per-row chance of a power-up on the safe path, once `POWERUP_FROM` is passed. */
-export const POWERUP_CHANCE = 0.08;
+export const POWERUP_CHANCE = 0.13;
 export const POWERUP_FROM = 120;
 /** Metres either side of the player (in z) the magnet pulls cash from. */
 export const MAGNET_REACH = 11;
 
 export function pickPowerUp(rng: Rng): PowerUpId {
   const roll = rng();
-  // The shield is the rarest because it is the only one that changes the
-  // outcome rather than the score.
-  if (roll < 0.4) return "magnet";
-  if (roll < 0.78) return "double";
-  return "shield";
+  // The shield is among the rarest because it changes the outcome rather than
+  // the score; the gift is the most common, because opening it is the fun.
+  if (roll < 0.22) return "magnet";
+  if (roll < 0.4) return "double";
+  if (roll < 0.52) return "shield";
+  if (roll < 0.64) return "fly";
+  if (roll < 0.76) return "boost";
+  return "gift";
+}
+
+/** A power-up a gift box can hand over: never another gift, never nothing. */
+export function pickGiftPower(rng: Rng): Exclude<PowerUpId, "gift"> {
+  const all = ["magnet", "double", "shield", "fly", "boost"] as const;
+  return all[Math.floor(rng() * all.length)] ?? "magnet";
 }
 
 /* ── Streaks ────────────────────────────────────────────────────────────── */
@@ -1395,14 +1442,14 @@ export function bagValue(bags: number, multiplier: number, currency: Currency): 
 }
 
 /**
- * THE SCORE. Gross income minus the bill, floored at zero so the leaderboard
- * can never be improved by hitting things. A run that collects 400 000 and
- * takes three hits has made 200 000 — which is the joke: the vendors are
- * expensive too.
+ * THE SCORE: what the guests gave minus what the vendors billed. NOT floored:
+ * a wedding can run at a loss, and the game says so in red rather than
+ * pretending a bad run broke even. Hitting things still never helps, because
+ * every hit only ever subtracts.
  */
 export function weddingProfit(e: RunEconomy, multiplier: number): number {
   const gross = grossCollected(e, multiplier);
-  return Math.max(0, gross - expensesFor(e));
+  return gross - expensesFor(e);
 }
 
 /** Total collected before the bill — what the HUD calls "cash collected". */
@@ -1439,7 +1486,8 @@ export function verdictThresholds(currency: Currency): { tight: number; comforta
 }
 
 export function verdictFor(profit: number, currency: Currency): Verdict {
-  if (profit <= 0) return "bankrupt";
+  // "bankrupt" is a wedding that ran at a LOSS: the bills beat the gifts.
+  if (profit < 0) return "bankrupt";
   const band = economyFor(currency);
   if (profit < band.tight) return "over_budget";
   if (profit < band.comfortable) return "tight";

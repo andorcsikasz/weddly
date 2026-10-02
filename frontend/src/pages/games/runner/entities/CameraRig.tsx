@@ -62,7 +62,10 @@ export function CameraRig({ readState }: CameraRigProps) {
     // so the last frame of a run is a slower, wider, held shot.
     const settle = s.phase === "over" ? 0.55 : 1;
     const targetX = s.x * 0.62;
-    const targetY = 2.55 + t * 1.15 + s.y * 0.22;
+    // In flight the camera climbs WITH the runner, so the sky trail stays in
+    // frame and the track drops away below: the jetpack shot.
+    const lift = s.fly > 0 || s.y > 1.6 ? s.y * 0.75 : s.y * 0.22;
+    const targetY = 2.55 + t * 1.15 + lift;
     const targetZ = 6.0 + t * 2.1 + (s.phase === "over" ? 1.2 : 0);
     const targetLook = 1.05 + s.y * 0.34;
 

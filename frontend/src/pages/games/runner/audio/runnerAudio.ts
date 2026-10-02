@@ -126,6 +126,12 @@ export class RunnerAudio {
         case "countdown":
           this.countdown(ctx, e.n);
           break;
+        case "liftoff":
+          this.liftoff(ctx);
+          break;
+        case "gift":
+          this.gift(ctx);
+          break;
         default:
           // `lane` is silent on purpose. A whoosh per lane change on a keyboard
           // player holding ArrowRight would be a machine gun; the camera pan is
@@ -289,6 +295,19 @@ export class RunnerAudio {
     // like a buzzer instead.
     this.blip(ctx, { type: "sawtooth", from: 392, to: 380, at: 0, dur: 0.32, gain: 0.05 });
     this.blip(ctx, { type: "sawtooth", from: 494, to: 480, at: 0, dur: 0.32, gain: 0.04 });
+  }
+
+  private liftoff(ctx: AudioContext) {
+    // A long rising whoosh: the balloons take you up.
+    this.blip(ctx, { type: "sine", from: 220, to: 1760, at: 0, dur: 0.7, gain: 0.07 });
+    this.noiseBurst(ctx, { at: 0, dur: 0.6, gain: 0.08, hz: 1800 });
+  }
+
+  private gift(ctx: AudioContext) {
+    // A music-box flourish: the present opening.
+    [1046, 1318, 1568, 2093, 1568, 2637].forEach((n, i) => {
+      this.blip(ctx, { type: "sine", from: n, to: n, at: i * 0.055, dur: 0.18, gain: 0.08 });
+    });
   }
 
   private countdown(ctx: AudioContext, n: number) {

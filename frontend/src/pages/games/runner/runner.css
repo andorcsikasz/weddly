@@ -1218,3 +1218,66 @@
 @media (prefers-reduced-motion: reduce) {
   .rn-toast { animation: none; }
 }
+
+.rn-negative {
+  color: #ff8a9a !important;
+  text-shadow: 0 1px 12px rgb(220 40 60 / 0.35) !important;
+}
+
+.rn-toast-wrap--top {
+  bottom: auto;
+  top: 6.5rem;
+}
+
+.rn-toast--gift {
+  background: rgb(36 26 8 / 0.9);
+  border-color: rgb(240 198 107 / 0.6);
+  box-shadow: 0 12px 34px rgb(0 0 0 / 0.45), 0 0 24px rgb(240 198 107 / 0.3);
+}
+
+.rn-toast--gift .rn-toast-icon {
+  color: #ffe08a;
+  border-color: rgb(255 224 138 / 0.5);
+}
+
+.rn-toast--gift .rn-toast-amount {
+  color: #ffe08a;
+}
+
+.rn-ledger {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.8rem;
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.rn-ledger-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rn-ledger-row span:first-child {
+  color: rgb(255 255 255 / 0.65);
+}
+
+.rn-ledger-row span:last-child {
+  font-weight: 700;
+}
+
+.rn-ledger-row--in span:last-child { color: #ffe08a; }
+.rn-ledger-row--out span:last-child { color: #ff8a9a; }
+
+.rn-card--menu .rn-power {
+  padding: 0.28rem 0.55rem;
+}
+
+.rn-power--fly svg { color: #f5b8a8; }
+.rn-power--boost svg { color: #8ee2a6; }
+.rn-timer--fly { color: #f5b8a8; border-color: rgb(237 169 151 / 0.5); }
+.rn-timer--boost { color: #8ee2a6; border-color: rgb(80 184 115 / 0.5); }

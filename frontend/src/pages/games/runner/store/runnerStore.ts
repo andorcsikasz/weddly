@@ -24,6 +24,8 @@ import {
   SPEED_START,
   START_HEARTS,
   STREAK_WINDOW,
+  expensesFor,
+  grossCollected,
   multiplierAt,
   nextMilestoneAt,
   verdictFor,
@@ -68,6 +70,13 @@ export interface RunnerHud {
   nextMultiplier: number | null;
   /** The most recent hit: which vendor, what it cost. Drives the hit toast. */
   lastHit: RunState["lastHit"];
+  lastGift: RunState["lastGift"];
+  fly: number;
+  boost: number;
+  /** What the guests gave (cash and totes, multiplier applied) and what the
+   *  vendors billed. Profit is exactly the first minus the second. */
+  gross: number;
+  expenses: number;
 }
 
 export interface RunnerStore extends RunnerHud {
@@ -167,6 +176,9 @@ export type HudCounters = Pick<
       | "cruiseSpeed"
       | "expenses"
       | "lastHit"
+      | "lastGift"
+      | "fly"
+      | "boost"
     >
   >;
 
@@ -214,6 +226,14 @@ export function deriveHud(
     shield: Math.min(1, (state.shield ?? 0) / POWERUP_SECONDS.shield),
     countdown: Math.ceil(state.countdown ?? 0),
     lastHit: state.lastHit ?? null,
+    lastGift: state.lastGift ?? null,
+    fly: Math.min(1, (state.fly ?? 0) / POWERUP_SECONDS.fly),
+    boost: Math.min(1, (state.boost ?? 0) / POWERUP_SECONDS.boost),
+    expenses: expensesFor({ hits: state.hits, currency, expenses: state.expenses }),
+    gross: grossCollected(
+      { cash: state.cash, bags: state.bags, hits: state.hits, currency },
+      state.multiplier,
+    ),
     speedT: Math.min(
       1,
       Math.max(0, ((state.cruiseSpeed ?? SPEED_START) - SPEED_START) / (SPEED_MAX - SPEED_START)),
@@ -244,6 +264,11 @@ const BLANK: RunnerHud = {
   toNext: 0,
   nextMultiplier: 2,
   lastHit: null,
+  lastGift: null,
+  fly: 0,
+  boost: 0,
+  gross: 0,
+  expenses: 0,
 };
 
 type SetState<T> = (partial: Partial<T>) => void;

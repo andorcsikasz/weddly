@@ -232,3 +232,48 @@ describe("hit pricing", () => {
     expect(engine.budget).toBe(20_000);
   });
 });
+
+describe("balloon flight", () => {
+  it("lifts the runner over every obstacle, lays a sky trail, and lands safely", () => {
+    const engine = new RunEngine("bride", "EUR");
+    engine.start(2);
+    engine.state.fly = 6;
+    for (let i = 0; i < 60; i++) engine.advance(FRAME);
+    expect(engine.state.y).toBeGreaterThan(2.5);
+    expect(engine.jump()).toBe(false);
+    // A wall right on top of the runner does nothing while airborne on balloons.
+    const slot = engine.obstacles.find((o) => !o.active)!;
+    Object.assign(slot, {
+      id: "dj_booth",
+      lane: 1,
+      x: 0,
+      z: -0.2,
+      spent: false,
+      charge: false,
+      charging: false,
+      active: true,
+    });
+    engine.advance(FRAME);
+    expect(engine.state.hits).toBe(0);
+    expect(engine.cash.some((c) => c.active && c.y > 3)).toBe(true);
+    for (let i = 0; i < 60 * 7; i++) {
+      engine.advance(FRAME);
+      if (engine.state.fly === 0 && engine.state.invuln > 0)
+        engine.state.invuln = Math.max(engine.state.invuln, 0.5);
+    }
+    expect(engine.state.fly).toBe(0);
+    expect(engine.state.y).toBeLessThan(0.05);
+  });
+});
+
+describe("gift box", () => {
+  it("opens into a surprise and reports it for the toast", () => {
+    const engine = new RunEngine("bride", "EUR");
+    engine.start(4);
+    const p = engine.powerups.find((x) => !x.active)!;
+    Object.assign(p, { kind: "gift", x: 0, y: 0.95, z: -0.1, active: true });
+    engine.advance(FRAME);
+    expect(engine.state.lastGift?.n).toBe(1);
+    expect(engine.drainEvents().some((e) => e.type === "gift")).toBe(true);
+  });
+});

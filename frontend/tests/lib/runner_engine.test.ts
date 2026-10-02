@@ -7,7 +7,7 @@
 // the particle queue, a page that reads a queue the audio layer already drained.
 
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { LEAD_IN, makeRng, ROWS } from "@shared/runner";
+import { LEAD_IN, ROWS, grossCollected, makeRng } from "@shared/runner";
 import { RunEngine } from "@/pages/games/runner/engine/RunEngine";
 import { useRunnerStore } from "@/pages/games/runner/store/runnerStore";
 
@@ -158,7 +158,11 @@ describe("RunEngine phases", () => {
 
     const summary = engine.summary();
     expect(summary.currency).toBe("HUF");
-    expect(summary.profit).toBeGreaterThanOrEqual(0);
+    // Profit is gifts minus bills, unfloored: a run that only hit things is
+    // a LOSS, and the summary says so.
+    expect(summary.profit).toBe(
+      grossCollected(summary, summary.multiplier) - (summary.expenses ?? 0),
+    );
     // Every heart spent and nothing collected: the bill alone floors the score at
     // zero, and the verdict has to say so rather than report a comfortable finish.
     expect(summary.hits).toBeGreaterThanOrEqual(3);
