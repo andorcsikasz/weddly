@@ -196,6 +196,71 @@ export const M = {
     }),
 } as const;
 
+/** A physically based cloth/skin material, registered like the rest. The rig
+ *  is the one thing the camera stares at all run, so it gets sheen (fabric that
+ *  catches a rim of light), clearcoat (satin lapels, a polished deck) and a
+ *  softer roughness than the props' flat matte. */
+function physical(key: string, params: THREE.MeshPhysicalMaterialParameters): THREE.Material {
+  const hit = registry.get(key);
+  if (hit) return hit;
+  const made = new THREE.MeshPhysicalMaterial(params);
+  registry.set(key, made);
+  return made;
+}
+
+export const RIG = {
+  gown: () =>
+    physical("rig:gown", {
+      color: PALETTE.paper50,
+      roughness: 0.55,
+      sheen: 1,
+      sheenRoughness: 0.45,
+      sheenColor: new THREE.Color(PALETTE.blush100),
+      emissive: new THREE.Color(PALETTE.paper100),
+      emissiveIntensity: 0.18,
+    }),
+  tux: () =>
+    physical("rig:tux", {
+      color: PALETTE.ink900,
+      roughness: 0.48,
+      sheen: 0.6,
+      sheenRoughness: 0.5,
+      sheenColor: new THREE.Color(PALETTE.ink700),
+      clearcoat: 0.15,
+    }),
+  skin: () =>
+    physical("rig:skin", {
+      color: PALETTE.skinTone,
+      roughness: 0.52,
+      sheen: 0.4,
+      sheenRoughness: 0.6,
+      sheenColor: new THREE.Color(PALETTE.skinSheen),
+    }),
+  skinDeep: () =>
+    physical("rig:skinDeep", {
+      color: PALETTE.skinToneDeep,
+      roughness: 0.55,
+      sheen: 0.3,
+      sheenColor: new THREE.Color(PALETTE.skinSheen),
+    }),
+  hair: () =>
+    physical("rig:hair", {
+      color: PALETTE.umber700,
+      roughness: 0.38,
+      sheen: 0.8,
+      sheenRoughness: 0.3,
+      sheenColor: new THREE.Color(PALETTE.hairSheen),
+    }),
+  hairLight: () =>
+    physical("rig:hairLight", {
+      color: PALETTE.hairLight,
+      roughness: 0.38,
+      sheen: 0.8,
+      sheenRoughness: 0.3,
+      sheenColor: new THREE.Color(PALETTE.hairLightSheen),
+    }),
+} as const;
+
 /** Release every shared material. The scene owns these for the lifetime of the
  *  route, so the page calls this on unmount. */
 export function disposeMaterials(): void {

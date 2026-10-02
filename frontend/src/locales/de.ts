@@ -4573,6 +4573,8 @@ const de: LocaleMessages = {
     power_fly_body: "Schwebe über alle Kosten entlang einer Münzspur am Himmel.",
     power_boost: "Supersneaker",
     power_boost_body: "Eine Weile viel höher springen.",
+    power_board: "Skateboard",
+    power_board_body: "Fahr eine Weile damit; es fängt einen Treffer für dich ab.",
   },
   quiz: {
     list: {

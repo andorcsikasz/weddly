@@ -155,9 +155,33 @@ export interface RunnerUIProps {
 
 /** The three power-ups, in one table, so the menu legend and the HUD timers
  *  cannot name them differently. */
+/** The skateboard glyph: lucide has none, so it is drawn in lucide's own
+ *  stroke idiom (24 grid, currentColor, round caps) to sit beside the others. */
+function SkateIcon({ size = 16, strokeWidth = 1.75 }: { size?: number; strokeWidth?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 11c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2" />
+      <circle cx="7.5" cy="17" r="1.6" />
+      <circle cx="16.5" cy="17" r="1.6" />
+    </svg>
+  );
+}
+
+type PowerIcon = LucideIcon | typeof SkateIcon;
+
 const POWERS: readonly {
-  id: "magnet" | "doubler" | "shield" | "fly" | "boost";
-  icon: LucideIcon;
+  id: "magnet" | "doubler" | "shield" | "fly" | "boost" | "board";
+  icon: PowerIcon;
   name: string;
   body: string;
 }[] = [
@@ -166,6 +190,7 @@ const POWERS: readonly {
   { id: "shield", icon: Shield, name: "runner.power_shield", body: "runner.power_shield_body" },
   { id: "fly", icon: Cloud, name: "runner.power_fly", body: "runner.power_fly_body" },
   { id: "boost", icon: Footprints, name: "runner.power_boost", body: "runner.power_boost_body" },
+  { id: "board", icon: SkateIcon, name: "runner.power_board", body: "runner.power_board_body" },
 ];
 
 export function RunnerUI({
@@ -355,6 +380,7 @@ function Hud(props: { muted: boolean; onToggleMute: () => void; onPause: () => v
   const shield = useRunnerStore((s) => s.shield);
   const fly = useRunnerStore((s) => s.fly);
   const boost = useRunnerStore((s) => s.boost);
+  const board = useRunnerStore((s) => s.board);
   const lastGift = useRunnerStore((s) => s.lastGift);
   const countdown = useRunnerStore((s) => s.countdown);
   const lastHit = useRunnerStore((s) => s.lastHit);
@@ -369,7 +395,7 @@ function Hud(props: { muted: boolean; onToggleMute: () => void; onPause: () => v
   // A streak banner fires on the exact counts the engine pays a bonus for.
   const streakStep = isStreakStep(combo) ? combo : 0;
   const streak = useRiseBanner(streakStep, 1500);
-  const timers = { magnet, doubler, shield, fly, boost };
+  const timers = { magnet, doubler, shield, fly, boost, board };
 
   return (
     <>

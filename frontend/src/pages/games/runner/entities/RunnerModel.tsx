@@ -22,7 +22,7 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import type { MutableRefObject } from "react";
 import * as THREE from "three";
-import { M, box, cylinder, geo, sphere } from "../constants/materials";
+import { M, RIG, box, cylinder, geo, sphere } from "../constants/materials";
 import { PALETTE } from "../constants/palette";
 import type { RunnerCharacter } from "../engine/RunEngine";
 
@@ -64,8 +64,12 @@ export interface RigInput {
   celebrate: number;
   /** False at the menu / while paused: an idle pose instead of a run. */
   running: boolean;
-  /** Extra vertical bob the caller wants, in metres (the partner's bounce). */
+  /** Extra vertical bob the caller wants, in metres. */
   bob: number;
+  /** On the skateboard: crouched, sideways stance, feet planted. */
+  ride?: boolean;
+  /** Hanging from the balloons: arms up, legs dangling. */
+  fly?: boolean;
 }
 
 /** Framerate-independent damping factor for a time constant. */
@@ -176,12 +180,12 @@ export function RunnerModel({
 
   const mat = useMemo(
     () => ({
-      skin: M.skin(),
-      skinDeep: M.skinDeep(),
-      hair: bride ? M.hairLight() : M.hair(),
-      ivory: M.ivory(),
+      skin: RIG.skin(),
+      skinDeep: RIG.skinDeep(),
+      hair: bride ? RIG.hairLight() : RIG.hair(),
+      ivory: RIG.gown(),
       veil: M.veil(),
-      tux: M.tuxedo(),
+      tux: RIG.tux(),
       lining: M.tuxedoLining(),
       shirt: M.shirt(),
       bow: M.bowTie(),
@@ -278,6 +282,42 @@ export function RunnerModel({
       tHead = -0.22 * s;
     }
 
+    if (input.ride && input.slide <= 0.01) {
+      // Surf stance: knees bent, feet planted, arms out for balance. Blended
+      // with the air tuck rather than replacing it, so an ollie still tucks.
+      const r = 1 - Math.min(1, input.air) * 0.6;
+      tThighL = 0.55 * r + tThighL * (1 - r);
+      tThighR = 0.35 * r + tThighR * (1 - r);
+      tShinL = 1.0 * r + tShinL * (1 - r);
+      tShinR = 0.8 * r + tShinR * (1 - r);
+      tArmL = -0.5 + Math.sin(input.clock * 2.1) * 0.12;
+      tArmR = 0.6 + Math.sin(input.clock * 2.1 + 1) * 0.12;
+      tForeL = 0.5;
+      tForeR = 0.4;
+      tBob = -0.16 * r + Math.sin(input.clock * 4) * 0.012;
+      tLean = 0.22;
+      tRoll = -input.laneDelta * 0.25 + Math.sin(input.clock * 1.6) * 0.04;
+      tSkirt = -0.25;
+    }
+
+    if (input.fly) {
+      // Hanging from the balloon strings: both arms straight up, legs dangling
+      // and kicking a little, gown and tails streaming.
+      tArmL = -2.95;
+      tArmR = -2.85;
+      tForeL = 0.12;
+      tForeR = 0.12;
+      tThighL = 0.25 + Math.sin(input.clock * 3.1) * 0.22;
+      tThighR = 0.1 + Math.sin(input.clock * 3.1 + 2) * 0.22;
+      tShinL = 0.45 + Math.max(0, Math.sin(input.clock * 3.1)) * 0.3;
+      tShinR = 0.45 + Math.max(0, Math.sin(input.clock * 3.1 + 2)) * 0.3;
+      tBob = Math.sin(input.clock * 1.8) * 0.05;
+      tLean = 0.06;
+      tRoll = Math.sin(input.clock * 1.3) * 0.06;
+      tSkirt = -0.3 + Math.sin(input.clock * 6) * 0.08;
+      tHead = 0.05;
+    }
+
     if (input.celebrate > 0.01) {
       // Profitable game over: arms up, a little hop. Deliberately small — the
       // verdict screen is doing the talking.
@@ -317,11 +357,13 @@ export function RunnerModel({
     // PLAYER at z = 0 — the whole world moves toward +z — but the partner runs a
     // few metres behind, so the rig has to own all three axes or the second copy
     // of it cannot be placed at all.
-    root.position.set(p.x, p.height + p.bob + input.bob, input.z);
+    // On the board the feet stand on the deck, 0.13 m up.
+    root.position.set(p.x, p.height + p.bob + input.bob + (input.ride ? 0.13 : 0), input.z);
     // Lean into the lane change AND flinch away from the hit. Both are roll
     // about z, and the flinch is added on top rather than replacing the lean,
     // so a hit mid-lane-change reads as one movement rather than two.
-    const flinch = input.invuln > 0 ? Math.sin(input.clock * 46) * 0.12 * input.invuln : 0;
+    const flinch =
+      input.invuln > 0 ? Math.sin(input.clock * 46) * 0.12 * Math.min(1, input.invuln) : 0;
     root.rotation.z = -input.laneDelta * 0.42 + flinch;
     root.rotation.y = input.laneDelta * 0.2;
     root.scale.setScalar(scale);
@@ -332,6 +374,9 @@ export function RunnerModel({
     if (jc.body) {
       jc.body.rotation.x = p.lean;
       jc.body.rotation.z = p.roll;
+      // Sideways stance on the board; square to the track on foot.
+      const yaw = input.ride && !input.fly ? 0.55 : 0;
+      jc.body.rotation.y += (yaw - jc.body.rotation.y) * k;
     }
     if (jc.head) jc.head.rotation.z = p.headTilt + Math.sin(input.clock * 0.9) * 0.03;
     if (jc.armL) jc.armL.rotation.x = p.armL;

@@ -5236,6 +5236,8 @@ export interface LocaleMessages {
     power_fly_body: string;
     power_boost: string;
     power_boost_body: string;
+    power_board: string;
+    power_board_body: string;
   };
   /** Live wedding quiz game — /app/games/quiz (list + builder),
    *  /app/games/quiz/:id/host (the host console), and /play/:code (the

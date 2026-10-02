@@ -4478,6 +4478,8 @@ const hr: LocaleMessages = {
     power_fly_body: "Leti iznad svih troškova po tragu kovanica na nebu.",
     power_boost: "Super tenisice",
     power_boost_body: "Neko vrijeme skačeš puno više.",
+    power_board: "Skateboard",
+    power_board_body: "Vozi ga neko vrijeme; prima jedan udarac umjesto tebe.",
   },
   quiz: {
     list: {

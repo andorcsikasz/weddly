@@ -67,6 +67,18 @@ export const PALETTE = {
   gold: "#f0c66b",
   goldDeep: "#c9992f",
   champagne: "#f7e3b8",
+  /** Golden-hour light: the sky fill and the low warm sun. */
+  hemiSky: "#bfe0ff",
+  sunLight: "#ffdcae",
+  cloud: "#ffffff",
+  cloudWarm: "#fff6ea",
+  /** The rig's skin and hair, with the sheen tint each one catches. */
+  skinTone: "#eab996",
+  skinToneDeep: "#d59a74",
+  skinSheen: "#ffcfb5",
+  hairSheen: "#a07a55",
+  hairLight: "#a5733f",
+  hairLightSheen: "#f0c890",
   /** Pickups: a bright yellow coin and a vivid green banknote. */
   coin: "#ffd21a",
   coinDeep: "#f2a900",
@@ -92,9 +104,15 @@ export const PALETTE = {
 export type PaletteKey = keyof typeof PALETTE;
 
 /** Sky and fog, as `THREE.Color` arguments. */
-export const SKY_TOP = PALETTE.skyTop;
-export const SKY_HORIZON = PALETTE.skyHorizon;
-export const FOG_COLOR = PALETTE.fog;
+/* GOLDEN HOUR. The first sky was pale enough that the ACES tone map turned it
+ * into flat grey, and the whole scene read as overcast. The dome is now a real
+ * blue that warms to a peach horizon, and the fog matches the horizon so the
+ * garden still dissolves into it without an edge. */
+export const SKY_TOP = "#4f9be0";
+export const SKY_MID = "#8ec8f2";
+export const SKY_HORIZON = "#ffd7a6";
+export const FOG_COLOR = "#f6d7b0";
+export const SUN = "#fff1c9";
 
 /**
  * Confetti, as an ARRAY rather than four more keys.

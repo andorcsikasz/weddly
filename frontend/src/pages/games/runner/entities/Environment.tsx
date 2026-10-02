@@ -17,7 +17,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { FOG_COLOR, PALETTE, SKY_HORIZON, SKY_TOP } from "../constants/palette";
+import { FOG_COLOR, PALETTE, SKY_HORIZON, SKY_MID, SKY_TOP, SUN } from "../constants/palette";
 import { M, box, cone, cylinder, sphere } from "../constants/materials";
 import { lawnTexture, pathTexture } from "../utils/textures";
 
@@ -204,8 +204,15 @@ export function Environment({ distance }: EnvironmentProps) {
           skybox image and it tints with the fog for free. */}
       <mesh scale={[-1, 1, 1]} renderOrder={-2}>
         <sphereGeometry args={[200, 16, 12]} />
-        <meshBasicMaterial map={sky} side={THREE.BackSide} depthWrite={false} fog={false} />
+        <meshBasicMaterial
+          map={sky}
+          side={THREE.BackSide}
+          depthWrite={false}
+          fog={false}
+          toneMapped={false}
+        />
       </mesh>
+      <SunAndClouds />
 
       <fog attach="fog" args={[FOG_COLOR, FOG_NEAR, FOG_FAR]} />
 
@@ -259,14 +266,98 @@ function skyGradient() {
   if (ctx) {
     const grad = ctx.createLinearGradient(0, 0, 0, 64);
     grad.addColorStop(0, SKY_TOP);
-    grad.addColorStop(0.62, SKY_HORIZON);
-    grad.addColorStop(1, PALETTE.fog);
+    grad.addColorStop(0.36, SKY_MID);
+    grad.addColorStop(0.5, SKY_HORIZON);
+    grad.addColorStop(1, FOG_COLOR);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 2, 64);
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
+  return texture;
+}
+
+/** A low sun straight down the track, with a soft halo, and a few low-poly
+ *  clouds drifting across. All unfogged and un-tonemapped: they are the sky. */
+function SunAndClouds() {
+  const clouds = useRef<THREE.Group>(null);
+  const halo = useMemo(() => radialTexture(), []);
+  useFrame((_, dt) => {
+    const g = clouds.current;
+    if (!g) return;
+    for (const c of g.children) {
+      c.position.x += dt * 1.2;
+      if (c.position.x > 140) c.position.x = -140;
+    }
+  });
+  const puffs = useMemo(() => {
+    const rnd = lcg(77);
+    return Array.from({ length: 9 }, () => ({
+      x: -140 + rnd() * 280,
+      y: 34 + rnd() * 30,
+      z: -150 - rnd() * 30,
+      s: 7 + rnd() * 7,
+    }));
+  }, []);
+  return (
+    <>
+      <sprite position={[0, 18, -185]} scale={[90, 90, 1]} renderOrder={-1}>
+        <spriteMaterial
+          map={halo}
+          color={SUN}
+          transparent
+          depthWrite={false}
+          fog={false}
+          toneMapped={false}
+        />
+      </sprite>
+      <mesh position={[0, 18, -186]} renderOrder={-1}>
+        <circleGeometry args={[7, 40]} />
+        <meshBasicMaterial color={SUN} fog={false} toneMapped={false} depthWrite={false} />
+      </mesh>
+      <group ref={clouds}>
+        {puffs.map((p, i) => (
+          <group key={i} position={[p.x, p.y, p.z]} scale={p.s}>
+            {[
+              [0, 0, 0, 1],
+              [1.1, -0.15, 0.1, 0.75],
+              [-1.05, -0.2, 0, 0.7],
+              [0.45, 0.45, 0, 0.7],
+              [-0.5, 0.35, 0.1, 0.6],
+            ].map(([x, y, z, r], k) => (
+              <mesh key={k} position={[x ?? 0, y ?? 0, z ?? 0]} scale={[1, 0.72, 0.8]}>
+                <icosahedronGeometry args={[r ?? 1, 1]} />
+                <meshBasicMaterial
+                  color={k % 2 ? PALETTE.cloudWarm : PALETTE.cloud}
+                  fog={false}
+                  toneMapped={false}
+                />
+              </mesh>
+            ))}
+          </group>
+        ))}
+      </group>
+    </>
+  );
+}
+
+/** A soft white-to-transparent disc for the sun's halo. */
+function radialTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, "rgba(255,255,255,0.95)");
+    g.addColorStop(0.25, "rgba(255,240,200,0.55)");
+    g.addColorStop(1, "rgba(255,220,170,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 

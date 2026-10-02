@@ -1074,13 +1074,14 @@ export const CHARGE_SPEED = 7;
 /** `fly` is the balloon flight (the jetpack moment: up over the track along a
  *  sky trail of coins), `boost` the super sneakers (higher jumps), and `gift` a
  *  wrapped wedding present that opens into a random surprise. */
-export type PowerUpId = "magnet" | "double" | "shield" | "fly" | "boost" | "gift";
+export type PowerUpId = "magnet" | "double" | "shield" | "fly" | "boost" | "board" | "gift";
 export const POWERUP_IDS: readonly PowerUpId[] = [
   "magnet",
   "double",
   "shield",
   "fly",
   "boost",
+  "board",
   "gift",
 ];
 
@@ -1092,6 +1093,9 @@ export const POWERUP_SECONDS: Readonly<Record<PowerUpId, number>> = {
   shield: 14,
   fly: 6,
   boost: 10,
+  /** The skateboard (the hoverboard moment): ride it until it runs out or until
+   *  it takes a hit for you, whichever is first. */
+  board: 14,
   gift: 0,
 };
 
@@ -1133,14 +1137,15 @@ export function pickPowerUp(rng: Rng): PowerUpId {
   if (roll < 0.22) return "magnet";
   if (roll < 0.4) return "double";
   if (roll < 0.52) return "shield";
-  if (roll < 0.64) return "fly";
-  if (roll < 0.76) return "boost";
+  if (roll < 0.62) return "fly";
+  if (roll < 0.72) return "boost";
+  if (roll < 0.82) return "board";
   return "gift";
 }
 
 /** A power-up a gift box can hand over: never another gift, never nothing. */
 export function pickGiftPower(rng: Rng): Exclude<PowerUpId, "gift"> {
-  const all = ["magnet", "double", "shield", "fly", "boost"] as const;
+  const all = ["magnet", "double", "shield", "fly", "boost", "board"] as const;
   return all[Math.floor(rng() * all.length)] ?? "magnet";
 }
 

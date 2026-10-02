@@ -73,6 +73,7 @@ export interface RunnerHud {
   lastGift: RunState["lastGift"];
   fly: number;
   boost: number;
+  board: number;
   /** What the guests gave (cash and totes, multiplier applied) and what the
    *  vendors billed. Profit is exactly the first minus the second. */
   gross: number;
@@ -179,6 +180,7 @@ export type HudCounters = Pick<
       | "lastGift"
       | "fly"
       | "boost"
+      | "board"
     >
   >;
 
@@ -229,6 +231,7 @@ export function deriveHud(
     lastGift: state.lastGift ?? null,
     fly: Math.min(1, (state.fly ?? 0) / POWERUP_SECONDS.fly),
     boost: Math.min(1, (state.boost ?? 0) / POWERUP_SECONDS.boost),
+    board: Math.min(1, (state.board ?? 0) / POWERUP_SECONDS.board),
     expenses: expensesFor({ hits: state.hits, currency, expenses: state.expenses }),
     gross: grossCollected(
       { cash: state.cash, bags: state.bags, hits: state.hits, currency },
@@ -267,6 +270,7 @@ const BLANK: RunnerHud = {
   lastGift: null,
   fly: 0,
   boost: 0,
+  board: 0,
   gross: 0,
   expenses: 0,
 };

@@ -132,6 +132,21 @@ export class RunnerAudio {
         case "gift":
           this.gift(ctx);
           break;
+        case "board_break":
+          this.noiseBurst(ctx, { at: 0, dur: 0.18, gain: 0.18, hz: 900 });
+          this.blip(ctx, { type: "square", from: 300, to: 90, at: 0, dur: 0.22, gain: 0.06 });
+          break;
+        case "trick":
+          this.noiseBurst(ctx, { at: 0, dur: 0.25, gain: 0.07, hz: 3200 });
+          this.blip(ctx, {
+            type: "triangle",
+            from: 660,
+            to: 1320,
+            at: 0.02,
+            dur: 0.18,
+            gain: 0.05,
+          });
+          break;
         default:
           // `lane` is silent on purpose. A whoosh per lane change on a keyboard
           // player holding ArrowRight would be a machine gun; the camera pan is

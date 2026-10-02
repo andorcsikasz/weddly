@@ -26,17 +26,12 @@ const RING_COLOR: Readonly<Record<PowerUpId, string>> = {
   shield: PALETTE.shield,
   fly: PALETTE.blush300,
   boost: PALETTE.sage300,
+  board: PALETTE.blush400,
   gift: PALETTE.gold,
 };
 
 /** Balloon colours for the flight, in the bouquet's palette. */
-const BALLOONS = [
-  PALETTE.blush300,
-  PALETTE.paper50,
-  PALETTE.blush200,
-  PALETTE.gold,
-  PALETTE.blush400,
-];
+const BALLOONS = [PALETTE.magnet, PALETTE.coin, PALETTE.shield, PALETTE.blush300, PALETTE.cash];
 
 /** A bunch of heart-ish balloons on strings: the flight. */
 function Balloons({ scale = 1 }: { scale?: number }) {
@@ -51,7 +46,14 @@ function Balloons({ scale = 1 }: { scale?: number }) {
           <group key={c + i}>
             <mesh position={[x, y, z]} scale={[1, 1.18, 1]}>
               <sphereGeometry args={[0.15, 20, 14]} />
-              <meshStandardMaterial color={c} roughness={0.25} metalness={0.05} />
+              <meshPhysicalMaterial
+                color={c}
+                roughness={0.18}
+                clearcoat={1}
+                clearcoatRoughness={0.1}
+                emissive={c}
+                emissiveIntensity={0.25}
+              />
             </mesh>
             <mesh position={[x * 0.5, y * 0.45 - 0.05, z * 0.5]} rotation={[z, 0, -x]}>
               <cylinderGeometry args={[0.004, 0.004, y + 0.1, 4]} />
@@ -84,6 +86,41 @@ function WingedShoe() {
           position={[-0.12, 0.12, d * 0.11]}
           rotation={[d * 0.6, 0, 0.5]}
         />
+      ))}
+    </group>
+  );
+}
+
+/** The skateboard: a kicktail deck in blush with gold wheels. Drawn along x
+ *  (nose to tail), which is how it sits under a sideways stance. */
+export function Skateboard() {
+  return (
+    <group>
+      <mesh geometry={box(0.78, 0.035, 0.24)} material={M.satin()} />
+      {[-1, 1].map((d) => (
+        <mesh
+          key={d}
+          geometry={cylinder(0.12, 0.12, 0.035, 24)}
+          material={M.satin()}
+          position={[d * 0.39, 0.025, 0]}
+          rotation={[0, 0, d * 0.28]}
+          scale={[1, 1, 1]}
+        />
+      ))}
+      <mesh geometry={box(0.76, 0.01, 0.22)} material={M.rubber()} position={[0, 0.022, 0]} />
+      {[-0.26, 0.26].map((x) => (
+        <group key={x} position={[x, -0.045, 0]}>
+          <mesh geometry={box(0.06, 0.04, 0.2)} material={M.chrome()} />
+          {[-0.11, 0.11].map((z) => (
+            <mesh
+              key={z}
+              geometry={cylinder(0.04, 0.04, 0.04, 16)}
+              material={M.coin()}
+              position={[0, -0.03, z]}
+              rotation={[Math.PI / 2, 0, 0]}
+            />
+          ))}
+        </group>
       ))}
     </group>
   );
@@ -171,6 +208,11 @@ const BODY: Readonly<Record<PowerUpId, ComponentType>> = {
   shield: Shield,
   fly: () => <Balloons scale={0.9} />,
   boost: WingedShoe,
+  board: () => (
+    <group rotation={[0.9, 0, 0.25]}>
+      <Skateboard />
+    </group>
+  ),
   gift: GiftBox,
 };
 
@@ -180,6 +222,7 @@ const KINDS = [
   "shield",
   "fly",
   "boost",
+  "board",
   "gift",
 ] as const satisfies readonly PowerUpId[];
 
@@ -276,6 +319,7 @@ export function PlayerAura({ readState }: { readState: () => RunState }) {
   const glow = useRef<THREE.Mesh>(null);
   const balloons = useRef<THREE.Group>(null);
   const kicks = useRef<THREE.Group>(null);
+  const deck = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
     const s = readState();
@@ -305,6 +349,13 @@ export function PlayerAura({ readState }: { readState: () => RunState }) {
       balloons.current.position.set(s.x, s.y + 2.05, 0.05);
       balloons.current.rotation.z = Math.sin(t * 1.7) * 0.12;
       balloons.current.rotation.x = 0.15 + Math.sin(t * 2.3) * 0.06;
+    }
+    if (deck.current) {
+      const on = live && s.board > 0 && blink(s.board);
+      deck.current.visible = on;
+      deck.current.position.set(s.x, s.y + 0.09, 0.02);
+      // Sideways under the stance; a kickflip through any jump taken on it.
+      deck.current.rotation.set(s.trick * Math.PI * 2, Math.PI / 2 + 0.55, 0);
     }
     if (kicks.current) {
       const on = live && s.boost > 0 && blink(s.boost);
@@ -339,6 +390,9 @@ export function PlayerAura({ readState }: { readState: () => RunState }) {
         <Balloons scale={1.5} />
       </group>
       {/* Super sneakers: a spinning ring of sparks round the feet. */}
+      <group ref={deck} visible={false} scale={1.35}>
+        <Skateboard />
+      </group>
       <group ref={kicks} visible={false}>
         {[0, 1, 2, 3, 4, 5].map((i) => {
           const a = (i / 6) * Math.PI * 2;

@@ -4448,6 +4448,8 @@ const en: LocaleMessages = {
     power_fly_body: "Float over every cost along a trail of coins in the sky.",
     power_boost: "Super sneakers",
     power_boost_body: "Jump much higher for a while.",
+    power_board: "Skateboard",
+    power_board_body: "Ride it for a while; it takes one hit for you.",
   },
   quiz: {
     list: {

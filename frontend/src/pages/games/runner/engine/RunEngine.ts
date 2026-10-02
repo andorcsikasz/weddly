@@ -204,6 +204,8 @@ export type RunEvent =
   | { type: "power"; kind: PowerUpId }
   | { type: "gift"; outcome: GiftOutcome }
   | { type: "liftoff" }
+  | { type: "board_break" }
+  | { type: "trick" }
   | { type: "shield_break" }
   | { type: "streak"; count: number; value: number }
   | { type: "charge" }
@@ -310,6 +312,10 @@ export interface RunState {
   /** Seconds of balloon flight / super sneakers left. */
   fly: number;
   boost: number;
+  /** Seconds of skateboard left; 0 is on foot. */
+  board: number;
+  /** 0 → 1 over a jump taken on the board: the rig spins the deck through it. */
+  trick: number;
   /** Seconds of the 3-2-1 left before the track starts moving. */
   countdown: number;
   /** The bill so far: each hit priced by its vendor against the couple's budget. */
@@ -421,6 +427,8 @@ export class RunEngine {
       lastGift: null,
       fly: 0,
       boost: 0,
+      board: 0,
+      trick: 0,
     };
     for (let i = 0; i < OBSTACLE_POOL; i++) {
       this.obstacles.push({
@@ -485,6 +493,8 @@ export class RunEngine {
     s.lastGift = null;
     s.fly = 0;
     s.boost = 0;
+    s.board = 0;
+    s.trick = 0;
     this.giftCount = 0;
     this.skyCursor = 0;
     this.lastCount = Math.ceil(countdown);
@@ -571,6 +581,10 @@ export class RunEngine {
     this.coyote = 0;
     this.jumpBuffer = 0;
     this.events.push({ type: "jump" });
+    if (s.board > 0) {
+      s.trick = 1;
+      this.events.push({ type: "trick" });
+    }
   }
 
   slide(): boolean {
@@ -656,6 +670,8 @@ export class RunEngine {
     if (s.doubler > 0) s.doubler = Math.max(0, s.doubler - dt);
     if (s.shield > 0) s.shield = Math.max(0, s.shield - dt);
     if (s.boost > 0) s.boost = Math.max(0, s.boost - dt);
+    if (s.board > 0) s.board = Math.max(0, s.board - dt);
+    if (s.trick > 0) s.trick = Math.max(0, s.trick - dt * 1.7);
     if (s.fly > 0) {
       s.fly = Math.max(0, s.fly - dt);
       if (s.fly === 0) {
@@ -997,6 +1013,7 @@ export class RunEngine {
     else if (kind === "double") s.doubler = POWERUP_SECONDS.double;
     else if (kind === "shield") s.shield = POWERUP_SECONDS.shield;
     else if (kind === "boost") s.boost = POWERUP_SECONDS.boost;
+    else if (kind === "board") s.board = POWERUP_SECONDS.board;
     else {
       s.fly = POWERUP_SECONDS.fly;
       this.skyCursor = 0;
@@ -1062,6 +1079,17 @@ export class RunEngine {
   private damage(o: ObstacleInstance) {
     const s = this.state;
     if (s.invuln > 0 || s.phase !== "running") return;
+    if (s.board > 0) {
+      // The board takes the hit and is gone, exactly the hoverboard rule: no
+      // heart, no bill, a short grace and the runner is back on foot.
+      s.board = 0;
+      s.trick = 0;
+      s.invuln = 1.0;
+      s.shake = 0.5;
+      this.events.push({ type: "board_break" });
+      this.spark("dust", s.x, 0.2, 0);
+      return;
+    }
     if (s.shield > 0) {
       // The shield takes the hit whole: no heart, no bill, no stumble. A short
       // invulnerability so the same wall cannot hit the bare runner a frame later.

@@ -1281,3 +1281,5 @@
 .rn-power--boost svg { color: #8ee2a6; }
 .rn-timer--fly { color: #f5b8a8; border-color: rgb(237 169 151 / 0.5); }
 .rn-timer--boost { color: #8ee2a6; border-color: rgb(80 184 115 / 0.5); }
+.rn-power--board svg { color: #f0a08a; }
+.rn-timer--board { color: #f0a08a; border-color: rgb(226 130 106 / 0.5); }

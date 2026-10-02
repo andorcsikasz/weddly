@@ -131,6 +131,8 @@ function PlayerRig({ engine }: { engine: RunEngine }) {
       celebrate: s.phase === "over" ? 1 : 0,
       running: s.phase === "running",
       bob: 0,
+      ride: s.board > 0,
+      fly: s.fly > 0,
     };
   }, [engine]);
 
@@ -203,8 +205,10 @@ export function RunnerCanvas({ engine, currency, locale }: RunnerSceneProps) {
 function Lights() {
   return (
     <>
-      <hemisphereLight args={[PALETTE.skyTop, PALETTE.sage600, 0.85]} />
-      <directionalLight position={[-6, 9, -4]} intensity={1.15} color={PALETTE.skyHorizon} />
+      <hemisphereLight args={[PALETTE.hemiSky, PALETTE.sage600, 0.9]} />
+      {/* The low sun, from ahead and to one side: warm, and strong enough to
+          give every shape a lit face and a shaded one. */}
+      <directionalLight position={[-6, 8, -10]} intensity={1.5} color={PALETTE.sunLight} />
       {/* A cool fill from BEHIND the camera, so the player's face is never in
           shadow: the camera is behind them, so this is the light doing all the
           character reading. */}

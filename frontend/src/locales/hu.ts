@@ -4481,6 +4481,8 @@ const hu: LocaleMessages = {
     power_fly_body: "Lebegj át minden költség felett, érmékkel teli égi úton.",
     power_boost: "Szuper cipő",
     power_boost_body: "Egy ideig sokkal magasabbra ugrasz.",
+    power_board: "Gördeszka",
+    power_board_body: "Egy ideig ezzel suhansz, és egy ütközést elnyel helyetted.",
   },
   quiz: {
     list: {

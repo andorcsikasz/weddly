@@ -4530,6 +4530,8 @@ const es: LocaleMessages = {
     power_fly_body: "Flota sobre todos los gastos siguiendo un rastro de monedas en el cielo.",
     power_boost: "Superzapatillas",
     power_boost_body: "Saltas mucho más alto durante un rato.",
+    power_board: "Monopatín",
+    power_board_body: "Llévalo un rato; recibe un golpe por ti.",
   },
   quiz: {
     list: {
