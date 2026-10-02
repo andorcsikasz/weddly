@@ -1,7 +1,7 @@
-// /app/games — the hub every Wēddly Games type lands on. Two brand tiles
-// hand off to each game's own management page (/app/games/quiz,
-// /app/games/markets). A third game type is one more tile here plus its own
-// nested route in App.tsx.
+// /app/games — the hub every Wēddly Games type lands on. Two brand tiles hand
+// off to each game's own management page (/app/games/quiz, /app/games/markets)
+// and one first-party tile to the runner (/app/games/runner). A new game type is
+// one more tile here plus its own nested route in App.tsx.
 //
 // Dark "console" chrome (GamesConsole.css) rather than the standard paper
 // app shell — same #0c1019 canvas as the public /games teaser and the live
@@ -11,8 +11,8 @@
 // description and a pill CTA, composed on a deep panel that only tints with
 // the game's own brand colour — restrained, so the white copy stays solid.
 
-import { ArrowRight, Gamepad2, Sparkles, TrendingUp } from "lucide-react";
-import type { CSSProperties, PointerEvent } from "react";
+import { ArrowRight, Gamepad2, HeartPulse, Sparkles, TrendingUp } from "lucide-react";
+import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useT } from "../../lib/i18n";
 import { GamesAmbient } from "./GamesAmbient";
@@ -142,6 +142,9 @@ function ripple(e: PointerEvent<HTMLAnchorElement>) {
 function GameTile({
   to,
   tone,
+  accent,
+  icon,
+  deco,
   title,
   description,
   kicker,
@@ -149,14 +152,20 @@ function GameTile({
   delay,
 }: {
   to: string;
-  tone: "quiz" | "markets";
+  tone: "quiz" | "markets" | "runner";
+  /** The game's own brand colour, declared with the tile rather than switched on
+   *  it. `gc-tile-${tone}` still names the panel treatment in the stylesheet, but
+   *  the accent now travels with the data, so a fourth game needs no branch here. */
+  accent: string;
+  icon: ReactNode;
+  /** The per-tile scattered decoration, or null for a tile that draws its own. */
+  deco: ReactNode;
   title: string;
   description: string;
   kicker: string;
   cta: string;
   delay: number;
 }) {
-  const accent = tone === "quiz" ? "#8b3dff" : "#1652f0";
   return (
     <Link
       to={to}
@@ -170,14 +179,10 @@ function GameTile({
       <span className="gc-tile-glare" aria-hidden="true" />
       <span className="gc-tile-spot" aria-hidden="true" />
       <span className="gc-tile-glow" style={{ color: accent }} aria-hidden="true" />
-      {tone === "quiz" ? <ShapeCluster /> : <SparkDeco />}
+      {deco}
       <div className="gc-tile-content">
         <span className="gc-kicker">
-          {tone === "quiz" ? (
-            <Gamepad2 size={14} aria-hidden />
-          ) : (
-            <TrendingUp size={14} aria-hidden />
-          )}
+          {icon}
           {kicker}
         </span>
         <h2 className="font-space text-2xl font-bold text-white sm:text-3xl">{title}</h2>
@@ -220,6 +225,9 @@ export default function GamesHubPage() {
           <GameTile
             to="/app/games/quiz"
             tone="quiz"
+            accent="#8b3dff"
+            icon={<Gamepad2 size={14} aria-hidden />}
+            deco={<ShapeCluster />}
             title={t("games_hub.quiz_card_title")}
             description={t("games_hub.quiz_card_description")}
             kicker={t("games_hub.quiz_kicker")}
@@ -229,11 +237,26 @@ export default function GamesHubPage() {
           <GameTile
             to="/app/games/markets"
             tone="markets"
+            accent="#1652f0"
+            icon={<TrendingUp size={14} aria-hidden />}
+            deco={<SparkDeco />}
             title={t("games_hub.markets_card_title")}
             description={t("games_hub.markets_card_description")}
             kicker={t("games_hub.markets_kicker")}
             cta={t("games_hub.cta")}
             delay={360}
+          />
+          <GameTile
+            to="/app/games/runner"
+            tone="runner"
+            accent="#d9738a"
+            icon={<HeartPulse size={14} aria-hidden />}
+            deco={null}
+            title={t("games_hub.runner_card_title")}
+            description={t("games_hub.runner_card_description")}
+            kicker={t("games_hub.runner_kicker")}
+            cta={t("games_hub.cta")}
+            delay={460}
           />
         </div>
       </div>

@@ -73,6 +73,18 @@ export default defineConfig({
           }
           if (id.includes("/node_modules/react-router")) return "vendor-router";
           if (id.includes("/node_modules/lucide-react/")) return "vendor-lucide";
+          // Three.js + React Three Fiber, for the wedding runner only.
+          //
+          // They are ~500 KB raw of 3D engine, and a couple who opens their budget
+          // page should not pay for a game they never launched. Naming the chunk
+          // does two things: it keeps them out of the main bundle, and it means the
+          // budget check can exempt them BY NAME instead of by raising the global
+          // ceiling for every other asset. `@react-three/fiber` has to travel with
+          // `three` — it imports it for `extend()` and the JSX namespace types, so
+          // splitting the two produces a chunk that cannot resolve its own import.
+          if (id.includes("/node_modules/three/") || id.includes("/node_modules/@react-three/")) {
+            return "vendor-three";
+          }
           return undefined;
         },
       },

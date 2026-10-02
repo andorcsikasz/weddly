@@ -40,6 +40,10 @@ const MarketingContentPage = lazyWithReload(() => import("./pages/MarketingConte
 const GamesPage = lazyWithReload(() => import("./pages/GamesPage"));
 const GamesHubPage = lazyWithReload(() => import("./pages/games/GamesHubPage"));
 const MarketsPage = lazyWithReload(() => import("./pages/MarketsPage"));
+/** The runner is code-split like every other game. Three.js and R3F are the
+ *  largest thing a couple who never plays it will download, so they must not be
+ *  in the main chunk — see the `three` vendor chunk in vite.config.ts. */
+const RunnerGamePage = lazyWithReload(() => import("./pages/games/runner/RunnerGamePage"));
 const PlayMarketsPage = lazyWithReload(() => import("./pages/PlayMarketsPage"));
 const QuizListPage = lazyWithReload(() => import("./pages/quiz/QuizListPage"));
 const QuizBuilderPage = lazyWithReload(() => import("./pages/quiz/QuizBuilderPage"));
@@ -1341,7 +1345,19 @@ export default function App() {
               </Page>
             }
           />
-          {/* Legacy pre-hub URLs — static "quiz"/"markets" segments above
+          {/* Run for the Wedding — the endless runner. A full-screen game
+           *  surface (runner.css pins it over the shell); `<Page>` is still
+           *  required for its ErrorBoundary + Suspense, so a WebGL failure stays
+           *  inside the game instead of blanking the whole app. */}
+          <Route
+            path="games/runner"
+            element={
+              <Page>
+                <RunnerGamePage />
+              </Page>
+            }
+          />
+          {/* Legacy pre-hub URLs — static "quiz"/"markets"/"runner" segments above
            *  rank ahead of these dynamic ones, so only an actual old quiz id
            *  falls through to the redirect. */}
           <Route path="games/:quizId" element={<QuizBuilderLegacyRedirect />} />

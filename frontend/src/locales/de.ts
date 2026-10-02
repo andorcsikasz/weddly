@@ -4483,16 +4483,70 @@ const de: LocaleMessages = {
   games_hub: {
     title: "Spiele",
     subtitle:
-      "Zwei Wege, alle Gäste mitspielen zu lassen — sie steigen per Smartphone ein, ganz ohne Login oder App.",
+      "Drei Wege, damit der ganze Raum mitspielt: die Gäste kommen vom Handy oder du übernimmst das Steuer.",
     cta: "Spiel öffnen",
     quiz_kicker: "Quiz",
     quiz_card_title: "Kahoot x Weddly",
     quiz_card_description:
-      "Erstellt ein persönliches Quiz über eure Geschichte — die Gäste antworten vom Handy und kämpfen um den ersten Platz.",
+      "Erstellt ein persönliches Quiz über eure Geschichte: die Gäste antworten vom Handy und kämpfen um den ersten Platz.",
     markets_kicker: "Tippspiel",
     markets_card_title: "Polymarket x Weddly",
     markets_card_description:
-      "Lasst die Gäste auf den Abend wetten — wer zuerst weint, wie lange die Party dauert und was die Braut von der Torte hält.",
+      "Lasst die Gäste auf den Abend wetten: wer zuerst weint, wie lange die Party dauert und was die Braut von der Torte hält.",
+    runner_kicker: "Endlos-Lauf",
+    runner_card_title: "Lauf zur Hochzeit",
+    runner_card_description:
+      "Stürme die Hochzeitsspur, weiche jedem Kostpunkt und jeder Rechnung im letzten Moment aus: und sieh, was übrig bleibt.",
+  },
+
+  runner: {
+    title: "Lauf zur Hochzeit",
+    subtitle:
+      "Endlos-Lauf: den Kosten ausweichen, jeden Cent einsammeln und sehen, was vom Hochzeitsbudget übrig bleibt.",
+    start: "Lauf starten",
+    ready_title: "Bereit?",
+    how_title: "So funktioniert es",
+    how_body:
+      "Alles auf dieser Strecke ist eine Hochzeitskosten: ein Blumenwagen, eine Rechnung im letzten Moment, ein DJ-Pult, das du dir nicht leisten kannst. Weiche ihnen aus, sammle das Geld ein, und der Gewinn am Ende ist, was der Tag übrig lässt.",
+    controls_title: "Steuerung",
+    control_left: "Nach links",
+    control_right: "Nach rechts",
+    control_jump: "Springen",
+    control_slide: "Schieben",
+    control_pause: "Pause",
+    touch_controls:
+      "Nach links oder rechts wischen für die Spur, nach oben springen, nach unten schieben.",
+    preparing: "Garten wird vorbereitet…",
+    profit_label: "Hochzeitsgewinn",
+    distance_label: "Strecke",
+    multiplier_label: "Punkte-Multiplikator",
+    hearts_label: "Herzen",
+    verdict_under_title: "Du bist im Budget geblieben.",
+    verdict_under_body:
+      "Jeder Florist, jeder DJ, jede späte Ergänzung, und es ist noch Geld übrig.",
+    verdict_tight_title: "Knapp, aber geschafft.",
+    verdict_tight_body:
+      "Das Budget hat es gerade überstanden. Ein Fotograf mehr, und es wäre nichts geworden.",
+    verdict_over_title: "Die Kosten haben gewonnen.",
+    verdict_over_body:
+      "Die Anbieter haben mehr berechnet als die Hochzeit. Das ist die ganze Geschichte.",
+    verdict_bankrupt_title: "Drei Kosten und Schluss.",
+    verdict_bankrupt_body: "Jeder Treffer ist eine Rechnung. Du hattest nur drei.",
+    gameover_title: "Das war die Hochzeit",
+    collected_label: "Gesammelt",
+    hits_label: "Kosten getroffen",
+    bags_label: "Taschen",
+    final_profit_label: "Gewinn",
+    new_best: "Neue persönliche Bestleistung",
+    first_run: "Dein erster Lauf",
+    your_best: "Deine Bestleistung",
+    run_again: "Noch ein Lauf",
+    back_to_games: "Zurück zu den Spielen",
+    paused_title: "Pausiert",
+    resume: "Weiter",
+    quit: "Zum Menü",
+    mute_on: "Ton aus",
+    mute_off: "Ton an",
   },
   quiz: {
     list: {

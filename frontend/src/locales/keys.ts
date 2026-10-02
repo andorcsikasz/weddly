@@ -5136,6 +5136,77 @@ export interface LocaleMessages {
     markets_kicker: string;
     markets_card_title: string;
     markets_card_description: string;
+    /** The runner tile is NOT a Kahoot/Polymarket partnership and says so: it is
+     *  Weddly's own game, and the brand column stays where it is. */
+    runner_kicker: string;
+    runner_card_title: string;
+    runner_card_description: string;
+  };
+
+  /* Run for the Wedding — the endless runner at /app/games/runner.
+   *
+   * THE GAME HAS NO COPY OF ITS OWN CURRENCY. `runner.*` never contains a symbol,
+   * a currency name or a grouped number: every figure is rendered from
+   * `RUN_ECONOMY[couple.currency]` through `formatMoney`, and the glyph travels
+   * with the number. A string per locale therefore cannot go stale when the
+   * couple's twelve currencies each want different grouping, and no key here has
+   * to be re-translated when the economy is re-priced. */
+  runner: {
+    title: string;
+    subtitle: string;
+    /** The menu, before the first run of a session. */
+    start: string;
+    ready_title: string;
+    how_title: string;
+    how_body: string;
+    controls_title: string;
+    control_left: string;
+    control_right: string;
+    control_jump: string;
+    control_slide: string;
+    control_pause: string;
+    /** Shown only on a touch device; the key hints above are the desktop answer. */
+    touch_controls: string;
+    /** While the couple lookup is in flight. Not a spinner with no copy. */
+    preparing: string;
+    /** The HUD. `profit` leads because it is the number the game is about. */
+    profit_label: string;
+    multiplier_label: string;
+    distance_label: string;
+    hearts_label: string;
+    /** Game over. The four verdicts are four keys, never one string with a
+     *  branch, so a locale cannot lose one and print the others. */
+    gameover_title: string;
+    /** Four verdicts × two lines. The KEY NAMES are published by the shared
+     *  module as `VERDICT_I18N`, which is what the game-over card reads — a
+     *  local map here would be a second table that could name a key the locale
+     *  files never received, and the symptom is a verdict headline rendering as
+     *  a raw dotted path in one language and correctly in the other four. */
+    verdict_under_title: string;
+    verdict_under_body: string;
+    verdict_tight_title: string;
+    verdict_tight_body: string;
+    verdict_over_title: string;
+    verdict_over_body: string;
+    verdict_bankrupt_title: string;
+    verdict_bankrupt_body: string;
+    collected_label: string;
+    hits_label: string;
+    bags_label: string;
+    final_profit_label: string;
+    new_best: string;
+    first_run: string;
+    your_best: string;
+    run_again: string;
+    back_to_games: string;
+    /** Pause. `quit` leaves the run without a verdict — the run was abandoned,
+     *  not lost, so it must not claim a score. */
+    paused_title: string;
+    resume: string;
+    quit: string;
+    /** The mute toggle's accessible name; the icon carries the rest. */
+    mute_on: string;
+    mute_off: string;
   };
   /** Live wedding quiz game — /app/games/quiz (list + builder),
    *  /app/games/quiz/:id/host (the host console), and /play/:code (the

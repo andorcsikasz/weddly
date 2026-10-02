@@ -1,0 +1,350 @@
+/* Run for the Wedding — the DOM half of the game.
+ *
+ * THE HUD IS A GLASS PLATE OVER THE CANVAS AND NOTHING ELSE. The scene is
+ * procedural, warm and full of detail, and any chrome with a solid background
+ * would read as a second, competing image. So: `rn-hud` is a row of small
+ * translucent plates with backdrop blur, and the overlays that DO take the
+ * screen (menu, pause, game over) get a scrim plus one panel.
+ *
+ * The palette is the Games console's own — the runner sits in the same family as
+ * the quiz and the prediction board, so it borrows their deep canvas and their
+ * white-on-dark type scale rather than inventing a fourth. The one accent is the
+ * blossom blush, which is the same blush the 3D bouquet is made of, so the button
+ * and the world agree.
+ */
+
+.rn-page {
+  position: fixed;
+  inset: 0;
+  /* Above the app shell's rail and header: this route is a full-screen game
+     surface with its own exit (the menu's back link, the HUD's pause). */
+  z-index: 60;
+  overflow: hidden;
+  background: #0c1019;
+  color: #fff;
+  font-family: inherit;
+  /* The whole page is a game surface: a drag that starts on it is a swipe, and
+     text selection on a double-tap is a mis-fire. Both are disabled at the root
+     rather than per-element, because every child inherits the fix and a missed
+     one reads as a bug in the game. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rn-canvas {
+  position: absolute !important;
+  inset: 0;
+}
+
+/* ── Live HUD ───────────────────────────────────────────────────────────── */
+
+.rn-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 0.9rem 1rem;
+  pointer-events: none;
+}
+
+.rn-hud-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.rn-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.75rem;
+  background: rgb(12 16 25 / 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgb(255 255 255 / 0.09);
+}
+
+.rn-stat-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.55);
+}
+
+/* The profit is the number the game is about, so it is the one figure on the HUD
+ * given the largest type. Everything else is deliberately smaller so the eye
+ * lands on the score without being told to. */
+.rn-stat--lead .rn-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.rn-stat-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.rn-stat--mult .rn-stat-value {
+  font-size: 1.1rem;
+  color: #ffd9e0;
+}
+
+.rn-hearts {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.75rem;
+  background: rgb(12 16 25 / 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgb(255 255 255 / 0.09);
+}
+
+.rn-heart--on {
+  color: #f2919f;
+}
+
+.rn-heart--off {
+  color: rgb(255 255 255 / 0.22);
+}
+
+.rn-iconbtn {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  color: rgb(255 255 255 / 0.8);
+  background: rgb(12 16 25 / 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgb(255 255 255 / 0.09);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.rn-iconbtn:hover {
+  color: #fff;
+}
+
+/* ── Overlays ───────────────────────────────────────────────────────────── */
+
+.rn-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  pointer-events: auto;
+}
+
+/* `preparing` has no scrim: there is nothing behind it yet, and a dim layer over
+ * an empty canvas reads as a failed render rather than a load. */
+.rn-overlay--solid {
+  background: #0c1019;
+}
+
+.rn-overlay--scrim {
+  background: rgb(8 11 18 / 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.rn-waiting {
+  font-size: 0.95rem;
+  color: rgb(255 255 255 / 0.6);
+  letter-spacing: 0.02em;
+}
+
+.rn-card {
+  width: 100%;
+  max-width: 34rem;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 1.75rem;
+  border-radius: 1.25rem;
+  background: rgb(16 21 33 / 0.92);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.55);
+}
+
+.rn-card--slim {
+  max-width: 22rem;
+  text-align: center;
+}
+
+/* Space Grotesk leads, with the same fallback chain as `tailwind.config.js`'s
+ * `font-space` — the runner's headings are the hub's headings, so they use the
+ * same face rather than a second near-identical one. */
+.rn-title {
+  font-family: "Space Grotesk", "Helvetica Neue", Helvetica, Inter, Arial, system-ui, sans-serif;
+  font-size: clamp(1.6rem, 5vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.rn-title--sm {
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+}
+
+.rn-subtitle {
+  margin-top: 0.6rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.rn-block {
+  margin-top: 1.35rem;
+}
+
+.rn-block-title {
+  font-size: 0.65rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.rn-block-body {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgb(255 255 255 / 0.75);
+}
+
+.rn-keys {
+  margin-top: 0.55rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.rn-keyrow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.88rem;
+  color: rgb(255 255 255 / 0.78);
+}
+
+.rn-kbd {
+  min-width: 7.5rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.4rem;
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  text-align: center;
+  color: rgb(255 255 255 / 0.9);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+/* ONE fill on the whole card. The primary is the blossom the bouquet is made of;
+ * the ghost is an outline with no fill at all, so "the one action" is
+ * unambiguous at a glance on a screen the player is reading mid-run. */
+.rn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.8rem 1.1rem;
+  border-radius: 0.8rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.15s ease, background 0.15s ease;
+}
+
+.rn-btn--primary {
+  background: #d9738a;
+  color: #fff;
+  border: none;
+}
+
+.rn-btn--primary:hover {
+  filter: brightness(1.08);
+}
+
+.rn-btn--ghost {
+  background: transparent;
+  color: rgb(255 255 255 / 0.78);
+  border: 1px solid rgb(255 255 255 / 0.18);
+}
+
+.rn-btn--ghost:hover {
+  background: rgb(255 255 255 / 0.06);
+  color: #fff;
+}
+
+.rn-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* ── Game over ──────────────────────────────────────────────────────────── */
+
+.rn-verdict {
+  margin-top: 0.4rem;
+  font-size: 1rem;
+  color: rgb(255 255 255 / 0.78);
+}
+
+.rn-final {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.rn-final-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.rn-breakdown {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.4rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.rn-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.rn-breakdown-row dt {
+  color: rgb(255 255 255 / 0.6);
+}
+
+.rn-breakdown-row dd {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.rn-best {
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+  color: rgb(255 255 255 / 0.6);
+}
+
+.rn-best--new {
+  color: #ffd9e0;
+  font-weight: 600;
+}

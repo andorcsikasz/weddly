@@ -286,7 +286,21 @@ html:has(.gc-page) body {
 }
 .gc-tile-markets:hover {
   border-color: rgba(35, 136, 255, 0.55);
-  box-shadow: 0 26px 60px -22px rgba(22, 82, 240, 0.42);
+  box-shadow: 0 26px 60px -22px rgba(35, 136, 255, 0.42);
+}
+/* The runner's blossom — the same #d9738a its Start button and the 3D bouquet are
+ * made of. Not a brand colour: the runner is first-party, which is also why its
+ * tile is the only one with no scattered decoration and instead carries a flat
+ * laurel, so the tile reads as "ours" next to two licensed games. */
+.gc-tile-runner {
+  background:
+    radial-gradient(130% 190% at 100% 0%, rgba(217, 115, 138, 0.26), rgba(140, 62, 82, 0.1) 46%, transparent 72%),
+    linear-gradient(160deg, #1e1a22 0%, #15141b 100%);
+  border-color: rgba(217, 115, 138, 0.32);
+}
+.gc-tile-runner:hover {
+  border-color: rgba(217, 115, 138, 0.55);
+  box-shadow: 0 26px 60px -22px rgba(217, 115, 138, 0.4);
 }
 .gc-tile-glow {
   position: absolute;
@@ -795,6 +809,21 @@ html:has(.gc-page) body {
 }
 .gc-tile:hover .gc-tile-border {
   opacity: 1;
+}
+/* The runner sweeps two shades of its own blossom rather than a partner's brand
+ * ramp: a light bloom into the deep tone. Leaving this unset would fall back to
+ * the base `.gc-tile-border` (no gradient at all) and the runner would be the one
+ * tile whose hover border does not move. */
+.gc-tile-runner .gc-tile-border {
+  background: conic-gradient(
+    from var(--gc-angle),
+    transparent 0deg,
+    #f7b7c6 90deg,
+    transparent 185deg,
+    transparent 205deg,
+    #d9738a 290deg,
+    transparent 360deg
+  );
 }
 @keyframes gc-spin {
   to {
