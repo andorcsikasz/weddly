@@ -201,6 +201,7 @@ function QuestionRow({
           ticks={question.priceHistory}
           stroke="#2f9c52"
           ariaLabel={t("markets.chart_alt")}
+          current={question.probability}
         />
       </div>
 

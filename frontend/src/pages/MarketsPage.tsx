@@ -132,6 +132,7 @@ function QuestionCard({
           ticks={question.priceHistory}
           stroke="#2388ff"
           ariaLabel={t("markets.chart_alt")}
+          current={question.probability}
         />
       </div>
 
