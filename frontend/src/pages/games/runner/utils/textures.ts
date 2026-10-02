@@ -476,7 +476,7 @@ export function moneyLabelTexture(text: string, big: boolean): THREE.CanvasTextu
   const probeCtx = probe.getContext("2d");
   if (!probeCtx) return null;
   probeCtx.font = `800 ${fontSize}px "Georgia", "Times New Roman", serif`;
-  const textWidth = Math.ceil(probeCtx.measureText(text).width);
+  const textWidth = Math.ceil(probeCtx.measureText(big ? "+" + text : text).width);
 
   const padX = Math.round(fontSize * 0.34);
   const padY = Math.round(fontSize * 0.3);
@@ -491,7 +491,7 @@ export function moneyLabelTexture(text: string, big: boolean): THREE.CanvasTextu
   // pale path, and cream-on-cream over the path is exactly the case that would
   // otherwise be unreadable in the second half of a run.
   const radius = height * 0.34;
-  ctx.fillStyle = big ? "rgba(58, 36, 12, 0.86)" : "rgba(24, 30, 44, 0.78)";
+  ctx.fillStyle = big ? "rgba(0, 0, 0, 0)" : "rgba(24, 30, 44, 0.78)";
   ctx.beginPath();
   ctx.moveTo(radius, 0);
   ctx.arcTo(width, 0, width, height, radius);
@@ -501,17 +501,22 @@ export function moneyLabelTexture(text: string, big: boolean): THREE.CanvasTextu
   ctx.closePath();
   ctx.fill();
 
-  if (big) {
-    ctx.strokeStyle = PALETTE.gold;
-    ctx.lineWidth = Math.max(2, fontSize * 0.045);
-    ctx.stroke();
-  }
-
   ctx.font = `800 ${fontSize}px "Georgia", "Times New Roman", serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = big ? PALETTE.gold : PALETTE.paper50;
-  ctx.fillText(text, width / 2, height / 2 + fontSize * 0.03);
+  if (big) {
+    // No plate on the big label: an outline carries the contrast on its own and
+    // the scene stays visible through the gaps between the digits.
+    ctx.lineJoin = "round";
+    ctx.lineWidth = fontSize * 0.16;
+    ctx.strokeStyle = "rgba(58, 36, 12, 0.9)";
+    ctx.strokeText("+" + text, width / 2, height / 2 + fontSize * 0.03);
+    ctx.fillStyle = PALETTE.gold;
+    ctx.fillText("+" + text, width / 2, height / 2 + fontSize * 0.03);
+  } else {
+    ctx.fillStyle = PALETTE.paper50;
+    ctx.fillText(text, width / 2, height / 2 + fontSize * 0.03);
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;

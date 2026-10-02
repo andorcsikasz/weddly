@@ -29,6 +29,15 @@
 
 import type { RunEngine, RunEvent } from "../engine/RunEngine";
 
+/** Four bars of bass, one note per sixteenth (0 = rest). A minor pentatonic in A,
+ *  so it never clashes with the C-major pickups above it. */
+const BASS: readonly (readonly number[])[] = [
+  [110, 0, 0, 110, 0, 0, 131, 0, 110, 0, 0, 147, 0, 131, 0, 0],
+  [110, 0, 0, 110, 0, 0, 165, 0, 147, 0, 0, 131, 0, 110, 0, 0],
+  [98, 0, 0, 98, 0, 0, 131, 0, 98, 0, 0, 110, 0, 131, 0, 0],
+  [110, 0, 0, 110, 0, 165, 0, 147, 0, 131, 0, 110, 0, 98, 0, 0],
+];
+
 /** How many of the same sound may play inside `RATE_WINDOW_MS`. */
 const RATE_WINDOW_MS = 90;
 const MAX_PER_WINDOW = 3;
@@ -101,6 +110,21 @@ export class RunnerAudio {
           break;
         case "gameover":
           this.gameover(ctx);
+          break;
+        case "power":
+          this.power(ctx);
+          break;
+        case "shield_break":
+          this.shieldBreak(ctx);
+          break;
+        case "streak":
+          this.streak(ctx);
+          break;
+        case "charge":
+          this.horn(ctx);
+          break;
+        case "countdown":
+          this.countdown(ctx, e.n);
           break;
         default:
           // `lane` is silent on purpose. A whoosh per lane change on a keyboard
@@ -231,6 +255,95 @@ export class RunnerAudio {
     });
   }
 
+  private power(ctx: AudioContext) {
+    // A fast upward sweep plus a sparkle on top: a power-up is a state change,
+    // not a pickup, so it gets the only glissando in the game.
+    this.blip(ctx, { type: "square", from: 330, to: 1320, at: 0, dur: 0.22, gain: 0.05 });
+    [1568, 2093, 2637].forEach((n, i) => {
+      this.blip(ctx, {
+        type: "triangle",
+        from: n,
+        to: n,
+        at: 0.1 + i * 0.05,
+        dur: 0.1,
+        gain: 0.07,
+      });
+    });
+  }
+
+  private shieldBreak(ctx: AudioContext) {
+    // Glass, not a thud: the shield took it, the runner did not.
+    this.noiseBurst(ctx, { at: 0, dur: 0.22, gain: 0.16, hz: 4200 });
+    this.blip(ctx, { type: "triangle", from: 1760, to: 880, at: 0, dur: 0.25, gain: 0.08 });
+  }
+
+  private streak(ctx: AudioContext) {
+    const notes = [784, 988, 1175, 1568, 1976];
+    notes.forEach((n, i) => {
+      this.blip(ctx, { type: "triangle", from: n, to: n, at: i * 0.045, dur: 0.12, gain: 0.09 });
+    });
+  }
+
+  private horn(ctx: AudioContext) {
+    // Two detuned saws: a car horn is a chord, which is why one tone sounds
+    // like a buzzer instead.
+    this.blip(ctx, { type: "sawtooth", from: 392, to: 380, at: 0, dur: 0.32, gain: 0.05 });
+    this.blip(ctx, { type: "sawtooth", from: 494, to: 480, at: 0, dur: 0.32, gain: 0.04 });
+  }
+
+  private countdown(ctx: AudioContext, n: number) {
+    const go = n === 0;
+    this.blip(ctx, {
+      type: "square",
+      from: go ? 1046 : 523,
+      to: go ? 1046 : 523,
+      at: 0,
+      dur: go ? 0.35 : 0.12,
+      gain: 0.06,
+    });
+  }
+
+  /* ── Music ───────────────────────────────────────────────────────────── */
+
+  /** A tiny step sequencer: kick, off-beat hat, and a pentatonic bass line. It
+   *  only runs while a run is moving, and is scheduled a tenth of a second ahead
+   *  on the audio clock so a slow frame cannot make it stutter. */
+  private nextStep = 0;
+  private stepIndex = 0;
+  private music(ctx: AudioContext, playing: boolean, intensity: number) {
+    if (!playing) {
+      this.nextStep = 0;
+      return;
+    }
+    const bpm = 118 + intensity * 26;
+    const sixteenth = 60 / bpm / 4;
+    if (this.nextStep < ctx.currentTime) this.nextStep = ctx.currentTime + 0.02;
+    while (this.nextStep < ctx.currentTime + 0.1) {
+      const at = this.nextStep - ctx.currentTime;
+      const step = this.stepIndex % 16;
+      const bar = Math.floor(this.stepIndex / 16) % 4;
+      if (step % 4 === 0) {
+        this.blip(ctx, { type: "sine", from: 140, to: 45, at, dur: 0.16, gain: 0.16 });
+      }
+      if (step % 4 === 2) this.noiseBurst(ctx, { at, dur: 0.04, gain: 0.05, hz: 8000 });
+      if (intensity > 0.35 && step % 2 === 1)
+        this.noiseBurst(ctx, { at, dur: 0.02, gain: 0.025, hz: 9500 });
+      const line = BASS[bar] ?? BASS[0]!;
+      const note = line[step];
+      if (note)
+        this.blip(ctx, {
+          type: "triangle",
+          from: note,
+          to: note,
+          at,
+          dur: sixteenth * 1.6,
+          gain: 0.07,
+        });
+      this.nextStep += sixteenth;
+      this.stepIndex += 1;
+    }
+  }
+
   /* ── Plumbing ────────────────────────────────────────────────────────── */
 
   private allow(kind: string) {
@@ -285,6 +398,15 @@ export class RunnerAudio {
   attach(engine: RunEngine): readonly RunEvent[] {
     const events = engine.drainEvents();
     this.play(events);
+    const ctx = this.ctx;
+    if (ctx && this.master && !this.muted && ctx.state === "running") {
+      const s = engine.state;
+      this.music(
+        ctx,
+        s.phase === "running" && s.countdown <= 0,
+        Math.min(1, Math.max(0, (s.cruiseSpeed - 11.5) / 15.5)),
+      );
+    }
     return events;
   }
 }

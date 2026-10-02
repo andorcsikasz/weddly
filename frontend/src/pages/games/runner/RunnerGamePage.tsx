@@ -36,7 +36,7 @@ import { RunnerUI } from "./components/RunnerUI";
 import { useRunnerStore } from "./store/runnerStore";
 import { coupleApi } from "@/lib/endpoints";
 import { useT } from "@/lib/i18n";
-import type { Currency } from "@shared/types";
+import type { BudgetGoal, Currency } from "@shared/types";
 import "./runner.css";
 
 /** The five things a player can ask for. Every input device below maps onto this
@@ -101,9 +101,21 @@ export default function RunnerGamePage() {
   // moment and the engine adopts it. What CANNOT happen is a run starting before
   // the currency is known, which the `ready` gate below enforces.
   const engine = useMemo(() => new RunEngine(), []);
+  // Dev-only handle for poking the simulation from the console or a QA script
+  // (grant a power-up, jump to 600 m). Stripped from production builds.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    (window as unknown as { __runner?: RunEngine }).__runner = engine;
+    return () => {
+      delete (window as unknown as { __runner?: RunEngine }).__runner;
+    };
+  }, [engine]);
   const audio = useMemo(() => createRunnerAudio(), []);
 
   const currency = useRef<Currency | null>(null);
+  /** The couple's own wedding budget, in their currency: every hit is priced
+   *  against it (see `hitCost`). Null when they have not set one. */
+  const budget = useRef<number | null>(null);
 
   /* ── Who you are ────────────────────────────────────────────────────────── */
   const character = useRunnerStore((s) => s.character);
@@ -122,6 +134,7 @@ export default function RunnerGamePage() {
       .then((r) => {
         if (!live) return;
         currency.current = r.couple?.currency ?? "HUF";
+        budget.current = budgetFromGoal(r.couple?.budget_goal ?? null);
       })
       .catch(() => {
         if (!live) return;
@@ -199,8 +212,10 @@ export default function RunnerGamePage() {
   const start = useCallback(() => {
     void audio.unlock();
     engine.setCurrency(currency.current ?? "HUF");
+    engine.setBudget(budget.current);
     resetHud();
-    engine.start();
+    // Three seconds of 3-2-1 with the track already laid out in front.
+    engine.start(undefined, 3);
     sync();
   }, [audio, engine, resetHud, sync]);
 
@@ -328,4 +343,15 @@ function isTouchDevice(): boolean {
   // A `maxTouchPoints` check would put the swipe copy in front of someone who has
   // a keyboard, and they would then have no key hints at all.
   return typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+}
+
+/** One number out of the couple's budget goal: the exact figure, or the middle
+ *  of a range, or whichever end of it they filled in. Null for "don't know yet". */
+function budgetFromGoal(goal: BudgetGoal | null): number | null {
+  if (!goal) return null;
+  if (goal.exact_huf) return goal.exact_huf;
+  const lo = goal.min_huf ?? null;
+  const hi = goal.max_huf ?? null;
+  if (lo && hi) return (lo + hi) / 2;
+  return lo ?? hi ?? null;
 }

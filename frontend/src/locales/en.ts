@@ -4371,13 +4371,13 @@ const en: LocaleMessages = {
     markets_card_description:
       "Let guests bet on the night: who cries first, how late the party runs, what the bride thinks of the cake.",
     runner_kicker: "Endless runner",
-    runner_card_title: "Run for the Wedding",
+    runner_card_title: "Wedding Run",
     runner_card_description:
       "Dash down the wedding lane, dodge every cost and every last-minute bill, and watch what is left at the end.",
   },
 
   runner: {
-    title: "Run for the Wedding",
+    title: "Wedding Run",
     subtitle:
       "Endless runner: dodge the costs, grab every cent, and see what is left of the wedding budget.",
     start: "Start the run",
@@ -4424,6 +4424,20 @@ const en: LocaleMessages = {
     quit: "Quit to menu",
     mute_on: "Mute sound",
     mute_off: "Unmute sound",
+    power_title: "Power-ups",
+    power_magnet: "Magnet",
+    power_magnet_body: "Pulls every coin nearby straight to you.",
+    power_double: "Double cash",
+    power_double_body: "Every pickup is worth twice as much.",
+    power_shield: "Shield",
+    power_shield_body: "Takes one hit for you, no bill attached.",
+    streak_label: "Streak",
+    streak_banner: "{count} in a row!",
+    milestone_banner: "Score ×{n}",
+    next_multiplier: "×{n} next",
+    go: "Go!",
+    best_combo_label: "Best streak",
+    hit_toast_sub: "Unplanned cost",
   },
   quiz: {
     list: {

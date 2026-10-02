@@ -4404,13 +4404,13 @@ const hu: LocaleMessages = {
     markets_card_description:
       "Hadd tippeljenek a vendégek az estére: ki sír előbb, meddig tart a buli, és mit szól a menyasszony a tortához.",
     runner_kicker: "Végtelen futás",
-    runner_card_title: "Fuss a házasságért",
+    runner_card_title: "Wedding Run",
     runner_card_description:
       "Rohass végig az esküvői pályán, kerüld ki a költségeket és az utolsó pillanatbeli számlákat, és nézd meg, mi marad a végén.",
   },
 
   runner: {
-    title: "Fuss a házasságért",
+    title: "Wedding Run",
     subtitle:
       "Végtelen futás: kerüld el a költségeket, szedd fel az összes pénzt, és nézd meg, mi marad az esküvői keretből.",
     start: "Indítás",
@@ -4419,8 +4419,8 @@ const hu: LocaleMessages = {
     how_body:
       "Minden ezen a pályán egy esküvői költség van: virágkocsi, utolsó pillanatban érkező számla, DJ-pult, amit nem engedhetsz meg. Kerüld ki őket, szedd fel a készpénzt, és a végén látod, mi maradt.",
     choose_title: "Ki vagy?",
-    play_as_bride: "Az menyasszony",
-    play_as_groom: "Az öröklegény",
+    play_as_bride: "A menyasszony",
+    play_as_groom: "A vőlegény",
     controls_title: "Irányítás",
     control_left: "Balra",
     control_right: "Jobbra",
@@ -4457,6 +4457,20 @@ const hu: LocaleMessages = {
     quit: "Kilépés a menübe",
     mute_on: "Hang némítása",
     mute_off: "Hang visszakapcsolása",
+    power_title: "Bónuszok",
+    power_magnet: "Mágnes",
+    power_magnet_body: "Minden közeli érmét magához húz.",
+    power_double: "Dupla pénz",
+    power_double_body: "Minden felvett összeg kétszer annyit ér.",
+    power_shield: "Pajzs",
+    power_shield_body: "Egy ütközést elnyel helyetted, számla nélkül.",
+    streak_label: "Sorozat",
+    streak_banner: "{count} egymás után!",
+    milestone_banner: "Pontszorzó ×{n}",
+    next_multiplier: "Következő: ×{n}",
+    go: "Rajt!",
+    best_combo_label: "Leghosszabb sorozat",
+    hit_toast_sub: "Váratlan költség",
   },
   quiz: {
     list: {

@@ -96,8 +96,12 @@ describe("RunnerUI overlays", () => {
   it("offers Start and the exit link on the menu", () => {
     renderUI();
     expect(screen.getByText("runner.start")).toBeTruthy();
-    expect(screen.getByText("runner.how_title")).toBeTruthy();
-    expect(screen.getByText("runner.controls_title")).toBeTruthy();
+    // One screen: who you are, the power-ups as a row, and the controls as a
+    // single line. The long "how it works" paragraph is gone on purpose.
+    expect(screen.getByText("runner.choose_title")).toBeTruthy();
+    expect(screen.getByLabelText("runner.power_title")).toBeTruthy();
+    expect(screen.getByText(/runner\.control_jump/)).toBeTruthy();
+    expect(screen.queryByText("runner.how_body")).toBeNull();
     // Full screen over the shell, so the menu must carry its own way out.
     expect(screen.getByText("runner.back_to_games").closest("a")?.getAttribute("href")).toBe(
       "/app/games",

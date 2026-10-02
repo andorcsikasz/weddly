@@ -29,16 +29,16 @@ function Coin({ tier }: { tier: CashId }) {
     return (
       <group>
         <mesh
-          geometry={cylinder(0.22, 0.22, 0.07, 14)}
-          material={M.gold()}
+          geometry={cylinder(0.24, 0.24, 0.07, 20)}
+          material={M.coin()}
           rotation={[0, 0, Math.PI / 2]}
         />
         <mesh
-          geometry={torus(0.22, 0.028, 6, 14)}
-          material={M.goldDeep()}
+          geometry={torus(0.24, 0.032, 8, 20)}
+          material={M.coinRim()}
           rotation={[0, Math.PI / 2, 0]}
         />
-        <mesh geometry={box(0.03, 0.2, 0.06)} material={M.goldDeep()} />
+        <mesh geometry={box(0.075, 0.1, 0.03)} material={M.coinRim()} position={[0.02, 0, 0]} />
       </group>
     );
   }

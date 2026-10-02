@@ -4494,13 +4494,13 @@ const de: LocaleMessages = {
     markets_card_description:
       "Lasst die Gäste auf den Abend wetten: wer zuerst weint, wie lange die Party dauert und was die Braut von der Torte hält.",
     runner_kicker: "Endlos-Lauf",
-    runner_card_title: "Lauf zur Hochzeit",
+    runner_card_title: "Wedding Run",
     runner_card_description:
       "Stürme die Hochzeitsspur, weiche jedem Kostpunkt und jeder Rechnung im letzten Moment aus: und sieh, was übrig bleibt.",
   },
 
   runner: {
-    title: "Lauf zur Hochzeit",
+    title: "Wedding Run",
     subtitle:
       "Endlos-Lauf: den Kosten ausweichen, jeden Cent einsammeln und sehen, was vom Hochzeitsbudget übrig bleibt.",
     start: "Lauf starten",
@@ -4550,6 +4550,20 @@ const de: LocaleMessages = {
     quit: "Zum Menü",
     mute_on: "Ton aus",
     mute_off: "Ton an",
+    power_title: "Power-ups",
+    power_magnet: "Magnet",
+    power_magnet_body: "Zieht jede Münze in der Nähe direkt zu dir.",
+    power_double: "Doppeltes Geld",
+    power_double_body: "Jedes eingesammelte Geld zählt doppelt.",
+    power_shield: "Schild",
+    power_shield_body: "Fängt einen Treffer für dich ab, ohne Rechnung.",
+    streak_label: "Serie",
+    streak_banner: "{count} in Folge!",
+    milestone_banner: "Punkte ×{n}",
+    next_multiplier: "Als Nächstes: ×{n}",
+    go: "Los!",
+    best_combo_label: "Längste Serie",
+    hit_toast_sub: "Ungeplante Kosten",
   },
   quiz: {
     list: {

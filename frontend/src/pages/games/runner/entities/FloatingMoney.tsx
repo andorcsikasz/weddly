@@ -27,7 +27,10 @@ import { moneyLabelTexture } from "../utils/textures";
  *  pause does not resume every label halfway up. Long enough to be read at running
  *  speed, short enough to stay out of the track's way. */
 const LIFE = 0.85;
-const BAG_LIFE = 1.15;
+const BAG_LIFE = 0.95;
+/** World height of a big label. Was 0.66, which at the near plane covered a
+ *  third of the track. */
+const BIG_SIZE = 0.42;
 /** Metres a label climbs over its life. */
 const RISE = 1.6;
 /** Fraction of the life spent popping, before the rise takes over. */
@@ -61,6 +64,10 @@ interface Slot {
    *  re-rasterised for a label it is not about to draw. */
   key: string;
   baseY: number;
+  baseX: number;
+  /** -1 drifts left, 1 drifts right. */
+  side: number;
+  aspect: number;
 }
 
 export function FloatingMoney({ drain, readClock, format }: FloatingMoneyProps) {
@@ -78,7 +85,18 @@ export function FloatingMoney({ drain, readClock, format }: FloatingMoneyProps) 
         sprite.visible = false;
         // Above every prop, so a label is never half-buried in a hedge.
         sprite.renderOrder = 20;
-        return { sprite, material, born: null, life: 0, big: false, key: "", baseY: 0 };
+        return {
+          sprite,
+          material,
+          born: null,
+          life: 0,
+          big: false,
+          key: "",
+          baseY: 0,
+          baseX: 0,
+          side: 1,
+          aspect: ASPECT,
+        };
       }),
     [],
   );
@@ -100,6 +118,12 @@ export function FloatingMoney({ drain, readClock, format }: FloatingMoneyProps) 
 
     const batch = drain();
     for (const request of batch) {
+      // Only the BIG events (a bag, a streak bonus) get a label in the world.
+      // A coin label rose straight up the middle of the track, exactly where the
+      // player is reading the next row, and a swept line of them walled the view
+      // in digits. Coins are counted by the HUD's gain chip instead, which sits in
+      // the corner and adds a whole row up into one number.
+      if (!request.big) continue;
       const slot = slots.find((s) => s.born === null);
       if (!slot) break;
       const text = format(request.value, request.currency);
@@ -110,16 +134,22 @@ export function FloatingMoney({ drain, readClock, format }: FloatingMoneyProps) 
           slot.material.map = texture;
           slot.material.needsUpdate = true;
           slot.key = key;
+          const img = texture.image as { width?: number; height?: number } | undefined;
+          slot.aspect = img?.width && img.height ? img.width / img.height : ASPECT;
         }
       }
       slot.born = readClock();
       slot.life = request.big ? BAG_LIFE : LIFE;
       slot.big = request.big;
-      slot.baseY = request.y;
-      slot.sprite.position.set(request.x, request.y, request.z);
+      // Off to the side and above the shoulder, never over the lane ahead: the
+      // label drifts OUTWARD (away from the centre line) as it climbs.
+      slot.baseY = request.y + 0.6;
+      slot.side = request.x > 0.2 ? 1 : request.x < -0.2 ? -1 : slots.indexOf(slot) % 2 ? 1 : -1;
+      slot.baseX = request.x + slot.side * 0.9;
+      slot.sprite.position.set(slot.baseX, slot.baseY, Math.max(request.z, -1.5) + 0.8);
       slot.material.opacity = 1;
-      const base = request.big ? 0.66 : 0.44;
-      slot.sprite.scale.set(base * ASPECT, base, 1);
+      const base = request.big ? BIG_SIZE : 0.44;
+      slot.sprite.scale.set(base * slot.aspect, base, 1);
       slot.sprite.visible = true;
       if (slot.sprite.parent !== parent) parent.add(slot.sprite);
     }
@@ -140,10 +170,11 @@ export function FloatingMoney({ drain, readClock, format }: FloatingMoneyProps) 
       // a bubble, and one that only pops disappears before it can be read.
       const ease = 1 - Math.pow(1 - t, 2);
       slot.sprite.position.y = slot.baseY + RISE * ease;
+      slot.sprite.position.x = slot.baseX + slot.side * 1.1 * ease;
       slot.material.opacity = t < POP ? 1 : 1 - (t - POP) / (1 - POP);
       const pop = t < POP ? 1.5 - (t / POP) * 0.5 : 1;
-      const base = slot.big ? 0.66 : 0.44;
-      slot.sprite.scale.set(base * pop * ASPECT, base * pop, 1);
+      const base = slot.big ? BIG_SIZE : 0.44;
+      slot.sprite.scale.set(base * pop * slot.aspect, base * pop, 1);
     }
   });
 

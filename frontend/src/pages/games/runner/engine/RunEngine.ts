@@ -24,6 +24,19 @@
 
 import {
   BAG_CHANCE,
+  CHARGE_SPEED,
+  CHARGE_TRIGGER,
+  MAGNET_REACH,
+  MAX_BLOCKS_PER_ROW,
+  POWERUP_CHANCE,
+  POWERUP_FROM,
+  POWERUP_SECONDS,
+  ROW_GAP_TIGHT,
+  STREAK_WINDOW,
+  hitCost,
+  isStreakStep,
+  pickPowerUp,
+  streakBonus,
   DESPAWN_BEHIND,
   economyFor,
   HIT_SLOWMO,
@@ -51,7 +64,15 @@ import {
   verdictFor,
   weddingProfit,
 } from "@shared/runner";
-import type { CashId, LaneIndex, ObstacleId, RowLayout, Rng, Verdict } from "@shared/runner";
+import type {
+  CashId,
+  LaneIndex,
+  ObstacleId,
+  PowerUpId,
+  RowLayout,
+  Rng,
+  Verdict,
+} from "@shared/runner";
 import type { Currency } from "@shared/types";
 
 /** Which of the couple the player is. Purely cosmetic — both share one physics
@@ -78,10 +99,11 @@ const MAX_SUBSTEPS = 12;
  *  created — the generator fails SILENTLY and the track gets emptier the denser
  *  it is meant to be. A player sees a thinning obstacle field and blames the
  *  difficulty ramp. If `ROW_GAP_TIGHT` ever drops again, this must come with it. */
-const OBSTACLE_POOL = 32;
+const OBSTACLE_POOL = Math.ceil((SPAWN_AHEAD / ROW_GAP_TIGHT + 1) * MAX_BLOCKS_PER_ROW) + 4;
 /** Cash is instanced, so the pool is just memory and a loop bound. */
-const CASH_POOL = 120;
+const CASH_POOL = 220;
 const BAG_POOL = 8;
+const POWERUP_POOL = 4;
 
 /** Nominal player height, standing. The catalogue in `shared/runner.ts` is
  *  authored against this and against `SLIDE`'s 0.8 — both live here as the
@@ -99,6 +121,19 @@ export interface ObstacleInstance {
   active: boolean;
   /** Set once this obstacle has taken a heart, so one limousine is one bill. */
   spent: boolean;
+  /** Will drive at the player once inside `CHARGE_TRIGGER`. */
+  charge: boolean;
+  /** Is driving right now. The renderer reads it for the bounce and the warning. */
+  charging: boolean;
+}
+
+export interface PowerUpInstance {
+  kind: PowerUpId;
+  x: number;
+  y: number;
+  z: number;
+  active: boolean;
+  phase: number;
 }
 
 export interface CashInstance {
@@ -157,13 +192,18 @@ export type RunEvent =
   | { type: "slide" }
   | { type: "lane"; lane: LaneIndex }
   | { type: "hit"; x: number; y: number; z: number; obstacle: ObstacleId }
-  | { type: "expense"; amount: number }
+  | { type: "expense"; amount: number; obstacle: ObstacleId }
   | { type: "milestone"; multiplier: number }
+  | { type: "power"; kind: PowerUpId }
+  | { type: "shield_break" }
+  | { type: "streak"; count: number; value: number }
+  | { type: "charge" }
+  | { type: "countdown"; n: number }
   | { type: "gameover"; summary: RunSummary };
 
 /** Why a burst of particles exists. The engine picks the reason and the position;
  *  the particle system owns what the reason LOOKS like. */
-export type SparkKind = "coin" | "cost" | "dust" | "confetti";
+export type SparkKind = "coin" | "cost" | "dust" | "confetti" | "power";
 
 export interface SparkRequest {
   kind: SparkKind;
@@ -199,6 +239,11 @@ export interface RunSummary {
   hits: number;
   multiplier: number;
   verdict: Verdict;
+  /** Longest pickup streak of the run. Optional so a summary written before
+   *  streaks existed still renders. */
+  bestCombo?: number;
+  /** The bill, summed from each hit's own vendor price. */
+  expenses?: number;
   /** Which currency every figure above is denominated in. Carried on the
    *  summary itself so the game-over card renders one symbol for one number
    *  set and cannot label a EUR profit with a Ft glyph. */
@@ -244,6 +289,22 @@ export interface RunState {
   hits: number;
   /** Metres until the next multiplier step, or null at the top of the ladder. */
   toNextMilestone: number | null;
+  /** Pickups in a row without a hit or a gap longer than `STREAK_WINDOW`. */
+  combo: number;
+  bestCombo: number;
+  /** Seconds left before the streak lapses. */
+  comboTimer: number;
+  /** Seconds of each power-up left; 0 is off. */
+  magnet: number;
+  doubler: number;
+  shield: number;
+  /** Seconds of the 3-2-1 left before the track starts moving. */
+  countdown: number;
+  /** The bill so far: each hit priced by its vendor against the couple's budget. */
+  expenses: number;
+  /** The most recent hit, for the toast. `n` is the hit count it was, so the
+   *  HUD can tell a new hit from a re-render of the same one. */
+  lastHit: { id: ObstacleId; amount: number; n: number } | null;
 }
 
 const clamp = (n: number, lo: number, hi: number) => (n < lo ? lo : n > hi ? hi : n);
@@ -256,6 +317,7 @@ export class RunEngine {
   readonly obstacles: ObstacleInstance[] = [];
   readonly cash: CashInstance[] = [];
   readonly bags: BagInstance[] = [];
+  readonly powerups: PowerUpInstance[] = [];
   events: RunEvent[] = [];
   readonly state: RunState;
 
@@ -268,6 +330,8 @@ export class RunEngine {
   private slideCooldown = 0;
   private coyote = 0;
   private jumpBuffer = 0;
+  /** Last whole second of the countdown announced, so each number fires once. */
+  private lastCount = 0;
   private key = 1;
   /** Wall-clock seconds since the run started; drives the run cycle, the camera
    *  and the partner's idle animation. Public because THREE separate rigs read
@@ -292,6 +356,16 @@ export class RunEngine {
    *  so switching it mid-menu cannot leave a coin worth the old currency's
    *  number. A currency change mid-RUN is refused — see `setCurrency`. */
   currency: Currency = "HUF";
+
+  /** The couple's wedding budget in `currency`, or null when they have not set
+   *  one. Prices every hit (see `hitCost`). Same mid-run guard as the currency. */
+  budget: number | null = null;
+
+  setBudget(budget: number | null): void {
+    const phase = this.state.phase;
+    if (phase === "running" || phase === "paused") return;
+    this.budget = budget !== null && Number.isFinite(budget) && budget > 0 ? budget : null;
+  }
 
   constructor(character: RunnerCharacter = "bride", currency: Currency = "HUF") {
     this.currency = currency;
@@ -318,6 +392,15 @@ export class RunEngine {
       bags: 0,
       hits: 0,
       toNextMilestone: 0,
+      combo: 0,
+      bestCombo: 0,
+      comboTimer: 0,
+      magnet: 0,
+      doubler: 0,
+      shield: 0,
+      countdown: 0,
+      expenses: 0,
+      lastHit: null,
     };
     for (let i = 0; i < OBSTACLE_POOL; i++) {
       this.obstacles.push({
@@ -328,6 +411,8 @@ export class RunEngine {
         z: 0,
         active: false,
         spent: false,
+        charge: false,
+        charging: false,
       });
     }
     for (let i = 0; i < CASH_POOL; i++) {
@@ -336,11 +421,16 @@ export class RunEngine {
     for (let i = 0; i < BAG_POOL; i++) {
       this.bags.push({ x: 0, y: 0, z: 0, active: false, phase: i * 1.1 });
     }
+    for (let i = 0; i < POWERUP_POOL; i++) {
+      this.powerups.push({ kind: "magnet", x: 0, y: 0, z: 0, active: false, phase: i * 0.8 });
+    }
   }
 
   /* ── Lifecycle ──────────────────────────────────────────────────────── */
 
-  start(seed?: number) {
+  /** `countdown` is seconds of 3-2-1 before the track moves. The page passes 3;
+   *  the tests pass nothing, so a seeded run is still a pure function of frames. */
+  start(seed?: number, countdown = 0) {
     const s = this.state;
     s.phase = "running";
     s.distance = 0;
@@ -363,8 +453,19 @@ export class RunEngine {
     s.bags = 0;
     s.hits = 0;
     s.toNextMilestone = null;
+    s.combo = 0;
+    s.bestCombo = 0;
+    s.comboTimer = 0;
+    s.magnet = 0;
+    s.doubler = 0;
+    s.shield = 0;
+    s.countdown = countdown;
+    s.expenses = 0;
+    s.lastHit = null;
+    this.lastCount = Math.ceil(countdown);
 
     for (const o of this.obstacles) o.active = false;
+    for (const p of this.powerups) p.active = false;
     for (const c of this.cash) c.active = false;
     for (const b of this.bags) b.active = false;
     // Both queues are cleared, not just the events. An undrained spark from the
@@ -387,6 +488,9 @@ export class RunEngine {
     this.rng = makeRng(this.seed);
     // The first row lands LEAD_IN metres out, never on top of the player.
     this.spawnCursor = LEAD_IN;
+    // Spawn the opening window NOW rather than on the first step, so the track
+    // is already laid out under the 3-2-1 instead of popping in at "go".
+    this.spawn();
   }
 
   pause() {
@@ -405,7 +509,7 @@ export class RunEngine {
 
   moveLane(direction: -1 | 1): boolean {
     const s = this.state;
-    if (s.phase !== "running") return false;
+    if (s.phase !== "running" || s.countdown > 0) return false;
     const next = clamp(s.lane + direction, 0, 2) as LaneIndex;
     if (next === s.lane) return false;
     s.lane = next;
@@ -419,7 +523,7 @@ export class RunEngine {
 
   jump(): boolean {
     const s = this.state;
-    if (s.phase !== "running") return false;
+    if (s.phase !== "running" || s.countdown > 0) return false;
     // Coyote time covers the handful of frames between leaving the ground and
     // the jump landing, which is the classic "I pressed jump and nothing
     // happened" complaint. The buffer does the same for a press that arrives
@@ -445,7 +549,7 @@ export class RunEngine {
 
   slide(): boolean {
     const s = this.state;
-    if (s.phase !== "running") return false;
+    if (s.phase !== "running" || s.countdown > 0) return false;
     // No sliding in mid-air: the one place a runner's controls usually betray
     // you is a duck that eats a jump, and ducking in the air does nothing
     // useful here anyway.
@@ -476,6 +580,19 @@ export class RunEngine {
       return;
     }
     this.clock += realDt;
+    if (s.countdown > 0) {
+      // The 3-2-1 runs on real time and moves nothing: the track is already
+      // spawned ahead (see `start`), the runner is on the line, and the numbers
+      // are announced once each for the HUD pop and the beep.
+      s.countdown = Math.max(0, s.countdown - realDt);
+      const n = Math.ceil(s.countdown);
+      if (n !== this.lastCount) {
+        this.lastCount = n;
+        this.events.push({ type: "countdown", n });
+      }
+      this.pump(realDt);
+      return;
+    }
     this.accum += Math.min(realDt, MAX_SUBSTEPS * STEP);
     let steps = 0;
     while (this.accum >= STEP && steps < MAX_SUBSTEPS) {
@@ -509,6 +626,13 @@ export class RunEngine {
     if (this.slideCooldown > 0) this.slideCooldown = Math.max(0, this.slideCooldown - dt);
     if (this.coyote > 0) this.coyote = Math.max(0, this.coyote - dt);
     if (this.jumpBuffer > 0) this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
+    if (s.magnet > 0) s.magnet = Math.max(0, s.magnet - dt);
+    if (s.doubler > 0) s.doubler = Math.max(0, s.doubler - dt);
+    if (s.shield > 0) s.shield = Math.max(0, s.shield - dt);
+    if (s.comboTimer > 0) {
+      s.comboTimer = Math.max(0, s.comboTimer - dt);
+      if (s.comboTimer === 0) s.combo = 0;
+    }
 
     /* Slide. Runs to its full length even if the key is long gone — an early
      * cancel is how a slide becomes a twitch. */
@@ -574,14 +698,33 @@ export class RunEngine {
     this.spawn();
     for (const o of this.obstacles) {
       if (!o.active) continue;
-      o.z += travel;
+      if (o.charge && !o.charging && -o.z < CHARGE_TRIGGER) {
+        o.charging = true;
+        this.events.push({ type: "charge" });
+      }
+      o.z += travel + (o.charging ? CHARGE_SPEED * dt : 0);
       if (o.z > DESPAWN_BEHIND) o.active = false;
     }
+    // The magnet bends cash toward the runner rather than teleporting it: the
+    // player watches a lane of coins curve in, which is the whole fun of it.
+    const pull = s.magnet > 0 ? ease(dt, 0.09) : 0;
+    const bodyY = s.y + (s.sliding ? SLIDE_HEIGHT : STAND_HEIGHT) / 2;
     for (const c of this.cash) {
       if (!c.active) continue;
       c.z += travel;
       c.phase += dt * 3.1;
+      if (pull > 0 && c.z > -MAGNET_REACH && c.z < 1) {
+        c.x += (s.x - c.x) * pull;
+        c.y += (bodyY - c.y) * pull;
+        c.z += (0 - c.z) * pull * 0.6;
+      }
       if (c.z > DESPAWN_BEHIND) c.active = false;
+    }
+    for (const p of this.powerups) {
+      if (!p.active) continue;
+      p.z += travel;
+      p.phase += dt * 2.4;
+      if (p.z > DESPAWN_BEHIND) p.active = false;
     }
     for (const b of this.bags) {
       if (!b.active) continue;
@@ -605,7 +748,13 @@ export class RunEngine {
       const template = pickRow(this.rng, s.distance);
       const layout = template.build(this.rng);
       this.placeRow(this.spawnCursor, layout);
-      this.spawnCursor = nextSpawn(this.spawnCursor, s.distance);
+      if (s.distance + this.spawnCursor > POWERUP_FROM && layout.safe.length > 0) {
+        if (this.rng() < POWERUP_CHANCE) {
+          const lane = layout.safe[Math.floor(this.rng() * layout.safe.length)] ?? layout.safe[0];
+          if (lane !== undefined) this.placePowerUp(this.spawnCursor - 5, lane);
+        }
+      }
+      this.spawnCursor = nextSpawn(this.spawnCursor, s.distance) + (layout.span ?? 0);
     }
   }
 
@@ -616,8 +765,10 @@ export class RunEngine {
       if (!slot) break;
       slot.id = block.id;
       slot.lane = block.lane;
-      slot.z = z;
+      slot.z = z - (block.dz ?? 0);
       slot.spent = false;
+      slot.charge = block.charge === true;
+      slot.charging = false;
       slot.active = true;
       // Lateral jitter so a row of identical carts does not read as a fence.
       // Wide blockers get none — a limousine that drifts sideways stops being a
@@ -640,7 +791,7 @@ export class RunEngine {
         : cashTierFor(this.rng, i, coins.length);
       slot.x = laneX(c.lane);
       slot.y = c.height;
-      slot.z = z;
+      slot.z = z - (c.dz ?? 0);
       slot.active = true;
     }
     if (layout.bag) {
@@ -661,6 +812,17 @@ export class RunEngine {
     if (height >= 1.05) return "envelope";
     if (height >= 0.6) return "bundle";
     return "coin";
+  }
+
+  /** A power-up a few metres before a row, on one of its safe lanes. */
+  private placePowerUp(spawn: number, lane: LaneIndex) {
+    const slot = this.powerups.find((p) => !p.active);
+    if (!slot) return;
+    slot.kind = pickPowerUp(this.rng);
+    slot.x = laneX(lane);
+    slot.y = 0.95;
+    slot.z = -spawn;
+    slot.active = true;
   }
 
   private freeObstacle(): ObstacleInstance | null {
@@ -708,15 +870,20 @@ export class RunEngine {
       if (Math.abs(c.x - s.x) > 0.66) continue;
       if (Math.abs(c.y - centerY) > reach) continue;
       c.active = false;
-      const value = coinValue(c.tier, this.currency);
+      const value = coinValue(c.tier, this.currency) * (s.doubler > 0 ? 2 : 1);
       s.cash += value;
+      this.bumpStreak();
       this.events.push({ type: "coin", x: c.x, y: c.y, z: c.z, tier: c.tier, value });
       // One burst, not one per tier. The tier is the SCORE difference and the
       // player reads it off the HUD; the burst's job is only to say "something
       // was collected here", and a bundle burst that looks identical to a coin
       // burst teaches the player nothing the counter has not already said.
       this.spark("coin", c.x, c.y, c.z);
-      this.float(c.x, c.y + 0.35, c.z, value * s.multiplier, false);
+      // Under the magnet every coin arrives at the runner, so the labels would
+      // stack in one column; fan them out by the coin's own phase (not the rng,
+      // which would change the track).
+      const fan = s.magnet > 0 ? Math.sin(c.phase * 7.3) * 0.9 : 0;
+      this.float(c.x + fan, c.y + 0.35 + Math.abs(fan) * 0.3, c.z, value * s.multiplier, false);
     }
 
     for (const b of this.bags) {
@@ -726,6 +893,7 @@ export class RunEngine {
       if (Math.abs(b.y - centerY) > reach + 0.3) continue;
       b.active = false;
       s.bags += 1;
+      this.bumpStreak();
       this.events.push({
         type: "bag",
         x: b.x,
@@ -738,11 +906,63 @@ export class RunEngine {
       this.spark("coin", b.x, b.y + 0.2, b.z);
       this.float(b.x, b.y + 0.75, b.z, economyFor(this.currency).bag * s.multiplier, true);
     }
+
+    for (const p of this.powerups) {
+      if (!p.active) continue;
+      if (Math.abs(p.z) > 0.75) continue;
+      if (Math.abs(p.x - s.x) > 0.8) continue;
+      if (Math.abs(p.y - centerY) > reach + 0.2) continue;
+      p.active = false;
+      if (p.kind === "magnet") s.magnet = POWERUP_SECONDS.magnet;
+      else if (p.kind === "double") s.doubler = POWERUP_SECONDS.double;
+      else s.shield = POWERUP_SECONDS.shield;
+      this.events.push({ type: "power", kind: p.kind });
+      this.spark("power", p.x, p.y, p.z);
+    }
+  }
+
+  /** One more pickup in the streak, and the bonus when it lands on a step. The
+   *  bonus goes into RAW cash like any pickup, so the profit stays derivable
+   *  from the counters and the multiplier applies to it once, not twice. */
+  private bumpStreak() {
+    const s = this.state;
+    s.combo += 1;
+    s.comboTimer = STREAK_WINDOW;
+    if (s.combo > s.bestCombo) s.bestCombo = s.combo;
+    if (isStreakStep(s.combo)) {
+      const bonus = streakBonus(s.combo, this.currency);
+      s.cash += bonus;
+      this.events.push({ type: "streak", count: s.combo, value: bonus * s.multiplier });
+      this.spark("confetti", s.x, 1.6, -0.5);
+      // Never DROPPED by the per-frame cap: a streak label is the one float that
+      // is not redundant with the HUD counter, so it evicts a coin label instead.
+      if (this.floats.length >= MAX_FLOATS_PER_ADVANCE) this.floats.pop();
+      this.floats.push({
+        x: s.x,
+        y: 2.3,
+        z: -0.5,
+        value: bonus * s.multiplier,
+        currency: this.currency,
+        big: true,
+      });
+    }
   }
 
   private damage(o: ObstacleInstance) {
     const s = this.state;
     if (s.invuln > 0 || s.phase !== "running") return;
+    if (s.shield > 0) {
+      // The shield takes the hit whole: no heart, no bill, no stumble. A short
+      // invulnerability so the same wall cannot hit the bare runner a frame later.
+      s.shield = 0;
+      s.invuln = 0.6;
+      s.shake = 0.4;
+      this.events.push({ type: "shield_break" });
+      this.spark("power", s.x, 1, 0);
+      return;
+    }
+    s.combo = 0;
+    s.comboTimer = 0;
     s.hearts = Math.max(0, s.hearts - 1);
     s.hits += 1;
     s.invuln = INVULN_SECONDS;
@@ -757,7 +977,10 @@ export class RunEngine {
       z: o.z,
       obstacle: o.id,
     });
-    this.events.push({ type: "expense", amount: economyFor(this.currency).expensePerHit });
+    const cost = hitCost(o.id, this.currency, this.budget);
+    s.expenses += cost;
+    s.lastHit = { id: o.id, amount: cost, n: s.hits };
+    this.events.push({ type: "expense", amount: cost, obstacle: o.id });
     // The cost burst is RED and rises, where a pickup's falls and is gold: the
     // two must never be confusable at a glance, because one adds to the score and
     // the other takes from it.
@@ -859,7 +1082,13 @@ export class RunEngine {
    *  so the score on screen can always be recomputed from the run. */
   summary(): RunSummary {
     const s = this.state;
-    const economy = { cash: s.cash, bags: s.bags, hits: s.hits, currency: this.currency };
+    const economy = {
+      cash: s.cash,
+      bags: s.bags,
+      hits: s.hits,
+      currency: this.currency,
+      expenses: s.expenses,
+    };
     const profit = weddingProfit(economy, s.multiplier);
     return {
       profit,
@@ -869,6 +1098,8 @@ export class RunEngine {
       hits: s.hits,
       multiplier: s.multiplier,
       verdict: verdictFor(profit, this.currency),
+      bestCombo: s.bestCombo,
+      expenses: s.expenses,
       currency: this.currency,
     };
   }
@@ -877,7 +1108,7 @@ export class RunEngine {
    *  through the shared economy rather than accumulated, for the same reason the
    *  summary is. */
   expenses(): number {
-    return this.state.hits * economyFor(this.currency).expensePerHit;
+    return this.state.expenses;
   }
 
   /** Switch the scoring currency. Refused while a run is in flight: half the
@@ -913,16 +1144,6 @@ export class RunEngine {
   }
 
   /* ── Cosmetics the renderer reads ──────────────────────────────────── */
-
-  /** Where the partner being chased is, in metres ahead. They hover around 30
-   *  metres out, drift a little closer whenever the player is doing well (a
-   *  milestone closes the gap for a moment) and never closer than 18 — far
-   *  enough that they read as narrative rather than as another collider. */
-  partnerDistance(milestonePulse: number): number {
-    const base = 30 - milestonePulse * 6;
-    const sway = Math.sin(this.clock * 0.55) * 2.4;
-    return base + sway;
-  }
 
   /** Seconds since the run began. Drives every run-cycle animation. */
   get runClock(): number {

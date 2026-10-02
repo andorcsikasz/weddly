@@ -19,12 +19,22 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { CONFETTI, DUST, PALETTE } from "../constants/palette";
 
-const COUNT = 320;
+const COUNT = 900;
 /** Parked particles go here. Far enough that the fog eats them, close enough
  *  that they are inside the camera's frustum and do not cost a re-fit. */
 const PARKED = -999;
 
-type Kind = "confetti" | "coin" | "dust" | "cost";
+type Kind = "confetti" | "coin" | "dust" | "cost" | "power";
+
+/** Particles per request. A burst used to be ONE particle, which read as a
+ *  flicker rather than as an event. */
+const BURST: Readonly<Record<Kind, number>> = {
+  coin: 7,
+  cost: 16,
+  dust: 6,
+  confetti: 46,
+  power: 30,
+};
 
 interface Particle {
   alive: boolean;
@@ -170,47 +180,59 @@ export function Particles({ drain }: ParticlesProps) {
     // 1. Drain the spawn requests. Ring-buffer the pool: the oldest particle is
     //    the one to sacrifice, which is invisible in practice because anything
     //    this old is already fading.
-    for (const req of drain()) {
-      const p = st.pool[st.cursor]!;
-      st.cursor = (st.cursor + 1) % COUNT;
-      p.alive = true;
-      p.kind = req.kind;
-      p.x = req.x;
-      p.y = req.y;
-      p.z = req.z;
-      p.spin = Math.random() * Math.PI * 2;
-      switch (req.kind) {
-        case "coin":
-          p.vx = (Math.random() - 0.5) * 1.6;
-          p.vy = 1.6 + Math.random() * 1.4;
-          p.vz = -2 - Math.random() * 3;
-          p.life = 0.55;
-          p.size = 0.16;
-          break;
-        case "cost":
-          p.vx = (Math.random() - 0.5) * 2.4;
-          p.vy = 2.4 + Math.random() * 1.6;
-          p.vz = -1 - Math.random() * 2;
-          p.life = 0.7;
-          p.size = 0.2;
-          break;
-        case "dust":
-          p.vx = (Math.random() - 0.5) * 0.8;
-          p.vy = 0.4 + Math.random() * 0.5;
-          p.vz = -3 - Math.random() * 4;
-          p.life = 0.4;
-          p.size = 0.1;
-          break;
-        default:
-          p.vx = (Math.random() - 0.5) * 5;
-          p.vy = 3 + Math.random() * 4;
-          p.vz = -3 - Math.random() * 6;
-          p.life = 1.1 + Math.random() * 0.7;
-          p.size = 0.15;
-          break;
+    for (const req of drain())
+      for (let n = 0; n < BURST[req.kind]; n++) {
+        const p = st.pool[st.cursor]!;
+        st.cursor = (st.cursor + 1) % COUNT;
+        p.alive = true;
+        p.kind = req.kind;
+        p.x = req.x;
+        p.y = req.y;
+        p.z = req.z;
+        p.spin = Math.random() * Math.PI * 2;
+        switch (req.kind) {
+          case "coin":
+            p.vx = (Math.random() - 0.5) * 1.6;
+            p.vy = 1.6 + Math.random() * 1.4;
+            p.vz = -2 - Math.random() * 3;
+            p.life = 0.55;
+            p.size = 0.16;
+            break;
+          case "cost":
+            p.vx = (Math.random() - 0.5) * 2.4;
+            p.vy = 2.4 + Math.random() * 1.6;
+            p.vz = -1 - Math.random() * 2;
+            p.life = 0.7;
+            p.size = 0.2;
+            break;
+          case "power": {
+            // A ring that blooms outward around the pickup.
+            const a = Math.random() * Math.PI * 2;
+            const r = 2.6 + Math.random() * 1.4;
+            p.vx = Math.cos(a) * r;
+            p.vy = Math.sin(a) * r * 0.8 + 0.6;
+            p.vz = -2 - Math.random() * 2;
+            p.life = 0.75;
+            p.size = 0.18;
+            break;
+          }
+          case "dust":
+            p.vx = (Math.random() - 0.5) * 0.8;
+            p.vy = 0.4 + Math.random() * 0.5;
+            p.vz = -3 - Math.random() * 4;
+            p.life = 0.4;
+            p.size = 0.1;
+            break;
+          default:
+            p.vx = (Math.random() - 0.5) * 5;
+            p.vy = 3 + Math.random() * 4;
+            p.vz = -3 - Math.random() * 6;
+            p.life = 1.1 + Math.random() * 0.7;
+            p.size = 0.15;
+            break;
+        }
+        p.span = p.life;
       }
-      p.span = p.life;
-    }
 
     // 2. Integrate, and write the visible range straight into the GPU buffers.
     const col = new THREE.Color();
@@ -278,6 +300,8 @@ function colorFor(kind: Kind) {
       return PALETTE.blush600;
     case "dust":
       return DUST;
+    case "power":
+      return PALETTE.shield;
     default:
       return PALETTE.blush400;
   }

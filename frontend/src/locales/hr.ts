@@ -4401,13 +4401,13 @@ const hr: LocaleMessages = {
     markets_card_description:
       "Neka gosti pogađaju o večeri: tko prvi plače, dokle traje zabava, što mladenka misli o torti.",
     runner_kicker: "Beskonačni trk",
-    runner_card_title: "Trči za vjenčanje",
+    runner_card_title: "Wedding Run",
     runner_card_description:
       "Juri vjenčanom stazom, izbjegni svaki trošak i svaki račun u posljednji tren i vidi što je ostalo na kraju.",
   },
 
   runner: {
-    title: "Trči za vjenčanje",
+    title: "Wedding Run",
     subtitle:
       "Beskonačni trk: izbjegni troškove, pokupi svaki cent i vidi što je ostalo od vjenčanog proračuna.",
     start: "Započni trk",
@@ -4454,6 +4454,20 @@ const hr: LocaleMessages = {
     quit: "Izađi u izbornik",
     mute_on: "Isključi zvuk",
     mute_off: "Uključi zvuk",
+    power_title: "Pojačanja",
+    power_magnet: "Magnet",
+    power_magnet_body: "Privlači sve obližnje kovanice ravno k tebi.",
+    power_double: "Dupli novac",
+    power_double_body: "Svaki skupljeni iznos vrijedi dvostruko.",
+    power_shield: "Štit",
+    power_shield_body: "Prima jedan udarac umjesto tebe, bez računa.",
+    streak_label: "Niz",
+    streak_banner: "{count} zaredom!",
+    milestone_banner: "Bodovi ×{n}",
+    next_multiplier: "Sljedeće: ×{n}",
+    go: "Kreni!",
+    best_combo_label: "Najduži niz",
+    hit_toast_sub: "Neplanirani trošak",
   },
   quiz: {
     list: {

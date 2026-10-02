@@ -1,5 +1,5 @@
 /**
- * "Weddly: Run for the Wedding" — the pure game domain.
+ * "Weddly: Wedding Run" — the pure game domain.
  *
  * Sibling module to `shared/quiz.ts` and `shared/markets.ts` under the same
  * "Wēddly Games" umbrella, with the same rule that makes those two safe: EVERY
@@ -52,6 +52,7 @@
  */
 
 import type { Currency } from "./currency";
+import type { SupplierCategory } from "./suppliers";
 
 /** Three lanes, always. Index 0 is the couple's left as they run. */
 export const LANE_COUNT = 3 as const;
@@ -104,7 +105,21 @@ export type ObstacleId =
   | "planner_clipboard"
   | "confetti_cannon"
   | "flower_wall"
-  | "last_minute_bill";
+  | "last_minute_bill"
+  // One per directory category the first set did not cover, so the track reads
+  // as the whole vendor list rather than the same eight trades.
+  | "food_truck"
+  | "grand_piano"
+  | "speaker_stack"
+  | "marquee_tent"
+  | "tailor_mannequin"
+  | "fairy_lights"
+  | "disco_ball"
+  | "ring_light"
+  | "luggage_cart"
+  | "ring_box"
+  | "nail_polish"
+  | "invitation_stack";
 
 /**
  * The obstacle catalogue. Collision boxes are authored against
@@ -272,7 +287,181 @@ export const OBSTACLES: Readonly<Record<ObstacleId, ObstacleSpec>> = {
     footprint: 0.94,
     weight: 1.5,
   },
+  food_truck: {
+    id: "food_truck",
+    gate: "lane",
+    half: { x: 0.56, y: 1.15, z: 1.4 },
+    base: 0,
+    footprint: 1.06,
+    weight: 1.3,
+  },
+  grand_piano: {
+    id: "grand_piano",
+    gate: "lane",
+    half: { x: 0.54, y: 0.85, z: 0.7 },
+    base: 0,
+    footprint: 1,
+    weight: 1.2,
+  },
+  speaker_stack: {
+    id: "speaker_stack",
+    gate: "lane",
+    half: { x: 0.5, y: 1.2, z: 0.4 },
+    base: 0,
+    footprint: 0.95,
+    weight: 1.2,
+  },
+  marquee_tent: {
+    id: "marquee_tent",
+    gate: "lane",
+    half: { x: 0.56, y: 1.3, z: 0.5 },
+    base: 0,
+    footprint: 1,
+    weight: 1.3,
+  },
+  tailor_mannequin: {
+    id: "tailor_mannequin",
+    gate: "lane",
+    half: { x: 0.4, y: 1.0, z: 0.3 },
+    base: 0,
+    footprint: 0.8,
+    weight: 1,
+  },
+  fairy_lights: {
+    id: "fairy_lights",
+    gate: "slide",
+    half: { x: 0.56, y: 0.5, z: 0.12 },
+    base: 1.05,
+    footprint: 1,
+    weight: 1.1,
+  },
+  disco_ball: {
+    id: "disco_ball",
+    gate: "slide",
+    half: { x: 0.42, y: 0.55, z: 0.42 },
+    base: 1.02,
+    footprint: 0.85,
+    weight: 1,
+  },
+  ring_light: {
+    id: "ring_light",
+    gate: "slide",
+    half: { x: 0.44, y: 0.6, z: 0.2 },
+    base: 1.02,
+    footprint: 0.85,
+    weight: 0.9,
+  },
+  luggage_cart: {
+    id: "luggage_cart",
+    gate: "slide",
+    half: { x: 0.5, y: 0.6, z: 0.5 },
+    base: 1.05,
+    footprint: 0.95,
+    weight: 1,
+  },
+  ring_box: {
+    id: "ring_box",
+    gate: "jump",
+    half: { x: 0.4, y: 0.34, z: 0.4 },
+    base: 0,
+    footprint: 0.82,
+    weight: 1.1,
+  },
+  nail_polish: {
+    id: "nail_polish",
+    gate: "jump",
+    half: { x: 0.32, y: 0.36, z: 0.32 },
+    base: 0,
+    footprint: 0.68,
+    weight: 0.9,
+  },
+  invitation_stack: {
+    id: "invitation_stack",
+    gate: "jump",
+    half: { x: 0.42, y: 0.33, z: 0.32 },
+    base: 0,
+    footprint: 0.84,
+    weight: 1,
+  },
 };
+
+/* ── What a hit costs ───────────────────────────────────────────────────── */
+
+/**
+ * Every obstacle is a VENDOR, named by the directory's own category, so the
+ * hit toast can say which line of the budget just went over ("Cakes & desserts
+ * −120 000 Ft") in the couple's language with no copy of its own. `share` is
+ * that category's rough slice of a whole wedding budget: what makes a catering
+ * trolley a far worse hit than a bottle of nail polish.
+ */
+export interface ObstacleCost {
+  readonly category: SupplierCategory;
+  readonly share: number;
+}
+
+export const OBSTACLE_COST: Readonly<Record<ObstacleId, ObstacleCost>> = {
+  photographer: { category: "photography", share: 0.08 },
+  videographer: { category: "videography", share: 0.06 },
+  dj_booth: { category: "dj", share: 0.04 },
+  florist_cart: { category: "florist", share: 0.06 },
+  catering_trolley: { category: "catering", share: 0.28 },
+  cake_trolley: { category: "cake_dessert", share: 0.03 },
+  champagne_tower: { category: "bar_drinks", share: 0.06 },
+  giant_receipt: { category: "venue", share: 0.25 },
+  limousine: { category: "transport", share: 0.03 },
+  dress_rack: { category: "bridal_boutique", share: 0.06 },
+  makeup_station: { category: "hair_makeup", share: 0.02 },
+  photo_booth: { category: "photo_booth", share: 0.02 },
+  decor_arch: { category: "wedding_decor", share: 0.05 },
+  chair_stack: { category: "rental_equipment", share: 0.03 },
+  service_fee_sign: { category: "catering", share: 0.28 },
+  planner_clipboard: { category: "wedding_planner", share: 0.07 },
+  confetti_cannon: { category: "entertainment", share: 0.03 },
+  flower_wall: { category: "florist", share: 0.06 },
+  last_minute_bill: { category: "venue", share: 0.25 },
+  food_truck: { category: "food_trucks", share: 0.04 },
+  grand_piano: { category: "live_music", share: 0.05 },
+  speaker_stack: { category: "sound_tech", share: 0.02 },
+  marquee_tent: { category: "tent_pavilion", share: 0.06 },
+  tailor_mannequin: { category: "suit_formal", share: 0.02 },
+  fairy_lights: { category: "lighting", share: 0.02 },
+  disco_ball: { category: "dance_lessons", share: 0.01 },
+  ring_light: { category: "content_creator", share: 0.02 },
+  luggage_cart: { category: "accommodation", share: 0.04 },
+  ring_box: { category: "wedding_jewelry", share: 0.05 },
+  nail_polish: { category: "nails", share: 0.005 },
+  invitation_stack: { category: "invitation_graphics", share: 0.015 },
+};
+
+/** A hit is an unplanned overrun of HALF that vendor's line. */
+export const HIT_SHARE_OF_LINE = 0.5;
+
+/** The budget a run is priced against when the couple has not set one: forty
+ *  bills' worth, which puts the average hit near the flat `expensePerHit` the
+ *  game was balanced on. */
+export function typicalBudget(currency: Currency): number {
+  return economyFor(currency).expensePerHit * 40;
+}
+
+/** Two significant digits, so a bill reads "120 000", never "117 384". */
+export function niceAmount(n: number): number {
+  if (n <= 0) return 0;
+  const mag = 10 ** (Math.floor(Math.log10(n)) - 1);
+  return Math.round(n / mag) * mag;
+}
+
+/**
+ * What hitting one obstacle costs, priced off the COUPLE'S OWN budget. Clamped
+ * to a quarter..three bills of the flat expense, because a 200-million wedding
+ * must not make every hit end the run and a tiny budget must not make hits
+ * free; inside that band, a bigger budget really does mean bigger bills.
+ */
+export function hitCost(id: ObstacleId, currency: Currency, budget: number | null): number {
+  const flat = economyFor(currency).expensePerHit;
+  const base = budget !== null && budget > 0 ? budget : typicalBudget(currency);
+  const raw = base * OBSTACLE_COST[id].share * HIT_SHARE_OF_LINE;
+  return niceAmount(Math.min(flat * 3, Math.max(flat * 0.25, raw)));
+}
 
 /** Every obstacle id, in catalogue order. */
 export const OBSTACLE_IDS = Object.keys(OBSTACLES) as readonly ObstacleId[];
@@ -326,16 +515,46 @@ export type RowId =
   | "full_high"
   | "cash_arc"
   | "bag_alley"
-  | "stagger";
+  | "stagger"
+  | "coin_highway"
+  | "jackpot"
+  | "runaway_limo"
+  | "zigzag_low"
+  | "slalom"
+  | "duck_and_hop";
+
+export interface RowBlock {
+  readonly lane: LaneIndex;
+  readonly id: ObstacleId;
+  /** Metres FURTHER AHEAD than the row's own spawn point. A multi-beat row
+   *  (slalom, duck-and-hop) is one template whose second beat sits `dz` behind
+   *  the first, so the pair is authored, and tested, as one decision. */
+  readonly dz?: number;
+  /** A parked obstacle that starts driving AT the player once it is
+   *  `CHARGE_TRIGGER` metres out. Only ever a `lane` gate, with the other lanes
+   *  clear, so the answer is the same one a parked copy asks for. */
+  readonly charge?: boolean;
+}
+
+export interface RowCoin {
+  readonly lane: LaneIndex;
+  readonly height: number;
+  /** Metres ahead of the row's spawn point. Coins used to share the row's z, so
+   *  an "arc" of five was a vertical STACK the player swallowed in one frame. */
+  readonly dz?: number;
+}
 
 export interface RowLayout {
-  readonly blocked: readonly { lane: LaneIndex; id: ObstacleId }[];
+  readonly blocked: readonly RowBlock[];
   /** Lanes that are clear. Empty means the row is a pure cash reward. */
   readonly safe: Lanes;
   /** Cash placed along the safe path, in metres above the path. */
-  readonly coins: readonly { lane: LaneIndex; height: number }[];
+  readonly coins: readonly RowCoin[];
   /** A tote bag on the safe path, or none. */
   readonly bag: { lane: LaneIndex; height: number } | null;
+  /** Extra track the row occupies past its spawn point (its deepest `dz`), so
+   *  the next row is spaced from where this one ENDS, not where it started. */
+  readonly span?: number;
 }
 
 /** Mulberry32 — tiny, fast, seedable. The whole run's shape is a function of
@@ -382,19 +601,32 @@ function sidesOf(lane: LaneIndex): [LaneIndex, LaneIndex] {
   return [left, right];
 }
 
-/** A short arc of coins over `lane` — rewards the jump it usually sits on. */
-function arcOver(lane: LaneIndex, count: number, peak: number): RowLayout["coins"] {
-  const out: { lane: LaneIndex; height: number }[] = [];
+/** Metres between consecutive coins in a trail. Tight enough to read as one
+ *  line at speed, loose enough that each pickup is its own blip. */
+export const COIN_SPACING = 1.5;
+
+/** Where the nth of `count` coins sits along the track, centred on `at`. */
+const trailDz = (i: number, count: number, at: number) =>
+  Number((at + (i - (count - 1) / 2) * COIN_SPACING).toFixed(3));
+
+/** A short arc of coins over `lane`, spread ALONG the track so it is the shape a
+ *  jump actually traces — rewards the jump it usually sits on. */
+function arcOver(lane: LaneIndex, count: number, peak: number, at = 0): RowCoin[] {
+  const out: RowCoin[] = [];
   for (let i = 0; i < count; i++) {
     const t = count === 1 ? 1 : i / (count - 1);
-    out.push({ lane, height: Number((peak * Math.sin(t * Math.PI)).toFixed(3)) });
+    out.push({
+      lane,
+      height: Number((0.3 + (peak - 0.3) * Math.sin(t * Math.PI)).toFixed(3)),
+      dz: trailDz(i, count, at),
+    });
   }
   return out;
 }
 
 /** A flat line of coins down `lane` — rewards a slide or a lane change. */
-function lineDown(lane: LaneIndex, count: number, height: number): RowLayout["coins"] {
-  return Array.from({ length: count }, () => ({ lane, height }));
+function lineDown(lane: LaneIndex, count: number, height: number, at = 0): RowCoin[] {
+  return Array.from({ length: count }, (_, i) => ({ lane, height, dz: trailDz(i, count, at) }));
 }
 
 /** The lanes a row leaves open. Single source so `safe` can never disagree
@@ -429,7 +661,7 @@ export const ROWS: readonly RowTemplate[] = [
     weight: 1.4,
     build: (rng) => {
       const lane = ANY_LANE(rng);
-      return { blocked: [], safe: [0, 1, 2], coins: lineDown(lane, 4, 0.9), bag: null };
+      return { blocked: [], safe: [0, 1, 2], coins: lineDown(lane, 6, 0.9), bag: null };
     },
   },
   {
@@ -442,7 +674,7 @@ export const ROWS: readonly RowTemplate[] = [
       return {
         blocked: [],
         safe: [0, 1, 2],
-        coins: arcOver(lane, 5, 1.05),
+        coins: arcOver(lane, 7, 1.05),
         bag: rng() < 0.12 ? { lane, height: 1.15 } : null,
       };
     },
@@ -464,7 +696,7 @@ export const ROWS: readonly RowTemplate[] = [
         // The coin sits on the arc the player is already passing through after
         // the jump, at a height they collect without aiming for it. Reward for
         // the correct verb, never a second thing to solve at the same time.
-        coins: [{ lane: clear, height: 0.95 }],
+        coins: lineDown(clear, 3, 0.9),
         bag: null,
       };
     },
@@ -480,7 +712,7 @@ export const ROWS: readonly RowTemplate[] = [
       return {
         blocked: [{ lane: blockedLane, id: pickWeighted(rng, SLIDE_IDS) }],
         safe: clearLanes(blockedLane),
-        coins: [{ lane: clear, height: 0.42 }],
+        coins: lineDown(clear, 3, 0.42),
         bag: null,
       };
     },
@@ -666,7 +898,132 @@ export const ROWS: readonly RowTemplate[] = [
       };
     },
   },
+  {
+    id: "coin_highway",
+    verb: null,
+    from: 60,
+    weight: 0.9,
+    build: (rng) => {
+      // Two parallel lines of cash: the "pick a lane" reward. Nothing to dodge,
+      // which is exactly what makes it a breather between two hard rows.
+      const a = ANY_LANE(rng);
+      const b = OTHER(rng, a);
+      return {
+        blocked: [],
+        safe: [0, 1, 2],
+        coins: [...lineDown(a, 6, 0.85), ...lineDown(b, 6, 0.85)],
+        bag: rng() < 0.15 ? { lane: b, height: 1.0 } : null,
+      };
+    },
+  },
+  {
+    id: "jackpot",
+    verb: null,
+    from: 300,
+    weight: 0.35,
+    build: () => ({
+      // Rare and loud: an arc in every lane and a bag on the centre one.
+      blocked: [],
+      safe: [0, 1, 2],
+      coins: [...arcOver(0, 6, 1.1), ...arcOver(1, 6, 1.1), ...arcOver(2, 6, 1.1)],
+      bag: { lane: 1, height: 1.2 },
+    }),
+  },
+  {
+    id: "runaway_limo",
+    verb: "lane",
+    from: 380,
+    weight: 0.8,
+    build: (rng) => {
+      // The limousine nobody booked, driving straight at you. It is parked until
+      // it is `CHARGE_TRIGGER` metres out, so it is seen from the same distance
+      // as any other lane gate; it just arrives sooner than its spawn implies.
+      const lane = ANY_LANE(rng);
+      const clear = OTHER(rng, lane);
+      return {
+        blocked: [{ lane, id: rng() < 0.5 ? "limousine" : "food_truck", charge: true }],
+        safe: clearLanes(lane),
+        coins: lineDown(clear, 5, 0.85),
+        bag: null,
+      };
+    },
+  },
+  {
+    id: "zigzag_low",
+    verb: "jump",
+    from: 450,
+    weight: 0.8,
+    build: (rng) => {
+      // A low cost in every lane, staggered: jump three times in a straight line,
+      // or weave. Either answer works, which is what makes it a rhythm row.
+      const order: LaneIndex[] = rng() < 0.5 ? [0, 1, 2] : [2, 1, 0];
+      return {
+        blocked: order.map((lane, i) => ({ lane, id: pickWeighted(rng, JUMP_IDS), dz: i * 6 })),
+        safe: [],
+        coins: arcOver(order[0] === 0 ? 2 : 0, 5, 1.0, 3),
+        bag: null,
+        span: 12,
+      };
+    },
+  },
+  {
+    id: "slalom",
+    verb: "lane",
+    from: 560,
+    weight: 0.8,
+    build: (rng) => {
+      // Two lane walls, eleven metres apart, open on OPPOSITE flanks: the row is
+      // a double lane change, and the coins draw the line through it.
+      const first: LaneIndex = rng() < 0.5 ? 0 : 2;
+      const second = (2 - first) as LaneIndex;
+      const firstBlocked = clearLanes(first);
+      const secondBlocked = clearLanes(second);
+      return {
+        blocked: [
+          ...firstBlocked.map((lane) => ({ lane, id: pickWeighted(rng, LANE_IDS) })),
+          ...secondBlocked.map((lane) => ({
+            lane,
+            id: pickWeighted(rng, LANE_IDS),
+            dz: SLALOM_GAP,
+          })),
+        ],
+        safe: [first],
+        coins: [...lineDown(first, 3, 0.85), ...lineDown(second, 3, 0.85, SLALOM_GAP)],
+        bag: null,
+        span: SLALOM_GAP,
+      };
+    },
+  },
+  {
+    id: "duck_and_hop",
+    verb: "slide",
+    from: 820,
+    weight: 0.7,
+    build: (rng) => ({
+      // Every lane high, then every lane low: slide, then jump. The first row in
+      // the game that asks for two DIFFERENT verbs in sequence, so it waits until
+      // the player has met both a few hundred times.
+      blocked: [
+        ...([0, 1, 2] as const).map((lane) => ({ lane, id: pickWeighted(rng, SLIDE_IDS) })),
+        ...([0, 1, 2] as const).map((lane) => ({
+          lane,
+          id: pickWeighted(rng, JUMP_IDS),
+          dz: DUCK_HOP_GAP,
+        })),
+      ],
+      safe: [1],
+      coins: [...lineDown(1, 3, 0.42), ...arcOver(1, 5, 1.2, DUCK_HOP_GAP)],
+      bag: null,
+      span: DUCK_HOP_GAP,
+    }),
+  },
 ] as const;
+
+/** Metres between the two walls of a slalom. At top speed this is a third of a
+ *  second, which is why the row is gated at 560 m. */
+export const SLALOM_GAP = 11;
+/** Metres between the high and the low wall of a duck-and-hop. */
+export const DUCK_HOP_GAP = 11;
 
 /** Distance at which the ramp starts. Roughly the first 25 seconds. */
 export const EASY_UNTIL_DISTANCE = 220;
@@ -684,7 +1041,7 @@ export const SPEED_MAX = 27;
 /** Speed gained per metre travelled. */
 export const SPEED_PER_METRE = 0.0042;
 
-/** Metres between consecutive rows: 22 early (a row every ~1.9 s), 12 late.
+/** Metres between consecutive rows: 18 early (a row every ~1.6 s), 10 late.
  *
  *  THESE WENT DOWN twice and the reason to keep them together is the pool.
  *
@@ -696,8 +1053,71 @@ export const SPEED_PER_METRE = 0.0042;
  *  just stops spawning, and the symptom reads as "the obstacles thinned out later
  *  on". So a gap change and a pool change are the same edit: see `OBSTACLE_POOL`
  *  in the engine, which is sized from this arithmetic rather than guessed. */
-export const ROW_GAP_EASY = 22;
-export const ROW_GAP_TIGHT = 12;
+export const ROW_GAP_EASY = 18;
+export const ROW_GAP_TIGHT = 10;
+
+/** The most obstacles any one row template can place (duck-and-hop: two walls of
+ *  three). The engine's pool is sized from this times the rows in the window, so
+ *  a new template that beats it MUST raise it, and `runner_density` checks that
+ *  every template stays inside it. */
+export const MAX_BLOCKS_PER_ROW = 6;
+
+/* ── Charging obstacles ─────────────────────────────────────────────────── */
+
+/** Metres out at which a parked `charge` obstacle starts driving. */
+export const CHARGE_TRIGGER = 34;
+/** Its own speed toward the player, ON TOP of the run speed. */
+export const CHARGE_SPEED = 7;
+
+/* ── Power-ups ──────────────────────────────────────────────────────────── */
+
+export type PowerUpId = "magnet" | "double" | "shield";
+export const POWERUP_IDS: readonly PowerUpId[] = ["magnet", "double", "shield"];
+
+/** Seconds each power-up lasts. The shield lasts until it absorbs a hit OR this
+ *  runs out, whichever comes first, so it cannot be banked for the late game. */
+export const POWERUP_SECONDS: Readonly<Record<PowerUpId, number>> = {
+  magnet: 9,
+  double: 8,
+  shield: 14,
+};
+
+/** Per-row chance of a power-up on the safe path, once `POWERUP_FROM` is passed. */
+export const POWERUP_CHANCE = 0.08;
+export const POWERUP_FROM = 120;
+/** Metres either side of the player (in z) the magnet pulls cash from. */
+export const MAGNET_REACH = 11;
+
+export function pickPowerUp(rng: Rng): PowerUpId {
+  const roll = rng();
+  // The shield is the rarest because it is the only one that changes the
+  // outcome rather than the score.
+  if (roll < 0.4) return "magnet";
+  if (roll < 0.78) return "double";
+  return "shield";
+}
+
+/* ── Streaks ────────────────────────────────────────────────────────────── */
+
+/** Seconds a pickup streak survives without another pickup. */
+export const STREAK_WINDOW = 2.4;
+
+/** Streak counts that pay a bonus. Past the table, every further 100 does. */
+export const STREAK_STEPS: readonly number[] = [10, 25, 50, 75, 100, 150, 200, 300];
+
+/** True when reaching `count` pickups in a row pays a streak bonus. */
+export function isStreakStep(count: number): boolean {
+  if (STREAK_STEPS.includes(count)) return true;
+  const last = STREAK_STEPS[STREAK_STEPS.length - 1] ?? 300;
+  return count > last && count % 100 === 0;
+}
+
+/** Raw cash a streak step pays, before the multiplier: one coin per pickup in
+ *  the streak. Priced off the coin so it follows the couple's currency like
+ *  every other figure. */
+export function streakBonus(count: number, currency: Currency): number {
+  return economyFor(currency).coin * count;
+}
 
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
 
@@ -949,12 +1369,16 @@ export interface RunEconomy {
    *  rather than passed alongside it, so a summary can never be rendered with
    *  the wrong symbol. */
   readonly currency: Currency;
+  /** The bill actually charged, when hits are priced per vendor. Absent means
+   *  the flat `hits × expensePerHit`. */
+  readonly expenses?: number;
 }
 
 /** The bill so far. Derived from `hits` and the couple's own expense per hit
  *  rather than accumulated by the engine, which is why the engine has no way
  *  to disagree with the number the game-over card prints. */
-export function expensesFor(e: Pick<RunEconomy, "hits" | "currency">): number {
+export function expensesFor(e: Pick<RunEconomy, "hits" | "currency" | "expenses">): number {
+  if (e.expenses !== undefined) return e.expenses;
   return e.hits * economyFor(e.currency).expensePerHit;
 }
 

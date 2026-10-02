@@ -5210,6 +5210,22 @@ export interface LocaleMessages {
     /** The mute toggle's accessible name; the icon carries the rest. */
     mute_on: string;
     mute_off: string;
+    /** Power-ups, streaks and the run's banners. */
+    power_title: string;
+    power_magnet: string;
+    power_magnet_body: string;
+    power_double: string;
+    power_double_body: string;
+    power_shield: string;
+    power_shield_body: string;
+    streak_label: string;
+    streak_banner: string;
+    milestone_banner: string;
+    next_multiplier: string;
+    go: string;
+    best_combo_label: string;
+    /** Second line of the hit toast under the vendor's category name. */
+    hit_toast_sub: string;
   };
   /** Live wedding quiz game — /app/games/quiz (list + builder),
    *  /app/games/quiz/:id/host (the host console), and /play/:code (the

@@ -17,7 +17,18 @@
  */
 
 import { useSyncExternalStore } from "react";
-import { START_HEARTS, verdictFor, weddingProfit } from "@shared/runner";
+import {
+  MILESTONES,
+  POWERUP_SECONDS,
+  SPEED_MAX,
+  SPEED_START,
+  START_HEARTS,
+  STREAK_WINDOW,
+  multiplierAt,
+  nextMilestoneAt,
+  verdictFor,
+  weddingProfit,
+} from "@shared/runner";
 import type { Currency } from "@shared/types";
 import type { RunnerCharacter, RunState, RunSummary, TickExtras } from "../engine/RunEngine";
 
@@ -40,6 +51,23 @@ export interface RunnerHud {
   verdict: ReturnType<typeof verdictFor>;
   /** 1 → 0 right after a milestone, for the "×3!" pop. */
   milestonePulse: number;
+  /** Pickups in a row, and how much of the streak window is left (0..1). */
+  combo: number;
+  comboLeft: number;
+  /** Each power-up's remaining time as a fraction of its full length (0..1). */
+  magnet: number;
+  doubler: number;
+  shield: number;
+  /** Whole seconds of 3-2-1 left; 0 once the run is moving. */
+  countdown: number;
+  /** 0 at the opening speed, 1 at the top: drives the speed lines. */
+  speedT: number;
+  /** 0..1 progress from the current multiplier step to the next; 1 at the top. */
+  toNext: number;
+  /** The multiplier the next step pays, or null at the top of the ladder. */
+  nextMultiplier: number | null;
+  /** The most recent hit: which vendor, what it cost. Drives the hit toast. */
+  lastHit: RunState["lastHit"];
 }
 
 export interface RunnerStore extends RunnerHud {
@@ -126,7 +154,34 @@ function writeBest(currency: Currency, value: number) {
 export type HudCounters = Pick<
   RunState,
   "phase" | "cash" | "bags" | "hits" | "hearts" | "multiplier" | "distance"
->;
+> &
+  Partial<
+    Pick<
+      RunState,
+      | "combo"
+      | "comboTimer"
+      | "magnet"
+      | "doubler"
+      | "shield"
+      | "countdown"
+      | "cruiseSpeed"
+      | "expenses"
+      | "lastHit"
+    >
+  >;
+
+/** Where a distance sits between the current multiplier step and the next. */
+function milestoneProgress(distance: number): { toNext: number; nextMultiplier: number | null } {
+  const next = nextMilestoneAt(distance);
+  if (!next) return { toNext: 1, nextMultiplier: null };
+  const current = multiplierAt(distance);
+  const from = MILESTONES.find((m) => m.multiplier === current)?.at ?? 0;
+  const span = Math.max(1, next.at - from);
+  return {
+    toNext: Math.min(1, Math.max(0, (distance - from) / span)),
+    nextMultiplier: next.multiplier,
+  };
+}
 
 /** The HUD snapshot from the raw counters. Pure and exported so a test can prove
  *  the live HUD and the game-over card agree without rendering anything — and
@@ -137,7 +192,7 @@ export function deriveHud(
   milestonePulse: number,
 ): RunnerHud {
   const profit = weddingProfit(
-    { cash: state.cash, bags: state.bags, hits: state.hits, currency },
+    { cash: state.cash, bags: state.bags, hits: state.hits, currency, expenses: state.expenses },
     state.multiplier,
   );
   return {
@@ -152,6 +207,18 @@ export function deriveHud(
     currency,
     verdict: verdictFor(profit, currency),
     milestonePulse,
+    combo: state.combo ?? 0,
+    comboLeft: Math.min(1, (state.comboTimer ?? 0) / STREAK_WINDOW),
+    magnet: Math.min(1, (state.magnet ?? 0) / POWERUP_SECONDS.magnet),
+    doubler: Math.min(1, (state.doubler ?? 0) / POWERUP_SECONDS.double),
+    shield: Math.min(1, (state.shield ?? 0) / POWERUP_SECONDS.shield),
+    countdown: Math.ceil(state.countdown ?? 0),
+    lastHit: state.lastHit ?? null,
+    speedT: Math.min(
+      1,
+      Math.max(0, ((state.cruiseSpeed ?? SPEED_START) - SPEED_START) / (SPEED_MAX - SPEED_START)),
+    ),
+    ...milestoneProgress(state.distance),
   };
 }
 
@@ -167,6 +234,16 @@ const BLANK: RunnerHud = {
   currency: "HUF",
   verdict: "bankrupt",
   milestonePulse: 0,
+  combo: 0,
+  comboLeft: 0,
+  magnet: 0,
+  doubler: 0,
+  shield: 0,
+  countdown: 0,
+  speedT: 0,
+  toNext: 0,
+  nextMultiplier: 2,
+  lastHit: null,
 };
 
 type SetState<T> = (partial: Partial<T>) => void;
@@ -248,6 +325,7 @@ export const useRunnerStore = createStore<RunnerStore>((set, get) => ({
           hearts: 0,
           multiplier: summary.multiplier,
           distance: summary.distance,
+          expenses: summary.expenses,
         },
         summary.currency,
         0,

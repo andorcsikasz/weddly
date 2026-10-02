@@ -26,9 +26,9 @@ import { CameraRig } from "./entities/CameraRig";
 import { Collectibles } from "./entities/Collectibles";
 import { Environment } from "./entities/Environment";
 import { Obstacles } from "./entities/Obstacles";
-import { Partner } from "./entities/Partner";
 import { FloatingMoney } from "./entities/FloatingMoney";
 import { Particles } from "./entities/Particles";
+import { PlayerAura, PowerUps } from "./entities/PowerUps";
 import { RunnerModel, type RigInput } from "./entities/RunnerModel";
 import { PALETTE } from "./constants/palette";
 import { expenseFor, runMoney } from "./utils/format";
@@ -55,6 +55,7 @@ export function RunnerScene({ engine, currency, locale }: RunnerSceneProps) {
   const readObstacles = useCallback(() => engine.obstacles, [engine]);
   const readCash = useCallback(() => engine.cash, [engine]);
   const readBags = useCallback(() => engine.bags, [engine]);
+  const readPowerUps = useCallback(() => engine.powerups, [engine]);
   const readDistance = useCallback(() => engine.state.distance, [engine]);
   const drainSparks = useCallback(() => engine.drainSparks(), [engine]);
   const drainFloats = useCallback(() => engine.drainFloats(), [engine]);
@@ -84,9 +85,10 @@ export function RunnerScene({ engine, currency, locale }: RunnerSceneProps) {
       <Lights />
       <Environment distance={readDistance} />
       <PlayerRig engine={engine} />
-      <PartnerRig engine={engine} readState={readState} />
       <Obstacles read={readObstacles} expenseLabel={expenseLabel} />
       <Collectibles readCash={readCash} readBags={readBags} mark={mark} />
+      <PowerUps read={readPowerUps} />
+      <PlayerAura readState={readState} />
       <ContactShadow readState={readState} />
       <Particles drain={drainSparks} />
       <FloatingMoney drain={drainFloats} readClock={readClock} format={formatFloat} />
@@ -133,20 +135,6 @@ function PlayerRig({ engine }: { engine: RunEngine }) {
   }, [engine]);
 
   return <RunnerModel character={engine.state.character} read={read} />;
-}
-
-/** The partner: the same rig, the other skin, a trailing z and the `far` detail
- *  level, all decided in `Partner`. The only decision left here is WHOSE skin,
- *  and that belongs to the engine because the player chose it. */
-function PartnerRig({
-  engine,
-  readState,
-}: {
-  engine: RunEngine;
-  readState: () => RunState;
-}) {
-  const character = engine.state.character === "bride" ? "groom" : "bride";
-  return <Partner character={character} read={readState} />;
 }
 
 /**
@@ -221,6 +209,10 @@ function Lights() {
           shadow: the camera is behind them, so this is the light doing all the
           character reading. */}
       <directionalLight position={[3, 4, 7]} intensity={0.32} color={PALETTE.white} />
+      {/* A warm RIM from ahead of the runner: the camera sees their back, and a
+          back lit only from behind the camera is flat. This outlines the
+          silhouette — veil, shoulders, tails — against the track. */}
+      <directionalLight position={[0, 3.5, -8]} intensity={0.75} color={PALETTE.champagne} />
     </>
   );
 }

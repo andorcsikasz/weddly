@@ -4452,13 +4452,13 @@ const es: LocaleMessages = {
     markets_card_description:
       "Deja que los invitados apuesten por la noche: quién llora primero, hasta cuándo dura la fiesta, qué opina la novia de la tarta.",
     runner_kicker: "Runner infinito",
-    runner_card_title: "Corre por la boda",
+    runner_card_title: "Wedding Run",
     runner_card_description:
       "Corre por el carril de la boda, esquiva cada coste y cada factura a última hora, y mira qué queda al final.",
   },
 
   runner: {
-    title: "Corre por la boda",
+    title: "Wedding Run",
     subtitle:
       "Runner infinito: esquiva los costes, recoge cada céntimo y mira qué queda del presupuesto de la boda.",
     start: "Empezar la carrera",
@@ -4505,6 +4505,20 @@ const es: LocaleMessages = {
     quit: "Salir al menú",
     mute_on: "Silenciar sonido",
     mute_off: "Activar sonido",
+    power_title: "Potenciadores",
+    power_magnet: "Imán",
+    power_magnet_body: "Atrae hacia ti todas las monedas cercanas.",
+    power_double: "Dinero doble",
+    power_double_body: "Cada recogida vale el doble.",
+    power_shield: "Escudo",
+    power_shield_body: "Recibe un golpe por ti, sin factura.",
+    streak_label: "Racha",
+    streak_banner: "¡{count} seguidas!",
+    milestone_banner: "Puntos ×{n}",
+    next_multiplier: "Siguiente: ×{n}",
+    go: "¡Ya!",
+    best_combo_label: "Mejor racha",
+    hit_toast_sub: "Gasto imprevisto",
   },
   quiz: {
     list: {

@@ -67,6 +67,14 @@ export const PALETTE = {
   gold: "#f0c66b",
   goldDeep: "#c9992f",
   champagne: "#f7e3b8",
+  /** Pickups: a bright yellow coin and a vivid green banknote. */
+  coin: "#ffd21a",
+  coinDeep: "#f2a900",
+  cash: "#2fd65a",
+  cashDeep: "#15a03c",
+  /** Power-ups: the shield bubble, the magnet's pull, and their pickup ring. */
+  shield: "#8fd8f2",
+  magnet: "#e2564a",
 
   /** The sky behind the manor — a warm late-afternoon gradient, not blue. */
   skyTop: "#bcd6e8",

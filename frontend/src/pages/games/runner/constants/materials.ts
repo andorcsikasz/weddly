@@ -22,6 +22,8 @@ function mat(
     metalness?: number;
     flatShading?: boolean;
     emissive?: string;
+    /** Defaults to the faint 0.12 lift; pickups go much higher so they glow. */
+    emissiveIntensity?: number;
     transparent?: boolean;
     opacity?: number;
     side?: THREE.Side;
@@ -37,7 +39,7 @@ function mat(
     // A whisper of self-illumination on the ivory and the gold so the low-sun
     // garden does not turn a white dress into a grey shape.
     emissive: extra.emissive ?? "#000000",
-    emissiveIntensity: extra.emissive ? 0.12 : 0,
+    emissiveIntensity: extra.emissive ? (extra.emissiveIntensity ?? 0.12) : 0,
     transparent: extra.transparent ?? false,
     opacity: extra.opacity ?? 1,
     side: extra.side ?? THREE.FrontSide,
@@ -100,9 +102,33 @@ export const M = {
       transparent: true,
       opacity: 0.55,
     }),
-  /** Banknotes and coins. */
-  cash: () => mat("cash", "#8fbf72", { roughness: 0.7 }),
-  cashBack: () => mat("cashBack", PALETTE.sage600, { roughness: 0.7 }),
+  /** PICKUPS GLOW. A coin used to be the metallic `gold` (0.85 metalness), which
+   *  in this low sun rendered as a brown disc on a beige path: nothing about it
+   *  said "collect me". Pickups are now saturated and self-lit, so money reads as
+   *  money against every surface in the scene. */
+  coin: () =>
+    mat("coin", PALETTE.coin, {
+      roughness: 0.35,
+      metalness: 0.2,
+      emissive: PALETTE.coin,
+      emissiveIntensity: 0.55,
+    }),
+  coinRim: () =>
+    mat("coinRim", PALETTE.coinDeep, {
+      roughness: 0.3,
+      metalness: 0.3,
+      emissive: PALETTE.coinDeep,
+      emissiveIntensity: 0.4,
+    }),
+  /** Banknotes: a vivid money green, lit from within for the same reason. */
+  cash: () =>
+    mat("cash", PALETTE.cash, { roughness: 0.55, emissive: PALETTE.cash, emissiveIntensity: 0.45 }),
+  cashBack: () =>
+    mat("cashBack", PALETTE.cashDeep, {
+      roughness: 0.55,
+      emissive: PALETTE.cashDeep,
+      emissiveIntensity: 0.35,
+    }),
   envelope: () => mat("envelope", PALETTE.paper50, { roughness: 0.85 }),
   /** A darker blush for the photo booth curtain and anything that has to read
    *  as fabric in shadow. `bowTie` is the same tone at a different size, but
@@ -140,6 +166,34 @@ export const M = {
   danger: () => mat("danger", PALETTE.blush600, { roughness: 0.6 }),
   slate: () => mat("slate", "#5d6b70", { roughness: 0.6, metalness: 0.3 }),
   chrome: () => mat("chrome", "#b8c0c4", { roughness: 0.25, metalness: 0.7 }),
+  /** Tulle: the sheer overskirt over the gown. Double-sided so the layer reads
+   *  from inside the hem too as the skirt swings. */
+  tulle: () =>
+    mat("tulle", PALETTE.paper50, {
+      roughness: 0.95,
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
+    }),
+  /** Lace trim and pearls: brighter than the ivory, with a little sheen. */
+  lace: () => mat("lace", PALETTE.white, { roughness: 0.75, emissive: PALETTE.paper50 }),
+  pearl: () =>
+    mat("pearl", PALETTE.paper50, { roughness: 0.15, metalness: 0.25, emissive: PALETTE.paper100 }),
+  /** Satin: the sash, the bow and the groom's trouser stripe catch the light. */
+  satin: () => mat("satin", PALETTE.blush300, { roughness: 0.3, metalness: 0.15 }),
+  satinInk: () => mat("satinInk", PALETTE.ink700, { roughness: 0.25, metalness: 0.2 }),
+  /** Velvet: the ring box and the polish. Deep blush, fully matte. */
+  blushVelvet: () => mat("blushVelvet", PALETTE.blush600, { roughness: 1 }),
+  magnet: () => mat("magnet", PALETTE.magnet, { roughness: 0.35, emissive: PALETTE.magnet }),
+  shieldGlass: () =>
+    mat("shieldGlass", PALETTE.shield, {
+      roughness: 0.1,
+      metalness: 0.1,
+      emissive: PALETTE.shield,
+      transparent: true,
+      opacity: 0.2,
+      side: THREE.DoubleSide,
+    }),
 } as const;
 
 /** Release every shared material. The scene owns these for the lifetime of the

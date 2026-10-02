@@ -22,9 +22,23 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import type { MutableRefObject } from "react";
 import * as THREE from "three";
-import { M, box, cylinder, geo, limb, sphere } from "../constants/materials";
+import { M, box, cylinder, geo, sphere } from "../constants/materials";
 import { PALETTE } from "../constants/palette";
 import type { RunnerCharacter } from "../engine/RunEngine";
+
+/* SMOOTH GEOMETRY. The rig is the one thing on screen the player stares at for
+ * the whole run, so it is built at a much higher resolution than the props:
+ * every sphere, cylinder and capsule below goes through these three, which
+ * floor the segment counts. The props keep the low-poly look on purpose. */
+const S = (r: number, segments = 12) => sphere(r, Math.max(segments, 28));
+const C = (rt: number, rb: number, h: number, segments = 14) =>
+  cylinder(rt, rb, h, Math.max(segments, 32));
+const L = (radius: number, length: number, key: string) =>
+  geo(`smoothLimb:${key}:${radius}:${length}`, () => {
+    const g = new THREE.CapsuleGeometry(radius, Math.max(0.001, length - radius * 2), 10, 24);
+    g.translate(0, -length / 2, 0);
+    return g;
+  });
 
 export interface RigInput {
   /** World x of the root and feet height above the path. */
@@ -71,6 +85,14 @@ interface Joints {
   shinR: THREE.Group | null;
   skirt: THREE.Group | null;
   veil: THREE.Group | null;
+  /** Bride: the train dragging behind the hem, and the two ribbon tails of the
+   *  bow at the small of the back. Groom: the two jacket tails. All four are
+   *  cloth, so all four lag the body instead of tracking it. */
+  train: THREE.Group | null;
+  ribbonL: THREE.Group | null;
+  ribbonR: THREE.Group | null;
+  tailL: THREE.Group | null;
+  tailR: THREE.Group | null;
 }
 
 /**
@@ -120,6 +142,11 @@ export function RunnerModel({
     shinR: null,
     skirt: null,
     veil: null,
+    train: null,
+    ribbonL: null,
+    ribbonR: null,
+    tailL: null,
+    tailR: null,
   });
   const pose = useRef({
     phase: 0,
@@ -165,6 +192,14 @@ export function RunnerModel({
       leaf: M.bouquetLeaf(),
       bloom1: M.bouquet(),
       bloom2: M.blossomPale(),
+      tulle: M.tulle(),
+      lace: M.lace(),
+      pearl: M.pearl(),
+      satin: M.satin(),
+      satinInk: M.satinInk(),
+      gold: M.gold(),
+      chrome: M.chrome(),
+      shoe: M.rubber(),
     }),
     [bride],
   );
@@ -317,6 +352,25 @@ export function RunnerModel({
       jc.veil.rotation.x = -p.lean * 1.5 - 0.12 + Math.sin(input.clock * 5.5) * 0.06;
       jc.veil.rotation.z = -root.rotation.z * 1.6;
     }
+    /* Cloth. Everything trailing gets the speed as a lift (the faster the run,
+       the further back it flies) plus its own flutter at a frequency unrelated to
+       the stride, so it reads as air moving through fabric rather than as a
+       second pair of legs. */
+    const wind = input.running ? Math.min(1, input.speed / 24) : 0.15;
+    const flutter = Math.sin(input.clock * 9.5);
+    const flutter2 = Math.sin(input.clock * 11.3 + 1.3);
+    if (jc.train) {
+      jc.train.rotation.x = -0.1 - wind * 0.25 + flutter * 0.04 - input.air * 0.5;
+      jc.train.rotation.z = -root.rotation.z * 1.2 + swing * 0.08;
+    }
+    if (jc.ribbonL) jc.ribbonL.rotation.x = -0.25 - wind * 0.7 + flutter * 0.18;
+    if (jc.ribbonR) jc.ribbonR.rotation.x = -0.3 - wind * 0.65 + flutter2 * 0.18;
+    if (jc.ribbonL) jc.ribbonL.rotation.z = 0.25 + flutter2 * 0.08;
+    if (jc.ribbonR) jc.ribbonR.rotation.z = -0.25 + flutter * 0.08;
+    if (jc.tailL)
+      jc.tailL.rotation.x = -0.2 - wind * 0.55 + flutter * 0.1 + Math.max(0, swing) * 0.15;
+    if (jc.tailR)
+      jc.tailR.rotation.x = -0.2 - wind * 0.55 + flutter2 * 0.1 + Math.max(0, swing2) * 0.15;
   });
 
   return (
@@ -345,173 +399,378 @@ export function RunnerModel({
             group, not a child, so a swinging thigh can never drag the skirt
             with it — only the explicit sway below moves the fabric. */}
           <group position={[0, HIP_Y, 0]}>
-            <group ref={set("thighL")} position={[-0.115, 0, 0]}>
-              <mesh geometry={limb(0.082, 0.44, "thigh")} material={bride ? mat.skin : mat.tux} />
-              <group ref={set("shinL")} position={[0, -0.44, 0]}>
-                <mesh geometry={limb(0.07, 0.44, "shin")} material={bride ? mat.skin : mat.tux} />
-                {/* Running sneakers, visible under the hem. The joke in the brief
-                  is that these are what the marathon is actually done in. */}
-                <mesh
-                  geometry={box(0.15, 0.09, 0.26)}
-                  material={mat.shirt}
-                  position={[0, -0.42, 0.05]}
-                />
-                <mesh
-                  geometry={box(0.16, 0.03, 0.27)}
-                  material={mat.sneakerSole}
-                  position={[0, -0.462, 0.05]}
-                />
+            {(["L", "R"] as const).map((side) => (
+              <group
+                key={side}
+                ref={set(side === "L" ? "thighL" : "thighR")}
+                position={[side === "L" ? -0.115 : 0.115, 0, 0]}
+              >
+                <mesh geometry={L(0.082, 0.44, "thigh")} material={bride ? mat.skin : mat.tux} />
+                {!bride && (
+                  /* The satin side stripe: what makes trousers formalwear. */
+                  <mesh
+                    geometry={box(0.018, 0.42, 0.04)}
+                    material={mat.satinInk}
+                    position={[side === "L" ? -0.083 : 0.083, -0.22, 0]}
+                  />
+                )}
+                <group ref={set(side === "L" ? "shinL" : "shinR")} position={[0, -0.44, 0]}>
+                  <mesh geometry={L(0.07, 0.44, "shin")} material={bride ? mat.skin : mat.tux} />
+                  {!bride && (
+                    <mesh
+                      geometry={box(0.018, 0.4, 0.04)}
+                      material={mat.satinInk}
+                      position={[side === "L" ? -0.072 : 0.072, -0.2, 0]}
+                    />
+                  )}
+                  <Sneaker mat={mat} />
+                </group>
               </group>
-            </group>
-            <group ref={set("thighR")} position={[0.115, 0, 0]}>
-              <mesh geometry={limb(0.082, 0.44, "thigh")} material={bride ? mat.skin : mat.tux} />
-              <group ref={set("shinR")} position={[0, -0.44, 0]}>
-                <mesh geometry={limb(0.07, 0.44, "shin")} material={bride ? mat.skin : mat.tux} />
-                <mesh
-                  geometry={box(0.15, 0.09, 0.26)}
-                  material={mat.shirt}
-                  position={[0, -0.42, 0.05]}
-                />
-                <mesh
-                  geometry={box(0.16, 0.03, 0.27)}
-                  material={mat.sneakerSole}
-                  position={[0, -0.462, 0.05]}
-                />
-              </group>
-            </group>
+            ))}
           </group>
 
-          {/* Gown / trousers. */}
+          {/* Gown / trousers seat. */}
           <group ref={set("skirt")} position={[0, HIP_Y, 0]}>
             {bride ? (
               <>
                 {/* A-line gown: narrow at the waist, hem at 0.28 m — which is
                   exactly where the sneakers start showing. */}
                 <mesh
-                  geometry={cylinder(0.2, 0.5, 1.0, 18)}
+                  geometry={C(0.19, 0.5, 1.0, 28)}
                   material={mat.ivory}
                   position={[0, -0.12, 0]}
                 />
+                {/* Sheer tulle overskirt, a touch wider and longer, so the edge of
+                  the gown has depth instead of a single hard silhouette. */}
                 <mesh
-                  geometry={cylinder(0.19, 0.21, 0.2, 14)}
-                  material={mat.ivory}
-                  position={[0, 0.3, 0]}
+                  geometry={C(0.21, 0.56, 1.04, 28)}
+                  material={mat.tulle}
+                  position={[0, -0.14, 0]}
                 />
-                {/* Blush sash at the waist — the one warm accent on the ivory. */}
+                {/* Lace hem band and a scallop of lace at the waist seam. */}
                 <mesh
-                  geometry={cylinder(0.215, 0.215, 0.09, 16)}
-                  material={mat.blush}
+                  geometry={C(0.505, 0.515, 0.07, 28)}
+                  material={mat.lace}
+                  position={[0, -0.585, 0]}
+                />
+                {Array.from({ length: 12 }, (_, i) => {
+                  const a = (i / 12) * Math.PI * 2;
+                  return (
+                    <mesh
+                      key={i}
+                      geometry={S(0.04, 6)}
+                      material={mat.lace}
+                      position={[Math.sin(a) * 0.5, -0.54, Math.cos(a) * 0.5]}
+                      scale={[1, 0.6, 0.5]}
+                    />
+                  );
+                })}
+                {/* The train: it trails from the back of the hem and drags. */}
+                <group ref={set("train")} position={[0, -0.45, -0.32]}>
+                  <mesh geometry={trainGeo} material={mat.ivory} rotation={[-1.35, 0, 0]} />
+                  <mesh
+                    geometry={trainGeo}
+                    material={mat.tulle}
+                    rotation={[-1.3, 0, 0]}
+                    position={[0, 0.02, 0]}
+                    scale={[1.08, 1.05, 1]}
+                  />
+                </group>
+                {/* Satin sash with a big bow at the small of the back: the first
+                  thing the chase camera sees. */}
+                <mesh
+                  geometry={C(0.205, 0.205, 0.08, 20)}
+                  material={mat.satin}
                   position={[0, 0.36, 0]}
                 />
+                <group position={[0, 0.36, -0.2]}>
+                  {[-1, 1].map((d) => (
+                    <mesh
+                      key={d}
+                      geometry={S(0.085, 10)}
+                      material={mat.satin}
+                      position={[d * 0.085, 0.01, -0.02]}
+                      scale={[1.2, 0.75, 0.45]}
+                      rotation={[0, 0, d * 0.35]}
+                    />
+                  ))}
+                  <mesh geometry={S(0.04, 8)} material={mat.satin} position={[0, 0, -0.04]} />
+                  <group ref={set("ribbonL")} position={[-0.03, -0.02, -0.04]}>
+                    <mesh
+                      geometry={box(0.05, 0.42, 0.012)}
+                      material={mat.satin}
+                      position={[0, -0.21, 0]}
+                    />
+                  </group>
+                  <group ref={set("ribbonR")} position={[0.03, -0.02, -0.04]}>
+                    <mesh
+                      geometry={box(0.05, 0.38, 0.012)}
+                      material={mat.satin}
+                      position={[0, -0.19, 0]}
+                    />
+                  </group>
+                </group>
               </>
             ) : (
-              <mesh
-                geometry={cylinder(0.2, 0.22, 0.44, 14)}
-                material={mat.tux}
-                position={[0, -0.02, 0]}
-              />
+              <mesh geometry={C(0.2, 0.22, 0.44, 16)} material={mat.tux} position={[0, -0.02, 0]} />
             )}
           </group>
 
           {/* Torso. */}
           <group position={[0, HIP_Y, 0]}>
-            <mesh
-              geometry={box(0.42, 0.46, 0.25)}
-              material={bride ? mat.ivory : mat.tux}
-              position={[0, 0.32, 0]}
-            />
             {bride ? (
-              <mesh geometry={box(0.44, 0.1, 0.26)} material={mat.ivory} position={[0, 0.5, 0]} />
+              <>
+                {/* A fitted bodice, narrow at the waist, with a pearl edge along
+                  the neckline and off-the-shoulder sleeves. */}
+                <mesh
+                  geometry={C(0.2, 0.165, 0.42, 18)}
+                  material={mat.ivory}
+                  position={[0, 0.6 - 0.28, 0]}
+                  scale={[1, 1, 0.72]}
+                />
+                {Array.from({ length: 11 }, (_, i) => {
+                  const a = (i / 10 - 0.5) * Math.PI * 1.1;
+                  return (
+                    <mesh
+                      key={i}
+                      geometry={S(0.016, 6)}
+                      material={mat.pearl}
+                      position={[Math.sin(a) * 0.19, 0.52, Math.cos(a) * 0.14]}
+                    />
+                  );
+                })}
+                {/* Bare shoulders above the bodice. */}
+                <mesh
+                  geometry={S(0.17, 14)}
+                  material={mat.skin}
+                  position={[0, 0.55, 0]}
+                  scale={[1.35, 0.42, 0.8]}
+                />
+                {[-1, 1].map((d) => (
+                  <mesh
+                    key={d}
+                    geometry={torusGeo}
+                    material={mat.tulle}
+                    position={[d * 0.215, 0.47, 0]}
+                    rotation={[0, Math.PI / 2, d * 0.4]}
+                  />
+                ))}
+                {/* Buttons down the back. */}
+                {[0.2, 0.28, 0.36, 0.44].map((y) => (
+                  <mesh
+                    key={y}
+                    geometry={S(0.013, 6)}
+                    material={mat.pearl}
+                    position={[0, y, -0.15]}
+                  />
+                ))}
+              </>
             ) : (
               <>
-                {/* Shirt front + blush lapels. The lining is what stops a black
-                  tux from reading as a rectangle at this camera distance. */}
+                {/* A tailored jacket: broad at the shoulder, cut in at the waist. */}
                 <mesh
-                  geometry={box(0.16, 0.4, 0.26)}
-                  material={mat.shirt}
-                  position={[0, 0.34, 0.005]}
-                />
-                <mesh
-                  geometry={box(0.1, 0.34, 0.02)}
-                  material={mat.lining}
-                  position={[0.09, 0.32, 0.13]}
-                />
-                <mesh
-                  geometry={box(0.1, 0.34, 0.02)}
-                  material={mat.lining}
-                  position={[-0.09, 0.32, 0.13]}
-                />
-                {/* Jacket tails, kicked back so the tux reads as a suit in motion. */}
-                <mesh
-                  geometry={box(0.34, 0.38, 0.03)}
+                  geometry={C(0.24, 0.19, 0.46, 16)}
                   material={mat.tux}
-                  position={[0, -0.04, -0.14]}
-                  rotation={[-0.22, 0, 0]}
+                  position={[0, 0.32, 0]}
+                  scale={[1, 1, 0.66]}
                 />
+                {[-1, 1].map((d) => (
+                  <mesh
+                    key={d}
+                    geometry={S(0.085, 10)}
+                    material={mat.tux}
+                    position={[d * 0.22, 0.52, 0]}
+                    scale={[1.1, 0.75, 1]}
+                  />
+                ))}
+                {/* Shirt front, lapels, buttons, pocket square, boutonniere. */}
+                <mesh
+                  geometry={box(0.12, 0.3, 0.02)}
+                  material={mat.shirt}
+                  position={[0, 0.4, 0.152]}
+                />
+                {[-1, 1].map((d) => (
+                  <mesh
+                    key={d}
+                    geometry={box(0.075, 0.3, 0.02)}
+                    material={mat.satinInk}
+                    position={[d * 0.075, 0.38, 0.158]}
+                    rotation={[0, 0, d * -0.28]}
+                  />
+                ))}
+                {[0.18, 0.26].map((y) => (
+                  <mesh
+                    key={y}
+                    geometry={S(0.014, 6)}
+                    material={mat.satinInk}
+                    position={[0, y, 0.165]}
+                  />
+                ))}
+                <mesh
+                  geometry={box(0.06, 0.03, 0.02)}
+                  material={mat.satin}
+                  position={[0.12, 0.42, 0.16]}
+                />
+                <group position={[-0.12, 0.47, 0.17]}>
+                  <mesh geometry={S(0.028, 8)} material={mat.bloom2} />
+                  <mesh geometry={S(0.016, 6)} material={mat.leaf} position={[0.02, -0.025, 0]} />
+                </group>
+                {/* The back: collar and a centre seam the camera sees all run. */}
+                <mesh
+                  geometry={box(0.2, 0.05, 0.08)}
+                  material={mat.tux}
+                  position={[0, 0.56, -0.08]}
+                />
+                <mesh
+                  geometry={box(0.012, 0.4, 0.01)}
+                  material={mat.satinInk}
+                  position={[0, 0.3, -0.158]}
+                />
+                {/* Split tails, each its own cloth joint. */}
+                {(["L", "R"] as const).map((side) => (
+                  <group
+                    key={side}
+                    ref={set(side === "L" ? "tailL" : "tailR")}
+                    position={[side === "L" ? -0.08 : 0.08, 0.12, -0.13]}
+                  >
+                    <mesh
+                      geometry={box(0.15, 0.44, 0.025)}
+                      material={mat.tux}
+                      position={[0, -0.22, 0]}
+                    />
+                  </group>
+                ))}
               </>
             )}
             {/* Neck + head. */}
             <mesh
-              geometry={cylinder(0.055, 0.06, 0.1, 8)}
+              geometry={C(0.055, 0.06, 0.1, 10)}
               material={mat.skinDeep}
               position={[0, 0.6, 0]}
             />
             <group ref={set("head")} position={[0, 0.74, 0]}>
-              <mesh geometry={sphere(0.145, 14)} material={mat.skin} />
+              <mesh geometry={S(0.145, 18)} material={mat.skin} scale={[1, 1.06, 1]} />
+              {/* Ears and a nose: tiny, but they turn a ball into a head. */}
+              {[-1, 1].map((d) => (
+                <mesh
+                  key={d}
+                  geometry={S(0.032, 8)}
+                  material={mat.skinDeep}
+                  position={[d * 0.142, 0, 0]}
+                  scale={[0.5, 1, 0.8]}
+                />
+              ))}
+              {!far && (
+                <mesh geometry={S(0.02, 8)} material={mat.skinDeep} position={[0, -0.02, 0.145]} />
+              )}
               {bride ? (
                 <>
                   <mesh
-                    geometry={sphere(0.152, 14)}
+                    geometry={S(0.153, 18)}
                     material={mat.hair}
-                    scale={[1, 0.72, 1]}
-                    position={[0, 0.045, -0.01]}
+                    scale={[1, 0.74, 1]}
+                    position={[0, 0.045, -0.012]}
                   />
+                  {/* The updo: a bun, wrapped, with a crown of small flowers round
+                    it — the back of the head is what the player looks at. */}
+                  <mesh geometry={S(0.085, 14)} material={mat.hair} position={[0, 0.05, -0.15]} />
                   <mesh
-                    geometry={sphere(0.075, 10)}
+                    geometry={torusGeo}
                     material={mat.hair}
-                    position={[0, 0.03, -0.15]}
+                    position={[0, 0.05, -0.15]}
+                    scale={[0.55, 0.55, 0.55]}
                   />
+                  {Array.from({ length: 7 }, (_, i) => {
+                    const a = (i / 7) * Math.PI * 2;
+                    return (
+                      <mesh
+                        key={i}
+                        geometry={S(0.024, 8)}
+                        material={i % 2 ? mat.bloom1 : mat.bloom2}
+                        position={[Math.cos(a) * 0.088, 0.05 + Math.sin(a) * 0.088, -0.19]}
+                      />
+                    );
+                  })}
+                  {/* Two loose curls framing the face. */}
+                  {[-1, 1].map((d) => (
+                    <mesh
+                      key={d}
+                      geometry={L(0.018, 0.14, "curl")}
+                      material={mat.hair}
+                      position={[d * 0.13, -0.02, 0.05]}
+                      rotation={[0, 0, d * 0.12]}
+                    />
+                  ))}
+                  {!far &&
+                    [-1, 1].map((d) => (
+                      <mesh
+                        key={d}
+                        geometry={S(0.014, 6)}
+                        material={mat.pearl}
+                        position={[d * 0.15, -0.045, 0.01]}
+                      />
+                    ))}
                 </>
               ) : (
-                <mesh
-                  geometry={sphere(0.15, 12)}
-                  material={mat.hair}
-                  scale={[1, 0.6, 1]}
-                  position={[0, 0.05, 0]}
-                />
+                <>
+                  <mesh
+                    geometry={S(0.152, 16)}
+                    material={mat.hair}
+                    scale={[1, 0.62, 1.02]}
+                    position={[0, 0.055, -0.01]}
+                  />
+                  {/* The quiff. */}
+                  <mesh
+                    geometry={S(0.08, 12)}
+                    material={mat.hair}
+                    position={[0.02, 0.12, 0.07]}
+                    scale={[1.3, 0.6, 1]}
+                    rotation={[0.3, 0, -0.2]}
+                  />
+                  <mesh
+                    geometry={S(0.15, 14)}
+                    material={mat.hair}
+                    position={[0, 0.0, -0.035]}
+                    scale={[1.02, 0.7, 0.9]}
+                  />
+                </>
               )}
               {!far && (
                 <>
                   <mesh
-                    geometry={sphere(0.017, 6)}
+                    geometry={S(0.017, 6)}
                     material={mat.eye}
-                    position={[-0.05, 0.005, 0.128]}
+                    position={[-0.05, 0.005, 0.135]}
                   />
-                  <mesh
-                    geometry={sphere(0.017, 6)}
-                    material={mat.eye}
-                    position={[0.05, 0.005, 0.128]}
-                  />
+                  <mesh geometry={S(0.017, 6)} material={mat.eye} position={[0.05, 0.005, 0.135]} />
                   <mesh
                     geometry={cheekGeo}
                     material={mat.cheek}
-                    position={[-0.093, -0.035, 0.105]}
+                    position={[-0.093, -0.035, 0.112]}
                     rotation={[0, -0.5, 0]}
                   />
                   <mesh
                     geometry={cheekGeo}
                     material={mat.cheek}
-                    position={[0.093, -0.035, 0.105]}
+                    position={[0.093, -0.035, 0.112]}
                     rotation={[0, 0.5, 0]}
                   />
                 </>
               )}
               {bride && !far && (
-                /* The veil, trailing from the crown. Two crossed planes so it
-                 reads from the chase camera and from the side. */
-                <group ref={set("veil")} position={[0, 0.06, -0.06]}>
+                /* The veil, on a pearl comb above the bun, trailing from the
+                 crown. Two crossed planes so it reads from the chase camera and
+                 from the side. */
+                <group ref={set("veil")} position={[0, 0.1, -0.12]}>
+                  <mesh geometry={box(0.16, 0.025, 0.03)} material={mat.pearl} />
                   <mesh geometry={veilGeo} material={mat.veil} position={[0, 0, -0.02]} />
                   <mesh geometry={veilGeo} material={mat.veil} rotation={[0, Math.PI / 2, 0]} />
+                  <mesh
+                    geometry={veilGeo}
+                    material={mat.tulle}
+                    position={[0, -0.02, -0.04]}
+                    scale={[0.8, 0.82, 1]}
+                  />
                 </group>
               )}
             </group>
@@ -519,29 +778,40 @@ export function RunnerModel({
               /* The bouquet, carried in front of the chest rather than in a hand —
                attaching it to the hand would swing it through the gown on every
                stride and clip it through the body at full extension. */
-              <group position={[0, 0.3, 0.22]}>
-                <mesh geometry={sphere(0.075, 10)} material={mat.bloom1} scale={[1, 0.85, 1]} />
+              <group position={[0, 0.28, 0.24]}>
+                {BOUQUET.map(([x, y, z, r], i) => (
+                  <mesh
+                    key={i}
+                    geometry={S(r, 10)}
+                    material={i % 3 === 0 ? mat.bloom2 : i % 3 === 1 ? mat.bloom1 : mat.blush}
+                    position={[x, y, z]}
+                  />
+                ))}
+                {[-0.6, 0, 0.6].map((a) => (
+                  <mesh
+                    key={a}
+                    geometry={S(0.04, 6)}
+                    material={mat.leaf}
+                    position={[Math.sin(a) * 0.1, -0.03, Math.cos(a) * 0.04]}
+                    scale={[1.4, 0.4, 0.8]}
+                  />
+                ))}
                 <mesh
-                  geometry={sphere(0.05, 8)}
-                  material={mat.blush}
-                  position={[0.06, 0.02, 0.02]}
-                />
-                <mesh
-                  geometry={sphere(0.04, 8)}
-                  material={mat.bloom2}
-                  position={[-0.04, -0.08, 0.03]}
-                />
-                <mesh
-                  geometry={cylinder(0.012, 0.012, 0.18, 6)}
-                  material={mat.leaf}
+                  geometry={C(0.025, 0.018, 0.16, 8)}
+                  material={mat.satin}
                   position={[0, -0.12, 0]}
-                  rotation={[0.5, 0, 0.3]}
+                />
+                <mesh
+                  geometry={box(0.03, 0.2, 0.008)}
+                  material={mat.satin}
+                  position={[0.03, -0.24, 0]}
+                  rotation={[0, 0, 0.15]}
                 />
               </group>
             ) : (
               !far && (
-                <group position={[0, 0.56, 0.1]}>
-                  <mesh geometry={box(0.09, 0.06, 0.03)} material={mat.bow} />
+                <group position={[0, 0.56, 0.12]}>
+                  <mesh geometry={box(0.09, 0.05, 0.03)} material={mat.bow} />
                   <mesh geometry={box(0.035, 0.035, 0.035)} material={mat.bow} />
                 </group>
               )
@@ -550,20 +820,39 @@ export function RunnerModel({
 
           {/* Arms. Shoulders live on the torso group so they inherit its lean. */}
           <group position={[0, HIP_Y, 0]}>
-            <group ref={set("armL")} position={[-0.24, 0.44, 0]}>
-              <mesh geometry={limb(0.058, 0.3, "upperArm")} material={bride ? mat.skin : mat.tux} />
-              <group ref={set("foreL")} position={[0, -0.3, 0]}>
-                <mesh geometry={limb(0.05, 0.28, "foreArm")} material={mat.skin} />
-                <mesh geometry={sphere(0.055, 8)} material={mat.skin} position={[0, -0.28, 0]} />
+            {(["L", "R"] as const).map((side) => (
+              <group
+                key={side}
+                ref={set(side === "L" ? "armL" : "armR")}
+                position={[side === "L" ? -0.25 : 0.25, 0.46, 0]}
+              >
+                <mesh geometry={L(0.058, 0.3, "upperArm")} material={bride ? mat.skin : mat.tux} />
+                <group ref={set(side === "L" ? "foreL" : "foreR")} position={[0, -0.3, 0]}>
+                  <mesh geometry={L(0.05, 0.28, "foreArm")} material={bride ? mat.skin : mat.tux} />
+                  {!bride && (
+                    /* A shirt cuff with a gold link, then the hand. */
+                    <mesh
+                      geometry={C(0.052, 0.052, 0.04, 10)}
+                      material={mat.shirt}
+                      position={[0, -0.25, 0]}
+                    />
+                  )}
+                  {bride && (
+                    <mesh
+                      geometry={C(0.05, 0.05, 0.02, 10)}
+                      material={mat.pearl}
+                      position={[0, -0.24, 0]}
+                    />
+                  )}
+                  <mesh
+                    geometry={S(0.05, 10)}
+                    material={mat.skin}
+                    position={[0, -0.3, 0.01]}
+                    scale={[0.9, 1.15, 0.7]}
+                  />
+                </group>
               </group>
-            </group>
-            <group ref={set("armR")} position={[0.24, 0.44, 0]}>
-              <mesh geometry={limb(0.058, 0.3, "upperArm")} material={bride ? mat.skin : mat.tux} />
-              <group ref={set("foreR")} position={[0, -0.3, 0]}>
-                <mesh geometry={limb(0.05, 0.28, "foreArm")} material={mat.skin} />
-                <mesh geometry={sphere(0.055, 8)} material={mat.skin} position={[0, -0.28, 0]} />
-              </group>
-            </group>
+            ))}
           </group>
         </group>
       </group>
@@ -571,9 +860,59 @@ export function RunnerModel({
   );
 }
 
+/** One running sneaker: rounded toe, white upper, a blush stripe and a sole.
+ *  The joke in the brief is that these are what the marathon is done in, so
+ *  they deserve to look like real shoes. */
+function Sneaker({ mat }: { mat: Record<string, THREE.Material> }) {
+  return (
+    <group position={[0, -0.42, 0.04]}>
+      <mesh geometry={box(0.14, 0.085, 0.2)} material={mat.shirt} position={[0, 0, -0.02]} />
+      <mesh
+        geometry={S(0.072, 10)}
+        material={mat.shirt}
+        position={[0, -0.005, 0.08]}
+        scale={[1, 0.6, 1.1]}
+      />
+      <mesh
+        geometry={box(0.145, 0.02, 0.1)}
+        material={mat.satin}
+        position={[0, 0.005, 0.0]}
+        rotation={[0.5, 0, 0]}
+      />
+      <mesh
+        geometry={box(0.15, 0.032, 0.29)}
+        material={mat.sneakerSole}
+        position={[0, -0.045, 0.02]}
+      />
+    </group>
+  );
+}
+
+/** Bouquet blooms: [x, y, z, radius]. Hand-placed into a dome. */
+const BOUQUET: ReadonlyArray<readonly [number, number, number, number]> = [
+  [0, 0.03, 0.02, 0.065],
+  [0.07, 0.01, 0.0, 0.05],
+  [-0.07, 0.015, 0.0, 0.052],
+  [0.035, 0.065, -0.02, 0.045],
+  [-0.04, 0.06, -0.02, 0.045],
+  [0.02, -0.03, 0.05, 0.045],
+  [-0.03, -0.035, 0.045, 0.04],
+  [0.08, -0.04, -0.02, 0.035],
+  [-0.08, -0.04, -0.01, 0.035],
+];
+
 /** The cheek disc and the veil sheet, built once at module scope: both are
  *  identical for every rig in the scene and both are pure geometry. */
-const cheekGeo = geo("cheek", () => new THREE.CircleGeometry(0.032, 10));
-const veilGeo = geo("veil", () => new THREE.PlaneGeometry(0.52, 0.92, 1, 3));
+const cheekGeo = geo("cheek", () => new THREE.CircleGeometry(0.032, 24));
+const veilGeo = geo("veil", () => new THREE.PlaneGeometry(0.56, 1.15, 4, 10));
 // Translated down so the sheet hangs from the crown instead of straddling it.
-veilGeo.translate(0, -0.46, 0);
+veilGeo.translate(0, -0.575, 0);
+/** The train: a tapered sheet built pointing down, laid back by its group so it
+ *  drags behind the hem. */
+const trainGeo = geo("train", () => {
+  const g = new THREE.CylinderGeometry(0.34, 0.5, 0.75, 40, 4, true, Math.PI * 0.6, Math.PI * 0.8);
+  g.translate(0, -0.375, 0);
+  return g;
+});
+/** A thin ring, reused for the off-shoulder sleeves and the wrapped bun. */
+const torusGeo = geo("rigTorus", () => new THREE.TorusGeometry(0.075, 0.03, 16, 36));

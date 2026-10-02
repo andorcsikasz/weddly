@@ -23,6 +23,20 @@ import { M, box, cone, cylinder, sphere, torus } from "../constants/materials";
 import { PALETTE } from "../constants/palette";
 import type { ObstacleInstance } from "../engine/RunEngine";
 import { receiptTexture, signTexture } from "../utils/textures";
+import {
+  DiscoBall,
+  FairyLights,
+  FoodTruck,
+  GrandPiano,
+  InvitationStack,
+  LuggageCart,
+  MarqueeTent,
+  NailPolish,
+  RingBox,
+  RingLight,
+  SpeakerStack,
+  TailorMannequin,
+} from "./VendorProps";
 
 /** One prop's collision volume, flattened the same way the engine does it, so a
  *  mesh cannot be drawn somewhere the engine does not test. */
@@ -613,6 +627,7 @@ export function Obstacles({ read, expenseLabel }: ObstaclesProps) {
    * The rendered ids live in state, and the frame loop touches that state only
    * when a slot actually changes prop — a handful of times a run, not once a
    * frame. Position and visibility stay on the ref, where they belong. */
+  const warnings = useRef<(THREE.Group | null)[]>([]);
   const [drawn, setDrawn] = useState<ObstacleId[]>(() => pool.map((i) => i.id));
   const drawnRef = useRef(drawn);
 
@@ -629,7 +644,24 @@ export function Obstacles({ read, expenseLabel }: ObstaclesProps) {
       node.position.set(inst.x, 0, inst.z);
       // Obstacles do not spin, but a slow roll on the trolleys is what stops the
       // track reading as a conveyor belt of static props.
-      if (HUMMERS.has(inst.id)) node.rotation.y = Math.sin(t * 0.7 + i) * 0.05;
+      node.rotation.y = HUMMERS.has(inst.id) ? Math.sin(t * 0.7 + i) * 0.05 : 0;
+      node.rotation.x = 0;
+      // A charging prop bounces on its suspension and leans into the run, so it
+      // reads as DRIVING at you rather than as a parked one sliding faster.
+      if (inst.charging) {
+        node.position.y = Math.abs(Math.sin(t * 18 + i)) * 0.08;
+        node.rotation.x = -0.05;
+        node.rotation.y = Math.sin(t * 9 + i) * 0.04;
+      }
+      const warn = warnings.current[i];
+      if (warn) {
+        warn.visible = inst.charge;
+        if (inst.charge) {
+          const k = inst.charging ? 1 + Math.abs(Math.sin(t * 14)) * 0.35 : 0.85;
+          warn.scale.set(k, k, k);
+          warn.rotation.y = t * 3;
+        }
+      }
     }
     if (stale) {
       const next = pool.map((i) => i.id);
@@ -649,6 +681,23 @@ export function Obstacles({ read, expenseLabel }: ObstaclesProps) {
           visible={false}
         >
           <Prop id={drawn[i] ?? inst.id} expenseLabel={expenseLabel} />
+          {/* The warning marker over a prop that is about to drive at you. */}
+          <group
+            ref={(n) => {
+              warnings.current[i] = n;
+            }}
+            position={[0, 2.35, 0]}
+            visible={false}
+          >
+            <mesh rotation={[Math.PI, 0, 0]}>
+              <coneGeometry args={[0.26, 0.5, 3]} />
+              <meshBasicMaterial color={PALETTE.magnet} />
+            </mesh>
+            <mesh position={[0, -0.45, 0]}>
+              <sphereGeometry args={[0.07, 8, 8]} />
+              <meshBasicMaterial color={PALETTE.magnet} />
+            </mesh>
+          </group>
         </group>
       ))}
     </group>
@@ -708,4 +757,16 @@ const PROPS: Readonly<Record<ObstacleId, ComponentType | null>> = {
   giant_receipt: null,
   service_fee_sign: null,
   last_minute_bill: null,
+  food_truck: FoodTruck,
+  grand_piano: GrandPiano,
+  speaker_stack: SpeakerStack,
+  marquee_tent: MarqueeTent,
+  tailor_mannequin: TailorMannequin,
+  fairy_lights: FairyLights,
+  disco_ball: DiscoBall,
+  ring_light: RingLight,
+  luggage_cart: LuggageCart,
+  ring_box: RingBox,
+  nail_polish: NailPolish,
+  invitation_stack: InvitationStack,
 };

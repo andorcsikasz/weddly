@@ -8,27 +8,35 @@
 // ramp bug and would be very hard to trace back here.
 
 import { describe, expect, it } from "bun:test";
-import { ROW_GAP_EASY, ROW_GAP_TIGHT, SPAWN_AHEAD, nextSpawn, rowGapAt } from "@shared/runner";
+import {
+  MAX_BLOCKS_PER_ROW,
+  ROWS,
+  ROW_GAP_EASY,
+  ROW_GAP_TIGHT,
+  SPAWN_AHEAD,
+  makeRng,
+  nextSpawn,
+  rowGapAt,
+} from "@shared/runner";
 import { RunEngine } from "@/pages/games/runner/engine/RunEngine";
 import type { FloatRequest } from "@/pages/games/runner/engine/RunEngine";
 import { moneyLabelTexture } from "@/pages/games/runner/utils/textures";
 
 type FloatRequestCurrency = FloatRequest["currency"];
 
-/** The pool size the engine was built with. Mirrored rather than imported because
- *  it is a PRIVATE constant, and a test that imports it would be asserting against
- *  the same source it is meant to check. If the pool is raised, this fails and the
- *  message says what to do. */
-const POOL = 32;
-/** Every obstacle one row can hold: three lanes. */
-const LANES = 3;
+/** Every obstacle one row can hold. Read off the shared module, and checked
+ *  against every template below, so a new row that places more cannot slip past
+ *  the pool arithmetic. */
+const LANES = MAX_BLOCKS_PER_ROW;
+/** The pool the engine actually built, counted off a live instance. */
+const POOL = new RunEngine("bride", "EUR").obstacles.length;
 
 describe("track density", () => {
   it("spawns a row every couple of seconds, not every three", () => {
     // The complaint this answers: the opening was so sparse that a run spent
     // whole seconds with nothing to dodge, which reads as a broken game rather
     // than as an easy one.
-    expect(ROW_GAP_EASY).toBeLessThanOrEqual(24);
+    expect(ROW_GAP_EASY).toBeLessThanOrEqual(20);
     expect(ROW_GAP_TIGHT).toBeLessThan(ROW_GAP_EASY);
 
     // A row every ~1.9 s at the opening speed, ~1.4 s at the top.
@@ -45,6 +53,15 @@ describe("track density", () => {
     // The +1 row is the spawn cursor's overshoot: the `while` loop places a row and
     // then advances the cursor, so one row can sit just past the window edge.
     expect(needed).toBeLessThanOrEqual(POOL);
+  });
+
+  it("never lets a row template place more obstacles than the pool is sized for", () => {
+    const rng = makeRng(99);
+    for (const row of ROWS) {
+      for (let i = 0; i < 200; i++) {
+        expect(row.build(rng).blocked.length).toBeLessThanOrEqual(MAX_BLOCKS_PER_ROW);
+      }
+    }
   });
 
   it("always moves the cursor forward, however tight the gap gets", () => {

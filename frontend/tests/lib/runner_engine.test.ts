@@ -7,7 +7,7 @@
 // the particle queue, a page that reads a queue the audio layer already drained.
 
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { makeRng, ROWS } from "@shared/runner";
+import { LEAD_IN, makeRng, ROWS } from "@shared/runner";
 import { RunEngine } from "@/pages/games/runner/engine/RunEngine";
 import { useRunnerStore } from "@/pages/games/runner/store/runnerStore";
 
@@ -103,8 +103,17 @@ describe("RunEngine phases", () => {
     expect(engine.state.bags).toBe(0);
     expect(engine.state.multiplier).toBe(1);
     expect(engine.state.phase).toBe("running");
-    for (const o of engine.obstacles) expect(o.active).toBe(false);
-    for (const c of engine.cash) expect(c.active).toBe(false);
+    // The opening window is laid out at once (so the 3-2-1 has a track under it),
+    // so "clean" means: nothing stale, nothing spent, and nothing near the feet.
+    for (const o of engine.obstacles) {
+      if (!o.active) continue;
+      expect(o.spent).toBe(false);
+      expect(-o.z).toBeGreaterThanOrEqual(LEAD_IN - 1e-6);
+    }
+    for (const c of engine.cash) if (c.active) expect(-c.z).toBeGreaterThan(20);
+    for (const p of engine.powerups) if (p.active) expect(-p.z).toBeGreaterThan(20);
+    expect(engine.state.combo).toBe(0);
+    expect(engine.state.magnet + engine.state.doubler + engine.state.shield).toBe(0);
   });
 
   it("queues sparks for a collision and hands them over destructively", () => {
@@ -208,7 +217,15 @@ describe("runner store", () => {
     // instead of failing for a reason anybody can read.
     const engine = new RunEngine("bride", "HUF");
     engine.start(5);
-    Object.assign(engine.state, { cash: 30_000, bags: 2, hits: 1, multiplier: 2 });
+    // One hit, billed at its vendor's price: the profit subtracts the bill the
+    // engine actually charged, not a flat per-hit constant.
+    Object.assign(engine.state, {
+      cash: 30_000,
+      bags: 2,
+      hits: 1,
+      expenses: 400_000,
+      multiplier: 2,
+    });
     const counters = { ...engine.state };
     useRunnerStore.getState().tick(counters, { clock: 1, milestonePulse: 0 }, "HUF");
     const live = useRunnerStore.getState().profit;
@@ -222,6 +239,7 @@ describe("runner store", () => {
       hits: counters.hits,
       multiplier: counters.multiplier,
       verdict: "tight",
+      expenses: counters.expenses,
       currency: "HUF",
     });
     expect(useRunnerStore.getState().profit).toBe(live);
