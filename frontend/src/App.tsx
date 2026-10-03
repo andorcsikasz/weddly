@@ -45,6 +45,7 @@ const MarketsPage = lazyWithReload(() => import("./pages/MarketsPage"));
  *  in the main chunk — see the `three` vendor chunk in vite.config.ts. */
 const RunnerGamePage = lazyWithReload(() => import("./pages/games/runner/RunnerGamePage"));
 const PlayMarketsPage = lazyWithReload(() => import("./pages/PlayMarketsPage"));
+const MarketsScreenPage = lazyWithReload(() => import("./pages/MarketsScreenPage"));
 const QuizListPage = lazyWithReload(() => import("./pages/quiz/QuizListPage"));
 const QuizBuilderPage = lazyWithReload(() => import("./pages/quiz/QuizBuilderPage"));
 const QuizHostPage = lazyWithReload(() => import("./pages/quiz/QuizHostPage"));
@@ -1070,6 +1071,16 @@ export default function App() {
           element={
             <Page>
               <PlayMarketsPage />
+            </Page>
+          }
+        />
+        {/* The venue big screen for the same board: public, read-only, polls
+         *  the same lookup a not-yet-joined phone does. */}
+        <Route
+          path="/play/markets/:code/screen"
+          element={
+            <Page>
+              <MarketsScreenPage />
             </Page>
           }
         />

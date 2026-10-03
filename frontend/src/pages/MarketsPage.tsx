@@ -15,7 +15,14 @@
 // Polymarket-flavoured probability bar + pool numbers rather than the plain
 // paper-app card list it used to be.
 
-import { MARKET_DEFAULT_OPENING, MARKET_OPENING_OPTIONS, trendSinceOpen } from "@shared/markets";
+import { MARKET_PACKS, type MarketPackId, packQuestionText } from "@shared/market_packs";
+import {
+  MARKET_DEFAULT_OPENING,
+  MARKET_FLASH_SECONDS,
+  MARKET_OPENING_OPTIONS,
+  MARKET_PRIZE_MAX,
+  trendSinceOpen,
+} from "@shared/markets";
 import type { MarketBoardDetail, MarketLeaderboardEntry, MarketQuestion } from "@shared/markets";
 import type { UiLocale } from "@shared/locales";
 import {
@@ -25,7 +32,9 @@ import {
   Coins,
   Copy,
   Crown,
+  Gift,
   ListChecks,
+  Monitor,
   Pause,
   Play,
   QrCode,
@@ -34,10 +43,12 @@ import {
   TrendingUp,
   Users,
   X,
+  Zap,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { MarketMiniChart } from "../components/MarketMiniChart";
+import { TitleChips } from "../components/markets/party";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, marketsApi } from "../lib/endpoints";
@@ -230,6 +241,9 @@ export default function MarketsPage() {
   const [prompt, setPrompt] = useState("");
   const [closesAt, setClosesAt] = useState("");
   const [opening, setOpening] = useState(MARKET_DEFAULT_OPENING);
+  const [prize, setPrize] = useState("");
+  const [packId, setPackId] = useState<MarketPackId | null>(null);
+  const [packPicked, setPackPicked] = useState<Set<number>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
 
@@ -251,6 +265,7 @@ export default function MarketsPage() {
         if (!alive) return;
         setWeddingDate(couple?.wedding_date ?? null);
         setClosesAt(defaultClosesAt(couple?.wedding_date ?? null));
+        setPrize(first.prize ?? "");
         await refresh(first.id);
       } catch (e) {
         if (alive) toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -333,6 +348,80 @@ export default function MarketsPage() {
       setPrompt("");
       setOpening(MARKET_DEFAULT_OPENING);
       setClosesAt(defaultClosesAt(weddingDate));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("markets.save_error"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  /** Flash: same prompt + opening as the form, but locks in seconds. */
+  async function addFlash(seconds: number) {
+    if (!board || !prompt.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await marketsApi.addQuestion(
+        board.id,
+        prompt.trim(),
+        Date.now() + seconds * 1000,
+        opening,
+      );
+      setBoard(res.board);
+      setPrompt("");
+      setOpening(MARKET_DEFAULT_OPENING);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("markets.save_error"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function savePrize() {
+    if (!board || prize.trim() === (board.prize ?? "")) return;
+    try {
+      const res = await marketsApi.setPrize(board.id, prize.trim() || null);
+      setBoard({ ...board, prize: res.board.prize });
+      toast.success(t("markets_party.prize_saved"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("markets.save_error"));
+    }
+  }
+
+  function openPack(id: MarketPackId) {
+    if (packId === id) {
+      setPackId(null);
+      return;
+    }
+    const pack = MARKET_PACKS.find((p) => p.id === id);
+    if (!pack || !board) return;
+    // Preselect everything the board doesn't already ask, so re-opening a
+    // pack after adding it offers nothing twice.
+    const existing = new Set(board.questions.map((q) => q.prompt.trim().toLowerCase()));
+    const picked = new Set<number>();
+    pack.questions.forEach((q, i) => {
+      if (!existing.has(packQuestionText(q, locale).toLowerCase())) picked.add(i);
+    });
+    setPackId(id);
+    setPackPicked(picked);
+  }
+
+  async function addPack() {
+    const pack = MARKET_PACKS.find((p) => p.id === packId);
+    if (!board || !pack || packPicked.size === 0 || !closesAt) return;
+    const ms = new Date(closesAt).getTime();
+    if (!Number.isFinite(ms)) return;
+    setSubmitting(true);
+    try {
+      const items = pack.questions
+        .filter((_, i) => packPicked.has(i))
+        .map((q) => ({
+          prompt: packQuestionText(q, locale),
+          openingProbability: q.opening ?? MARKET_DEFAULT_OPENING,
+        }));
+      const res = await marketsApi.addQuestions(board.id, items, ms);
+      setBoard(res.board);
+      setPackId(null);
+      toast.success(t("markets_party.pack_added", { count: String(items.length) }));
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("markets.save_error"));
     } finally {
@@ -438,6 +527,16 @@ export default function MarketsPage() {
                 <QrCode size={14} aria-hidden="true" />
                 QR
               </button>
+              <a
+                className="gc-btn gc-btn-outline gc-btn-sm"
+                href={`/play/markets/${board.joinCode}/screen`}
+                target="_blank"
+                rel="noreferrer"
+                title={t("markets_party.screen_hint")}
+              >
+                <Monitor size={14} aria-hidden="true" />
+                {t("markets_party.screen_open")}
+              </a>
               <button
                 type="button"
                 className="gc-btn gc-btn-primary gc-btn-sm"
@@ -458,6 +557,25 @@ export default function MarketsPage() {
               </button>
             </div>
           </div>
+        </section>
+
+        <section className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+          <label htmlFor="markets-prize" className="gc-label">
+            <Gift size={13} className="mr-1 inline align-[-2px]" aria-hidden />
+            {t("markets_party.prize_label")}
+          </label>
+          <input
+            id="markets-prize"
+            className="gc-input"
+            placeholder={t("markets_party.prize_placeholder")}
+            value={prize}
+            maxLength={MARKET_PRIZE_MAX}
+            onChange={(e) => setPrize(e.target.value)}
+            onBlur={savePrize}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+          />
         </section>
 
         {qrOpen && qrUrl && (
@@ -529,6 +647,67 @@ export default function MarketsPage() {
         </section>
 
         <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+          <h2 className="font-grotesk text-lg text-white">{t("markets_party.packs_title")}</h2>
+          <p className="mt-0.5 text-sm text-white/60">{t("markets_party.packs_hint")}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {MARKET_PACKS.map((pack) => (
+              <button
+                key={pack.id}
+                type="button"
+                aria-pressed={packId === pack.id}
+                onClick={() => openPack(pack.id)}
+                className={`gc-btn gc-btn-sm ${packId === pack.id ? "gc-btn-primary" : "gc-btn-outline"}`}
+              >
+                <span aria-hidden>{pack.emoji}</span> {t(`markets_party.pack_${pack.id}`)}
+              </button>
+            ))}
+          </div>
+          {packId && (
+            <div className="mt-3 space-y-1.5">
+              {MARKET_PACKS.find((p) => p.id === packId)?.questions.map((q, i) => (
+                <label
+                  key={q.en}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-white/85 hover:bg-white/5"
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-[#7c5cff]"
+                    checked={packPicked.has(i)}
+                    onChange={() =>
+                      setPackPicked((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(i)) next.delete(i);
+                        else next.add(i);
+                        return next;
+                      })
+                    }
+                  />
+                  <span className="flex-1">{packQuestionText(q, locale)}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-white/45">
+                    {q.opening ?? MARKET_DEFAULT_OPENING}%
+                  </span>
+                </label>
+              ))}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  className="gc-btn gc-btn-primary gc-btn-sm"
+                  disabled={packPicked.size === 0 || !closesAt || submitting}
+                  onClick={addPack}
+                >
+                  {t("markets_party.pack_add", { count: String(packPicked.size) })}
+                </button>
+                {!closesAt && (
+                  <span className="text-xs text-white/55">
+                    {t("markets_party.pack_needs_close")}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
           <h2 className="font-grotesk text-lg text-white">{t("markets.add_question_title")}</h2>
           <div className="mt-3 space-y-3">
             <div>
@@ -588,6 +767,25 @@ export default function MarketsPage() {
             >
               {t("markets.add_button")}
             </button>
+            <div className="rounded-xl border border-dashed border-white/15 p-3">
+              <p className="flex items-center gap-1.5 text-sm font-bold text-white">
+                <Zap size={14} className="text-star" aria-hidden /> {t("markets_party.flash_title")}
+              </p>
+              <p className="mt-0.5 text-xs text-white/55">{t("markets_party.flash_hint")}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {MARKET_FLASH_SECONDS.map((sec) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    className="gc-btn gc-btn-outline gc-btn-sm"
+                    disabled={!prompt.trim() || submitting || board.status !== "live"}
+                    onClick={() => addFlash(sec)}
+                  >
+                    ⚡ {t("markets_party.flash_seconds", { seconds: String(sec) })}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -608,7 +806,10 @@ export default function MarketsPage() {
                     <span className="w-4 shrink-0" aria-hidden />
                   )}
                   <span aria-hidden="true">{entry.player.avatar}</span>
-                  <span className="flex-1 truncate text-sm text-white">{entry.player.name}</span>
+                  <span className="min-w-0 flex-1 text-sm text-white">
+                    <span className="block truncate">{entry.player.name}</span>
+                    <TitleChips titles={entry.titles} />
+                  </span>
                   <span className="text-sm font-semibold tabular-nums text-white">
                     {t("markets.balance_pts", { balance: String(entry.player.balance) })}
                   </span>

@@ -141,6 +141,7 @@ import type {
   MarketPublicState,
   MarketQuestion,
   MarketSide,
+  MarketTeam,
 } from "@shared/markets";
 import type {
   AdminCommunitySupplierReport,
@@ -4771,6 +4772,17 @@ export const marketsApi = {
   leaderboard: (id: number) =>
     apiFetch<{ leaderboard: MarketLeaderboardEntry[] }>("GET", `/api/markets/${id}/leaderboard`),
 
+  setPrize: (id: number, prize: string | null) =>
+    apiFetch<{ board: MarketBoardSummary }>("PATCH", `/api/markets/${id}`, { prize }),
+  addQuestions: (
+    id: number,
+    questions: { prompt: string; openingProbability: number }[],
+    closesAt: number,
+  ) =>
+    apiFetch<{ board: MarketBoardDetail }>("POST", `/api/markets/${id}/questions/bulk`, {
+      questions,
+      closesAt,
+    }),
   addQuestion: (id: number, prompt: string, closesAt: number, openingProbability: number) =>
     apiFetch<{ board: MarketBoardDetail }>("POST", `/api/markets/${id}/questions`, {
       prompt,
@@ -4821,7 +4833,13 @@ export const marketsPlayApi = {
     apiFetch<MarketPublicState>("GET", `/api/play/markets/${encodeURIComponent(code)}`, undefined, {
       headers: token ? { [MARKET_PLAYER_TOKEN_HEADER]: token } : undefined,
     }),
-  join: (code: string, name: string, avatar: string, existingToken: string | null) =>
+  join: (
+    code: string,
+    name: string,
+    avatar: string,
+    existingToken: string | null,
+    team: MarketTeam | null = null,
+  ) =>
     apiFetch<{
       player: { id: number; name: string; avatar: string; balance: number };
       token: string;
@@ -4829,7 +4847,7 @@ export const marketsPlayApi = {
     }>(
       "POST",
       `/api/play/markets/${encodeURIComponent(code)}/join`,
-      { name, avatar },
+      { name, avatar, team },
       { headers: existingToken ? { [MARKET_PLAYER_TOKEN_HEADER]: existingToken } : undefined },
     ),
   state: (code: string, token: string) =>
@@ -4851,6 +4869,28 @@ export const marketsPlayApi = {
       { side, stake },
       { headers: { [MARKET_PLAYER_TOKEN_HEADER]: token } },
     ),
+  bailout: (code: string, token: string, questionId: number) =>
+    apiFetch<{ result: { refund: number }; state: MarketPublicState }>(
+      "POST",
+      `/api/play/markets/${encodeURIComponent(code)}/questions/${questionId}/bailout`,
+      {},
+      { headers: { [MARKET_PLAYER_TOKEN_HEADER]: token } },
+    ),
+  pity: (code: string, token: string) =>
+    apiFetch<{ result: { balance: number }; state: MarketPublicState }>(
+      "POST",
+      `/api/play/markets/${encodeURIComponent(code)}/pity`,
+      {},
+      { headers: { [MARKET_PLAYER_TOKEN_HEADER]: token } },
+    ),
+  react: (code: string, token: string, emoji: string) =>
+    apiFetch<{ stored: boolean }>(
+      "POST",
+      `/api/play/markets/${encodeURIComponent(code)}/react`,
+      { emoji },
+      { headers: { [MARKET_PLAYER_TOKEN_HEADER]: token } },
+    ),
+  qrUrl: (code: string) => `/api/play/markets/${encodeURIComponent(code)}/qr`,
   previewPayout: (code: string, questionId: number, side: MarketSide, stake: number) =>
     apiFetch<{ estimatedPayout: number }>(
       "GET",

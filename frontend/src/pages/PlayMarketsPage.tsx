@@ -12,24 +12,50 @@
 // straight from shared/markets.ts rather than re-derived, so the number a
 // guest sees while dragging the stake can never disagree with what actually
 // gets paid out.
+//
+// Party mode: the page runs on the same dark console canvas as the couple's
+// board and the venue big screen, and everything that makes it a game rather
+// than a form lives in components/markets/party.tsx (reveal, reactions,
+// podium, flash countdowns), shared with the big screen so a phone and the TV
+// tell the room the same story at the same moment.
 
 import {
+  bailoutRefund,
   estimatedPayout,
+  isFlashQuestion,
   MARKET_AVATARS,
   MARKET_MIN_STAKE,
-  trendSinceOpen,
+  MARKET_PITY_LOAN,
+  MARKET_QUICK_STAKES,
+  MARKET_REACTIONS,
+  MARKET_TEAMS,
+  type MarketPublicState,
   type MarketQuestion,
   type MarketSide,
+  type MarketTeam,
+  trendSinceOpen,
 } from "@shared/markets";
-import { Coins, Lock, TrendingDown, TrendingUp } from "lucide-react";
+import { Coins, Lock, TrendingDown, TrendingUp, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { MarketMiniChart } from "../components/MarketMiniChart";
+import {
+  FlashBadge,
+  Podium,
+  ReactionLayer,
+  RevealOverlay,
+  TitleChips,
+  useNewQuestions,
+  useNow,
+  useRevealQueue,
+} from "../components/markets/party";
+import { useToast } from "../components/ui";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { marketsPlayApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
-import type { MarketPublicState } from "@shared/markets";
+import { isMuted, playSound, setMuted } from "../lib/market_sfx";
+import "./games/GamesConsole.css";
 
 function tokenKey(code: string): string {
   return `weddly.market.${code}`;
@@ -49,7 +75,9 @@ function writeToken(code: string, token: string): void {
   }
 }
 
-const STATE_POLL_MS = 5000;
+// Faster than the old 5s: flash questions live for a minute, and a reveal
+// that lands 5 seconds after the big screen's reads as lag.
+const STATE_POLL_MS = 3000;
 
 function BetControls({
   question,
@@ -68,15 +96,17 @@ function BetControls({
   if (question.status !== "open") return null;
 
   const maxStake = Math.max(0, balance);
-  const payout = side ? estimatedPayout(question.pool, side, Math.min(stake, maxStake)) : 0;
+  const effective = Math.min(stake, maxStake);
+  const payout = side ? estimatedPayout(question.pool, side, effective) : 0;
+  const allIn = effective === maxStake && maxStake > 0;
 
   return (
-    <div className="mt-3 rounded-xl bg-paper-100 p-3 dark:bg-umber-800/60">
-      <div className="flex gap-2">
+    <div className="mt-3 rounded-xl bg-white/5 p-3">
+      <div className="gc-side-split">
         <button
           type="button"
-          className={`flex-1 rounded-xl bg-sage-500 px-3 py-2.5 text-sm font-bold text-white transition-all active:scale-[0.98] hover:bg-sage-600 ${
-            side === "yes" ? "ring-2 ring-inset ring-white/70" : ""
+          className={`gc-outcome-btn gc-outcome-btn-yes gc-outcome-btn-block ${
+            side === "yes" ? "ring-2 ring-inset ring-white/80" : ""
           }`}
           onClick={() => setSide("yes")}
         >
@@ -84,8 +114,8 @@ function BetControls({
         </button>
         <button
           type="button"
-          className={`flex-1 rounded-xl bg-blush-500 px-3 py-2.5 text-sm font-bold text-white transition-all active:scale-[0.98] hover:bg-blush-600 ${
-            side === "no" ? "ring-2 ring-inset ring-white/70" : ""
+          className={`gc-outcome-btn gc-outcome-btn-no gc-outcome-btn-block ${
+            side === "no" ? "ring-2 ring-inset ring-white/80" : ""
           }`}
           onClick={() => setSide("no")}
         >
@@ -94,59 +124,77 @@ function BetControls({
       </div>
 
       {side && (
-        <div className="mt-3">
-          <label
-            htmlFor={`stake-${question.id}`}
-            className="mb-1 block text-xs font-medium text-ink-600 dark:text-umber-200"
-          >
-            {t("markets_play.stake_label")}
-          </label>
-          <div className="flex items-center gap-2">
-            <Coins size={16} className="text-ink-500 dark:text-umber-300" aria-hidden="true" />
+        <div className="mk-pop-in mt-3">
+          <p className="gc-label">{t("markets_play.stake_label")}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {MARKET_QUICK_STAKES.filter((s) => s <= maxStake).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStake(s)}
+                className={`mk-wiggle rounded-lg px-3 py-1.5 text-sm font-bold tabular-nums ${
+                  effective === s && !allIn ? "bg-white text-ink-900" : "bg-white/10 text-white"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setStake(maxStake)}
+              disabled={maxStake <= 0}
+              className={`mk-wiggle rounded-lg px-3 py-1.5 text-sm font-black tracking-wide ${
+                allIn ? "bg-star text-ink-900" : "bg-star/20 text-star"
+              }`}
+            >
+              {t("markets_party.all_in")}
+            </button>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <Coins size={16} className="text-white/60" aria-hidden="true" />
             <input
               id={`stake-${question.id}`}
+              aria-label={t("markets_play.stake_label")}
               type="range"
               min={MARKET_MIN_STAKE}
               max={maxStake || MARKET_MIN_STAKE}
               step={5}
               value={Math.min(stake, maxStake || MARKET_MIN_STAKE)}
               onChange={(e) => setStake(Number(e.target.value))}
-              className="flex-1"
+              className="flex-1 accent-star"
             />
-            <span className="w-16 text-right text-sm font-semibold text-ink-900 dark:text-paper-50">
-              {Math.min(stake, maxStake)}
+            <span className="w-14 text-right text-sm font-bold tabular-nums text-white">
+              {effective}
             </span>
           </div>
 
-          <div className="mt-2 flex items-center justify-between rounded-lg bg-paper-50 px-3 py-2 text-sm dark:bg-umber-900/60">
-            <span className="text-ink-600 dark:text-umber-200">
-              {t("markets_play.estimated_return_label")}
-            </span>
-            <span className="font-semibold text-ink-900 dark:text-paper-50">{payout} pts</span>
+          <div className="mt-2 flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm">
+            <span className="text-white/70">{t("markets_play.estimated_return_label")}</span>
+            <span className="font-bold tabular-nums text-white">{payout} pts</span>
           </div>
-          <p className="mt-1 text-xs text-ink-500 dark:text-umber-400">
+          <div className="mt-1 flex items-center justify-between text-xs text-white/55">
+            <span>{t("markets_play.profit_label")}</span>
+            <span className="tabular-nums">{Math.max(0, payout - effective)} pts</span>
+          </div>
+          <p className="mt-1 text-[11px] text-white/45">
             {t("markets_play.estimated_return_hint")}
           </p>
-          <div className="mt-1 flex items-center justify-between text-xs text-ink-500 dark:text-umber-400">
-            <span>{t("markets_play.profit_label")}</span>
-            <span>{Math.max(0, payout - Math.min(stake, maxStake))} pts</span>
-          </div>
 
           <button
             type="button"
-            className="btn-primary btn-sm mt-3 w-full"
+            className={`gc-btn mt-3 w-full font-black ${allIn ? "bg-star text-ink-900" : "gc-btn-primary"}`}
             disabled={busy || maxStake <= 0}
             onClick={async () => {
               setBusy(true);
               try {
-                await onBet(side, Math.min(stake, maxStake));
+                await onBet(side, effective);
                 setSide(null);
               } finally {
                 setBusy(false);
               }
             }}
           >
-            {t("markets_play.place_bet")}
+            {allIn ? `${t("markets_party.all_in")}!` : t("markets_play.place_bet")}
           </button>
         </div>
       )}
@@ -158,32 +206,41 @@ function QuestionRow({
   question,
   myBalance,
   myPosition,
+  now,
   onBet,
+  onBailout,
 }: {
   question: MarketQuestion;
   myBalance: number | null;
   myPosition: MarketPublicState["myPositions"][number] | undefined;
+  now: number;
   onBet: (questionId: number, side: MarketSide, stake: number) => Promise<void>;
+  onBailout: (questionId: number) => Promise<void>;
 }) {
   const { t } = useT();
   const trend = trendSinceOpen(question.priceHistory);
+  const [busy, setBusy] = useState(false);
+  // A flash window can pass between polls; lock the slip on the client clock
+  // too, so nobody taps "bet" on a question the server already closed.
+  const open = question.status === "open" && question.closesAt > now;
 
   return (
-    <li className="rounded-2xl border border-ink-900/15 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900/40">
+    <li
+      className={`gc-card mk-pop-in p-4 ${
+        isFlashQuestion(question) && open ? "border-star/60" : ""
+      }`}
+    >
+      <div className="mb-1">
+        <FlashBadge question={question} now={now} />
+      </div>
       <div className="flex items-start justify-between gap-3">
-        <p className="font-medium text-ink-900 dark:text-paper-50">{question.prompt}</p>
+        <p className="font-semibold text-white">{question.prompt}</p>
         <div className="flex shrink-0 items-center gap-1.5">
-          <span className="text-lg font-bold text-ink-900 dark:text-paper-50">
+          <span className="text-2xl font-black tabular-nums text-white">
             {question.probability}%
           </span>
           {trend !== null && (
-            <span
-              className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-bold ${
-                trend > 0
-                  ? "bg-sage-100 text-sage-700 dark:bg-sage-400/15 dark:text-sage-300"
-                  : "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
-              }`}
-            >
+            <span className={`gc-trend ${trend > 0 ? "gc-trend-up" : "gc-trend-down"}`}>
               {trend > 0 ? (
                 <TrendingUp size={11} aria-hidden />
               ) : (
@@ -196,36 +253,41 @@ function QuestionRow({
         </div>
       </div>
 
-      <div className="mt-2 h-28">
+      <div className="mt-2 h-24">
         <MarketMiniChart
           ticks={question.priceHistory}
-          stroke="#2f9c52"
+          stroke="#45e39e"
           ariaLabel={t("markets.chart_alt")}
           current={question.probability}
         />
       </div>
 
       {myPosition && (
-        <p className="mt-2 text-xs text-ink-600 dark:text-umber-200">
+        <p className="mt-2 text-xs text-white/75">
           {t("markets_play.your_position", {
             stake: String(myPosition.stake),
             side: t(`markets_play.bet_${myPosition.side}`),
           })}
-          {question.status === "open" && (
-            <span className="ml-1.5 font-medium text-sage-700 dark:text-sage-300">
+          {open && (
+            <span className="ml-1.5 font-semibold text-[#6ff0b7]">
               {t("markets_play.position_value", { value: String(myPosition.currentValue) })}
             </span>
           )}
         </p>
       )}
 
+      {question.status === "open" && !open && (
+        <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-white/60">
+          <Lock size={12} aria-hidden="true" /> {t("markets_play.closed_note")}
+        </p>
+      )}
       {question.status === "closed" && (
-        <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+        <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-white/60">
           <Lock size={12} aria-hidden="true" /> {t("markets_play.closed_note")}
         </p>
       )}
       {question.status === "resolved" && question.outcome && (
-        <p className="mt-2 text-xs font-medium text-ink-700 dark:text-umber-100">
+        <p className="mt-2 text-xs font-semibold text-white/85">
           {t("markets_play.resolved_note", { outcome: t(`markets_play.bet_${question.outcome}`) })}
           {myPosition &&
             (myPosition.side === question.outcome
@@ -235,22 +297,35 @@ function QuestionRow({
         </p>
       )}
       {question.status === "voided" && (
-        <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
-          {t("markets_play.voided_note")}
-        </p>
+        <p className="mt-2 text-xs text-white/60">{t("markets_play.voided_note")}</p>
       )}
 
-      {question.status === "open" && myBalance !== null && !myPosition && (
+      {open && myBalance !== null && !myPosition && (
         <BetControls
           question={question}
           balance={myBalance}
           onBet={(side, stake) => onBet(question.id, side, stake)}
         />
       )}
-      {question.status === "open" && myPosition && (
-        <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
-          {t("markets_play.side_locked")}
-        </p>
+      {open && myPosition && (
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] text-white/50">{t("markets_party.bailout_hint")}</p>
+          <button
+            type="button"
+            className="gc-btn gc-btn-outline gc-btn-sm"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await onBailout(question.id);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            🪂 {t("markets_party.bailout", { refund: String(bailoutRefund(myPosition.stake)) })}
+          </button>
+        </div>
       )}
     </li>
   );
@@ -258,45 +333,46 @@ function QuestionRow({
 
 function JoinScreen({
   hostDisplayName,
+  prize,
   onJoin,
 }: {
   hostDisplayName: string;
-  onJoin: (name: string, avatar: string) => Promise<void>;
+  prize: string | null;
+  onJoin: (name: string, avatar: string, team: MarketTeam | null) => Promise<void>;
 }) {
   const { t } = useT();
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(MARKET_AVATARS[0] as string);
+  const [team, setTeam] = useState<MarketTeam | null>(null);
   const [busy, setBusy] = useState(false);
 
   return (
     <div className="mx-auto max-w-sm px-4 py-10 text-center">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-500 dark:text-umber-300">
+      <p className="text-xs font-black uppercase tracking-[0.2em] text-star">
         {t("markets_play.join_kicker")}
       </p>
       {hostDisplayName && (
-        <h1 className="mt-1 font-grotesk text-2xl text-ink-900 dark:text-paper-50">
+        <h1 className="mt-1 font-grotesk text-2xl text-white">
           {t("markets_play.hosted_by", { name: hostDisplayName })}
         </h1>
       )}
+      {prize && (
+        <p className="mt-2 text-sm text-white/75">🎁 {t("markets_party.prize_won", { prize })}</p>
+      )}
 
-      <label
-        htmlFor="market-name"
-        className="mt-6 mb-1 block text-left text-xs font-medium text-ink-600 dark:text-umber-200"
-      >
+      <label htmlFor="market-name" className="gc-label mt-6 text-left">
         {t("markets_play.name_label")}
       </label>
       <input
         id="market-name"
-        className="input w-full"
+        className="gc-input"
         placeholder={t("markets_play.name_placeholder")}
         value={name}
         onChange={(e) => setName(e.target.value)}
         maxLength={40}
       />
 
-      <p className="mt-4 mb-1 text-left text-xs font-medium text-ink-600 dark:text-umber-200">
-        {t("markets_play.avatar_label")}
-      </p>
+      <p className="gc-label mt-4 text-left">{t("markets_play.avatar_label")}</p>
       <div className="grid grid-cols-8 gap-1.5">
         {MARKET_AVATARS.map((a) => (
           <button
@@ -304,8 +380,8 @@ function JoinScreen({
             type="button"
             aria-pressed={avatar === a}
             onClick={() => setAvatar(a)}
-            className={`aspect-square rounded-lg text-lg transition-colors ${
-              avatar === a ? "bg-sage-500" : "bg-paper-200 dark:bg-umber-800"
+            className={`mk-wiggle aspect-square rounded-lg text-lg transition-colors ${
+              avatar === a ? "bg-star" : "bg-white/10"
             }`}
           >
             {a}
@@ -313,14 +389,32 @@ function JoinScreen({
         ))}
       </div>
 
+      <p className="gc-label mt-4 text-left">{t("markets_party.team_label")}</p>
+      <div className="grid grid-cols-3 gap-1.5">
+        {[...MARKET_TEAMS, null].map((tm) => (
+          <button
+            key={tm ?? "none"}
+            type="button"
+            aria-pressed={team === tm}
+            onClick={() => setTeam(tm)}
+            className={`rounded-lg px-2 py-2 text-xs font-bold leading-tight ${
+              team === tm ? "bg-white text-ink-900" : "bg-white/10 text-white"
+            }`}
+          >
+            {tm === "bride" ? "👰 " : tm === "groom" ? "🤵 " : "🎲 "}
+            {t(tm ? `markets_party.team_${tm}` : "markets_party.team_none")}
+          </button>
+        ))}
+      </div>
+
       <button
         type="button"
-        className="btn-primary mt-6 w-full"
+        className="gc-btn gc-btn-primary mt-6 w-full font-black"
         disabled={!name.trim() || busy}
         onClick={async () => {
           setBusy(true);
           try {
-            await onJoin(name.trim(), avatar);
+            await onJoin(name.trim(), avatar, team);
           } finally {
             setBusy(false);
           }
@@ -332,13 +426,38 @@ function JoinScreen({
   );
 }
 
+function ReactionBar({ onReact }: { onReact: (emoji: string) => void }) {
+  const { t } = useT();
+  return (
+    <div
+      role="group"
+      aria-label={t("markets_party.react_label")}
+      className="fixed inset-x-0 bottom-0 z-30 flex justify-center gap-1 border-t border-white/10 bg-[#0c1019]/95 px-2 py-2 backdrop-blur"
+    >
+      {MARKET_REACTIONS.map((emoji) => (
+        <button
+          key={emoji}
+          type="button"
+          onClick={() => onReact(emoji)}
+          className="rounded-xl px-2 py-1 text-2xl transition-transform active:scale-125"
+        >
+          {emoji}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function PlayMarketsPage() {
   const { code = "" } = useParams<{ code: string }>();
   const { t } = useT();
+  const toast = useToast();
   const [state, setState] = useState<MarketPublicState | null>(null);
   const [token, setToken] = useState<string | null>(() => readToken(code));
   const [notFound, setNotFound] = useState(false);
+  const [muted, setMutedState] = useState(isMuted);
   const pollRef = useRef<number | null>(null);
+  const now = useNow(1000);
 
   async function load() {
     try {
@@ -361,101 +480,216 @@ export default function PlayMarketsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, token]);
 
-  async function handleJoin(name: string, avatar: string) {
-    const res = await marketsPlayApi.join(code, name, avatar, token);
-    writeToken(code, res.token);
-    setToken(res.token);
-    setState(res.state);
+  const joined = state !== null && state.myBalance !== null;
+  const reveal = useRevealQueue(joined ? state.questions : null);
+  const freshQuestions = useNewQuestions(joined ? state.questions : null);
+
+  useEffect(() => {
+    if (freshQuestions.length === 0) return;
+    playSound("new");
+    toast.success(`⚡ ${t("markets_party.new_question")}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [freshQuestions]);
+
+  async function guarded<T>(fn: () => Promise<T>): Promise<T | undefined> {
+    try {
+      return await fn();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      return undefined;
+    }
+  }
+
+  async function handleJoin(name: string, avatar: string, team: MarketTeam | null) {
+    await guarded(async () => {
+      const res = await marketsPlayApi.join(code, name, avatar, token, team);
+      writeToken(code, res.token);
+      setToken(res.token);
+      setState(res.state);
+    });
   }
 
   async function handleBet(questionId: number, side: MarketSide, stake: number) {
-    if (!token) return;
-    const res = await marketsPlayApi.bet(code, token, questionId, side, stake);
+    if (!token || !state) return;
+    const wasAllIn = stake === state.myBalance;
+    const res = await guarded(() => marketsPlayApi.bet(code, token, questionId, side, stake));
+    if (!res) return;
+    playSound(wasAllIn ? "allin" : "bet");
     setState(res.state);
+  }
+
+  async function handleBailout(questionId: number) {
+    if (!token) return;
+    const res = await guarded(() => marketsPlayApi.bailout(code, token, questionId));
+    if (!res) return;
+    playSound("lock");
+    toast.success(t("markets_party.bailout_done", { refund: String(res.result.refund) }));
+    setState(res.state);
+  }
+
+  async function handlePity() {
+    if (!token) return;
+    const res = await guarded(() => marketsPlayApi.pity(code, token));
+    if (!res) return;
+    playSound("win");
+    toast.success(t("markets_party.pity_done"));
+    setState(res.state);
+  }
+
+  function handleReact(emoji: string) {
+    if (!token) return;
+    playSound("pop");
+    void marketsPlayApi.react(code, token, emoji).catch(() => undefined);
+  }
+
+  function toggleMute() {
+    setMuted(!muted);
+    setMutedState(!muted);
   }
 
   if (notFound) {
     return (
-      <div className="mx-auto max-w-sm px-4 py-16 text-center">
-        <h1 className="font-grotesk text-2xl text-ink-900 dark:text-paper-50">
+      <div className="gc-page min-h-screen px-4 py-16 text-center" style={{ margin: 0 }}>
+        <p className="text-6xl" aria-hidden>
+          🚪
+        </p>
+        <h1 className="mt-3 font-grotesk text-2xl text-white">
           {t("markets_play.not_found_title")}
         </h1>
-        <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
-          {t("markets_play.not_found_body")}
-        </p>
+        <p className="mt-2 text-sm text-white/70">{t("markets_play.not_found_body")}</p>
       </div>
     );
   }
 
   if (!state) return null;
 
-  const joined = state.myBalance !== null;
+  const me = state.leaderboard.find((e) => e.player.id === state.me?.id);
+  const ordered = [...state.questions].sort((a, b) => {
+    // Live flash questions first, then other open ones, then the rest in order.
+    const rank = (q: MarketQuestion) =>
+      q.status === "open" && q.closesAt > now ? (isFlashQuestion(q) ? 0 : 1) : 2;
+    return rank(a) - rank(b);
+  });
 
   return (
-    <div className="min-h-screen bg-paper-50 dark:bg-ink-950">
-      <header className="border-b border-ink-900/10 px-4 py-3 dark:border-umber-800">
-        <Wordmark size="sm" />
+    <div className="gc-page min-h-screen pb-20" style={{ margin: 0 }}>
+      <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+        <span className="text-white">
+          <Wordmark size="sm" />
+        </span>
+        <button
+          type="button"
+          onClick={toggleMute}
+          aria-label={t(muted ? "markets_party.unmute" : "markets_party.mute")}
+          className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white"
+        >
+          {muted ? <VolumeX size={18} aria-hidden /> : <Volume2 size={18} aria-hidden />}
+        </button>
       </header>
 
       {!joined ? (
-        <JoinScreen hostDisplayName={state.hostDisplayName} onJoin={handleJoin} />
+        <JoinScreen
+          hostDisplayName={state.hostDisplayName}
+          prize={state.prize}
+          onJoin={handleJoin}
+        />
+      ) : state.status === "ended" ? (
+        <main className="px-4 py-10">
+          <Podium leaderboard={state.leaderboard} prize={state.prize} />
+          <p className="mt-8 text-center text-sm text-white/60">{t("markets_play.ended_note")}</p>
+        </main>
       ) : (
-        <main className="mx-auto max-w-lg px-4 py-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">
-              {state.boardTitle}
-            </h1>
-            <span className="rounded-full bg-paper-200 px-3 py-1 text-sm font-semibold text-ink-900 dark:bg-umber-800 dark:text-paper-50">
-              {t("markets_play.balance_label")}: {state.myBalance} pts
+        <main className="mx-auto max-w-lg px-4 py-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="truncate font-grotesk text-xl text-white">{state.boardTitle}</h1>
+              {me && (
+                <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-white/60">
+                  #{me.rank} · {state.me?.team && t(`markets_party.team_${state.me.team}`)}
+                  <TitleChips titles={me.titles} />
+                </p>
+              )}
+            </div>
+            <span className="shrink-0 rounded-full bg-star px-3 py-1 text-sm font-black tabular-nums text-ink-900">
+              🪙 {state.myBalance}
             </span>
           </div>
 
-          {state.status === "draft" && (
-            <p className="rounded-xl bg-paper-100 p-3 text-sm text-ink-600 dark:bg-umber-800 dark:text-umber-200">
-              {t("markets_play.not_live_note")}
+          {state.prize && (
+            <p className="mb-3 rounded-xl bg-white/5 px-3 py-2 text-sm text-white/80">
+              🎁 {t("markets_party.prize_won", { prize: state.prize })}
             </p>
           )}
-          {state.status === "ended" && (
-            <p className="rounded-xl bg-paper-100 p-3 text-sm text-ink-600 dark:bg-umber-800 dark:text-umber-200">
-              {t("markets_play.ended_note")}
+
+          {state.me?.pityAvailable && (
+            <div className="mk-pop-in mb-3 rounded-xl border border-star/40 bg-star/10 p-3 text-center">
+              <p className="text-sm font-semibold text-white">😵 {t("markets_party.pity_title")}</p>
+              <button
+                type="button"
+                className="gc-btn gc-btn-sm mt-2 bg-star font-black text-ink-900"
+                onClick={handlePity}
+              >
+                🙏 {t("markets_party.pity_button", { amount: String(MARKET_PITY_LOAN) })}
+              </button>
+            </div>
+          )}
+
+          {state.status === "draft" && (
+            <p className="mb-3 rounded-xl bg-white/5 p-3 text-sm text-white/70">
+              {t("markets_play.not_live_note")}
             </p>
           )}
 
           <ul className="space-y-3">
-            {state.questions.map((q) => (
+            {ordered.map((q) => (
               <QuestionRow
                 key={q.id}
                 question={q}
                 myBalance={state.myBalance}
                 myPosition={state.myPositions.find((p) => p.questionId === q.id)}
+                now={now}
                 onBet={handleBet}
+                onBailout={handleBailout}
               />
             ))}
           </ul>
 
           <section className="mt-6">
-            <h2 className="font-grotesk text-lg text-ink-900 dark:text-paper-50">
+            <h2 className="font-grotesk text-lg text-white">
               {t("markets_play.leaderboard_title")}
             </h2>
             <ol className="mt-2 space-y-1.5">
               {state.leaderboard.slice(0, 10).map((entry) => (
                 <li
                   key={entry.player.id}
-                  className="flex items-center justify-between rounded-xl border border-ink-900/10 bg-paper-50 px-3 py-2 text-sm dark:border-umber-700 dark:bg-umber-900/40"
+                  className={`gc-leaderboard-row ${entry.player.id === state.me?.id ? "ring-1 ring-star/60" : ""}`}
                 >
-                  <span className="flex items-center gap-2 text-ink-900 dark:text-paper-50">
-                    <span className="text-ink-500 dark:text-umber-300">#{entry.rank}</span>
-                    <span aria-hidden="true">{entry.player.avatar}</span>
-                    {entry.player.name}
+                  <span className="w-6 shrink-0 text-right text-sm text-white/45">
+                    {entry.rank === 1 ? "👑" : `#${entry.rank}`}
                   </span>
-                  <span className="font-medium text-ink-900 dark:text-paper-50">
-                    {entry.player.balance} pts
+                  <span aria-hidden="true">{entry.player.avatar}</span>
+                  <span className="min-w-0 flex-1 text-sm text-white">
+                    <span className="block truncate">{entry.player.name}</span>
+                    <TitleChips titles={entry.titles} />
+                  </span>
+                  <span className="text-sm font-semibold tabular-nums text-white">
+                    {entry.player.balance}
                   </span>
                 </li>
               ))}
             </ol>
           </section>
         </main>
+      )}
+
+      {joined && state.status === "live" && <ReactionBar onReact={handleReact} />}
+      <ReactionLayer reactions={joined ? state.reactions : null} />
+      {reveal.current && (
+        <RevealOverlay
+          question={reveal.current}
+          myPosition={state.myPositions.find((p) => p.questionId === reveal.current?.id)}
+          onDone={reveal.dismiss}
+        />
       )}
     </div>
   );

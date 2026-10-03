@@ -32,6 +32,7 @@
 //   POST /api/play/markets/:code/questions/:qid/bailout — 80% back, frees the player to re-bet
 //   POST /api/play/markets/:code/pity                   — one small loan for a broke guest
 //   POST /api/play/markets/:code/react                  — {emoji}, floats up on the big screen
+//   GET  /api/play/markets/:code/qr                     — join QR for the big screen (PNG)
 
 import { MARKET_AVATARS, type MarketOutcome, type MarketSide } from "@shared/markets";
 import { CONFIG } from "../config";
@@ -428,6 +429,18 @@ async function handleReact(ctx: Ctx): Promise<Response> {
   return json({ stored: addReaction(resolved.board, player, body.emoji) });
 }
 
+/** The join QR for the big screen. Public on purpose: it encodes nothing
+ *  but the join link, and the code it carries is already the public key to
+ *  the board. Same lookup bucket as the state poll. */
+async function handlePlayQr(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "markets:lookup", MARKET_STATE_BUCKET);
+  const { board } = resolveBoardByCode(ctx.params.code ?? "");
+  const png = await generateQrPng(`${CONFIG.frontendBaseUrl}/play/markets/${board.join_code}`);
+  return new Response(new Uint8Array(png), {
+    headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600" },
+  });
+}
+
 function handlePreview(ctx: Ctx): Response {
   const code = ctx.params.code ?? "";
   const resolved = resolveBoardByCode(code);
@@ -468,4 +481,5 @@ export function registerMarketsRoutes(router: Router): void {
   router.post("/api/play/markets/:code/questions/:qid/bailout", handleBailout);
   router.post("/api/play/markets/:code/pity", handlePity);
   router.post("/api/play/markets/:code/react", handleReact);
+  router.get("/api/play/markets/:code/qr", handlePlayQr);
 }

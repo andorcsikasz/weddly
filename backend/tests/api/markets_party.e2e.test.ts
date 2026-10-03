@@ -113,6 +113,22 @@ describe("markets party: question packs", () => {
   });
 });
 
+describe("markets party: big-screen QR", () => {
+  test("the join QR is public for a real code and 404s for a made-up one", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("party-qr@weddly.test");
+    const board = await liveBoard(token);
+    const ok = await fetch(
+      `http://localhost:${process.env.PORT ?? "8791"}/api/play/markets/${board.joinCode}/qr`,
+    );
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get("content-type")).toBe("image/png");
+    await ok.arrayBuffer();
+    const missing = await req("GET", "/api/play/markets/ZZZZZZ/qr");
+    expect(missing.status).toBe(404);
+  });
+});
+
 describe("markets party: ticker, teams, reactions", () => {
   test("bets show in the ticker, teams total their balances, reactions float and cool down", async () => {
     wipeAll();
