@@ -4762,6 +4762,9 @@ export const marketsApi = {
   list: () => apiFetch<{ boards: MarketBoardSummary[] }>("GET", "/api/markets"),
   create: (title: string) =>
     apiFetch<{ board: MarketBoardDetail }>("POST", "/api/markets", { title }),
+  /** The couple's board, created server-side on first use (idempotent). */
+  current: (title: string) =>
+    apiFetch<{ board: MarketBoardDetail }>("POST", "/api/markets/current", { title }),
   get: (id: number) => apiFetch<{ board: MarketBoardDetail }>("GET", `/api/markets/${id}`),
   rename: (id: number, title: string) =>
     apiFetch<{ board: MarketBoardSummary }>("PATCH", `/api/markets/${id}`, { title }),

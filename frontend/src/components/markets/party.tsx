@@ -95,15 +95,57 @@ function useSeen<T>(items: readonly T[] | null, key: (item: T) => number): T[] {
   return fresh;
 }
 
-/** Questions that became `resolved` after this screen started watching, one
- *  at a time. `dismiss` moves to the next. */
-export function useRevealQueue(questions: readonly MarketQuestion[] | null) {
-  const resolved = questions ? questions.filter((q) => q.status === "resolved") : null;
-  const fresh = useSeen(resolved, (q) => q.id);
+/** How far back a just-opened screen still plays a reveal it missed. A phone
+ *  that slept through the moment in a pocket should still get its drumroll
+ *  when it wakes; a screen opened an hour later should not replay the night. */
+const REVEAL_CATCHUP_MS = 2 * 60 * 1000;
+
+function readSeenIds(key: string): Set<number> {
+  try {
+    const raw = localStorage.getItem(key);
+    return new Set(raw ? (JSON.parse(raw) as number[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeSeenIds(key: string, ids: Set<number>): void {
+  try {
+    // Only the newest few matter: a board has tens of questions, not thousands.
+    localStorage.setItem(key, JSON.stringify([...ids].slice(-200)));
+  } catch {
+    // best-effort; worst case a reveal replays once
+  }
+}
+
+/** Resolved questions this device hasn't been shown yet, one at a time.
+ *  "Shown" is remembered per device under `storageKey`, and on first load
+ *  anything resolved within `REVEAL_CATCHUP_MS` that isn't remembered still
+ *  plays, so neither a reload nor a sleeping phone loses the moment, and
+ *  neither replays one already seen. `dismiss` moves to the next. */
+export function useRevealQueue(questions: readonly MarketQuestion[] | null, storageKey: string) {
+  const seen = useRef<Set<number> | null>(null);
   const [queue, setQueue] = useState<MarketQuestion[]>([]);
+
   useEffect(() => {
-    if (fresh.length) setQueue((q) => [...q, ...fresh]);
-  }, [fresh]);
+    if (!questions) return;
+    const resolved = questions.filter((q) => q.status === "resolved");
+    if (seen.current === null) {
+      const stored = readSeenIds(storageKey);
+      const cutoff = Date.now() - REVEAL_CATCHUP_MS;
+      for (const q of resolved) {
+        if ((q.resolvedAt ?? 0) < cutoff) stored.add(q.id);
+      }
+      seen.current = stored;
+    }
+    const set = seen.current;
+    const fresh = resolved.filter((q) => !set.has(q.id));
+    if (fresh.length === 0) return;
+    for (const q of fresh) set.add(q.id);
+    writeSeenIds(storageKey, set);
+    setQueue((prev) => [...prev, ...fresh]);
+  }, [questions, storageKey]);
+
   return { current: queue[0] ?? null, dismiss: () => setQueue((q) => q.slice(1)) };
 }
 

@@ -4738,6 +4738,10 @@ const es: LocaleMessages = {
     side_locked: "Ya apostaste al otro lado en esta pregunta",
   },
   markets_party: {
+    first_in_hint: "¡Eres el primero! Tu ganancia crece cuando alguien apuesta en tu contra.",
+    resolve_confirm_title: "Dictar: {outcome}",
+    resolve_confirm_body:
+      "Se cierran las apuestas, se paga a los ganadores y todas las pantallas muestran el resultado. Sin vuelta atrás.",
     team_label: "Elige tu bando",
     team_bride: "Equipo Novia",
     team_groom: "Equipo Novio",

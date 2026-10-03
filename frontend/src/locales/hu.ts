@@ -4687,6 +4687,10 @@ const hu: LocaleMessages = {
     side_locked: "Nincs pálfordulás! Már a másik oldalra tettél",
   },
   markets_party: {
+    first_in_hint: "Te vagy az első! A nyereséged akkor nő, ha valaki ellened fogad.",
+    resolve_confirm_title: "Kihirdeted: {outcome}",
+    resolve_confirm_body:
+      "A tétek lezárulnak, a nyertesek kifizetve, és minden képernyőn jön a leleplezés. Nincs visszaút.",
     team_label: "Melyik csapat?",
     team_bride: "Menyasszony csapat",
     team_groom: "Vőlegény csapat",

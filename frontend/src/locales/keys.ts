@@ -5477,6 +5477,9 @@ export interface LocaleMessages {
     side_locked: string;
   };
   markets_party: {
+    first_in_hint: string;
+    resolve_confirm_title: string;
+    resolve_confirm_body: string;
     team_label: string;
     team_bride: string;
     team_groom: string;

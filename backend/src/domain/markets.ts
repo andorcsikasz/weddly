@@ -164,7 +164,10 @@ function questionSettlement(row: MarketQuestionRow): MarketSettlement | null {
   const top = winners[0]!;
   return {
     winnerCount: winners.length,
-    biggestWinner: { name: top.name, avatar: top.avatar, profit: top.profit },
+    // Everyone on one side means nobody lost and nobody won anything; "+0"
+    // on the big screen is not a moment worth naming anyone for.
+    biggestWinner:
+      top.profit > 0 ? { name: top.name, avatar: top.avatar, profit: top.profit } : null,
   };
 }
 
@@ -385,6 +388,24 @@ export function createBoard(coupleId: number, title: string): MarketBoardRow {
        VALUES (?, ?, ?, 'draft', ?, ?, ?) RETURNING *`,
     )
     .get(coupleId, title, uniqueJoinCode(), MARKET_STARTING_BALANCE, ts, ts) as MarketBoardRow;
+}
+
+/** The couple's board, creating it on first use. The page used to list and
+ *  then create from the browser, so any double mount (React StrictMode in
+ *  dev, a quick back-and-forward) ran that twice and left the couple with two
+ *  boards, the second one invisible. Fully synchronous, so two requests can't
+ *  interleave between the read and the insert. */
+export function ensureBoard(
+  coupleId: number,
+  title: string,
+): { row: MarketBoardRow; created: boolean } {
+  const existing = db
+    .prepare(
+      "SELECT * FROM market_boards WHERE couple_id = ? ORDER BY created_at ASC, id ASC LIMIT 1",
+    )
+    .get(coupleId) as MarketBoardRow | null;
+  if (existing) return { row: existing, created: false };
+  return { row: createBoard(coupleId, title), created: true };
 }
 
 export function updateBoardTitle(id: number, coupleId: number, title: string): MarketBoardRow {
@@ -652,6 +673,9 @@ function leaderboardTitles(
   startingBalance: number,
 ): Map<number, MarketTitle[]> {
   const titles = new Map<number, MarketTitle[]>();
+  // An award is a comparison, and a room of one has nobody to compare with:
+  // the lone early joiner was being crowned "Degenerate" for one small bet.
+  if (ranked.length < 2) return titles;
   const give = (id: number | null, title: MarketTitle) => {
     if (id === null) return;
     titles.set(id, [...(titles.get(id) ?? []), title]);

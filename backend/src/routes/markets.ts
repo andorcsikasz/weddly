@@ -7,6 +7,7 @@
 // Authenticated (couple only):
 //   GET    /api/markets                              — list the couple's boards
 //   POST   /api/markets                               — create one (draft)
+//   POST   /api/markets/current                        — the couple's board, created on first use
 //   GET    /api/markets/:id                            — full detail incl. questions + pools
 //   PATCH  /api/markets/:id                            — rename
 //   DELETE /api/markets/:id
@@ -44,6 +45,7 @@ import {
   createQuestions,
   deleteBoard,
   deleteQuestion,
+  ensureBoard,
   endBoard,
   getBoardScoped,
   getQuestionScoped,
@@ -144,6 +146,23 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     after: { title },
   });
   return json({ board: toMarketBoardDetail(board) }, { status: 201 });
+}
+
+async function handleEnsure(ctx: Ctx): Promise<Response> {
+  const { userId, couple } = requireCouple(ctx);
+  const body = await readJson<Record<string, unknown>>(ctx.req);
+  const { row, created } = ensureBoard(couple.id, parseBoardTitle(body.title ?? ""));
+  if (created) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "markets.board.create",
+      target_kind: "market_board",
+      target_id: row.id,
+      after: { title: row.title },
+    });
+  }
+  return json({ board: toMarketBoardDetail(row) }, { status: created ? 201 : 200 });
 }
 
 function handleGet(ctx: Ctx): Response {
@@ -459,6 +478,7 @@ function handlePreview(ctx: Ctx): Response {
 export function registerMarketsRoutes(router: Router): void {
   router.get("/api/markets", handleList, true);
   router.post("/api/markets", handleCreate, true);
+  router.post("/api/markets/current", handleEnsure, true);
   router.get("/api/markets/:id", handleGet, true);
   router.patch("/api/markets/:id", handleUpdate, true);
   router.delete("/api/markets/:id", handleDelete, true);

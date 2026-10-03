@@ -57,6 +57,31 @@ function play<T>(path: string, token: string, body: unknown = {}) {
   return req<T>("POST", path, body, { headers: { "X-Market-Player-Token": token } });
 }
 
+describe("markets party: the couple's board", () => {
+  // The page used to list-then-create from the browser, so a double mount
+  // minted two boards. The server now owns "get or create".
+  test("current returns the same board however often it is asked", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("party-ensure@weddly.test");
+    const first = await req<BoardResp>(
+      "POST",
+      "/api/markets/current",
+      { title: "Bets" },
+      { token },
+    );
+    expect(first.status).toBe(201);
+    const [a, b] = await Promise.all([
+      req<BoardResp>("POST", "/api/markets/current", { title: "Bets" }, { token }),
+      req<BoardResp>("POST", "/api/markets/current", { title: "Bets" }, { token }),
+    ]);
+    expect(a.status).toBe(200);
+    expect(a.data.board.id).toBe(first.data.board.id);
+    expect(b.data.board.id).toBe(first.data.board.id);
+    const list = await req<{ boards: unknown[] }>("GET", "/api/markets", undefined, { token });
+    expect(list.data.boards).toHaveLength(1);
+  });
+});
+
 describe("markets party: question packs", () => {
   test("a pack lands whole, and one bad entry rejects all of it", async () => {
     wipeAll();
@@ -208,8 +233,15 @@ describe("markets party: bail-out", () => {
     const flip = await play<StateResp>(`${base}/bet`, kati.token, { side: "no", stake: 50 });
     expect(flip.status).toBe(200);
 
+    // Alone in the room there is nobody to out-do, so no awards yet...
+    const alone = await req<MarketPublicState>("GET", `/api/play/markets/${board.joinCode}`);
+    expect(alone.data.leaderboard[0]!.titles).toEqual([]);
+
+    // ...and a second player makes it a contest.
+    await join(board.joinCode, "Peti");
     const lb = await req<MarketPublicState>("GET", `/api/play/markets/${board.joinCode}`);
-    expect(lb.data.leaderboard[0]!.titles).toContain("bailout_king");
+    const katiEntry = lb.data.leaderboard.find((e) => e.player.name === "Kati")!;
+    expect(katiEntry.titles).toContain("bailout_king");
   });
 });
 
@@ -329,5 +361,40 @@ describe("markets party: reveal summary and awards", () => {
     // Awards are bragging rights: balances still sum to exactly what was handed out.
     const total = s.data.leaderboard.reduce((sum, e) => sum + e.player.balance, 0);
     expect(total).toBe(4 * 500);
+  });
+});
+
+describe("markets party: settling a live question", () => {
+  test("an open question can be called early, and a unanimous win names nobody", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("party-early@weddly.test");
+    const board = await liveBoard(token);
+    const qid = board.questions[0]!.id;
+    const a = await join(board.joinCode, "Anna");
+    const b = await join(board.joinCode, "Bence");
+    for (const p of [a, b]) {
+      await play(`/api/play/markets/${board.joinCode}/questions/${qid}/bet`, p.token, {
+        side: "yes",
+        stake: 40,
+      });
+    }
+    // Still an hour before the lock: the moment happened, the couple calls it.
+    const r = await req(
+      "POST",
+      `/api/markets/${board.id}/questions/${qid}/resolve`,
+      { outcome: "yes" },
+      {
+        token,
+      },
+    );
+    expect(r.status).toBe(200);
+    const s = await req<MarketPublicState>("GET", `/api/play/markets/${board.joinCode}`);
+    expect(s.data.questions[0]!.settlement).toEqual({ winnerCount: 2, biggestWinner: null });
+    // Late bets bounce off a settled question.
+    const late = await play(`/api/play/markets/${board.joinCode}/questions/${qid}/bet`, a.token, {
+      side: "yes",
+      stake: 10,
+    });
+    expect(late.status).toBe(400);
   });
 });

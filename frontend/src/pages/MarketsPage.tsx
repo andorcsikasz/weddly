@@ -17,6 +17,7 @@
 
 import { MARKET_PACKS, type MarketPackId, packQuestionText } from "@shared/market_packs";
 import {
+  isFlashQuestion,
   MARKET_DEFAULT_OPENING,
   MARKET_FLASH_SECONDS,
   MARKET_OPENING_OPTIONS,
@@ -48,7 +49,7 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { MarketMiniChart } from "../components/MarketMiniChart";
-import { TitleChips } from "../components/markets/party";
+import { FlashBadge, TitleChips, useNow } from "../components/markets/party";
 import { useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, marketsApi } from "../lib/endpoints";
@@ -72,10 +73,30 @@ function playUrl(joinCode: string): string {
 }
 
 /** Suggested default for a new question's betting deadline: 22:00 on the
- *  wedding day. Just a starting point in the picker — the couple can change
- *  it per question. No suggestion when the date is still TBD. */
+ *  wedding day. Just a starting point in the picker; the couple can change
+ *  it per question. */
 function defaultClosesAt(weddingDate: string | null): string {
-  return weddingDate ? `${weddingDate}T22:00` : "";
+  const onTheDay = weddingDate ? `${weddingDate}T22:00` : null;
+  if (onTheDay && new Date(onTheDay).getTime() > Date.now()) return onTheDay;
+  // No date yet, or the day has passed (a rehearsal, or a board run after the
+  // wedding): a blank or past default blocked every add and every pack, and
+  // the server refuses a past deadline anyway. A few hours from now, on the
+  // hour, is a starting point that always works.
+  const later = new Date(Date.now() + 3 * 60 * 60 * 1000);
+  later.setMinutes(0, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${later.getFullYear()}-${pad(later.getMonth() + 1)}-${pad(later.getDate())}T${pad(later.getHours())}:00`;
+}
+
+/** What needs the host's hand first: a running flash (it is gone in a
+ *  minute), then open questions, then closed ones waiting on a verdict, with
+ *  settled questions sinking to the bottom. Creation order put a brand-new
+ *  60-second flash below a long scroll of finished business. Stable within
+ *  each group, so nothing jumps around between polls. */
+function hostOrder(questions: readonly MarketQuestion[]): MarketQuestion[] {
+  const rank = (q: MarketQuestion) =>
+    q.status === "open" ? (isFlashQuestion(q) ? 0 : 1) : q.status === "closed" ? 2 : 3;
+  return [...questions].sort((a, b) => rank(a) - rank(b));
 }
 
 const QUESTION_STATUS_TONE: Record<MarketQuestion["status"], string> = {
@@ -84,6 +105,12 @@ const QUESTION_STATUS_TONE: Record<MarketQuestion["status"], string> = {
   resolved: "border-white/25 bg-white/10 text-white/80",
   voided: "border-white/15 bg-white/5 text-white/45",
 };
+
+/** Its own clock, so only a flash card re-renders every second. */
+function LiveFlashBadge({ question }: { question: MarketQuestion }) {
+  const now = useNow(1000);
+  return <FlashBadge question={question} now={now} />;
+}
 
 function QuestionCard({
   question,
@@ -100,12 +127,20 @@ function QuestionCard({
 }) {
   const { t } = useT();
   const total = question.pool.yes + question.pool.no;
-  const yesPct = total > 0 ? question.probability : 50;
+  // `probability` already IS the opening line before anyone bets, so it is
+  // right in both states; a hardcoded 50 here showed a 30/70 question as a
+  // coin flip until the first bet landed.
+  const yesPct = question.probability;
   const noPct = 100 - yesPct;
   const trend = trendSinceOpen(question.priceHistory);
 
   return (
     <li className="gc-market-card rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+      {isFlashQuestion(question) && question.status === "open" && (
+        <div className="mb-2">
+          <LiveFlashBadge question={question} />
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3">
         <p className="font-medium text-white">{question.prompt}</p>
         <span
@@ -123,8 +158,8 @@ function QuestionCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="text-3xl font-bold tabular-nums text-white">
-          {total > 0 ? question.probability : "–"}
-          {total > 0 && <span className="text-base font-semibold text-white/60">%</span>}
+          {yesPct}
+          <span className="text-base font-semibold text-white/60">%</span>
         </span>
         {trend !== null && (
           <span className={`gc-trend ${trend > 0 ? "gc-trend-up" : "gc-trend-down"}`}>
@@ -138,14 +173,19 @@ function QuestionCard({
         )}
       </div>
 
-      <div className="mt-2 h-32 sm:h-40">
-        <MarketMiniChart
-          ticks={question.priceHistory}
-          stroke="#2388ff"
-          ariaLabel={t("markets.chart_alt")}
-          current={question.probability}
-        />
-      </div>
+      {/* A chart of nothing is a flat line; it only earns its height once
+          someone has moved the price, which keeps a freshly packed board
+          scannable instead of eight identical graphs. */}
+      {total > 0 && (
+        <div className="mt-2 h-32 sm:h-40">
+          <MarketMiniChart
+            ticks={question.priceHistory}
+            stroke="#2388ff"
+            ariaLabel={t("markets.chart_alt")}
+            current={question.probability}
+          />
+        </div>
+      )}
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-white/60">
         <span>
@@ -170,7 +210,11 @@ function QuestionCard({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {question.status === "closed" && (
+        {/* Resolvable while still open too: the moment happens when it
+            happens, and making the couple wait for the lock time to settle a
+            question everyone just watched answer itself is dead air. The
+            backend has always allowed it. */}
+        {(question.status === "closed" || question.status === "open") && (
           <>
             <button
               type="button"
@@ -257,11 +301,10 @@ export default function MarketsPage() {
     let alive = true;
     (async () => {
       try {
-        const [{ boards }, { couple }] = await Promise.all([
-          marketsApi.list(),
+        const [{ board: first }, { couple }] = await Promise.all([
+          marketsApi.current(t("markets.page_title")),
           coupleApi.current(),
         ]);
-        const first = boards[0] ?? (await marketsApi.create(t("markets.page_title"))).board;
         if (!alive) return;
         setWeddingDate(couple?.wedding_date ?? null);
         setClosesAt(defaultClosesAt(couple?.wedding_date ?? null));
@@ -431,6 +474,17 @@ export default function MarketsPage() {
 
   async function resolveQuestion(questionId: number, outcome: "yes" | "no") {
     if (!board) return;
+    // Settling pays everyone out and can't be undone, and the buttons now sit
+    // on live questions too, one mis-tap away from a wrong verdict.
+    const ok = await confirm({
+      title: t("markets_party.resolve_confirm_title", {
+        outcome: t(outcome === "yes" ? "markets_party.reveal_yes" : "markets_party.reveal_no"),
+      }),
+      body: t("markets_party.resolve_confirm_body"),
+      confirmLabel: t(outcome === "yes" ? "markets.resolve_yes" : "markets.resolve_no"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
     try {
       await marketsApi.resolveQuestion(board.id, questionId, outcome);
       await refresh(board.id);
@@ -628,11 +682,12 @@ export default function MarketsPage() {
         <section className="mb-6">
           {board.questions.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-white/20 p-6 text-center text-sm text-white/60">
-              {t("markets.empty_title")} — {t("markets.empty_body")}
+              <span className="font-semibold text-white/80">{t("markets.empty_title")}</span>{" "}
+              {t("markets.empty_body")}
             </p>
           ) : (
             <ul className="space-y-3">
-              {board.questions.map((q) => (
+              {hostOrder(board.questions).map((q) => (
                 <QuestionCard
                   key={q.id}
                   question={q}

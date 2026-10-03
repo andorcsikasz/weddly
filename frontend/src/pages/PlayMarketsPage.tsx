@@ -172,10 +172,20 @@ function BetControls({
             <span className="text-white/70">{t("markets_play.estimated_return_label")}</span>
             <span className="font-bold tabular-nums text-white">{payout} pts</span>
           </div>
-          <div className="mt-1 flex items-center justify-between text-xs text-white/55">
-            <span>{t("markets_play.profit_label")}</span>
-            <span className="tabular-nums">{Math.max(0, payout - effective)} pts</span>
-          </div>
+          {question.pool[side === "yes" ? "no" : "yes"] === 0 ? (
+            // Pooled betting pays winners out of the OTHER side's stakes, so
+            // with nobody across from you the profit really is zero for now.
+            // A bare "0 pts" read as a pointless bet; this says why and when
+            // that changes.
+            <p className="mt-1 text-xs font-semibold text-star">
+              {t("markets_party.first_in_hint")}
+            </p>
+          ) : (
+            <div className="mt-1 flex items-center justify-between text-xs text-white/55">
+              <span>{t("markets_play.profit_label")}</span>
+              <span className="tabular-nums">{Math.max(0, payout - effective)} pts</span>
+            </div>
+          )}
           <p className="mt-1 text-[11px] text-white/45">
             {t("markets_play.estimated_return_hint")}
           </p>
@@ -253,14 +263,16 @@ function QuestionRow({
         </div>
       </div>
 
-      <div className="mt-2 h-24">
-        <MarketMiniChart
-          ticks={question.priceHistory}
-          stroke="#45e39e"
-          ariaLabel={t("markets.chart_alt")}
-          current={question.probability}
-        />
-      </div>
+      {question.pool.yes + question.pool.no > 0 && (
+        <div className="mt-2 h-24">
+          <MarketMiniChart
+            ticks={question.priceHistory}
+            stroke="#45e39e"
+            ariaLabel={t("markets.chart_alt")}
+            current={question.probability}
+          />
+        </div>
+      )}
 
       {myPosition && (
         <p className="mt-2 text-xs text-white/75">
@@ -481,7 +493,7 @@ export default function PlayMarketsPage() {
   }, [code, token]);
 
   const joined = state !== null && state.myBalance !== null;
-  const reveal = useRevealQueue(joined ? state.questions : null);
+  const reveal = useRevealQueue(joined ? state.questions : null, `weddly.market.revealed.${code}`);
   const freshQuestions = useNewQuestions(joined ? state.questions : null);
 
   useEffect(() => {
@@ -605,7 +617,8 @@ export default function PlayMarketsPage() {
               <h1 className="truncate font-grotesk text-xl text-white">{state.boardTitle}</h1>
               {me && (
                 <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-white/60">
-                  #{me.rank} · {state.me?.team && t(`markets_party.team_${state.me.team}`)}
+                  #{me.rank}
+                  {state.me?.team && ` · ${t(`markets_party.team_${state.me.team}`)}`}
                   <TitleChips titles={me.titles} />
                 </p>
               )}

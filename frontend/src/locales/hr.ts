@@ -4684,6 +4684,10 @@ const hr: LocaleMessages = {
     side_locked: "Već ste se kladili na drugu stranu za ovo pitanje",
   },
   markets_party: {
+    first_in_hint: "Prvi si! Tvoja zarada raste kad netko uloži protiv tebe.",
+    resolve_confirm_title: "Proglasi: {outcome}",
+    resolve_confirm_body:
+      "Oklade se zatvaraju, pobjednici su isplaćeni, a svaki ekran prikazuje otkrivanje. Nema povratka.",
     team_label: "Odaberi stranu",
     team_bride: "Tim Mladenka",
     team_groom: "Tim Mladoženja",

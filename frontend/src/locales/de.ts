@@ -4781,6 +4781,10 @@ const de: LocaleMessages = {
     side_locked: "Du hast bei dieser Frage schon auf die andere Seite gewettet",
   },
   markets_party: {
+    first_in_hint: "Du bist zuerst! Dein Gewinn wächst, sobald jemand gegen dich wettet.",
+    resolve_confirm_title: "Entscheiden: {outcome}",
+    resolve_confirm_body:
+      "Wetten schließen, Gewinner werden ausgezahlt und jeder Bildschirm zeigt die Auflösung. Kein Zurück.",
     team_label: "Wähl deine Seite",
     team_bride: "Team Braut",
     team_groom: "Team Bräutigam",

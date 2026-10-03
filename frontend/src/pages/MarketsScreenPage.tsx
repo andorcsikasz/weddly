@@ -86,7 +86,7 @@ export default function MarketsScreenPage() {
     };
   }, [code]);
 
-  const reveal = useRevealQueue(state?.questions ?? null);
+  const reveal = useRevealQueue(state?.questions ?? null, `weddly.market.screen.revealed.${code}`);
 
   if (notFound) {
     return (
@@ -113,7 +113,11 @@ export default function MarketsScreenPage() {
       <header className="mb-6 flex items-center justify-between gap-8">
         <div>
           <p className="text-xl font-black uppercase tracking-[0.25em] text-star">WeddlyMarket</p>
-          <h1 className="font-grotesk text-5xl text-white">{state.boardTitle}</h1>
+          {/* The couple, not the board title: a board is created titled after
+              the game itself, which put "WeddlyMarket" under "WeddlyMarket". */}
+          <h1 className="font-grotesk text-5xl text-white">
+            {state.hostDisplayName || state.boardTitle}
+          </h1>
           {state.prize && (
             <p className="mt-2 text-2xl text-white/80">
               🎁 {t("markets_party.prize_won", { prize: state.prize })}

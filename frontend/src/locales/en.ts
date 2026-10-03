@@ -4653,6 +4653,10 @@ const en: LocaleMessages = {
     side_locked: "No flip-flopping! You already picked the other side",
   },
   markets_party: {
+    first_in_hint: "First in! Your profit grows when someone bets against you.",
+    resolve_confirm_title: "Call it: {outcome}",
+    resolve_confirm_body:
+      "Bets lock, winners get paid, and every screen plays the reveal. No take-backs.",
     team_label: "Pick your side",
     team_bride: "Team Bride",
     team_groom: "Team Groom",
