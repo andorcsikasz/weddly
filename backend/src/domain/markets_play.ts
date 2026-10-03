@@ -6,7 +6,16 @@
 
 import { randomBytes } from "node:crypto";
 import {
+  bailoutRefund,
   currentPositionValue,
+  MARKET_PITY_LOAN,
+  MARKET_REACTION_WINDOW_MS,
+  MARKET_REACTIONS,
+  MARKET_TEAMS,
+  type MarketBetEvent,
+  type MarketReaction,
+  type MarketTeam,
+  type MarketTeamScore,
   estimatedPayout,
   MARKET_MAX_STAKE,
   MARKET_MIN_STAKE,
@@ -31,6 +40,12 @@ import {
   type MarketPlayerRow,
   type MarketQuestionRow,
 } from "./markets";
+
+const RECENT_BETS_LIMIT = 15;
+// One emoji per player per this window; anything faster is dropped quietly,
+// since a reaction is decoration and a refusal toast would be louder than it.
+const REACTION_COOLDOWN_MS = 1200;
+const REACTION_RETENTION_MS = 60 * 60 * 1000;
 
 interface CoupleNameRow {
   display_name: string;
@@ -65,11 +80,18 @@ export function getPlayerByToken(boardId: number, token: string): MarketPlayerRo
  *  rejoin just updates name/avatar rather than minting a second player, so a
  *  guest never loses their running balance to a reload. A fresh join starts
  *  at the board's `starting_balance`. */
+export function parseTeam(raw: unknown): MarketTeam | null {
+  return typeof raw === "string" && (MARKET_TEAMS as readonly string[]).includes(raw)
+    ? (raw as MarketTeam)
+    : null;
+}
+
 export function joinBoard(
   board: MarketBoardRow,
   existingToken: string | null,
   name: string,
   avatar: string,
+  team: MarketTeam | null = null,
 ): { player: MarketPlayerRow; token: string } {
   const cleanedName = name.trim().slice(0, MARKET_PLAYER_NAME_MAX);
   if (!cleanedName) throw new HttpError(400, "Name is required");
@@ -84,23 +106,99 @@ export function joinBoard(
   if (existing) {
     const updated = db
       .prepare(
-        "UPDATE market_players SET name = ?, avatar = ?, last_seen_at = ? WHERE id = ? RETURNING *",
+        "UPDATE market_players SET name = ?, avatar = ?, team = COALESCE(?, team), last_seen_at = ? WHERE id = ? RETURNING *",
       )
-      .get(cleanedName, avatar, ts, existing.id) as MarketPlayerRow;
+      .get(cleanedName, avatar, team, ts, existing.id) as MarketPlayerRow;
     return { player: updated, token: existing.token };
   }
 
   const token = mintPlayerToken();
   const player = db
     .prepare(
-      `INSERT INTO market_players (board_id, token, name, avatar, balance, joined_at, last_seen_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+      `INSERT INTO market_players (board_id, token, name, avatar, team, balance, joined_at, last_seen_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
     )
-    .get(board.id, token, cleanedName, avatar, board.starting_balance, ts, ts) as MarketPlayerRow;
+    .get(
+      board.id,
+      token,
+      cleanedName,
+      avatar,
+      team,
+      board.starting_balance,
+      ts,
+      ts,
+    ) as MarketPlayerRow;
   return { player, token };
 }
 
 // ─── public state DTO ────────────────────────────────────────────────────────────
+
+function recentBets(boardId: number): MarketBetEvent[] {
+  const rows = db
+    .prepare(
+      `SELECT t.id AS id, t.question_id AS question_id, pl.name AS name, pl.avatar AS avatar,
+              t.side AS side, t.stake AS stake, t.at AS at
+         FROM market_price_ticks t
+         JOIN market_questions q ON q.id = t.question_id
+         JOIN market_players pl ON pl.id = t.player_id
+        WHERE q.board_id = ? AND t.player_id IS NOT NULL AND t.stake > 0
+        ORDER BY t.at DESC, t.id DESC LIMIT ?`,
+    )
+    .all(boardId, RECENT_BETS_LIMIT) as {
+    id: number;
+    question_id: number;
+    name: string;
+    avatar: string;
+    side: MarketSide;
+    stake: number;
+    at: number;
+  }[];
+  return rows.map((r) => ({
+    id: r.id,
+    questionId: r.question_id,
+    name: r.name,
+    avatar: r.avatar,
+    side: r.side,
+    stake: r.stake,
+    at: r.at,
+  }));
+}
+
+function recentReactions(boardId: number): MarketReaction[] {
+  return db
+    .prepare(
+      `SELECT r.id AS id, r.emoji AS emoji, pl.name AS name, r.at AS at
+         FROM market_reactions r JOIN market_players pl ON pl.id = r.player_id
+        WHERE r.board_id = ? AND r.at > ? ORDER BY r.at ASC, r.id ASC LIMIT 60`,
+    )
+    .all(boardId, now() - MARKET_REACTION_WINDOW_MS) as MarketReaction[];
+}
+
+function teamScores(boardId: number): MarketTeamScore[] {
+  const rows = db
+    .prepare(
+      `SELECT team, COUNT(*) AS players, COALESCE(SUM(balance), 0) AS balance
+         FROM market_players WHERE board_id = ? AND removed_at IS NULL AND team IS NOT NULL
+        GROUP BY team`,
+    )
+    .all(boardId) as { team: MarketTeam; players: number; balance: number }[];
+  return MARKET_TEAMS.map((team) => {
+    const row = rows.find((r) => r.team === team);
+    return { team, players: row?.players ?? 0, balance: row?.balance ?? 0 };
+  });
+}
+
+function hasOpenExposure(boardId: number, playerId: number): boolean {
+  return Boolean(
+    db
+      .prepare(
+        `SELECT 1 FROM market_positions mp JOIN market_questions q ON q.id = mp.question_id
+          WHERE q.board_id = ? AND mp.player_id = ? AND q.outcome IS NULL AND q.voided_at IS NULL
+          LIMIT 1`,
+      )
+      .get(boardId, playerId),
+  );
+}
 
 export function getPublicState(
   resolved: ResolvedBoard,
@@ -160,15 +258,34 @@ export function getPublicState(
     }
   ).c;
 
+  const me = player
+    ? (() => {
+        const row = db
+          .prepare("SELECT team, pity_loans FROM market_players WHERE id = ?")
+          .get(player.id) as { team: MarketTeam | null; pity_loans: number };
+        return {
+          id: player.id,
+          team: row.team,
+          pityAvailable:
+            row.pity_loans === 0 && freshBalance === 0 && !hasOpenExposure(board.id, player.id),
+        };
+      })()
+    : null;
+
   return {
     boardTitle: board.title,
     hostDisplayName: coupleDisplayName,
     status: board.status,
+    prize: board.prize,
     questions: questionRows.map(toMarketQuestion),
     myBalance: freshBalance,
     myPositions,
+    me,
     totalPlayers,
     leaderboard: computeLeaderboard(board.id),
+    recentBets: recentBets(board.id),
+    reactions: recentReactions(board.id),
+    teams: teamScores(board.id),
   };
 }
 
@@ -194,8 +311,9 @@ export interface PlaceBetResult {
  *  player bets on a question — see the UNIQUE(question_id, player_id)
  *  constraint and shared/markets.ts's settlement math, which assumes one
  *  side per player per question. Topping up just adds to the same side;
- *  switching sides is refused rather than silently netted, so a player can
- *  never "flip" a bet after seeing the room move against them. */
+ *  switching sides is refused rather than silently netted. The only way
+ *  across is `bailOut`, which costs a fifth of the stake, so a flip after
+ *  seeing the room move is allowed but never free. */
 export function placeBet(
   board: MarketBoardRow,
   player: MarketPlayerRow,
@@ -203,30 +321,13 @@ export function placeBet(
   side: MarketSide,
   stake: number,
 ): PlaceBetResult {
-  if (board.status !== "live") {
-    throw new HttpError(400, "This board isn't open to guests right now", {
-      code: "board_not_live",
-    });
-  }
   if (!Number.isInteger(stake) || stake < MARKET_MIN_STAKE || stake > MARKET_MAX_STAKE) {
     throw new HttpError(
       400,
       `Stake must be an integer between ${MARKET_MIN_STAKE} and ${MARKET_MAX_STAKE}`,
     );
   }
-  const questionRow = getQuestionScoped(board.id, questionId);
-  if (!questionRow) throw new HttpError(404, "Question not found");
-  const status = marketQuestionStatus(
-    {
-      closesAt: questionRow.closes_at,
-      outcome: questionRow.outcome,
-      voidedAt: questionRow.voided_at,
-    },
-    now(),
-  );
-  if (status !== "open") {
-    throw new HttpError(400, "Betting is closed on this question", { code: "question_closed" });
-  }
+  const questionRow = requireOpenQuestion(board, questionId);
 
   const fresh = db.prepare("SELECT balance FROM market_players WHERE id = ?").get(player.id) as {
     balance: number;
@@ -262,7 +363,11 @@ export function placeBet(
     }
     // Same transaction as the pool write above — see recordPriceTick's own
     // comment for why a tick can never exist without its bet or vice versa.
-    recordPriceTick(questionId, questionPool(questionId), questionRow.opening_probability, ts);
+    recordPriceTick(questionId, questionPool(questionId), questionRow.opening_probability, ts, {
+      playerId: player.id,
+      side,
+      stake,
+    });
   });
   tx();
 
@@ -281,6 +386,104 @@ export function placeBet(
     balance: refreshedPlayer.balance,
     question: toMarketQuestion(refreshedQuestion),
   };
+}
+
+function requireOpenQuestion(board: MarketBoardRow, questionId: number): MarketQuestionRow {
+  if (board.status !== "live") {
+    throw new HttpError(400, "This board isn't open to guests right now", {
+      code: "board_not_live",
+    });
+  }
+  const questionRow = getQuestionScoped(board.id, questionId);
+  if (!questionRow) throw new HttpError(404, "Question not found");
+  const status = marketQuestionStatus(
+    {
+      closesAt: questionRow.closes_at,
+      outcome: questionRow.outcome,
+      voidedAt: questionRow.voided_at,
+    },
+    now(),
+  );
+  if (status !== "open") {
+    throw new HttpError(400, "Betting is closed on this question", { code: "question_closed" });
+  }
+  return questionRow;
+}
+
+/** Walk away from a position while the question is still open: the stake
+ *  leaves the pool, `MARKET_BAILOUT_REFUND_PCT` of it comes back, and the
+ *  rest is burned (see the constant for why it can't be the live value).
+ *  Deleting the position is what frees the player to bet again, on either
+ *  side, so this is also the one sanctioned way to switch sides. */
+export function bailOut(
+  board: MarketBoardRow,
+  player: MarketPlayerRow,
+  questionId: number,
+): { refund: number } {
+  const questionRow = requireOpenQuestion(board, questionId);
+  const position = db
+    .prepare("SELECT id, stake FROM market_positions WHERE question_id = ? AND player_id = ?")
+    .get(questionId, player.id) as { id: number; stake: number } | null;
+  if (!position) throw new HttpError(400, "No bet to bail out of", { code: "no_position" });
+
+  const refund = bailoutRefund(position.stake);
+  const ts = now();
+  db.transaction(() => {
+    db.prepare("DELETE FROM market_positions WHERE id = ?").run(position.id);
+    db.prepare(
+      "UPDATE market_players SET balance = balance + ?, bailouts = bailouts + 1, last_seen_at = ? WHERE id = ?",
+    ).run(refund, ts, player.id);
+    recordPriceTick(questionId, questionPool(questionId), questionRow.opening_probability, ts);
+  })();
+  return { refund };
+}
+
+/** One small loan for a broke guest, so they keep playing instead of
+ *  watching. Only when they truly have nothing: 0 points AND nothing riding
+ *  on an unsettled question (an open bet might still pay out). */
+export function takePityLoan(board: MarketBoardRow, player: MarketPlayerRow): { balance: number } {
+  if (board.status !== "live") {
+    throw new HttpError(400, "This board isn't open to guests right now", {
+      code: "board_not_live",
+    });
+  }
+  const row = db
+    .prepare("SELECT balance, pity_loans FROM market_players WHERE id = ?")
+    .get(player.id) as { balance: number; pity_loans: number };
+  if (row.pity_loans > 0) throw new HttpError(400, "Loan already used", { code: "pity_used" });
+  if (row.balance > 0 || hasOpenExposure(board.id, player.id)) {
+    throw new HttpError(400, "You're not broke yet", { code: "not_broke" });
+  }
+  const updated = db
+    .prepare(
+      "UPDATE market_players SET balance = balance + ?, pity_loans = pity_loans + 1 WHERE id = ? RETURNING balance",
+    )
+    .get(MARKET_PITY_LOAN, player.id) as { balance: number };
+  return { balance: updated.balance };
+}
+
+/** Returns whether the reaction was stored; a too-fast repeat is dropped. */
+export function addReaction(
+  board: MarketBoardRow,
+  player: MarketPlayerRow,
+  emoji: unknown,
+): boolean {
+  if (typeof emoji !== "string" || !MARKET_REACTIONS.includes(emoji)) {
+    throw new HttpError(400, "Unknown reaction");
+  }
+  const ts = now();
+  const last = db
+    .prepare("SELECT MAX(at) AS at FROM market_reactions WHERE player_id = ?")
+    .get(player.id) as { at: number | null };
+  if (last.at !== null && ts - last.at < REACTION_COOLDOWN_MS) return false;
+  db.prepare("DELETE FROM market_reactions WHERE board_id = ? AND at < ?").run(
+    board.id,
+    ts - REACTION_RETENTION_MS,
+  );
+  db.prepare(
+    "INSERT INTO market_reactions (board_id, player_id, emoji, at) VALUES (?, ?, ?, ?)",
+  ).run(board.id, player.id, emoji, ts);
+  return true;
 }
 
 export function touchPlayer(playerId: number): void {

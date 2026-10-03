@@ -2961,6 +2961,18 @@ CREATE TABLE IF NOT EXISTS market_price_ticks (
 );
 CREATE INDEX IF NOT EXISTS idx_market_price_ticks_question ON market_price_ticks(question_id, at ASC);
 
+-- Emoji a guest fires at the room, floated up on the big screen. Ephemeral by
+-- design: reads only ever look at the last few seconds, and inserts prune
+-- anything older than an hour, so this never grows past one party.
+CREATE TABLE IF NOT EXISTS market_reactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  board_id INTEGER NOT NULL REFERENCES market_boards(id) ON DELETE CASCADE,
+  player_id INTEGER NOT NULL REFERENCES market_players(id) ON DELETE CASCADE,
+  emoji TEXT NOT NULL,
+  at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_market_reactions_board ON market_reactions(board_id, at);
+
 -- Cumulative "time actually spent in the app" per user per UTC day, fed by
 -- one fixed-size increment per POST /api/activity/heartbeat (see
 -- domain/activity.ts) rather than a client-reported duration, so a user

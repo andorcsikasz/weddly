@@ -15,6 +15,7 @@
 //   GET    /api/markets/:id/leaderboard
 //   GET    /api/markets/:id/qr                         — printable QR (PNG, ?format=svg)
 //   POST   /api/markets/:id/questions
+//   POST   /api/markets/:id/questions/bulk             — a question pack, {questions, closesAt}
 //   PATCH  /api/markets/:id/questions/:qid
 //   DELETE /api/markets/:id/questions/:qid
 //   POST   /api/markets/:id/questions/:qid/resolve      — {outcome: 'yes'|'no'}
@@ -28,6 +29,9 @@
 //   GET  /api/play/markets/:code/state                  — polled by the guest's screen
 //   POST /api/play/markets/:code/questions/:qid/bet     — {side, stake}
 //   GET  /api/play/markets/:code/questions/:qid/preview — ?side=&stake= -> {estimatedPayout}
+//   POST /api/play/markets/:code/questions/:qid/bailout — 80% back, frees the player to re-bet
+//   POST /api/play/markets/:code/pity                   — one small loan for a broke guest
+//   POST /api/play/markets/:code/react                  — {emoji}, floats up on the big screen
 
 import { MARKET_AVATARS, type MarketOutcome, type MarketSide } from "@shared/markets";
 import { CONFIG } from "../config";
@@ -36,6 +40,7 @@ import {
   computeLeaderboard,
   createBoard,
   createQuestion,
+  createQuestions,
   deleteBoard,
   deleteQuestion,
   endBoard,
@@ -43,25 +48,32 @@ import {
   getQuestionScoped,
   listBoardsForCouple,
   parseBoardTitle,
+  parseBulkQuestions,
   parseClosesAt,
   parseOpeningProbability,
+  parsePrize,
   parseQuestionPrompt,
   resolveQuestion,
   startBoard,
   toMarketBoardDetail,
   toMarketBoardSummary,
   toMarketQuestion,
+  updateBoardPrize,
   updateBoardTitle,
   updateQuestion,
   voidQuestion,
 } from "../domain/markets";
 import {
+  addReaction,
+  bailOut,
   getPlayerByToken,
   getPublicState,
   joinBoard,
+  parseTeam,
   placeBet,
   previewPayout,
   resolveBoardByCode,
+  takePityLoan,
   touchPlayer,
 } from "../domain/markets_play";
 import { addAuditLog } from "../lib/audit";
@@ -78,6 +90,9 @@ const PLAYER_TOKEN_HEADER = "x-market-player-token";
 const MARKET_STATE_BUCKET = { capacity: 400, refillRate: 6 };
 const MARKET_JOIN_BUCKET = { capacity: 20, refillRate: 1 / 6 };
 const MARKET_BET_BUCKET = { capacity: 30, refillRate: 1 };
+// Reactions are spammy by nature; the per-player cooldown in addReaction
+// does the real shaping, this only caps a scripted flood from one IP.
+const MARKET_REACT_BUCKET = { capacity: 120, refillRate: 4 };
 
 // ─── couple-side helpers ────────────────────────────────────────────────────────
 
@@ -140,8 +155,16 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   const { couple } = requireCouple(ctx);
   const board = requireBoard(ctx, couple.id);
   const body = await readJson<Record<string, unknown>>(ctx.req);
-  if (body.title === undefined) throw new HttpError(400, "Nothing to update");
-  const updated = updateBoardTitle(board.id, couple.id, parseBoardTitle(body.title));
+  if (body.title === undefined && body.prize === undefined) {
+    throw new HttpError(400, "Nothing to update");
+  }
+  let updated = board;
+  if (body.title !== undefined) {
+    updated = updateBoardTitle(board.id, couple.id, parseBoardTitle(body.title));
+  }
+  if (body.prize !== undefined) {
+    updated = updateBoardPrize(board.id, couple.id, parsePrize(body.prize));
+  }
   return json({ board: toMarketBoardSummary(updated) });
 }
 
@@ -237,6 +260,24 @@ async function handleCreateQuestion(ctx: Ctx): Promise<Response> {
   return json({ board: toMarketBoardDetail(board) }, { status: 201 });
 }
 
+async function handleCreateQuestionsBulk(ctx: Ctx): Promise<Response> {
+  const { userId, couple } = requireCouple(ctx);
+  const board = requireBoard(ctx, couple.id);
+  const body = await readJson<Record<string, unknown>>(ctx.req);
+  const items = parseBulkQuestions(body.questions);
+  const closesAt = parseClosesAt(body.closesAt);
+  createQuestions(board.id, items, closesAt);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "markets.question.bulk_create",
+    target_kind: "market_board",
+    target_id: board.id,
+    after: { count: items.length, closesAt },
+  });
+  return json({ board: toMarketBoardDetail(board) }, { status: 201 });
+}
+
 async function handleUpdateQuestion(ctx: Ctx): Promise<Response> {
   const { couple } = requireCouple(ctx);
   const board = requireBoard(ctx, couple.id);
@@ -319,7 +360,13 @@ async function handlePlayJoin(ctx: Ctx): Promise<Response> {
       : (MARKET_AVATARS[0] as string);
   const existingToken = ctx.req.headers.get(PLAYER_TOKEN_HEADER);
 
-  const { player, token } = joinBoard(resolved.board, existingToken, name, avatar);
+  const { player, token } = joinBoard(
+    resolved.board,
+    existingToken,
+    name,
+    avatar,
+    parseTeam(body.team),
+  );
   return json({
     player: { id: player.id, name: player.name, avatar: player.avatar, balance: player.balance },
     token,
@@ -353,6 +400,34 @@ async function handleBet(ctx: Ctx): Promise<Response> {
   return json({ result, state: getPublicState(resolved, player) });
 }
 
+function requirePlayer(ctx: Ctx) {
+  const resolved = resolveBoardByCode(ctx.params.code ?? "");
+  const player = optionalPlayer(ctx, resolved.board.id);
+  if (!player) throw new HttpError(401, "Join the board first", { code: "not_joined" });
+  return { resolved, player };
+}
+
+function handleBailout(ctx: Ctx): Response {
+  rateLimit(ctx.clientIp, "markets:bet", MARKET_BET_BUCKET);
+  const { resolved, player } = requirePlayer(ctx);
+  const result = bailOut(resolved.board, player, requireQuestionId(ctx));
+  return json({ result, state: getPublicState(resolved, player) });
+}
+
+function handlePity(ctx: Ctx): Response {
+  rateLimit(ctx.clientIp, "markets:bet", MARKET_BET_BUCKET);
+  const { resolved, player } = requirePlayer(ctx);
+  const result = takePityLoan(resolved.board, player);
+  return json({ result, state: getPublicState(resolved, player) });
+}
+
+async function handleReact(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "markets:react", MARKET_REACT_BUCKET);
+  const { resolved, player } = requirePlayer(ctx);
+  const body = await readJson<Record<string, unknown>>(ctx.req);
+  return json({ stored: addReaction(resolved.board, player, body.emoji) });
+}
+
 function handlePreview(ctx: Ctx): Response {
   const code = ctx.params.code ?? "";
   const resolved = resolveBoardByCode(code);
@@ -379,6 +454,7 @@ export function registerMarketsRoutes(router: Router): void {
   router.get("/api/markets/:id/leaderboard", handleLeaderboard, true);
   router.get("/api/markets/:id/qr", handleGetQr, true);
   router.post("/api/markets/:id/questions", handleCreateQuestion, true);
+  router.post("/api/markets/:id/questions/bulk", handleCreateQuestionsBulk, true);
   router.patch("/api/markets/:id/questions/:qid", handleUpdateQuestion, true);
   router.delete("/api/markets/:id/questions/:qid", handleDeleteQuestion, true);
   router.post("/api/markets/:id/questions/:qid/resolve", handleResolveQuestion, true);
@@ -389,4 +465,7 @@ export function registerMarketsRoutes(router: Router): void {
   router.get("/api/play/markets/:code/state", handlePlayState);
   router.post("/api/play/markets/:code/questions/:qid/bet", handleBet);
   router.get("/api/play/markets/:code/questions/:qid/preview", handlePreview);
+  router.post("/api/play/markets/:code/questions/:qid/bailout", handleBailout);
+  router.post("/api/play/markets/:code/pity", handlePity);
+  router.post("/api/play/markets/:code/react", handleReact);
 }

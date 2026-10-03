@@ -2870,6 +2870,17 @@ addColumnIfMissing(
   "opening_probability",
   "opening_probability INTEGER NOT NULL DEFAULT 50",
 );
+// Prediction markets, party mode. Ticks learn WHO moved the price (the live
+// bet ticker; NULL on creation ticks and every tick written before this),
+// players pick a team and may take one pity loan, a bail-out is counted for
+// the leaderboard award, and a board can name a real-world prize.
+addColumnIfMissing("market_price_ticks", "player_id", "player_id INTEGER");
+addColumnIfMissing("market_price_ticks", "side", "side TEXT");
+addColumnIfMissing("market_price_ticks", "stake", "stake INTEGER");
+addColumnIfMissing("market_players", "team", "team TEXT");
+addColumnIfMissing("market_players", "pity_loans", "pity_loans INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("market_players", "bailouts", "bailouts INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("market_boards", "prize", "prize TEXT");
 
 // ── Review-summary cold-start gate lowered to 1 (was 3, 2026-08-25) ────────
 // recomputeSupplierAggregate only writes avg_rating on the review write path,

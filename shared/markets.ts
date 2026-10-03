@@ -66,6 +66,15 @@ export interface MarketQuestion {
    *  Capped server-side (`questionPriceHistory`) — a display trend, not a
    *  full audit ledger. */
   priceHistory: MarketPriceTick[];
+  /** Only on a resolved question: who backed the outcome and who took home
+   *  the most, for the reveal moment on the big screen and every phone.
+   *  Null while open/closed/voided, or when nobody backed the winner. */
+  settlement: MarketSettlement | null;
+}
+
+export interface MarketSettlement {
+  winnerCount: number;
+  biggestWinner: { name: string; avatar: string; profit: number } | null;
 }
 
 export interface MarketPriceTick {
@@ -85,6 +94,47 @@ export interface MarketPlayer {
 export interface MarketLeaderboardEntry {
   player: MarketPlayer;
   rank: number;
+  /** Fun awards derived from the ledger on every read — see `MarketTitle`. */
+  titles: MarketTitle[];
+}
+
+/** Leaderboard awards, recomputed on every read so they move with the night.
+ *  None of them pays points: an award that minted points would break the
+ *  no-house rule (`settleMarketQuestion`), so they are bragging rights only.
+ *  - `prophet`: top of the table, and actually up on the starting balance
+ *  - `degenerate`: most points staked in total
+ *  - `oracle`: most wins on a side that held at most a quarter of the pool
+ *  - `bailout_king`: most bail-outs taken
+ *  - `rock_bottom`: last place and down on the start, once 3+ are playing */
+export type MarketTitle = "prophet" | "degenerate" | "oracle" | "bailout_king" | "rock_bottom";
+
+export type MarketTeam = "bride" | "groom";
+export const MARKET_TEAMS: readonly MarketTeam[] = ["bride", "groom"];
+
+/** One placed bet, for the live ticker ("Kati put 200 on NOPE"). */
+export interface MarketBetEvent {
+  id: number;
+  questionId: number;
+  name: string;
+  avatar: string;
+  side: MarketSide;
+  stake: number;
+  at: UnixMs;
+}
+
+/** An emoji a guest fired at the room — floats up on the big screen. */
+export interface MarketReaction {
+  id: number;
+  emoji: string;
+  name: string;
+  at: UnixMs;
+}
+
+export interface MarketTeamScore {
+  team: MarketTeam;
+  players: number;
+  /** Sum of the team's balances — the only number points can't fake. */
+  balance: number;
 }
 
 export interface MarketBoardSummary {
@@ -93,6 +143,8 @@ export interface MarketBoardSummary {
   joinCode: string;
   status: MarketBoardStatus;
   startingBalance: number;
+  /** See `MarketPublicState.prize`. */
+  prize: string | null;
   questionCount: number;
   playerCount: number;
   createdAt: UnixMs;
@@ -123,12 +175,30 @@ export interface MarketPublicState {
   boardTitle: string;
   hostDisplayName: string;
   status: MarketBoardStatus;
+  /** What the winner gets, in the couple's own words ("picks the next
+   *  song"). A real-world prize, never points. Null when none is set. */
+  prize: string | null;
   questions: MarketQuestion[];
   /** Null when no player token was presented (not joined yet). */
   myBalance: number | null;
   myPositions: MyMarketPosition[];
+  /** Null when not joined. */
+  me: MarketMe | null;
   totalPlayers: number;
   leaderboard: MarketLeaderboardEntry[];
+  /** Newest first, capped — the ticker. */
+  recentBets: MarketBetEvent[];
+  /** Fired within the last `MARKET_REACTION_WINDOW_MS`, oldest first. */
+  reactions: MarketReaction[];
+  teams: MarketTeamScore[];
+}
+
+export interface MarketMe {
+  id: number;
+  team: MarketTeam | null;
+  /** True when the player is broke (0 points, nothing riding on an open
+   *  question) and hasn't had their one pity loan yet. */
+  pityAvailable: boolean;
 }
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -139,6 +209,39 @@ export const MARKET_MAX_STAKE = 10_000;
 export const MARKET_PROMPT_MAX = 200;
 export const MARKET_TITLE_MAX = 80;
 export const MARKET_PLAYER_NAME_MAX = 40;
+
+/** Quick-bet chips on the bet slip; "all in" is the balance itself. */
+export const MARKET_QUICK_STAKES: readonly number[] = [10, 50, 100];
+
+/** Flash questions: open for this many seconds, with a countdown. */
+export const MARKET_FLASH_SECONDS: readonly number[] = [60, 90, 180];
+/** A question whose whole window is at most this long is shown as a flash. */
+export const MARKET_FLASH_MAX_MS = 5 * 60 * 1000;
+
+export function isFlashQuestion(q: { createdAt: UnixMs; closesAt: UnixMs }): boolean {
+  return q.closesAt - q.createdAt <= MARKET_FLASH_MAX_MS;
+}
+
+/** A broke guest gets ONE loan of this many points so they can keep playing
+ *  instead of spectating. It is the only place points are ever created, it
+ *  is once per player, and it is small enough not to move the podium. */
+export const MARKET_PITY_LOAN = 50;
+
+/** Bailing out of a position refunds this share of the stake and frees the
+ *  player to bet again, either side. The rest is BURNED, not handed to
+ *  anyone: paying out the live mark-to-market value instead would let early
+ *  sellers drain points the remaining pool needs to pay its winners. The
+ *  haircut is also what keeps flip-flopping from being free. */
+export const MARKET_BAILOUT_REFUND_PCT = 80;
+
+export function bailoutRefund(stake: number): number {
+  return Math.floor((stake * MARKET_BAILOUT_REFUND_PCT) / 100);
+}
+
+export const MARKET_REACTIONS: readonly string[] = ["😂", "🔥", "😭", "😱", "🥂", "💍", "👏", "🙈"];
+export const MARKET_REACTION_WINDOW_MS = 12_000;
+export const MARKET_PRIZE_MAX = 120;
+export const MARKET_BULK_MAX = 30;
 
 /** The opening lines a couple can start a question at, as YES's percent:
  *  50/50 by default, or tilted either way in steps of ten down to 10/90.

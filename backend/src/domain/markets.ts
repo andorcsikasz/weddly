@@ -28,6 +28,12 @@ import {
   type MarketPosition,
   type MarketPriceTick,
   type MarketQuestion,
+  type MarketSettlement,
+  type MarketSide,
+  type MarketTeam,
+  type MarketTitle,
+  MARKET_BULK_MAX,
+  MARKET_PRIZE_MAX,
 } from "@shared/markets";
 import { db, now } from "../db";
 import { HttpError } from "../lib/http";
@@ -41,6 +47,7 @@ export interface MarketBoardRow {
   join_code: string;
   status: MarketBoardStatus;
   starting_balance: number;
+  prize: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -65,6 +72,9 @@ export interface MarketPlayerRow {
   name: string;
   avatar: string;
   balance: number;
+  team: MarketTeam | null;
+  pity_loans: number;
+  bailouts: number;
   joined_at: number;
   last_seen_at: number;
   removed_at: number | null;
@@ -120,11 +130,42 @@ export function recordPriceTick(
   pool: MarketPool,
   opening: number,
   at: number,
+  bet?: { playerId: number; side: MarketSide; stake: number },
 ): void {
   db.prepare(
-    `INSERT INTO market_price_ticks (question_id, probability, pool_yes, pool_no, at)
-     VALUES (?, ?, ?, ?, ?)`,
-  ).run(questionId, marketProbability(pool, opening), pool.yes, pool.no, at);
+    `INSERT INTO market_price_ticks (question_id, probability, pool_yes, pool_no, at, player_id, side, stake)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    questionId,
+    marketProbability(pool, opening),
+    pool.yes,
+    pool.no,
+    at,
+    bet?.playerId ?? null,
+    bet?.side ?? null,
+    bet?.stake ?? null,
+  );
+}
+
+/** The reveal-moment summary: how many backed the outcome and who profited
+ *  most. Read off the stamped `payout`s, so it is the settled truth rather
+ *  than a recomputation that could disagree with what was credited. */
+function questionSettlement(row: MarketQuestionRow): MarketSettlement | null {
+  if (row.outcome === null) return null;
+  const winners = db
+    .prepare(
+      `SELECT pl.name AS name, pl.avatar AS avatar, mp.payout - mp.stake AS profit
+         FROM market_positions mp JOIN market_players pl ON pl.id = mp.player_id
+        WHERE mp.question_id = ? AND mp.side = ? AND mp.payout IS NOT NULL
+        ORDER BY profit DESC, mp.created_at ASC`,
+    )
+    .all(row.id, row.outcome) as { name: string; avatar: string; profit: number }[];
+  if (winners.length === 0) return null;
+  const top = winners[0]!;
+  return {
+    winnerCount: winners.length,
+    biggestWinner: { name: top.name, avatar: top.avatar, profit: top.profit },
+  };
 }
 
 export function toMarketQuestion(row: MarketQuestionRow): MarketQuestion {
@@ -147,6 +188,7 @@ export function toMarketQuestion(row: MarketQuestionRow): MarketQuestion {
     ),
     probability: marketProbability(pool, row.opening_probability),
     priceHistory: questionPriceHistory(row.id),
+    settlement: questionSettlement(row),
   };
 }
 
@@ -168,6 +210,7 @@ export function toMarketBoardSummary(row: MarketBoardRow): MarketBoardSummary {
     joinCode: row.join_code,
     status: row.status,
     startingBalance: row.starting_balance,
+    prize: row.prize,
     questionCount: countQuestions(row.id),
     playerCount: countPlayers(row.id),
     createdAt: row.created_at,
@@ -218,6 +261,36 @@ export function parseOpeningProbability(raw: unknown): number {
     throw new HttpError(400, "openingProbability must be one of 10, 20, ... 90");
   }
   return raw;
+}
+
+/** Absent leaves the prize alone; null or an empty string clears it. */
+export function parsePrize(raw: unknown): string | null {
+  if (raw === null) return null;
+  if (typeof raw !== "string" || raw.length > MARKET_PRIZE_MAX) {
+    throw new HttpError(400, `prize must be a string (max ${MARKET_PRIZE_MAX} chars)`);
+  }
+  return raw.trim() || null;
+}
+
+export interface BulkQuestionInput {
+  prompt: string;
+  openingProbability: number;
+}
+
+/** A question pack arrives as a list; each entry is validated with the same
+ *  rules as a single add, so a pack can never smuggle in what the form
+ *  can't. */
+export function parseBulkQuestions(raw: unknown): BulkQuestionInput[] {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > MARKET_BULK_MAX) {
+    throw new HttpError(400, `questions must be a list of 1-${MARKET_BULK_MAX}`);
+  }
+  return raw.map((item) => {
+    const obj = (item ?? {}) as Record<string, unknown>;
+    return {
+      prompt: parseQuestionPrompt(obj.prompt),
+      openingProbability: parseOpeningProbability(obj.openingProbability),
+    };
+  });
 }
 
 // ─── join codes ────────────────────────────────────────────────────────────────
@@ -324,6 +397,20 @@ export function updateBoardTitle(id: number, coupleId: number, title: string): M
   return row;
 }
 
+export function updateBoardPrize(
+  id: number,
+  coupleId: number,
+  prize: string | null,
+): MarketBoardRow {
+  const row = db
+    .prepare(
+      "UPDATE market_boards SET prize = ?, updated_at = ? WHERE id = ? AND couple_id = ? RETURNING *",
+    )
+    .get(prize, now(), id, coupleId) as MarketBoardRow | undefined;
+  if (!row) throw new HttpError(404, "Board not found");
+  return row;
+}
+
 export function deleteBoard(id: number, coupleId: number): void {
   const result = db
     .prepare("DELETE FROM market_boards WHERE id = ? AND couple_id = ?")
@@ -381,6 +468,20 @@ export function createQuestion(
     return row;
   });
   return tx();
+}
+
+/** A whole pack in one transaction: all of it lands or none of it does, so
+ *  a half-added pack never needs explaining. Same per-question rules (and the
+ *  same opening tick) as `createQuestion`. */
+export function createQuestions(
+  boardId: number,
+  items: BulkQuestionInput[],
+  closesAt: number,
+): void {
+  const tx = db.transaction(() => {
+    for (const item of items) createQuestion(boardId, { ...item, closesAt });
+  });
+  tx();
 }
 
 /** The prompt is locked the instant a single bet exists — rewording a
@@ -523,8 +624,86 @@ export function listActivePlayers(boardId: number): MarketPlayerRow[] {
     .all(boardId) as MarketPlayerRow[];
 }
 
+/** Each award goes to the single player with the highest count (earliest
+ *  joiner on a tie), and only when that count is above zero — an award for
+ *  nothing is noise. */
+function awardTop(counts: Map<number, number>, players: MarketPlayer[]): number | null {
+  let best: number | null = null;
+  let bestCount = 0;
+  for (const p of players) {
+    const c = counts.get(p.id) ?? 0;
+    if (c > bestCount) {
+      best = p.id;
+      bestCount = c;
+    }
+  }
+  return best;
+}
+
+function boardCounts(sql: string, boardId: number): Map<number, number> {
+  const rows = db.prepare(sql).all(boardId) as { player_id: number; c: number }[];
+  return new Map(rows.map((r) => [r.player_id, r.c]));
+}
+
+function leaderboardTitles(
+  boardId: number,
+  rows: MarketPlayerRow[],
+  ranked: MarketPlayer[],
+  startingBalance: number,
+): Map<number, MarketTitle[]> {
+  const titles = new Map<number, MarketTitle[]>();
+  const give = (id: number | null, title: MarketTitle) => {
+    if (id === null) return;
+    titles.set(id, [...(titles.get(id) ?? []), title]);
+  };
+  const first = ranked[0];
+  if (first && first.balance > startingBalance) give(first.id, "prophet");
+
+  give(
+    awardTop(
+      boardCounts(
+        `SELECT mp.player_id, SUM(mp.stake) AS c FROM market_positions mp
+           JOIN market_questions q ON q.id = mp.question_id
+          WHERE q.board_id = ? GROUP BY mp.player_id`,
+        boardId,
+      ),
+      ranked,
+    ),
+    "degenerate",
+  );
+
+  // A win counts as an "oracle" call when the winning side held at most a
+  // quarter of the final pool: the room disagreed and this player didn't.
+  give(
+    awardTop(
+      boardCounts(
+        `SELECT mp.player_id, COUNT(*) AS c FROM market_positions mp
+           JOIN market_questions q ON q.id = mp.question_id
+          WHERE q.board_id = ? AND q.outcome IS NOT NULL AND mp.side = q.outcome
+            AND (SELECT SUM(stake) FROM market_positions w WHERE w.question_id = q.id AND w.side = q.outcome) * 4
+                <= (SELECT SUM(stake) FROM market_positions a WHERE a.question_id = q.id)
+          GROUP BY mp.player_id`,
+        boardId,
+      ),
+      ranked,
+    ),
+    "oracle",
+  );
+
+  give(awardTop(new Map(rows.map((r) => [r.id, r.bailouts])), ranked), "bailout_king");
+
+  const last = ranked[ranked.length - 1];
+  if (ranked.length >= 3 && last && last.balance < startingBalance) give(last.id, "rock_bottom");
+  return titles;
+}
+
 export function computeLeaderboard(boardId: number): MarketLeaderboardEntry[] {
-  const players = listActivePlayers(boardId).map(toMarketPlayer);
+  const rows = listActivePlayers(boardId);
+  const players = rows.map(toMarketPlayer);
   players.sort((a, b) => b.balance - a.balance || a.joinedAt - b.joinedAt);
-  return players.map((player, i) => ({ player, rank: i + 1 }));
+  const board = db
+    .prepare("SELECT starting_balance FROM market_boards WHERE id = ?")
+    .get(boardId) as { starting_balance: number } | undefined;
+  const titles = leaderboardTitles(boardId, rows, players, board?.starting_balance ?? 0);
+  return players.map((player, i) => ({ player, rank: i + 1, titles: titles.get(player.id) ?? [] }));
 }
