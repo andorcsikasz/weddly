@@ -24,6 +24,7 @@ import {
   type QuizPhase,
   type QuizPlayer,
   type QuizRevealedAnswer,
+  type QuizRevealStats,
   type QuizSlide,
   type QuizSlideConfig,
   type QuizSlideKind,
@@ -485,6 +486,14 @@ export function createSlide(
     ) as QuizSlideRow;
 }
 
+/** A template's worth of slides in one transaction, appended after whatever
+ *  the quiz already has. All or nothing, like a market question pack. */
+export function createSlides(quizId: number, inputs: Parameters<typeof createSlide>[1][]): void {
+  db.transaction(() => {
+    for (const input of inputs) createSlide(quizId, input);
+  })();
+}
+
 export function updateSlide(
   quizId: number,
   slideId: number,
@@ -589,6 +598,33 @@ export function listActivePlayers(quizId: number): QuizPlayerRow[] {
     .all(quizId) as QuizPlayerRow[];
 }
 
+/** The most recent scored slide the room has actually played, by position:
+ *  "scored" means at least one answer was marked right or wrong, which is
+ *  also what proves the slide was reached. `throughPosition` is inclusive;
+ *  the caller excludes the current slide while it is still open, because a
+ *  streak that ticked up mid-question would tell everyone who got it right. */
+export function latestScoredSlideId(quizId: number, throughPosition: number): number | null {
+  const row = db
+    .prepare(
+      `SELECT s.id FROM quiz_slides s
+        WHERE s.quiz_id = ? AND s.position <= ?
+          AND EXISTS (SELECT 1 FROM quiz_answers a WHERE a.slide_id = s.id AND a.correct IS NOT NULL)
+        ORDER BY s.position DESC LIMIT 1`,
+    )
+    .get(quizId, throughPosition) as { id: number } | null;
+  return row?.id ?? null;
+}
+
+/** A player's live streak as of `slideId`: their stored streak if they got
+ *  it right, otherwise zero (wrong, or not answered at all). */
+function streakOn(slideId: number | null): Map<number, number> {
+  if (slideId === null) return new Map();
+  const rows = db
+    .prepare("SELECT player_id, streak FROM quiz_answers WHERE slide_id = ? AND correct = 1")
+    .all(slideId) as { player_id: number; streak: number }[];
+  return new Map(rows.map((r) => [r.player_id, r.streak]));
+}
+
 export function computeLeaderboard(
   quizId: number,
   currentSlideId: number | null,
@@ -600,8 +636,54 @@ export function computeLeaderboard(
     player: toQuizPlayer(row, playerScore(row.id)),
     delta: revealDeltas && currentSlideId !== null ? slideDelta(currentSlideId, row.id) : null,
   }));
-  withScores.sort((a, b) => b.player.score - a.player.score || a.row.joined_at - b.row.joined_at);
-  return withScores.map(({ player, delta }, i) => ({ player, rank: i + 1, delta }));
+  const byScore = (a: (typeof withScores)[number], b: (typeof withScores)[number]) =>
+    b.player.score - a.player.score || a.row.joined_at - b.row.joined_at;
+  withScores.sort(byScore);
+
+  // Where everyone stood before this slide's points landed, for the "up 2
+  // places" line. Same tiebreak as the live table, or a tie would read as
+  // movement that never happened.
+  const before = new Map<number, number>();
+  if (revealDeltas && currentSlideId !== null) {
+    [...withScores]
+      .sort(
+        (a, b) =>
+          b.player.score - (b.delta ?? 0) - (a.player.score - (a.delta ?? 0)) ||
+          a.row.joined_at - b.row.joined_at,
+      )
+      .forEach((e, i) => before.set(e.player.id, i + 1));
+  }
+
+  const current = currentSlideId !== null ? getSlideScoped(quizId, currentSlideId) : undefined;
+  const through = current ? current.position - (revealDeltas ? 0 : 1) : Number.MAX_SAFE_INTEGER;
+  const streaks = streakOn(latestScoredSlideId(quizId, through));
+
+  return withScores.map(({ player, delta }, i) => ({
+    player,
+    rank: i + 1,
+    delta,
+    rankChange: before.has(player.id) ? (before.get(player.id) as number) - (i + 1) : null,
+    streak: streaks.get(player.id) ?? 0,
+  }));
+}
+
+/** The numbers a reveal calls out: how many answered, how many got it, and
+ *  the quickest correct answer. Response time is the server's own clock. */
+export function revealStatsForSlide(slideId: number): QuizRevealStats {
+  const counts = db
+    .prepare(
+      "SELECT COUNT(*) AS answered, COALESCE(SUM(correct = 1), 0) AS correct FROM quiz_answers WHERE slide_id = ?",
+    )
+    .get(slideId) as { answered: number; correct: number };
+  const fastest = db
+    .prepare(
+      `SELECT p.name AS name, p.avatar AS avatar, a.response_ms AS ms
+         FROM quiz_answers a JOIN quiz_players p ON p.id = a.player_id
+        WHERE a.slide_id = ? AND a.correct = 1 AND p.removed_at IS NULL
+        ORDER BY a.response_ms ASC, a.id ASC LIMIT 1`,
+    )
+    .get(slideId) as { name: string; avatar: string; ms: number } | null;
+  return { answered: counts.answered, correct: counts.correct, fastest: fastest ?? null };
 }
 
 function slideDelta(slideId: number, playerId: number): number {
@@ -723,6 +805,7 @@ export function getHostState(quiz: QuizRow): QuizHostState {
     leaderboard: computeLeaderboard(quiz.id, quiz.current_slide_id, revealed),
     currentSlideAnswers:
       revealed && currentSlideRow ? listRevealedAnswers(currentSlideRow.id) : null,
+    revealStats: revealed && currentSlideRow ? revealStatsForSlide(currentSlideRow.id) : null,
   };
 }
 

@@ -20,6 +20,7 @@
 //
 // Guest-facing join/state/answer endpoints live in routes/quiz_play.ts.
 
+import { QUIZ_BULK_SLIDES_MAX } from "@shared/quiz";
 import { CONFIG } from "../config";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
@@ -27,6 +28,7 @@ import {
   beginSlide,
   createQuiz,
   createSlide,
+  createSlides,
   deleteQuiz,
   deleteSlide,
   endQuiz,
@@ -150,6 +152,22 @@ async function handleCreateSlide(ctx: Ctx): Promise<Response> {
   const body = await readJson<Record<string, unknown>>(ctx.req);
   const input = parseSlideCreateInput(body);
   createSlide(quiz.id, input);
+  return json({ quiz: toQuizDetail(quiz) }, { status: 201 });
+}
+
+/** A template: a list of slides validated exactly like single adds, landed
+ *  in one transaction so a bad entry can't leave half a template behind. */
+async function handleCreateSlidesBulk(ctx: Ctx): Promise<Response> {
+  const { couple } = requireCouple(ctx);
+  const quiz = requireQuiz(ctx, couple.id);
+  requireEditable(quiz);
+  const body = await readJson<Record<string, unknown>>(ctx.req);
+  const raw = body.slides;
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > QUIZ_BULK_SLIDES_MAX) {
+    throw new HttpError(400, `slides must be a list of 1-${QUIZ_BULK_SLIDES_MAX}`);
+  }
+  const inputs = raw.map((item) => parseSlideCreateInput((item ?? {}) as Record<string, unknown>));
+  createSlides(quiz.id, inputs);
   return json({ quiz: toQuizDetail(quiz) }, { status: 201 });
 }
 
@@ -300,6 +318,7 @@ export function registerQuizRoutes(router: Router): void {
   router.delete("/api/quizzes/:id", handleDelete, true);
 
   router.post("/api/quizzes/:id/slides", handleCreateSlide, true);
+  router.post("/api/quizzes/:id/slides/bulk", handleCreateSlidesBulk, true);
   router.patch("/api/quizzes/:id/slides/:slideId", handleUpdateSlide, true);
   router.delete("/api/quizzes/:id/slides/:slideId", handleDeleteSlide, true);
   router.post("/api/quizzes/:id/slides/:slideId/move", handleMoveSlide, true);

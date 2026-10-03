@@ -5,7 +5,10 @@
 
 import { randomBytes } from "node:crypto";
 import {
+  QUIZ_LOBBY_PLAYERS_MAX,
   QUIZ_PLAYER_NAME_MAX,
+  quizStreakBonus,
+  type QuizMyAnswer,
   quizAnswersOpen,
   quizSlideIsAnswerable,
   scoreAnswer,
@@ -20,9 +23,11 @@ import {
   computeLeaderboard,
   getQuizByCode,
   getSlideScoped,
+  latestScoredSlideId,
   listRevealedAnswers,
   normalizeJoinCode,
   playerScore,
+  revealStatsForSlide,
   toPublicSlide,
   toQuizSlide,
   type QuizPlayerRow,
@@ -132,6 +137,37 @@ export function getPublicState(
   const myEntry =
     player && leaderboard ? leaderboard.find((e) => e.player.id === player.id) : undefined;
 
+  const myAnswerRow =
+    player && currentSlideRow
+      ? (db
+          .prepare(
+            "SELECT correct, points_awarded, bonus, streak FROM quiz_answers WHERE slide_id = ? AND player_id = ?",
+          )
+          .get(currentSlideRow.id, player.id) as {
+          correct: 0 | 1 | null;
+          points_awarded: number;
+          bonus: number;
+          streak: number;
+        } | null)
+      : null;
+  const myAnswer: QuizMyAnswer | null = myAnswerRow
+    ? {
+        correct: myAnswerRow.correct === null ? null : myAnswerRow.correct === 1,
+        points: myAnswerRow.points_awarded,
+        bonus: myAnswerRow.bonus,
+        streak: myAnswerRow.streak,
+      }
+    : null;
+
+  const lobbyPlayers =
+    quiz.phase === "lobby"
+      ? (db
+          .prepare(
+            "SELECT name, avatar FROM quiz_players WHERE quiz_id = ? AND removed_at IS NULL ORDER BY joined_at ASC LIMIT ?",
+          )
+          .all(quiz.id, QUIZ_LOBBY_PLAYERS_MAX) as { name: string; avatar: string }[])
+      : [];
+
   return {
     quizTitle: quiz.title,
     hostDisplayName: coupleDisplayName,
@@ -145,6 +181,9 @@ export function getPublicState(
     myRank: myEntry?.rank ?? null,
     leaderboard,
     currentSlideAnswers,
+    revealStats: revealed && currentSlideRow ? revealStatsForSlide(currentSlideRow.id) : null,
+    myAnswer,
+    lobbyPlayers,
   };
 }
 
@@ -209,6 +248,20 @@ export function recordAnswer(
 
   const responseMs = Math.max(0, now() - (quiz.phase_started_at ?? now()));
   const slide = toQuizSlide(slideRow);
+
+  // The streak this player arrives with: their stored streak on the latest
+  // scored slide played before this one, if they got it right; zero if they
+  // got it wrong or skipped it. One row, because each answer stores its own.
+  const prevSlideId = latestScoredSlideId(quiz.id, slideRow.position - 1);
+  const prev = prevSlideId
+    ? (db
+        .prepare(
+          "SELECT streak FROM quiz_answers WHERE slide_id = ? AND player_id = ? AND correct = 1",
+        )
+        .get(prevSlideId, player.id) as { streak: number } | null)
+    : null;
+  const priorStreak = prev?.streak ?? 0;
+
   const result = scoreAnswer(
     {
       kind: slide.kind,
@@ -220,18 +273,27 @@ export function recordAnswer(
     responseMs,
   );
 
+  // An unscored slide (opinion poll, untargeted heatmap) neither builds nor
+  // breaks a streak: there was nothing to get right.
+  const streak =
+    result.correct === true ? priorStreak + 1 : result.correct === false ? 0 : priorStreak;
+  const bonus = result.correct === true ? quizStreakBonus(streak) : 0;
+  const points = result.points + bonus;
+
   try {
     db.prepare(
-      `INSERT INTO quiz_answers (slide_id, player_id, value_json, response_ms, correct, points_awarded, answered_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO quiz_answers (slide_id, player_id, value_json, response_ms, correct, points_awarded, answered_at, streak, bonus)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       slideId,
       player.id,
       JSON.stringify(value),
       responseMs,
       result.correct === null ? null : result.correct ? 1 : 0,
-      result.points,
+      points,
       now(),
+      streak,
+      bonus,
     );
   } catch {
     // UNIQUE(slide_id, player_id) backstop against a concurrent double-submit
@@ -241,7 +303,7 @@ export function recordAnswer(
 
   db.prepare("UPDATE quiz_players SET last_seen_at = ? WHERE id = ?").run(now(), player.id);
 
-  return { correct: result.correct, points: result.points, myTotal: playerScore(player.id) };
+  return { correct: result.correct, points, bonus, streak, myTotal: playerScore(player.id) };
 }
 
 export function touchPlayer(playerId: number): void {

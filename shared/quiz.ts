@@ -115,6 +115,33 @@ export interface QuizLeaderboardEntry {
   rank: number;
   /** Points earned on the slide just revealed, or null outside a reveal. */
   delta: number | null;
+  /** Places gained (positive) or lost (negative) on the slide just revealed,
+   *  measured against the table before its points landed. Null outside a
+   *  reveal. */
+  rankChange: number | null;
+  /** Consecutive correct answers on scored questions up to the latest one the
+   *  room has played. Missing a question breaks it, same as a wrong answer. */
+  streak: number;
+}
+
+/** The numbers worth saying out loud at a reveal. */
+export interface QuizRevealStats {
+  answered: number;
+  correct: number;
+  /** The quickest CORRECT answer; null when nobody got it, or the slide is
+   *  unscored (no right answer to be quick at). */
+  fastest: { name: string; avatar: string; ms: number } | null;
+}
+
+/** One guest's own answer to the current slide, from the server, so a phone
+ *  reloaded mid-reveal still knows how it did. */
+export interface QuizMyAnswer {
+  correct: boolean | null;
+  /** Total awarded, streak bonus included. */
+  points: number;
+  bonus: number;
+  /** The streak this answer left the player on. */
+  streak: number;
 }
 
 // ─── response DTOs — the contract both sides import, per shared/types.ts's rule ──
@@ -159,6 +186,7 @@ export interface QuizHostState {
   leaderboard: QuizLeaderboardEntry[];
   /** Populated only once `phase` is 'reveal'/'ended'. */
   currentSlideAnswers: QuizRevealedAnswer[] | null;
+  revealStats: QuizRevealStats | null;
 }
 
 /** GET /api/play/:code and /api/play/:code/state — polled by the guest's own
@@ -177,12 +205,20 @@ export interface QuizPublicState {
   myRank: number | null;
   leaderboard: QuizLeaderboardEntry[] | null;
   currentSlideAnswers: QuizRevealedAnswer[] | null;
+  revealStats: QuizRevealStats | null;
+  /** Null until this player has answered the current slide. */
+  myAnswer: QuizMyAnswer | null;
+  /** Who is in, for the lobby's "look who's here" wall. Lobby phase only,
+   *  capped; empty otherwise. */
+  lobbyPlayers: { name: string; avatar: string }[];
 }
 
 /** POST /api/play/:code/answer response. */
 export interface QuizAnswerResult {
   correct: boolean | null;
   points: number;
+  bonus: number;
+  streak: number;
   myTotal: number;
 }
 
@@ -234,6 +270,18 @@ export function quizRoundPosition(
 }
 
 export const QUIZ_DEFAULT_POINTS = 1000;
+
+/** Streak bonus: each correct answer in a row beyond the first adds this
+ *  much on top, capped so a long streak can't run away with the game. */
+export const QUIZ_STREAK_BONUS_STEP = 100;
+export const QUIZ_STREAK_BONUS_CAP = 500;
+
+export function quizStreakBonus(streak: number): number {
+  return Math.min(QUIZ_STREAK_BONUS_CAP, Math.max(0, streak - 1) * QUIZ_STREAK_BONUS_STEP);
+}
+
+export const QUIZ_LOBBY_PLAYERS_MAX = 60;
+export const QUIZ_BULK_SLIDES_MAX = 40;
 export const QUIZ_DEFAULT_TIME_LIMIT_S = 20;
 export const QUIZ_NUMBER_DEFAULT_TOLERANCE_FRACTION = 0.05;
 export const QUIZ_HEATMAP_DEFAULT_TOLERANCE_RADIUS = 0.15;

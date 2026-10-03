@@ -2881,6 +2881,11 @@ addColumnIfMissing("market_players", "team", "team TEXT");
 addColumnIfMissing("market_players", "pity_loans", "pity_loans INTEGER NOT NULL DEFAULT 0");
 addColumnIfMissing("market_players", "bailouts", "bailouts INTEGER NOT NULL DEFAULT 0");
 addColumnIfMissing("market_boards", "prize", "prize TEXT");
+// Quiz streaks: the streak an answer left its player on, and the bonus it
+// earned. Stored rather than recomputed so a later slide can extend a streak
+// by reading ONE row, and so the bonus paid is the bonus on record.
+addColumnIfMissing("quiz_answers", "streak", "streak INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("quiz_answers", "bonus", "bonus INTEGER NOT NULL DEFAULT 0");
 
 // ── Review-summary cold-start gate lowered to 1 (was 3, 2026-08-25) ────────
 // recomputeSupplierAggregate only writes avg_rating on the review write path,
