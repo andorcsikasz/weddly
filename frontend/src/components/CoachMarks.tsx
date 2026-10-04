@@ -15,10 +15,37 @@
 import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useLocation } from "react-router-dom";
 import { useT } from "../lib/i18n";
 
 const STORAGE_KEY = "weddly.coachmarks.v1";
 const MOBILE_BREAKPOINT_PX = 1024; // matches Tailwind `lg:`
+
+/**
+ * Routes that render a FULL-VIEWPORT surface over the app shell, where the
+ * coach tour cannot do its job and must not be shown at all.
+ *
+ * The runner pins itself over the shell with `position: fixed; inset: 0` at
+ * `z-index: 60` (runner.css `.rn-page`), which puts it UNDER this tour's
+ * `z-[80]` swallower. Every one of the tour's targets — the bottom nav, the
+ * More button, the partner-invite section — is shell chrome that the game
+ * surface covers, so on a phone the player got a full-screen overlay they
+ * could neither complete nor tap through: Start did nothing, every swipe was
+ * swallowed, and the only way out was the browser's back gesture. The tour is
+ * also about the SHELL's navigation, which a full-screen game does not have.
+ *
+ * Deliberately not a blanket `/app/games` prefix: the hub and the quiz /
+ * markets management pages are ordinary scrolling shell pages, they scroll,
+ * and the tour reads perfectly well there. Only a route that hides the shell
+ * is exempt. A NEW full-screen game route has to be added here.
+ *
+ * Note this suppresses the overlay rather than completing the tour, so the
+ * player still gets it the moment they leave the game — nothing is skipped,
+ * it is only deferred to a screen where it works.
+ */
+function isFullscreenGameRoute(pathname: string): boolean {
+  return pathname === "/app/games/runner" || pathname.startsWith("/app/games/runner/");
+}
 
 interface CoachStep {
   /** `data-coach-target` value of the element to highlight. */
@@ -100,6 +127,7 @@ function markCompleted() {
 
 export function CoachMarks() {
   const { t } = useT();
+  const { pathname } = useLocation();
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
@@ -180,6 +208,12 @@ export function CoachMarks() {
   }, [targetRect, step?.side]);
 
   if (!active || !step) return null;
+  // A full-screen game route covers every target this tour points at, so the
+  // overlay would be an inescapable blank sheet. Checked HERE rather than in
+  // the mount effect on purpose: the player can walk INTO a game while the tour
+  // is already up, and the route has to be able to dismiss it mid-flight.
+  // Nothing is marked completed, so the tour is waiting on the next shell page.
+  if (isFullscreenGameRoute(pathname)) return null;
 
   const advance = () => {
     if (lastStep) {

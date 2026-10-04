@@ -441,7 +441,23 @@
 .rn-stat--lead {
   border-color: rgb(240 198 107 / 0.35);
   box-shadow: 0 0 24px rgb(240 198 107 / 0.12);
-  min-width: 9.5rem;
+  /* A RESERVED width, not a minimum — the score must never be able to resize
+     its own row. It used to carry `min-width: 9.5rem` and grow with the
+     figure (measured 152px at 0 up to 216px at nine digits), which pushed the
+     multiplier ring, the hearts and the pause button sideways as a run got
+     good, and on a 390px phone tipped `.rn-hud-right` onto a second row the
+     moment the score crossed a digit count. A player taps pause by reflex;
+     having it drift under their thumb mid-run is the whole bug.
+     The reserve is sized for the economy's own `comfortable` band doubled
+     (HUF 120 000 000 — nine grouped digits plus the currency), which is where
+     a strong run lands and well past the point where the verdict has already
+     been decided. `overflow: hidden` is the safety valve for a figure past
+     even that: a clipped score is a far better failure than a moving button.
+     Pinned with `flex: 0 0 auto` rather than `width` so a shrink-to-fit
+     cannot reintroduce the same negotiation. */
+  flex: 0 0 auto;
+  width: 13.5rem;
+  overflow: hidden;
 }
 
 .rn-stat--lead .rn-stat-value {
@@ -953,11 +969,40 @@
   .rn-tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  /* The lead plate keeps its reserved width (see above) rather than dropping
+     to `min-width: 0`, because a phone is exactly where the score growing used
+     to reflow the row. Instead the RESERVE is smaller and the figure inside it
+     is a size down, so the same nine digits fit in a narrower box. That does
+     not buy the hearts/mute/pause cluster a single row at 390px — it measures
+     at 168 + 48 + 180 against 358 available, so it wraps either way — but the
+     wrap is now decided by the viewport instead of by how well the run is
+     going, which is the part a player can feel. */
   .rn-stat--lead {
-    min-width: 0;
+    width: 10.5rem;
+    padding: 0.35rem 0.55rem;
+  }
+  .rn-stat--lead .rn-stat-value {
+    font-size: 1.15rem;
   }
   .rn-stat:not(.rn-stat--lead) {
     display: none;
+  }
+  /* Six simultaneous power-ups stack into a three-line block. Tighter chips buy
+     some of that back — the HUD with all six running measures 250px of an 844px
+     phone, down from 265px — but the row is still tall, and that is deliberate:
+     these are the six mechanics the menu can only name, and a run where six are
+     live at once is exactly when reading them matters most. */
+  .rn-timer,
+  .rn-combo {
+    padding: 0.28rem 0.5rem 0.38rem;
+    font-size: 0.7rem;
+  }
+  .rn-combo-count {
+    font-size: 0.88rem;
+  }
+  .rn-timer svg {
+    width: 14px;
+    height: 14px;
   }
 }
 

@@ -108,6 +108,30 @@ describe("RunnerUI overlays", () => {
     );
   });
 
+  it("names what every power-up does, for anyone not hovering it", () => {
+    useRunnerStore.setState({ phase: "menu" });
+    renderUI();
+    // The menu teaches six power-ups as a row of icons, and the sentence
+    // explaining each one lived ONLY in a `title` attribute — which is a hover
+    // tooltip. Nothing on the page said what any of them did: for a keyboard
+    // player and for a screen reader the row of six icons conveyed nothing at
+    // all, and the game then handed out six mechanics with no in-game
+    // explanation beyond a live trial. The body is carried as visually-hidden
+    // text so each item's accessible name is "Magnet — pulls every coin
+    // nearby straight to you", which is what the icon row has always implied.
+    const items = screen.getByLabelText("runner.power_title").querySelectorAll("li");
+    expect(items).toHaveLength(6);
+    const magnet = items[0];
+    expect(magnet?.textContent).toContain("runner.power_magnet");
+    expect(magnet?.textContent).toContain("runner.power_magnet_body");
+    // Visually hidden, not newly VISIBLE copy: the menu is one screen with no
+    // scroll on purpose, so the fix cannot be six sentences of body text.
+    const hidden = magnet?.querySelector(".sr-only");
+    expect(hidden?.textContent).toBe("runner.power_magnet_body");
+    // The hover tooltip stays, because it is still the right answer for a mouse.
+    expect(magnet?.getAttribute("title")).toBe("runner.power_magnet_body");
+  });
+
   it("shows no scoreboard while paused, only the paused card", () => {
     useRunnerStore.getState().tick(runningState(), { clock: 1, milestonePulse: 0 }, "HUF");
     // The engine's pause is a PHASE change, so that is how the store sees one.

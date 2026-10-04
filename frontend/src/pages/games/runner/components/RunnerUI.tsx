@@ -257,6 +257,15 @@ export function RunnerUI({
               <li key={p.id} className={`rn-power rn-power--${p.id}`} title={t(p.body)}>
                 <p.icon size={15} strokeWidth={1.75} aria-hidden />
                 <span>{t(p.name)}</span>
+                {/* The sentence explaining each power-up lived ONLY in `title`,
+                    which is a hover tooltip: nothing on the page said what the
+                    six icons do, for a keyboard player or a screen reader the
+                    menu taught nothing at all. Carried as visually-hidden text
+                    so the list item's accessible name becomes "Magnet — pulls
+                    every coin nearby straight to you", which is what the icon
+                    row has always implied. `title` stays for the mouse hover
+                    it was built for. */}
+                <span className="sr-only">{t(p.body)}</span>
               </li>
             ))}
           </ul>
