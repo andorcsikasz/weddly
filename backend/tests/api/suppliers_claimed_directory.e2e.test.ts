@@ -457,4 +457,49 @@ describe("a verified vendor outside the couple's country", () => {
       ).run(curatedId);
     }
   });
+
+  // Regression: the ", XX" suffix on `city` is the only place a curated entry's
+  // country is written, and a claimed vendor edits `city`. Retyping "Almería,
+  // ES" as "MARBELLA" dropped the listing into the HU default, so the Hungary
+  // filter on /suppliers/browse drew pins in Spain and Italy.
+  test("keeps its country after the vendor rewrites the city without the suffix", async () => {
+    wipeAll();
+    const entry = DIRECTORY.find((s) => /,\s*[A-Z]{2}$/.test(s.city));
+    if (!entry) throw new Error("no suffixed curated entry to claim");
+    const curatedId = entry.id;
+    const country = curatedCountry(curatedId, entry.city);
+    expect(country).not.toBe("HU");
+    const original = db
+      .prepare("SELECT city, hero_image_url FROM listings WHERE id = ?")
+      .get(curatedId) as { city: string; hero_image_url: string | null };
+    await claimCurated(curatedId, "foreign-retyped@weddly.test");
+    db.prepare("UPDATE listings SET city = ?, hero_image_url = ? WHERE id = ?").run(
+      "MARBELLA",
+      "https://img.example/foreign.jpg",
+      curatedId,
+    );
+
+    try {
+      expect(curatedCountry(curatedId, "MARBELLA")).toBe(country);
+
+      const hu = await req<{ vendors: DirectoryItem[]; cities: { city: string }[] }>(
+        "GET",
+        "/api/public/vendors?country=HU&city=MARBELLA",
+      );
+      expect(hu.status).toBe(200);
+      expect(hu.data.vendors.some((v) => v.id === curatedId)).toBe(false);
+      expect(hu.data.cities.some((c) => c.city === "MARBELLA")).toBe(false);
+
+      const home = await req<{ vendors: DirectoryItem[] }>(
+        "GET",
+        `/api/public/vendors?country=${country}&limit=48&q=${encodeURIComponent(entry.name)}`,
+      );
+      const card = home.data.vendors.find((v) => v.id === curatedId);
+      expect(card?.country).toBe(country);
+    } finally {
+      db.prepare(
+        "UPDATE listings SET vendor_account_id = NULL, city = ?, hero_image_url = ? WHERE id = ?",
+      ).run(original.city, original.hero_image_url, curatedId);
+    }
+  });
 });

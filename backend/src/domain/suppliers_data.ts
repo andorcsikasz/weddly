@@ -22368,15 +22368,40 @@ const AUSTRIAN_VENUE_IDS: ReadonlySet<string> = new Set([
   "villa-maund-schoppernau",
 ]);
 
+function citySuffixCountry(city: string): string | null {
+  return city.match(/,\s*([A-Z]{2})$/)?.[1] ?? null;
+}
+
+/** The country each curated entry was IMPORTED under, keyed by id and read off
+ *  the source file's own city, never the `listings` row. The ", XX" suffix is
+ *  the only place a curated entry's country is written down, and `city` is a
+ *  field the vendor edits once they claim the page: a Spanish photographer who
+ *  retyped "Almería, ES" as "MARBELLA" deleted their own country with it and
+ *  fell through to the HU default, which put Marbella, Madrid and a Veneto
+ *  agriturismo on the map under the Hungary filter. Built lazily because the
+ *  directory is ~10k entries and most processes never ask. */
+let importedCountryById: Map<string, string> | null = null;
+function importedCountry(id: string): string | null {
+  if (!importedCountryById) {
+    importedCountryById = new Map();
+    for (const s of RAW_DIRECTORY) {
+      const code = citySuffixCountry(s.city);
+      if (code && !importedCountryById.has(s.id)) importedCountryById.set(s.id, code);
+    }
+  }
+  return importedCountryById.get(id) ?? null;
+}
+
 /** Resolve a curated entry's ISO alpha-2 country. Reads a ", XX" suffix off
  *  `city` first (the HR/RO/SI batches), then the id-anchored Slovak/Austrian
- *  sets, else "HU". */
+ *  sets, then the country the entry was imported under (`city` may be a
+ *  claimed vendor's rewrite with no suffix left), else "HU". */
 export function curatedCountry(id: string, city: string): string {
-  const suffix = city.match(/,\s*([A-Z]{2})$/);
-  if (suffix?.[1]) return suffix[1];
+  const suffix = citySuffixCountry(city);
+  if (suffix) return suffix;
   if (SLOVAK_VENUE_IDS.has(id)) return "SK";
   if (AUSTRIAN_VENUE_IDS.has(id)) return "AT";
-  return "HU";
+  return importedCountry(id) ?? "HU";
 }
 
 // City -> centroid, derived by averaging the coordinated venues in each town,
