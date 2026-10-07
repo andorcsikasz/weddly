@@ -40,10 +40,6 @@ const MarketingContentPage = lazyWithReload(() => import("./pages/MarketingConte
 const GamesPage = lazyWithReload(() => import("./pages/GamesPage"));
 const GamesHubPage = lazyWithReload(() => import("./pages/games/GamesHubPage"));
 const MarketsPage = lazyWithReload(() => import("./pages/MarketsPage"));
-/** The runner is code-split like every other game. Three.js and R3F are the
- *  largest thing a couple who never plays it will download, so they must not be
- *  in the main chunk — see the `three` vendor chunk in vite.config.ts. */
-const RunnerGamePage = lazyWithReload(() => import("./pages/games/runner/RunnerGamePage"));
 const PlayMarketsPage = lazyWithReload(() => import("./pages/PlayMarketsPage"));
 const MarketsScreenPage = lazyWithReload(() => import("./pages/MarketsScreenPage"));
 const QuizListPage = lazyWithReload(() => import("./pages/quiz/QuizListPage"));
@@ -1354,18 +1350,6 @@ export default function App() {
             element={
               <Page>
                 <MarketsPage />
-              </Page>
-            }
-          />
-          {/* Run for the Wedding — the endless runner. A full-screen game
-           *  surface (runner.css pins it over the shell); `<Page>` is still
-           *  required for its ErrorBoundary + Suspense, so a WebGL failure stays
-           *  inside the game instead of blanking the whole app. */}
-          <Route
-            path="games/runner"
-            element={
-              <Page>
-                <RunnerGamePage />
               </Page>
             }
           />

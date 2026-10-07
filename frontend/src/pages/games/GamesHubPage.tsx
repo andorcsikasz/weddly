@@ -11,7 +11,7 @@
 // description and a pill CTA, composed on a deep panel that only tints with
 // the game's own brand colour — restrained, so the white copy stays solid.
 
-import { ArrowRight, Gamepad2, HeartPulse, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, Gamepad2, Sparkles, TrendingUp } from "lucide-react";
 import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useT } from "../../lib/i18n";
@@ -245,18 +245,6 @@ export default function GamesHubPage() {
             kicker={t("games_hub.markets_kicker")}
             cta={t("games_hub.cta")}
             delay={360}
-          />
-          <GameTile
-            to="/app/games/runner"
-            tone="runner"
-            accent="#d9738a"
-            icon={<HeartPulse size={14} aria-hidden />}
-            deco={null}
-            title={t("games_hub.runner_card_title")}
-            description={t("games_hub.runner_card_description")}
-            kicker={t("games_hub.runner_kicker")}
-            cta={t("games_hub.cta")}
-            delay={460}
           />
         </div>
       </div>
