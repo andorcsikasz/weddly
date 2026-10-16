@@ -10872,7 +10872,6 @@ const hu: LocaleMessages = {
     lockedDetailsTitle: "Foglaltság és elérhetőség",
     lockedBody: "Regisztrálj, hogy lásd, és árajánlatot kérhess.",
     sideTitle: "A teljes profil",
-    sideItemPackages: "Csomagok és árak",
     sideItemDate: "Szabad az esküvőtök napján?",
     sideItemContact: "Elérhetőség és helyszín",
     sideItemQuote: "Árajánlatkérés",
@@ -10886,7 +10885,7 @@ const hu: LocaleMessages = {
   vendorBrowse: {
     title: "Szolgáltatók böngészése",
     subtitle:
-      "A Weddly összes szolgáltatója, szabadon böngészhetően. Válassz kategóriát a teljes listához, szűrj településre, és nyiss meg bármelyik profilt a képekért és véleményekért. Az árakhoz és a foglaltsághoz regisztrálj.",
+      "A Weddly összes szolgáltatója, szabadon böngészhetően. Válassz kategóriát a teljes listához, szűrj településre, és nyiss meg bármelyik profilt a képekért, csomagokért és véleményekért. A foglaltsághoz és az elérhetőséghez regisztrálj.",
     couples_stat: "Jelenleg {count} pár tervezi az esküvőjét a Weddly-n",
     cta_couple: "Elkezdem a tervezést",
     cta_vendor: "Szolgáltatóként",

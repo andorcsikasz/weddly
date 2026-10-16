@@ -10779,7 +10779,6 @@ const hr: LocaleMessages = {
     lockedDetailsTitle: "Dostupnost i kontakt",
     lockedBody: "Registrirajte se da to vidite i zatražite ponudu.",
     sideTitle: "Cijeli profil",
-    sideItemPackages: "Paketi i cijene",
     sideItemDate: "Slobodni na vaš datum?",
     sideItemContact: "Kontakt i lokacija",
     sideItemQuote: "Zatraži ponudu",
@@ -10793,7 +10792,7 @@ const hr: LocaleMessages = {
   vendorBrowse: {
     title: "Pregledajte dobavljače za vjenčanja",
     subtitle:
-      "Svi dobavljači na Weddlyju, slobodni za pregledavanje. Odaberite kategoriju za cijeli popis, filtrirajte po gradu i otvorite bilo koji profil za fotografije i recenzije. Za cijene i dostupnost registrirajte se.",
+      "Svi dobavljači na Weddlyju, slobodni za pregledavanje. Odaberite kategoriju za cijeli popis, filtrirajte po gradu i otvorite bilo koji profil za fotografije, pakete i recenzije. Za dostupnost i kontakt registrirajte se.",
     couples_stat: "{count} parova upravo planira vjenčanje na Weddlyju",
     cta_couple: "Počnite planirati",
     cta_vendor: "Pridružite se kao dobavljač",

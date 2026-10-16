@@ -23,5 +23,10 @@ export function toPublicVendorProfile(detail: SupplierDetail): PublicVendorProfi
     claimed: detail.vendor_account_id !== null,
     listing_complete: detail.listing_complete,
     reviews_summary: detail.reviews_summary,
+    packages: detail.packages,
+    currency: detail.currency,
+    capacity_min: detail.capacity_min,
+    capacity_max: detail.capacity_max,
+    venue: detail.venue,
   };
 }

@@ -1,10 +1,11 @@
 // Public, unauthenticated vendor page at `/suppliers/:supplier_id`. This is the
 // surface a couple shares with someone OUTSIDE Weddly, and its whole job is to
 // lead them into the app: it says who the vendor is, what they say about
-// themselves, shows their photos and what couples say about them, and turns
-// everything else (packages and prices, availability, contact, Q&A) into a
-// locked placeholder with a sign-up CTA that returns to the vendor's page
-// inside the app (owner direction 2026-09-21).
+// themselves, shows their photos, packages, venue details and what couples say
+// about them, and turns everything else (availability, contact, videos, Q&A)
+// into a locked placeholder with a sign-up CTA that returns to the vendor's
+// page inside the app (owner direction 2026-09-21; packages and venue details
+// unlocked 2026-10-16).
 //
 // Laid out in the SAME order as the in-app profile (`SupplierDetailPage`):
 // header, photo mosaic, packages, about, reviews, availability and contact. The
@@ -26,7 +27,7 @@ import type {
 import { pickListingBlurb } from "@shared/listing_language";
 import { REVIEW_BODY_MAX_CHARS } from "@shared/suppliers";
 import { vendorPublicId } from "@shared/vendor_slug";
-import { ArrowLeft, CalendarCheck, Lock, MapPin, Send, Star, Tag } from "lucide-react";
+import { ArrowLeft, CalendarCheck, Lock, MapPin, Send, Star } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ClaimListingModal } from "../components/ClaimListingModal";
@@ -38,6 +39,12 @@ import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { ReviewSummaryCard } from "../components/ReviewSummaryCard";
 import { Dialog, useConfirm } from "../components/ui";
 import { VendorGallery } from "../components/VendorGallery";
+import { VendorPackageList } from "../components/VendorPackageCards";
+import {
+  VenueOverviewSection,
+  VenueRatesSection,
+  VenueRulesSection,
+} from "../components/VenueSections";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
 import { Wordmark } from "../components/Wordmark";
@@ -433,7 +440,6 @@ function AccessCard({
   signedIn: boolean;
 }) {
   const items = [
-    { icon: Tag, key: "publicVendor.sideItemPackages" },
     { icon: CalendarCheck, key: "publicVendor.sideItemDate" },
     { icon: MapPin, key: "publicVendor.sideItemContact" },
     { icon: Send, key: "publicVendor.sideItemQuote" },
@@ -666,16 +672,48 @@ export default function PublicVendorPage() {
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           {/* ── MAIN ─────────────────────────────────────────────────────── */}
           <main className="min-w-0">
-            {/* Packages lead, exactly where the in-app page puts them, because
-                this is the section a visitor most wants and the strongest
-                reason to sign up. */}
-            <LockedSection
-              title={t("suppliers.detail.packages.title")}
-              rows={3}
-              cta={unlockCta}
-              signedIn={signedIn}
-              t={t}
-            />
+            {/* Venue details, then packages, exactly where the in-app page puts
+                them. Public since 2026-10-16: a visitor comparing venues needs
+                to read what a place offers and what it costs. No request
+                button on either, since asking for a quote needs an account. */}
+            {detail.venue && (
+              <>
+                <VenueOverviewSection
+                  id="venue"
+                  venue={detail.venue}
+                  currency={detail.venue.currency}
+                  locale={locale}
+                  t={t}
+                />
+                <VenueRatesSection
+                  id="venue-rates"
+                  venue={detail.venue}
+                  initialDate={null}
+                  initialGuests={null}
+                  locale={locale}
+                  t={t}
+                />
+                <VenueRulesSection id="venue-rules" venue={detail.venue} t={t} />
+              </>
+            )}
+            {detail.packages.length > 0 && (
+              <section id="packages" className="mb-12 scroll-mt-24">
+                <h2 className="text-2xl font-bold tracking-tight text-ink-900 dark:text-paper-50">
+                  {t("suppliers.detail.packages.title")}
+                </h2>
+                <p className="mb-4 mt-1 text-sm text-ink-500 dark:text-umber-300">
+                  {t("suppliers.detail.packages.subtitle")}
+                </p>
+                <VendorPackageList
+                  packages={detail.packages}
+                  currency={detail.currency}
+                  capacityMin={detail.capacity_min}
+                  capacityMax={detail.capacity_max}
+                  locale={locale}
+                  t={t}
+                />
+              </section>
+            )}
 
             <section className="mb-12">
               <h2 className="mb-3 text-2xl font-bold tracking-tight text-ink-900 dark:text-paper-50">

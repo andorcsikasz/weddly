@@ -10953,7 +10953,6 @@ const de: LocaleMessages = {
     lockedDetailsTitle: "Verfügbarkeit und Kontakt",
     lockedBody: "Registriere dich, um das zu sehen und ein Angebot anzufragen.",
     sideTitle: "Das vollständige Profil",
-    sideItemPackages: "Pakete und Preise",
     sideItemDate: "Frei an eurem Datum?",
     sideItemContact: "Kontakt und Ort",
     sideItemQuote: "Angebot anfragen",
@@ -10967,7 +10966,7 @@ const de: LocaleMessages = {
   vendorBrowse: {
     title: "Hochzeitsdienstleister entdecken",
     subtitle:
-      "Alle Dienstleister auf Weddly, frei zum Stöbern. Wählen Sie eine Kategorie für die ganze Liste, filtern Sie nach Ort und öffnen Sie ein Profil für Fotos und Bewertungen. Für Preise und Verfügbarkeit melden Sie sich an.",
+      "Alle Dienstleister auf Weddly, frei zum Stöbern. Wählen Sie eine Kategorie für die ganze Liste, filtern Sie nach Ort und öffnen Sie ein Profil für Fotos, Pakete und Bewertungen. Für Verfügbarkeit und Kontakt melden Sie sich an.",
     couples_stat: "{count} Paare planen gerade ihre Hochzeit auf Weddly",
     cta_couple: "Planung starten",
     cta_vendor: "Als Dienstleister mitmachen",

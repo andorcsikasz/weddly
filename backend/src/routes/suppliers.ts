@@ -695,12 +695,12 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
 
 /** GET /api/public/vendors/:supplier_id — the unauthenticated, shareable
  *  vendor page payload. This is the ONE endpoint that leaves the workspace
- *  auth wall, and it hands out the smallest useful thing: identity, the
- *  vendor's own description, their photos and their PUBLISHED reviews (see
- *  `toPublicVendorProfile`). Everything else (packages and prices, videos,
- *  capacity, languages, contact, address, availability, Q&A) is behind the
- *  account and the page says so with a sign-up CTA (owner direction
- *  2026-09-21).
+ *  auth wall, and it hands out identity, the vendor's own description, their
+ *  photos, packages, venue details and PUBLISHED reviews (see
+ *  `toPublicVendorProfile`). Everything else (videos, languages, contact,
+ *  address, availability, Q&A) is behind the account and the page says so with
+ *  a sign-up CTA (owner direction 2026-09-21; packages and venue details
+ *  unlocked 2026-10-16).
  *
  *  The session is deliberately NOT consulted: a signed-in visitor gets the same
  *  answer and is sent to `/app/suppliers/:id` for the rest, so this response is

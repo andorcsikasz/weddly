@@ -10795,7 +10795,6 @@ const en: LocaleMessages = {
     lockedDetailsTitle: "Availability and contact",
     lockedBody: "Sign up to see this and to ask for a quote.",
     sideTitle: "The full profile",
-    sideItemPackages: "Packages and prices",
     sideItemDate: "Free on your wedding date?",
     sideItemContact: "Contact and location",
     sideItemQuote: "Ask for a quote",
@@ -10809,7 +10808,7 @@ const en: LocaleMessages = {
   vendorBrowse: {
     title: "Browse wedding vendors",
     subtitle:
-      "Every vendor on Weddly, free to browse. Pick a category for the whole list, filter by town, and open any profile for photos and reviews. Sign up for prices and availability.",
+      "Every vendor on Weddly, free to browse. Pick a category for the whole list, filter by town, and open any profile for photos, packages and reviews. Sign up for availability and contact details.",
     couples_stat: "{count} couples are planning their wedding on Weddly right now",
     cta_couple: "Start planning",
     cta_vendor: "Join as vendor",

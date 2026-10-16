@@ -12199,7 +12199,6 @@ export interface LocaleMessages {
     lockedBody: string;
     /** Sticky side card that lists what the account adds. */
     sideTitle: string;
-    sideItemPackages: string;
     sideItemDate: string;
     sideItemContact: string;
     sideItemQuote: string;

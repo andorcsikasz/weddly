@@ -59,6 +59,7 @@ interface PublicPayload {
     id: string;
     name: string;
     reviews_summary: { reviews_count: number };
+    packages: Array<{ name: string; price_min: number | null }>;
   };
   reviews: Array<{ id: number; published?: boolean; rating: number }>;
 }
@@ -69,16 +70,21 @@ interface PublicPayload {
 const PUBLIC_DETAIL_KEYS = [
   "blurb_en",
   "blurb_hu",
+  "capacity_max",
+  "capacity_min",
   "category",
   "city",
   "claimed",
   "company_name",
   "country",
+  "currency",
   "gallery_urls",
   "id",
   "listing_complete",
   "name",
+  "packages",
   "reviews_summary",
+  "venue",
 ];
 
 describe("GET /api/public/vendors/:id — no auth", () => {
@@ -236,6 +242,10 @@ describe("the anonymous vendor page hands out identity, description, photos and 
     expect(r.data.detail.blurb_en).toBe("English description");
     expect(r.data.detail.gallery_urls).toContain("/uploads/listings/great-tide/one.jpg");
     expect(r.data.detail.claimed).toBe(true);
+    // Packages and their guide prices are public since 2026-10-16.
+    expect(r.data.detail.packages.map((p) => p.name)).toEqual([SECRETS.packageName]);
+    expect(r.data.detail.packages[0]?.price_min).toBe(Number(SECRETS.packagePrice));
+    expect(r.data.detail.currency).toBeTruthy();
   });
 
   test("no gated value appears anywhere in the body, signed in or not", async () => {
@@ -256,9 +266,7 @@ describe("the anonymous vendor page hands out identity, description, photos and 
         "Attila",
         SECRETS.website,
         SECRETS.email,
-        // Packages, videos, coordinates.
-        SECRETS.packageName,
-        SECRETS.packagePrice,
+        // Videos, coordinates.
         SECRETS.videoId,
         "47.5",
       ]) {
@@ -273,13 +281,9 @@ describe("the anonymous vendor page hands out identity, description, photos and 
         "lat",
         "lng",
         "price_band",
-        "capacity_min",
-        "capacity_max",
         "spoken_languages",
         "venue_style",
-        "packages",
         "videos",
-        "currency",
         "bookable",
         "next_available",
         "vendor_account_id",

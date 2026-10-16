@@ -1713,11 +1713,12 @@ export interface SupplierContact {
  *  `SupplierDetail`. The public page used to be the detail payload with a few
  *  fields blanked, and every field added to the detail afterwards was public
  *  the moment it existed. Here a new field is private until somebody types it
- *  into `toPublicVendorProfile`. Packages, prices, videos, capacity, languages,
- *  price band, phone, website, address, coordinates and availability are
- *  deliberately absent: the public page shows a locked placeholder for them and
- *  a sign-up CTA, and the real values live behind the account on
- *  `/app/suppliers/:id` (owner direction 2026-09-21). */
+ *  into `toPublicVendorProfile`. Packages and the venue details are public
+ *  since 2026-10-16 (owner direction: a visitor browsing venues has to be able
+ *  to read what a place offers and what it costs). Videos, languages, price
+ *  band, phone, website, address, coordinates and availability stay absent:
+ *  the public page shows a locked placeholder for them and a sign-up CTA, and
+ *  the real values live behind the account on `/app/suppliers/:id`. */
 export interface PublicVendorProfile {
   /** Canonical listing id (`v12`), never the URL's spelling. */
   id: string;
@@ -1739,6 +1740,19 @@ export interface PublicVendorProfile {
   claimed: boolean;
   listing_complete: boolean;
   reviews_summary: ReviewSummary;
+  /** The vendor's packages with their guide prices. Already empty for an
+   *  imported profile nobody has claimed (packages are pricing, and the teaser
+   *  rule upstream takes pricing out). */
+  packages: ListingPackage[];
+  /** What package money is denominated in. */
+  currency: Currency;
+  /** The guest range a per-person package converts across. Nothing else on the
+   *  public page reads them. */
+  capacity_min: number | null;
+  capacity_max: number | null;
+  /** Venue profile, spaces and pricing rules. Null on non-venue listings, on a
+   *  venue that has filled none of it in, and on an unclaimed import. */
+  venue: VenueDetail | null;
 }
 
 /** `GET /api/public/vendors/:id`: the whole payload of the anonymous vendor

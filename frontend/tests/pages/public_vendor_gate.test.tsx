@@ -1,7 +1,7 @@
 // The anonymous vendor page as a teaser that leads into the app.
 //
-// It shows who the vendor is, their description, photos and reviews, and turns
-// everything else into a locked placeholder with a sign-up CTA. What is pinned
+// It shows who the vendor is, their description, photos, packages and reviews,
+// and turns everything else into a locked placeholder with a sign-up CTA. What is pinned
 // here is the wiring a screenshot cannot show: that every CTA goes to sign-up
 // while remembering the vendor's page inside the app, that a signed-in visitor
 // is sent straight to that page instead, and that the review link a vendor
@@ -127,6 +127,23 @@ beforeEach(() => {
         histogram: [0, 0, 0, 1, 2],
         top_tags: [],
       },
+      packages: [
+        {
+          id: 1,
+          name: "Full day",
+          price_text: null,
+          price_min: 1200,
+          price_max: null,
+          price_mode: "total",
+          description: "Ten hours, two shooters.",
+          pdf_url: null,
+          pdf_name: null,
+        },
+      ],
+      currency: "EUR",
+      capacity_min: null,
+      capacity_max: null,
+      venue: null,
     },
     reviews: [
       {
@@ -165,7 +182,7 @@ describe("PublicVendorPage: what a stranger sees", () => {
     expect(screen.getByText("They caught every tear.")).toBeTruthy();
   });
 
-  it("locks packages and availability + contact behind a CTA, in the in-app order", async () => {
+  it("shows packages, then locks availability + contact behind a CTA, in the in-app order", async () => {
     await renderPage();
 
     const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
@@ -177,17 +194,26 @@ describe("PublicVendorPage: what a stranger sees", () => {
     expect(packages).toBeGreaterThanOrEqual(0);
     expect(about).toBeGreaterThan(packages);
     expect(details).toBeGreaterThan(about);
-    // One unlock CTA in each locked section.
-    expect(screen.getAllByText("Sign up to see it")).toHaveLength(2);
+    // The package is real, with its price; only the details block is locked.
+    expect(screen.getByText("Full day")).toBeTruthy();
+    expect(screen.getByText("Ten hours, two shooters.")).toBeTruthy();
+    expect(document.body.textContent ?? "").toMatch(/1,200/);
+    expect(screen.getAllByText("Sign up to see it")).toHaveLength(1);
   });
 
-  it("carries no package, price, phone, address or website on the page", async () => {
+  it("carries no phone, address, website or quote button on the page", async () => {
     await renderPage();
-    const text = document.body.textContent ?? "";
     expect(document.querySelector("a[href^='tel:']")).toBeNull();
     expect(document.querySelector("a[href^='/r/supplier']")).toBeNull();
+    // Asking for a quote needs an account, so a package row has no button.
     expect(document.querySelector("[data-testid='package-request']")).toBeNull();
-    expect(text).not.toMatch(/\bFt\b|€/);
+  });
+
+  it("renders no packages section when the vendor has none", async () => {
+    payload.detail.packages = [];
+    await renderPage();
+    const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    expect(headings).not.toContain("Packages");
   });
 });
 
