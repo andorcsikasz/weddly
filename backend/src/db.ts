@@ -1924,6 +1924,15 @@ addColumnIfMissing("photo_uploads", "hidden_at", "hidden_at INTEGER");
 // Couple-upload source tag (#11). Retro-tag pre-existing couple uploads — must
 // run AFTER the column add.
 addColumnIfMissing("photo_uploads", "source", "source TEXT NOT NULL DEFAULT 'guest'");
+// Guest-camera idempotency key: the phone keeps unsent shots in IndexedDB
+// and resends them on the next visit, so an upload that landed just before the
+// tab died arrives twice. Scoped by device so one guest's id can never answer
+// with another guest's photo. Index AFTER the column (May 2026 ordering rule).
+addColumnIfMissing("photo_uploads", "client_shot_id", "client_shot_id TEXT");
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_photo_uploads_client_shot " +
+    "ON photo_uploads(album_id, device_id, client_shot_id) WHERE client_shot_id IS NOT NULL",
+);
 db.exec("UPDATE photo_uploads SET source = 'couple' WHERE device_id = 'couple'");
 // A device row represents a guest-camera session, not necessarily a guest.
 // Keep its source explicit so legacy couple-upload sessions never consume the

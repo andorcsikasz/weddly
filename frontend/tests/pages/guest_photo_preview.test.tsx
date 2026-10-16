@@ -1,6 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { IDBFactory, IDBKeyRange as FakeIDBKeyRange } from "fake-indexeddb";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { _resetOutboxForTests, listShots, putShot } from "@/lib/film_outbox";
 import { I18nProvider, _preloadHuForTests } from "@/lib/i18n";
 import GuestPhotoPage from "@/pages/GuestPhotoPage";
 
@@ -286,9 +288,10 @@ describe("<GuestPhotoPage> host preview", () => {
       target: { files: [new File([new Uint8Array([2])], "b.jpg", { type: "image/jpeg" })] },
     });
 
-    // The first upload's own success screen (shotCount === 1) confirms both
-    // were accepted rather than the second silently overwriting the first.
-    await waitFor(() => expect(screen.getByText("Megvan.")).toBeInTheDocument());
+    // The per-shot toast confirms both were accepted rather than the second
+    // silently overwriting the first. No full-screen sheet ever covers the lens.
+    await waitFor(() => expect(screen.getByText(/Elküldve/)).toBeInTheDocument());
+    expect(screen.queryByText("Megvan.")).toBeNull();
     await waitFor(() => expect(uploadCalls).toEqual([1, 2]));
   });
 
@@ -342,9 +345,92 @@ describe("<GuestPhotoPage> host preview", () => {
       target: { files: [new File([new Uint8Array([1])], "a.jpg", { type: "image/jpeg" })] },
     });
 
-    await waitFor(() => expect(screen.getByText("Megvan.")).toBeInTheDocument(), {
+    await waitFor(() => expect(screen.getByText(/Elküldve/)).toBeInTheDocument(), {
       timeout: 4000,
     });
     expect(uploadAttempts).toBe(2);
   });
+
+  // shotCount 0 lands on the viewfinder (its queue restores the shot); 1
+  // lands on "welcome back", which has no camera, so the page drains it.
+  it.each([
+    ["the viewfinder", 0],
+    ["the welcome-back screen", 1],
+  ])(
+    "resends a shot an earlier visit left, from %s, then forgets it",
+    async (_where, priorShots) => {
+      const g = globalThis as unknown as { indexedDB?: unknown; IDBKeyRange?: unknown };
+      const saved = { indexedDB: g.indexedDB, IDBKeyRange: g.IDBKeyRange };
+      g.indexedDB = new IDBFactory();
+      g.IDBKeyRange = FakeIDBKeyRange;
+      _resetOutboxForTests();
+      try {
+        // The tab died with this shot still unsent, under the device id the
+        // guest had back then.
+        localStorage.setItem("weddly.film.live-token.name", "Anna");
+        await putShot({
+          id: "left-behind",
+          token: "live-token",
+          deviceId: "old-device",
+          blob: new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])], { type: "image/jpeg" }),
+          createdAt: Date.now(),
+        });
+        _resetOutboxForTests();
+
+        const uploads: FormData[] = [];
+        globalThis.fetch = mock((input: RequestInfo | URL, init?: RequestInit) => {
+          const url = String(input);
+          if (url.endsWith("/photos") && init?.body instanceof FormData) {
+            uploads.push(init.body);
+            return Promise.resolve(
+              new Response(
+                JSON.stringify({ upload: { id: 7, fileUrl: "/uploads/x.jpg" }, shotCount: 1 }),
+                {
+                  status: 200,
+                  headers: { "Content-Type": "application/json" },
+                },
+              ),
+            );
+          }
+          return Promise.resolve(
+            response({
+              album: {
+                displayName: "Andor & Sári",
+                weddingDate: "2026-08-08",
+                slug: null,
+                title: null,
+                shotsPerGuest: 5,
+                isUploadEnabled: true,
+                eventEndsAt: null,
+                revealAt: null,
+                filmAesthetic: "natural",
+                coverImageUrl: null,
+              },
+              shotCount: priorShots,
+            }),
+          );
+        }) as unknown as typeof fetch;
+        Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: undefined });
+
+        render(
+          <I18nProvider>
+            <MemoryRouter initialEntries={["/photos/live-token"]}>
+              <Routes>
+                <Route path="/photos/:token" element={<GuestPhotoPage />} />
+              </Routes>
+            </MemoryRouter>
+          </I18nProvider>,
+        );
+
+        await waitFor(() => expect(uploads).toHaveLength(1));
+        expect(uploads[0]?.get("client_shot_id")).toBe("left-behind");
+        expect(uploads[0]?.get("device_id")).toBe("old-device");
+        await waitFor(async () => expect(await listShots("live-token")).toEqual([]));
+      } finally {
+        g.indexedDB = saved.indexedDB;
+        g.IDBKeyRange = saved.IDBKeyRange;
+        _resetOutboxForTests();
+      }
+    },
+  );
 });

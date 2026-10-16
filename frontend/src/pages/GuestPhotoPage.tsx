@@ -35,6 +35,7 @@ import { Camera, Check, ImagePlus, RotateCcw, Share2, SwitchCamera } from "lucid
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
+import { deleteShot, listShots, putShot } from "../lib/film_outbox";
 import { intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 
@@ -358,6 +359,50 @@ function useCamera(facing: Facing, enabled = true) {
   return { videoRef, canvasRef, status, capture };
 }
 
+// ─── outbox drain off the viewfinder ─────────────────────────────────────────
+// A returning guest does not always land on the camera: "welcome back", the
+// developing countdown and the full-roll screen have no viewfinder, and the
+// countdown has no way back to one. Shots an earlier visit left in the outbox
+// are sent from those screens too, quietly, one at a time. A shot the server
+// refuses for good is forgotten; anything else stays for the next visit. If
+// the guest opens the camera meanwhile, the viewfinder restores what is left,
+// and the server's client_shot_id dedupe makes any overlap a no-op.
+
+function useOutboxDrain(token: string, album: PhotoAlbumPublic | null) {
+  useEffect(() => {
+    if (!album || !token) return;
+    let cancelled = false;
+    void (async () => {
+      for (const shot of await listShots(token)) {
+        if (cancelled) return;
+        try {
+          await photoAlbumApi.upload(
+            token,
+            new File([shot.blob], "shot.jpg", { type: shot.blob.type }),
+            { deviceId: shot.deviceId, filterApplied: album.filmAesthetic, clientShotId: shot.id },
+          );
+          void deleteShot(shot.id);
+        } catch (err: unknown) {
+          const status = (err as { status?: unknown })?.status;
+          const code = (err as { detail?: { code?: string } })?.detail?.code;
+          const permanent =
+            code === "shot_limit" ||
+            code === "heic_not_supported" ||
+            status === 400 ||
+            status === 413;
+          if (permanent) void deleteShot(shot.id);
+          // Offline, rate-limited or a closed film: stop, and leave the rest
+          // in order for the next visit.
+          else return;
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, album]);
+}
+
 // ─── upload queue ─────────────────────────────────────────────────────────────
 // Capture and upload are deliberately decoupled: a shot is captured instantly
 // (a canvas snapshot, no network) and handed to a background queue, so a slow
@@ -367,6 +412,12 @@ function useCamera(facing: Facing, enabled = true) {
 // failure with backoff, and keeps trying once the browser's `online` event
 // fires again for anything that gave up. A genuinely bad file (HEIC, over
 // size, the shot cap) fails once and never retries.
+//
+// The queue is also mirrored to IndexedDB (lib/film_outbox), because memory
+// does not survive the tab: a shot leaves the outbox only once the server has
+// it or has refused the file for good, and the next visit to the same film
+// resends whatever is left. Each shot's id is its `client_shot_id`, so a
+// resend of an upload that did land is answered with the same photo.
 
 const MAX_UPLOAD_ATTEMPTS = 4;
 const RETRY_BACKOFF_MS = [1200, 3000, 6000];
@@ -377,7 +428,10 @@ const QUEUE_DISPLAY_MAX = 4;
 const QUEUE_RETAIN_MAX = 20;
 
 interface QueueItem {
+  /** Also the outbox key and the upload's `client_shot_id`. */
   id: string;
+  /** The device the shot was taken under; a restored shot keeps its own. */
+  deviceId: string;
   file: File;
   previewUrl: string;
   status: "queued" | "uploading" | "retrying" | "failed" | "done";
@@ -546,12 +600,9 @@ function Viewfinder({
   // queue loop and any in-progress burst stop reaching for a device that's
   // about to be swapped out for the limit_reached screen.
   const limitReachedRef = useRef(false);
-  // Full-screen thank-you shown once, on the guest's very first-ever shot —
-  // it explains when photos surface and offers to invite others. Every shot
-  // after that is a quiet auto-dismissing toast instead, so shooting stays
-  // continuous: no tap is needed to get back to the viewfinder.
-  const [sent, setSent] = useState(false);
-  const [sentCount, setSentCount] = useState(0);
+  // Every shot, the first included, is confirmed by a quiet auto-dismissing
+  // toast. Nothing ever covers the lens between shots: a guest can shoot the
+  // whole roll back to back without a single tap to get back to the camera.
   const [toastCount, setToastCount] = useState<number | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deviceId = preview || demo ? "" : getDeviceId(token);
@@ -602,14 +653,9 @@ function Viewfinder({
     // The demo sends nothing, so it confirms nothing: the rolling frame
     // counter is its feedback, and the reveal is its payoff.
     if (demo) return;
-    if (newShotCount === 1) {
-      setSentCount(newShotCount);
-      setSent(true);
-    } else {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      setToastCount(newShotCount);
-      toastTimer.current = setTimeout(() => setToastCount(null), 1600);
-    }
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastCount(newShotCount);
+    toastTimer.current = setTimeout(() => setToastCount(null), 1600);
   }
 
   /** Resolves once the item is settled one way or another: done, waiting out
@@ -629,12 +675,14 @@ function Viewfinder({
     }
     try {
       const result = await photoAlbumApi.upload(token, item.file, {
-        deviceId,
+        deviceId: item.deviceId,
         guestName: guestName ?? undefined,
         filterApplied: album.filmAesthetic,
         preview,
+        clientShotId: item.id,
       });
       item.status = "done";
+      void deleteShot(item.id);
       bump();
       handleUploadSuccess(result.shotCount);
     } catch (err: unknown) {
@@ -644,9 +692,14 @@ function Viewfinder({
           : null;
       const code = (err as { detail?: { code?: string } })?.detail?.code;
 
+      // Every branch below that sets `retryable = false` for the FILE (the cap,
+      // HEIC, size, type) also forgets it on disk: resending it next visit
+      // gets the same answer. Anything else (a closed film, a 5xx run that
+      // exhausted its tries) stays in the outbox for the next visit.
       if (code === "shot_limit") {
         item.status = "failed";
         item.retryable = false;
+        void deleteShot(item.id);
         bump();
         // Nothing else already queued behind this guest's cap can succeed
         // either — fail them now instead of burning a request each to find out.
@@ -654,6 +707,7 @@ function Viewfinder({
           if (other.status === "queued") {
             other.status = "failed";
             other.retryable = false;
+            void deleteShot(other.id);
           }
         }
         limitReachedRef.current = true;
@@ -665,6 +719,7 @@ function Viewfinder({
         item.status = "failed";
         item.retryable = false;
         item.errorMessage = t("photos.error_heic");
+        void deleteShot(item.id);
         bump();
         return;
       }
@@ -672,6 +727,7 @@ function Viewfinder({
         item.status = "failed";
         item.retryable = false;
         item.errorMessage = t("photos.error_too_large");
+        void deleteShot(item.id);
         bump();
         return;
       }
@@ -679,6 +735,7 @@ function Viewfinder({
         item.status = "failed";
         item.retryable = false;
         item.errorMessage = t("photos.error_bad_type");
+        void deleteShot(item.id);
         bump();
         return;
       }
@@ -725,11 +782,41 @@ function Viewfinder({
     }
   }
 
+  /** Bounds memory by dropping the oldest SETTLED shots. A shot still owed to
+   *  the server is never dropped, or a long burst offline would quietly forget
+   *  its first frames until the next visit. */
   function pruneQueue() {
-    if (queueRef.current.length <= QUEUE_RETAIN_MAX) return;
-    const dropped = queueRef.current.slice(0, queueRef.current.length - QUEUE_RETAIN_MAX);
-    for (const d of dropped) URL.revokeObjectURL(d.previewUrl);
-    queueRef.current = queueRef.current.slice(-QUEUE_RETAIN_MAX);
+    let excess = queueRef.current.length - QUEUE_RETAIN_MAX;
+    if (excess <= 0) return;
+    const kept: QueueItem[] = [];
+    for (const item of queueRef.current) {
+      const settled = item.status === "done" || (item.status === "failed" && !item.retryable);
+      if (excess > 0 && settled) {
+        URL.revokeObjectURL(item.previewUrl);
+        excess -= 1;
+      } else {
+        kept.push(item);
+      }
+    }
+    queueRef.current = kept;
+  }
+
+  function appendToQueue(id: string, itemDeviceId: string, file: File) {
+    queueRef.current = [
+      ...queueRef.current,
+      {
+        id,
+        deviceId: itemDeviceId,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        status: "queued",
+        attempts: 0,
+        retryable: true,
+      },
+    ];
+    pruneQueue();
+    bump();
+    void runQueue();
   }
 
   function enqueueCapture(file: File) {
@@ -750,21 +837,31 @@ function Viewfinder({
     navigator.vibrate?.(8);
     setFlash(true);
     setTimeout(() => setFlash(false), 120);
-    queueRef.current = [
-      ...queueRef.current,
-      {
-        id: crypto.randomUUID(),
-        file,
-        previewUrl: URL.createObjectURL(file),
-        status: "queued",
-        attempts: 0,
-        retryable: true,
-      },
-    ];
-    pruneQueue();
-    bump();
-    void runQueue();
+    const id = crypto.randomUUID();
+    // Written before the upload starts; the upload does not wait on it. A
+    // delete for a fast upload waits for this write (see film_outbox), so
+    // nothing is left behind.
+    if (!demo) void putShot({ id, token, deviceId, blob: file, createdAt: Date.now() });
+    appendToQueue(id, deviceId, file);
   }
+
+  // Resend whatever an earlier visit to this film left behind. Merged by id,
+  // so a shot captured in the moment before this resolves isn't queued twice.
+  useEffect(() => {
+    if (preview || demo) return;
+    let cancelled = false;
+    void listShots(token).then((shots) => {
+      if (cancelled || unmountedRef.current) return;
+      for (const shot of shots) {
+        if (queueRef.current.some((i) => i.id === shot.id)) continue;
+        const file = new File([shot.blob], "shot.jpg", { type: shot.blob.type });
+        appendToQueue(shot.id, shot.deviceId, file);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   function retryQueueItem(id: string) {
     const item = queueRef.current.find((i) => i.id === id);
@@ -883,12 +980,6 @@ function Viewfinder({
     if (item.retryable) retryQueueItem(item.id);
     else if (item.errorMessage) setError(item.errorMessage);
   }
-
-  const sentSub = album.revealAt
-    ? t("photos.sent_sub_reveal")
-        .replace("{{names}}", album.displayName)
-        .replace("{{date}}", formatRevealDate(album.revealAt, locale))
-    : t("photos.sent_sub_now").replace("{{names}}", album.displayName);
 
   const remaining = album.eventEndsAt ? Math.max(0, album.eventEndsAt - Date.now()) : null;
 
@@ -1009,7 +1100,7 @@ function Viewfinder({
           </div>
         )}
 
-        {/* Quiet per-shot confirmation after the first — fades on its own so
+        {/* Quiet per-shot confirmation for every shot. It fades on its own so
             shooting stays continuous, no tap needed to get back to the lens. */}
         {toastCount !== null && (
           <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
@@ -1160,30 +1251,6 @@ function Viewfinder({
           )}
         </div>
       </div>
-
-      {/* ── Sent ───────────────────────────────────────────────────── */}
-      {sent && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-center bg-ink-950 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-16">
-          <div className="mx-auto w-full max-w-sm">
-            <span className="mb-8 flex h-12 w-12 items-center justify-center rounded-full bg-sage-500">
-              <Check size={26} className="text-paper-50" aria-hidden="true" />
-            </span>
-            <SheetTitle>{t("photos.sent_heading")}</SheetTitle>
-            <SheetBody>{sentSub}</SheetBody>
-            <p className="mt-2 font-grotesk text-[13px] font-medium text-paper-50/35">
-              {t("photos.sent_count").replace("{{n}}", String(sentCount))}
-            </p>
-            <div className="mt-10 flex flex-col gap-3">
-              <button type="button" onClick={() => setSent(false)} className={PRIMARY_BTN}>
-                {t("photos.sent_add_more")}
-              </button>
-              <button type="button" onClick={shareInvite} className={GHOST_BTN}>
-                {t("photos.sent_invite")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Hidden file input — the upload-from-gallery route. */}
       <input
@@ -1336,6 +1403,16 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
   const [searchParams] = useSearchParams();
   const preview = searchParams.get("preview") === "1";
   const [state, setState] = useState<PageState>({ kind: "loading" });
+  useOutboxDrain(
+    token,
+    !preview &&
+      !demo &&
+      (state.kind === "returning_welcome" ||
+        state.kind === "developing" ||
+        state.kind === "limit_reached")
+      ? state.album
+      : null,
+  );
   const [nameInput, setNameInput] = useState("");
   const [emailInput, setEmailInput] = useState("");
   const [marketingOptIn, setMarketingOptIn] = useState(false);

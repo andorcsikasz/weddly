@@ -4327,11 +4327,15 @@ export const photoAlbumApi = {
       filterApplied?: FilmAesthetic;
       /** Defense-in-depth marker: the server rejects preview uploads. */
       preview?: boolean;
+      /** Stable per shot across retries and page loads; the server answers a
+       *  repeat with the photo it already stored instead of a second copy. */
+      clientShotId?: string;
     },
   ): Promise<{ upload: { id: number; fileUrl: string }; shotCount: number }> {
     const form = new FormData();
     form.append("file", file);
     form.append("device_id", opts.deviceId);
+    if (opts.clientShotId) form.append("client_shot_id", opts.clientShotId);
     if (opts.guestName) form.append("guest_name", opts.guestName);
     if (opts.filterApplied) form.append("filter_applied", opts.filterApplied);
     return publicFilmFetch<{ upload: { id: number; fileUrl: string }; shotCount: number }>(

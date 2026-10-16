@@ -1332,6 +1332,9 @@ async function handleGetQr(ctx: Ctx): Promise<Response> {
   });
 }
 
+/** A UUID in practice; the bound keeps the column (and the index) small. */
+const CLIENT_SHOT_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
 /** POST /api/photo-albums/:token/photos — guest uploads a photo (multipart). */
 async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   rejectPreviewMutation(ctx);
@@ -1380,8 +1383,42 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   if (registered.removed_at !== null)
     throw new HttpError(403, "This device was removed from the film", { code: "device_removed" });
 
+  // A resend of a shot this device already sent (the phone's outbox replays
+  // anything it never heard back about) answers with the stored photo. It
+  // comes BEFORE the shot limit: the frame was spent by the first attempt, and
+  // a full roll must not refuse a shot it is already holding.
+  const clientShotIdRaw = form.get("client_shot_id");
+  let clientShotId: string | null = null;
+  if (clientShotIdRaw !== null) {
+    if (typeof clientShotIdRaw !== "string" || !CLIENT_SHOT_ID_RE.test(clientShotIdRaw))
+      throw new HttpError(400, "client_shot_id must be 1-64 letters, digits, - or _");
+    clientShotId = clientShotIdRaw;
+  }
+  const findPrior = () =>
+    clientShotId === null
+      ? null
+      : ((db
+          .prepare(
+            `SELECT id, file_path AS filePath FROM photo_uploads
+              WHERE album_id = ? AND device_id = ? AND client_shot_id = ?`,
+          )
+          .get(row.id, deviceId, clientShotId) as { id: number; filePath: string } | null) ?? null);
+  const replayed = (prior: { id: number; filePath: string }) =>
+    json(
+      {
+        upload: { id: prior.id, fileUrl: prior.filePath },
+        shotCount: countParticipantShots(row.id, deviceId, registered.guestName, registered.email),
+      },
+      { status: 200 },
+    );
+  // A row with no file_path is a first attempt that died between the INSERT
+  // and the storage write: its frame is counted but its bytes never landed, so
+  // this attempt finishes it rather than answering with an empty URL.
+  const prior = findPrior();
+  if (prior?.filePath) return replayed(prior);
+
   // Shot limit check.
-  if (row.shots_per_guest !== null) {
+  if (row.shots_per_guest !== null && !prior) {
     const used = countParticipantShots(row.id, deviceId, registered.guestName, registered.email);
     if (used >= row.shots_per_guest)
       throw new HttpError(429, "Shot limit reached", { code: "shot_limit" });
@@ -1418,20 +1455,39 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   // write the bytes once under the final key. The image bytes are already in
   // memory (`raw`), so no temp file is needed — the storage backend (disk or
   // R2) writes the final object directly.
-  const uploadRow = db
-    .prepare(
-      `INSERT INTO photo_uploads
-         (album_id, device_id, guest_name, file_path, mime_type, file_size,
-          filter_applied, uploaded_at, source)
-       VALUES (?, ?, ?, '', ?, ?, ?, ?, 'guest')
-       RETURNING id`,
-    )
-    .get(row.id, deviceId, guestName, sniffed, raw.size, filter, ts) as { id: number };
+  let uploadRow: { id: number };
+  if (prior) {
+    uploadRow = { id: prior.id };
+  } else {
+    try {
+      uploadRow = db
+        .prepare(
+          `INSERT INTO photo_uploads
+             (album_id, device_id, guest_name, file_path, mime_type, file_size,
+              filter_applied, uploaded_at, source, client_shot_id)
+           VALUES (?, ?, ?, '', ?, ?, ?, ?, 'guest', ?)
+           RETURNING id`,
+        )
+        .get(row.id, deviceId, guestName, sniffed, raw.size, filter, ts, clientShotId) as {
+        id: number;
+      };
+    } catch (err) {
+      // Two tabs draining one outbox can race the same shot past findPrior.
+      // The unique index lets exactly one INSERT win; the loser answers with
+      // the winner's photo.
+      const raced = findPrior();
+      if (!raced) throw err;
+      return replayed(raced);
+    }
+  }
 
   const key = photoObjectKey(row.couple_id, row.id, uploadRow.id, ext);
   const publicUrl = `/uploads/${key}`;
   await storage.write(key, raw);
-  db.prepare("UPDATE photo_uploads SET file_path = ? WHERE id = ?").run(publicUrl, uploadRow.id);
+  // mime + size too: finishing a half-written row stores THESE bytes.
+  db.prepare(
+    "UPDATE photo_uploads SET file_path = ?, mime_type = ?, file_size = ? WHERE id = ?",
+  ).run(publicUrl, sniffed, raw.size, uploadRow.id);
 
   const shotCount = countParticipantShots(row.id, deviceId, guestName, registered.email);
 

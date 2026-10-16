@@ -522,11 +522,13 @@ async function guestUpload(
   albumPath: string,
   deviceId: string,
   claimedGuestName?: string,
+  clientShotId?: string,
 ): Promise<Response> {
   const fd = new FormData();
   fd.append("file", new File([FAKE_JPEG], "p.jpg", { type: "image/jpeg" }));
   fd.append("device_id", deviceId);
   if (claimedGuestName !== undefined) fd.append("guest_name", claimedGuestName);
+  if (clientShotId !== undefined) fd.append("client_shot_id", clientShotId);
   return fetch(`${BASE}/api/photo-albums/${albumPath}/photos`, { method: "POST", body: fd });
 }
 
@@ -971,6 +973,152 @@ describe("per-guest quota and canonical attribution", () => {
       { token },
     );
     expect(current.data.album.participantCount).toBe(1);
+  });
+});
+
+// ── Outbox resend: client_shot_id idempotency ─────────────────────────────────
+// The guest camera keeps unsent shots in IndexedDB and resends them on the
+// next visit, so the server sees the same shot again whenever the first
+// attempt landed but its answer never reached the phone.
+
+describe("guest upload resend (client_shot_id)", () => {
+  let token: string;
+  let albumToken: string;
+
+  function rowsFor(
+    deviceId: string,
+  ): Array<{ id: number; filePath: string; clientShotId: string | null }> {
+    return db
+      .prepare(
+        `SELECT id, file_path AS filePath, client_shot_id AS clientShotId
+           FROM photo_uploads
+          WHERE album_id = (SELECT id FROM photo_albums WHERE upload_token = ?) AND device_id = ?
+          ORDER BY id`,
+      )
+      .all(albumToken, deviceId) as Array<{
+      id: number;
+      filePath: string;
+      clientShotId: string | null;
+    }>;
+  }
+
+  async function register(deviceId: string, name: string): Promise<void> {
+    const r = await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: deviceId,
+      guest_name: name,
+      email: `${deviceId}@guest.test`,
+    });
+    expect(r.status).toBe(200);
+  }
+
+  beforeAll(async () => {
+    wipeFilm();
+    ({ token } = await bootstrapCouple("guest-resend@weddly.test"));
+    albumToken = await createAlbum(token);
+    db.prepare("UPDATE photo_albums SET shots_per_guest = 2 WHERE upload_token = ?").run(
+      albumToken,
+    );
+    await register("resend-a", "Anna");
+    await register("resend-b", "Bence");
+    await register("resend-c", "Cili");
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("a resent shot is the same photo and spends no second frame", async () => {
+    const first = await guestUpload(albumToken, "resend-a", undefined, "shot-1");
+    expect(first.status).toBe(201);
+    const firstBody = (await first.json()) as {
+      upload: { id: number; fileUrl: string };
+      shotCount: number;
+    };
+    expect(firstBody.shotCount).toBe(1);
+
+    const again = await guestUpload(albumToken, "resend-a", undefined, "shot-1");
+    expect(again.status).toBe(200);
+    const againBody = (await again.json()) as {
+      upload: { id: number; fileUrl: string };
+      shotCount: number;
+    };
+    expect(againBody.upload).toEqual(firstBody.upload);
+    expect(againBody.shotCount).toBe(1);
+    expect(rowsFor("resend-a")).toHaveLength(1);
+  });
+
+  test("a full roll still answers a resend, and still refuses a new shot", async () => {
+    const second = await guestUpload(albumToken, "resend-a", undefined, "shot-2");
+    expect(second.status).toBe(201);
+
+    // Roll is now full (2 of 2). The resend of a shot it already holds is not
+    // a new frame, so the cap must not turn it into a 429.
+    const resend = await guestUpload(albumToken, "resend-a", undefined, "shot-2");
+    expect(resend.status).toBe(200);
+
+    const fresh = await guestUpload(albumToken, "resend-a", undefined, "shot-3");
+    expect(fresh.status).toBe(429);
+    expect(((await fresh.json()) as { detail?: { code?: string } }).detail?.code).toBe(
+      "shot_limit",
+    );
+    expect(rowsFor("resend-a")).toHaveLength(2);
+  });
+
+  test("the id is scoped to the device, so another guest's id never returns their photo", async () => {
+    const other = await guestUpload(albumToken, "resend-b", undefined, "shot-1");
+    expect(other.status).toBe(201);
+    const [mine] = rowsFor("resend-b");
+    const [theirs] = rowsFor("resend-a");
+    expect(mine?.id).not.toBe(theirs?.id);
+  });
+
+  test("a first attempt that died before its bytes landed is finished by the resend", async () => {
+    // What a crash between the INSERT and the storage write leaves behind.
+    db.prepare(
+      `INSERT INTO photo_uploads
+         (album_id, device_id, guest_name, file_path, mime_type, file_size,
+          uploaded_at, source, client_shot_id)
+       VALUES ((SELECT id FROM photo_albums WHERE upload_token = ?), 'resend-c', 'Cili', '',
+               'image/jpeg', 0, ?, 'guest', 'half-shot')`,
+    ).run(albumToken, Date.now());
+    const [half] = rowsFor("resend-c");
+
+    const resend = await guestUpload(albumToken, "resend-c", undefined, "half-shot");
+    expect(resend.status).toBe(201);
+    const body = (await resend.json()) as {
+      upload: { id: number; fileUrl: string };
+      shotCount: number;
+    };
+    expect(body.upload.id).toBe(half?.id as number);
+    expect(body.upload.fileUrl).toStartWith("/uploads/");
+    expect(body.shotCount).toBe(1);
+    const rows = rowsFor("resend-c");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.filePath).toBe(body.upload.fileUrl);
+  });
+
+  test("two tabs racing one shot store it once", async () => {
+    const [x, y] = await Promise.all([
+      guestUpload(albumToken, "resend-b", undefined, "raced"),
+      guestUpload(albumToken, "resend-b", undefined, "raced"),
+    ]);
+    // Either the loser hits the unique index (200), or it finds the winner's
+    // row mid-write and finishes it under the same key (201). Both are one
+    // photo; what must never happen is a second row.
+    expect([200, 201]).toContain(x.status);
+    expect([200, 201]).toContain(y.status);
+    const xs = (await x.json()) as { upload: { id: number } };
+    const ys = (await y.json()) as { upload: { id: number } };
+    expect(xs.upload.id).toBe(ys.upload.id);
+    expect(rowsFor("resend-b").filter((r) => r.clientShotId === "raced")).toHaveLength(1);
+  });
+
+  test("an upload with no id behaves as before, and a malformed id is refused", async () => {
+    await register("resend-d", "Dóra");
+    const plain = await guestUpload(albumToken, "resend-d");
+    expect(plain.status).toBe(201);
+    expect(rowsFor("resend-d")[0]?.clientShotId).toBeNull();
+
+    const bad = await guestUpload(albumToken, "resend-d", undefined, "not a valid id!");
+    expect(bad.status).toBe(400);
   });
 });
 
