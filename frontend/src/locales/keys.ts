@@ -5544,6 +5544,31 @@ export interface LocaleMessages {
     teams_title: string;
     team_players: string;
   };
+  quiz_party: {
+    templates_title: string;
+    templates_hint: string;
+    template_know_us: string;
+    template_wedding_day: string;
+    template_add: string;
+    template_added: string;
+    back_to_builder: string;
+    join_at: string;
+    auto_reveal: string;
+    auto_reveal_hint: string;
+    all_in: string;
+    fastest: string;
+    correct_count: string;
+    nobody_right: string;
+    times_up: string;
+    no_answer: string;
+    answer_failed: string;
+    streak_bonus: string;
+    streak_chip: string;
+    rank_up: string;
+    rank_down: string;
+    lobby_who: string;
+    first_slide_hint: string;
+  };
   /** Day-of run-of-show — CRUD over the schedule_events table. */
   schedule: {
     title: string;

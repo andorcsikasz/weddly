@@ -15,6 +15,7 @@ import { useParams } from "react-router-dom";
 import {
   BetTicker,
   FlashBadge,
+  marketPodiumEntries,
   Podium,
   ReactionLayer,
   RevealOverlay,
@@ -143,7 +144,7 @@ export default function MarketsScreenPage() {
 
       {state.status === "ended" ? (
         <div className="mt-6">
-          <Podium leaderboard={state.leaderboard} prize={state.prize} big />
+          <Podium entries={marketPodiumEntries(state.leaderboard)} prize={state.prize} big />
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-8">

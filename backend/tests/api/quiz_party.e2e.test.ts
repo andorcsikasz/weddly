@@ -14,6 +14,11 @@ import {
   type QuizPublicState,
   quizStreakBonus,
 } from "@shared/quiz";
+import {
+  instantiateQuizTemplate,
+  QUIZ_TEMPLATES,
+  templatePartnerNames,
+} from "@shared/quiz_templates";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
 const HEADER = "X-Quiz-Player-Token";
@@ -219,5 +224,39 @@ describe("quiz party: the reveal", () => {
     expect(mine.data.revealStats?.fastest?.name).toBe("Csilla");
     const missed = await guestState(code, anna.token);
     expect(missed.data.myAnswer).toBeNull();
+  });
+});
+
+describe("quiz party: templates", () => {
+  // A template that fails validation fails for every couple who taps it, so
+  // each one goes through the real endpoint in both languages.
+  test("every template lands whole in EN and HU, with the couple's names in it", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("quizparty-templates@weddly.test");
+    const names = templatePartnerNames({ display_name: "Allie & Noah" });
+    expect(names).toEqual(["Allie", "Noah"]);
+    for (const template of QUIZ_TEMPLATES) {
+      for (const locale of ["en", "hu"]) {
+        const created = await req<{ quiz: QuizDetail }>(
+          "POST",
+          "/api/quizzes",
+          { title: "T" },
+          { token },
+        );
+        const slides = instantiateQuizTemplate(template, locale, names);
+        const r = await req<{ quiz: QuizDetail }>(
+          "POST",
+          `/api/quizzes/${created.data.quiz.id}/slides/bulk`,
+          { slides },
+          { token },
+        );
+        expect(r.status).toBe(201);
+        expect(r.data.quiz.slides).toHaveLength(template.slides.length);
+      }
+    }
+    const who = instantiateQuizTemplate(QUIZ_TEMPLATES[0]!, "en", names).find(
+      (s) => s.kind === "binary",
+    );
+    expect(who?.config.options).toEqual(["Allie", "Noah"]);
   });
 });

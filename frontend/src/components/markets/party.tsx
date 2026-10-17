@@ -380,18 +380,38 @@ const STEP_HEIGHT = ["h-40", "h-28", "h-20"];
 /** The end of the night: top three on steps, every award underneath, and the
  *  couple's prize if they named one. Screenshot-friendly on purpose, since
  *  that is how it gets shared. */
+/** One step on the podium, whichever game it came from. */
+export interface PodiumEntry {
+  id: number;
+  name: string;
+  avatar: string;
+  score: number;
+  titles?: readonly MarketTitle[];
+}
+
+export function marketPodiumEntries(leaderboard: readonly MarketLeaderboardEntry[]): PodiumEntry[] {
+  return leaderboard.map((e) => ({
+    id: e.player.id,
+    name: e.player.name,
+    avatar: e.player.avatar,
+    score: e.player.balance,
+    titles: e.titles,
+  }));
+}
+
 export function Podium({
-  leaderboard,
-  prize,
+  entries,
+  prize = null,
   big = false,
 }: {
-  leaderboard: readonly MarketLeaderboardEntry[];
-  prize: string | null;
+  /** Already ranked, best first. */
+  entries: readonly PodiumEntry[];
+  prize?: string | null;
   big?: boolean;
 }) {
   const { t } = useT();
-  const top = leaderboard.slice(0, 3);
-  const awarded = leaderboard.filter((e) => e.titles.length > 0);
+  const top = entries.slice(0, 3);
+  const awarded = entries.filter((e) => (e.titles?.length ?? 0) > 0);
 
   useEffect(() => {
     if (top.length) fireConfetti(undefined, { colors: CONFETTI, count: big ? 200 : 90 });
@@ -418,13 +438,13 @@ export function Podium({
             <div key={idx} className="flex w-1/3 max-w-[12rem] flex-col items-center">
               {idx === 0 && <Crown className="mb-1 text-star" size={big ? 48 : 28} aria-hidden />}
               <span className={big ? "text-7xl" : "text-4xl"} aria-hidden>
-                {entry.player.avatar}
+                {entry.avatar}
               </span>
               <span className={`mt-1 w-full truncate font-bold ${big ? "text-2xl" : "text-sm"}`}>
-                {entry.player.name}
+                {entry.name}
               </span>
               <span className={`tabular-nums text-white/70 ${big ? "text-xl" : "text-xs"}`}>
-                {entry.player.balance} pts
+                {entry.score} pts
               </span>
               <div
                 className={`mk-podium-step mt-2 flex w-full items-start justify-center rounded-t-xl pt-2 font-black ${
@@ -441,10 +461,10 @@ export function Podium({
       {awarded.length > 0 && (
         <ul className={`mt-6 space-y-1.5 ${big ? "text-xl" : "text-sm"}`}>
           {awarded.map((e) => (
-            <li key={e.player.id} className="flex items-center justify-center gap-2">
-              <span aria-hidden>{e.player.avatar}</span>
-              <span className="font-semibold">{e.player.name}</span>
-              <TitleChips titles={e.titles} big={big} />
+            <li key={e.id} className="flex items-center justify-center gap-2">
+              <span aria-hidden>{e.avatar}</span>
+              <span className="font-semibold">{e.name}</span>
+              <TitleChips titles={e.titles ?? []} big={big} />
             </li>
           ))}
         </ul>

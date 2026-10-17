@@ -41,6 +41,7 @@ import { useParams } from "react-router-dom";
 import { MarketMiniChart } from "../components/MarketMiniChart";
 import {
   FlashBadge,
+  marketPodiumEntries,
   Podium,
   ReactionLayer,
   RevealOverlay,
@@ -607,7 +608,7 @@ export default function PlayMarketsPage() {
         />
       ) : state.status === "ended" ? (
         <main className="px-4 py-10">
-          <Podium leaderboard={state.leaderboard} prize={state.prize} />
+          <Podium entries={marketPodiumEntries(state.leaderboard)} prize={state.prize} />
           <p className="mt-8 text-center text-sm text-white/60">{t("markets_play.ended_note")}</p>
         </main>
       ) : (

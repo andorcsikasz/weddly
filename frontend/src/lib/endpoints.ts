@@ -143,6 +143,7 @@ import type {
   MarketSide,
   MarketTeam,
 } from "@shared/markets";
+import type { QuizTemplateSlideInput } from "@shared/quiz_templates";
 import type {
   AdminCommunitySupplierReport,
   AdminListingPhotosResponse,
@@ -4684,6 +4685,9 @@ export const quizApi = {
       config?: QuizSlideConfig;
     },
   ) => apiFetch<{ quiz: QuizDetail }>("POST", `/api/quizzes/${quizId}/slides`, input),
+  /** A template's slides in one call; all land or none do. */
+  addSlides: (quizId: number, slides: QuizTemplateSlideInput[]) =>
+    apiFetch<{ quiz: QuizDetail }>("POST", `/api/quizzes/${quizId}/slides/bulk`, { slides }),
   updateSlide: (
     quizId: number,
     slideId: number,

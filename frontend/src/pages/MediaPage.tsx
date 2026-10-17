@@ -33,6 +33,7 @@ import {
   Mail,
   MessageCircle,
   MessageSquare,
+  Minus,
   Pencil,
   Plus,
   QrCode,
@@ -832,46 +833,50 @@ function FilmModal({
       : FILM_TIER_CAPS.free;
   const upgradePrice = formatEurCents(access?.priceEurCents ?? FILM_TIER_PRICE_EUR_CENTS.paid);
 
+  const shotsNum = parseInt(shots, 10) || 0;
+  const stepShots = (delta: number) =>
+    setShots(String(Math.min(500, Math.max(1, (shotsNum || 24) + delta))));
+  const tile = "rounded-2xl bg-paper-100 px-4 py-3.5 text-center dark:bg-umber-700/60";
+  const tileLabel =
+    "block text-[11px] font-semibold uppercase tracking-[0.14em] text-umber-600 dark:text-paper-300";
+  const stepBtn =
+    "inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-umber-900 shadow-sm transition-colors hover:bg-paper-200 disabled:opacity-40 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-600";
+
   return (
     <Dialog
       open={open}
       title={isEdit ? t("media.film_settings_title") : t("media.create_modal_title")}
+      titleClassName="text-xl text-center pl-9"
       role="dialog"
       closeOnBackdrop
       onClose={onClose}
       footer={
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex w-full flex-col items-center gap-2.5">
+          <button
+            type="submit"
+            form="film-modal-form"
+            className="btn-primary w-full justify-center rounded-full py-3 text-base"
+            disabled={saving}
+          >
+            {saving
+              ? t("media.create_modal_creating")
+              : isEdit
+                ? t("common.save")
+                : t("media.create_modal_submit")}
+          </button>
           {!isEdit && (
-            <span className="flex items-center gap-1 font-space text-[13px] font-semibold text-sage-700">
+            <span className="flex items-center gap-1 font-space text-[13px] font-semibold text-sage-700 dark:text-sage-300">
               <Check size={13} aria-hidden="true" />
               {includedGuestCap} {t("media.film_stat_people")} · {t("media.film_price_free")}
             </span>
           )}
-          <div className="ml-auto flex gap-2">
-            <button type="button" className="btn-ghost btn-sm" onClick={onClose} disabled={saving}>
-              {t("common.cancel")}
-            </button>
-            <button
-              type="submit"
-              form="film-modal-form"
-              className="btn-primary btn-sm"
-              disabled={saving}
-            >
-              {saving
-                ? t("media.create_modal_creating")
-                : isEdit
-                  ? t("common.save")
-                  : t("media.create_modal_submit")}
-            </button>
-          </div>
         </div>
       }
     >
-      {/* Uber-shaped: the name field explains itself through its placeholder, the
-          looks are their own preview, and every field label is one word. The one
-          sentence that survived is the placeholder-title warning, because
-          "guests see this" is genuinely surprising. */}
-      <form id="film-modal-form" onSubmit={handleSubmit} className="space-y-4">
+      {/* Uber-shaped and centred on one axis: a filled name field, the looks as
+          their own preview, then grey tiles that each answer one question. The
+          close button is the cancel, so the footer carries a single action. */}
+      <form id="film-modal-form" onSubmit={handleSubmit} className="space-y-5 pt-1">
         <div>
           <input
             type="text"
@@ -880,10 +885,10 @@ function FilmModal({
             maxLength={200}
             placeholder={t("media.film_settings_name_placeholder")}
             aria-label={t("media.film_settings_name")}
-            className="input w-full rounded-2xl px-4 py-3.5 font-space font-medium"
+            className="input w-full rounded-2xl border-transparent bg-paper-100 px-4 py-4 text-center font-space text-lg font-semibold dark:bg-umber-700/60"
           />
           {isPlaceholderTitle(title) && (
-            <div className="mt-2 flex items-start gap-2.5 rounded-2xl bg-amber-50 px-3.5 py-2.5 dark:bg-amber-400/10">
+            <div className="mt-2 flex items-start justify-center gap-2.5 rounded-2xl bg-amber-50 px-3.5 py-2.5 dark:bg-amber-400/10">
               <AlertTriangle
                 size={14}
                 className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400"
@@ -897,7 +902,7 @@ function FilmModal({
         </div>
 
         {/* The visible names make each look recognisable without hover. */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-center gap-2.5">
           {FILM_AESTHETICS.map((a) => (
             <button
               key={a}
@@ -906,110 +911,118 @@ function FilmModal({
               title={AESTHETIC_LABELS[a]}
               aria-label={AESTHETIC_LABELS[a]}
               aria-pressed={aesthetic === a}
-              className={`flex min-w-14 flex-col items-center gap-1 overflow-hidden rounded-2xl p-1 transition-all ${
-                aesthetic === a
-                  ? "ring-2 ring-umber-900 ring-offset-2 dark:ring-paper-100 dark:ring-offset-umber-900"
-                  : "opacity-70 hover:opacity-100"
-              }`}
+              className="group flex flex-col items-center gap-1.5"
             >
               <img
                 src={DEMO_STRIP[0]}
                 alt=""
                 aria-hidden="true"
-                className="h-12 w-12 object-cover"
+                className={`h-14 w-14 rounded-2xl object-cover transition-all ${
+                  aesthetic === a
+                    ? "ring-2 ring-umber-900 ring-offset-2 dark:ring-paper-100 dark:ring-offset-umber-800"
+                    : "opacity-60 group-hover:opacity-100"
+                }`}
                 style={{ filter: FILM_FILTERS[a] }}
               />
-              <span className="max-w-16 truncate text-[10px] font-medium text-umber-700 dark:text-paper-200">
+              <span
+                className={`max-w-16 truncate text-[11px] ${
+                  aesthetic === a
+                    ? "font-semibold text-umber-900 dark:text-paper-100"
+                    : "font-medium text-umber-600 dark:text-paper-300"
+                }`}
+              >
                 {AESTHETIC_LABELS[a]}
               </span>
             </button>
           ))}
         </div>
 
-        {/* One upload-rules group, same shape as the page behind it. `.input` carries
-            the dark-theme colours AND `color-scheme: dark`, without which the
-            native datetime picker glyph renders black on the dark sheet. */}
-        <fieldset>
-          <legend className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-umber-600 dark:text-paper-300">
-            {t("media.film_settings_upload")}
-          </legend>
-          <div className="divide-y divide-paper-200 overflow-hidden rounded-2xl border border-paper-200 dark:divide-umber-700 dark:border-umber-700">
-            <label className="flex items-center gap-3 px-4 py-3">
-              <span className="flex-1 text-sm font-medium text-umber-900 dark:text-paper-100">
-                {t("media.film_settings_shots")}
-              </span>
-              <input
-                type="number"
-                min={1}
-                max={500}
-                value={shots}
-                onChange={(e) => setShots(e.target.value)}
-                className="input w-20 rounded-xl px-3 text-right font-space text-sm font-semibold tabular-nums"
-              />
-              <span className="text-xs text-umber-600 dark:text-paper-300">
+        {/* `.input` carries the dark-theme colours AND `color-scheme: dark`, without
+            which the native datetime picker glyph renders black on the dark sheet. */}
+        <fieldset className="space-y-2">
+          <legend className="sr-only">{t("media.film_settings_upload")}</legend>
+          <div className="grid grid-cols-2 gap-2">
+            <div className={tile}>
+              <span className={tileLabel}>{t("media.film_settings_shots")}</span>
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  className={stepBtn}
+                  onClick={() => stepShots(-1)}
+                  disabled={shotsNum <= 1}
+                  aria-label="-1"
+                >
+                  <Minus size={16} aria-hidden="true" />
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={shots}
+                  onChange={(e) => setShots(e.target.value)}
+                  aria-label={t("media.film_settings_shots")}
+                  className="w-12 bg-transparent text-center font-space text-2xl font-semibold tabular-nums text-umber-900 [appearance:textfield] focus:outline-none dark:text-paper-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <button
+                  type="button"
+                  className={stepBtn}
+                  onClick={() => stepShots(1)}
+                  disabled={shotsNum >= 500}
+                  aria-label="+1"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </button>
+              </div>
+              <span className="mt-1 block text-[11px] text-umber-600 dark:text-paper-300">
                 / {t("media.film_per_person")}
               </span>
-            </label>
-            <div className="flex items-start gap-3 px-4 py-3">
-              <span className="flex-1">
-                <span className="block text-sm font-medium text-umber-900 dark:text-paper-100">
-                  {t("media.film_settings_cap")}
-                </span>
-                <span className="block text-xs leading-snug text-umber-600 dark:text-paper-300">
-                  {t("media.film_settings_cap_hint", { n: FILM_TIER_CAPS.free })}
-                </span>
+            </div>
+            <div
+              className={tile}
+              title={t("media.film_settings_cap_hint", { n: FILM_TIER_CAPS.free })}
+            >
+              <span className={tileLabel}>{t("media.film_settings_cap")}</span>
+              <span className="mt-2 block font-space text-2xl font-semibold leading-9 tabular-nums text-umber-900 dark:text-paper-100">
+                {album?.guestCap ?? includedGuestCap}
               </span>
-              <span className="text-right">
-                <span className="block font-space text-sm font-semibold text-umber-700 dark:text-paper-200">
-                  {album?.guestCap ?? includedGuestCap} {t("media.film_stat_people")}
-                </span>
-                {!isEdit && !access?.free && (
-                  <span className="block text-[11px] text-umber-600 dark:text-paper-300">
-                    {t("media.film_upgrade_cta")} · {upgradePrice}
-                  </span>
-                )}
+              <span className="mt-1 block text-[11px] text-umber-600 dark:text-paper-300">
+                {!isEdit && !access?.free
+                  ? `${t("media.film_upgrade_cta")} · ${upgradePrice}`
+                  : t("media.film_stat_people")}
               </span>
             </div>
-            <label className="flex items-center gap-3 px-4 py-3">
-              <span className="flex-1 text-sm font-medium text-umber-900 dark:text-paper-100">
-                {t("media.film_settings_ends")}
-              </span>
-              <input
-                type="datetime-local"
-                value={eventEndsAt}
-                onChange={(e) => setEventEndsAt(e.target.value)}
-                className="input w-auto min-w-0 shrink rounded-xl px-3 text-right text-sm"
-              />
-            </label>
-            <label className="flex items-center gap-3 px-4 py-3">
-              <span className="flex-1 text-sm font-medium text-umber-900 dark:text-paper-100">
-                {t("media.film_settings_reveal")}
-              </span>
-              <input
-                type="datetime-local"
-                value={revealAt}
-                onChange={(e) => setRevealAt(e.target.value)}
-                className="input w-auto min-w-0 shrink rounded-xl px-3 text-right text-sm"
-              />
-            </label>
-            {isEdit && (
-              <div className="flex items-center gap-3 px-4 py-3">
-                <span className="flex-1">
-                  <span className="block text-sm font-medium text-umber-900 dark:text-paper-100">
-                    {t("media.film_settings_prompts")}
-                  </span>
-                  <span className="block text-xs text-umber-600 dark:text-paper-300">
-                    {t("media.film_settings_prompts_hint")}
-                  </span>
-                </span>
-                <Switch
-                  checked={promptsEnabled}
-                  onChange={setPromptsEnabled}
-                  label={t("media.film_settings_prompts")}
-                />
-              </div>
-            )}
           </div>
+          <label className={`${tile} block`}>
+            <span className={tileLabel}>{t("media.film_settings_ends")}</span>
+            <input
+              type="datetime-local"
+              value={eventEndsAt}
+              onChange={(e) => setEventEndsAt(e.target.value)}
+              className="input mx-auto mt-2 block w-full max-w-64 rounded-xl border-transparent px-3 text-center text-sm font-medium"
+            />
+          </label>
+          <label className={`${tile} block`}>
+            <span className={tileLabel}>{t("media.film_settings_reveal")}</span>
+            <input
+              type="datetime-local"
+              value={revealAt}
+              onChange={(e) => setRevealAt(e.target.value)}
+              className="input mx-auto mt-2 block w-full max-w-64 rounded-xl border-transparent px-3 text-center text-sm font-medium"
+            />
+          </label>
+          {isEdit && (
+            <div className={`${tile} flex flex-col items-center gap-2`}>
+              <span className={tileLabel}>{t("media.film_settings_prompts")}</span>
+              <span className="text-xs text-umber-600 dark:text-paper-300">
+                {t("media.film_settings_prompts_hint")}
+              </span>
+              <Switch
+                checked={promptsEnabled}
+                onChange={setPromptsEnabled}
+                label={t("media.film_settings_prompts")}
+              />
+            </div>
+          )}
         </fieldset>
       </form>
     </Dialog>
@@ -1263,8 +1276,8 @@ export default function MediaPage() {
   const nearPhotoLimit =
     totalCapacity !== null && album !== null && album.photoCount >= Math.floor(totalCapacity * 0.8);
   // Tiers that still cost something: an upgrade is only offered while there is
-  // a bigger film to buy (shared/film_pricing.ts). `?.` on tiers too: a server
-  // from before the ladder answers without them.
+  // a bigger film to buy (shared/film_pricing.ts).
+  // `?.` on tiers too: a server from before the ladder answers without them.
   const buyableTiers = filmAccess?.tiers?.filter((tier) => tier.chargeCents > 0) ?? [];
   // A camera-only film starts closed (cap 0): nothing reaches guests until a
   // plan is paid, so that state always shows the notice.

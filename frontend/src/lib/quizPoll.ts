@@ -33,13 +33,23 @@ export function useQuizPoll<T>(
   const [error, setError] = useState<unknown>(null);
   const fetchRef = useRef(fetchFn);
   fetchRef.current = fetchFn;
+  const refreshRef = useRef<() => void>(() => undefined);
 
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    // One fetch at a time: a refresh that lands mid-fetch queues a single
+    // follow-up rather than starting a second timer chain.
+    let inFlight = false;
+    let again = false;
 
     async function tick() {
       if (cancelled) return;
+      if (inFlight) {
+        again = true;
+        return;
+      }
+      inFlight = true;
       try {
         const result = await fetchRef.current();
         if (!cancelled) {
@@ -48,6 +58,12 @@ export function useQuizPoll<T>(
         }
       } catch (e) {
         if (!cancelled) setError(e);
+      }
+      inFlight = false;
+      if (again) {
+        again = false;
+        void tick();
+        return;
       }
       schedule();
     }
@@ -64,6 +80,14 @@ export function useQuizPoll<T>(
       }
     }
 
+    // Fetch now and restart the clock, for a caller that knows the state
+    // just changed (it took an action) and should not wait out the interval,
+    // which in a hidden tab is ten seconds.
+    refreshRef.current = () => {
+      if (timer) clearTimeout(timer);
+      void tick();
+    };
+
     void tick();
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -76,5 +100,8 @@ export function useQuizPoll<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intervalMs]);
 
-  return { data, error };
+  // `setData` lets an action apply the state its own response already
+  // carries; the host console used to throw that away and sit on the old
+  // screen until the next tick.
+  return { data, error, setData, refresh: () => refreshRef.current() };
 }
