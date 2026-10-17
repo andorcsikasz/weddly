@@ -36,6 +36,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
 import { deleteShot, listShots, putShot } from "../lib/film_outbox";
+import {
+  activePreset,
+  digitalCrop,
+  findUltraWideDeviceId,
+  formatZoom,
+  maxZoom,
+  minZoom,
+  pinchZoom,
+  planZoom,
+  type ZoomRange,
+  zoomPresets,
+} from "../lib/camera_zoom";
 import { compressPickedImage, renderShot } from "../lib/shot_compress";
 import { intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -256,10 +268,27 @@ const FIRST_FRAME_TIMEOUT_MS = 5000;
 type CameraStatus = "starting" | "live" | "blocked" | "preview";
 type Facing = "environment" | "user";
 
-function useCamera(facing: Facing, enabled = true) {
+/** The `zoom` range a track reports, where the browser exposes one. */
+function trackZoomRange(track: MediaStreamTrack | undefined): ZoomRange | null {
+  const caps = track?.getCapabilities?.() as { zoom?: { min?: number; max?: number } } | undefined;
+  const zoom = caps?.zoom;
+  if (!zoom || typeof zoom.min !== "number" || typeof zoom.max !== "number") return null;
+  return zoom.max > zoom.min ? { min: zoom.min, max: zoom.max } : null;
+}
+
+/** `lens` picks the separate ultra-wide back camera (see lib/camera_zoom);
+ *  "main" is whatever `facing` resolves to. */
+function useCamera(facing: Facing, enabled = true, lens: "main" | "ultra" = "main") {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<CameraStatus>(enabled ? "starting" : "preview");
+  // The MAIN back lens's hardware zoom range, and the ultra-wide's device id.
+  // Both are only knowable once a stream is live (labels need permission).
+  const [mainZoomRange, setMainZoomRange] = useState<ZoomRange | null>(null);
+  const [ultraDeviceId, setUltraDeviceId] = useState<string | null>(null);
+  // Set when the ultra-wide refused to open, so the caller drops back to the
+  // main lens and stops offering 0.5 rather than showing a lens it isn't.
+  const [ultraFailed, setUltraFailed] = useState(false);
 
   useEffect(() => {
     if (!enabled) {
@@ -276,11 +305,14 @@ function useCamera(facing: Facing, enabled = true) {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     setStatus((s) => (s === "live" ? s : "starting"));
+    const wantUltra = lens === "ultra" && facing === "environment" && ultraDeviceId !== null;
 
     navigator.mediaDevices
       .getUserMedia({
         video: {
-          facingMode: { ideal: facing },
+          ...(wantUltra
+            ? { deviceId: { exact: ultraDeviceId } }
+            : { facingMode: { ideal: facing } }),
           width: { ideal: 1920 },
           height: { ideal: 1440 },
         },
@@ -295,6 +327,21 @@ function useCamera(facing: Facing, enabled = true) {
         // the guest looking at the camera they already had.
         streamRef.current?.getTracks().forEach((track) => track.stop());
         streamRef.current = stream;
+        if (!wantUltra) {
+          setMainZoomRange(
+            facing === "environment" ? trackZoomRange(stream.getVideoTracks()[0]) : null,
+          );
+          // Look for the ultra-wide once per back-camera stream. Labels only
+          // exist after permission, which is why this is here and not upfront.
+          if (facing === "environment") {
+            void navigator.mediaDevices
+              .enumerateDevices?.()
+              .then((devices) => {
+                if (!cancelled) setUltraDeviceId(findUltraWideDeviceId(devices));
+              })
+              .catch(() => {});
+          }
+        }
         const video = videoRef.current;
         if (!video) return;
         video.srcObject = stream;
@@ -310,14 +357,18 @@ function useCamera(facing: Facing, enabled = true) {
         }, FIRST_FRAME_TIMEOUT_MS);
       })
       .catch(() => {
-        if (!cancelled) setStatus((s) => (s === "live" ? s : "blocked"));
+        if (cancelled) return;
+        if (wantUltra) setUltraFailed(true);
+        setStatus((s) => (s === "live" ? s : "blocked"));
       });
 
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [enabled, facing]);
+    // ultraDeviceId is read, not reacted to: finding it must not reopen the
+    // camera, only a lens change the guest asked for does.
+  }, [enabled, facing, lens]);
 
   useEffect(
     () => () => {
@@ -334,16 +385,52 @@ function useCamera(facing: Facing, enabled = true) {
    *  `renderShot` draws the frame straight at its final size (long edge
    *  1600px) and encodes it under 1 MB, on a canvas of its own: see
    *  lib/shot_compress, which a gallery pick goes through as well. */
-  const capture = useCallback(async (mirror: boolean): Promise<File | null> => {
+  const capture = useCallback(async (mirror: boolean, digitalZoom = 1): Promise<File | null> => {
     const video = videoRef.current;
     if (!video) return null;
     // No frame yet — better to do nothing than to send a black rectangle.
     if (video.videoWidth === 0 || video.videoHeight === 0) return null;
-    const blob = await renderShot(video, video.videoWidth, video.videoHeight, { mirror });
+    const blob = await renderShot(video, video.videoWidth, video.videoHeight, {
+      mirror,
+      crop: digitalCrop(video.videoWidth, video.videoHeight, digitalZoom),
+    });
     return blob ? new File([blob], "shot.jpg", { type: "image/jpeg" }) : null;
   }, []);
 
-  return { videoRef, status, capture };
+  // Hardware zoom, coalesced: a pinch asks for a new value every frame, and
+  // applyConstraints is async, so only the latest wanted value is ever sent
+  // and never more than one at a time.
+  const zoomWanted = useRef<number | null>(null);
+  const zoomBusy = useRef(false);
+  const setHardwareZoom = useCallback((value: number) => {
+    zoomWanted.current = value;
+    if (zoomBusy.current) return;
+    zoomBusy.current = true;
+    void (async () => {
+      try {
+        while (zoomWanted.current !== null) {
+          const next = zoomWanted.current;
+          zoomWanted.current = null;
+          const track = streamRef.current?.getVideoTracks()[0];
+          if (!track) break;
+          await track
+            .applyConstraints({ advanced: [{ zoom: next } as MediaTrackConstraintSet] })
+            .catch(() => {});
+        }
+      } finally {
+        zoomBusy.current = false;
+      }
+    })();
+  }, []);
+
+  return {
+    videoRef,
+    status,
+    capture,
+    mainZoomRange,
+    ultraDeviceId: ultraFailed ? null : ultraDeviceId,
+    setHardwareZoom,
+  };
 }
 
 // ─── outbox drain off the viewfinder ─────────────────────────────────────────
@@ -567,7 +654,58 @@ function Viewfinder({
   const [facing, setFacing] = useState<Facing>("environment");
   // Host preview must not even request camera permission. It renders the same
   // chrome with a clearly marked, inert viewfinder instead.
-  const { videoRef, status, capture } = useCamera(facing, !preview);
+  const [lens, setLens] = useState<"main" | "ultra">("main");
+  const { videoRef, status, capture, mainZoomRange, ultraDeviceId, setHardwareZoom } = useCamera(
+    facing,
+    !preview,
+    lens,
+  );
+  // Zoom as the guest sees it (0.5x, 1x, 1.6x...). lib/camera_zoom maps it
+  // onto the ultra-wide lens, the track's own zoom, or a centred crop. The
+  // selfie camera has no hardware zoom or ultra-wide here: crop only.
+  const [zoom, setZoom] = useState(1);
+  const backZoom = facing === "environment" ? mainZoomRange : null;
+  const backUltra = facing === "environment" ? ultraDeviceId : null;
+  const zoomRange = { min: minZoom(backZoom, backUltra), max: maxZoom(backZoom) };
+  const plan = planZoom(zoom, backZoom, backUltra);
+  const presets = zoomPresets(zoomRange.min);
+  const digitalZoom = plan.lens === "main" ? plan.digital : 1;
+  useEffect(() => setLens(plan.lens), [plan.lens]);
+  // Re-sent whenever the main lens's stream (re)opens, since a new stream
+  // starts back at its own 1x.
+  useEffect(() => {
+    if (lens === "main" && plan.hardware !== null) setHardwareZoom(plan.hardware);
+  }, [lens, plan.hardware, mainZoomRange, setHardwareZoom]);
+  // The ultra-wide refused to open: its 0.5 is gone, so is this zoom.
+  useEffect(() => {
+    if (zoom < zoomRange.min) setZoom(zoomRange.min);
+  }, [zoom, zoomRange.min]);
+
+  // Two fingers on the viewfinder zoom it. Without a logical multi-camera a
+  // pinch stays on the main lens (from 1x up): switching lenses reopens the
+  // camera, which mid-gesture would flicker, so 0.5 is a tap, not a pinch.
+  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+  const pinchRange =
+    backZoom && backZoom.min < 1
+      ? zoomRange
+      : { min: Math.max(1, zoomRange.min), max: zoomRange.max };
+  function fingerSpread(touches: React.TouchList): number {
+    const a = touches[0];
+    const b = touches[1];
+    return a && b ? Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) : 0;
+  }
+  function handleTouchStart(e: React.TouchEvent) {
+    if (e.touches.length !== 2 || status !== "live") return;
+    pinchRef.current = { distance: fingerSpread(e.touches), zoom: Math.max(zoom, pinchRange.min) };
+  }
+  function handleTouchMove(e: React.TouchEvent) {
+    const pinch = pinchRef.current;
+    if (!pinch || e.touches.length !== 2) return;
+    setZoom(pinchZoom(pinch.zoom, pinch.distance, fingerSpread(e.touches), pinchRange));
+  }
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (e.touches.length < 2) pinchRef.current = null;
+  }
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [flash, setFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -905,7 +1043,7 @@ function Viewfinder({
   async function captureOnce() {
     if (preview || limitReachedRef.current || !live) return;
     if (max > 0 && shotCount + pendingCount >= max) return;
-    const file = await capture(facing === "user");
+    const file = await capture(facing === "user", digitalZoom);
     if (file) enqueueCapture(file);
   }
 
@@ -1023,7 +1161,11 @@ function Viewfinder({
 
       {/* ── Viewfinder ─────────────────────────────────────────────── */}
       <div
-        className="relative mx-2 flex-1 overflow-hidden rounded-[28px] bg-ink-950"
+        className="relative mx-2 flex-1 touch-none overflow-hidden rounded-[28px] bg-ink-950"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         style={{ minHeight: "50vh" }}
       >
         <video
@@ -1035,7 +1177,8 @@ function Viewfinder({
           }`}
           style={{
             filter: cssFilter,
-            transform: facing === "user" ? "scaleX(-1)" : undefined,
+            // The same centred crop renderShot applies to the saved shot.
+            transform: `${facing === "user" ? "scaleX(-1) " : ""}scale(${digitalZoom})`,
           }}
         />
 
@@ -1108,6 +1251,40 @@ function Viewfinder({
             (network) right on the thumbnail — no separate screen for it. */}
         {/* The latest shot lives by the shutter; this strip only surfaces the
             ones that still need attention (retrying, or failed). */}
+        {/* Zoom: 0.5 only where the phone has the lens for it. The selected
+            pill reads the live value (1.6×), like the phone's own camera. */}
+        {live && !preview && (
+          <div
+            className={`absolute inset-x-0 flex justify-center ${
+              queueRef.current.some((i) => i.status === "retrying" || i.status === "failed")
+                ? "bottom-20"
+                : "bottom-4"
+            }`}
+          >
+            <div className="flex items-center gap-1 rounded-full bg-black/40 p-1 backdrop-blur-sm">
+              {presets.map((p) => {
+                const selected = activePreset(zoom, presets) === p;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setZoom(p)}
+                    aria-label={t("photos.zoom_to").replace("{{n}}", formatZoom(p))}
+                    aria-pressed={selected}
+                    className={`flex items-center justify-center rounded-full font-grotesk font-bold tabular-nums transition-[width,height,background-color] duration-150 ${
+                      selected
+                        ? "h-9 min-w-9 bg-black/60 px-1.5 text-[12px] text-amber-300"
+                        : "h-7 min-w-7 px-1 text-[11px] text-paper-50"
+                    }`}
+                  >
+                    {selected ? `${formatZoom(zoom)}×` : formatZoom(p)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {queueRef.current.some((i) => i.status === "retrying" || i.status === "failed") && (
           <div className="absolute bottom-4 right-4 flex gap-2">
             {queueRef.current
@@ -1177,7 +1354,10 @@ function Viewfinder({
         </div>
         <button
           type="button"
-          onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}
+          onClick={() => {
+            setZoom(1);
+            setFacing((f) => (f === "environment" ? "user" : "environment"));
+          }}
           disabled={!live}
           aria-label={t("photos.flip_camera")}
           title={t("photos.flip_camera")}

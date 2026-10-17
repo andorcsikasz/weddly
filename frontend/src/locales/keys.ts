@@ -4218,6 +4218,7 @@ export interface LocaleMessages {
     take_photo: string;
     upload_existing: string;
     flip_camera: string;
+    zoom_to: string;
     /** getUserMedia refused or absent; the file picker is the way through. */
     camera_blocked: string;
     camera_blocked_sub: string;

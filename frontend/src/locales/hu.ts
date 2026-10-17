@@ -3614,6 +3614,7 @@ const hu: LocaleMessages = {
     take_photo: "Fotó készítése",
     upload_existing: "Kép feltöltése",
     flip_camera: "Kamera váltása",
+    zoom_to: "Nagyítás: {{n}}×",
     camera_blocked: "A kamera ki van kapcsolva",
     camera_blocked_sub: "Engedélyezd a kamerát, vagy koppints és válassz képet.",
     camera_blocked_inapp: "Nyisd meg a linket Safariban, vagy koppints és válassz képet.",

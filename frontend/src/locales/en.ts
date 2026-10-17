@@ -3588,6 +3588,7 @@ const en: LocaleMessages = {
     take_photo: "Take a photo",
     upload_existing: "Upload a photo",
     flip_camera: "Flip camera",
+    zoom_to: "Zoom {{n}}×",
     camera_blocked: "Camera is off",
     camera_blocked_sub: "Allow camera access, or tap to pick a photo.",
     camera_blocked_inapp: "Open this link in Safari, or tap to pick a photo.",

@@ -3590,6 +3590,7 @@ const hr: LocaleMessages = {
     take_photo: "Snimite fotografiju",
     upload_existing: "Učitajte fotografiju",
     flip_camera: "Zamijenite kameru",
+    zoom_to: "Zum {{n}}×",
     camera_blocked: "Kamera je isključena",
     camera_blocked_sub: "Dopustite pristup kameri ili dodirnite da odaberete fotografiju.",
     camera_blocked_inapp:

@@ -3656,6 +3656,7 @@ const es: LocaleMessages = {
     take_photo: "Hacer una foto",
     upload_existing: "Subir una foto",
     flip_camera: "Cambiar de cámara",
+    zoom_to: "Zoom {{n}}×",
     camera_blocked: "La cámara está apagada",
     camera_blocked_sub: "Permite el acceso a la cámara o toca para elegir una foto.",
     camera_blocked_inapp: "Abre este enlace en Safari o toca para elegir una foto.",

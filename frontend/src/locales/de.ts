@@ -3662,6 +3662,7 @@ const de: LocaleMessages = {
     take_photo: "Foto aufnehmen",
     upload_existing: "Foto hochladen",
     flip_camera: "Kamera wechseln",
+    zoom_to: "Zoom {{n}}×",
     camera_blocked: "Die Kamera ist aus",
     camera_blocked_sub: "Erlauben Sie den Kamerazugriff, oder tippen Sie, um ein Foto zu wählen.",
     camera_blocked_inapp:

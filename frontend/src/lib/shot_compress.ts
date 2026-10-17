@@ -73,9 +73,16 @@ export async function renderShot(
   source: CanvasImageSource,
   sourceWidth: number,
   sourceHeight: number,
-  opts: { mirror?: boolean } = {},
+  opts: {
+    mirror?: boolean;
+    /** Digital zoom: the part of the source to keep, in source pixels. The
+     *  output is fitted to the CROP, so a 2x crop of a 1920 frame is 960 wide
+     *  (fitLongEdge never upscales: no invented pixels). */
+    crop?: { sx: number; sy: number; sw: number; sh: number };
+  } = {},
 ): Promise<Blob | null> {
-  const { width, height } = fitLongEdge(sourceWidth, sourceHeight);
+  const crop = opts.crop ?? { sx: 0, sy: 0, sw: sourceWidth, sh: sourceHeight };
+  const { width, height } = fitLongEdge(Math.round(crop.sw), Math.round(crop.sh));
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -90,7 +97,7 @@ export async function renderShot(
     ctx.translate(width, 0);
     ctx.scale(-1, 1);
   }
-  ctx.drawImage(source, 0, 0, width, height);
+  ctx.drawImage(source, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
   return encodeUnderBudget(canvasJpegEncoder(canvas));
 }
 
