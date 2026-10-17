@@ -62,3 +62,63 @@ export function canvasJpegEncoder(
       }
     });
 }
+
+/** Draw a source at its fitted size and encode it under budget. The ONE
+ *  pipeline for a shot: the live camera's frame and a photo picked from the
+ *  gallery both come through here, so they leave the phone the same shape.
+ *  Each call draws on its own canvas (a burst would otherwise overwrite a shot
+ *  still on the ladder). The draw is synchronous, before the first await, so a
+ *  live frame is captured the instant this is called. */
+export async function renderShot(
+  source: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+  opts: { mirror?: boolean } = {},
+): Promise<Blob | null> {
+  const { width, height } = fitLongEdge(sourceWidth, sourceHeight);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  // A transparent PNG would encode its empty pixels as black.
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, width, height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  if (opts.mirror) {
+    ctx.translate(width, 0);
+    ctx.scale(-1, 1);
+  }
+  ctx.drawImage(source, 0, 0, width, height);
+  return encodeUnderBudget(canvasJpegEncoder(canvas));
+}
+
+/** A photo picked from the gallery, through the same pipeline as a camera
+ *  shot. A phone original is 3-8 MB, the exact upload a venue's signal
+ *  cannot carry. Decoded through an <img>, which applies the photo's EXIF
+ *  rotation when drawn (every browser since 2020), so a portrait shot stays
+ *  portrait. Re-encoding also drops the EXIF block, GPS position included,
+ *  which a guest sharing to a couple's film never meant to send.
+ *
+ *  An iPhone HEIC comes out as a JPEG wherever the browser can decode HEIC
+ *  (Safari). Anything that will not decode is returned UNCHANGED, so the
+ *  caller's existing checks (HEIC guidance, the server's type sniff) still
+ *  answer it exactly as before. */
+export async function compressPickedImage(file: File): Promise<File> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    if (!img.naturalWidth || !img.naturalHeight) return file;
+    const blob = await renderShot(img, img.naturalWidth, img.naturalHeight);
+    if (!blob) return file;
+    const name = `${file.name.replace(/\.[^.]*$/, "") || "photo"}.jpg`;
+    return new File([blob], name, { type: "image/jpeg" });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}

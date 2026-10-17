@@ -36,7 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
 import { deleteShot, listShots, putShot } from "../lib/film_outbox";
-import { canvasJpegEncoder, encodeUnderBudget, fitLongEdge } from "../lib/shot_compress";
+import { compressPickedImage, renderShot } from "../lib/shot_compress";
 import { intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 
@@ -331,33 +331,15 @@ function useCamera(facing: Facing, enabled = true) {
    *  it here would apply it twice. `mirror` matches the flipped selfie preview
    *  so the saved shot is what the guest actually framed.
    *
-   *  The frame is drawn straight at its final size (long edge 1600px, see
-   *  lib/shot_compress) rather than captured full and shrunk after, so there
-   *  is one resample, and the quality ladder then encodes until the shot is
-   *  under 1 MB. The frame is copied synchronously, before the first await, so
-   *  the shot is the instant the shutter fired even if encoding takes a
-   *  moment. Each shot gets its OWN canvas: a burst fires every 450ms, and on
-   *  a shared one the next frame would land on the canvas while this shot was
-   *  still working down the ladder, and get encoded in its place. */
+   *  `renderShot` draws the frame straight at its final size (long edge
+   *  1600px) and encodes it under 1 MB, on a canvas of its own: see
+   *  lib/shot_compress, which a gallery pick goes through as well. */
   const capture = useCallback(async (mirror: boolean): Promise<File | null> => {
     const video = videoRef.current;
     if (!video) return null;
     // No frame yet — better to do nothing than to send a black rectangle.
     if (video.videoWidth === 0 || video.videoHeight === 0) return null;
-    const { width: w, height: h } = fitLongEdge(video.videoWidth, video.videoHeight);
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    if (mirror) {
-      ctx.translate(w, 0);
-      ctx.scale(-1, 1);
-    }
-    ctx.drawImage(video, 0, 0, w, h);
-    const blob = await encodeUnderBudget(canvasJpegEncoder(canvas));
+    const blob = await renderShot(video, video.videoWidth, video.videoHeight, { mirror });
     return blob ? new File([blob], "shot.jpg", { type: "image/jpeg" }) : null;
   }, []);
 
@@ -974,10 +956,13 @@ function Viewfinder({
     openPicker();
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // A gallery pick goes through the camera's own pipeline (1600px, under
+  // 1 MB) before it is queued. An undecodable file comes back unchanged, so
+  // the HEIC guidance in enqueueCapture still fires where it can't convert.
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) enqueueCapture(file);
     e.target.value = "";
+    if (file) enqueueCapture(await compressPickedImage(file));
   }
 
   function handleQueueThumbTap(item: QueueItem) {
@@ -991,7 +976,9 @@ function Viewfinder({
   return (
     // One true black across bar, viewfinder and controls — a bluish ink-950
     // chrome against a black frame reads as two panels stitched together.
-    <div className="flex min-h-dvh flex-col bg-black">
+    // A camera, not a page: no text selection on a held shutter, no "Save
+    // image" sheet on a long-pressed thumbnail, no grey flash on a tap.
+    <div className="flex min-h-dvh select-none flex-col bg-black [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none]">
       {preview && <PreviewBanner />}
       {demo && <PreviewBanner label={t("photos.demo_banner")} />}
 
