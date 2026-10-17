@@ -36,6 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
 import { deleteShot, listShots, putShot } from "../lib/film_outbox";
+import { canvasJpegEncoder, encodeUnderBudget, fitLongEdge } from "../lib/shot_compress";
 import { intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 
@@ -257,7 +258,6 @@ type Facing = "environment" | "user";
 
 function useCamera(facing: Facing, enabled = true) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<CameraStatus>(enabled ? "starting" : "preview");
 
@@ -329,34 +329,39 @@ function useCamera(facing: Facing, enabled = true) {
   /** Grab the current frame as a JPEG. The aesthetic is deliberately NOT baked
    *  in: it is stored as metadata and re-applied at display time, so painting
    *  it here would apply it twice. `mirror` matches the flipped selfie preview
-   *  so the saved shot is what the guest actually framed. */
-  const capture = useCallback((mirror: boolean): Promise<File | null> => {
-    return new Promise((resolve) => {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      if (!video || !canvas) return resolve(null);
-      // No frame yet — better to do nothing than to send a black rectangle.
-      if (video.videoWidth === 0 || video.videoHeight === 0) return resolve(null);
-      const w = video.videoWidth;
-      const h = video.videoHeight;
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return resolve(null);
-      if (mirror) {
-        ctx.translate(w, 0);
-        ctx.scale(-1, 1);
-      }
-      ctx.drawImage(video, 0, 0, w, h);
-      canvas.toBlob(
-        (blob) => resolve(blob ? new File([blob], "shot.jpg", { type: "image/jpeg" }) : null),
-        "image/jpeg",
-        0.9,
-      );
-    });
+   *  so the saved shot is what the guest actually framed.
+   *
+   *  The frame is drawn straight at its final size (long edge 1600px, see
+   *  lib/shot_compress) rather than captured full and shrunk after, so there
+   *  is one resample, and the quality ladder then encodes until the shot is
+   *  under 1 MB. The frame is copied synchronously, before the first await, so
+   *  the shot is the instant the shutter fired even if encoding takes a
+   *  moment. Each shot gets its OWN canvas: a burst fires every 450ms, and on
+   *  a shared one the next frame would land on the canvas while this shot was
+   *  still working down the ladder, and get encoded in its place. */
+  const capture = useCallback(async (mirror: boolean): Promise<File | null> => {
+    const video = videoRef.current;
+    if (!video) return null;
+    // No frame yet — better to do nothing than to send a black rectangle.
+    if (video.videoWidth === 0 || video.videoHeight === 0) return null;
+    const { width: w, height: h } = fitLongEdge(video.videoWidth, video.videoHeight);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    if (mirror) {
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, w, h);
+    const blob = await encodeUnderBudget(canvasJpegEncoder(canvas));
+    return blob ? new File([blob], "shot.jpg", { type: "image/jpeg" }) : null;
   }, []);
 
-  return { videoRef, canvasRef, status, capture };
+  return { videoRef, status, capture };
 }
 
 // ─── outbox drain off the viewfinder ─────────────────────────────────────────
@@ -580,7 +585,7 @@ function Viewfinder({
   const [facing, setFacing] = useState<Facing>("environment");
   // Host preview must not even request camera permission. It renders the same
   // chrome with a clearly marked, inert viewfinder instead.
-  const { videoRef, canvasRef, status, capture } = useCamera(facing, !preview);
+  const { videoRef, status, capture } = useCamera(facing, !preview);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [flash, setFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1046,7 +1051,6 @@ function Viewfinder({
             transform: facing === "user" ? "scaleX(-1)" : undefined,
           }}
         />
-        <canvas ref={canvasRef} className="hidden" />
 
         {/* Starting up — quiet, no copy. */}
         {status === "starting" && (
