@@ -981,6 +981,77 @@ describe("per-guest quota and canonical attribution", () => {
 // next visit, so the server sees the same shot again whenever the first
 // attempt landed but its answer never reached the phone.
 
+// ── The upload deadline closes the film, and only while it is in the past ──────
+
+describe("film deadline", () => {
+  let token: string;
+  let albumToken: string;
+
+  function uploadEnabled(): number {
+    return (
+      db
+        .prepare("SELECT is_upload_enabled AS v FROM photo_albums WHERE upload_token = ?")
+        .get(albumToken) as { v: number }
+    ).v;
+  }
+
+  beforeAll(async () => {
+    wipeFilm();
+    ({ token } = await bootstrapCouple("film-deadline@weddly.test"));
+    albumToken = await createAlbum(token);
+    const r = await req("POST", `/api/photo-albums/${albumToken}/devices`, {
+      device_id: "late-guest",
+      guest_name: "Lili",
+      email: "lili@guest.test",
+    });
+    expect(r.status).toBe(200);
+  });
+
+  afterAll(() => wipeFilm());
+
+  test("a late upload is refused without switching the film off", async () => {
+    db.prepare("UPDATE photo_albums SET event_ends_at = ? WHERE upload_token = ?").run(
+      Date.now() - 60_000,
+      albumToken,
+    );
+    const late = await guestUpload(albumToken, "late-guest");
+    expect(late.status).toBe(403);
+    expect(((await late.json()) as { detail?: { code?: string } }).detail?.code).toBe(
+      "film_deadline_passed",
+    );
+    // The couple's own switch is untouched: the deadline is a derived close.
+    expect(uploadEnabled()).toBe(1);
+  });
+
+  test("moving the deadline later reopens the film with nothing else to do", async () => {
+    // What a postponed wedding (date shift) or the couple's edit does: only
+    // the deadline moves. It used to leave the film shut, since the late
+    // upload above had stored is_upload_enabled = 0.
+    const patched = await req(
+      "PATCH",
+      "/api/photo-albums/current",
+      { event_ends_at: Date.now() + 3_600_000 },
+      { token },
+    );
+    expect(patched.status).toBe(200);
+    const upload = await guestUpload(albumToken, "late-guest");
+    expect(upload.status).toBe(201);
+  });
+
+  test("the couple's own switch still closes the film before its deadline", async () => {
+    const off = await req(
+      "PATCH",
+      "/api/photo-albums/current",
+      { is_upload_enabled: false },
+      { token },
+    );
+    expect(off.status).toBe(200);
+    const refused = await guestUpload(albumToken, "late-guest");
+    expect(refused.status).toBe(403);
+    await refused.body?.cancel();
+  });
+});
+
 describe("guest upload resend (client_shot_id)", () => {
   let token: string;
   let albumToken: string;

@@ -1352,10 +1352,13 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
   if (!row) throw new HttpError(404, "Album not found");
   if (!row.is_upload_enabled) throw new HttpError(403, "Film is closed");
 
-  // Auto-close if event_ends_at has passed.
-  if (row.event_ends_at !== null && now() > row.event_ends_at) {
-    db.prepare("UPDATE photo_albums SET is_upload_enabled = 0 WHERE id = ?").run(row.id);
-    throw new HttpError(403, "Shooting window has closed");
+  // Past the deadline the film is closed, and that is DERIVED, never stored.
+  // This used to write is_upload_enabled = 0 on the first late upload, and
+  // nothing ever set it back: a deadline moved later afterwards (the couple
+  // editing it, or a postponed wedding shifting it) left the film shut with
+  // its deadline still ahead. is_upload_enabled is the couple's own switch.
+  if (row.event_ends_at !== null && now() >= row.event_ends_at) {
+    throw new HttpError(403, "Shooting window has closed", { code: "film_deadline_passed" });
   }
 
   const form = await ctx.req.formData().catch(() => {

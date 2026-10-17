@@ -1619,20 +1619,22 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
     photoAlbumApi
       .registerDevice(token, deviceId, storedName, { email: storedEmail })
       .then(({ album, shotCount }) => {
-        if (!album.isUploadEnabled) {
-          setState({ kind: "disabled" });
+        // The film is open until the couple closes it or its deadline passes,
+        // and only then. The reveal date says when the photos come OUT, never
+        // when shooting stops: a guest who took one shot and came back before
+        // the reveal used to land on the "still developing" countdown, a
+        // screen with no camera, hours before the deadline (reported with a
+        // screenshot 2026-10-17). The countdown belongs to a CLOSED film.
+        const closed =
+          !album.isUploadEnabled || (album.eventEndsAt !== null && Date.now() >= album.eventEndsAt);
+        if (closed) {
+          const developing =
+            album.revealAt !== null && Date.now() < album.revealAt && shotCount > 0;
+          setState(developing ? { kind: "developing", album } : { kind: "disabled" });
           return;
         }
         if (album.shotsPerGuest !== null && shotCount >= album.shotsPerGuest) {
           setState({ kind: "limit_reached", album });
-          return;
-        }
-        if (album.eventEndsAt !== null && Date.now() > album.eventEndsAt) {
-          setState({ kind: "disabled" });
-          return;
-        }
-        if (album.revealAt !== null && Date.now() < album.revealAt && shotCount > 0) {
-          setState({ kind: "developing", album });
           return;
         }
         if (storedName === null) {

@@ -433,4 +433,56 @@ describe("<GuestPhotoPage> host preview", () => {
       }
     },
   );
+
+  // Reported 2026-10-17 with a screenshot: a guest who had already shot came
+  // back before the reveal and got "still developing", no camera, while the
+  // film's deadline was still ahead.
+  it.each([
+    [
+      "before the deadline, a returning guest gets the camera back",
+      Date.now() + 3_600_000,
+      "Szia, Anna.",
+    ],
+    [
+      "once the deadline passes, a guest who shot sees the countdown",
+      Date.now() - 1_000,
+      "Még előhívás alatt.",
+    ],
+  ])("%s", async (_case, eventEndsAt, heading) => {
+    localStorage.setItem("weddly.film.live-token.name", "Anna");
+    globalThis.fetch = mock(() =>
+      Promise.resolve(
+        response({
+          album: {
+            displayName: "Andor & Sári",
+            weddingDate: "2027-09-05",
+            slug: null,
+            title: null,
+            shotsPerGuest: 10,
+            isUploadEnabled: true,
+            eventEndsAt,
+            // The reveal is still ahead in both cases: it decides when the
+            // photos come out, never when shooting stops.
+            revealAt: Date.now() + 86_400_000,
+            filmAesthetic: "natural",
+            coverImageUrl: null,
+          },
+          shotCount: 1,
+        }),
+      ),
+    ) as unknown as typeof fetch;
+    Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: undefined });
+
+    render(
+      <I18nProvider>
+        <MemoryRouter initialEntries={["/photos/live-token"]}>
+          <Routes>
+            <Route path="/photos/:token" element={<GuestPhotoPage />} />
+          </Routes>
+        </MemoryRouter>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText(heading)).toBeInTheDocument());
+  });
 });
