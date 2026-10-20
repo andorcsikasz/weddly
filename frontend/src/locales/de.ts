@@ -5189,6 +5189,7 @@ const de: LocaleMessages = {
     total_summary_invited: "{n} eingeladen",
     total_summary_households_unit: "Haushalte",
     total_summary_invited_unit: "eingeladen",
+    total_summary_kids_unit: "Kinder",
     total_summary_planned_unit: "geplant",
     stat_planned_action: "Zielgästezahl anpassen",
     stat_total_action: "Alle Gäste zeigen",

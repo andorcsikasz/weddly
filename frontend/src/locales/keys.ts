@@ -5779,6 +5779,7 @@ export interface LocaleMessages {
     total_summary_invited: string;
     total_summary_households_unit: string;
     total_summary_invited_unit: string;
+    total_summary_kids_unit: string;
     total_summary_planned_unit: string;
     stat_planned_action: string;
     stat_total_action: string;

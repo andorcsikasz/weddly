@@ -5084,6 +5084,7 @@ const hr: LocaleMessages = {
     total_summary_invited: "{n} pozvano",
     total_summary_households_unit: "kućanstava",
     total_summary_invited_unit: "pozvano",
+    total_summary_kids_unit: "djece",
     total_summary_planned_unit: "planirano",
     stat_planned_action: "Prilagodite cilj broja gostiju",
     stat_total_action: "Prikažite sve goste",

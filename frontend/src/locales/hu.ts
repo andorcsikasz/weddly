@@ -5089,6 +5089,7 @@ const hu: LocaleMessages = {
     total_summary_invited: "{n} meghívva",
     total_summary_households_unit: "háztartás",
     total_summary_invited_unit: "meghívva",
+    total_summary_kids_unit: "gyerek",
     total_summary_planned_unit: "tervezett",
     stat_planned_action: "Létszámcél módosítása",
     stat_total_action: "Összes vendég megjelenítése",

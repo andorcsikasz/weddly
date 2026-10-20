@@ -82,7 +82,6 @@ import {
   Shell,
   Sprout,
   Table as TableIcon,
-  Target,
   Trash2,
   TriangleAlert,
   Upload,
@@ -105,11 +104,10 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast, ViewSelect } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { GuestInvitesCenter } from "./GuestInvitesPage";
-import { guestCountBaseline } from "../lib/budget";
 import {
   type GuestUpsert,
   coupleApi,
@@ -393,7 +391,6 @@ export default function GuestsPage() {
       ? v
       : "default";
   })();
-  const navigate = useNavigate();
   // Anchor for the "households" header stat — clicking it clears any filter and
   // smooth-scrolls down to the household list.
   const listRef = useRef<HTMLDivElement>(null);
@@ -1254,16 +1251,9 @@ export default function GuestsPage() {
     }
   }
 
-  // Planned headcount shown alongside the live counts so couples see actual vs
-  // target at a glance. Mirrors the single number the couple set on the budget
-  // page (planning_count), falling back to the onboarding goal's baseline (the
-  // exact value, or the midpoint of a range) rather than printing a "40–150"
-  // range. Null (stat hidden) while the goal is still TBD.
-  const goal = couple?.guest_count_goal;
-  const plannedGuests: string | null =
-    couple && goal && goal.kind !== "tbd"
-      ? String(couple.planning_count ?? guestCountBaseline(couple, guests.length))
-      : null;
+  // Children and babies are part of the guest total, broken out because they
+  // change catering and seating (kids' menu, high chairs).
+  const kidsCount = listableGuests.filter((g) => g.kind !== "adult").length;
 
   // ── View mode ────────────────────────────────────────────────────────
   // A search always flips to the flat list (nothing about "search" implies a
@@ -1278,12 +1268,13 @@ export default function GuestsPage() {
   const activeFilterCount =
     rsvpSet.size + groupSet.size + (invitedFilter ? 1 : 0) + (accommodationFilter ? 1 : 0);
 
-  // Per-stat highlight/dim. The stat that owns the current view reads bright;
-  // the rest fade so the live filter is obvious at a glance.
-  const totalActive = activeFilterCount === 0 && !debouncedQuery && !householdFilter;
+  // Per-stat highlight/dim. Only a FILTER stat (invited / households) owning
+  // the view fades its siblings. The unfiltered list is the resting state, so
+  // it dims nothing: fading every other counter there made them read as
+  // disabled on the page a couple sees most.
   const invitedActive = invitedFilter;
   const householdActive = householdFilter && !flatView;
-  const anyStatActive = totalActive || invitedActive || householdActive;
+  const anyStatActive = invitedActive || householdActive;
   // Whichever household cards are on screen, for the collapse-all toggle in
   // the filter bar. Empty (toggle hidden) in the table and flat-list lenses,
   // which have no cards, and for a lone card, which has its own chevron.
@@ -1304,17 +1295,7 @@ export default function GuestsPage() {
             <h1 className="sr-only font-grotesk">{t("guests.title")}</h1>
           </div>
           {listableGuests.length > 0 ? (
-            <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-              {plannedGuests !== null && (
-                <GuestStat
-                  value={plannedGuests}
-                  label={t("guests.total_summary_planned_unit")}
-                  icon={<Target size={18} aria-hidden />}
-                  onClick={() => navigate("/app/budget")}
-                  actionTitle={t("guests.stat_planned_action")}
-                  dimmed={anyStatActive}
-                />
-              )}
+            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
               {/* Every stat counts `listableGuests`, NOT `guests`. The couple's
                   own two rows live in the guests table for headcount + seating
                   but are filtered out of the list and out of every filter, so
@@ -1329,9 +1310,16 @@ export default function GuestsPage() {
                 tone="primary"
                 onClick={showAllGuests}
                 actionTitle={t("guests.stat_total_action")}
-                active={totalActive}
-                dimmed={anyStatActive && !totalActive}
+                dimmed={anyStatActive}
               />
+              {kidsCount > 0 && (
+                <GuestStat
+                  value={kidsCount}
+                  label={t("guests.total_summary_kids_unit")}
+                  icon={<Baby size={18} aria-hidden />}
+                  dimmed={anyStatActive}
+                />
+              )}
               <GuestStat
                 value={closedHouseholds.length}
                 label={t("guests.total_summary_households_unit")}
@@ -1350,7 +1338,7 @@ export default function GuestsPage() {
                 active={invitedActive}
                 dimmed={anyStatActive && !invitedActive}
               />
-            </dl>
+            </div>
           ) : null}
         </div>
         {couple && !listEmpty && (
@@ -7094,27 +7082,29 @@ function GuestStat({
    *  drop opacity so the active filter reads at a glance. */
   dimmed?: boolean;
 }) {
-  // One cool navy family per stat — the icon inherits the number's token so it
-  // can't drift to a mismatched (warm-looking) lighter shade. Hierarchy is
-  // carried by the primary/secondary number token alone.
-  const cls =
-    tone === "primary"
-      ? "text-2xl font-semibold tabular-nums text-ink-900 dark:text-paper-50"
-      : "text-2xl font-semibold tabular-nums text-ink-600 dark:text-umber-300";
-  // The number + icon read as a glyph pair; the icon alone is ambiguous
-  // (target / people / house / paper-plane), so an INSTANT styled tooltip
-  // names it on hover/focus. We render our own (group-hover) tooltip rather
-  // than the native `title` attribute, which only appears after a ~1s OS
-  // delay and can't be styled.
+  // One cool navy family per stat; the icon inherits the number's colour so
+  // it can't drift to a mismatched shade. The colour is picked EXCLUSIVELY:
+  // stacking an active blush class on top of the ink one left the winner to
+  // stylesheet order, and the ink one won, so the active stat never lit up.
+  const color = active
+    ? "text-blush-600 dark:text-blush-300"
+    : tone === "primary"
+      ? "text-ink-900 dark:text-paper-50"
+      : "text-ink-600 dark:text-umber-300";
+  const cls = `text-2xl font-semibold tabular-nums ${color}`;
+  const fade = dimmed ? "opacity-35 hover:opacity-100" : "";
+  // The number + icon read as a glyph pair; the icon alone is ambiguous, so an
+  // INSTANT styled tooltip names it on hover/focus (the native `title` only
+  // shows after a ~1s OS delay and can't be styled). Screen readers get the
+  // name from the sr-only label instead.
   const tip = actionTitle ?? label;
   const inner = (
     <>
-      <dd>{value}</dd>
-      <dt aria-hidden>{icon}</dt>
+      <span>{value}</span>
+      {icon}
+      <span className="sr-only">{label}</span>
     </>
   );
-  // Decorative — the accessible name is carried by aria-label on the trigger,
-  // so we hide the duplicate text from screen readers to avoid double reads.
   const tooltip = (
     <span
       aria-hidden
@@ -7129,15 +7119,13 @@ function GuestStat({
         <button
           type="button"
           onClick={onClick}
-          aria-label={tip}
           aria-pressed={active}
           className={`peer -mx-1 inline-flex items-center gap-1 rounded-md px-1 leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 ${cls} ${
-            active
-              ? "text-blush-600 dark:text-blush-300"
-              : "hover:text-blush-600 dark:hover:text-blush-300"
-          } ${dimmed ? "opacity-35 hover:opacity-100" : ""}`}
+            active ? "" : "hover:text-blush-600 dark:hover:text-blush-300"
+          } ${fade}`}
         >
           {inner}
+          <span className="sr-only">{`, ${tip}`}</span>
         </button>
         {tooltip}
       </div>
@@ -7145,8 +7133,7 @@ function GuestStat({
   }
   return (
     <div
-      className={`group relative inline-flex items-center gap-1 leading-none ${cls}`}
-      aria-label={tip}
+      className={`group relative inline-flex items-center gap-1 leading-none transition ${cls} ${fade}`}
     >
       {inner}
       {tooltip}
