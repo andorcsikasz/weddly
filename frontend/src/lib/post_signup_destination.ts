@@ -28,7 +28,10 @@ const KEY = "weddly.post_signup_destination";
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const VENDOR_PAGE = /^\/app\/suppliers\/[A-Za-z0-9][A-Za-z0-9._~%-]{0,119}$/;
-const CAMERA_START = /^\/camera\/start(\?cap=\d{1,3})?$/;
+// A tryout code rides along too (an admin's shared /camera/start?code=… link
+// has to survive sign-up), in exactly the shape the backend accepts a code.
+const CAMERA_START =
+  /^\/camera\/start(\?cap=\d{1,3}(&code=[A-Z0-9-]{4,32})?|\?code=[A-Z0-9-]{4,32})?$/;
 
 export function isSafeDestination(path: unknown): path is string {
   return typeof path === "string" && (VENDOR_PAGE.test(path) || CAMERA_START.test(path));

@@ -824,6 +824,41 @@ export interface FilmAccessCheck {
   tiers: { cap: number; priceCents: number; chargeCents: number }[];
 }
 
+/** A free Weddly Camera tryout code, as the admin console lists it. The
+ *  status is derived, never stored (see film_promo_codes in schema.sql). */
+export type FilmPromoCodeStatus = "active" | "used_up" | "expired" | "revoked";
+
+export interface FilmPromoRedemption {
+  couple_id: number | null;
+  display_name: string | null;
+  email: string | null;
+  redeemed_at: number;
+}
+
+export interface FilmPromoCode {
+  id: number;
+  code: string;
+  /** Guest tier the code opens the film to (one of FILM_PRICE_TIERS). */
+  cap: number;
+  max_redemptions: number;
+  redemptions: number;
+  expires_at: number | null;
+  revoked_at: number | null;
+  note: string | null;
+  created_at: number;
+  status: FilmPromoCodeStatus;
+  redeemed_by: FilmPromoRedemption[];
+}
+
+/** Why a code cannot be used, as the redeem/check endpoints name it. */
+export type FilmPromoRefusal =
+  | "code_not_found"
+  | "code_expired"
+  | "code_revoked"
+  | "code_used_up"
+  | "code_already_redeemed"
+  | "cap_already_covered";
+
 export interface Couple {
   id: number;
   partner_a_id: number;

@@ -39,6 +39,7 @@ import type {
   EnvelopeTip,
   Household,
   FilmAccessCheck,
+  FilmPromoCode,
   FilmAesthetic,
   FilmDevice,
   FilmUpload,
@@ -2269,6 +2270,26 @@ export const visitorApi = {
 };
 
 /** Admin review moderation — the flagged (low-rating open) review queue. */
+/** Weddly Camera tryout codes: the admin console's side. */
+export const adminFilmCodeApi = {
+  list: () => apiFetch<{ codes: FilmPromoCode[] }>("GET", "/api/admin/film-codes"),
+  create: (body: {
+    code?: string;
+    cap: number;
+    max_redemptions?: number;
+    expires_at?: number | null;
+    note?: string | null;
+  }) => apiFetch<{ code: FilmPromoCode }>("POST", "/api/admin/film-codes", body),
+  revoke: (id: number) =>
+    apiFetch<{ code: FilmPromoCode }>("POST", `/api/admin/film-codes/${id}/revoke`),
+};
+
+/** Weddly Camera tryout codes: the customer's side. `check` spends nothing. */
+export const filmCodeApi = {
+  check: (code: string) => apiFetch<{ cap: number }>("POST", "/api/film-codes/check", { code }),
+  redeem: (code: string) => apiFetch<{ cap: number }>("POST", "/api/film-codes/redeem", { code }),
+};
+
 export const adminReviewApi = {
   listFlagged: (opts?: { cursor?: string | null; limit?: number }) => {
     const qs = new URLSearchParams();

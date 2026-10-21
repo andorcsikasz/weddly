@@ -39,6 +39,7 @@ import {
   QrCode,
   Share2,
   Trash2,
+  Ticket,
   Upload,
   Users,
   X,
@@ -55,7 +56,8 @@ import {
 } from "../components/CameraHero";
 import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
 import { useModalShell } from "../components/ui/modal_shell";
-import { coupleApi, photoAlbumApi } from "../lib/endpoints";
+import { coupleApi, filmCodeApi, photoAlbumApi } from "../lib/endpoints";
+import { filmCodeErrorKey, normalizeFilmCode } from "../lib/film_codes";
 import { intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 
@@ -1052,6 +1054,11 @@ export default function MediaPage() {
   const [filmAccess, setFilmAccess] = useState<FilmAccessCheck | null>(null);
   const [showFilmModal, setShowFilmModal] = useState(false);
   const [showTiers, setShowTiers] = useState(false);
+  // A tryout code (from an admin's /camera/start?code=… link, or typed here).
+  const [codeDialog, setCodeDialog] = useState<{ open: boolean; initial: string }>(() => {
+    const fromLink = normalizeFilmCode(new URLSearchParams(location.search).get("code") ?? "");
+    return { open: fromLink !== null, initial: fromLink ?? "" };
+  });
   const [showShare, setShowShare] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -1138,6 +1145,31 @@ export default function MediaPage() {
       cancelled = true;
     };
   }, [refreshUploads]);
+
+  /** After a code opened the film: say so, and re-read what changed. */
+  function handleCodeRedeemed(cap: number) {
+    toast.success(t("camera.code_redeemed", { n: cap }));
+    setShowTiers(false);
+    setCodeDialog({ open: false, initial: "" });
+    photoAlbumApi
+      .current()
+      .then((r) => setAlbum(r.album))
+      .catch(() => {});
+    photoAlbumApi
+      .filmAccess()
+      .then((r) => setFilmAccess(r.access))
+      .catch(() => {});
+  }
+
+  // Arriving from /camera/start, which redeemed the code before landing here.
+  useEffect(() => {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get("code")) window.history.replaceState(null, "", location.pathname);
+    if (qs.get("film") !== "code") return;
+    const cap = Number(qs.get("cap"));
+    if (Number.isInteger(cap) && cap > 0) toast.success(t("camera.code_redeemed", { n: cap }));
+    window.history.replaceState(null, "", location.pathname);
+  }, []);
 
   useEffect(() => {
     const qs = new URLSearchParams(location.search);
@@ -1860,6 +1892,15 @@ export default function MediaPage() {
                         : t("media.film_unpaid_body")
                       : t("media.film_upgrade_body").replace("{{cap}}", String(album.guestCap))}
                   </p>
+                  {/* While card payments are off this is the only way in, so
+                      it stays live even when the plan button is not. */}
+                  <button
+                    type="button"
+                    onClick={() => setCodeDialog({ open: true, initial: "" })}
+                    className="shrink-0 rounded-xl px-2 py-2 text-[13px] font-semibold text-amber-800 underline-offset-4 hover:underline"
+                  >
+                    {t("camera.code_toggle")}
+                  </button>
                   <button
                     type="button"
                     onClick={handleUpgradeFilm}
@@ -2109,6 +2150,16 @@ export default function MediaPage() {
         tiers={buyableTiers}
         onPick={(cap) => void checkoutTier(cap)}
         onClose={() => setShowTiers(false)}
+        onHaveCode={() => {
+          setShowTiers(false);
+          setCodeDialog({ open: true, initial: "" });
+        }}
+      />
+      <FilmCodeDialog
+        open={codeDialog.open}
+        initial={codeDialog.initial}
+        onRedeemed={handleCodeRedeemed}
+        onClose={() => setCodeDialog({ open: false, initial: "" })}
       />
       {album && guestLinkUrl && (
         <ShareSheet
@@ -2129,11 +2180,13 @@ function FilmTierDialog({
   tiers,
   onPick,
   onClose,
+  onHaveCode,
 }: {
   open: boolean;
   tiers: FilmAccessCheck["tiers"];
   onPick: (cap: number) => void;
   onClose: () => void;
+  onHaveCode: () => void;
 }) {
   const { t } = useT();
   const [busy, setBusy] = useState<number | null>(null);
@@ -2161,6 +2214,91 @@ function FilmTierDialog({
           </li>
         ))}
       </ul>
+      <button
+        type="button"
+        onClick={onHaveCode}
+        className="mt-4 flex min-h-11 w-full items-center justify-center gap-1.5 text-sm font-medium text-umber-700 underline-offset-4 hover:underline dark:text-paper-300"
+      >
+        <Ticket size={15} strokeWidth={1.5} aria-hidden="true" />
+        {t("camera.code_toggle")}
+      </button>
+    </Dialog>
+  );
+}
+
+/** Redeem a tryout code on this film. Checks and spends in one step: the
+ *  server refuses a code that would not raise the cap, so nothing is wasted. */
+function FilmCodeDialog({
+  open,
+  initial,
+  onRedeemed,
+  onClose,
+}: {
+  open: boolean;
+  initial: string;
+  onRedeemed: (cap: number) => void;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  const [value, setValue] = useState(initial);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (open) {
+      setValue(initial);
+      setError(null);
+    }
+  }, [open, initial]);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    const code = normalizeFilmCode(value);
+    if (!code) {
+      setError(t("camera.code_error_invalid_code"));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const { cap } = await filmCodeApi.redeem(code);
+      onRedeemed(cap);
+    } catch (err) {
+      setError(t(filmCodeErrorKey(err)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} title={t("camera.code_dialog_title")} onClose={onClose} role="dialog">
+      <form onSubmit={submit} className="mt-2">
+        <input
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value.toUpperCase());
+            setError(null);
+          }}
+          placeholder={t("camera.code_placeholder")}
+          aria-label={t("camera.code_placeholder")}
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          autoFocus
+          className="input font-mono uppercase tracking-wide"
+        />
+        {error && (
+          <p className="mt-1.5 text-sm text-amber-700 dark:text-amber-300" role="alert">
+            {error}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={busy || value.trim() === ""}
+          className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-umber-900 px-5 text-base font-semibold text-paper-50 transition-colors hover:bg-umber-800 disabled:opacity-50"
+        >
+          {busy ? "…" : t("camera.code_apply")}
+        </button>
+      </form>
     </Dialog>
   );
 }

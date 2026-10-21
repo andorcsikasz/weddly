@@ -7505,6 +7505,40 @@ export interface LocaleMessages {
     };
   };
   admin: {
+    nav_film_codes: string;
+    film_codes: {
+      title: string;
+      description: string;
+      new_title: string;
+      code_label: string;
+      code_placeholder: string;
+      cap_label: string;
+      uses_label: string;
+      expires_label: string;
+      note_label: string;
+      note_placeholder: string;
+      create: string;
+      created: string;
+      copied: string;
+      copy_code: string;
+      copy_link: string;
+      revoke: string;
+      revoke_title: string;
+      revoke_body: string;
+      revoked: string;
+      empty: string;
+      load_error: string;
+      status_active: string;
+      status_used_up: string;
+      status_expired: string;
+      status_revoked: string;
+      uses_count: string;
+      guests: string;
+      expires_on: string;
+      redeemed_by: string;
+      error_code_taken: string;
+      error_invalid_code: string;
+    };
     nav_label: string;
     /** ProfileMenu toggle that flips the shell between user-facing and
      *  admin-only chrome. */
@@ -10561,6 +10595,22 @@ export interface LocaleMessages {
    *  disclosure. Pricing numbers themselves live in the component (they're
    *  digits, not prose); these keys are the surrounding copy only. */
   camera: {
+    code_toggle: string;
+    code_placeholder: string;
+    code_apply: string;
+    code_applied: string;
+    code_remove: string;
+    code_cta: string;
+    code_redeemed: string;
+    code_dialog_title: string;
+    code_error_code_not_found: string;
+    code_error_code_expired: string;
+    code_error_code_revoked: string;
+    code_error_code_used_up: string;
+    code_error_code_already_redeemed: string;
+    code_error_cap_already_covered: string;
+    code_error_invalid_code: string;
+    code_error_rate: string;
     seo_title: string;
     seo_description: string;
     hero_title: string;

@@ -23,6 +23,7 @@ import {
   LayoutDashboard,
   LayoutList,
   LineChart,
+  Ticket,
   Wallet,
   Layers,
   MessageCircle,
@@ -377,6 +378,13 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     labelKey: "admin.nav_email_preview",
     // no tabKey — goes to the phone More sheet
     icon: <Mail size={18} />,
+    group: "manage",
+  },
+  {
+    to: "/app/admin/film-codes",
+    labelKey: "admin.nav_film_codes",
+    // no tabKey, goes to the phone More sheet
+    icon: <Ticket size={18} />,
     group: "manage",
   },
   {

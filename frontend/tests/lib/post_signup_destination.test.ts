@@ -51,6 +51,27 @@ describe("isSafeDestination", () => {
   });
 });
 
+describe("isSafeDestination: camera start", () => {
+  it("accepts the tier and a tryout code, alone or together", () => {
+    expect(isSafeDestination("/camera/start")).toBe(true);
+    expect(isSafeDestination("/camera/start?cap=100")).toBe(true);
+    expect(isSafeDestination("/camera/start?code=CAM-7K2Q9XHM")).toBe(true);
+    expect(isSafeDestination("/camera/start?cap=50&code=FAIR2027")).toBe(true);
+  });
+
+  it("refuses a code in any other shape", () => {
+    for (const bad of [
+      "/camera/start?code=",
+      "/camera/start?code=ab",
+      "/camera/start?code=CAM-1//evil.example",
+      "/camera/start?code=CAM-1&next=https://evil.example",
+      "/camera/start?code=fair2027",
+    ]) {
+      expect(isSafeDestination(bad)).toBe(false);
+    }
+  });
+});
+
 describe("remember + take", () => {
   it("hands the destination back exactly once", () => {
     rememberDestination("/app/suppliers/magyar-foto-v12");

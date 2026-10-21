@@ -1914,6 +1914,36 @@ CREATE TABLE IF NOT EXISTS film_devices (
   UNIQUE(album_id, device_id)
 );
 
+-- Free tryout codes for Weddly Camera, minted by an admin. A code opens a
+-- film to one guest tier with no payment. It raises photo_albums.guest_cap
+-- and nothing else: paid_at / paid_amount_cents stay untouched, because the
+-- financial planner counts paid_at as a sale and a later upgrade must charge
+-- the full difference. The status (active / used up / expired / revoked) is
+-- derived on read from these columns plus the redemption count.
+CREATE TABLE IF NOT EXISTS film_promo_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  cap INTEGER NOT NULL,
+  max_redemptions INTEGER NOT NULL,
+  expires_at INTEGER,
+  revoked_at INTEGER,
+  note TEXT,
+  created_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL
+);
+
+-- One row per film that used a code. UNIQUE so one film cannot spend the
+-- same code twice; the row count is what max_redemptions is measured against.
+CREATE TABLE IF NOT EXISTS film_promo_redemptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code_id INTEGER NOT NULL REFERENCES film_promo_codes(id) ON DELETE CASCADE,
+  album_id INTEGER NOT NULL REFERENCES photo_albums(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  cap_before INTEGER NOT NULL,
+  redeemed_at INTEGER NOT NULL,
+  UNIQUE(code_id, album_id)
+);
+
 -- Cache of Wikipedia destination cover photos downloaded to /uploads.
 -- Keyed by the normalised city name (lower-case, stripped).
 CREATE TABLE IF NOT EXISTS destination_photo_cache (
