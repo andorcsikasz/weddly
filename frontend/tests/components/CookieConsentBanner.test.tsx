@@ -9,6 +9,7 @@
 
 import { beforeEach, describe, expect, it } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { I18nProvider } from "@/lib/i18n";
 
@@ -35,10 +36,12 @@ function gatedScriptIsLive(): boolean {
   return el !== null && el.getAttribute("type") !== "text/plain";
 }
 
-function renderBanner() {
+function renderBanner(path = "/") {
   return render(
     <I18nProvider>
-      <CookieConsentBanner />
+      <MemoryRouter initialEntries={[path]}>
+        <CookieConsentBanner />
+      </MemoryRouter>
     </I18nProvider>,
   );
 }
@@ -46,6 +49,20 @@ function renderBanner() {
 describe("CookieConsentBanner", () => {
   beforeEach(() => {
     localStorage.clear();
+  });
+
+  // A guest holds this page up as a camera; the banner sat over the shutter.
+  // Not asking is declining, so the gated loader must stay inert too.
+  it.each(["/photos/abc123", "/camera/try"])("never shows on the guest camera (%s)", (path) => {
+    insertGatedScript();
+    renderBanner(path);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(gatedScriptIsInert()).toBe(true);
+  });
+
+  it("still asks everywhere else", () => {
+    renderBanner("/");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("shows the banner and leaves gated scripts inert when no decision is stored", () => {

@@ -3722,6 +3722,13 @@ const de: LocaleMessages = {
     demo_again: "Nochmal fotografieren",
     shots_left: "übrig",
     shots_taken: "Fotos",
+    closes_in: "Der Film schließt in {time}",
+    camera_retry: "Kamera erneut versuchen",
+    pick_photo: "Foto auswählen",
+    viewer_close: "Schließen",
+    viewer_prev: "Vorheriges Foto",
+    viewer_next: "Nächstes Foto",
+    viewer_save: "Foto speichern",
   },
   design: {
     title: "Design",

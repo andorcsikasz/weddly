@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useLocation } from "react-router-dom";
 import { applyStoredConsent, getStatisticsConsent, setStatisticsConsent } from "../lib/consent";
 import { useT } from "../lib/i18n";
 
@@ -8,8 +9,15 @@ import { useT } from "../lib/i18n";
  *  non-essential category (statistics), so there is no granular picker to
  *  build. Mounted once at the app root; renders nothing once a decision is
  *  on record. */
+/** Pages a wedding guest holds up as a camera. The banner covered the
+ *  bottom third of the screen there, shutter included, on the one page where
+ *  a guest has a few seconds and no interest in our analytics. Not asking is
+ *  the same as declining: nothing gated loads until someone says yes. */
+const NO_BANNER_PREFIXES = ["/photos/", "/camera/try"];
+
 export function CookieConsentBanner() {
   const { t } = useT();
+  const { pathname } = useLocation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -20,7 +28,7 @@ export function CookieConsentBanner() {
     }
   }, []);
 
-  if (!visible) return null;
+  if (!visible || NO_BANNER_PREFIXES.some((p) => pathname.startsWith(p))) return null;
 
   const decide = (granted: boolean) => {
     setStatisticsConsent(granted);

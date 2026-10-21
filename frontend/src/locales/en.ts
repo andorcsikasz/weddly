@@ -3647,6 +3647,13 @@ const en: LocaleMessages = {
     demo_again: "Shoot again",
     shots_left: "left",
     shots_taken: "shots",
+    closes_in: "Film closes in {time}",
+    camera_retry: "Try the camera again",
+    pick_photo: "Choose a photo",
+    viewer_close: "Close",
+    viewer_prev: "Previous photo",
+    viewer_next: "Next photo",
+    viewer_save: "Save photo",
   },
   design: {
     title: "Design",

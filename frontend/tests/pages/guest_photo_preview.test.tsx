@@ -486,3 +486,127 @@ describe("<GuestPhotoPage> host preview", () => {
     await waitFor(() => expect(screen.getByText(heading)).toBeInTheDocument());
   });
 });
+
+function album(over: Record<string, unknown> = {}) {
+  return {
+    displayName: "Andor & Sári",
+    weddingDate: "2026-08-08",
+    slug: null,
+    title: null,
+    shotsPerGuest: 30,
+    isUploadEnabled: true,
+    eventEndsAt: null,
+    revealAt: null,
+    filmAesthetic: "natural",
+    coverImageUrl: null,
+    ...over,
+  };
+}
+
+function renderFilm(token: string) {
+  return render(
+    <I18nProvider>
+      <MemoryRouter initialEntries={[`/photos/${token}`]}>
+        <Routes>
+          <Route path="/photos/:token" element={<GuestPhotoPage />} />
+        </Routes>
+      </MemoryRouter>
+    </I18nProvider>,
+  );
+}
+
+describe("<GuestPhotoPage> shooting without a break", () => {
+  // The per-device upload bucket answers 429 without the shot_limit code. That
+  // is "not yet", so the shot waits its turn instead of failing: a guest who
+  // shoots a whole roll back to back must not find red retry tiles after it.
+  it("waits out an upload rate limit instead of failing the shot", async () => {
+    localStorage.setItem("weddly.film.rate-token.name", "Anna");
+    let uploadAttempts = 0;
+    globalThis.fetch = mock((input: RequestInfo | URL) => {
+      if (String(input).includes("/devices")) {
+        return Promise.resolve(response({ album: album(), shotCount: 0 }));
+      }
+      uploadAttempts += 1;
+      if (uploadAttempts <= 2) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ error: "Too many requests, slow down" }), {
+            status: 429,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return Promise.resolve(response({ upload: { id: 1, fileUrl: "/x.jpg" }, shotCount: 1 }));
+    }) as unknown as typeof fetch;
+    Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: undefined });
+
+    const { container } = renderFilm("rate-token");
+    await waitFor(() => expect(screen.getByText("A kamera ki van kapcsolva")).toBeInTheDocument());
+    fireEvent.change(container.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [new File([new Uint8Array([1])], "a.jpg", { type: "image/jpeg" })] },
+    });
+
+    await waitFor(() => expect(screen.getByText(/Elküldve/)).toBeInTheDocument(), {
+      timeout: 12000,
+    });
+    expect(uploadAttempts).toBe(3);
+    expect(screen.queryByLabelText("Koppints az újrapróbáláshoz")).toBeNull();
+  }, 15000);
+
+  it("offers a real way out when the camera is refused", async () => {
+    localStorage.setItem("weddly.film.blocked-token.name", "Anna");
+    globalThis.fetch = mock(() =>
+      Promise.resolve(response({ album: album(), shotCount: 0 })),
+    ) as unknown as typeof fetch;
+    Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: undefined });
+
+    renderFilm("blocked-token");
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Kép kiválasztása" })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: "Kamera újrapróbálása" })).toBeInTheDocument();
+  });
+});
+
+describe("<GuestPhotoPage> revealed gallery", () => {
+  it("opens a photo full screen, steps through, and closes on Escape", async () => {
+    localStorage.setItem("weddly.film.reveal-token.name", "Anna");
+    const uploads = [1, 2, 3].map((id) => ({
+      id,
+      fileUrl: `/uploads/p${id}.jpg`,
+      guestName: `Guest ${id}`,
+      source: "guest",
+      filterApplied: null,
+      uploadedAt: Date.UTC(2026, 7, 8),
+    }));
+    globalThis.fetch = mock((input: RequestInfo | URL) => {
+      if (String(input).includes("/devices")) {
+        // Closed, reveal a moment away: the developing countdown runs out
+        // and hands over to the gallery.
+        return Promise.resolve(
+          response({
+            album: album({ isUploadEnabled: false, revealAt: Date.now() + 1200 }),
+            shotCount: 1,
+          }),
+        );
+      }
+      return Promise.resolve(response({ locked: false, uploads, total: 3 }));
+    }) as unknown as typeof fetch;
+
+    renderFilm("reveal-token");
+    const tiles = await screen.findAllByRole("button", { name: /Guest/ }, { timeout: 5000 });
+    expect(tiles).toHaveLength(3);
+    fireEvent.click(tiles[0] as HTMLElement);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("1 / 3")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Előző kép" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Következő kép" }));
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Kép mentése" })).toHaveAttribute(
+      "href",
+      "/uploads/p2.jpg",
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+  }, 10000);
+});

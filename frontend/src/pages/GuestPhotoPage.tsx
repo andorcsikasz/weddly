@@ -31,7 +31,19 @@
 import { parseIsoDate } from "@shared/planning_timeline";
 import type { FilmAesthetic, FilmUpload, PhotoAlbumPublic } from "@shared/types";
 import { FILM_FILTERS } from "@shared/types";
-import { Camera, Check, ImagePlus, RotateCcw, Share2, SwitchCamera } from "lucide-react";
+import {
+  Camera,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  ImagePlus,
+  RotateCcw,
+  Share2,
+  SwitchCamera,
+  Timer,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { photoAlbumApi } from "../lib/endpoints";
@@ -154,20 +166,40 @@ function demoAlbum(displayName: string): PhotoAlbumPublic {
   };
 }
 
+// ─── sharing ─────────────────────────────────────────────────────────────────
+
+/** The native share sheet, or WhatsApp where there is none: the two ways a
+ *  guest actually passes a link round a table. */
+function shareFilmLink(title: string): void {
+  const url = window.location.href;
+  if (navigator.share) {
+    navigator.share({ title, url }).catch(() => {});
+  } else {
+    window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener");
+  }
+}
+
 // ─── CSS filter helper ────────────────────────────────────────────────────────
 
 function filterStyle(aesthetic: FilmAesthetic): string {
   return FILM_FILTERS[aesthetic] ?? "none";
 }
 
-function formatFilmCountdown(ms: number): string {
-  if (ms <= 0) return "0m";
-  const d = Math.floor(ms / 86_400_000);
+/** Time until the film closes, in the guest's language: "4 nap 23 ó",
+ *  "4d 23h". The platform's narrow units, so no locale has to translate them. */
+function formatFilmCountdown(ms: number, locale: Locale): string {
+  const unit = (n: number, u: "day" | "hour" | "minute") =>
+    new Intl.NumberFormat(intlLocale(locale), {
+      style: "unit",
+      unit: u,
+      unitDisplay: "narrow",
+    }).format(n);
+  const d = Math.floor(Math.max(0, ms) / 86_400_000);
   const h = Math.floor((ms % 86_400_000) / 3_600_000);
   const m = Math.floor((ms % 3_600_000) / 60_000);
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  if (d > 0) return `${unit(d, "day")} ${unit(h, "hour")}`;
+  if (h > 0) return `${unit(h, "hour")} ${unit(m, "minute")}`;
+  return unit(Math.max(0, m), "minute");
 }
 
 type TFn = (path: string, vars?: Record<string, string | number>) => string;
@@ -278,7 +310,9 @@ function trackZoomRange(track: MediaStreamTrack | undefined): ZoomRange | null {
 
 /** `lens` picks the separate ultra-wide back camera (see lib/camera_zoom);
  *  "main" is whatever `facing` resolves to. */
-function useCamera(facing: Facing, enabled = true, lens: "main" | "ultra" = "main") {
+/** `attempt` is bumped by the guest's "try the camera again": the only way
+ *  back from a refusal they have since undone in Settings, short of a reload. */
+function useCamera(facing: Facing, enabled = true, lens: "main" | "ultra" = "main", attempt = 0) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<CameraStatus>(enabled ? "starting" : "preview");
@@ -368,7 +402,7 @@ function useCamera(facing: Facing, enabled = true, lens: "main" | "ultra" = "mai
     };
     // ultraDeviceId is read, not reacted to: finding it must not reopen the
     // camera, only a lens change the guest asked for does.
-  }, [enabled, facing, lens]);
+  }, [enabled, facing, lens, attempt]);
 
   useEffect(
     () => () => {
@@ -497,7 +531,13 @@ const MAX_UPLOAD_ATTEMPTS = 4;
 const RETRY_BACKOFF_MS = [1200, 3000, 6000];
 // Hold the shutter this long before it starts firing repeatedly.
 const BURST_HOLD_MS = 320;
-const BURST_INTERVAL_MS = 450;
+const BURST_INTERVAL_MS = 330;
+// A 429 that is NOT the shot cap is the per-device upload bucket: the server
+// will take the shot, just not yet. That is a wait, never a failure, so it
+// neither spends an attempt nor ends in a red "tap to retry" thumbnail. A
+// guest shooting a whole roll back to back used to lose every frame past the
+// bucket's burst to exactly that.
+const RATE_LIMIT_WAIT_MS = 4000;
 const QUEUE_DISPLAY_MAX = 4;
 const QUEUE_RETAIN_MAX = 20;
 
@@ -655,10 +695,12 @@ function Viewfinder({
   // Host preview must not even request camera permission. It renders the same
   // chrome with a clearly marked, inert viewfinder instead.
   const [lens, setLens] = useState<"main" | "ultra">("main");
+  const [cameraAttempt, setCameraAttempt] = useState(0);
   const { videoRef, status, capture, mainZoomRange, ultraDeviceId, setHardwareZoom } = useCamera(
     facing,
     !preview,
     lens,
+    cameraAttempt,
   );
   // Zoom as the guest sees it (0.5x, 1x, 1.6x...). lib/camera_zoom maps it
   // onto the ultra-wide lens, the track's own zoom, or a centred crop. The
@@ -742,12 +784,7 @@ function Viewfinder({
   }, []);
 
   function shareInvite() {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({ title: album.displayName, url }).catch(() => {});
-    } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener");
-    }
+    shareFilmLink(album.displayName);
   }
 
   const live = status === "live";
@@ -864,10 +901,18 @@ function Viewfinder({
         bump();
         return;
       }
-      // No status at all means fetch() itself threw — no connectivity. A 429
-      // here is the upload rate bucket (distinct from the shot_limit code
-      // above), and 5xx is hopefully transient. All three are worth retrying.
-      const retryable = httpStatus === null || httpStatus === 429 || httpStatus >= 500;
+      if (httpStatus === 429) {
+        item.status = "retrying";
+        bump();
+        await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_WAIT_MS));
+        if (unmountedRef.current) return;
+        item.status = "queued";
+        bump();
+        return;
+      }
+      // No status at all means fetch() itself threw — no connectivity, and
+      // 5xx is hopefully transient. Both are worth retrying.
+      const retryable = httpStatus === null || httpStatus >= 500;
       item.attempts += 1;
       if (retryable && item.attempts <= MAX_UPLOAD_ATTEMPTS) {
         item.status = "retrying";
@@ -1116,322 +1161,363 @@ function Viewfinder({
     // chrome against a black frame reads as two panels stitched together.
     // A camera, not a page: no text selection on a held shutter, no "Save
     // image" sheet on a long-pressed thumbnail, no grey flash on a tap.
-    <div className="flex min-h-dvh select-none flex-col bg-black [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none]">
-      {preview && <PreviewBanner />}
-      {demo && <PreviewBanner label={t("photos.demo_banner")} />}
+    // On a laptop (the /camera/try demo, a couple previewing) it keeps a
+    // phone's proportions instead of stretching the frame edge to edge.
+    <div className="min-h-dvh bg-black">
+      <div className="mx-auto flex min-h-dvh w-full max-w-[520px] select-none flex-col bg-black [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none]">
+        {preview && <PreviewBanner />}
+        {demo && <PreviewBanner label={t("photos.demo_banner")} />}
 
-      {/* ── Top bar: who + how many left, nothing else ─────────────── */}
-      <div
-        className={`flex items-center gap-3 px-5 pb-3 ${
-          demo || preview
-            ? "pt-[calc(max(0.5rem,env(safe-area-inset-top))+2.5rem)]"
-            : "pt-[max(0.9rem,env(safe-area-inset-top))]"
-        }`}
-      >
-        <p className="min-w-0 flex-1 truncate font-grotesk text-[15px] font-bold tracking-[-0.01em] text-paper-50">
-          {album.displayName}
-        </p>
-        {remaining !== null && (
-          <span className="shrink-0 font-grotesk text-[13px] font-medium tabular-nums text-paper-50/45">
-            {formatFilmCountdown(remaining)}
-          </span>
-        )}
-        {demo ? (
-          <button
-            type="button"
-            onClick={() => onDemoDevelop?.(demoFiles())}
-            disabled={shotCount === 0}
-            className="min-h-9 shrink-0 rounded-full bg-paper-50 px-4 font-grotesk text-[13px] font-bold text-ink-950 transition-[transform,opacity] duration-150 ease-out active:scale-[0.97] disabled:opacity-0"
-          >
-            {t("photos.demo_develop")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={shareInvite}
-            disabled={preview}
-            aria-label={t("photos.invite_aria")}
-            title={t("photos.invite_aria")}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
-          >
-            <Share2 size={16} aria-hidden="true" />
-          </button>
-        )}
-      </div>
-
-      {/* ── Viewfinder ─────────────────────────────────────────────── */}
-      <div
-        className="relative mx-2 flex-1 touch-none overflow-hidden rounded-[28px] bg-ink-950"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
-        style={{ minHeight: "50vh" }}
-      >
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
-            live ? "opacity-100" : "opacity-0"
-          }`}
-          style={{
-            filter: cssFilter,
-            // The same centred crop renderShot applies to the saved shot.
-            transform: `${facing === "user" ? "scaleX(-1) " : ""}scale(${digitalZoom})`,
-          }}
-        />
-
-        {/* Starting up — quiet, no copy. */}
-        {status === "starting" && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="h-8 w-8 animate-spin rounded-full border-2 border-paper-50/20 border-t-paper-50/70" />
-          </div>
-        )}
-
-        {/* Preview is intentionally inert: no camera permission and no file picker. */}
-        {preview && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center">
-            <Camera className="h-10 w-10 text-paper-50/45" aria-hidden="true" />
-            <span className="font-grotesk text-[22px] font-bold leading-tight text-paper-50">
-              {t("photos.preview_camera_heading")}
-            </span>
-            <span className="max-w-xs text-[14px] leading-relaxed text-paper-50/60">
-              {t("photos.preview_camera_sub")}
-            </span>
-          </div>
-        )}
-
-        {/* Camera refused / absent — one bold line and the upload route. */}
-        {blocked && (
-          <button
-            type="button"
-            onClick={openPicker}
-            className="absolute inset-0 flex w-full flex-col items-center justify-center gap-4 px-8 text-center"
-          >
-            <Camera className="h-10 w-10 text-paper-50/30" aria-hidden="true" />
-            <span className="font-grotesk text-[22px] font-bold leading-tight text-paper-50">
-              {t("photos.camera_blocked")}
-            </span>
-            <span className="text-[14px] text-paper-50/50">
-              {inApp && mobile ? t("photos.camera_blocked_inapp") : t("photos.camera_blocked_sub")}
-            </span>
-          </button>
-        )}
-
-        {/* Flash */}
+        {/* ── Top bar: who + how many left, nothing else ─────────────── */}
         <div
-          className="pointer-events-none absolute inset-0 bg-white transition-opacity duration-100"
-          style={{ opacity: flash ? 0.9 : 0 }}
-        />
-
-        {/* Error */}
-        {error && (
-          <div className="absolute left-4 right-4 top-4">
-            <p className="rounded-2xl bg-red-950/85 px-4 py-3 text-center text-[14px] font-medium text-red-200 backdrop-blur-sm">
-              {error}
-            </p>
-          </div>
-        )}
-
-        {/* Quiet per-shot confirmation for every shot. It fades on its own so
-            shooting stays continuous, no tap needed to get back to the lens. */}
-        {toastCount !== null && (
-          <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
-            <span className="flex items-center gap-1.5 rounded-full bg-black/60 px-3.5 py-1.5 font-grotesk text-[13px] font-semibold text-paper-50 backdrop-blur-sm">
-              <Check size={14} aria-hidden="true" />
-              {t("photos.sent_toast")} · {toastCount}
+          className={`flex items-center gap-3 px-5 pb-3 ${
+            demo || preview
+              ? "pt-[calc(max(0.5rem,env(safe-area-inset-top))+2.5rem)]"
+              : "pt-[max(0.9rem,env(safe-area-inset-top))]"
+          }`}
+        >
+          <p className="min-w-0 flex-1 truncate font-grotesk text-[15px] font-bold tracking-[-0.01em] text-paper-50">
+            {album.displayName}
+          </p>
+          {remaining !== null && (
+            <span
+              title={t("photos.closes_in", { time: formatFilmCountdown(remaining, locale) })}
+              className="flex shrink-0 items-center gap-1 font-grotesk text-[13px] font-medium tabular-nums text-paper-50/45"
+            >
+              <Timer size={13} strokeWidth={2} aria-hidden="true" />
+              <span className="sr-only">
+                {t("photos.closes_in", { time: formatFilmCountdown(remaining, locale) })}
+              </span>
+              <span aria-hidden="true">{formatFilmCountdown(remaining, locale)}</span>
             </span>
-          </div>
-        )}
+          )}
+          {demo ? (
+            <button
+              type="button"
+              onClick={() => onDemoDevelop?.(demoFiles())}
+              disabled={shotCount === 0}
+              className="min-h-9 shrink-0 rounded-full bg-paper-50 px-4 font-grotesk text-[13px] font-bold text-ink-950 transition-[transform,opacity] duration-150 ease-out active:scale-[0.97] disabled:opacity-0"
+            >
+              {t("photos.demo_develop")}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={shareInvite}
+              disabled={preview}
+              aria-label={t("photos.invite_aria")}
+              title={t("photos.invite_aria")}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
+            >
+              <Share2 size={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
 
-        {/* Recent shots — proof they landed, and where a stuck one can be
+        {/* ── Viewfinder ─────────────────────────────────────────────── */}
+        <div
+          className="relative mx-2 flex-1 touch-none overflow-hidden rounded-[28px] bg-ink-950"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+          style={{ minHeight: "50vh" }}
+        >
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+              live ? "opacity-100" : "opacity-0"
+            }`}
+            style={{
+              filter: cssFilter,
+              // The same centred crop renderShot applies to the saved shot.
+              transform: `${facing === "user" ? "scaleX(-1) " : ""}scale(${digitalZoom})`,
+            }}
+          />
+
+          {/* Starting up — quiet, no copy. */}
+          {status === "starting" && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="h-8 w-8 animate-spin rounded-full border-2 border-paper-50/20 border-t-paper-50/70" />
+            </div>
+          )}
+
+          {/* Preview is intentionally inert: no camera permission and no file picker. */}
+          {preview && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center">
+              <Camera className="h-10 w-10 text-paper-50/45" aria-hidden="true" />
+              <span className="font-grotesk text-[22px] font-bold leading-tight text-paper-50">
+                {t("photos.preview_camera_heading")}
+              </span>
+              <span className="max-w-xs text-[14px] leading-relaxed text-paper-50/60">
+                {t("photos.preview_camera_sub")}
+              </span>
+            </div>
+          )}
+
+          {/* Camera refused / absent: say so, then two real buttons. The whole
+            panel used to be one invisible button, which nobody guesses. */}
+          {blocked && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center">
+              <Camera className="h-10 w-10 text-paper-50/30" aria-hidden="true" />
+              <span className="font-grotesk text-[22px] font-bold leading-tight text-paper-50">
+                {t("photos.camera_blocked")}
+              </span>
+              <span className="max-w-xs text-[14px] leading-relaxed text-paper-50/50">
+                {inApp && mobile
+                  ? t("photos.camera_blocked_inapp")
+                  : t("photos.camera_blocked_sub")}
+              </span>
+              <div className="mt-3 flex w-full max-w-[260px] flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={openPicker}
+                  className="min-h-12 rounded-full bg-paper-50 px-5 font-grotesk text-[15px] font-bold text-ink-950 transition-transform active:scale-[0.98]"
+                >
+                  {t("photos.pick_photo")}
+                </button>
+                {!inApp && (
+                  <button
+                    type="button"
+                    onClick={() => setCameraAttempt((n) => n + 1)}
+                    className="min-h-12 rounded-full border border-paper-50/20 px-5 font-grotesk text-[15px] font-semibold text-paper-50/80 transition-colors active:bg-paper-50/10"
+                  >
+                    {t("photos.camera_retry")}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Flash */}
+          <div
+            className="pointer-events-none absolute inset-0 bg-white transition-opacity duration-100"
+            style={{ opacity: flash ? 0.9 : 0 }}
+          />
+
+          {/* Error */}
+          {error && (
+            <div className="absolute left-4 right-4 top-4" role="alert">
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                aria-label={`${error} ${t("common.dismiss")}`}
+                className="flex w-full items-start gap-3 rounded-2xl bg-red-950/85 px-4 py-3 text-left text-[14px] font-medium leading-snug text-red-200 backdrop-blur-sm"
+              >
+                <span className="min-w-0 flex-1">{error}</span>
+                <X size={16} className="mt-0.5 shrink-0 opacity-70" aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
+          {/* Quiet per-shot confirmation for every shot. It fades on its own so
+            shooting stays continuous, no tap needed to get back to the lens. */}
+          {toastCount !== null && !error && (
+            <div
+              role="status"
+              className="pointer-events-none absolute inset-x-0 top-4 flex justify-center"
+            >
+              <span className="flex items-center gap-1.5 rounded-full bg-black/60 px-3.5 py-1.5 font-grotesk text-[13px] font-semibold text-paper-50 backdrop-blur-sm">
+                <Check size={14} aria-hidden="true" />
+                {t("photos.sent_toast")} · {toastCount}
+              </span>
+            </div>
+          )}
+
+          {/* Recent shots — proof they landed, and where a stuck one can be
             retried. Uploading/retrying show a spinner or an amber dot; a
             permanently failed one shows why (bad file) or offers a retry
             (network) right on the thumbnail — no separate screen for it. */}
-        {/* The latest shot lives by the shutter; this strip only surfaces the
+          {/* The latest shot lives by the shutter; this strip only surfaces the
             ones that still need attention (retrying, or failed). */}
-        {/* Zoom: 0.5 only where the phone has the lens for it. The selected
+          {/* Zoom: 0.5 only where the phone has the lens for it. The selected
             pill reads the live value (1.6×), like the phone's own camera. */}
-        {live && !preview && (
-          <div
-            className={`absolute inset-x-0 flex justify-center ${
-              queueRef.current.some((i) => i.status === "retrying" || i.status === "failed")
-                ? "bottom-20"
-                : "bottom-4"
-            }`}
-          >
-            <div className="flex items-center gap-1 rounded-full bg-black/40 p-1 backdrop-blur-sm">
-              {presets.map((p) => {
-                const selected = activePreset(zoom, presets) === p;
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setZoom(p)}
-                    aria-label={t("photos.zoom_to").replace("{{n}}", formatZoom(p))}
-                    aria-pressed={selected}
-                    className={`flex items-center justify-center rounded-full font-grotesk font-bold tabular-nums transition-[width,height,background-color] duration-150 ${
-                      selected
-                        ? "h-9 min-w-9 bg-black/60 px-1.5 text-[12px] text-amber-300"
-                        : "h-7 min-w-7 px-1 text-[11px] text-paper-50"
-                    }`}
-                  >
-                    {selected ? `${formatZoom(zoom)}×` : formatZoom(p)}
-                  </button>
-                );
-              })}
+          {live && !preview && (
+            <div
+              className={`absolute inset-x-0 flex justify-center ${
+                queueRef.current.some((i) => i.status === "retrying" || i.status === "failed")
+                  ? "bottom-20"
+                  : "bottom-4"
+              }`}
+            >
+              <div className="flex items-center gap-1 rounded-full bg-black/40 p-1 backdrop-blur-sm">
+                {presets.map((p) => {
+                  const selected = activePreset(zoom, presets) === p;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setZoom(p)}
+                      aria-label={t("photos.zoom_to").replace("{{n}}", formatZoom(p))}
+                      aria-pressed={selected}
+                      className={`flex items-center justify-center rounded-full font-grotesk font-bold tabular-nums transition-[width,height,background-color] duration-150 ${
+                        selected
+                          ? "h-9 min-w-9 bg-black/60 px-1.5 text-[12px] text-amber-300"
+                          : "h-7 min-w-7 px-1 text-[11px] text-paper-50"
+                      }`}
+                    >
+                      {selected ? `${formatZoom(zoom)}×` : formatZoom(p)}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {queueRef.current.some((i) => i.status === "retrying" || i.status === "failed") && (
-          <div className="absolute bottom-4 right-4 flex gap-2">
-            {queueRef.current
-              .filter((i) => i.status === "retrying" || i.status === "failed")
-              .slice(-QUEUE_DISPLAY_MAX)
-              .map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleQueueThumbTap(item)}
-                  disabled={item.status !== "failed"}
-                  aria-label={
-                    item.status === "failed" && item.retryable ? t("photos.queue_retry") : undefined
-                  }
-                  className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-paper-50/25 shadow-lg disabled:cursor-default"
-                >
-                  <img
-                    src={item.previewUrl}
-                    alt=""
-                    aria-hidden="true"
-                    className="h-full w-full object-cover"
-                    style={{ filter: cssFilter }}
-                  />
-                  {(item.status === "queued" || item.status === "uploading") && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-paper-50/40 border-t-paper-50" />
-                    </span>
-                  )}
-                  {item.status === "retrying" && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <span className="h-2 w-2 rounded-full bg-amber-400" />
-                    </span>
-                  )}
-                  {item.status === "failed" && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/55">
-                      {item.retryable ? (
-                        <RotateCcw size={16} className="text-paper-50" aria-hidden="true" />
-                      ) : (
-                        <span className="font-grotesk text-[15px] font-bold text-red-300">!</span>
-                      )}
-                    </span>
-                  )}
-                </button>
-              ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── Utility row: upload · prompt · flip ────────────────────── */}
-      <div className="flex items-center gap-3 px-5 pt-4">
-        <button
-          type="button"
-          onClick={openPicker}
-          disabled={preview}
-          aria-label={t("photos.upload_existing")}
-          title={t("photos.upload_existing")}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
-        >
-          <ImagePlus size={20} aria-hidden="true" />
-        </button>
-        <div className="flex min-w-0 flex-1 justify-center">
-          {promptText && (
-            <span className="truncate text-center text-[13px] font-medium text-paper-50/60">
-              {promptText}
-            </span>
+          {queueRef.current.some((i) => i.status === "retrying" || i.status === "failed") && (
+            <div className="absolute bottom-4 right-4 flex gap-2">
+              {queueRef.current
+                .filter((i) => i.status === "retrying" || i.status === "failed")
+                .slice(-QUEUE_DISPLAY_MAX)
+                .map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleQueueThumbTap(item)}
+                    disabled={item.status !== "failed"}
+                    aria-label={
+                      item.status === "failed" && item.retryable
+                        ? t("photos.queue_retry")
+                        : undefined
+                    }
+                    className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-paper-50/25 shadow-lg disabled:cursor-default"
+                  >
+                    <img
+                      src={item.previewUrl}
+                      alt=""
+                      aria-hidden="true"
+                      className="h-full w-full object-cover"
+                      style={{ filter: cssFilter }}
+                    />
+                    {(item.status === "queued" || item.status === "uploading") && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-paper-50/40 border-t-paper-50" />
+                      </span>
+                    )}
+                    {item.status === "retrying" && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <span className="h-2 w-2 rounded-full bg-amber-400" />
+                      </span>
+                    )}
+                    {item.status === "failed" && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/55">
+                        {item.retryable ? (
+                          <RotateCcw size={16} className="text-paper-50" aria-hidden="true" />
+                        ) : (
+                          <span className="font-grotesk text-[15px] font-bold text-red-300">!</span>
+                        )}
+                      </span>
+                    )}
+                  </button>
+                ))}
+            </div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setZoom(1);
-            setFacing((f) => (f === "environment" ? "user" : "environment"));
-          }}
-          disabled={!live}
-          aria-label={t("photos.flip_camera")}
-          title={t("photos.flip_camera")}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-[opacity,background-color] active:bg-paper-50/20 disabled:opacity-0"
-        >
-          <SwitchCamera size={20} aria-hidden="true" />
-        </button>
-      </div>
 
-      {/* ── Controls: frame counter · shutter · last shot ──────────── */}
-      <div className="grid grid-cols-3 items-center px-6 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-5">
-        <div className="flex justify-start">
-          <ExposureCounter
-            value={
-              max > 0 ? Math.max(0, max - (shotCount + pendingCount)) : shotCount + pendingCount
-            }
-            max={max}
-          />
-        </div>
-
-        <div className="flex justify-center">
+        {/* ── Utility row: upload · prompt · flip ────────────────────── */}
+        <div className="flex items-center gap-3 px-5 pt-4">
           <button
             type="button"
-            disabled={preview || status === "starting"}
-            onPointerDown={handleShutterPointerDown}
-            onPointerUp={stopBurst}
-            onPointerCancel={stopBurst}
-            onPointerLeave={stopBurst}
-            onClick={handleShutterClick}
-            aria-label={t("photos.take_photo")}
-            className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-[3px] border-paper-50/80 transition-transform duration-150 ease-out active:scale-[0.92] disabled:opacity-50"
+            onClick={openPicker}
+            disabled={preview}
+            aria-label={t("photos.upload_existing")}
+            title={t("photos.upload_existing")}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20 disabled:opacity-40"
           >
-            <span className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-paper-50">
-              {pendingCount > 0 && (
-                <span className="h-6 w-6 animate-spin rounded-full border-2 border-ink-300 border-t-ink-950" />
-              )}
-            </span>
+            <ImagePlus size={20} aria-hidden="true" />
+          </button>
+          <div className="flex min-w-0 flex-1 justify-center">
+            {promptText && (
+              <span
+                key={promptText}
+                className="line-clamp-2 animate-fade-in text-balance text-center text-[13px] font-medium leading-snug text-paper-50/70"
+              >
+                {promptText}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setZoom(1);
+              setFacing((f) => (f === "environment" ? "user" : "environment"));
+            }}
+            disabled={!live}
+            aria-label={t("photos.flip_camera")}
+            title={t("photos.flip_camera")}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-[opacity,background-color] active:bg-paper-50/20 disabled:opacity-0"
+          >
+            <SwitchCamera size={20} aria-hidden="true" />
           </button>
         </div>
 
-        <div className="flex justify-end">
-          {latestShot ? (
-            <span
-              key={latestShot.id}
-              className="shot-pop relative h-12 w-12 overflow-hidden rounded-xl border border-paper-50/25"
-            >
-              <img
-                src={latestShot.previewUrl}
-                alt=""
-                aria-hidden="true"
-                className="h-full w-full object-cover"
-                style={{ filter: cssFilter }}
-              />
-              {(latestShot.status === "queued" || latestShot.status === "uploading") && (
-                <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-paper-50/40 border-t-paper-50" />
-                </span>
-              )}
-            </span>
-          ) : (
-            <span aria-hidden="true" className="h-12 w-12 rounded-xl border border-paper-50/15" />
-          )}
-        </div>
-      </div>
+        {/* ── Controls: frame counter · shutter · last shot ──────────── */}
+        <div className="grid grid-cols-3 items-center px-6 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-5">
+          <div className="flex justify-start">
+            <ExposureCounter
+              value={
+                max > 0 ? Math.max(0, max - (shotCount + pendingCount)) : shotCount + pendingCount
+              }
+              max={max}
+            />
+          </div>
 
-      {/* Hidden file input — the upload-from-gallery route. */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        disabled={preview}
-        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-        className="sr-only"
-        onChange={handleFileChange}
-      />
+          <div className="flex justify-center">
+            <button
+              type="button"
+              disabled={preview || status === "starting"}
+              onPointerDown={handleShutterPointerDown}
+              onPointerUp={stopBurst}
+              onPointerCancel={stopBurst}
+              onPointerLeave={stopBurst}
+              onClick={handleShutterClick}
+              aria-label={t("photos.take_photo")}
+              className="group flex h-[76px] w-[76px] touch-manipulation items-center justify-center rounded-full border-[3px] border-paper-50/80 transition-transform duration-150 ease-out active:scale-[0.92] disabled:opacity-50"
+            >
+              {/* Never a spinner here: a spinning shutter reads as "wait", and the
+                camera never needs the guest to wait. Upload progress lives on
+                the last-shot thumbnail beside it. */}
+              <span className="h-[60px] w-[60px] rounded-full bg-paper-50 transition-transform duration-100 ease-out group-active:scale-90" />
+            </button>
+          </div>
+
+          <div className="flex justify-end">
+            {latestShot ? (
+              <span
+                key={latestShot.id}
+                className="shot-pop relative h-12 w-12 overflow-hidden rounded-xl border border-paper-50/25"
+              >
+                <img
+                  src={latestShot.previewUrl}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-full w-full object-cover"
+                  style={{ filter: cssFilter }}
+                />
+                {(latestShot.status === "queued" || latestShot.status === "uploading") && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-paper-50/40 border-t-paper-50" />
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span aria-hidden="true" className="h-12 w-12 rounded-xl border border-paper-50/15" />
+            )}
+          </div>
+        </div>
+
+        {/* Hidden file input — the upload-from-gallery route. */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          disabled={preview}
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          className="sr-only"
+          onChange={handleFileChange}
+        />
+      </div>
     </div>
   );
 }
@@ -1469,23 +1555,29 @@ function Countdown({ revealsAt, onRevealed }: { revealsAt: number; onRevealed: (
 
 function Gallery({ uploads, aesthetic }: { uploads: FilmUpload[]; aesthetic: FilmAesthetic }) {
   const { t, locale } = useT();
+  const [open, setOpen] = useState<number | null>(null);
+  const labelFor = (u: FilmUpload, index: number) =>
+    t("media.gallery_photo_alt", {
+      n: index + 1,
+      name:
+        u.source === "couple"
+          ? t("photos.from_couple")
+          : (u.guestName ?? t("media.film_anonymous")),
+      date: new Date(u.uploadedAt).toLocaleDateString(intlLocale(locale)),
+    });
   return (
-    <div className="columns-2 gap-2">
-      {uploads.map((u, index) => {
-        const contributor =
-          u.source === "couple"
-            ? t("photos.from_couple")
-            : (u.guestName ?? t("media.film_anonymous"));
-        const label = t("media.gallery_photo_alt", {
-          n: index + 1,
-          name: contributor,
-          date: new Date(u.uploadedAt).toLocaleDateString(intlLocale(locale)),
-        });
-        return (
-          <div key={u.id} className="relative mb-2 overflow-hidden rounded-2xl break-inside-avoid">
+    <>
+      <div className="columns-2 gap-2 sm:columns-3">
+        {uploads.map((u, index) => (
+          <button
+            key={u.id}
+            type="button"
+            onClick={() => setOpen(index)}
+            className="relative mb-2 block w-full overflow-hidden rounded-2xl break-inside-avoid transition-transform active:scale-[0.98]"
+          >
             <img
               src={u.fileUrl}
-              alt={label}
+              alt={labelFor(u, index)}
               loading="lazy"
               className="w-full object-cover"
               style={{
@@ -1502,9 +1594,138 @@ function Gallery({ uploads, aesthetic }: { uploads: FilmUpload[]; aesthetic: Fil
                 {u.guestName}
               </span>
             )}
-          </div>
-        );
-      })}
+          </button>
+        ))}
+      </div>
+      {open !== null && (
+        <PhotoViewer
+          uploads={uploads}
+          index={open}
+          aesthetic={aesthetic}
+          labelFor={labelFor}
+          onIndex={setOpen}
+          onClose={() => setOpen(null)}
+        />
+      )}
+    </>
+  );
+}
+
+/** One photo, full screen. Swipe or arrow keys between them, Escape or the
+ *  cross to leave, and a save that hands over the file itself. */
+function PhotoViewer({
+  uploads,
+  index,
+  aesthetic,
+  labelFor,
+  onIndex,
+  onClose,
+}: {
+  uploads: FilmUpload[];
+  index: number;
+  aesthetic: FilmAesthetic;
+  labelFor: (u: FilmUpload, index: number) => string;
+  onIndex: (i: number) => void;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  const upload = uploads[index];
+  const hasPrev = index > 0;
+  const hasNext = index < uploads.length - 1;
+  const swipeX = useRef<number | null>(null);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowLeft" && hasPrev) onIndex(index - 1);
+      else if (e.key === "ArrowRight" && hasNext) onIndex(index + 1);
+    }
+    window.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+    };
+  }, [index, hasPrev, hasNext, onIndex, onClose]);
+
+  if (!upload) return null;
+  const navBtn =
+    "absolute top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-paper-50 backdrop-blur-sm transition-colors hover:bg-black/70 sm:flex";
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={labelFor(upload, index)}
+      className="fixed inset-0 z-50 flex flex-col bg-black"
+      onTouchStart={(e) => {
+        swipeX.current = e.touches[0]?.clientX ?? null;
+      }}
+      onTouchEnd={(e) => {
+        const from = swipeX.current;
+        const to = e.changedTouches[0]?.clientX;
+        swipeX.current = null;
+        if (from === null || to === undefined || Math.abs(to - from) < 50) return;
+        if (to < from && hasNext) onIndex(index + 1);
+        if (to > from && hasPrev) onIndex(index - 1);
+      }}
+    >
+      <div className="flex items-center gap-3 px-4 pb-3 pt-[max(0.9rem,env(safe-area-inset-top))]">
+        <span className="min-w-0 flex-1 truncate font-grotesk text-[14px] font-semibold text-paper-50/80">
+          {upload.source === "couple" ? t("photos.from_couple") : (upload.guestName ?? "")}
+        </span>
+        <span className="font-grotesk text-[13px] tabular-nums text-paper-50/45">
+          {index + 1} / {uploads.length}
+        </span>
+        <a
+          href={upload.fileUrl}
+          download
+          aria-label={t("photos.viewer_save")}
+          title={t("photos.viewer_save")}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20"
+        >
+          <Download size={18} aria-hidden="true" />
+        </a>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t("photos.viewer_close")}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-paper-50/10 text-paper-50 transition-colors active:bg-paper-50/20"
+        >
+          <X size={20} aria-hidden="true" />
+        </button>
+      </div>
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <img
+          key={upload.id}
+          src={upload.fileUrl}
+          alt={labelFor(upload, index)}
+          className="max-h-full max-w-full animate-fade-in rounded-xl object-contain"
+          style={{
+            filter: filterStyle((upload.filterApplied as FilmAesthetic | null) ?? aesthetic),
+          }}
+        />
+        {hasPrev && (
+          <button
+            type="button"
+            onClick={() => onIndex(index - 1)}
+            aria-label={t("photos.viewer_prev")}
+            className={`${navBtn} left-3`}
+          >
+            <ChevronLeft size={22} aria-hidden="true" />
+          </button>
+        )}
+        {hasNext && (
+          <button
+            type="button"
+            onClick={() => onIndex(index + 1)}
+            aria-label={t("photos.viewer_next")}
+            className={`${navBtn} right-3`}
+          >
+            <ChevronRight size={22} aria-hidden="true" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -1771,7 +1992,13 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
     return (
       <>
         {preview && <PreviewBanner />}
-        <div className="relative flex min-h-dvh flex-col justify-end overflow-hidden bg-ink-950 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-16 text-paper-50">
+        {/* With a cover the copy sits low, under the picture. Without one the
+            top half was an empty black slab, so the copy centres instead. */}
+        <div
+          className={`relative flex min-h-dvh flex-col overflow-hidden bg-ink-950 ${
+            state.album.coverImageUrl ? "justify-end" : "justify-center"
+          } px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-16 text-paper-50`}
+        >
           {state.album.coverImageUrl && (
             <img
               src={state.album.coverImageUrl}
@@ -1847,6 +2074,9 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
               onChange={(e) => setNameInput(e.target.value)}
               placeholder={t("photos.name_placeholder")}
               aria-label={t("photos.name_placeholder")}
+              autoComplete="name"
+              autoCapitalize="words"
+              enterKeyHint="next"
               autoFocus
               disabled={nameSubmitting}
               className="w-full rounded-2xl bg-paper-50/10 px-5 py-4 font-grotesk text-[17px] font-medium text-paper-50 placeholder-paper-50/30 outline-none transition-colors focus:bg-paper-50/15"
@@ -1854,6 +2084,8 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
             <input
               type="email"
               inputMode="email"
+              autoComplete="email"
+              enterKeyHint="go"
               autoCapitalize="off"
               autoCorrect="off"
               value={emailInput}
@@ -1871,13 +2103,13 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
                 {nameFormError}
               </p>
             )}
-            <label className="mt-5 flex items-start gap-3 text-[13px] leading-relaxed text-paper-50/50">
+            <label className="mt-5 flex cursor-pointer items-start gap-3 text-[13px] leading-relaxed text-paper-50/50">
               <input
                 type="checkbox"
                 checked={marketingOptIn}
                 onChange={(e) => setMarketingOptIn(e.target.checked)}
                 disabled={nameSubmitting}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-paper-50/30 bg-transparent"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border-paper-50/30 bg-transparent accent-paper-50"
               />
               <span>
                 {t("photos.marketing_opt_in_label")}{" "}
@@ -1983,6 +2215,16 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
         <SheetBody>
           {t("photos.limit_sub").replace("{{n}}", String(state.album.shotsPerGuest ?? ""))}
         </SheetBody>
+        {/* The roll is spent, the guest is not: the one useful thing left is
+            handing the camera to the next person at the table. */}
+        <button
+          type="button"
+          onClick={() => shareFilmLink(state.album.displayName)}
+          className={`${GHOST_BTN} mt-10 flex items-center justify-center gap-2`}
+        >
+          <Share2 size={18} aria-hidden="true" />
+          {t("photos.sent_invite")}
+        </button>
       </FilmSheet>
     );
   }

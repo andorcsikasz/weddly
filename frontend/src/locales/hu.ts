@@ -3672,6 +3672,13 @@ const hu: LocaleMessages = {
     demo_again: "Újra fotózok",
     shots_left: "maradt",
     shots_taken: "kép",
+    closes_in: "A film {time} múlva zárul",
+    camera_retry: "Kamera újrapróbálása",
+    pick_photo: "Kép kiválasztása",
+    viewer_close: "Bezárás",
+    viewer_prev: "Előző kép",
+    viewer_next: "Következő kép",
+    viewer_save: "Kép mentése",
   },
   design: {
     title: "Arculat",

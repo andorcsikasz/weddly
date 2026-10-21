@@ -72,7 +72,12 @@ const PHOTO_MIME_EXT: Record<SniffedImageMime, "jpg" | "png" | "webp"> = {
   "image/webp": "webp",
 };
 
-const UPLOAD_BUCKET = { capacity: 20, refillRate: 1 / 15 };
+// Sized for a guest shooting the way the camera invites them to: a held
+// shutter fires three frames a second, and a capped roll is usually 24-36. At
+// 20 then one every 15s, a roll shot back to back spent minutes trickling in
+// after the guest had pocketed the phone. 30 then one every 3s still stops a
+// script, which is all a client-chosen device id could ever key on anyway.
+const UPLOAD_BUCKET = { capacity: 30, refillRate: 1 / 3 };
 
 // ─── DB row types ────────────────────────────────────────────────────────────
 

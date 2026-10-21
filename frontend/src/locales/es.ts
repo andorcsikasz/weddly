@@ -3714,6 +3714,13 @@ const es: LocaleMessages = {
     demo_again: "Volver a disparar",
     shots_left: "quedan",
     shots_taken: "fotos",
+    closes_in: "La película se cierra en {time}",
+    camera_retry: "Reintentar la cámara",
+    pick_photo: "Elegir una foto",
+    viewer_close: "Cerrar",
+    viewer_prev: "Foto anterior",
+    viewer_next: "Foto siguiente",
+    viewer_save: "Guardar foto",
   },
   design: {
     title: "Diseño",

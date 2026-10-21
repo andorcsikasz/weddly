@@ -3651,6 +3651,13 @@ const hr: LocaleMessages = {
     demo_again: "Snimaj ponovno",
     shots_left: "preostalo",
     shots_taken: "snimaka",
+    closes_in: "Film se zatvara za {time}",
+    camera_retry: "Ponovno pokušaj s kamerom",
+    pick_photo: "Odaberi fotografiju",
+    viewer_close: "Zatvori",
+    viewer_prev: "Prethodna fotografija",
+    viewer_next: "Sljedeća fotografija",
+    viewer_save: "Spremi fotografiju",
   },
   design: {
     title: "Dizajn",

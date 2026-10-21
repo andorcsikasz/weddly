@@ -4283,6 +4283,13 @@ export interface LocaleMessages {
     demo_again: string;
     shots_left: string;
     shots_taken: string;
+    closes_in: string;
+    camera_retry: string;
+    pick_photo: string;
+    viewer_close: string;
+    viewer_prev: string;
+    viewer_next: string;
+    viewer_save: string;
   };
   /** Inspiration page that renders pins from a linked public Pinterest board. */
   /** /app/design — the curated wedding visual-identity editor. */
