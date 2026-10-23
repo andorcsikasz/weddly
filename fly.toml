@@ -1,0 +1,46 @@
+# Fly.io failover for when Railway is unavailable. Same Dockerfile, same /data
+# layout (SQLite + local uploads on a persistent volume).
+#   fly deploy --remote-only
+app = "weddly"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+  [build.args]
+    VITE_GOOGLE_CLIENT_ID = "149386274521-t6hr4ad10sih55kt7bk7ispigotsemju.apps.googleusercontent.com"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8787"
+  SERVE_FRONTEND = "1"
+  DB_PATH = "/data/weddly.db"
+  UPLOADS_DIR = "/data/uploads"
+  FRONTEND_BASE_URL = "https://tryweddly.com"
+  SUPPORT_EMAIL = "hello@tryweddly.com"
+  EMAIL_FROM = "Weddly <noreply@tryweddly.com>"
+  # Must equal GOOGLE_CLIENT_ID (secret) at runtime, see config.ts.
+  VITE_GOOGLE_CLIENT_ID = "149386274521-t6hr4ad10sih55kt7bk7ispigotsemju.apps.googleusercontent.com"
+
+[mounts]
+  source = "weddly_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  # SQLite on one volume: exactly one machine, always on.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "60s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "1gb"
