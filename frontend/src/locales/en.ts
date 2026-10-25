@@ -1172,6 +1172,15 @@ const en: LocaleMessages = {
       share_whatsapp: "WhatsApp",
       share_email: "Email",
       share_native: "Share",
+      qr_title: "Printable QR code",
+      qr_body:
+        "For your studio wall, business cards or a thank-you card. Clients scan it and land straight on your review form. It keeps working if your page name changes.",
+      qr_make: "Make my QR code",
+      qr_alt: "QR code to your review form",
+      qr_scans: "{n} scans in the last 30 days",
+      qr_png: "PNG for print",
+      qr_svg: "SVG",
+      qr_error: "The QR code couldn't be made. Try again in a minute.",
     },
     billing: {
       page_title: "Billing",

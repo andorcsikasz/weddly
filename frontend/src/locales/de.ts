@@ -1222,6 +1222,16 @@ const de: LocaleMessages = {
       share_whatsapp: "WhatsApp",
       share_email: "E-Mail",
       share_native: "Teilen",
+      qr_title: "QR-Code zum Ausdrucken",
+      qr_body:
+        "Für die Wand Ihres Studios, Ihre Visitenkarten oder eine Dankeskarte. Kunden scannen ihn und landen direkt bei Ihrem Bewertungsformular. Er funktioniert weiter, auch wenn sich der Name Ihrer Seite ändert.",
+      qr_make: "QR-Code erstellen",
+      qr_alt: "QR-Code zu Ihrem Bewertungsformular",
+      qr_scans: "{n} Scans in den letzten 30 Tagen",
+      qr_png: "PNG zum Drucken",
+      qr_svg: "SVG",
+      qr_error:
+        "Der QR-Code konnte nicht erstellt werden. Versuchen Sie es in einer Minute erneut.",
     },
     billing: {
       page_title: "Abrechnung",

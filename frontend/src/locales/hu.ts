@@ -1176,6 +1176,15 @@ const hu: LocaleMessages = {
       share_whatsapp: "WhatsApp",
       share_email: "E-mail",
       share_native: "Megosztás",
+      qr_title: "Nyomtatható QR-kód",
+      qr_body:
+        "Az irodád falára, a névjegykártyádra vagy egy köszönőkártyára. A párok beolvassák, és egyből az értékelő űrlapodra jutnak. Akkor is működik, ha megváltozik az oldalad neve.",
+      qr_make: "QR-kód készítése",
+      qr_alt: "QR-kód az értékelő űrlapodhoz",
+      qr_scans: "{n} beolvasás az elmúlt 30 napban",
+      qr_png: "PNG nyomtatáshoz",
+      qr_svg: "SVG",
+      qr_error: "Nem sikerült elkészíteni a QR-kódot. Próbáld újra egy perc múlva.",
     },
     billing: {
       page_title: "Számlázás",

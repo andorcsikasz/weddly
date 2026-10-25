@@ -1,17 +1,19 @@
 // Vendor reviews — read-only view of the couple-authored verified reviews on
 // the vendor's own listing, at /vendor/reviews inside VendorShell. Reuses the
 // public reviews endpoint (GET /api/suppliers/:id/reviews works for any authed
-// viewer), so there is no vendor-specific backend surface. Responding to
-// reviews is a deliberate non-goal for v1 — this page is about visibility.
+// viewer). The one vendor-specific surface is the printable review QR code
+// (/api/vendor/review-qr/me). Responding to reviews is a deliberate non-goal
+// for v1 — this page is about visibility.
 
-import { RefreshCw, Star } from "lucide-react";
+import { Download, QrCode, RefreshCw, Star } from "lucide-react";
 import { intlLocale } from "../../lib/format";
 import { useCallback, useEffect, useState } from "react";
 import type { ReviewSummary, SupplierReview } from "@shared/suppliers";
 import { vendorPublicId } from "@shared/vendor_slug";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { VendorShareSheet } from "../../components/VendorShareSheet";
-import { reviewApi, vendorListingApi } from "../../lib/endpoints";
+import type { VendorReviewQrView } from "@shared/vendor_review_qr";
+import { reviewApi, vendorListingApi, vendorReviewQrApi } from "../../lib/endpoints";
 import { ReviewSpendLine } from "../../components/ReviewSpendLine";
 import { useT } from "../../lib/i18n";
 import { reviewTagLabel } from "../../lib/reviewTags";
@@ -57,6 +59,114 @@ function CollectReviewsCard({
           </div>
         }
       />
+    </section>
+  );
+}
+
+/** The printable review QR code: a Hovercode dynamic code that opens the same
+ *  `?review=1` link as the share sheet. Made on request (each code is billed),
+ *  re-pointed server-side if the listing is renamed, hidden entirely when the
+ *  server has no Hovercode key. */
+function ReviewQrCard() {
+  const { t } = useT();
+  const [view, setView] = useState<VendorReviewQrView | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    vendorReviewQrApi
+      .get()
+      .then(setView)
+      .catch(() => setView(null));
+  }, []);
+
+  if (!view || (!view.available && !view.qr)) return null;
+  const qr = view.qr;
+
+  const make = async () => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      setView(await vendorReviewQrApi.create());
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const fileLink =
+    "inline-flex min-h-9 items-center gap-1.5 rounded-full border border-paper-300 px-3 text-sm font-medium text-steel-900 hover:bg-paper-100 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-800";
+
+  return (
+    <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900">
+      <div className="flex flex-col gap-0.5">
+        <h2 className="flex items-center gap-2 font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+          <QrCode size={18} strokeWidth={1.5} aria-hidden="true" />
+          {t("vendor.reviews.qr_title")}
+        </h2>
+        <p className="text-sm text-steel-600 dark:text-steel-300">{t("vendor.reviews.qr_body")}</p>
+      </div>
+      {!qr ? (
+        <div>
+          <button type="button" onClick={() => void make()} disabled={busy} className="btn-primary">
+            <QrCode size={16} strokeWidth={1.5} aria-hidden="true" />
+            <span>{busy ? t("common.loading") : t("vendor.reviews.qr_make")}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-start gap-4">
+          <img
+            src="/api/vendor/review-qr/me.svg"
+            alt={t("vendor.reviews.qr_alt")}
+            width={128}
+            height={128}
+            className="size-32 rounded-xl bg-white p-1.5"
+          />
+          <div className="flex min-w-0 flex-1 flex-col gap-2 text-sm">
+            <a
+              href={qr.shortlink_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="break-all text-steel-900 underline dark:text-paper-100"
+            >
+              {qr.shortlink_url.replace(/^https?:\/\//, "")}
+            </a>
+            {qr.scans_30d !== null && (
+              <p className="text-steel-600 tabular-nums dark:text-steel-300">
+                {t("vendor.reviews.qr_scans", { n: String(qr.scans_30d) })}
+              </p>
+            )}
+            {view.available && (
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href="/api/vendor/review-qr/me/download?format=png"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={fileLink}
+                >
+                  <Download size={16} strokeWidth={1.5} aria-hidden="true" />
+                  {t("vendor.reviews.qr_png")}
+                </a>
+                <a
+                  href="/api/vendor/review-qr/me/download?format=svg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={fileLink}
+                >
+                  <Download size={16} strokeWidth={1.5} aria-hidden="true" />
+                  {t("vendor.reviews.qr_svg")}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {failed && (
+        <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">
+          {t("vendor.reviews.qr_error")}
+        </p>
+      )}
     </section>
   );
 }
@@ -175,6 +285,7 @@ export default function VendorReviewsPage() {
       </header>
 
       {listingId && <CollectReviewsCard listingId={listingId} listingName={listingName} />}
+      {listingId && <ReviewQrCard />}
 
       {/* Aggregate header — the average appears from the very first published
           review, matching the public card. */}

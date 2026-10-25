@@ -105,6 +105,7 @@ import type { UiLocale } from "@shared/locales";
 import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/company_lookup";
 import type { AiAvailability, InquiryAssistResult } from "@shared/ai_assist";
 import type { TranslateAvailability, TranslateRequest, TranslateResult } from "@shared/translate";
+import type { VendorReviewQrView } from "@shared/vendor_review_qr";
 import type { AddressSuggestion } from "@shared/geo";
 import type {
   AdminPublicStatsPatch,
@@ -3275,6 +3276,14 @@ export const vendorClientsApi = {
     apiFetch<{ payment: VendorClientPayment }>("PATCH", `/api/vendor/payments/${paymentId}`, body),
   deletePayment: (paymentId: number) =>
     apiFetch<{ ok: true }>("DELETE", `/api/vendor/payments/${paymentId}`),
+};
+
+/** The vendor's printable review QR code (a Hovercode dynamic code). The image
+ *  itself is `/api/vendor/review-qr/me.svg`; print files come from
+ *  `/api/vendor/review-qr/me/download?format=png|svg`. */
+export const vendorReviewQrApi = {
+  get: () => apiFetch<VendorReviewQrView>("GET", "/api/vendor/review-qr/me"),
+  create: () => apiFetch<VendorReviewQrView>("POST", "/api/vendor/review-qr/me"),
 };
 
 /** Vendor dashboard / stats rollup for the signed-in vendor's account. */

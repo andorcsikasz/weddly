@@ -1618,6 +1618,16 @@ export interface LocaleMessages {
       share_email: string;
       /** Native share-sheet button, rendered only where `navigator.share` exists. */
       share_native: string;
+      /** Printable review QR code card (Hovercode dynamic code). */
+      qr_title: string;
+      qr_body: string;
+      qr_make: string;
+      qr_alt: string;
+      /** Receives `{n}` — scans in the last 30 days. */
+      qr_scans: string;
+      qr_png: string;
+      qr_svg: string;
+      qr_error: string;
     };
     billing: {
       page_title: string;

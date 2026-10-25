@@ -1194,6 +1194,15 @@ const hr: LocaleMessages = {
       share_whatsapp: "WhatsApp",
       share_email: "E-pošta",
       share_native: "Podijelite",
+      qr_title: "QR kod za ispis",
+      qr_body:
+        "Za zid vašeg studija, posjetnice ili zahvalnicu. Klijenti ga skeniraju i odmah dolaze na vaš obrazac za recenziju. Radi i ako se promijeni naziv vaše stranice.",
+      qr_make: "Izradite QR kod",
+      qr_alt: "QR kod do vašeg obrasca za recenziju",
+      qr_scans: "Skeniranja u zadnjih 30 dana: {n}",
+      qr_png: "PNG za ispis",
+      qr_svg: "SVG",
+      qr_error: "QR kod nije izrađen. Pokušajte ponovno za minutu.",
     },
     billing: {
       page_title: "Naplata",

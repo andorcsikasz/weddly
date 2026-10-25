@@ -162,6 +162,13 @@ process.env.ADDRESS_SUGGEST_FAKE = "1";
 process.env.DEEPL_API_KEY = "test-deepl-key";
 process.env.DEEPL_FAKE = "1";
 
+// Review QR codes (Hovercode): token + workspace pinned NON-empty so
+// hovercodeConfigured() reports the feature available; HOVERCODE_FAKE=1 makes
+// lib/hovercode.ts answer from an in-process stub, never the network.
+process.env.HOVERCODE_API_TOKEN = "test-hovercode-token";
+process.env.HOVERCODE_WORKSPACE_ID = "test-workspace";
+process.env.HOVERCODE_FAKE = "1";
+
 // AI Concierge (vendor inbox assistant): ANTHROPIC_API_KEY is pinned NON-empty
 // so aiConfigured() reports the feature available, AI_FAKE=1 makes lib/ai.ts
 // answer from a deterministic in-process stub instead of ever calling

@@ -3033,3 +3033,18 @@ CREATE TABLE IF NOT EXISTS map_locate_events (
 );
 CREATE INDEX IF NOT EXISTS idx_map_locate_events_created ON map_locate_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_map_locate_events_user ON map_locate_events(user_id);
+
+-- The vendor's printable review QR code: one Hovercode dynamic code per
+-- listing, made when the vendor asks for it (each code counts toward the
+-- Hovercode plan). It encodes `shortlink_url`, which redirects to
+-- `target_url` (the public page with the review composer open), so a renamed
+-- listing re-points the code instead of breaking printed copies
+-- (domain/vendor_review_qr.ts).
+CREATE TABLE IF NOT EXISTS listing_review_qr (
+  listing_id TEXT PRIMARY KEY REFERENCES listings(id) ON DELETE CASCADE,
+  qr_id TEXT NOT NULL,                                         -- Hovercode code id
+  shortlink_url TEXT NOT NULL,
+  target_url TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);

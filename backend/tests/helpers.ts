@@ -237,6 +237,7 @@ export function wipeAll(): void {
     // re-trigger it because the server is already running, so we DELETE only
     // the community/claimed rows and trust the boot snapshot for curated.
     "growth_events",
+    "listing_review_qr",
     "listing_claims",
     // Claim-invite campaign: sends cascade off campaigns, but delete both (and
     // in child-before-parent order) so a leaked send row can't make the next

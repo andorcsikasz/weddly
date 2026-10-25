@@ -1201,6 +1201,15 @@ const es: LocaleMessages = {
       share_whatsapp: "WhatsApp",
       share_email: "Email",
       share_native: "Compartir",
+      qr_title: "Código QR para imprimir",
+      qr_body:
+        "Para la pared de tu estudio, tus tarjetas de visita o una tarjeta de agradecimiento. Tus clientes lo escanean y llegan directamente a tu formulario de reseñas. Sigue funcionando aunque cambie el nombre de tu página.",
+      qr_make: "Crear mi código QR",
+      qr_alt: "Código QR a tu formulario de reseñas",
+      qr_scans: "{n} escaneos en los últimos 30 días",
+      qr_png: "PNG para imprimir",
+      qr_svg: "SVG",
+      qr_error: "No se pudo crear el código QR. Inténtalo de nuevo en un minuto.",
     },
     billing: {
       page_title: "Facturación",
