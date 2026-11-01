@@ -1525,6 +1525,20 @@ export default function GuestsPage() {
                           : "guests.filtered_results_other",
                         { count: filteredFlatGuests.length },
                       )}
+                  {/* Children and babies among the rows on screen, so a
+                      filtered table answers "how many kids' menus" too. */}
+                  {(() => {
+                    const kids = filteredFlatGuests.filter((g) => g.kind !== "adult").length;
+                    return kids > 0 ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span aria-hidden className="mx-2">
+                          ·
+                        </span>
+                        <Baby size={14} aria-hidden />
+                        {kids} {t("guests.total_summary_kids_unit")}
+                      </span>
+                    ) : null;
+                  })()}
                 </p>
               )
             }
