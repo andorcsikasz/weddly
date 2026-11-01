@@ -51,6 +51,7 @@ import { Link } from "react-router-dom";
 import {
   budgetSubcategorySuggestions,
   isCategoryHolderLine,
+  isDefaultOtherLine,
   isSupplierManagedLine,
   supplierManagedCategories,
 } from "../lib/budget";
@@ -454,16 +455,16 @@ export function CostPlanningCard({
   // localized default ("Egyéb" / "Other"). Identify them once so we can:
   //   1. exclude them from the "Egyéb" bucket so they don't double-count, and
   //   2. render them as standalone rows after the category sliders.
-  // Both HU and EN defaults are matched so a couple switching locales doesn't
-  // suddenly see their old "Egyéb" rows promoted to custom.
-  const defaultOtherLabels = useMemo(() => new Set(["Egyéb", "Other"]), []);
+  // Every UI language's default is matched (`isDefaultOtherLine`) so a couple
+  // switching locales doesn't suddenly see their old "Egyéb" rows promoted to
+  // custom.
   const customRows = useMemo(
-    () => lines.filter((l) => l.category === "other" && !defaultOtherLabels.has(l.label)),
-    [lines, defaultOtherLabels],
+    () => lines.filter((l) => l.category === "other" && !isDefaultOtherLine(l)),
+    [lines],
   );
   const aggregatableLines = useMemo(
-    () => lines.filter((l) => !(l.category === "other" && !defaultOtherLabels.has(l.label))),
-    [lines, defaultOtherLabels],
+    () => lines.filter((l) => !(l.category === "other" && !isDefaultOtherLine(l))),
+    [lines],
   );
 
   // Categories the couple cannot re-plan from here, because a booked supplier
@@ -861,8 +862,7 @@ export function CostPlanningCard({
           // row (auto-created by the aggregate edit when the category owned no
           // lines). That row IS the aggregate — showing it inside the drawer
           // made the category read as one of its own subcategories.
-          const categoryLabel = t(`budget.cat.${b.category}`);
-          const subLines = b.lines.filter((l) => !isCategoryHolderLine(l, categoryLabel));
+          const subLines = b.lines.filter((l) => !isCategoryHolderLine(l, b.category));
           // Offer the defined subcategories (Fotó/Videó, …) as quick-add chips
           // only while the drawer holds no real sub-items — once the couple has
           // split the category, the promise of defaults is spent.
@@ -914,11 +914,12 @@ export function CostPlanningCard({
                *  item to split it into. */}
               {!isHoneymoon && isExpanded && (
                 <>
-                  {subLines.map((line) => {
+                  {subLines.map((line, i) => {
                     const liveBaseline = customDrags[line.id] ?? line.planned_huf;
                     return (
                       <CustomRow
                         key={line.id}
+                        branch={i === subLines.length - 1 ? "last" : "mid"}
                         line={line}
                         liveDisplay={Math.round(liveBaseline * rowScaleFactor)}
                         scaleFactor={rowScaleFactor}
@@ -934,7 +935,7 @@ export function CostPlanningCard({
                     );
                   })}
                   {onAddCustomRow && suggestions.length > 0 && subLines.length === 0 && (
-                    <li className="py-2">
+                    <li className="!border-t-0 py-1.5 pl-6">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
                           {t("budget.subcategory_quick_add")}
@@ -959,6 +960,7 @@ export function CostPlanningCard({
                         onAddCustomRow(label, plannedHuf, options, b.category)
                       }
                       showPerGuestToggle={false}
+                      nested
                     />
                   )}
                 </>
@@ -1580,6 +1582,7 @@ function CustomRowInner({
   onSettle,
   showActualOverlay,
   highlighted = false,
+  branch = null,
 }: {
   line: BudgetLine;
   liveDisplay: number;
@@ -1601,8 +1604,14 @@ function CustomRowInner({
   onSettle?: (lineId: number, baselineValue: number) => void;
   showActualOverlay?: boolean;
   highlighted?: boolean;
+  /** Set when the row is a sub-item inside a category's drawer: draws the
+   *  tree connector under the parent's chevron ("mid" = ├, "last" = └) and
+   *  steps the type down a size so the row reads as detail of the category
+   *  above rather than a peer of it. */
+  branch?: "mid" | "last" | null;
 }) {
   const { t, locale } = useT();
+  const nested = branch !== null;
 
   const rowMax = widthAnchor;
   const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
@@ -1679,27 +1688,25 @@ function CustomRowInner({
 
   return (
     <li
-      className={`${ROW_GRID} -mx-2 rounded-md px-2 py-1.5 transition-colors duration-500 ${highlighted ? "bg-sage-50 ring-1 ring-inset ring-sage-200 dark:bg-sage-400/10 dark:ring-sage-400/20" : ""}`}
+      className={`${ROW_GRID} group relative -mx-2 rounded-md px-2 transition-colors duration-500 ${nested ? "!border-t-0 py-1" : "py-1.5"} ${highlighted ? "bg-sage-50 ring-1 ring-inset ring-sage-200 dark:bg-sage-400/10 dark:ring-sage-400/20" : ""}`}
     >
+      {branch && <TreeBranch last={branch === "last"} />}
       <span
-        className={`${ROW_LABEL_CELL} flex min-w-0 items-center gap-1.5 text-ink-700 dark:text-paper-100`}
+        className={`${ROW_LABEL_CELL} flex min-w-0 items-center gap-1.5 ${
+          nested
+            ? "pl-6 text-xs text-ink-500 dark:text-umber-200"
+            : "text-ink-700 dark:text-paper-100"
+        }`}
       >
-        {/* Delete used to be desktop-only, because on a phone it had to fight
-         *  the icon for the same 2rem and the label was hidden anyway — so
-         *  removing a custom row meant going to the budget table's mobile
-         *  card. The wrapped row gives the label line the full width, so the
-         *  glyph, the name and the delete all fit at every size now. */}
-        {onRemove && !supplierManaged && (
-          <button
-            type="button"
-            onClick={() => onRemove(line.id)}
-            className="-ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
-            aria-label={t("budget.custom_row_delete_aria", { label: line.label })}
-          >
-            <X size={12} aria-hidden />
-          </button>
+        {/* A sub-item with no picked icon shows none: the generic "…" glyph
+         *  under a category's own icon read as a second, unnamed category. */}
+        {(!nested || line.icon) && (
+          <Icon
+            size={nested ? 12 : 14}
+            className="shrink-0 text-ink-500 dark:text-umber-300"
+            aria-hidden
+          />
         )}
-        <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
         <span className="min-w-0 truncate">{line.label}</span>
       </span>
       <div className={`${ROW_TRACK_CELL} w-full`}>
@@ -1743,7 +1750,9 @@ function CustomRowInner({
         )}
       </div>
       <span
-        className={`${ROW_AMOUNT_CELL} stat-num block text-right text-xs text-ink-700 dark:text-paper-100`}
+        className={`${ROW_AMOUNT_CELL} stat-num block text-right text-xs ${
+          nested ? "text-ink-500 dark:text-umber-200" : "text-ink-700 dark:text-paper-100"
+        }`}
       >
         <span
           className="flex flex-col items-end leading-tight"
@@ -1762,7 +1771,9 @@ function CustomRowInner({
                 {formatMoney(line.actual_huf, currency, locale)} /{" "}
               </span>
             )}
-            <span className="font-medium">{formatMoney(liveDisplay, currency, locale)}</span>
+            <span className={nested ? "" : "font-medium"}>
+              {formatMoney(liveDisplay, currency, locale)}
+            </span>
           </span>
           {perGuest !== null && (
             <span className="whitespace-nowrap text-[10px] text-ink-400 dark:text-umber-300">
@@ -1771,10 +1782,45 @@ function CustomRowInner({
           )}
         </span>
       </span>
-      {/* A custom row has no freeze concept — the column is held open so its
-       *  slider still lines up with the category rows above it. */}
-      <span className={ROW_LOCK_CELL} aria-hidden />
+      {/* A custom row has no freeze concept, so its delete takes the lock's
+       *  column: out at the row's end, where it can't be mistaken for part
+       *  of the name or the tree. Desktop reveals it on hover / focus;
+       *  touch has no hover, so it stays visible there. */}
+      {onRemove && !supplierManaged ? (
+        <button
+          type="button"
+          onClick={() => onRemove(line.id)}
+          className={`${ROW_LOCK_CELL} inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-300 transition hover:bg-blush-50 hover:text-blush-700 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 sm:opacity-0 sm:group-hover:opacity-100 dark:text-umber-500 dark:hover:bg-blush-400/15 dark:hover:text-blush-300`}
+          aria-label={t("budget.custom_row_delete_aria", { label: line.label })}
+          title={t("budget.custom_row_delete_aria", { label: line.label })}
+        >
+          <X size={12} aria-hidden />
+        </button>
+      ) : (
+        <span className={ROW_LOCK_CELL} aria-hidden />
+      )}
     </li>
+  );
+}
+
+/** The ├ / └ connector for a sub-item row. Positioned off the row's own box
+ *  (which is `relative`) so the trunk runs the full height, including the
+ *  slider line a phone wraps onto; `left-3.5` is the centre of the parent
+ *  row's chevron (8 px row padding − 4 px chevron pull + half of 20 px), so
+ *  the branch visibly grows out of the control that opened it. The row's
+ *  `pl-6` then puts the sub-item's text under the parent's icon.
+ *  The tick sits on the label line: half-height on desktop, where the row is
+ *  a single centred line, and the first line's centre on a phone. */
+function TreeBranch({ last }: { last: boolean }) {
+  const line = "pointer-events-none absolute bg-paper-300 dark:bg-umber-600";
+  return (
+    <>
+      <span
+        aria-hidden
+        className={`${line} left-3.5 top-0 w-px ${last ? "h-[0.875rem] sm:h-1/2" : "bottom-0"}`}
+      />
+      <span aria-hidden className={`${line} left-3.5 top-[0.875rem] h-px w-2.5 sm:top-1/2`} />
+    </>
   );
 }
 
@@ -1790,6 +1836,7 @@ const CustomRow = memo(CustomRowInner);
 function AddCustomRow({
   onAdd,
   showPerGuestToggle = true,
+  nested = false,
 }: {
   onAdd: (
     label: string,
@@ -1802,6 +1849,9 @@ function AddCustomRow({
    *  Stays on for the bottom-of-list "other"/Egyéb affordance, where it's
    *  the only thing that decides whether a custom row scales at all. */
   showPerGuestToggle?: boolean;
+  /** Inside a category's drawer: indented to the sub-items' text column and
+   *  without the divider, so "add item" reads as the end of that branch. */
+  nested?: boolean;
 }) {
   const { t } = useT();
   const [expanded, setExpanded] = useState(false);
@@ -1844,7 +1894,7 @@ function AddCustomRow({
 
   if (!expanded) {
     return (
-      <li className="py-2">
+      <li className={nested ? "!border-t-0 py-1 pl-6" : "py-2"}>
         <button
           type="button"
           onClick={() => setExpanded(true)}
@@ -1858,7 +1908,7 @@ function AddCustomRow({
   }
 
   return (
-    <li className="py-2">
+    <li className={nested ? "!border-t-0 py-1 pl-6" : "py-2"}>
       <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
         <input
           type="text"

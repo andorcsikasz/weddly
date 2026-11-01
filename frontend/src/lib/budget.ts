@@ -273,9 +273,63 @@ export function mergeLines(prev: BudgetLine[], next: BudgetLine[]): BudgetLine[]
  *  "Fotó & videó" line never reads as one of its own subcategories — the
  *  amount it carries is still visible and editable on the category's aggregate
  *  row itself. */
-export function isCategoryHolderLine(line: BudgetLine, categoryLabel: string): boolean {
-  return line.label === categoryLabel;
+export function isCategoryHolderLine(line: BudgetLine, category: BudgetCategory): boolean {
+  return BUDGET_CATEGORY_NAMES[category].includes(line.label);
 }
+
+/** The anonymous "Other" bucket row (as opposed to a named custom row that
+ *  also lives in `category="other"`). Same any-language rule as above. */
+export function isDefaultOtherLine(line: BudgetLine): boolean {
+  return line.category === "other" && isCategoryHolderLine(line, "other");
+}
+
+/** Every UI language's name for each category. A holder row is labelled in
+ *  whatever language the UI spoke when it was created, so matching only the
+ *  CURRENT locale's name turned a Hungarian "Zene & DJ" holder into a fake
+ *  sub-item of "Music & DJ" the moment the couple switched to English.
+ *  Static rather than read from the locale trees because the non-EN trees
+ *  are lazy-loaded; `budget_category_names.test.ts` pins it to them. */
+export const BUDGET_CATEGORY_NAMES: Record<BudgetCategory, readonly string[]> = {
+  venue: ["Venue", "Helyszín", "Lugar", "Lokacija", "Location"],
+  catering: ["Catering", "Vendéglátás"],
+  drinks: ["Drinks", "Italok", "Bebidas", "Piće", "Getränke"],
+  attire: ["Attire", "Ruházat", "Vestuario", "Odjeća", "Kleidung"],
+  decor_floral: [
+    "Decor & flowers",
+    "Dekor & virág",
+    "Decoración y flores",
+    "Dekoracija i cvijeće",
+    "Deko & Blumen",
+  ],
+  photo_video: ["Photo & video", "Fotó & videó", "Foto y vídeo", "Foto i video", "Foto & Video"],
+  music_dj: ["Music & DJ", "Zene & DJ", "Música y DJ", "Glazba i DJ", "Musik & DJ"],
+  cake_dessert: [
+    "Cake & dessert",
+    "Torta & desszert",
+    "Tarta y postres",
+    "Torta i desert",
+    "Torte & Dessert",
+  ],
+  hair_makeup: [
+    "Hair & make-up",
+    "Haj & smink",
+    "Peluquería y maquillaje",
+    "Frizura i šminka",
+    "Haare & Make-up",
+  ],
+  transport: ["Transport", "Transzfer", "Transporte", "Prijevoz"],
+  honeymoon: ["Honeymoon", "Nászút", "Luna de miel", "Medeni mjesec", "Flitterwochen"],
+  stationery: ["Stationery", "Papíráru", "Papelería", "Tiskani materijali", "Papeterie"],
+  favours: [
+    "Favours",
+    "Vendégajándék",
+    "Detalles para invitados",
+    "Pokloni za goste",
+    "Gastgeschenke",
+  ],
+  rings: ["Rings", "Gyűrűk", "Anillos", "Prstenje", "Ringe"],
+  other: ["Other", "Egyéb", "Otros", "Ostalo", "Sonstiges"],
+};
 
 /** Quick-add suggestions for a category's sub-item drawer — the defined sets
  *  (Fotó/Videó, DJ/Élőzene, Dekor/Virág, …). A category with no entry has none

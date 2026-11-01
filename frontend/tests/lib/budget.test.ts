@@ -11,6 +11,7 @@ import {
   budgetSubcategorySuggestions,
   createBudgetWriteQueue,
   isCategoryHolderLine,
+  isDefaultOtherLine,
   isNoopPlan,
   mergeLines,
   planCategoryPaid,
@@ -223,29 +224,42 @@ describe("createBudgetWriteQueue", () => {
 });
 
 describe("isCategoryHolderLine", () => {
-  const t = (path: string) => `T[${path}]`;
-
-  it("hides a line labelled with the category's own localized name", () => {
+  it("hides a line labelled with the category's own name", () => {
     // The row `planCategoryPlanned` auto-creates when a category owns no lines
-    // is labelled "Photo & video" (the localized category name) — it IS the
-    // aggregate, not a sub-item, so the drawers must not show it.
-    const holder = { ...line(1, "photo_video", 400_000), label: t("budget.cat.photo_video") };
-    expect(isCategoryHolderLine(holder, t("budget.cat.photo_video"))).toBe(true);
+    // is labelled with the category name. It IS the aggregate, not a sub-item.
+    const holder = { ...line(1, "photo_video", 400_000), label: "Photo & video" };
+    expect(isCategoryHolderLine(holder, "photo_video")).toBe(true);
+  });
+
+  it("hides the holder whatever language it was created in", () => {
+    // Reported 2026-11-01: a "Zene & DJ" holder made while the UI was
+    // Hungarian showed up as a sub-item of "Music & DJ" in English.
+    const hu = { ...line(1, "music_dj", 300_000), label: "Zene & DJ" };
+    const de = { ...line(2, "music_dj", 300_000), label: "Musik & DJ" };
+    expect(isCategoryHolderLine(hu, "music_dj")).toBe(true);
+    expect(isCategoryHolderLine(de, "music_dj")).toBe(true);
   });
 
   it("keeps real named sub-items and the aggregate's own slug labels", () => {
     const named = { ...line(1, "photo_video", 100_000), label: "Fotó" };
-    expect(isCategoryHolderLine(named, "Photo & video")).toBe(false);
-    // Legacy rows store the slug as their label — never the category name.
-    expect(isCategoryHolderLine(line(2, "photo_video", 300_000), "Photo & video")).toBe(false);
+    expect(isCategoryHolderLine(named, "photo_video")).toBe(false);
+    // Legacy rows store the slug as their label, never the category name.
+    expect(isCategoryHolderLine(line(2, "photo_video", 300_000), "photo_video")).toBe(false);
   });
 
   it("does not hide a line because its label equals ANOTHER category's name", () => {
-    // A row labelled "Venue" sitting inside photo_video is a real sub-item
-    // (misnamed by the couple), never identity with the photo_video holder.
     const cross = { ...line(3, "photo_video", 200_000), label: "Venue" };
-    expect(isCategoryHolderLine(cross, "Photo & video")).toBe(false);
-    expect(isCategoryHolderLine(cross, "Venue")).toBe(true);
+    expect(isCategoryHolderLine(cross, "photo_video")).toBe(false);
+  });
+});
+
+describe("isDefaultOtherLine", () => {
+  it("matches the Other bucket in every UI language, never a named custom row", () => {
+    for (const label of ["Other", "Egyéb", "Otros", "Ostalo", "Sonstiges"]) {
+      expect(isDefaultOtherLine({ ...line(1, "other", 0), label })).toBe(true);
+    }
+    expect(isDefaultOtherLine({ ...line(2, "other", 0), label: "Planner fee" })).toBe(false);
+    expect(isDefaultOtherLine({ ...line(3, "venue", 0), label: "Other" })).toBe(false);
   });
 });
 

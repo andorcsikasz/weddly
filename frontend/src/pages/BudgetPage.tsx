@@ -69,6 +69,7 @@ import {
   guestCountBaseline,
   guestCountBounds,
   isCategoryHolderLine,
+  isDefaultOtherLine,
   isNoopPlan,
   isSupplierManagedLine,
   mergeLines,
@@ -591,10 +592,8 @@ export default function BudgetPage() {
   /** Aggregated "Egyéb" needs the same scaling math as the widget slider, but
    *  without dragging the custom rows along — they share `category === "other"`
    *  but live as their own rows in the table and would jump every time the
-   *  user tweaks the Egyéb aggregate otherwise. The widget's CostPlanningCard
-   *  uses the localised default label to identify custom rows; mirror that
-   *  here so the two views stay in lockstep. */
-  const isDefaultOtherLine = (line: BudgetLine) => line.label === "Egyéb" || line.label === "Other";
+   *  user tweaks the Egyéb aggregate otherwise. `isDefaultOtherLine` (shared
+   *  with CostPlanningCard) tells them apart in every UI language. */
 
   /** Plan the write, land it locally, THEN send it. The old order (await the
    *  PATCH, then replace the whole `lines` array) is what made the panel feel
@@ -1030,7 +1029,7 @@ export default function BudgetPage() {
     }
     for (const l of lines) {
       if (l.category === "honeymoon") continue;
-      if (l.category === "other" && !(l.label === "Egyéb" || l.label === "Other")) continue;
+      if (l.category === "other" && !isDefaultOtherLine(l)) continue;
       const b = map.get(l.category);
       if (!b) continue;
       b.lines.push(l);
@@ -1376,8 +1375,7 @@ export default function BudgetPage() {
                 // category owned no lines). That row IS the aggregate — showing
                 // it in the drawer made the category read as one of its own
                 // subcategories.
-                const categoryLabel = t(`budget.cat.${cat}`);
-                const subLines = linesForCat.filter((l) => !isCategoryHolderLine(l, categoryLabel));
+                const subLines = linesForCat.filter((l) => !isCategoryHolderLine(l, cat));
                 // Offer the defined subcategories (Fotó/Videó, …) as quick-add
                 // chips only while the drawer holds no real sub-items — once
                 // the couple has split the category, the promise is spent.
@@ -1481,9 +1479,10 @@ export default function BudgetPage() {
                      *  it. The category's own aggregate row is filtered out
                      *  (`subLines`). */}
                     {isExpanded &&
-                      subLines.map((line) => (
+                      subLines.map((line, i) => (
                         <BudgetSubLineTr
                           key={line.id}
+                          last={i === subLines.length - 1}
                           line={line}
                           scaledPlanned={scaledCategoryPlanned(cat, line.planned_huf)}
                           unscalePlanned={(v) => unscaleCategoryPlanned(cat, v)}
@@ -1725,6 +1724,7 @@ export default function BudgetPage() {
  *  here, since it lives inside a real category bucket whose scaling is
  *  already category-driven everywhere else on this page. */
 function BudgetSubLineTr({
+  last,
   line,
   scaledPlanned,
   unscalePlanned,
@@ -1737,6 +1737,8 @@ function BudgetSubLineTr({
   onPaymentsChanged,
   onDelete,
 }: {
+  /** Last sub-item of its category: the tree connector ends here (└). */
+  last: boolean;
   line: BudgetLine;
   scaledPlanned: number;
   unscalePlanned: (displayValue: number) => number;
@@ -1763,13 +1765,25 @@ function BudgetSubLineTr({
     <tr
       data-budget-line-id={line.id}
       data-category="sub-item"
-      className="border-t border-paper-100 bg-paper-50/60 transition hover:bg-paper-100 dark:border-umber-800 dark:bg-umber-800/30 dark:hover:bg-umber-700/60"
+      className="bg-paper-50/60 transition hover:bg-paper-100 dark:bg-umber-800/30 dark:hover:bg-umber-700/60"
     >
-      <td className="py-2 pl-9 pr-4 align-middle">
+      {/* Tree connector out of the parent row's chevron (td px-4, chevron
+       *  pulled -4 px, 20 px wide: centre at 22 px). No row border, so the
+       *  trunk runs unbroken from one sub-item to the next. */}
+      <td className="relative py-1.5 pl-[38px] pr-4 align-middle">
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute left-[22px] top-0 w-px bg-paper-300 dark:bg-umber-600 ${last ? "h-1/2" : "bottom-0"}`}
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-[22px] top-1/2 h-px w-2.5 bg-paper-300 dark:bg-umber-600"
+        />
         <CustomRowLabel
           icon={line.icon}
           label={line.label}
           href={owned ? `/app/suppliers/${line.couple_supplier_id ?? line.listing_id}` : null}
+          nested
         />
       </td>
       <td className="px-4 py-2 align-middle">
@@ -1847,15 +1861,23 @@ function CustomRowLabel({
   icon,
   label,
   href,
+  nested = false,
 }: {
   icon: string | null;
   label: string;
   href?: string | null;
+  /** A category's sub-item: a size smaller and muted, and no generic "…"
+   *  glyph when the couple picked no icon (it read as a second category). */
+  nested?: boolean;
 }) {
   const Icon = resolveCustomIcon(icon);
   return (
-    <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
-      <Icon size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
+    <span
+      className={`inline-flex items-center gap-2 ${nested ? "text-xs text-ink-600 dark:text-umber-200" : "text-sm text-ink-800 dark:text-paper-100"}`}
+    >
+      {(!nested || icon) && (
+        <Icon size={nested ? 12 : 14} className="text-ink-500 dark:text-umber-300" aria-hidden />
+      )}
       {href ? (
         <Link
           to={href}
