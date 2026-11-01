@@ -5232,6 +5232,9 @@ const es: LocaleMessages = {
     table_col_meal: "Menú",
     table_col_dietary: "Alimentación",
     table_col_accommodation: "Alojamiento",
+    table_col_kind: "Edad",
+    table_kind_child: "Niño (menor de 14)",
+    table_kind_baby: "Bebé (menor de 2)",
     table_col_invited: "Invitado",
     table_columns: "Columnas",
     table_columns_hint:

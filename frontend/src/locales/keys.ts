@@ -5886,6 +5886,9 @@ export interface LocaleMessages {
     table_col_meal: string;
     table_col_dietary: string;
     table_col_accommodation: string;
+    table_col_kind: string;
+    table_kind_child: string;
+    table_kind_baby: string;
     table_col_invited: string;
     table_columns: string;
     table_columns_hint: string;

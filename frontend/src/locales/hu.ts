@@ -5178,6 +5178,9 @@ const hu: LocaleMessages = {
     table_col_meal: "Menü",
     table_col_dietary: "Étrend",
     table_col_accommodation: "Szállás",
+    table_col_kind: "Kor",
+    table_kind_child: "Gyerek (14 év alatt)",
+    table_kind_baby: "Baba (2 év alatt)",
     table_col_invited: "Meghívó",
     table_columns: "Oszlopok",
     table_columns_hint:

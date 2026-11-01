@@ -2382,6 +2382,7 @@ function EmailCell({
  *  not in this list: it is always last and always there. */
 type GuestTableCol =
   | "name"
+  | "kind"
   | "invited"
   | "household"
   | "rsvp"
@@ -2393,6 +2394,7 @@ type GuestTableCol =
   | "accommodation";
 const GUEST_TABLE_COLS: GuestTableCol[] = [
   "name",
+  "kind",
   "invited",
   "household",
   "rsvp",
@@ -2479,6 +2481,7 @@ function moveGuestTableCol(
 
 const GUEST_TABLE_COL_LABEL: Record<GuestTableCol, string> = {
   name: "guests.table_col_name",
+  kind: "guests.table_col_kind",
   invited: "guests.table_col_invited",
   household: "guests.table_col_household",
   rsvp: "guests.table_col_rsvp",
@@ -3352,6 +3355,30 @@ function GuestTableRow({
                 onChange={(v) => void onUpdateGuest(g, { full_name: v })}
               />
             </span>
+          </td>
+        );
+      case "kind":
+        return (
+          <td key={c} className={`${CELL} text-center`}>
+            {/* A +1 and a supplier are their own type in the guest drawer, so
+                they read here rather than offering an age pick the drawer
+                itself would not. */}
+            {g.is_plus_one || g.is_supplier ? (
+              <span className="text-xs text-ink-600 dark:text-umber-200">
+                {t(g.is_supplier ? "guests.kind_supplier" : "guests.kind_plus_one")}
+              </span>
+            ) : (
+              <CellSelect
+                value={g.kind}
+                ariaLabel={t("guests.table_col_kind")}
+                onChange={(v) => void onUpdateGuest(g, { kind: v as GuestKind })}
+                className="[&>select]:text-center"
+              >
+                <option value="adult">{t("guests.kind_adult")}</option>
+                <option value="child">{t("guests.table_kind_child")}</option>
+                <option value="baby">{t("guests.table_kind_baby")}</option>
+              </CellSelect>
+            )}
           </td>
         );
       case "email":

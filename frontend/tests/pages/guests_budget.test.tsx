@@ -767,7 +767,7 @@ describe("<GuestsPage>", () => {
         .map((th) => th.textContent?.trim() ?? "")
         .filter(Boolean);
 
-    it("defaults to Name, Invited, Household, RSVP, Group, then the rest", async () => {
+    it("defaults to Name, Age, Invited, Household, RSVP, Group, then the rest", async () => {
       const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10] });
       installDefaultEndpoints({
         households: [hh],
@@ -775,7 +775,14 @@ describe("<GuestsPage>", () => {
       });
       renderAt("/app/guests?view=table");
       await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
-      expect(headerTexts().slice(0, 5)).toEqual(["Name", "Invited", "Household", "RSVP", "Group"]);
+      expect(headerTexts().slice(0, 6)).toEqual([
+        "Name",
+        "Age",
+        "Invited",
+        "Household",
+        "RSVP",
+        "Group",
+      ]);
     });
 
     it("hides the Invited column once every guest is invited", async () => {
@@ -787,7 +794,7 @@ describe("<GuestsPage>", () => {
       renderAt("/app/guests?view=table");
       await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
       expect(headerTexts()).not.toContain("Invited");
-      expect(headerTexts().slice(0, 3)).toEqual(["Name", "Household", "RSVP"]);
+      expect(headerTexts().slice(0, 3)).toEqual(["Name", "Age", "Household"]);
     });
 
     it("honours a saved order and hidden set", async () => {
@@ -809,12 +816,13 @@ describe("<GuestsPage>", () => {
       await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
       const heads = headerTexts();
       // Group was dragged first and the name can never be hidden. Columns the
-      // saved layout predates (certainty, meal, lodging) slot back in after
-      // their default left-hand neighbour instead of vanishing.
-      expect(heads.slice(0, 7)).toEqual([
+      // saved layout predates (age, certainty, meal, lodging) slot back in
+      // after their default left-hand neighbour instead of vanishing.
+      expect(heads.slice(0, 8)).toEqual([
         "Group",
         "Certainty",
         "Name",
+        "Age",
         "Invited",
         "Household",
         "RSVP",
@@ -852,6 +860,34 @@ describe("<GuestsPage>", () => {
       await flush(1);
       expect(headerTexts()[0]).toBe("Name");
       expect(nameCell().className).toContain("sticky");
+    });
+
+    it("records a child or a baby in the Age column, and the summary counts them", async () => {
+      const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10, 11] });
+      installDefaultEndpoints({
+        households: [hh],
+        guests: [
+          makeGuest({ id: 10, full_name: "Alice", household_id: 1 }),
+          makeGuest({ id: 11, full_name: "Tom", household_id: 1, kind: "baby" }),
+        ],
+      });
+      onPatch((u) => u.startsWith("/api/guests/10"), {
+        guest: makeGuest({ id: 10, full_name: "Alice", household_id: 1, kind: "child" }),
+      });
+      renderAt("/app/guests?view=table");
+      await waitFor(() => expect(screen.getByDisplayValue("Alice")).toBeInTheDocument());
+      const selects = () => screen.getAllByLabelText(/^age$/i) as HTMLSelectElement[];
+      expect(selects().map((s) => s.value)).toEqual(["adult", "baby"]);
+      expect(screen.getAllByRole("option", { name: "Baby (under 2)" })).toHaveLength(2);
+      expect(screen.getByText(/1 kids/)).toBeInTheDocument();
+
+      fireEvent.change(selects()[0]!, { target: { value: "child" } });
+      await flush(2);
+      const patch = fetchCalls.find(
+        (c) => c.method === "PATCH" && c.url.startsWith("/api/guests/10"),
+      );
+      expect((patch?.body as { kind?: string } | undefined)?.kind).toBe("child");
+      expect(screen.getByText(/2 kids/)).toBeInTheDocument();
     });
 
     it("a certainty change repaints the whole household at once", async () => {
