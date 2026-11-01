@@ -4948,6 +4948,7 @@ const hr: LocaleMessages = {
     group_shared_friends: "Zajednički prijatelji",
     group_work: "Posao",
     group_other: "Ostalo",
+    group_show_all: "Prikaži sve strane",
     empty_title: "Još nema gostiju",
     empty_body:
       "Dodajte prvog gosta ili uvezite cijeli popis iz CSV-a, predložak čuva ispravan format.",

@@ -4952,6 +4952,7 @@ const hu: LocaleMessages = {
     group_shared_friends: "Közös barátok",
     group_work: "Munkahely",
     group_other: "Egyéb",
+    group_show_all: "Összes oldal",
     empty_title: "Még nincsenek vendégek",
     empty_body:
       "Add hozzá az elsőt, vagy importálj egy egész listát CSV-ből, a sablon segít a formátumban.",

@@ -5970,6 +5970,7 @@ export interface LocaleMessages {
     group_shared_friends: string;
     group_work: string;
     group_other: string;
+    group_show_all: string;
     empty_title: string;
     empty_body: string;
     empty_cta_add: string;

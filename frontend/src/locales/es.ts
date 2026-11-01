@@ -5006,6 +5006,7 @@ const es: LocaleMessages = {
     group_shared_friends: "Amigos en común",
     group_work: "Trabajo",
     group_other: "Otros",
+    group_show_all: "Mostrar todos los lados",
     empty_title: "Aún no hay invitados",
     empty_body:
       "Añade tu primer invitado o importa la lista completa desde CSV; la plantilla mantiene el formato correcto.",

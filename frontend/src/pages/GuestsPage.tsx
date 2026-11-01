@@ -373,6 +373,9 @@ interface DrawerInit {
   guest: Guest | null;
   /** When opening "add another to existing household", we pre-select it. */
   defaultHouseholdId: number | null;
+  /** The side/group filter active when "Add guest" was pressed. One tag is
+   *  pre-picked; several narrow the picker to just those (with a way out). */
+  filterGroups?: GuestGroupTag[];
 }
 
 export default function GuestsPage() {
@@ -1446,7 +1449,13 @@ export default function GuestsPage() {
             <button
               type="button"
               className="btn-primary"
-              onClick={() => setEditing({ guest: null, defaultHouseholdId: null })}
+              onClick={() =>
+                setEditing({
+                  guest: null,
+                  defaultHouseholdId: null,
+                  filterGroups: GROUPS.filter((g) => groupSet.has(g)),
+                })
+              }
               title={t("guests.add_hint")}
             >
               <Plus size={16} /> {t("guests.add")}
@@ -1465,7 +1474,13 @@ export default function GuestsPage() {
               sent: listableGuests.some((g) => g.invited_at != null),
               answers: listableGuests.some((g) => g.rsvp_status !== "pending"),
             }}
-            onAddGuest={() => setEditing({ guest: null, defaultHouseholdId: null })}
+            onAddGuest={() =>
+              setEditing({
+                guest: null,
+                defaultHouseholdId: null,
+                filterGroups: GROUPS.filter((g) => groupSet.has(g)),
+              })
+            }
             onOpenMeals={() => setMealsOpen(true)}
             onSendInvites={openInvites}
           />
@@ -1527,7 +1542,13 @@ export default function GuestsPage() {
         <GuestsFirstRun
           mealIntent={mealIntent}
           onMealIntent={chooseMealIntent}
-          onAddGuest={() => setEditing({ guest: null, defaultHouseholdId: null })}
+          onAddGuest={() =>
+            setEditing({
+              guest: null,
+              defaultHouseholdId: null,
+              filterGroups: GROUPS.filter((g) => groupSet.has(g)),
+            })
+          }
           onImport={onImport}
           onDownloadTemplate={() => downloadCsvTemplate(locale)}
           importing={importing}
@@ -4726,12 +4747,16 @@ function GuestDrawer({
     init.defaultHouseholdId != null &&
     households.some((h) => h.id === init.defaultHouseholdId && h.is_supplier_household);
 
+  const filterGroups = guest == null ? (init.filterGroups ?? []) : [];
+  // Several sides filtered: offer just those until the couple asks for all.
+  const [showAllGroups, setShowAllGroups] = useState(filterGroups.length < 2);
+  const pickerGroups = showAllGroups ? GROUPS : filterGroups;
   const [form, setForm] = useState<Partial<Guest>>(
     guest ?? {
       full_name: "",
       email: null,
       phone: null,
-      group_tag: "other",
+      group_tag: filterGroups[0] ?? "other",
       kind: "adult",
       certainty: "definite",
       rsvp_status: intoSupplierHousehold ? "yes" : "pending",
@@ -4769,7 +4794,11 @@ function GuestDrawer({
     init.defaultHouseholdId !== null || guest?.household_id ? "existing" : "new",
   );
   const [householdId, setHouseholdId] = useState<number | null>(
-    guest?.household_id ?? init.defaultHouseholdId ?? households[0]?.id ?? null,
+    guest?.household_id ??
+      init.defaultHouseholdId ??
+      households.find((h) => filterGroups.includes(h.group_tag))?.id ??
+      households[0]?.id ??
+      null,
   );
   const [newHouseholdLabel, setNewHouseholdLabel] = useState("");
   // Per-household opt-in for the public RSVP "needs accommodation?" question,
@@ -5032,7 +5061,7 @@ function GuestDrawer({
             <div className="mb-3">
               <label className="field-label">{t("guests.group")}</label>
               <div className="grid grid-cols-7 gap-2">
-                {GROUPS.map((g) => (
+                {pickerGroups.map((g) => (
                   <SegmentButton
                     key={g}
                     active={(form.group_tag ?? "other") === g}
@@ -5042,6 +5071,17 @@ function GuestDrawer({
                     iconOnly
                   />
                 ))}
+                {!showAllGroups && (
+                  <button
+                    type="button"
+                    className="flex items-center justify-center rounded-xl border border-dashed border-paper-300 text-ink-500 hover:text-ink-900 dark:border-umber-700 dark:text-umber-300 dark:hover:text-paper-100"
+                    onClick={() => setShowAllGroups(true)}
+                    title={t("guests.group_show_all")}
+                    aria-label={t("guests.group_show_all")}
+                  >
+                    <Plus size={14} aria-hidden />
+                  </button>
+                )}
               </div>
               {/* The cells are icon-only and their name is a hover tooltip,
                   which a touch screen never shows, so name the pick here. */}

@@ -4917,6 +4917,7 @@ const en: LocaleMessages = {
     group_shared_friends: "Shared friends",
     group_work: "Work",
     group_other: "Other",
+    group_show_all: "Show all sides",
     empty_title: "No guests yet",
     empty_body:
       "Add your first guest or import the whole list from CSV, the template keeps the format right.",

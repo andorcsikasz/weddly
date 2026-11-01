@@ -5054,6 +5054,7 @@ const de: LocaleMessages = {
     group_shared_friends: "Gemeinsame Freunde",
     group_work: "Arbeit",
     group_other: "Sonstige",
+    group_show_all: "Alle Seiten zeigen",
     empty_title: "Noch keine Gäste",
     empty_body:
       "Legen Sie den ersten Gast an oder importieren Sie die ganze Liste aus einer CSV, die Vorlage hält das Format richtig.",
