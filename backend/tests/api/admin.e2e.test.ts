@@ -282,6 +282,30 @@ describe("admin gate — recent primary authentication", () => {
     expect(fresh.status).toBe(200);
   });
 
+  test("the code is asked only by the admin console, never on an ordinary app page", async () => {
+    const token = await bootstrapAdmin();
+    const sessionId = token.slice(0, token.indexOf("."));
+    db.prepare("UPDATE sessions SET authenticated_at = ? WHERE id = ?").run(
+      now() - CONFIG.adminReauthTtlMs - 1,
+      sessionId,
+    );
+    const listing = db.prepare("SELECT id FROM listings LIMIT 1").get() as { id: string } | null;
+    expect(listing).not.toBeNull();
+
+    // A vendor page in the couple app answers normally (the couple's view).
+    const detail = await req(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listing?.id ?? "")}`,
+      undefined,
+      { token },
+    );
+    expect(detail.status).toBe(200);
+
+    // The console itself still wants the code.
+    const adminPage = await req("GET", "/api/admin/users", undefined, { token });
+    expect(adminPage.status).toBe(403);
+  });
+
   test("production policy requires recent application MFA and rejects legacy/future proofs", () => {
     const at = now();
     expect(

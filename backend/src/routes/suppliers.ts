@@ -51,7 +51,7 @@ import { toPublicVendorProfile } from "../domain/public_vendor";
 import { getReviewCountsMap, getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments } from "../domain/supplier_comments";
 import { getAvailability, isIsoDate, listingIdsUnavailableOn } from "../domain/supplier_bookings";
-import { isAdminEmail, requireAdmin } from "../domain/users";
+import { viewerIsAdmin as viewerIsAdminCheck } from "../domain/users";
 import { completeListingIds } from "../domain/vendor_clients";
 import { db } from "../db";
 import { haversineKm } from "../lib/geo";
@@ -679,11 +679,11 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
   // shortlist comparison dialog. It's only ever non-null for claimed vendor
   // accounts (the rest stay null and render an "ask to confirm" fallback),
   // so exposing it leaks nothing an unclaimed listing didn't already imply.
-  const userRow = db.prepare("SELECT email FROM users WHERE id = ?").get(userId) as
-    | { email: string }
-    | undefined;
-  const viewerIsAdmin = userRow ? isAdminEmail(userRow.email) : false;
-  if (viewerIsAdmin) requireAdmin(ctx);
+  // An admin gets the admin extras only with a completed 2FA step-up, and
+  // without one simply sees the couple's view. Throwing here used to pop the
+  // admin code prompt on every vendor page of the ordinary app, while the
+  // code is meant to be asked only on the way into the admin console.
+  const { isAdmin: viewerIsAdmin } = viewerIsAdminCheck(ctx);
 
   const payload = buildSupplierDetail(supplierId, {
     viewerUserId: userId,
