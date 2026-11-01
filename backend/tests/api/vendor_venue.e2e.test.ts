@@ -296,7 +296,7 @@ describe("venue pricing rules", () => {
 });
 
 describe("couple-facing exposure", () => {
-  test("a signed-in couple gets the venue block; the anonymous page does not", async () => {
+  test("a signed-in couple and the anonymous page both get the venue block", async () => {
     const { id, token } = await seedVendor("venue-exposed@weddly.test");
     const couple = await bootstrapCouple("venue-exposed-couple@test.test");
 
@@ -319,7 +319,9 @@ describe("couple-facing exposure", () => {
 
     const pub = await req<Record<string, unknown>>("GET", `/api/public/vendors/${id}`);
     expect(pub.status).toBe(200);
-    expect(JSON.stringify(pub.data)).not.toContain("Peak season");
-    expect(Object.keys(pub.data)).not.toContain("venue");
+    // Venue details are public since 2026-10-16: a visitor browsing venues
+    // has to be able to read what a place offers and what it costs.
+    expect(JSON.stringify(pub.data)).toContain("Peak season");
+    expect(Object.keys(pub.data.detail as object)).toContain("venue");
   });
 });
