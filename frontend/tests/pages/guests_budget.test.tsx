@@ -890,6 +890,34 @@ describe("<GuestsPage>", () => {
       expect(screen.getByText(/2 kids/)).toBeInTheDocument();
     });
 
+    it("sorted by name, a +1 stays under their host, and the summary counts the +1s", async () => {
+      const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10, 11, 12] });
+      installDefaultEndpoints({
+        households: [hh],
+        guests: [
+          makeGuest({ id: 10, full_name: "Zoe", household_id: 1 }),
+          makeGuest({ id: 11, full_name: "Mark", household_id: 1 }),
+          makeGuest({
+            id: 12,
+            full_name: "Adam",
+            household_id: 1,
+            is_plus_one: true,
+            plus_one_of: 10,
+          }),
+        ],
+      });
+      renderAt("/app/guests?view=table&sort=name");
+      await waitFor(() => expect(screen.getByDisplayValue("Zoe")).toBeInTheDocument());
+      const order = ["Mark", "Zoe", "Adam"].map((n) => screen.getByDisplayValue(n));
+      for (let i = 0; i < order.length - 1; i++) {
+        expect(
+          order[i]!.compareDocumentPosition(order[i + 1]!) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+      }
+      const summary = screen.getByText(/3 (guests|results)/i).closest("p");
+      expect(summary?.textContent).toMatch(/\+1\s*1/);
+    });
+
     it("a certainty change repaints the whole household at once", async () => {
       const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10, 11] });
       installDefaultEndpoints({

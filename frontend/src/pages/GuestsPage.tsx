@@ -318,7 +318,31 @@ function sortGuests(list: Guest[], sort: SortKey): Guest[] {
         GROUPS.indexOf(a.group_tag) - GROUPS.indexOf(b.group_tag) ||
         a.full_name.localeCompare(b.full_name),
     );
-  return arr;
+  return keepPlusOnesWithHost(arr);
+}
+
+/** A +1 rides directly under their host whatever the sort, so "Anna" and
+ *  "Anna's +1" stay one pair instead of landing at opposite ends of an A-Z
+ *  list. The host's position decides; a +1 whose host is filtered out keeps
+ *  its own sorted place. */
+function keepPlusOnesWithHost(list: Guest[]): Guest[] {
+  const present = new Set(list.map((g) => g.id));
+  const byHost = new Map<number, Guest[]>();
+  for (const g of list) {
+    if (g.plus_one_of != null && present.has(g.plus_one_of)) {
+      const arr = byHost.get(g.plus_one_of) ?? [];
+      arr.push(g);
+      byHost.set(g.plus_one_of, arr);
+    }
+  }
+  if (byHost.size === 0) return list;
+  const out: Guest[] = [];
+  for (const g of list) {
+    if (g.plus_one_of != null && present.has(g.plus_one_of)) continue;
+    out.push(g);
+    for (const p of byHost.get(g.id) ?? []) out.push(p);
+  }
+  return out;
 }
 function sortHouseholds(list: Household[], sort: SortKey): Household[] {
   if (sort === "name") return [...list].sort((a, b) => a.label.localeCompare(b.label));
@@ -1536,6 +1560,20 @@ export default function GuestsPage() {
                         </span>
                         <Baby size={14} aria-hidden />
                         {kids} {t("guests.total_summary_kids_unit")}
+                      </span>
+                    ) : null;
+                  })()}
+                  {/* Plus-ones among the rows on screen, same idea: the total
+                      says how many of the seats are someone's +1. */}
+                  {(() => {
+                    const plusOnes = filteredFlatGuests.filter((g) => g.is_plus_one).length;
+                    return plusOnes > 0 ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span aria-hidden className="mx-2">
+                          ·
+                        </span>
+                        <PlusOneBadge show />
+                        {plusOnes}
                       </span>
                     ) : null;
                   })()}
@@ -6831,15 +6869,13 @@ function GuestFilterBar({
         ? "bg-umber-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
         : "bg-paper-100 text-ink-700 ring-1 ring-paper-200 hover:bg-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-700",
     ].join(" ");
-  // Side/group chips get their tag's own colour instead of the generic
-  // monochrome treatment above — the filter panel, the section headers in the
-  // grouped view and each household's own chip all speak the same colour
-  // language now, so a couple learns a tag's colour once.
+  // A SELECTED side/group chip takes its tag's own colour, matching the
+  // grouped view's section headers. Unselected ones stay neutral like every
+  // other chip, so the colour marks what is on rather than painting the row.
   const groupChip = (g: GuestGroupTag, on: boolean) =>
-    [
-      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition-all active:scale-95",
-      on ? GROUP_TAG_TONE_ACTIVE[g] : GROUP_TAG_TONE[g],
-    ].join(" ");
+    on
+      ? `inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition-all active:scale-95 ${GROUP_TAG_TONE_ACTIVE[g]}`
+      : chip(false);
   const hasActive = activeFilterCount > 0 || householdView;
 
   return (
