@@ -18,7 +18,7 @@
 import type { Couple, Guest, SeatAssignment, SeatingTable } from "@shared/types";
 import type { ScheduleEvent } from "@shared/schedule";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { ReactNode } from "react";
 import SchedulePage from "@/pages/SchedulePage";
@@ -234,6 +234,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // bun:test has no global afterEach for Testing Library to hook, so without
+  // this every test's page stays mounted under the next one.
+  cleanup();
   globalThis.fetch = realFetch;
   try {
     localStorage.removeItem("weddly.token");
@@ -316,8 +319,10 @@ describe("<SeatingPage>", () => {
     await renderPage(<SeatingPage />);
     await openFloorPlan();
 
-    // "No tables yet" → render the stationery empty card.
-    expect(await screen.findByText("No tables yet")).toBeInTheDocument();
+    // First run asks for the room before the first table (589f9dfc).
+    expect(
+      await screen.findByRole("heading", { name: "How big is the room?" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Add one to get started.")).toBeInTheDocument();
     // Empty-state CTA uses a distinct label from the toolbar button to avoid
     // duplicate accessible names when both render simultaneously.

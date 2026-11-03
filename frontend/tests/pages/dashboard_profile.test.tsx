@@ -15,7 +15,7 @@
 import { resolveDesign } from "@shared/design";
 import type { Couple, Guest, BudgetLine } from "@shared/types";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import DashboardPage from "@/pages/DashboardPage";
 import ProfilePage from "@/pages/ProfilePage";
@@ -346,6 +346,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // bun:test has no global afterEach for Testing Library to hook, so without
+  // this every test's page stays mounted under the next one.
+  cleanup();
   globalThis.fetch = realFetch;
   try {
     localStorage.removeItem("weddly.token");

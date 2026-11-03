@@ -8,17 +8,25 @@
 // sibling control groups of equal weight. What it asserts now is the opposite
 // property, that most of those controls are NOT on screen until asked for.
 
-import { afterEach, beforeAll, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { DEFAULT_DESIGN } from "@shared/design";
 import { _preloadHuForTests, I18nProvider } from "@/lib/i18n";
 import { ConfirmDialogProvider, ToastProvider } from "@/components/ui";
 import DesignPage from "@/pages/DesignPage";
+import { WEBSITE_INTRO_KEY } from "@/components/design/WebsiteIntro";
 
 beforeAll(async () => {
   await _preloadHuForTests();
   localStorage.setItem("weddly.locale", "hu");
+});
+
+// The editor sits behind a once-per-device intro (3f4f18e1). These smoke
+// tests are about the editor, so every one starts past it; the intro itself
+// has its own test below.
+beforeEach(() => {
+  localStorage.setItem(WEBSITE_INTRO_KEY, "1");
 });
 
 // `mountPage` swaps in a stub fetch and, until this, never gave it back — so
@@ -92,6 +100,20 @@ function mountPage(
 }
 
 describe("<DesignPage> smoke (/app/design/website)", () => {
+  it("shows the intro on a first visit, and the editor once it is dismissed", async () => {
+    localStorage.removeItem(WEBSITE_INTRO_KEY);
+    const { container } = mountPage();
+    await waitFor(() => {
+      expect(container.querySelector("[data-website-intro]")).not.toBeNull();
+    });
+    expect(screen.queryByText("Finomhangolás")).toBeNull();
+    fireEvent.keyDown(window, { key: "Enter" });
+    await waitFor(() => {
+      expect(screen.getByText("Finomhangolás")).toBeInTheDocument();
+    });
+    expect(localStorage.getItem(WEBSITE_INTRO_KEY)).toBe("1");
+  });
+
   it("opens on the committed look and the seven fine-tune rows", async () => {
     mountPage();
 

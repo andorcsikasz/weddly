@@ -2,8 +2,8 @@ import "../setup";
 
 import { checklistSections } from "@shared/wedding_checklist";
 import type { PlanningItem } from "@shared/types";
-import { describe, expect, it } from "bun:test";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "bun:test";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { AppProviders } from "@/components/ui/AppProviders";
 import { WeddingChecklist } from "@/components/WeddingChecklist";
@@ -83,6 +83,12 @@ function mockPlanningUpdate(task: PlanningItem) {
   };
 }
 
+// bun:test has no global afterEach for Testing Library to hook, so without
+// this every test's page stays mounted under the next one.
+afterEach(() => {
+  cleanup();
+});
+
 describe("Wedding checklist Planning surface", () => {
   it("is persistent, uses a two-column layout, and exposes real checkboxes", () => {
     localStorage.setItem("weddly.locale", "en");
@@ -152,14 +158,15 @@ describe("Wedding checklist Planning surface", () => {
     expect(screen.getByText("Overdue")).toBeInTheDocument();
   });
 
-  it("shows Suggest deadlines only when there's a wedding date and something left to add", () => {
+  it("shows Suggest deadlines while something is left to add, with or without a wedding date", () => {
     localStorage.setItem("weddly.locale", "en");
     const weddingDate = "2027-08-15";
     const catalog = checklistSections("en", weddingDate).flatMap((section) => section.items);
     const [first] = catalog;
     if (!first) throw new Error("Checklist fixture is incomplete");
 
-    // No wedding date at all: nothing to compute a suggestion from.
+    // No wedding date: the suggestions count back from the pace's horizon
+    // (c2fbffbc), so there is still something to suggest.
     const { rerender } = render(
       <I18nProvider>
         <AppProviders>
@@ -174,7 +181,7 @@ describe("Wedding checklist Planning surface", () => {
         </AppProviders>
       </I18nProvider>,
     );
-    expect(screen.queryByRole("button", { name: "Suggest deadlines" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Suggest deadlines" })).toBeInTheDocument();
 
     rerender(
       <I18nProvider>

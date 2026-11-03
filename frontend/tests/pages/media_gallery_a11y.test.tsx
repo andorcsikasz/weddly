@@ -1,6 +1,6 @@
 import type { FilmUpload } from "@shared/types";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { I18nProvider } from "@/lib/i18n";
@@ -37,6 +37,12 @@ function renderGallery(
     </I18nProvider>,
   );
 }
+
+// bun:test has no global afterEach for Testing Library to hook, so without
+// this every test's gallery stays mounted under the next one.
+afterEach(() => {
+  cleanup();
+});
 
 beforeEach(() => {
   localStorage.setItem("weddly.locale", "en");
