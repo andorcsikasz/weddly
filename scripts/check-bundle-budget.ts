@@ -41,10 +41,14 @@ const LAZY_ENGINE_BUDGETS: Readonly<Record<string, number>> = {
 
 // Keep modest headroom over the measured August 2026 production build:
 // 478.4 KiB initial, 128.4 KiB largest JS, and 31.5 KiB largest CSS.
+// November 2026: initial is DOWN to 372.4 KiB, but the largest single files
+// grew with two months of features (the HU locale at 144.8 KiB, the app CSS
+// at 38.8 KiB). The per-file ceilings moved up to fit; the initial budget did
+// not, so the page as a whole is still held to the August number.
 const BUDGETS = {
   initial: 525 * KIB,
-  singleJs: 140 * KIB,
-  singleCss: 36 * KIB,
+  singleJs: 155 * KIB,
+  singleCss: 42 * KIB,
 } as const;
 
 function transferBytes(path: string): number {
