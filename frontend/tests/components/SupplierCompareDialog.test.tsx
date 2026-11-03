@@ -6,8 +6,8 @@
 // (no server), exercising the same empty-state path as an unclaimed listing.
 
 import type { DirectorySupplier } from "@shared/suppliers";
-import { describe, expect, it, mock } from "bun:test";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SupplierCompareDialog } from "@/components/SupplierCompareDialog";
 import { I18nProvider, useT } from "@/lib/i18n";
 
@@ -89,6 +89,28 @@ function renderDialog(
   );
 }
 
+// The dialog fetches each supplier's details on mount. A test that does not
+// stub fetch used to reach for a real server, get ECONNREFUSED and sit in the
+// API client's retry backoff; and with no cleanup() (bun:test has no global
+// afterEach for Testing Library to hook) that dialog stayed mounted, so a
+// later test's "progress bar gone" wait was really waiting on an earlier
+// test's retries. Default to an instant 404; a test that cares installs its
+// own stub on top.
+const realFetch = globalThis.fetch;
+beforeEach(() => {
+  globalThis.fetch = mock(
+    async () =>
+      new Response(JSON.stringify({ error: "Not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      }),
+  ) as unknown as typeof fetch;
+});
+afterEach(() => {
+  cleanup();
+  globalThis.fetch = realFetch;
+});
+
 describe("<SupplierCompareDialog> distance / rating / available rows", () => {
   it("shows km from the couple's venue pin and tints the closest supplier", () => {
     // Budapest pin; two suppliers roughly 0km and ~50km away.
@@ -155,14 +177,16 @@ describe("<SupplierCompareDialog> distance / rating / available rows", () => {
       expect(screen.queryByText(/no ratings yet/i)).not.toBeInTheDocument();
       release();
       // A failed fetch still settles: the bar goes and the fallback copy lands.
-      await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+      await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument(), {
+        timeout: 5000,
+      });
       // Both columns land on the same empty state, so the row says it ONCE
       // across the table instead of repeating it per column.
-      expect(screen.getAllByText(/no ratings yet/i).length).toBe(1);
+      await waitFor(() => expect(screen.getAllByText(/no ratings yet/i).length).toBe(1));
     } finally {
       globalThis.fetch = realFetch;
     }
-  });
+  }, 15000);
 
   it("opens the map from a city that has a coordinate, and has no contact row", () => {
     const pinned = makeSupplier({ id: "p", name: "Pinned", city: "Győr", lat: 47.68, lng: 17.63 });
