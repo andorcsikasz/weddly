@@ -41,7 +41,9 @@ const MAX_WIDTH = 1920;
 // The hero crops to a wide band. A portrait shot loses its subject in that
 // crop and a small one upscales to mush, so both are only accepted when the
 // page has nothing better to offer.
-const MIN_HERO_WIDTH = 900;
+// 900 let a 1024px original through, which reads as mush stretched across a
+// 2000px-wide hero. Smaller files still win when nothing sharper exists.
+const MIN_HERO_WIDTH = 1280;
 const MIN_HERO_RATIO = 1.15;
 // Upstream calls are the cost here, so a page contributes at most this many
 // file titles to the one batched Commons lookup.
@@ -85,13 +87,19 @@ function fakePhotoUrl(place: string): string | null {
 // six small photos with hairlines between them. It is the correct picture of
 // the place and a terrible one to run full-bleed behind a headline.
 const NON_PHOTO_RE =
-  /marker|locator|location|_map[._]|\.svg\b|seal|flag|emblem|coat_of_arms|coat-of-arms|logo|atlas|chart|portolan|ESA|satellite|aerial|OSM|montage|collage|\.ogg\b|\.wav\b|\.mp3\b|\.mp4\b|\.webm\b|\.ogv\b/i;
+  /marker|locator|location|_map[._]|\.svg\b|seal|flag|emblem|coat_of_arms|coat-of-arms|logo|atlas|chart|portolan|ESA|satellite|landsat|modis|sentinel-2|aerial|OSM|montage|collage|district|divison|division|elevation|hydrograph|population|poblacion|\.ogg\b|\.wav\b|\.mp3\b|\.mp4\b|\.webm\b|\.ogv\b/i;
 
 // Photo file extensions we accept (excludes SVG, audio, video, etc.)
 const PHOTO_EXT_RE = /\.(jpe?g|png|webp)$/i;
 
+// Bumped whenever the picker gets smarter, so a destination cached with the
+// old picker's photo is re-picked instead of keeping it forever. The version
+// rides in both the cache key and the file name (a reused URL would be served
+// from the browser's cache).
+const PICKER_VERSION = "v2";
+
 function cityKey(city: string): string {
-  return city.toLowerCase().trim();
+  return `${PICKER_VERSION}:${city.toLowerCase().trim()}`;
 }
 
 function citySlug(city: string): string {
@@ -202,10 +210,15 @@ async function commonsImages(titles: string[]): Promise<Map<string, CommonsImage
   return out;
 }
 
-/** Ordered file titles worth trying for `place` on one wiki host: the page
- *  summary's own lead image first (an editor picked it, so it is the postcard
- *  shot), then whatever else the article carries. */
-async function wikiFileTitles(host: string, place: string): Promise<string[]> {
+type WikiPageFiles = { lead: string | null; body: string[] };
+
+/** File titles one wiki article offers for `place`: the page summary's lead
+ *  image (an editor picked it, so it is the postcard shot) and, separately,
+ *  whatever else the article body carries. They are kept apart because they
+ *  are not worth the same: a Wikipedia city article's body is mostly its
+ *  HISTORY section, so its first photos are Roman baths and 1925 street
+ *  scenes, never the place a couple is flying to. */
+async function wikiPageFiles(host: string, place: string): Promise<WikiPageFiles> {
   const slug = encodeURIComponent(place);
   const [summary, media] = await Promise.all([
     fetchJson<{ thumbnail?: { source: string } }>(
@@ -215,51 +228,130 @@ async function wikiFileTitles(host: string, place: string): Promise<string[]> {
       `https://${host}/api/rest_v1/page/media-list/${slug}`,
     ),
   ]);
-
-  const titles: string[] = [];
-  const lead = summary?.thumbnail?.source ? filenameFromThumbUrl(summary.thumbnail.source) : null;
-  if (lead && isTravelPhoto(lead)) titles.push(lead);
+  const leadRaw = summary?.thumbnail?.source
+    ? filenameFromThumbUrl(summary.thumbnail.source)
+    : null;
+  const lead = leadRaw && isTravelPhoto(leadRaw) ? leadRaw : null;
+  const body: string[] = [];
   for (const item of media?.items ?? []) {
     const title = item.title ?? "";
-    if (!isTravelPhoto(title)) continue;
-    if (!item.srcset?.length) continue;
-    titles.push(title);
-    if (titles.length >= MAX_TITLES_PER_PAGE) break;
+    if (!isBodyPhoto(title) || !item.srcset?.length) continue;
+    body.push(title);
+    if (body.length >= MAX_TITLES_PER_PAGE) break;
   }
-  return titles;
+  return { lead, body };
 }
 
-/** Wiki hosts to ask, best source first. Wikivoyage is a travel wiki, so its
- *  lead image is a scenic one by construction; Wikipedia is the fallback.
- *  The couple's own language goes first because the destination string was
- *  saved in it — an `hu` couple has "Róma, Olaszország" on the row, and
- *  en.wikipedia has never heard of either. */
-function wikiHosts(lang: string): string[] {
-  const hosts = [`${lang}.wikivoyage.org`, `${lang}.wikipedia.org`];
-  if (lang !== "en") hosts.push("en.wikivoyage.org", "en.wikipedia.org");
-  return hosts;
+/** A body image is a last resort, so it has to look like a photograph by its
+ *  NAME alone: a JPEG (PNGs and TIFFs in an article body are charts, maps and
+ *  scanned engravings, which is how Barcelona got a population graph), and no
+ *  year before 1960 in the title, which is the history section talking. */
+function isBodyPhoto(title: string): boolean {
+  if (!isTravelPhoto(title) || !/\.jpe?g$/i.test(title)) return false;
+  return !/(^|[^0-9])1[0-9]{3}([^0-9]|$)/.test(title.replace(/19[6-9][0-9]/g, ""));
 }
 
-/** Best available tourist photo for one place name, or null when no wiki we
- *  ask has an article for it. Every host is queried in parallel and their
- *  titles resolved in a single batched Commons call, so this is two round
- *  trips regardless of how many hosts are in play. */
+/** Where the place lives on the couple's own Wikipedia: its Wikidata item and
+ *  its English title. The destination string is saved in the couple's
+ *  language, so without this the English wikis (where Wikivoyage actually has
+ *  a page) are asked about "Párizs" and answer nothing. */
+async function wikiIdentity(
+  lang: string,
+  place: string,
+): Promise<{ wikidata: string | null; enTitle: string | null }> {
+  const params = new URLSearchParams({
+    action: "query",
+    titles: place,
+    prop: "pageprops|langlinks",
+    ppprop: "wikibase_item",
+    lllang: "en",
+    redirects: "1",
+    format: "json",
+  });
+  const data = await fetchJson<{
+    query?: {
+      pages?: Record<
+        string,
+        { title?: string; pageprops?: { wikibase_item?: string }; langlinks?: { "*"?: string }[] }
+      >;
+    };
+  }>(`https://${lang}.wikipedia.org/w/api.php?${params}`);
+  const page = Object.values(data?.query?.pages ?? {})[0];
+  const wikidata = page?.pageprops?.wikibase_item ?? null;
+  const enTitle = lang === "en" ? (page?.title ?? null) : (page?.langlinks?.[0]?.["*"] ?? null);
+  return { wikidata, enTitle };
+}
+
+/** Wikidata's own "image" (P18) for the item: the one picture the community
+ *  agreed stands for the place (the Eiffel Tower for Paris, the skyline for
+ *  Rome). It is the best single signal there is, so it goes first. */
+async function wikidataImages(id: string): Promise<string[]> {
+  const data = await fetchJson<{
+    claims?: { P18?: { mainsnak?: { datavalue?: { value?: string } } }[] };
+  }>(
+    `https://www.wikidata.org/w/api.php?action=wbgetclaims&entity=${encodeURIComponent(id)}&property=P18&format=json`,
+  );
+  return (data?.claims?.P18 ?? [])
+    .map((c) => c.mainsnak?.datavalue?.value ?? "")
+    .filter((t) => t && isTravelPhoto(t));
+}
+
+/** Every title worth trying, best first. The tiers matter more than the
+ *  hosts: a curated pick (Wikidata) beats an editor's lead image, a travel
+ *  wiki's lead beats an encyclopaedia's, and any lead beats any body photo. */
+export function orderPhotoTitles(src: {
+  wikidata: string[];
+  voyageLeads: (string | null)[];
+  wikiLeads: (string | null)[];
+  voyageBodies: string[][];
+  wikiBodies: string[][];
+}): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const add = (t: string | null) => {
+    if (!t) return;
+    const k = commonsKey(t);
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push(t);
+  };
+  for (const t of src.wikidata) add(t);
+  for (const t of src.voyageLeads) add(t);
+  for (const t of src.wikiLeads) add(t);
+  for (const list of src.voyageBodies) for (const t of list) add(t);
+  for (const list of src.wikiBodies) for (const t of list) add(t);
+  return out;
+}
+
+/** Best available tourist photo for one place name, or null when nothing we
+ *  ask knows the place. Three round trips whatever the language: resolve the
+ *  place's identity, then every wiki and Wikidata in parallel, then one
+ *  batched Commons lookup. */
 export async function resolveDestinationPhoto(place: string, lang: string): Promise<string | null> {
   if (fakeMode()) return fakePhotoUrl(place);
-  const hosts = wikiHosts(lang);
-  const perHost = await Promise.all(hosts.map((h) => wikiFileTitles(h, place)));
-  // Host priority survives the flatten: every title from the first host comes
-  // before the second host's, and within a host the lead image comes first.
-  const ordered: string[] = [];
-  const seen = new Set<string>();
-  for (const titles of perHost) {
-    for (const title of titles) {
-      const key = commonsKey(title);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      ordered.push(title);
-    }
+  let identity = await wikiIdentity(lang, place);
+  if (!identity.wikidata && lang !== "en") identity = await wikiIdentity("en", place);
+  const enName = identity.enTitle ?? place;
+
+  // Each wiki is asked under the name it knows the place by.
+  const voyage: [string, string][] = [[`${lang}.wikivoyage.org`, place]];
+  const wiki: [string, string][] = [[`${lang}.wikipedia.org`, place]];
+  if (lang !== "en") {
+    voyage.push(["en.wikivoyage.org", enName]);
+    wiki.push(["en.wikipedia.org", enName]);
   }
+  const [wikidata, voyagePages, wikiPages] = await Promise.all([
+    identity.wikidata ? wikidataImages(identity.wikidata) : Promise.resolve([]),
+    Promise.all(voyage.map(([h, n]) => wikiPageFiles(h, n))),
+    Promise.all(wiki.map(([h, n]) => wikiPageFiles(h, n))),
+  ]);
+  const ordered = orderPhotoTitles({
+    wikidata,
+    voyageLeads: voyagePages.map((p) => p.lead),
+    wikiLeads: wikiPages.map((p) => p.lead),
+    voyageBodies: voyagePages.map((p) => p.body),
+    wikiBodies: wikiPages.map((p) => p.body),
+  });
   if (ordered.length === 0) return null;
 
   const images = await commonsImages(ordered);
@@ -355,7 +447,7 @@ async function downloadAndCache(place: string, remoteUrl: string): Promise<strin
     if (fakeMode()) {
       // Write a real (one-pixel) object so `storage.exists` on the next read
       // behaves exactly as it does in production.
-      const key = `${DEST_PHOTO_DIR}/${citySlug(place)}.jpg`;
+      const key = `${DEST_PHOTO_DIR}/${citySlug(place)}.${PICKER_VERSION}.jpg`;
       await storage.write(key, ONE_PIXEL_JPEG);
       const localPath = `/uploads/${key}`;
       writePhotoCache(cityKey(place), localPath, place);
@@ -375,7 +467,7 @@ async function downloadAndCache(place: string, remoteUrl: string): Promise<strin
     const rawExt = extname(remoteUrl.split("?")[0] ?? "").toLowerCase();
     const ext = [".jpg", ".jpeg", ".png", ".webp"].includes(rawExt) ? rawExt : ".jpg";
 
-    const filename = `${citySlug(place)}${ext}`;
+    const filename = `${citySlug(place)}.${PICKER_VERSION}${ext}`;
     const key = `${DEST_PHOTO_DIR}/${filename}`;
     await storage.write(key, new Uint8Array(buf));
 

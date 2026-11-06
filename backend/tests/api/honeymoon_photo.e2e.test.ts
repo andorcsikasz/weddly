@@ -2,7 +2,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
-import { photoCandidates } from "../../src/routes/honeymoon";
+import { orderPhotoTitles, photoCandidates } from "../../src/routes/honeymoon";
 import { bootstrapCouple, req } from "../helpers";
 
 // ─── Breadcrumb → place ladder (pure, no network) ─────────────────────────
@@ -93,7 +93,7 @@ describe("honeymoon photo — endpoint", () => {
     const r = await photoFor(token, "Bali, Indonézia");
     expect(r.status).toBe(200);
     expect(r.data.matched).toBe("Bali");
-    expect(r.data.photo_url).toBe("/uploads/destination-photos/bali.jpg");
+    expect(r.data.photo_url).toBe("/uploads/destination-photos/bali.v2.jpg");
   });
 
   test("a venue with no photo falls through to the CITY, not to the country", async () => {
@@ -107,7 +107,7 @@ describe("honeymoon photo — endpoint", () => {
     );
     expect(r.status).toBe(200);
     expect(r.data.matched).toBe("Róma");
-    expect(r.data.photo_url).toBe("/uploads/destination-photos/r-ma.jpg");
+    expect(r.data.photo_url).toBe("/uploads/destination-photos/r-ma.v2.jpg");
   });
 
   test("the full destination string is cached, so a repeat is one row read", async () => {
@@ -124,7 +124,7 @@ describe("honeymoon photo — endpoint", () => {
       .query<{ local_path: string; matched: string | null }, [string]>(
         "SELECT local_path, matched FROM destination_photo_cache WHERE city = ?",
       )
-      .get(destination.toLowerCase());
+      .get(`v2:${destination.toLowerCase()}`);
     expect(byFull?.matched).toBe("Magyarország");
     expect(byFull?.local_path).toBe(firstUrl as string);
 
@@ -143,8 +143,44 @@ describe("honeymoon photo — endpoint", () => {
       .query<{ local_path: string }, [string]>(
         "SELECT local_path FROM destination_photo_cache WHERE city = ?",
       )
-      .get(destination.toLowerCase());
+      .get(`v2:${destination.toLowerCase()}`);
     // Empty local_path is the tombstone that mutes the ladder until its TTL.
     expect(cached?.local_path).toBe("");
+  });
+});
+
+// ─── Which picture of a place wins (pure, no network) ─────────────────────
+//
+// "Párizs" on hu.wikipedia has no Wikivoyage page and a montage lead, so the
+// old picker fell into the article BODY and ran a photo of the Roman baths
+// from its history section. These pin the tiers that stop that.
+
+describe("honeymoon photo — title ordering", () => {
+  const empty = { wikidata: [], voyageLeads: [], wikiLeads: [], voyageBodies: [], wikiBodies: [] };
+
+  test("Wikidata's own image beats every lead, and any lead beats any body photo", () => {
+    const order = orderPhotoTitles({
+      wikidata: ["Eiffel.jpg"],
+      voyageLeads: [null, "View_of_the_Seine.jpg"],
+      wikiLeads: ["Notre_Dame.jpg"],
+      voyageBodies: [["Louvre.jpg"]],
+      wikiBodies: [["Thermes-de-Cluny-caldarium.jpg"]],
+    });
+    expect(order).toEqual([
+      "Eiffel.jpg",
+      "View_of_the_Seine.jpg",
+      "Notre_Dame.jpg",
+      "Louvre.jpg",
+      "Thermes-de-Cluny-caldarium.jpg",
+    ]);
+  });
+
+  test("the same file from two wikis is tried once, at its best tier", () => {
+    const order = orderPhotoTitles({
+      ...empty,
+      wikiLeads: ["Fájl:Colosseo_2020.jpg"],
+      wikiBodies: [["File:Colosseo 2020.jpg", "Forum.jpg"]],
+    });
+    expect(order).toEqual(["Fájl:Colosseo_2020.jpg", "Forum.jpg"]);
   });
 });
