@@ -790,7 +790,13 @@ export const VENUE_LAYOUTS: readonly { slug: VenueLayoutSlug; nameKey: string }[
  *  the same `site_image_N_url` TEXT column an upload uses, so the guest page
  *  renders one identically to the other and the grayscale treatment applies to
  *  both. Additive-only: never rename or drop a `file`, or a couple who picked it
- *  loses their image. Add new art by appending a row and dropping the photo in. */
+ *  loses their image. Add new art by appending a row and dropping the photo in.
+ *
+ *  A row marked `retired` is no longer OFFERED (the picker hides it and the
+ *  backend refuses its slug), but its file stays shipped and `curatedPhotoUrl`
+ *  still resolves it, because a couple who picked it stored the path and their
+ *  page must keep rendering. Retiring is how the set gets refreshed without
+ *  breaking anyone. */
 export type CuratedPhotoSlug =
   | "reception_pergola"
   | "reception_candlelit"
@@ -803,50 +809,86 @@ export type CuratedPhotoSlug =
   | "eucalyptus"
   | "eucalyptus_light"
   | "wedding_cake"
-  | "ceremony_aisle";
+  | "ceremony_aisle"
+  | "ceremony_florals"
+  | "gown_hallway"
+  | "tablescape"
+  | "place_card"
+  | "glassware"
+  | "taper_candles"
+  | "tuscan_hills"
+  | "vineyard_dusk"
+  | "ranunculus"
+  | "peonies_plaster"
+  | "peonies_soft"
+  | "lace";
 
 export const CURATED_SITE_PHOTOS: readonly {
   slug: CuratedPhotoSlug;
   file: string;
   nameKey: string;
+  /** No longer offered; the file stays so existing picks keep rendering. */
+  retired?: true;
 }[] = [
   {
     slug: "reception_pergola",
     file: "01-reception-pergola.jpg",
     nameKey: "design.web.photo_art.reception_pergola",
+    retired: true,
   },
   {
     slug: "reception_candlelit",
     file: "02-reception-candlelit.jpg",
     nameKey: "design.web.photo_art.reception_candlelit",
+    retired: true,
   },
   {
     slug: "place_setting",
     file: "03-place-setting.jpg",
     nameKey: "design.web.photo_art.place_setting",
+    retired: true,
   },
   {
     slug: "greenery_arch",
     file: "04-greenery-arch.jpg",
     nameKey: "design.web.photo_art.greenery_arch",
+    retired: true,
   },
-  { slug: "draped_arch", file: "05-draped-arch.jpg", nameKey: "design.web.photo_art.draped_arch" },
+  {
+    slug: "draped_arch",
+    file: "05-draped-arch.jpg",
+    nameKey: "design.web.photo_art.draped_arch",
+    retired: true,
+  },
   {
     slug: "pampas_candles",
     file: "06-pampas-candles.jpg",
     nameKey: "design.web.photo_art.pampas_candles",
+    retired: true,
   },
-  { slug: "candle_still", file: "07-candle.jpg", nameKey: "design.web.photo_art.candle_still" },
+  {
+    slug: "candle_still",
+    file: "07-candle.jpg",
+    nameKey: "design.web.photo_art.candle_still",
+    retired: true,
+  },
   {
     slug: "dried_flowers",
     file: "08-dried-flowers.jpg",
     nameKey: "design.web.photo_art.dried_flowers",
+    retired: true,
   },
-  { slug: "eucalyptus", file: "09-eucalyptus.jpg", nameKey: "design.web.photo_art.eucalyptus" },
+  {
+    slug: "eucalyptus",
+    file: "09-eucalyptus.jpg",
+    nameKey: "design.web.photo_art.eucalyptus",
+    retired: true,
+  },
   {
     slug: "eucalyptus_light",
     file: "10-eucalyptus-light.jpg",
     nameKey: "design.web.photo_art.eucalyptus_light",
+    retired: true,
   },
   // 11-12 fill the two subjects the first ten never covered: the cake and the
   // ceremony itself. Sourced people-free like the rest — a stock couple on a
@@ -856,17 +898,80 @@ export const CURATED_SITE_PHOTOS: readonly {
     slug: "wedding_cake",
     file: "11-wedding-cake.jpg",
     nameKey: "design.web.photo_art.wedding_cake",
+    retired: true,
   },
   // 12: Feyza Yıldırım via Pexels (Pexels License).
   {
     slug: "ceremony_aisle",
     file: "12-ceremony-aisle.jpg",
     nameKey: "design.web.photo_art.ceremony_aisle",
+    retired: true,
   },
+  // 13-24 replaced 01-12 as the offered set (2026-11): one editorial palette
+  // (warm, muted, film-toned) instead of mixed stock, still people-free. All
+  // are Unsplash originals published under CC0 (pre-2017 Unsplash licence) and
+  // mirrored on Wikimedia Commons, which is where they were fetched from.
+  // Photographer and Unsplash id per row; no attribution is legally required.
+  // 13: Shardayyy Photography (unsplash fJzmPe-a0eU)
+  {
+    slug: "ceremony_florals",
+    file: "13-ceremony-florals.jpg",
+    nameKey: "design.web.photo_art.ceremony_florals",
+  },
+  // 14: Mike & Noemi Gonzalez (unsplash cV4ove3k2Vo)
+  {
+    slug: "gown_hallway",
+    file: "14-gown-hallway.jpg",
+    nameKey: "design.web.photo_art.gown_hallway",
+  },
+  // 15: rawpixel (unsplash FWOGqSKq_Cs)
+  { slug: "tablescape", file: "15-tablescape.jpg", nameKey: "design.web.photo_art.tablescape" },
+  // 16: Clem Onojeghuo (unsplash h-cjqxhB5DE)
+  { slug: "place_card", file: "16-place-card.jpg", nameKey: "design.web.photo_art.place_card" },
+  // 17: Michael Browning (unsplash L81JnFoi4pY)
+  { slug: "glassware", file: "17-glassware.jpg", nameKey: "design.web.photo_art.glassware" },
+  // 18: Nicola Fioravanti (unsplash UrAKbpKnak8)
+  {
+    slug: "taper_candles",
+    file: "18-taper-candles.jpg",
+    nameKey: "design.web.photo_art.taper_candles",
+  },
+  // 19: Rowan Heuvel (unsplash xYYBo69fvQE)
+  {
+    slug: "tuscan_hills",
+    file: "19-tuscan-hills.jpg",
+    nameKey: "design.web.photo_art.tuscan_hills",
+  },
+  // 20: Karsten Würth (unsplash HiE1bIIoRqQ)
+  {
+    slug: "vineyard_dusk",
+    file: "20-vineyard-dusk.jpg",
+    nameKey: "design.web.photo_art.vineyard_dusk",
+  },
+  // 21: Anette Grolle (unsplash OGsV5vPKZNc)
+  { slug: "ranunculus", file: "21-ranunculus.jpg", nameKey: "design.web.photo_art.ranunculus" },
+  // 22: Alexandra Seinet (unsplash 8dmtbpJJJ7k)
+  {
+    slug: "peonies_plaster",
+    file: "22-peonies-plaster.jpg",
+    nameKey: "design.web.photo_art.peonies_plaster",
+  },
+  // 23: Annie Spratt (unsplash Xh0yiAhVLFA)
+  {
+    slug: "peonies_soft",
+    file: "23-peonies-soft.jpg",
+    nameKey: "design.web.photo_art.peonies_soft",
+  },
+  // 24: Anna Docking (unsplash p7v6X41PP4w)
+  { slug: "lace", file: "24-lace.jpg", nameKey: "design.web.photo_art.lace" },
 ];
 
+/** What the picker shows. Retired rows stay resolvable but are not offered. */
+export const OFFERED_SITE_PHOTOS = CURATED_SITE_PHOTOS.filter((p) => !p.retired);
+
+/** Slugs the backend accepts for a NEW pick: the offered set only. */
 export const VALID_CURATED_PHOTO_SLUGS: ReadonlySet<CuratedPhotoSlug> = new Set(
-  CURATED_SITE_PHOTOS.map((p) => p.slug),
+  OFFERED_SITE_PHOTOS.map((p) => p.slug),
 );
 
 /** The public URL a curated slug resolves to, single-sourced so the frontend

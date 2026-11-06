@@ -590,9 +590,10 @@ function PublicFooter({ flush = false }: { flush?: boolean }) {
       {/* Mobile = 2-col grid: brand+tagline span the top row, then Couples
        *  fills the left column while Vendors + Guests stack in the right
        *  column. Desktop (lg) expands to brand + 3 link columns — the
-       *  right-column wrapper uses lg:contents so its two columns rejoin
-       *  the grid as direct children. */}
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 sm:gap-8 sm:px-6 sm:py-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-12">
+       *  right-column wrapper uses lg:contents so its columns (Vendors, Planners,
+       *  Guests) rejoin the grid as direct children. Five tracks, one per
+       *  child: with four, Guests wrapped onto a row of its own. */}
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 sm:gap-8 sm:px-6 sm:py-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr] lg:gap-10">
         <div className="col-span-2 lg:col-span-1">
           <Wordmark size="md" className="text-umber-900 dark:text-paper-50" />
           <p className="mt-1.5 max-w-xs text-sm leading-snug text-umber-700 sm:mt-3 sm:leading-relaxed dark:text-umber-200">

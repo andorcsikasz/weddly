@@ -90,10 +90,10 @@ import {
   seatingApi,
 } from "../lib/endpoints";
 import {
-  currencySymbol,
   formatDate,
-  formatHufCompact,
+  formatDateShort,
   formatMoney,
+  formatMoneyCompact,
   formatNumber,
   isPlausibleDateIso,
   todayIso,
@@ -1398,9 +1398,7 @@ export default function DashboardPage() {
                 roiPlanned !== null ? (
                   <AnimatedNumber
                     value={roiPlanned}
-                    format={(n) =>
-                      `${formatHufCompact(n, locale)} ${currencySymbol(currency, locale)}`
-                    }
+                    format={(n) => formatMoneyCompact(n, currency, locale)}
                   />
                 ) : (
                   "-"
@@ -1443,7 +1441,7 @@ export default function DashboardPage() {
                             <span className="truncate">{t(`budget.cat.${cat}`)}</span>
                           </span>
                           <span className="shrink-0 pl-1 font-semibold tabular-nums text-umber-900 dark:text-paper-50">
-                            {formatHufCompact(perGuest, locale)} {currencySymbol(currency, locale)}
+                            {formatMoneyCompact(perGuest, currency, locale)}
                           </span>
                         </Link>
                       );
@@ -1591,7 +1589,9 @@ const TILE_TONE_CLASSES: Record<TileTone, string> = {
 function TileIcon({ tone, children }: { tone: TileTone; children: ReactNode }) {
   return (
     <span
-      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${TILE_TONE_CLASSES[tone]}`}
+      // Phones get the figure, not the medallion: in a two-up grid the icon
+      // and the chart toggle left a money value about 80px to sit in.
+      className={`hidden h-9 w-9 shrink-0 items-center justify-center rounded-full sm:inline-flex ${TILE_TONE_CLASSES[tone]}`}
       aria-hidden="true"
     >
       {children}
@@ -1640,10 +1640,10 @@ function KpiTile({
           breakdown
         ) : (
           <>
-            <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
+            <div className="stat-num truncate font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
               {value}
             </div>
-            <div className="mt-1.5 text-xs font-medium text-ink-400 dark:text-umber-400">
+            <div className="mt-1.5 truncate text-xs font-medium text-ink-400 dark:text-umber-400">
               {unit}
             </div>
             {progress !== undefined && progress !== null && (
@@ -1782,7 +1782,7 @@ function BudgetKpiTile({
                       <span className="truncate">{t(`budget.cat.${cat}`)}</span>
                     </span>
                     <span className="shrink-0 pl-1 font-semibold tabular-nums text-umber-900 dark:text-paper-50">
-                      {formatHufCompact(v, locale)} {currencySymbol(currency, locale)}
+                      {formatMoneyCompact(v, currency, locale)}
                     </span>
                   </Link>
                 );
@@ -1791,7 +1791,7 @@ function BudgetKpiTile({
           </div>
         ) : (
           <>
-            <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
+            <div className="stat-num truncate font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
               <AnimatedNumber
                 value={totalActual}
                 format={(n) => formatMoney(n, currency, locale)}
@@ -1964,7 +1964,7 @@ function DaysToGoTile({
               />
             </div>
             <div className="mt-2 text-left">
-              <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
+              <div className="stat-num truncate font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
                 {planningPct}%
               </div>
               <div className="mt-1.5 text-xs font-medium text-ink-400 dark:text-umber-400">
@@ -1984,7 +1984,7 @@ function DaysToGoTile({
             aria-label={t("dashboard.kpi_days_edit_hint")}
             className="-my-1 block w-full rounded-lg py-1 text-left transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
           >
-            <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
+            <div className="stat-num truncate font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
               {days !== null ? (
                 <AnimatedNumber value={days} format={(n) => formatNumber(n, locale)} />
               ) : (
@@ -1993,7 +1993,7 @@ function DaysToGoTile({
             </div>
             <div className="mt-1.5 text-xs font-medium text-ink-400 dark:text-umber-400">
               {days !== null && goal.exact_date
-                ? goal.exact_date.replace(/-/g, ".")
+                ? formatDateShort(goal.exact_date, locale)
                 : t("dashboard.kpi_days_tbd")}
             </div>
           </button>

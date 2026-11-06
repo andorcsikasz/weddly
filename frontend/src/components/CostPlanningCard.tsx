@@ -674,8 +674,10 @@ export function CostPlanningCard({
         {cap !== null &&
           (tier === "safe" ? (
             <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
-              <ArrowDown size={12} className="self-center" aria-hidden />
-              {t("budget.under_by", { amount: formatMoney(underAmount, currency, locale) })}
+              {underAmount > 0 && <ArrowDown size={12} className="self-center" aria-hidden />}
+              {underAmount === 0
+                ? t("budget.on_budget")
+                : t("budget.under_by", { amount: formatMoney(underAmount, currency, locale) })}
             </span>
           ) : tier === "soft" ? (
             // 0–5 % over: calm amber dot, no blush pill — well within the

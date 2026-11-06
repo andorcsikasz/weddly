@@ -857,9 +857,10 @@ function LiveStatsBand() {
   const tiles = [
     { value: stats.couples, label: t("landing.counter_couples_label") },
     { value: stats.rsvps, label: t("landing.counter_rsvps_label") },
-  ].filter((tile): tile is { value: number; label: string } => tile.value !== null);
+    // A zero is not social proof: "0 couples planning" beside a real RSVP
+    // count reads as an empty product, so each tile drops out on its own.
+  ].filter((tile): tile is { value: number; label: string } => (tile.value ?? 0) > 0);
   if (tiles.length === 0) return null;
-  if (tiles.every((tile) => tile.value === 0)) return null;
 
   return (
     <section className="relative bg-paper-50 dark:bg-umber-900">

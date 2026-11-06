@@ -15,7 +15,12 @@ import { issueSession } from "../auth/session";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { addCoupleMember, assignOrganiserCode, getCoupleById, toCouple } from "../domain/couples";
-import { type DemoLocale, purgeStaleDemoCouples, seedShrekDemo } from "../domain/demo_seed";
+import {
+  type DemoLocale,
+  demoCurrency,
+  purgeStaleDemoCouples,
+  seedShrekDemo,
+} from "../domain/demo_seed";
 import { purgeStalePlannerDemos, seedPlannerDemo } from "../domain/planner_demo_seed";
 import {
   purgeStaleVendorDemos,
@@ -107,10 +112,12 @@ async function handleStart(ctx: Ctx): Promise<Response> {
           created_at, updated_at, onboarded_at)
        VALUES (?, NULL, 'Shrek & Fiona', 'Fiona', 'Shrek',
                'exact', 'exact', 'exact',
-               '["rustic","garden"]', 'HUF', 'active', 1, 'couple',
+               '["rustic","garden"]', ?, 'active', 1, 'couple',
                ?, ?, ?)`,
     )
-    .run(userId, ts, ts, ts);
+    // Same rule as a real couple: HU visitors plan in forint, everyone else in
+    // euro. The seed converts its amounts to match (`demoMoney`).
+    .run(userId, demoCurrency(locale), ts, ts, ts);
   const coupleId = Number(coupleResult.lastInsertRowid);
 
   // Public couple slug — keep "SHREKFIONA" if free, otherwise let

@@ -4571,6 +4571,18 @@ export interface LocaleMessages {
         eucalyptus_light: string;
         wedding_cake: string;
         ceremony_aisle: string;
+        ceremony_florals: string;
+        gown_hallway: string;
+        tablescape: string;
+        place_card: string;
+        glassware: string;
+        taper_candles: string;
+        tuscan_hills: string;
+        vineyard_dusk: string;
+        ranunculus: string;
+        peonies_plaster: string;
+        peonies_soft: string;
+        lace: string;
       };
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };
@@ -6281,6 +6293,7 @@ export interface LocaleMessages {
     slider_max_aria: string;
     over_by: string;
     under_by: string;
+    on_budget: string;
     /** Why the slider on this row is read-only: the amount is mirrored from a
      *  booked supplier and changes on that supplier's card, not here. */
     supplier_managed_hint: string;

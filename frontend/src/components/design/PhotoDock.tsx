@@ -16,10 +16,10 @@
 import {
   COVER_IMAGE_ACCEPT,
   COVER_IMAGE_MAX_MB,
-  CURATED_SITE_PHOTOS,
   curatedPhotoUrl,
   IMAGE_TREATMENTS,
   type ImageTreatmentSlug,
+  OFFERED_SITE_PHOTOS,
 } from "@shared/design";
 import { ImagePlus, Images, Loader2, Move, X } from "lucide-react";
 import { useState } from "react";
@@ -397,7 +397,7 @@ export function PhotoDock({
         title={t("design.web.photo_gallery_title")}
       >
         <div className="grid grid-cols-2 gap-3 pb-2 sm:grid-cols-3">
-          {CURATED_SITE_PHOTOS.map((photo) => {
+          {OFFERED_SITE_PHOTOS.map((photo) => {
             const src = curatedPhotoUrl(photo.slug);
             if (!src) return null;
             return (

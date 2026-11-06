@@ -65,4 +65,40 @@ describe("demo locale", () => {
     expect(names).toContain("Donkey");
     expect(names).not.toContain("Szamár");
   });
+  // The demo follows the same currency rule as a real couple: HU plans in
+  // forint, everyone else in euro. The seed's amounts are written in forint,
+  // so a euro demo must convert them, never show a forint figure under "€".
+  test("demo currency follows the locale, and euro amounts are converted", async () => {
+    type Lines = { lines: Array<{ category: string; planned_huf: number }> };
+    const hu = await req<StartRes>("POST", "/api/demo/start", { locale: "hu" });
+    const en = await req<StartRes>("POST", "/api/demo/start", { locale: "en" });
+    const huCouple = await req<{ couple: { currency: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      {
+        token: hu.data.session.token,
+      },
+    );
+    const enCouple = await req<{ couple: { currency: string } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      {
+        token: en.data.session.token,
+      },
+    );
+    expect(huCouple.data.couple.currency).toBe("HUF");
+    expect(enCouple.data.couple.currency).toBe("EUR");
+
+    const huLines = await req<Lines>("GET", "/api/budget/lines", undefined, {
+      token: hu.data.session.token,
+    });
+    const enLines = await req<Lines>("GET", "/api/budget/lines", undefined, {
+      token: en.data.session.token,
+    });
+    const venue = (r: Lines) => r.lines.find((l) => l.category === "venue")?.planned_huf;
+    expect(venue(huLines.data)).toBe(720_000);
+    expect(venue(enLines.data)).toBe(1_800);
+  });
 });

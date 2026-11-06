@@ -184,6 +184,33 @@ export function currencySymbol(currency: Currency, locale: Locale = "hu"): strin
   return symbol ?? currency;
 }
 
+/** `formatHufCompact` with the currency symbol on the side the locale puts
+ *  it: "€539" / "€4.1K" in English, "215 000 Ft" in Hungarian, "539 €" in
+ *  German. Gluing the symbol on as a suffix everywhere is how an English
+ *  dashboard ended up with "€4,080" in one tile and "539 €" in the next. */
+export function formatMoneyCompact(
+  amount: number,
+  currency: Currency,
+  locale: Locale = "hu",
+): string {
+  const parts = new Intl.NumberFormat(intlLocale(locale), {
+    style: "currency",
+    currency,
+    currencyDisplay: "narrowSymbol",
+    maximumFractionDigits: 0,
+  }).formatToParts(1);
+  const symbolIdx = parts.findIndex((p) => p.type === "currency");
+  const numberIdx = parts.findIndex((p) => p.type === "integer");
+  const symbol = parts[symbolIdx]?.value ?? currency;
+  const n = formatHufCompact(amount, locale);
+  if (symbolIdx !== -1 && symbolIdx < numberIdx) {
+    // Keep the locale's own spacing ("€539" vs "Ft 539").
+    const gap = parts[symbolIdx + 1]?.type === "literal" ? " " : "";
+    return `${symbol}${gap}${n}`;
+  }
+  return `${n} ${symbol}`;
+}
+
 // Intl.DisplayNames instances are as costly to build as NumberFormat — the
 // currency picker asks for a dozen names per render, so memoise per locale.
 const displayNamesCache = new Map<Locale, Intl.DisplayNames | null>();
@@ -314,6 +341,19 @@ export function formatDate(ymd: string | null, locale: Locale = "hu"): string {
   return d.toLocaleDateString(intlLocale(locale), {
     year: "numeric",
     month: "long",
+    day: "numeric",
+  });
+}
+
+/** Compact date for tight spots (a KPI tile's caption): "6 Mar 2027",
+ *  "2027. márc. 6.". Same locale rules as `formatDate`, abbreviated month. */
+export function formatDateShort(ymd: string | null, locale: Locale = "hu"): string {
+  if (!ymd) return "";
+  const d = new Date(`${ymd}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return ymd;
+  return d.toLocaleDateString(intlLocale(locale), {
+    year: "numeric",
+    month: "short",
     day: "numeric",
   });
 }

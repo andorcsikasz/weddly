@@ -20,6 +20,20 @@ export type DemoLocale = "hu" | "en";
  *  like "Shrek" or "Fiona"); the object form carries both translations. */
 export type LText = string | { en: string; hu: string };
 
+/** The demo workspace's currency: forint for HU visitors, euro for everyone
+ *  else, which is the same default a real couple gets at creation. */
+export function demoCurrency(locale: DemoLocale): "HUF" | "EUR" {
+  return locale === "hu" ? "HUF" : "EUR";
+}
+
+/** The seed's amounts are written in forint. A euro demo converts them at a
+ *  round 400 Ft/EUR and rounds to the nearest 10, so "Venue" reads €1,800
+ *  rather than a forint figure under a euro sign. */
+export function demoMoney(huf: number, locale: DemoLocale): number {
+  if (demoCurrency(locale) === "HUF") return huf;
+  return Math.round(huf / 400 / 10) * 10;
+}
+
 /** Resolve a localisable string for the given locale. */
 export function pickL(l: LText, locale: DemoLocale): string {
   return typeof l === "string" ? l : l[locale];
@@ -1247,8 +1261,8 @@ export function seedShrekDemo(coupleId: number, locale: DemoLocale = "en"): Seed
         coupleId,
         b.category,
         pickL(b.label, locale),
-        b.planned,
-        b.actual,
+        demoMoney(b.planned, locale),
+        demoMoney(b.actual, locale),
         T(b.notes),
         ts,
         ts,
@@ -1256,7 +1270,7 @@ export function seedShrekDemo(coupleId: number, locale: DemoLocale = "en"): Seed
       result.budget_lines_created += 1;
     }
     // Stamp the budget ceiling on the couple, sum of planned rows.
-    const totalPlanned = BUDGET_LINES.reduce((s, b) => s + b.planned, 0);
+    const totalPlanned = BUDGET_LINES.reduce((s, b) => s + demoMoney(b.planned, locale), 0);
     db.prepare(
       "UPDATE couples SET budget_ceiling_huf = ?, budget_kind = 'exact', target_guest_count = ?, guest_count_kind = 'exact', updated_at = ? WHERE id = ?",
     ).run(totalPlanned, 15, ts, coupleId);
@@ -1377,7 +1391,7 @@ export function seedShrekDemo(coupleId: number, locale: DemoLocale = "en"): Seed
         pickL(a.name, locale),
         T(a.address),
         a.capacity,
-        a.price_huf,
+        a.price_huf === null ? null : demoMoney(a.price_huf, locale),
         a.link,
         a.contact,
         T(a.notes),
