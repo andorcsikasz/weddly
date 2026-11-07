@@ -9,6 +9,7 @@ import { scanAdminSenderIntegrity } from "../../src/domain/emails/integrity_chec
 import { senderForKind } from "../../src/domain/emails/kinds";
 import { buildUnsubscribeHeaders } from "../../src/domain/emails/preferences";
 import { sendKind } from "../../src/domain/emails/send";
+import { buildEmail } from "../../src/domain/emails/templates";
 import { registerAndVerify, req, wipeAll } from "../helpers";
 
 // Owner rule, 2026-07-31: anything an admin sends from /app/admin/* leaves
@@ -298,5 +299,44 @@ describe("admin email duplicate guard", () => {
         )
       ).status,
     ).toBe("skipped_no_provider");
+  });
+});
+
+// Reported 2026-11-07: the header logo did not show in a vendor's first
+// activation mail. A remote <img> is hidden by Gmail for a new sender and by
+// Outlook by default; an inline (CID) attachment needs no download.
+describe("the header logo travels inside the message", () => {
+  test("the shell's logo URL is swapped for an inline attachment on the wire", () => {
+    const built = buildEmail(
+      "vendor_activation",
+      { businessName: "Bloom Studio", activateUrl: "https://tryweddly.com/vendor/activate/x" },
+      { recipientName: "Bloom Studio" },
+    );
+    const logoUrl = `${CONFIG.frontendBaseUrl}/email/logo.png`;
+    // Previews keep the hosted URL.
+    expect(built.rendered.html).toContain(`src="${logoUrl}"`);
+    const payload = buildResendPayload({
+      to: "vendor@test.test",
+      subject: built.subject,
+      html: built.rendered.html,
+      text: built.rendered.text,
+    });
+    const html = payload.html as string;
+    expect(html).not.toContain(`src="${logoUrl}"`);
+    expect(html).toContain('src="cid:weddly-logo"');
+    const attachments = payload.attachments as Array<Record<string, string>>;
+    expect(attachments).toHaveLength(1);
+    expect(attachments[0]?.content_id).toBe("weddly-logo");
+    expect(attachments[0]?.content?.startsWith("iVBORw0KGgo")).toBe(true); // PNG magic
+  });
+
+  test("mail without the shell logo carries no attachment", () => {
+    const payload = buildResendPayload({
+      to: "a@test.test",
+      subject: "x",
+      html: "<p>hi</p>",
+      text: "hi",
+    });
+    expect(payload.attachments).toBeUndefined();
   });
 });

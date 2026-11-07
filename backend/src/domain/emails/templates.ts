@@ -3436,7 +3436,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
 
   // Vendor accepted (or activation re-sent). Unlike the outreach decision mail
   // above, the CTA button IS the single-use activation link (never the
-  // homepage), the URL is also shown as a clickable copy-paste fallback, and
+  // homepage). Kept deliberately short (owner direction 2026-11-07): no
+  // copy-paste URL, no "didn't request this" footnote, and
   // the transactional footer is honest because the recipient now has a
   // pre-built account waiting. Mirrors `planner_onboarding_invite`.
   vendor_activation: (p, ctx) => {
@@ -3448,15 +3449,13 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       introParas.length > 0
         ? introParas
         : [
-            "Jó hírünk van: felvettünk titeket a Weddly-n tervező pároknak ajánlott szolgáltatók közé.",
-            '**A szolgáltatói fiókotok aktiválásához kattintsatok a lenti „Fiók aktiválása" gombra.** A jelentkezéskor megadott adataitok és képeitek alapján már összeraktuk a profilotokat, belépés után csak átnézitek és élesítitek.',
+            "Felvettünk titeket a Weddly ajánlott szolgáltatói közé. A profilotok már kész, csak át kell nézni és élesíteni.",
           ];
     const enParas =
       introParas.length > 0
         ? introParas
         : [
-            "Good news: we've added you to the vendors we recommend to couples planning on Weddly.",
-            '**To activate your vendor account, tap the "Activate account" button below.** We\'ve already built your profile from the details and photos in your application, so once you sign in you just review it and go live.',
+            "You're now one of the vendors Weddly recommends to couples. Your profile is ready, just review it and go live.",
           ];
     return {
       subject:
@@ -3470,24 +3469,19 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "We'd love to welcome you to the Weddly directory",
         ),
       ctaUrl: p.activateUrl,
-      plainCtaUrl: true,
       noUtm: true,
       hu: {
         preheader: "Aktiváld a szolgáltatói fiókod.",
         greeting: name ? `Szia ${name}!` : "Szia!",
         paragraphs: huParas,
         cta: "Fiók aktiválása",
-        ctaSubtext: "A link 30 napig érvényes, és csak egyszer működik.",
-        footnote:
-          "Ha nem te kérted ezt a fiókot, hagyd figyelmen kívül ezt a levelet. A profil aktiválás nélkül nem jelenik meg.",
+        ctaSubtext: "30 napig érvényes, egyszer használható.",
       },
       en: {
         greeting: name ? `Hi ${name},` : "Hi there,",
         paragraphs: enParas,
         cta: "Activate account",
-        ctaSubtext: "The link is valid for 30 days and works once.",
-        footnote:
-          "If you didn't request this account, you can ignore this email. The profile will not go live unless it is activated.",
+        ctaSubtext: "Valid for 30 days, works once.",
       },
     };
   },

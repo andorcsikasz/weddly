@@ -264,7 +264,7 @@ async function acceptedWaitlistRejectMintsNothing(adminToken: string): Promise<n
 describe("vendor_activation email builder points every link at the activation URL", () => {
   const ACTIVATE_URL = "https://tryweddly.com/vendor/activate/deadbeefcafe";
 
-  test("accept variant: CTA button + copy-paste fallback both are the activation link", () => {
+  test("accept variant: the CTA button is the activation link, no long URL under it", () => {
     const built = buildEmail(
       "vendor_activation",
       {
@@ -286,9 +286,8 @@ describe("vendor_activation email builder points every link at the activation UR
     // guest fallback).
     expect(html).toContain("Fiók aktiválása");
     expect(html).toContain("Activate account");
-    // The activation URL is ALSO a clickable copy-paste fallback line.
-    expect(html).toContain(`<a href="${ACTIVATE_URL}"`);
-    expect(html).toContain("Vagy másold be a böngészőbe:");
+    // Kept short on purpose: no copy-paste URL line under the button.
+    expect(html).not.toContain("Vagy másold be a böngészőbe:");
     // The old misleading homepage CTA label is gone.
     expect(html).not.toContain("Weddly megnyitása");
     expect(html).not.toContain("Open Weddly");
@@ -314,7 +313,7 @@ describe("vendor_activation email builder points every link at the activation UR
     expect(html).toContain("Fiók aktiválása");
     // The single-use expiry line under the button (the no-card sentence that
     // used to sit here is banned copy now).
-    expect(html).toContain("A link 30 napig érvényes");
+    expect(html).toContain("30 napig érvényes");
     expect(html).not.toContain("Weddly megnyitása");
   });
 });

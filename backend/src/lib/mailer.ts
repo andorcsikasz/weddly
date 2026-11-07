@@ -4,6 +4,7 @@
 import { CONFIG } from "../config";
 import { createHash } from "node:crypto";
 import { log } from "./logger";
+import { EMAIL_LOGO_CID, EMAIL_LOGO_FILENAME, EMAIL_LOGO_PNG_BASE64 } from "./email_logo";
 
 export interface SendEmailInput {
   to: string;
@@ -70,14 +71,33 @@ export function buildResendPayload(input: SendEmailInput): Record<string, unknow
       delete headers[key];
     }
   }
+  // The header logo travels inside the message (CID) rather than as a remote
+  // image, which Gmail hides for a new sender and Outlook hides by default.
+  // Only the wire payload is rewritten, so previews keep the hosted URL.
+  const logoUrl = `${CONFIG.frontendBaseUrl}/email/logo.png`;
+  const embedLogo = input.html.includes(`src="${logoUrl}"`);
+  const html = embedLogo
+    ? input.html.split(`src="${logoUrl}"`).join(`src="cid:${EMAIL_LOGO_CID}"`)
+    : input.html;
   return {
     from: input.from ?? CONFIG.emailFrom,
     to: input.to,
     reply_to: input.replyTo ?? headerReplyTo ?? CONFIG.supportEmail,
     subject: input.subject,
-    html: input.html,
+    html,
     text: input.text,
     headers,
+    ...(embedLogo
+      ? {
+          attachments: [
+            {
+              filename: EMAIL_LOGO_FILENAME,
+              content: EMAIL_LOGO_PNG_BASE64,
+              content_id: EMAIL_LOGO_CID,
+            },
+          ],
+        }
+      : {}),
   };
 }
 
