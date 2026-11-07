@@ -930,6 +930,8 @@ export interface LocaleMessages {
     gallery_count: string;
     gallery_add: string;
     gallery_delete: string;
+    gallery_replace: string;
+    gallery_replace_success: string;
     gallery_upload_success: string;
     gallery_upload_failed: string;
     /** Receives `{max}` cap. */
@@ -3315,6 +3317,31 @@ export interface LocaleMessages {
     pitch_faq_5_a: string;
     pitch_faq_6_q: string;
     pitch_faq_6_a: string;
+  };
+  /** In-person QR signup (/suppliers/join). */
+  vendor_join: {
+    seo_title: string;
+    q0: string;
+    q1: string;
+    q2: string;
+    name_placeholder: string;
+    category_search: string;
+    other_placeholder: string;
+    email_placeholder: string;
+    password_placeholder: string;
+    show_password: string;
+    hide_password: string;
+    next: string;
+    ok: string;
+    terms_prefix: string;
+    terms_link: string;
+    terms_middle: string;
+    privacy_link: string;
+    terms_suffix: string;
+    done_title: string;
+    done_body: string;
+    done_cta: string;
+    switch_language: string;
   };
   vendor_register: {
     err_listing_exists: string;
@@ -7657,6 +7684,16 @@ export interface LocaleMessages {
       register_submit: string;
       register_success: string;
       register_email_taken: string;
+      register_mode: string;
+      mode_qr: string;
+      mode_email: string;
+      qr_title: string;
+      qr_hint: string;
+      qr_present: string;
+      qr_copy: string;
+      qr_copied: string;
+      qr_scan: string;
+      qr_scan_sub: string;
       filter_all: string;
       filter_active: string;
       filter_founding: string;

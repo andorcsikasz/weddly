@@ -138,6 +138,7 @@ const VendorClaimVerifyPage = lazyWithReload(() => import("./pages/VendorClaimVe
 const VendorActivatePage = lazyWithReload(() => import("./pages/VendorActivatePage"));
 const PlannerActivatePage = lazyWithReload(() => import("./pages/PlannerActivatePage"));
 const VendorRegisterPage = lazyWithReload(() => import("./pages/VendorRegisterPage"));
+const VendorQuickJoinPage = lazyWithReload(() => import("./pages/VendorQuickJoinPage"));
 const VendorOnboardingPage = lazyWithReload(() => import("./pages/vendor/VendorOnboardingPage"));
 // VendorHomePage (pages/VendorHomePage.tsx) is the legacy standalone listing
 // editor — its body will be lifted into the in-shell VendorListingPage by a
@@ -499,6 +500,18 @@ export default function App() {
             <Page>
               <VendorsPage />
             </Page>
+          }
+        />
+        {/* In-person signup: the QR an admin shows a vendor opens this.
+            Full-bleed and self-contained, so it reads like a native sheet. */}
+        <Route
+          path="/suppliers/join"
+          element={
+            <RedirectIfAuthed>
+              <Page>
+                <VendorQuickJoinPage />
+              </Page>
+            </RedirectIfAuthed>
           }
         />
         <Route

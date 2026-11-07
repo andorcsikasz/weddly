@@ -5,6 +5,7 @@
 // allowlist as the other admin routes). Distinct from the BEÉRKEZŐ vendor
 // waitlist (triage) and the community supplier moderation directory.
 
+import { isUiLocale } from "@shared/locales";
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
@@ -37,6 +38,7 @@ import {
 } from "../domain/vendor_onboarding";
 import { sendVendorActivationEmail } from "../domain/vendor_waitlist_emails";
 import { addAuditLog } from "../lib/audit";
+import { generateQrSvg } from "../lib/qrcode";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 
 /** Every valid supplier category, from the taxonomy source of truth. */
@@ -56,6 +58,20 @@ function parseId(ctx: Ctx): number {
 function handleList(ctx: Ctx): Response {
   requireAdmin(ctx);
   return json({ active: listAdminVendorAccounts(), pending: listPendingOnboardings() });
+}
+
+/** The in-person signup QR: an admin shows it to a vendor across a table, the
+ *  vendor scans it and lands on the short `/suppliers/join` form, which posts to
+ *  the ordinary public `/api/vendor/register`. Nothing here grants anything: the
+ *  form is as open as `/suppliers/signup`, so the code is just a shorter door.
+ *  `lang` carries the admin's UI language so a Hungarian vendor is not greeted
+ *  in English (the public default). Admin-only so this never becomes a general
+ *  "encode any URL" service. */
+async function handleRegisterQr(ctx: Ctx): Promise<Response> {
+  requireAdmin(ctx);
+  const lang = ctx.url.searchParams.get("lang");
+  const url = `${CONFIG.frontendBaseUrl}/suppliers/join${isUiLocale(lang) && lang !== "en" ? `?lang=${lang}` : ""}`;
+  return json({ url, svg: await generateQrSvg(url) });
 }
 
 /** Suspend or reactivate the vendor's owner user (users.status). Takes effect
@@ -463,6 +479,7 @@ async function handleMerge(ctx: Ctx): Promise<Response> {
 export function registerAdminVendorRoutes(router: Router) {
   router.get("/api/admin/vendors", handleList, true);
   router.post("/api/admin/vendors/register", handleRegister, true);
+  router.get("/api/admin/vendors/register-qr", handleRegisterQr, true);
   router.post("/api/admin/vendors/:id/suspend", handleSuspend, true);
   router.post("/api/admin/vendors/:id/reactivate", handleReactivate, true);
   router.post("/api/admin/vendors/:id/remind-incomplete", handleRemindIncomplete, true);

@@ -23,17 +23,20 @@ import {
   Check,
   ClipboardList,
   Clock,
+  Copy,
   CreditCard,
   DollarSign,
   Eye,
   Gift,
   Loader2,
   Mail,
+  Maximize2,
   MessageSquare,
   MinusCircle,
   Moon,
   MousePointerClick,
   Pencil,
+  QrCode,
   RotateCcw,
   Search,
   Star,
@@ -41,11 +44,21 @@ import {
   Timer,
   Trash2,
   UserPlus,
+  X,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { AdminEmptyState, AdminPageHeader, Pill, StatFilter } from "../components/admin";
 import type { PillTone } from "../components/admin";
-import { Button, Dialog, TextField, useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import {
+  Button,
+  Dialog,
+  SegmentedControl,
+  TextField,
+  useConfirm,
+  useEntryPrompt,
+  useToast,
+} from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminVendorMgmtApi } from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
@@ -927,8 +940,47 @@ function RegisterVendorDialog({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
+  // QR first: the in-person case (a vendor across the table) is the quick one,
+  // and the emailed activation link stays one tap away for everything else.
+  const [mode, setMode] = useState<"qr" | "email">("qr");
+  const [qr, setQr] = useState<{ url: string; svg: string } | null>(null);
+  const [qrError, setQrError] = useState(false);
+  const [presenting, setPresenting] = useState(false);
+
+  useEffect(() => {
+    if (!open || mode !== "qr") return;
+    let cancelled = false;
+    setQrError(false);
+    adminVendorMgmtApi
+      .registerQr(locale)
+      .then((r) => {
+        if (!cancelled) setQr(r);
+      })
+      .catch(() => {
+        if (!cancelled) setQrError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, mode, locale]);
+
+  async function copyQrLink() {
+    if (!qr) return;
+    try {
+      await navigator.clipboard.writeText(qr.url);
+      toast.success(t("admin.vendors.qr_copied"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    }
+  }
+
+  function closeQr() {
+    // Anyone who scanned while it was open is a new vendor: refresh the list.
+    onCreated();
+    onClose();
+  }
   const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
   const [category, setCategory] = useState<SupplierCategory | "">("");
@@ -938,6 +990,8 @@ function RegisterVendorDialog({
   // Fresh form every open — a cancelled half-typed vendor mustn't leak forward.
   useEffect(() => {
     if (!open) return;
+    setMode("qr");
+    setPresenting(false);
     setBusinessName("");
     setEmail("");
     setCategory("");
@@ -971,83 +1025,200 @@ function RegisterVendorDialog({
     }
   }
 
+  const qrMarkup = qr ? { __html: qr.svg } : undefined;
+
   return (
-    <Dialog
-      open={open}
-      title={t("admin.vendors.register_title")}
-      onClose={onClose}
-      role="dialog"
-      closeOnBackdrop
-      footer={
-        <>
-          <Button variant="outline" onClick={onClose} disabled={submitting}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            type="submit"
-            form="register-vendor-form"
-            variant="primary"
-            disabled={!canSubmit}
-            loading={submitting}
-            loadingLabel={t("common.loading")}
-            leftIcon={<Mail size={15} />}
-          >
-            {t("admin.vendors.register_submit")}
-          </Button>
-        </>
-      }
-    >
-      <p className="mb-4 text-sm text-ink-600 dark:text-umber-300">
-        {t("admin.vendors.register_intro")}
-      </p>
-      <form id="register-vendor-form" className="space-y-4" onSubmit={onSubmit}>
-        <TextField
-          id="register-vendor-business"
-          label={t("admin.vendors.register_business")}
-          value={businessName}
-          onChange={(e) => setBusinessName(e.target.value)}
-          required
-          autoComplete="off"
+    <>
+      <Dialog
+        open={open}
+        title={t("admin.vendors.register_title")}
+        onClose={mode === "qr" ? closeQr : onClose}
+        role="dialog"
+        closeOnBackdrop
+        footer={
+          mode === "qr" ? (
+            <Button variant="primary" onClick={closeQr}>
+              {t("common.done")}
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={onClose} disabled={submitting}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="submit"
+                form="register-vendor-form"
+                variant="primary"
+                disabled={!canSubmit}
+                loading={submitting}
+                loadingLabel={t("common.loading")}
+                leftIcon={<Mail size={15} />}
+              >
+                {t("admin.vendors.register_submit")}
+              </Button>
+            </>
+          )
+        }
+      >
+        <SegmentedControl
+          ariaLabel={t("admin.vendors.register_mode")}
+          value={mode}
+          onChange={setMode}
+          className="mb-5 w-full"
+          options={[
+            { value: "qr", label: t("admin.vendors.mode_qr"), icon: <QrCode size={15} /> },
+            { value: "email", label: t("admin.vendors.mode_email"), icon: <Mail size={15} /> },
+          ]}
         />
-        <TextField
-          id="register-vendor-email"
-          type="email"
-          label={t("admin.vendors.register_email")}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="off"
-        />
-        <div>
-          <label htmlFor="register-vendor-category" className="field-label">
-            {t("admin.vendors.register_category")}
-          </label>
-          <select
-            id="register-vendor-category"
-            className="input"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as SupplierCategory | "")}
-            required
-          >
-            <option value="" disabled>
-              {t("vendor_register.category_placeholder")}
-            </option>
-            {SUPPLIER_GROUPS.map((g) => (
-              <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
-                {g.categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c === "other"
-                      ? t("vendor_register.category_other_option")
-                      : t(`suppliers.cat.${c}`)}
+        {mode === "qr" ? (
+          <div className="flex flex-col items-center text-center">
+            <button
+              type="button"
+              onClick={() => qr && setPresenting(true)}
+              className="group relative flex aspect-square w-full max-w-[16rem] items-center justify-center overflow-hidden rounded-3xl bg-white p-3 shadow-soft ring-1 ring-neutral-200 transition active:scale-[0.98]"
+              aria-label={t("admin.vendors.qr_present")}
+            >
+              {qrMarkup ? (
+                // Server-rendered from our own fixed URL by the qrcode lib.
+                <div
+                  className="h-full w-full [&>svg]:h-full [&>svg]:w-full"
+                  dangerouslySetInnerHTML={qrMarkup}
+                />
+              ) : qrError ? (
+                <span className="text-sm text-neutral-500">{t("common.error_generic")}</span>
+              ) : (
+                <Loader2 size={28} className="animate-spin text-neutral-400" aria-hidden="true" />
+              )}
+            </button>
+            <p className="mt-4 text-base font-semibold text-ink-900 dark:text-paper-100">
+              {t("admin.vendors.qr_title")}
+            </p>
+            <p className="mt-1 max-w-xs text-sm text-ink-600 dark:text-umber-300">
+              {t("admin.vendors.qr_hint")}
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPresenting(true)}
+                disabled={!qr}
+                leftIcon={<Maximize2 size={14} />}
+              >
+                {t("admin.vendors.qr_present")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyQrLink}
+                disabled={!qr}
+                leftIcon={<Copy size={14} />}
+              >
+                {t("admin.vendors.qr_copy")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="mb-4 text-sm text-ink-600 dark:text-umber-300">
+              {t("admin.vendors.register_intro")}
+            </p>
+            <form id="register-vendor-form" className="space-y-4" onSubmit={onSubmit}>
+              <TextField
+                id="register-vendor-business"
+                label={t("admin.vendors.register_business")}
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                required
+                autoComplete="off"
+              />
+              <TextField
+                id="register-vendor-email"
+                type="email"
+                label={t("admin.vendors.register_email")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="off"
+              />
+              <div>
+                <label htmlFor="register-vendor-category" className="field-label">
+                  {t("admin.vendors.register_category")}
+                </label>
+                <select
+                  id="register-vendor-category"
+                  className="input"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as SupplierCategory | "")}
+                  required
+                >
+                  <option value="" disabled>
+                    {t("vendor_register.category_placeholder")}
                   </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </div>
-        {error && <p className="field-error">{error}</p>}
-      </form>
-    </Dialog>
+                  {SUPPLIER_GROUPS.map((g) => (
+                    <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
+                      {g.categories.map((c) => (
+                        <option key={c} value={c}>
+                          {c === "other"
+                            ? t("vendor_register.category_other_option")
+                            : t(`suppliers.cat.${c}`)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              {error && <p className="field-error">{error}</p>}
+            </form>
+          </>
+        )}
+      </Dialog>
+      {presenting && qrMarkup && (
+        <QrPresentation markup={qrMarkup} onClose={() => setPresenting(false)} />
+      )}
+    </>
+  );
+}
+
+/** The code at arm's length: a white full screen with nothing but the QR, so a
+ *  vendor can scan it off a laptop or a phone held across the table. Any tap or
+ *  Esc closes it. */
+function QrPresentation({ markup, onClose }: { markup: { __html: string }; onClose: () => void }) {
+  const { t } = useT();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] flex animate-fade-in flex-col items-center justify-center bg-white p-6"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("admin.vendors.qr_title")}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full text-neutral-900 hover:bg-neutral-100"
+        aria-label={t("a11y.close")}
+      >
+        <X size={24} aria-hidden="true" />
+      </button>
+      <div
+        className="aspect-square w-[min(80vw,70vh)] [&>svg]:h-full [&>svg]:w-full"
+        dangerouslySetInnerHTML={markup}
+      />
+      <p className="mt-8 text-center text-2xl font-semibold tracking-tight text-neutral-900">
+        {t("admin.vendors.qr_scan")}
+      </p>
+      <p className="mt-2 text-center text-base text-neutral-500">
+        {t("admin.vendors.qr_scan_sub")}
+      </p>
+    </div>,
+    document.body,
   );
 }
 

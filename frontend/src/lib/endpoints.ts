@@ -2563,6 +2563,13 @@ export const adminVendorMgmtApi = {
    *  "Aktiválásra vár" list until they activate. */
   register: (body: { email: string; business_name: string; category: string }) =>
     apiFetch<{ ok: true; onboarding_id: number }>("POST", "/api/admin/vendors/register", body),
+  /** The in-person signup QR: shown to a vendor, it opens the short
+   *  /suppliers/join form. `svg` is server-rendered from our own URL. */
+  registerQr: (lang: string) =>
+    apiFetch<{ url: string; svg: string }>(
+      "GET",
+      `/api/admin/vendors/register-qr?lang=${encodeURIComponent(lang)}`,
+    ),
   suspend: (id: number) =>
     apiFetch<{ ok: true; status: string }>("POST", `/api/admin/vendors/${id}/suspend`, {}),
   reactivate: (id: number) =>

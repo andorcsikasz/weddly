@@ -762,3 +762,36 @@ describe("admin vendor incomplete-listing reminder", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("in-person signup QR", () => {
+  test("encodes the short join page, carrying the admin's language", async () => {
+    const adminToken = await bootstrapAdmin();
+    const res = await req<{ url: string; svg: string }>(
+      "GET",
+      "/api/admin/vendors/register-qr?lang=hu",
+      undefined,
+      { token: adminToken },
+    );
+    expect(res.status).toBe(200);
+    expect(res.data.url).toMatch(/\/suppliers\/join\?lang=hu$/);
+    expect(res.data.svg.startsWith("<svg")).toBe(true);
+
+    // English is the public default, so it needs no parameter; junk is dropped.
+    const en = await req<{ url: string }>(
+      "GET",
+      "/api/admin/vendors/register-qr?lang=xx",
+      undefined,
+      {
+        token: adminToken,
+      },
+    );
+    expect(en.data.url).toMatch(/\/suppliers\/join$/);
+  });
+
+  test("a non-admin cannot mint the code", async () => {
+    await bootstrapAdmin();
+    const { token } = await bootstrapCouple("notadmin-qr@weddly.test");
+    const res = await req("GET", "/api/admin/vendors/register-qr", undefined, { token });
+    expect(res.status).toBe(403);
+  });
+});
