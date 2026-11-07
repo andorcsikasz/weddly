@@ -28,26 +28,22 @@
 //      because the header already carries one (icon on desktop, menu item on
 //      mobile) and a second one just competes with the signup button.
 //   5. BELOW THE HERO THE PAGE FOLLOWS THE SHAPE OF A PRODUCT PITCH: three
-//      alternating blocks (Manage, Grow, Get booked), a rail of the trades the
-//      directory covers, and a short FAQ. Every claim in them is a thing the
-//      product does today, and none of them is a count, a price, a plan or a
-//      testimonial (rules 3 and the empty VENDOR_TESTIMONIALS). The pictures
-//      are templates (see VendorPitchMockups) and name nobody. "Get booked"
-//      rather than "Get paid" on purpose: Weddly tracks a vendor's money, it
-//      does not move it, and a heading promising otherwise would be the one
-//      untrue line on the page.
+//      alternating blocks (inquiries and dates, the couple's shortlist, the
+//      quote), a rail of the trades the directory covers, and a short FAQ.
+//      Every claim in them is a thing the product does today, and none of them
+//      is a count, a price, a plan or a testimonial (rules 3 and the empty
+//      VENDOR_TESTIMONIALS). The pictures are templates (see
+//      VendorPitchMockups) and name nobody, and they move: the story is told by
+//      the animation, which is why the copy can stay this short.
+//   6. LESS TEXT, NO LABEL WORDS (owner direction 2026-11-07). The blocks used
+//      to carry one-word eyebrows ("Manage", "Grow", "Get booked") over the
+//      headline; they said nothing the headline did not and read as template
+//      filler. Each block is now a headline plus two short lines, and the FAQ
+//      keeps only the questions the page does not already answer (who it is
+//      for is the trades rail, looking around first is the demo button).
 
 import { isVendorSelfServeBlocked } from "@shared/suppliers";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Share2,
-  Store,
-} from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Plus, Share2, Store } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
@@ -110,7 +106,7 @@ export default function VendorsPage() {
   return (
     <PublicShell black>
       {/* Hero */}
-      <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-10 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
+      <section className="mx-auto grid max-w-6xl gap-10 px-4 pt-8 pb-12 sm:gap-12 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
           {/* Headline and search box are ONE measure. `w-fit` sizes this
               wrapper to its widest max-content child, which here is the
@@ -125,7 +121,7 @@ export default function VendorsPage() {
           <div className="lg:w-fit">
             {/* The headline is short enough to carry real display size now that
                 no badge sits above it. */}
-            <h1 className="font-grotesk text-4xl font-semibold leading-[1.02] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
+            <h1 className="text-balance font-grotesk text-[2.5rem] font-semibold leading-[1.02] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
               {t("vendors.hero_title")}
             </h1>
             {/* The directory's own front door, the same box the couples landing
@@ -133,7 +129,7 @@ export default function VendorsPage() {
                 reading "be one click away" can check that click for themselves:
                 type the business name and either find the listing waiting to be
                 claimed or land in the open directory they are about to join. */}
-            <VendorSearchBar black className="mt-8 text-left" />
+            <VendorSearchBar black className="mt-6 text-left sm:mt-8" />
           </div>
           {/* Two buttons, one dominant. Nothing sits under them any more: the
               effort claim and the free-window promise both read as marketing
@@ -184,7 +180,7 @@ export default function VendorsPage() {
           this is aimed at whoever else wandered in. */}
       <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
         <TracingFrame className="rounded-2xl shadow-soft dark:shadow-none">
-          <div className="flex flex-col items-start gap-5 rounded-[calc(1rem-5px)] bg-black p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div className="flex flex-col items-start gap-5 rounded-[calc(1rem-5px)] bg-black p-5 sm:flex-row sm:items-center sm:justify-between sm:p-8">
             <div className="min-w-0">
               <h2 className="font-grotesk text-xl text-paper-50 sm:text-2xl">
                 {t("vendors.recommend_title")}
@@ -223,17 +219,6 @@ export default function VendorsPage() {
       />
 
       <ClosingBand />
-
-      {/* Back to landing */}
-      <section className="mx-auto max-w-2xl px-4 pb-12 text-center sm:px-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
-        >
-          <ArrowLeft size={14} />
-          {t("vendors.back_to_landing")}
-        </Link>
-      </section>
     </PublicShell>
   );
 }
@@ -252,8 +237,8 @@ export default function VendorsPage() {
 function ClosingBand() {
   const { t } = useT();
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 text-center sm:px-6 sm:py-16">
-      <h2 className="font-grotesk text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
+    <section className="mx-auto max-w-6xl px-4 pt-6 pb-16 text-center sm:px-6 sm:py-16">
+      <h2 className="text-balance font-grotesk text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
         {t("vendors.closing_title")}
       </h2>
       {VENDOR_TESTIMONIALS.length > 0 && (
@@ -286,36 +271,31 @@ function ClosingBand() {
   );
 }
 
-/** One block of the pitch: an eyebrow, a headline, three short lines and a
- *  picture, alternating sides down the page. The bullets are the whole copy on
- *  purpose (no lead paragraph): the picture carries the rest. */
+/** One block of the pitch: a headline, two short lines and a picture,
+ *  alternating sides down the page. No eyebrow and no lead paragraph (rule 6):
+ *  the animated picture carries the rest. */
 function FeatureBlock({
-  eyebrow,
   title,
   bullets,
   visual,
   flip,
 }: {
-  eyebrow: string;
   title: string;
   bullets: string[];
   visual: ReactNode;
   flip?: boolean;
 }) {
   return (
-    <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-2 lg:gap-20">
+    <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 sm:gap-10 sm:px-6 sm:py-16 lg:grid-cols-2 lg:gap-20">
       <div className={flip ? "lg:order-2" : undefined}>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-300">
-          {eyebrow}
-        </p>
-        <h2 className="mt-3 font-grotesk text-3xl font-semibold leading-[1.08] tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
+        <h2 className="text-balance font-grotesk text-[1.75rem] font-semibold leading-[1.1] tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
           {title}
         </h2>
-        <ul className="mt-6 space-y-3.5">
+        <ul className="mt-5 space-y-3 sm:mt-6">
           {bullets.map((b) => (
             <li
               key={b}
-              className="flex items-start gap-3 text-base leading-relaxed text-ink-700 dark:text-paper-200"
+              className="flex items-start gap-3 text-[15px] leading-relaxed text-ink-700 sm:text-base dark:text-paper-200"
             >
               <Check
                 size={18}
@@ -333,42 +313,27 @@ function FeatureBlock({
   );
 }
 
-/** Manage / Grow / Get booked. Three headings, in the order a vendor's week
- *  actually runs: the work that arrives, the reason it arrives, the money it
- *  turns into. */
+/** Three blocks, in the order a vendor's week actually runs: the work that
+ *  arrives, the reason it arrives, the booking it turns into. Two lines each:
+ *  the third used to restate what the picture already shows. */
 function PitchBlocks() {
   const { t } = useT();
   return (
     <>
       <FeatureBlock
-        eyebrow={t("vendors.pitch_manage_eyebrow")}
         title={t("vendors.pitch_manage_title")}
-        bullets={[
-          t("vendors.pitch_manage_b1"),
-          t("vendors.pitch_manage_b2"),
-          t("vendors.pitch_manage_b3"),
-        ]}
+        bullets={[t("vendors.pitch_manage_b1"), t("vendors.pitch_manage_b3")]}
         visual={<CalendarMockup />}
       />
       <FeatureBlock
         flip
-        eyebrow={t("vendors.pitch_grow_eyebrow")}
         title={t("vendors.pitch_grow_title")}
-        bullets={[
-          t("vendors.pitch_grow_b1"),
-          t("vendors.pitch_grow_b2"),
-          t("vendors.pitch_grow_b3"),
-        ]}
+        bullets={[t("vendors.pitch_grow_b2"), t("vendors.pitch_grow_b3")]}
         visual={<ShortlistMockup />}
       />
       <FeatureBlock
-        eyebrow={t("vendors.pitch_book_eyebrow")}
         title={t("vendors.pitch_book_title")}
-        bullets={[
-          t("vendors.pitch_book_b1"),
-          t("vendors.pitch_book_b2"),
-          t("vendors.pitch_book_b3"),
-        ]}
+        bullets={[t("vendors.pitch_book_b1"), t("vendors.pitch_book_b2")]}
         visual={<QuoteMockup />}
       />
     </>
@@ -413,9 +378,9 @@ function TradesRail() {
     "grid h-9 w-9 place-items-center rounded-full border border-ink-900/15 text-ink-900 transition hover:border-ink-900 disabled:pointer-events-none disabled:opacity-25 dark:border-paper-50/20 dark:text-paper-100";
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <h2 className="font-grotesk text-3xl font-semibold leading-[1.08] tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
+        <h2 className="text-balance font-grotesk text-[1.75rem] font-semibold leading-[1.08] tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
           {t("vendors.pitch_trades_title")}
         </h2>
         <div className="flex items-center gap-4">
@@ -461,13 +426,13 @@ function TradesRail() {
       <div
         ref={railRef}
         onScroll={sync}
-        className="-mx-4 mt-8 flex snap-x snap-mandatory scroll-pl-4 gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:scroll-pl-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 mt-6 flex snap-x snap-mandatory scroll-pl-4 gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:scroll-pl-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {TRADE_PHOTOS.map((category) => (
           <Link
             key={category}
             to={browseHref(category)}
-            className="group relative aspect-[4/5] w-52 shrink-0 snap-start overflow-hidden rounded-2xl bg-paper-200 sm:w-60 dark:bg-umber-800"
+            className="group relative aspect-[4/5] w-40 shrink-0 snap-start overflow-hidden rounded-2xl bg-paper-200 sm:w-60 dark:bg-umber-800"
           >
             <img
               src={`/vendors-trades/${category}.jpg`}
@@ -477,7 +442,7 @@ function TradesRail() {
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
             />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-4 pb-4 pt-16">
-              <span className="font-grotesk text-lg font-semibold leading-tight text-white">
+              <span className="font-grotesk text-base font-semibold leading-tight text-white sm:text-lg">
                 {t(`suppliers.cat.${category}`)}
               </span>
             </div>
@@ -485,14 +450,16 @@ function TradesRail() {
         ))}
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2">
+      {/* One swipeable row on a phone: wrapped, the twenty-odd chips stacked
+          into a wall of words taller than the photo rail above them. */}
+      <div className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mt-6 sm:flex-wrap sm:overflow-visible sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {others.map((category) => {
           const Icon = categoryIcon(category);
           return (
             <Link
               key={category}
               to={browseHref(category)}
-              className="inline-flex items-center gap-2 rounded-full border border-ink-900/15 px-3.5 py-2 text-sm text-ink-700 transition-colors hover:border-ink-900/40 hover:text-ink-900 dark:border-paper-50/15 dark:text-paper-200 dark:hover:border-paper-50/40 dark:hover:text-paper-50"
+              className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-ink-900/15 px-3.5 py-2 text-sm text-ink-700 transition-colors hover:border-ink-900/40 hover:text-ink-900 dark:border-paper-50/15 dark:text-paper-200 dark:hover:border-paper-50/40 dark:hover:text-paper-50"
             >
               <Icon size={15} strokeWidth={1.5} aria-hidden />
               {t(`suppliers.cat.${category}`)}
@@ -504,9 +471,10 @@ function TradesRail() {
   );
 }
 
-const FAQ_KEYS = [1, 2, 3, 4, 5, 6] as const;
+const FAQ_KEYS = [1, 2, 3, 4] as const;
 
-/** Six answers, on the questions a vendor actually stops at. Native
+/** Four answers, on the questions a vendor actually stops at and the page does
+ *  not already answer (rule 6). Native
  *  <details>: keyboard, screen reader and no-JS behaviour come for free, and
  *  there is no state to keep. There is deliberately no question about cost: the
  *  page states no price or offer (rule 3), and an answer that dodged it would
@@ -514,14 +482,14 @@ const FAQ_KEYS = [1, 2, 3, 4, 5, 6] as const;
 function Faq() {
   const { t } = useT();
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-      <h2 className="text-center font-grotesk text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
+    <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
+      <h2 className="text-center font-grotesk text-[1.75rem] font-semibold tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
         {t("vendors.pitch_faq_title")}
       </h2>
       <div className="mt-8 border-t border-ink-900/10 dark:border-paper-50/10">
         {FAQ_KEYS.map((n) => (
           <details key={n} className="group border-b border-ink-900/10 dark:border-paper-50/10">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 font-grotesk text-lg font-medium text-ink-900 marker:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-paper-50 dark:focus-visible:ring-paper-100 [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-grotesk text-base font-medium sm:gap-6 sm:py-5 sm:text-lg text-ink-900 marker:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-paper-50 dark:focus-visible:ring-paper-100 [&::-webkit-details-marker]:hidden">
               {t(`vendors.pitch_faq_${n}_q`)}
               <Plus
                 size={20}
@@ -530,7 +498,7 @@ function Faq() {
                 aria-hidden
               />
             </summary>
-            <p className="pb-6 pr-10 leading-relaxed text-ink-600 dark:text-paper-200">
+            <p className="pb-5 text-[15px] leading-relaxed sm:pb-6 sm:pr-10 sm:text-base text-ink-600 dark:text-paper-200">
               {t(`vendors.pitch_faq_${n}_a`)}
             </p>
           </details>

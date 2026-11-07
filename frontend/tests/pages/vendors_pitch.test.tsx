@@ -103,10 +103,10 @@ describe("/suppliers pitch", () => {
     expect(new Set(linked).size).toBe(linked.length);
   });
 
-  it("renders the FAQ as closed <details> with all six answers in the DOM", async () => {
+  it("renders the FAQ as closed <details> with all four answers in the DOM", async () => {
     await renderPage();
     const items = Array.from(document.querySelectorAll("details"));
-    expect(items).toHaveLength(6);
+    expect(items).toHaveLength(4);
     for (const d of items) expect(d.open).toBe(false);
     expect(screen.getByText(en.vendors.pitch_faq_2_q)).toBeTruthy();
     expect(screen.getByText(en.vendors.pitch_faq_2_a)).toBeTruthy();
@@ -119,6 +119,15 @@ describe("/suppliers pitch", () => {
     // Twice: the quote card's own total, and the accepted-quote chip on the
     // hero. Both derive from the same sample, so they cannot disagree.
     expect(screen.getAllByText("€2,200")).toHaveLength(2);
+  });
+
+  it("carries no one-word eyebrow labels over the blocks", async () => {
+    await renderPage();
+    // Owner direction 2026-11-07: "Manage" / "Grow" / "Get booked" read as
+    // template filler and were removed (VendorsPage header, rule 6).
+    for (const word of ["Manage", "Grow", "Get booked"]) {
+      expect(screen.queryByText(word)).toBeNull();
+    }
   });
 
   it("keeps a numeric claim, a price and a plan off the page", async () => {

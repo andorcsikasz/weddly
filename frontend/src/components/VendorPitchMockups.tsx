@@ -1,6 +1,6 @@
 // Product pictures for the /suppliers pitch. Three small cards, one per block:
-// the availability calendar (Manage), the couple's shortlist (Grow) and a quote
-// with its payment schedule (Get booked).
+// the availability calendar, the couple's shortlist and a quote
+// with its payment schedule.
 //
 // Built as HTML rather than SVG on purpose: every word on them is a real UI
 // string that has to follow the locale, and month / weekday / money come from
@@ -14,6 +14,10 @@
 //   - The sample month is fixed and shows no year, so the picture cannot age.
 //   - Decorative (`aria-hidden`): the bullets beside each one say the same
 //     thing in text.
+//   - Each one plays a slow loop (10-16s, keyframes `pitch*` in
+//     tailwind.config.js): an inquiry lands, a held date turns booked, a quote
+//     builds up and is accepted. Under prefers-reduced-motion every piece sits
+//     still in its finished state, so the picture never depends on motion.
 
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import { Check, Star } from "lucide-react";
@@ -38,6 +42,10 @@ export function PitchPlate({
 
 const CARD =
   "rounded-2xl border border-ink-900/10 bg-white shadow-soft dark:border-paper-50/10 dark:bg-black dark:shadow-none";
+
+/** One piece of a pitch loop appearing in sequence. The delay staggers it
+ *  inside the same 14s cycle, so every piece stays in step on every lap. */
+const REVEAL = "animate-pitch-reveal motion-reduce:animate-none";
 
 /** "A new inquiry just arrived": the dot, the date, the button the vendor would
  *  press. Shared by the calendar picture and the hero, since both say the same
@@ -110,29 +118,36 @@ function AcceptedChip({ className = "" }: { className?: string }) {
 
 /** The hero picture. A photograph of a ceremony with the product laid over it:
  *  the same two chips the blocks below use (an inquiry arriving, a quote being
- *  accepted). It replaced a listing-card mockup that only restated the Grow
+ *  accepted). It replaced a listing-card mockup that only restated the shortlist
  *  block, and carried the page's one invented number (a rating). This carries
  *  no rating, no count and no name: the photo is the wedding, the chips are the
  *  product. */
 export function HeroCollage() {
   return (
     <div aria-hidden className="relative mx-auto w-full max-w-md lg:max-w-none">
-      <img
-        src="/vendors-trades/hero.jpg"
-        alt=""
-        width={1000}
-        height={667}
-        decoding="async"
-        className="aspect-[4/3] w-full rounded-3xl object-cover shadow-soft dark:shadow-none"
+      <div className="overflow-hidden rounded-3xl shadow-soft dark:shadow-none">
+        <img
+          src="/vendors-trades/hero.jpg"
+          alt=""
+          width={1000}
+          height={667}
+          decoding="async"
+          className="aspect-[4/3] w-full origin-center animate-pitch-drift object-cover motion-reduce:animate-none"
+        />
+      </div>
+      {/* The story in two beats: the inquiry lands, then the quote is accepted. */}
+      <InquiryChip
+        className={`absolute -bottom-5 left-3 w-56 sm:-left-6 sm:w-64 ${REVEAL} [animation-delay:600ms]`}
       />
-      <InquiryChip className="absolute -bottom-5 left-3 w-64 sm:-left-6" />
-      <AcceptedChip className="absolute -top-4 right-3 sm:-right-4" />
+      <AcceptedChip
+        className={`absolute -top-4 right-3 sm:-right-4 ${REVEAL} [animation-delay:3s]`}
+      />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Manage: a month of dates, with the inquiry that just arrived.
+// Block 1: a month of dates, with the inquiry that just arrived.
 // ---------------------------------------------------------------------------
 
 // June 2027 starts on a Tuesday, so a Monday-first grid opens with one blank.
@@ -172,15 +187,28 @@ export function CalendarMockup() {
             const day = i + 1;
             const booked = CAL_BOOKED.has(day);
             const held = CAL_HELD.has(day);
+            if (held) {
+              // The held Saturday turns booked halfway through the loop: the
+              // couple said yes. Two stacked layers cross-fade, so the static
+              // (reduced-motion) frame is the plain held date.
+              return (
+                <span key={day} className="relative mx-auto h-8 w-8 text-xs tabular-nums">
+                  <span className="absolute inset-0 flex animate-pitch-held items-center justify-center rounded-full border border-dashed border-amber-500 font-semibold text-amber-700 motion-reduce:animate-none dark:text-amber-300">
+                    {day}
+                  </span>
+                  <span className="absolute inset-0 flex animate-pitch-booked items-center justify-center rounded-full bg-ink-900 font-semibold text-paper-50 opacity-0 motion-reduce:hidden dark:bg-paper-50 dark:text-black">
+                    {day}
+                  </span>
+                </span>
+              );
+            }
             return (
               <span
                 key={day}
                 className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full text-xs tabular-nums ${
                   booked
                     ? "bg-ink-900 font-semibold text-paper-50 dark:bg-paper-50 dark:text-black"
-                    : held
-                      ? "border border-dashed border-amber-500 font-semibold text-amber-700 dark:text-amber-300"
-                      : "text-ink-700 dark:text-paper-200"
+                    : "text-ink-700 dark:text-paper-200"
                 }`}
               >
                 {day}
@@ -203,13 +231,15 @@ export function CalendarMockup() {
       {/* The lead that just came in. It hangs off the corner so the two read as
           two objects (a calendar, and the thing that lands on it), and stays
           inside the plate on a phone. */}
-      <InquiryChip className="relative mx-auto mt-3 w-full max-w-[17rem] sm:absolute sm:-bottom-5 sm:-left-4 sm:mt-0 sm:mx-0 lg:-left-8" />
+      <InquiryChip
+        className={`relative mx-auto mt-3 w-full max-w-[17rem] sm:absolute sm:-bottom-5 sm:-left-4 sm:mt-0 sm:mx-0 lg:-left-8 ${REVEAL} [animation-delay:1s]`}
+      />
     </PitchPlate>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Grow: the short list a couple picks from, with the vendor on it.
+// Block 2: the short list a couple picks from, with the vendor on it.
 // ---------------------------------------------------------------------------
 
 const SHORTLIST_TILES = [
@@ -232,7 +262,7 @@ export function ShortlistMockup() {
               key={tile.photo}
               className={`overflow-hidden rounded-xl border bg-paper-50 dark:bg-black ${
                 tile.own
-                  ? "border-2 border-ink-900 dark:border-paper-50"
+                  ? "animate-pitch-lift border-2 border-ink-900 motion-reduce:animate-none dark:border-paper-50"
                   : "border-ink-900/10 dark:border-paper-50/10"
               }`}
             >
@@ -266,7 +296,7 @@ export function ShortlistMockup() {
 }
 
 // ---------------------------------------------------------------------------
-// Get booked: a quote, and the money that follows it.
+// Block 3: a quote, and the money that follows it.
 // ---------------------------------------------------------------------------
 
 export function QuoteMockup() {
@@ -285,27 +315,37 @@ export function QuoteMockup() {
           <p className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
             {t("vendors.pitch_mock_quote")}
           </p>
-          <span className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-0.5 text-[11px] font-semibold text-sage-800 dark:bg-sage-400/15 dark:text-sage-300">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-0.5 text-[11px] font-semibold text-sage-800 dark:bg-sage-400/15 dark:text-sage-300 ${REVEAL} [animation-delay:2.6s]`}
+          >
             <Check size={12} strokeWidth={2.5} aria-hidden />
             {t("vendors.pitch_mock_accepted")}
           </span>
         </div>
         <ul className="mt-4 space-y-2.5 text-sm">
           {labels.map((label, i) => (
-            <li key={label} className="flex justify-between gap-4 text-ink-700 dark:text-paper-200">
+            <li
+              key={label}
+              className={`flex justify-between gap-4 text-ink-700 dark:text-paper-200 ${REVEAL}`}
+              style={{ animationDelay: `${i * 500}ms` }}
+            >
               <span>{label}</span>
               <span className="tabular-nums">{money(amounts[i] ?? 0)}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-4 flex justify-between border-t border-ink-900/10 pt-3 font-semibold text-ink-900 dark:border-paper-50/10 dark:text-paper-50">
+        <div
+          className={`mt-4 flex justify-between border-t border-ink-900/10 pt-3 font-semibold text-ink-900 dark:border-paper-50/10 dark:text-paper-50 ${REVEAL} [animation-delay:1.6s]`}
+        >
           <span>{t("vendors.pitch_mock_total")}</span>
           <span className="tabular-nums">{money(total)}</span>
         </div>
       </div>
 
       {/* The payment schedule the vendor keeps against the same client. */}
-      <div className={`${CARD} mx-auto mt-3 max-w-sm space-y-2.5 px-5 py-4 text-sm`}>
+      <div
+        className={`${CARD} mx-auto mt-3 max-w-sm space-y-2.5 px-5 py-4 text-sm ${REVEAL} [animation-delay:3.6s]`}
+      >
         <div className="flex items-center justify-between gap-3">
           <span className="text-ink-700 dark:text-paper-200">
             {t("vendors.pitch_mock_deposit")}

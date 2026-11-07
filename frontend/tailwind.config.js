@@ -401,6 +401,16 @@ export default {
         // text rises out of a soft blur, then the underline draws after it.
         "field-open": "fieldOpen 700ms cubic-bezier(0.22, 1, 0.36, 1) both",
         "underline-draw": "underlineDraw 900ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both",
+        // /suppliers pitch loops. Slow on purpose (10-16s): each one tells a
+        // small story (an inquiry lands, a date gets booked, a quote is
+        // accepted) and then rests, so the page moves without fidgeting.
+        // Every element using them also carries motion-reduce:animate-none,
+        // which leaves it in its plain, fully visible state.
+        "pitch-reveal": "pitchReveal 14s cubic-bezier(0.22, 1, 0.36, 1) infinite both",
+        "pitch-held": "pitchHeld 14s ease-in-out infinite both",
+        "pitch-booked": "pitchBooked 14s ease-in-out infinite both",
+        "pitch-lift": "pitchLift 10s ease-in-out infinite",
+        "pitch-drift": "pitchDrift 16s ease-in-out infinite alternate",
       },
       keyframes: {
         fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
@@ -442,6 +452,32 @@ export default {
         badgeHalo: {
           "0%": { opacity: "0.85", transform: "scale(0.5)" },
           "100%": { opacity: "0", transform: "scale(2.4)" },
+        },
+        pitchReveal: {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "6%, 88%": { opacity: "1", transform: "translateY(0)" },
+          "95%, 100%": { opacity: "0", transform: "translateY(0)" },
+        },
+        pitchHeld: {
+          "0%, 45%": { opacity: "1" },
+          "52%, 90%": { opacity: "0" },
+          "97%, 100%": { opacity: "1" },
+        },
+        pitchBooked: {
+          "0%, 45%": { opacity: "0", transform: "scale(0.6)" },
+          "52%, 90%": { opacity: "1", transform: "scale(1)" },
+          "97%, 100%": { opacity: "0", transform: "scale(0.6)" },
+        },
+        pitchLift: {
+          "0%, 25%, 80%, 100%": { transform: "translateY(0)", boxShadow: "0 0 0 0 rgba(0,0,0,0)" },
+          "35%, 70%": {
+            transform: "translateY(-6px)",
+            boxShadow: "0 14px 28px -12px rgba(0,0,0,0.35)",
+          },
+        },
+        pitchDrift: {
+          "0%": { transform: "scale(1)" },
+          "100%": { transform: "scale(1.07)" },
         },
       },
     },
