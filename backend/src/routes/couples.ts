@@ -49,6 +49,7 @@ import {
   type DateFormatSlug,
   type FontFamilySlug,
   type FontPresetSlug,
+  type HeroLayoutSlug,
   HEX_COLOR_RE,
   type ImageTreatmentSlug,
   type MonogramSeparatorSlug,
@@ -62,6 +63,7 @@ import {
   VALID_DATE_FORMATS,
   VALID_FONT_FAMILIES,
   VALID_FONTS,
+  VALID_HERO_LAYOUTS,
   VALID_IMAGE_TREATMENTS,
   VALID_PALETTES,
   VALID_SEPARATORS,
@@ -2708,6 +2710,15 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         }
         next.web.venueLayout = v as VenueLayoutSlug;
       }
+      // Opening-screen composition (and photo-band framing). Presentational,
+      // seeded by the template packs and tweakable on its own afterwards.
+      if ("heroLayout" in w) {
+        const v = w.heroLayout;
+        if (typeof v !== "string" || !VALID_HERO_LAYOUTS.has(v as HeroLayoutSlug)) {
+          throw new HttpError(400, "design.web.heroLayout is invalid");
+        }
+        next.web.heroLayout = v as HeroLayoutSlug;
+      }
     }
     const changed =
       next.style !== prev.style ||
@@ -2730,6 +2741,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.web.ornaments !== prev.web.ornaments ||
       next.web.venueMap !== prev.web.venueMap ||
       next.web.venueLayout !== prev.web.venueLayout ||
+      next.web.heroLayout !== prev.web.heroLayout ||
       JSON.stringify(next.web.hiddenSections) !== JSON.stringify(prev.web.hiddenSections);
     if (changed) {
       updates.push({ col: "design_json", val: JSON.stringify(next) });
@@ -3065,6 +3077,49 @@ async function handleChooseSitePhotoPreset(ctx: Ctx): Promise<Response> {
     target_id: couple.id,
     before: { slot, url: previousUrl },
     after: { slot, url },
+  });
+
+  const refreshed = getCoupleById(couple.id);
+  if (!refreshed) throw new HttpError(500, "Couple vanished mid-update");
+  return json({ couple: toCouple(refreshed) });
+}
+
+// POST /api/couples/current/cover/preset { slug } puts a curated design photo
+// in the hero instead of an upload. The cover PATCH only takes absolute http(s)
+// URLs, so a same-origin `/design-photos/...` path needs its own door, and the
+// slug whitelist is what keeps it from becoming "store any path". Mirrors the
+// site-photo preset: an uploaded cover it replaces is deleted from storage.
+async function handleChooseCoverPreset(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple to update");
+
+  const body = await readJson<{ slug?: unknown }>(ctx.req);
+  const slug = typeof body.slug === "string" ? body.slug : "";
+  const url = VALID_CURATED_PHOTO_SLUGS.has(slug as CuratedPhotoSlug)
+    ? curatedPhotoUrl(slug)
+    : null;
+  if (!url) throw new HttpError(400, "Unknown photo", { code: "bad_photo_slug" });
+
+  const previousUrl = couple.cover_image_url;
+  const prevKey = previousUrl ? keyFromUploadUrl(previousUrl) : null;
+  if (prevKey) await storage.delete(prevKey);
+
+  const ts = now();
+  // A new picture resets the framing: a focal point chosen for the old photo
+  // means nothing for this one.
+  db.prepare(
+    `UPDATE couples SET cover_image_url = ?, cover_position_x = 50, cover_position_y = 50,
+       cover_scale = 100, updated_at = ? WHERE id = ?`,
+  ).run(url, ts, couple.id);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple.cover_preset",
+    target_kind: "couple",
+    target_id: couple.id,
+    before: { cover_image_url: previousUrl },
+    after: { cover_image_url: url },
   });
 
   const refreshed = getCoupleById(couple.id);
@@ -4060,6 +4115,7 @@ export function registerCoupleRoutes(router: Router) {
   router.get("/api/couples/activity", handleGetActivity, true);
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.post("/api/couples/current/cover", handleUploadCover, true);
+  router.post("/api/couples/current/cover/preset", handleChooseCoverPreset, true);
   router.post("/api/couples/current/site-photo/:slot", handleUploadSitePhoto, true);
   router.post("/api/couples/current/site-photo/:slot/preset", handleChooseSitePhotoPreset, true);
   router.delete("/api/couples/current/site-photo/:slot", handleDeleteSitePhoto, true);

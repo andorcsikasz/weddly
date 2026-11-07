@@ -11,9 +11,15 @@
 // names, same date, same geometry. That is the whole argument for showing the
 // couple's real content here instead of a glyph or a lorem name.
 
-import { type CoupleDesign, STYLE_PRESETS, type StylePresetSlug } from "@shared/design";
+import {
+  type CoupleDesign,
+  curatedPhotoUrl,
+  STYLE_PRESETS,
+  type StylePresetSlug,
+} from "@shared/design";
 import { Check } from "lucide-react";
 import { useT } from "../../lib/i18n";
+import { HeroProof } from "./HeroProof";
 import { ProofCard } from "./ProofCard";
 
 export function SampleTable({
@@ -28,6 +34,12 @@ export function SampleTable({
   /** A design carrying the given pack, so each tile previews that pack applied
    *  to THIS couple rather than to the catalog's defaults. */
   designForStyle,
+  /** "site" draws each pack's guest-page opening screen instead of a printed
+   *  card: on the website tab the templates differ in composition, which an
+   *  invitation cannot show. */
+  surface = "card",
+  /** The couple's current cover, shown in every site tile when there is one. */
+  coverUrl = null,
 }: {
   id: string;
   open: boolean;
@@ -38,6 +50,8 @@ export function SampleTable({
   weddingDate: string | null | undefined;
   fallbackName: string;
   designForStyle: (slug: StylePresetSlug) => CoupleDesign;
+  surface?: "card" | "site";
+  coverUrl?: string | null;
 }) {
   const { t, locale } = useT();
   if (!open) return null;
@@ -86,15 +100,35 @@ export function SampleTable({
                   active ? "animate-card-lift" : ""
                 }`}
               >
-                <ProofCard
-                  design={designForStyle(preset.slug)}
-                  size="table"
-                  brideName={brideName}
-                  groomName={groomName}
-                  weddingDate={weddingDate}
-                  locale={locale}
-                  fallbackName={fallbackName}
-                />
+                {surface === "site" ? (
+                  <HeroProof
+                    design={designForStyle(preset.slug)}
+                    // The couple's own cover when they have one (a tap never
+                    // replaces it). Otherwise the template's suggestion, which
+                    // is exactly what a tap on a template puts in the frame.
+                    photoUrl={
+                      coverUrl ??
+                      (preset.defaultWeb?.heroLayout && preset.defaultWeb.heroLayout !== "overlay"
+                        ? curatedPhotoUrl(preset.suggestedPhotos?.[0] ?? "")
+                        : null)
+                    }
+                    brideName={brideName}
+                    groomName={groomName}
+                    weddingDate={weddingDate}
+                    locale={locale}
+                    fallbackName={fallbackName}
+                  />
+                ) : (
+                  <ProofCard
+                    design={designForStyle(preset.slug)}
+                    size="table"
+                    brideName={brideName}
+                    groomName={groomName}
+                    weddingDate={weddingDate}
+                    locale={locale}
+                    fallbackName={fallbackName}
+                  />
+                )}
               </span>
               <span className="truncate px-0.5 font-serif text-lg italic text-ink-900 sm:text-xl dark:text-paper-50">
                 {name}

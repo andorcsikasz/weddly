@@ -51,6 +51,7 @@ interface CoupleEnvelope {
     id: number;
     site_image_1_url: string | null;
     site_image_2_url: string | null;
+    cover_image_url: string | null;
   };
 }
 
@@ -180,6 +181,39 @@ describe("site photo slots — curated preset picker", () => {
     for (const p of CURATED_SITE_PHOTOS) {
       expect(existsSync(join(DESIGN_PHOTOS_DIR, p.file))).toBe(true);
     }
+  });
+
+  test("a curated photo can be the cover, replacing an upload and resetting the framing", async () => {
+    const { token, coupleId } = await bootstrapCouple("cover-preset@weddly.test");
+    db.prepare(
+      "UPDATE couples SET cover_position_x = 10, cover_position_y = 90, cover_scale = 180 WHERE id = ?",
+    ).run(coupleId);
+    const art = OFFERED_SITE_PHOTOS[0];
+    if (!art) throw new Error("no curated photos defined");
+    const r = await req<CoupleEnvelope>(
+      "POST",
+      "/api/couples/current/cover/preset",
+      { slug: art.slug },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.cover_image_url).toBe(`/design-photos/${art.file}`);
+    const row = db
+      .prepare(
+        "SELECT cover_position_x x, cover_position_y y, cover_scale s FROM couples WHERE id = ?",
+      )
+      .get(coupleId) as { x: number; y: number; s: number };
+    expect(row).toEqual({ x: 50, y: 50, s: 100 });
+
+    // Retired and unknown slugs are refused: the whitelist is the whole guard
+    // against this route storing an arbitrary path as the cover.
+    const retired = CURATED_SITE_PHOTOS.find((p) => p.retired);
+    for (const slug of [retired?.slug, "../../etc/passwd", 7]) {
+      const bad = await req("POST", "/api/couples/current/cover/preset", { slug }, { token });
+      expect(bad.status).toBe(400);
+    }
+    const anon = await req("POST", "/api/couples/current/cover/preset", { slug: art.slug });
+    expect(anon.status).toBe(401);
   });
 
   test("an unknown slug is refused, column untouched", async () => {

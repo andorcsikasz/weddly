@@ -28,6 +28,12 @@ export type StylePresetSlug =
   | "modern_monochrome"
   | "blush_romantic"
   | "midnight_luxe"
+  // ── The four website TEMPLATES (2026-11): packs that also change the guest
+  //    page's composition (hero layout + photo framing), not only its colours. ──
+  | "tuscan_villa"
+  | "riviera"
+  | "atelier"
+  | "bordeaux"
   // ── Legacy slugs kept for back-compat: a couple who picked one of these
   //    before the pack redesign keeps validating? No — they're NOT in
   //    STYLE_PRESETS, so their stored style degrades to the default while
@@ -49,6 +55,11 @@ export type PaletteSlug =
   | "mono_ink"
   | "blush_rose"
   | "noir"
+  // ── Template palettes. ──
+  | "villa"
+  | "riviera"
+  | "atelier"
+  | "bordeaux"
   // ── Legacy palettes (kept renderable for back-compat). ──
   | "botanical_green"
   | "espresso"
@@ -68,6 +79,11 @@ export type FontPresetSlug =
   | "mono_sans"
   | "blush_bodoni"
   | "noir_smallcaps"
+  // ── Template pairings. ──
+  | "villa_garamond"
+  | "riviera_didone"
+  | "atelier_serif"
+  | "bordeaux_romance"
   // ── Legacy presets (kept for back-compat). ──
   | "classic_serif"
   | "modern_clean"
@@ -236,6 +252,10 @@ export interface StylePreset {
   /** Card frame the pack seeds when picked - most packs carry their identity in
    *  the ornament, not a rectangular border, so this is usually "none". */
   defaultBorderStyle: BorderStyleSlug;
+  /** Curated photos that suit the pack, best first. The first is the cover a
+   *  pack proposes when the couple has none yet; the gallery lists them all
+   *  ahead of the rest. Only offered (non-retired) slugs belong here. */
+  suggestedPhotos?: readonly CuratedPhotoSlug[];
   /** Optional website-chrome defaults a style seeds when picked (e.g. the
    *  editorial style turns on grayscale photos + sharp, shadowless, outline
    *  chrome). Omitted on styles that keep today's web defaults. */
@@ -300,6 +320,44 @@ export const PALETTES: readonly Palette[] = [
     background: pair("#18120E"),
     accent: pair("#C5A44F"),
     text: pair("#F2E8D5"),
+  },
+  // ── The four template palettes. ──
+  {
+    // Tuscan Villa: limewashed plaster, burnt sienna, olive leaf.
+    slug: "villa",
+    nameKey: "design.palette.villa",
+    primary: pair("#9B4A2C"),
+    background: pair("#F3ECE1"),
+    accent: pair("#8A8A5A"),
+    text: pair("#2F2520"),
+  },
+  {
+    // Riviera: sun-bleached linen, deep sea blue, sand.
+    slug: "riviera",
+    nameKey: "design.palette.riviera",
+    primary: pair("#24506E"),
+    background: pair("#F6F3EC"),
+    accent: pair("#C7B395"),
+    text: pair("#1D2833"),
+  },
+  {
+    // Atelier: greige paper, press black, tobacco.
+    slug: "atelier",
+    nameKey: "design.palette.atelier",
+    primary: pair("#2A2622"),
+    background: pair("#ECE7DF"),
+    accent: pair("#A0825E"),
+    text: pair("#1E1B18"),
+  },
+  {
+    // Bordeaux: the second dark palette. Rose-gold and cream on deep wine, a
+    // candlelit dinner rather than Midnight's black-tie gala.
+    slug: "bordeaux",
+    nameKey: "design.palette.bordeaux",
+    primary: pair("#E6B8A2"),
+    background: pair("#2B1519"),
+    accent: pair("#A0705F"),
+    text: pair("#F3E6DC"),
   },
   {
     slug: "botanical_green",
@@ -446,6 +504,43 @@ export const FONT_PRESETS: readonly FontPreset[] = [
     headingFamily: "cormorant_sc",
     bodyFamily: "eb_garamond",
   },
+  // ── Template pairings (bundled families only, no new webfont). ──
+  {
+    // Villa: italic Garamond names over a light geometric Jost.
+    slug: "villa_garamond",
+    nameKey: "design.font.villa_garamond",
+    headingStack: '"EB Garamond", Garamond, Georgia, "Times New Roman", serif',
+    bodyStack: '"Jost", "Century Gothic", "Futura", system-ui, sans-serif',
+    headingFamily: "eb_garamond",
+    bodyFamily: "jost",
+  },
+  {
+    // Riviera: spaced-out Didone capitals over a clean DM Sans.
+    slug: "riviera_didone",
+    nameKey: "design.font.riviera_didone",
+    headingStack: '"Bodoni Moda", "Didot", "Bodoni MT", Georgia, serif',
+    bodyStack: '"DM Sans", "Helvetica Neue", Inter, system-ui, sans-serif',
+    headingFamily: "bodoni_moda",
+    bodyFamily: "dm_sans",
+  },
+  {
+    // Atelier: upright Cormorant set very large, with a grotesk for the rest.
+    slug: "atelier_serif",
+    nameKey: "design.font.atelier_serif",
+    headingStack: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+    bodyStack: '"General Sans", "Helvetica Neue", Inter, system-ui, sans-serif',
+    headingFamily: "cormorant",
+    bodyFamily: "general_sans",
+  },
+  {
+    // Bordeaux: italic Cormorant over a bookish Garamond.
+    slug: "bordeaux_romance",
+    nameKey: "design.font.bordeaux_romance",
+    headingStack: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+    bodyStack: '"EB Garamond", Garamond, Georgia, "Times New Roman", serif',
+    headingFamily: "cormorant_italic",
+    bodyFamily: "eb_garamond",
+  },
   {
     slug: "classic_serif",
     nameKey: "design.font.classic_serif",
@@ -565,7 +660,13 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     headingStyle: "italic",
     defaultDateFormat: "long",
     defaultBorderStyle: "none",
-    defaultWeb: { buttonStyle: "outline", cardRadius: "soft", shadow: "soft" },
+    suggestedPhotos: ["ceremony_florals", "tablescape", "peonies_soft", "vineyard_dusk"],
+    defaultWeb: {
+      buttonStyle: "outline",
+      cardRadius: "soft",
+      shadow: "soft",
+      heroLayout: "overlay",
+    },
   },
   {
     // Modern Monochrome - gallery wedding: pure white, bold grotesk, asymmetric.
@@ -578,11 +679,13 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     headingStyle: "uppercase",
     defaultDateFormat: "numeric_dot",
     defaultBorderStyle: "none",
+    suggestedPhotos: ["gown_hallway", "lace", "glassware", "place_card"],
     defaultWeb: {
       buttonStyle: "flat",
       cardRadius: "sharp",
       shadow: "none",
       imageTreatment: "grayscale",
+      heroLayout: "overlay",
     },
   },
   {
@@ -595,7 +698,13 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     cardLayout: "framed",
     defaultDateFormat: "long",
     defaultBorderStyle: "none",
-    defaultWeb: { buttonStyle: "lifted", cardRadius: "full", shadow: "soft" },
+    suggestedPhotos: ["peonies_soft", "peonies_plaster", "ranunculus", "ceremony_florals"],
+    defaultWeb: {
+      buttonStyle: "lifted",
+      cardRadius: "full",
+      shadow: "soft",
+      heroLayout: "overlay",
+    },
   },
   {
     // Midnight Luxe - black-tie gala: gold on near-black, small caps, deco corners.
@@ -608,7 +717,96 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     headingStyle: "small_caps",
     defaultDateFormat: "roman",
     defaultBorderStyle: "none",
-    defaultWeb: { buttonStyle: "outline", cardRadius: "sharp", shadow: "none" },
+    suggestedPhotos: ["taper_candles", "glassware", "gown_hallway", "peonies_plaster"],
+    defaultWeb: {
+      buttonStyle: "outline",
+      cardRadius: "sharp",
+      shadow: "none",
+      heroLayout: "overlay",
+    },
+  },
+  // ── The four website templates. Each is a whole pack (palette, type,
+  //    ornament, print layout) PLUS its own page composition, so they differ in
+  //    structure, not just colour. Print reuses the existing ornament + card
+  //    layout vocabularies, so the PDF renderer needed nothing new. ──
+  {
+    // Tuscan Villa - long lunch in the hills: split-screen hero, sienna + olive.
+    slug: "tuscan_villa",
+    nameKey: "design.style.tuscan_villa",
+    defaultPalette: "villa",
+    defaultFonts: "villa_garamond",
+    ornament: "botanical",
+    cardLayout: "centered",
+    headingStyle: "italic",
+    defaultDateFormat: "long",
+    defaultBorderStyle: "none",
+    suggestedPhotos: ["tuscan_hills", "vineyard_dusk", "tablescape", "ceremony_florals"],
+    defaultWeb: {
+      buttonStyle: "flat",
+      cardRadius: "soft",
+      shadow: "soft",
+      imageTreatment: "none",
+      heroLayout: "split",
+    },
+  },
+  {
+    // Riviera - seaside ceremony: the cover framed in an arched window.
+    slug: "riviera",
+    nameKey: "design.style.riviera",
+    defaultPalette: "riviera",
+    defaultFonts: "riviera_didone",
+    ornament: "oval",
+    cardLayout: "framed",
+    headingStyle: "uppercase",
+    defaultDateFormat: "numeric_dot",
+    defaultBorderStyle: "none",
+    suggestedPhotos: ["ceremony_florals", "peonies_soft", "glassware", "place_card"],
+    defaultWeb: {
+      buttonStyle: "outline",
+      cardRadius: "full",
+      shadow: "none",
+      imageTreatment: "none",
+      heroLayout: "arch",
+    },
+  },
+  {
+    // Atelier - a fashion-magazine issue: giant stacked names, captioned photo.
+    slug: "atelier",
+    nameKey: "design.style.atelier",
+    defaultPalette: "atelier",
+    defaultFonts: "atelier_serif",
+    ornament: "none",
+    cardLayout: "asymmetric",
+    defaultDateFormat: "numeric_dot",
+    defaultBorderStyle: "none",
+    suggestedPhotos: ["gown_hallway", "lace", "place_card", "ranunculus"],
+    defaultWeb: {
+      buttonStyle: "flat",
+      cardRadius: "sharp",
+      shadow: "none",
+      imageTreatment: "none",
+      heroLayout: "editorial",
+    },
+  },
+  {
+    // Bordeaux - candlelit dinner: dark wine, the cover as a framed poster.
+    slug: "bordeaux",
+    nameKey: "design.style.bordeaux",
+    defaultPalette: "bordeaux",
+    defaultFonts: "bordeaux_romance",
+    ornament: "deco",
+    cardLayout: "corners",
+    headingStyle: "italic",
+    defaultDateFormat: "long",
+    defaultBorderStyle: "none",
+    suggestedPhotos: ["taper_candles", "peonies_plaster", "ranunculus", "glassware"],
+    defaultWeb: {
+      buttonStyle: "outline",
+      cardRadius: "sharp",
+      shadow: "none",
+      imageTreatment: "none",
+      heroLayout: "poster",
+    },
   },
 ];
 
@@ -737,6 +935,25 @@ export type ImageTreatmentSlug = "none" | "grayscale";
  *  "side" degrades to "stacked" on its own — two 160px columns are worse than
  *  one of each. */
 export type VenueLayoutSlug = "stacked" | "side";
+
+/** How the guest page's opening screen is composed, and how the optional photo
+ *  bands are framed further down. `overlay` is the original full-bleed cover
+ *  with the names on it; the other four are the template compositions:
+ *    split     - photo on one half, names on a plain panel beside it
+ *    arch      - names above a tall arched window holding the photo
+ *    editorial - giant stacked names over a wide, captioned photo
+ *    poster    - the photo as a framed print with corner marks, names below
+ *  Every layout works with no cover photo too: the frame fills with a soft
+ *  accent wash and the monogram, so a fresh workspace still looks composed. */
+export type HeroLayoutSlug = "overlay" | "split" | "arch" | "editorial" | "poster";
+
+export const HERO_LAYOUTS: readonly { slug: HeroLayoutSlug; nameKey: string }[] = [
+  { slug: "overlay", nameKey: "design.web.hero_layout.overlay" },
+  { slug: "split", nameKey: "design.web.hero_layout.split" },
+  { slug: "arch", nameKey: "design.web.hero_layout.arch" },
+  { slug: "editorial", nameKey: "design.web.hero_layout.editorial" },
+  { slug: "poster", nameKey: "design.web.hero_layout.poster" },
+];
 
 export const CARD_RADII: readonly { slug: CardRadiusSlug; nameKey: string; css: string }[] = [
   { slug: "sharp", nameKey: "design.web.card_radius.sharp", css: "0.375rem" },
@@ -982,6 +1199,19 @@ export function curatedPhotoUrl(slug: string): string | null {
   return found ? `/design-photos/${found.file}` : null;
 }
 
+/** The offered photos with the pack's suggestions first, in the pack's order.
+ *  One list for every picker, so "suggested" means the same thing everywhere. */
+export function photosForStyle(style: StylePresetSlug): {
+  photos: typeof OFFERED_SITE_PHOTOS;
+  suggested: ReadonlySet<CuratedPhotoSlug>;
+} {
+  const wanted = getStylePreset(style).suggestedPhotos ?? [];
+  const suggested = new Set(wanted.filter((s) => VALID_CURATED_PHOTO_SLUGS.has(s)));
+  const first = [...suggested].map((s) => OFFERED_SITE_PHOTOS.find((p) => p.slug === s)!);
+  const rest = OFFERED_SITE_PHOTOS.filter((p) => !suggested.has(p.slug));
+  return { photos: [...first, ...rest], suggested };
+}
+
 // ── Cover / guest-page image upload constraints ──────────────────────────────
 // Single source of truth for the limits the backend enforces AND the frontend
 // communicates up-front + pre-checks, so a couple learns "too large, use under
@@ -1044,6 +1274,9 @@ export const VALID_WEBSITE_SECTIONS: ReadonlySet<WebsiteSectionSlug> = new Set(
 export const VALID_IMAGE_TREATMENTS: ReadonlySet<ImageTreatmentSlug> = new Set(
   IMAGE_TREATMENTS.map((i) => i.slug),
 );
+export const VALID_HERO_LAYOUTS: ReadonlySet<HeroLayoutSlug> = new Set(
+  HERO_LAYOUTS.map((h) => h.slug),
+);
 export const VALID_VENUE_LAYOUTS: ReadonlySet<VenueLayoutSlug> = new Set(
   VENUE_LAYOUTS.map((v) => v.slug),
 );
@@ -1070,6 +1303,8 @@ export interface DesignWebsiteOptions {
   /** Venue name over the map, or the two side by side (square map). Only ever
    *  visible when `venueMap` is on and the couple has coordinates. */
   venueLayout: VenueLayoutSlug;
+  /** The opening screen's composition + photo-band framing. */
+  heroLayout: HeroLayoutSlug;
 }
 
 /** Resolve a card-radius slug to its CSS length; never throws. */
@@ -1107,6 +1342,7 @@ export const DEFAULT_DESIGN: CoupleDesign = {
     ornaments: true,
     venueMap: false,
     venueLayout: "stacked",
+    heroLayout: "overlay",
   },
 };
 
@@ -1210,6 +1446,10 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
         i.web?.venueLayout && VALID_VENUE_LAYOUTS.has(i.web.venueLayout)
           ? i.web.venueLayout
           : DEFAULT_DESIGN.web.venueLayout,
+      heroLayout:
+        i.web?.heroLayout && VALID_HERO_LAYOUTS.has(i.web.heroLayout)
+          ? i.web.heroLayout
+          : DEFAULT_DESIGN.web.heroLayout,
     },
   };
 }
@@ -1255,6 +1495,8 @@ export interface PublicDesign {
   website_ornaments: boolean;
   /** Venue name over the map, or side by side with a square map. */
   website_venue_layout: VenueLayoutSlug;
+  /** Opening-screen composition + photo-band framing. */
+  website_hero_layout: HeroLayoutSlug;
 }
 
 /** Build the public, presentation-only payload from a resolved design. */
@@ -1296,6 +1538,7 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
     website_image_treatment: design.web.imageTreatment,
     website_ornaments: design.web.ornaments,
     website_venue_layout: design.web.venueLayout,
+    website_hero_layout: design.web.heroLayout,
   };
 }
 

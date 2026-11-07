@@ -1006,6 +1006,10 @@ export const coupleApi = {
     apiFetch<{ couple: Couple }>("POST", `/api/couples/current/site-photo/${slot}/preset`, {
       slug,
     }),
+  /** Use a curated design photo as the hero cover (same slug whitelist as the
+   *  site-photo presets). Resets the cover's focal point and zoom. */
+  chooseCoverPreset: (slug: string) =>
+    apiFetch<{ couple: Couple }>("POST", "/api/couples/current/cover/preset", { slug }),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
   archive: () => apiFetch<{ couple: Couple }>("POST", "/api/couples/current/archive", {}),

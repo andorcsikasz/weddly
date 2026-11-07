@@ -29,6 +29,7 @@ import {
   getFontPreset,
   getPalette,
   getStylePreset,
+  HERO_LAYOUTS,
   IMAGE_TREATMENTS,
   type ImageTreatmentSlug,
   MONOGRAM_SEPARATORS,
@@ -77,6 +78,7 @@ import {
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LookBar } from "../components/design/LookBar";
+import { HeroLayoutGlyph } from "../components/design/HeroLayoutGlyph";
 import { PhotoDock } from "../components/design/PhotoDock";
 import { PrintShelf } from "../components/design/PrintShelf";
 import { ProofCard } from "../components/design/ProofCard";
@@ -746,6 +748,22 @@ export default function DesignPage() {
     setStyleSnapshot(designRef.current);
     setDesign((prev) => applyStylePreset(prev, slug));
     setStyleTableOpen(false);
+    // The template packs are built around a framed photo. A couple with no
+    // cover yet gets the pack's own suggestion in the frame, so the page they
+    // land on is the finished look rather than an empty wash. Only ever fills
+    // an EMPTY cover: a photo the couple chose is never replaced by a tap.
+    const preset = getStylePreset(slug);
+    const suggestion = preset.suggestedPhotos?.[0];
+    if (
+      suggestion &&
+      preset.defaultWeb?.heroLayout &&
+      preset.defaultWeb.heroLayout !== "overlay" &&
+      couple &&
+      !couple.cover_image_url &&
+      !readOnly
+    ) {
+      void chooseCoverPreset(suggestion);
+    }
   }
   // Opening a row snapshots the design so the body can show a truthful
   // before/now pair, and pushes the row id into the hash so the swap is
@@ -1119,6 +1137,23 @@ export default function DesignPage() {
     }
   }
 
+  async function chooseCoverPreset(slug: string) {
+    if (coverBusy) return;
+    setCoverBusy(true);
+    try {
+      const r = await coupleApi.chooseCoverPreset(slug);
+      setCouple(r.couple);
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError && err.status === 402
+          ? t("design.save_blocked")
+          : t("design.web.photo_upload_error"),
+      );
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
   // The cover (hero) image. Same server-returns-the-couple contract as the site
   // photos, so the live preview updates in place. Removal PATCHes the field null.
   async function uploadCoverImage(file: File) {
@@ -1473,6 +1508,8 @@ export default function DesignPage() {
             weddingDate={couple?.wedding_date}
             fallbackName={t("design.print_preview.sample_couple")}
             designForStyle={(slug) => applyStylePreset(design, slug)}
+            surface={tab === "website" ? "site" : "card"}
+            coverUrl={couple?.cover_image_url ?? null}
           />
 
           <div className="grid gap-8 lg:grid-cols-[minmax(0,23rem)_minmax(0,1fr)]">
@@ -1506,6 +1543,8 @@ export default function DesignPage() {
                     onTreatment={chooseImageTreatment}
                     onUpload={(slot, file) => void uploadSitePhotoSlot(slot, file)}
                     onChoosePreset={(slot, slug) => void chooseSitePhotoPreset(slot, slug)}
+                    onChooseCoverPreset={(slug) => void chooseCoverPreset(slug)}
+                    style={design.style}
                     onRemove={(slot) => void removeSitePhoto(slot)}
                     onCoverUpload={(file) => void uploadCoverImage(file)}
                     onCoverRemove={() => void removeCoverImage()}
@@ -1860,6 +1899,66 @@ export default function DesignPage() {
                               />
                             }
                           />
+                        )}
+
+                        {/* Layout: how the guest page opens. Website only, since
+                            a printed card has no hero. Each option is drawn in
+                            the couple's own colours rather than named. */}
+                        {tab === "website" && (
+                          <TuneRow
+                            id="layout"
+                            label={t("design.tune.layout")}
+                            value={
+                              <HeroLayoutGlyph
+                                layout={design.web.heroLayout}
+                                colors={resolvedColors}
+                                className="h-6 w-9 rounded-sm ring-1 ring-black/10 dark:ring-white/15"
+                              />
+                            }
+                            open={openRow === "layout"}
+                            onToggle={() => toggleRow("layout")}
+                            before={rowBefore}
+                            now={design}
+                            onRevert={revertRow}
+                            couple={previewCouple}
+                            locale={locale}
+                            fallbackName={sampleCoupleName}
+                          >
+                            <TuneRail>
+                              {HERO_LAYOUTS.map((hl) => {
+                                const active = design.web.heroLayout === hl.slug;
+                                return (
+                                  <button
+                                    key={hl.slug}
+                                    type="button"
+                                    onClick={() =>
+                                      setDesign((d) => ({
+                                        ...d,
+                                        web: { ...d.web, heroLayout: hl.slug },
+                                      }))
+                                    }
+                                    aria-pressed={active}
+                                    aria-label={t(hl.nameKey)}
+                                    title={t(hl.nameKey)}
+                                    className={`flex shrink-0 snap-start flex-col items-center gap-1 rounded-lg border p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                                      active
+                                        ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+                                        : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+                                    }`}
+                                  >
+                                    <HeroLayoutGlyph
+                                      layout={hl.slug}
+                                      colors={resolvedColors}
+                                      className="h-14 w-20 rounded"
+                                    />
+                                    <span className="text-[11px] text-ink-600 dark:text-umber-200">
+                                      {t(hl.nameKey)}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </TuneRail>
+                          </TuneRow>
                         )}
 
                         {/* Cards: corners and shadow as one named feel. */}

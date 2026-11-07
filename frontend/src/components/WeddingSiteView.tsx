@@ -230,6 +230,21 @@ function Band({
   );
 }
 
+/** Art-deco corner marks around a framed photo (the Bordeaux poster frame).
+ *  Drawn in the accent, offset just outside the frame so they read as a mount. */
+function PosterCorners() {
+  const base = "pointer-events-none absolute h-5 w-5";
+  const color = { borderColor: "var(--wt-accent)" };
+  return (
+    <>
+      <span aria-hidden className={`${base} -left-2 -top-2 border-l border-t`} style={color} />
+      <span aria-hidden className={`${base} -right-2 -top-2 border-r border-t`} style={color} />
+      <span aria-hidden className={`${base} -bottom-2 -left-2 border-b border-l`} style={color} />
+      <span aria-hidden className={`${base} -bottom-2 -right-2 border-b border-r`} style={color} />
+    </>
+  );
+}
+
 /** Small uppercase eyebrow above a section heading. */
 function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
   return (
@@ -681,13 +696,98 @@ export function WeddingSiteView({
   // gets ONE aspect ratio across every breakpoint instead — the same trade the
   // cover height override makes below, for the same reason (a per-breakpoint
   // custom ratio has no meaningful "50-200%" to name).
+  const heroLayout = view.design.website_hero_layout ?? "overlay";
+  const venueParts = splitVenue(view.venue_name, view.venue_city);
+  // Template layouts frame the optional photos the same way they frame the
+  // cover, so the page keeps one visual idea from top to bottom instead of
+  // reverting to full-bleed bands after the hero.
+  const framedImage = (
+    url: string,
+    x: number | undefined,
+    y: number | undefined,
+    className: string,
+  ) => (
+    <img
+      src={url}
+      alt=""
+      loading="lazy"
+      className={`h-full w-full object-cover ${className}`}
+      style={{
+        objectPosition: `${x ?? 50}% ${y ?? 50}%`,
+        filter: imgFilter,
+        transition: "filter 400ms ease",
+      }}
+    />
+  );
   const siteImageBand = (
     url: string | null | undefined,
     x: number | undefined,
     y: number | undefined,
     height: number | null | undefined,
-  ) =>
-    url ? (
+  ) => {
+    if (!url) return null;
+    if (heroLayout === "arch") {
+      return (
+        <section className="w-full px-6 py-10 sm:py-14">
+          <div className="relative mx-auto aspect-[3/4] w-[min(72vw,22rem)]">
+            <span
+              aria-hidden
+              className="absolute -inset-2.5 rounded-t-full border"
+              style={{ borderColor: "var(--wt-accent)" }}
+            />
+            <div className="relative h-full overflow-hidden rounded-t-full">
+              {framedImage(url, x, y, "")}
+            </div>
+          </div>
+        </section>
+      );
+    }
+    if (heroLayout === "poster") {
+      return (
+        <section className="w-full px-6 py-10 sm:py-14">
+          <div
+            className="relative mx-auto max-w-2xl border p-2.5"
+            style={{ borderColor: "var(--wt-accent)" }}
+          >
+            <PosterCorners />
+            <div className="aspect-[4/3] overflow-hidden">{framedImage(url, x, y, "")}</div>
+          </div>
+        </section>
+      );
+    }
+    if (heroLayout === "split") {
+      return (
+        <section className="w-full px-6 py-10 sm:px-8 sm:py-14">
+          <div className="relative mx-auto max-w-4xl">
+            <span
+              aria-hidden
+              className="absolute inset-0 translate-x-3 translate-y-3 sm:translate-x-5 sm:translate-y-5"
+              style={{ backgroundColor: "var(--wt-accent)", opacity: 0.35 }}
+            />
+            <div className="relative aspect-[16/10] overflow-hidden">
+              {framedImage(url, x, y, "")}
+            </div>
+          </div>
+        </section>
+      );
+    }
+    if (heroLayout === "editorial") {
+      return (
+        <section className="w-full px-6 py-8 sm:px-8 sm:py-12">
+          <div className="mx-auto max-w-6xl">
+            <div className="aspect-[3/2] overflow-hidden sm:aspect-[21/9]">
+              {framedImage(url, x, y, "")}
+            </div>
+            <span
+              aria-hidden
+              className="mt-3 block h-px w-full"
+              style={{ backgroundColor: "var(--wt-text)", opacity: 0.25 }}
+            />
+          </div>
+        </section>
+      );
+    }
+    return (
       <section className="w-full">
         <img
           src={url}
@@ -702,7 +802,262 @@ export function WeddingSiteView({
           }}
         />
       </section>
+    );
+  };
+
+  // ── Template heroes ────────────────────────────────────────────────────
+  // The four compositions the template packs seed (split / arch / editorial /
+  // poster). Unlike the overlay hero, the names never sit ON the photo here,
+  // so the text always takes the palette colours and needs no scrim or tone
+  // sampling. Each frames the cover differently, and with no cover the frame
+  // fills with an accent wash and the monogram rather than collapsing, so a
+  // fresh workspace still opens on a composed page.
+  const coverEdit = isPreview ? editAffordance(e.onEditCover, editHint) : {};
+  const coverEditClass =
+    isPreview && e.onEditCover ? " cursor-pointer transition hover:opacity-95" : "";
+  const heroPhoto = view.cover_image_url ? (
+    <img
+      src={view.cover_image_url}
+      alt=""
+      className="absolute inset-0 h-full w-full object-cover"
+      style={{
+        objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
+        transform: `scale(${Math.max(1, (view.cover_scale ?? 100) / 100)})`,
+        transformOrigin: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
+        filter: imgFilter,
+        transition: "filter 400ms ease",
+      }}
+    />
+  ) : (
+    <div
+      className="absolute inset-0 flex flex-col items-center justify-center gap-3"
+      style={{
+        background:
+          "linear-gradient(160deg, color-mix(in srgb, var(--wt-accent) 40%, var(--wt-bg)) 0%, color-mix(in srgb, var(--wt-accent) 12%, var(--wt-bg)) 100%)",
+      }}
+    >
+      <span
+        aria-hidden
+        className="text-[clamp(2.5rem,9vw,4.5rem)] leading-none"
+        style={{
+          fontFamily: "var(--wt-heading-font)",
+          color: "var(--wt-accent-text)",
+          opacity: 0.85,
+        }}
+      >
+        {buildMonogram(view.bride_name, view.groom_name, "amp", locale) || "&"}
+      </span>
+      {isPreview && (
+        <span className="inline-flex items-center gap-1.5 text-xs" style={{ opacity: 0.7 }}>
+          <Camera size={13} aria-hidden />
+          {t("wedding_site.ghost.cover_cta")}
+        </span>
+      )}
+    </div>
+  );
+  const templateDateSize =
+    view.design.date_format === "long"
+      ? "whitespace-nowrap text-[clamp(1.25rem,6vw,1.75rem)] tracking-[0.04em] sm:text-3xl"
+      : "whitespace-nowrap text-[clamp(1.5rem,7vw,2.25rem)] tracking-[0.12em] sm:text-4xl lg:text-5xl";
+  const heroDate = (extra: string) =>
+    heroDateBig ? (
+      isPreview && e.onEditDate ? (
+        <button
+          type="button"
+          onClick={e.onEditDate}
+          title={editHint}
+          className={`block rounded-md px-2 py-1 transition hover:opacity-80 ${templateDateSize} ${extra}`}
+          style={{ fontFamily: "var(--wt-heading-font)", color: "inherit" }}
+        >
+          {heroDateBig}
+        </button>
+      ) : (
+        <p
+          className={`${templateDateSize} ${extra}`}
+          style={{ fontFamily: "var(--wt-heading-font)" }}
+          aria-label={dateLine}
+        >
+          <span aria-hidden>{heroDateBig}</span>
+        </p>
+      )
+    ) : isPreview ? (
+      <button
+        type="button"
+        onClick={e.onEditDate}
+        disabled={!e.onEditDate}
+        title={editHint}
+        className={`inline-flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm transition hover:opacity-80 disabled:cursor-default ${extra}`}
+        style={{ borderColor: "var(--wt-accent)", opacity: 0.8 }}
+      >
+        <Calendar size={14} aria-hidden />
+        {t("wedding_site.ghost.date_cta")}
+        <Plus size={12} aria-hidden />
+      </button>
     ) : null;
+  const heroEyebrow = (
+    <p
+      className="text-[11px] font-semibold uppercase tracking-[0.32em]"
+      style={{ color: "var(--wt-accent-text)" }}
+    >
+      {t("wedding_site.hero.eyebrow")}
+    </p>
+  );
+  const heroCity = venueParts.city ? (
+    <p className="text-xs uppercase tracking-[0.28em]" style={{ opacity: 0.7 }}>
+      {venueParts.city}
+    </p>
+  ) : null;
+  const heroNameStyle: CSSProperties = {
+    fontFamily: "var(--wt-heading-font)",
+    color: "inherit",
+    ...headingTreatment,
+  };
+  const nameA = view.bride_name?.trim() || "";
+  const nameB = view.groom_name?.trim() || "";
+
+  const composedHero =
+    heroLayout === "split" ? (
+      <section className="grid w-full sm:min-h-[min(88vh,52rem)] sm:grid-cols-2">
+        <div
+          className={`relative aspect-[4/5] overflow-hidden sm:aspect-auto${coverEditClass}`}
+          {...coverEdit}
+        >
+          {heroPhoto}
+        </div>
+        <div className="flex flex-col items-center justify-center px-8 py-14 text-center sm:px-12 sm:py-20">
+          {heroEyebrow}
+          <h1
+            className="mt-6 text-[clamp(2.5rem,10vw,3.25rem)] leading-[1.02] tracking-tight break-words sm:text-6xl lg:text-7xl"
+            style={heroNameStyle}
+          >
+            {view.couple_display_name}
+          </h1>
+          <span
+            aria-hidden
+            className="mt-8 block h-px w-12"
+            style={{ backgroundColor: "var(--wt-accent)" }}
+          />
+          {heroDate("mx-auto mt-8")}
+          {heroCity && <div className="mt-3">{heroCity}</div>}
+          {monogram && (
+            <p
+              aria-hidden
+              className="mt-12 text-sm tracking-[0.3em]"
+              style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-accent-text)" }}
+            >
+              {monogram}
+            </p>
+          )}
+        </div>
+      </section>
+    ) : heroLayout === "arch" ? (
+      <section className="w-full px-6 pb-2 pt-14 text-center sm:pt-20">
+        {monogram ? (
+          <p
+            aria-hidden
+            className="text-sm tracking-[0.3em]"
+            style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-accent-text)" }}
+          >
+            {monogram}
+          </p>
+        ) : (
+          heroEyebrow
+        )}
+        <h1
+          className="mx-auto mt-5 max-w-4xl text-[clamp(1.75rem,7.5vw,2.5rem)] leading-[1.1] break-words sm:text-5xl"
+          style={heroNameStyle}
+        >
+          {view.couple_display_name}
+        </h1>
+        <div className="relative mx-auto mt-10 aspect-[3/4] w-[min(78vw,26rem)] sm:mt-14">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -inset-3 rounded-t-full border"
+            style={{ borderColor: "var(--wt-accent)" }}
+          />
+          <div
+            className={`relative h-full overflow-hidden rounded-t-full${coverEditClass}`}
+            {...coverEdit}
+          >
+            {heroPhoto}
+          </div>
+        </div>
+        {heroDate("mx-auto mt-10 sm:mt-12")}
+        {heroCity && <div className="mt-3">{heroCity}</div>}
+      </section>
+    ) : heroLayout === "editorial" ? (
+      <section className="w-full px-6 pt-6 sm:px-8 sm:pt-10">
+        <div className="mx-auto max-w-6xl">
+          <div
+            className="flex items-center justify-between gap-4 border-y py-2.5 text-[11px] font-medium uppercase tracking-[0.28em]"
+            style={{ borderColor: "color-mix(in srgb, var(--wt-text) 28%, transparent)" }}
+          >
+            <span className="truncate">{monogram || t("wedding_site.hero.eyebrow")}</span>
+            <span className="truncate">{venueParts.city ?? ""}</span>
+          </div>
+          <h1
+            className="mt-8 text-[clamp(3rem,15vw,10rem)] leading-[0.88] tracking-[-0.02em] break-words sm:mt-12"
+            style={heroNameStyle}
+          >
+            {nameA && nameB ? (
+              <>
+                <span className="block">{nameA}</span>
+                <span className="block pl-[8%] sm:pl-[14%]">
+                  <span className="italic" style={{ color: "var(--wt-accent-text)" }}>
+                    &amp;{" "}
+                  </span>
+                  {nameB}
+                </span>
+              </>
+            ) : (
+              view.couple_display_name
+            )}
+          </h1>
+          <div className="mt-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 sm:mt-12">
+            {heroDate("")}
+            <p
+              className="text-[11px] font-semibold uppercase tracking-[0.32em]"
+              style={{ opacity: 0.7 }}
+            >
+              {t("wedding_site.hero.eyebrow")}
+            </p>
+          </div>
+          <div
+            className={`relative mt-5 aspect-[4/5] overflow-hidden sm:aspect-[21/9]${coverEditClass}`}
+            {...coverEdit}
+          >
+            {heroPhoto}
+          </div>
+        </div>
+      </section>
+    ) : (
+      // poster
+      <section className="w-full px-6 pb-2 pt-12 text-center sm:pt-16">
+        {heroEyebrow}
+        <div
+          className="relative mx-auto mt-9 w-[min(84vw,30rem)] border p-3"
+          style={{ borderColor: "var(--wt-accent)" }}
+        >
+          <PosterCorners />
+          <div className={`relative aspect-[4/5] overflow-hidden${coverEditClass}`} {...coverEdit}>
+            {heroPhoto}
+          </div>
+        </div>
+        <h1
+          className="mx-auto mt-10 max-w-4xl text-[clamp(2.25rem,9vw,3rem)] leading-[1.05] break-words sm:text-6xl"
+          style={heroNameStyle}
+        >
+          {view.couple_display_name}
+        </h1>
+        <span
+          aria-hidden
+          className="mx-auto mt-6 block h-px w-16"
+          style={{ backgroundColor: "var(--wt-accent)" }}
+        />
+        {heroDate("mx-auto mt-6")}
+        {heroCity && <div className="mt-3">{heroCity}</div>}
+      </section>
+    );
 
   return (
     <div className="wedding-theme w-full" style={themeStyle}>
@@ -711,215 +1066,219 @@ export function WeddingSiteView({
           image that reaches the very top of the page; the text colour follows
           the photo's brightness so it stays legible. Without a photo we keep
           the names + date on the palette background. */}
-      <section className="w-full">
-        {view.cover_image_url ? (
-          // Full-bleed cover photo, names + date overlaid. The image (+ scrim)
-          // is the cover-edit target; the text overlay is a sibling so the
-          // date's own click-to-edit isn't swallowed by the cover affordance.
-          <div className="relative w-full">
-            <div
-              className={`overflow-hidden ${
-                isPreview && e.onEditCover ? "cursor-pointer transition hover:opacity-95" : ""
-              }`}
-              {...(isPreview ? editAffordance(e.onEditCover, editHint) : {})}
-            >
-              <img
-                src={view.cover_image_url}
-                alt=""
-                className="aspect-[3/4] max-h-[88vh] w-full object-cover sm:aspect-[21/9]"
-                // Honour the couple's chosen focal point + zoom (CoverPositioner
-                // writes cover_position_x/y 0–100 and cover_scale 100–300). The
-                // transform zooms IN from the focal point; overflow-hidden on the
-                // wrapper clips it. Without this the page centre-crops at 1x.
-                style={{
-                  objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
-                  transform: `scale(${Math.max(1, (view.cover_scale ?? 100) / 100)})`,
-                  transformOrigin: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
-                  ...(view.cover_height != null
-                    ? { aspectRatio: bandAspectRatio(view.cover_height) }
-                    : {}),
-                  filter: imgFilter,
-                  transition: "filter 400ms ease",
-                }}
-              />
-              {/* Legibility scrim — only when the text is light (dark/unknown
-                  photo). A light photo keeps dark text and needs no veil. */}
-              {coverTone !== "light" && (
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0"
+      {heroLayout !== "overlay" ? (
+        composedHero
+      ) : (
+        <section className="w-full">
+          {view.cover_image_url ? (
+            // Full-bleed cover photo, names + date overlaid. The image (+ scrim)
+            // is the cover-edit target; the text overlay is a sibling so the
+            // date's own click-to-edit isn't swallowed by the cover affordance.
+            <div className="relative w-full">
+              <div
+                className={`overflow-hidden ${
+                  isPreview && e.onEditCover ? "cursor-pointer transition hover:opacity-95" : ""
+                }`}
+                {...(isPreview ? editAffordance(e.onEditCover, editHint) : {})}
+              >
+                <img
+                  src={view.cover_image_url}
+                  alt=""
+                  className="aspect-[3/4] max-h-[88vh] w-full object-cover sm:aspect-[21/9]"
+                  // Honour the couple's chosen focal point + zoom (CoverPositioner
+                  // writes cover_position_x/y 0–100 and cover_scale 100–300). The
+                  // transform zooms IN from the focal point; overflow-hidden on the
+                  // wrapper clips it. Without this the page centre-crops at 1x.
                   style={{
-                    background:
-                      "linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.30) 100%)",
+                    objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
+                    transform: `scale(${Math.max(1, (view.cover_scale ?? 100) / 100)})`,
+                    transformOrigin: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
+                    ...(view.cover_height != null
+                      ? { aspectRatio: bandAspectRatio(view.cover_height) }
+                      : {}),
+                    filter: imgFilter,
+                    transition: "filter 400ms ease",
                   }}
                 />
-              )}
-            </div>
+                {/* Legibility scrim — only when the text is light (dark/unknown
+                  photo). A light photo keeps dark text and needs no veil. */}
+                {coverTone !== "light" && (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.30) 100%)",
+                    }}
+                  />
+                )}
+              </div>
 
-            {/* Overlaid names + date. pointer-events-none lets photo clicks fall
+              {/* Overlaid names + date. pointer-events-none lets photo clicks fall
                 through to the cover-edit target; the date button re-enables them. */}
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center sm:px-8">
-              {monogram && (
-                <p
-                  className="mb-4 text-sm tracking-[0.3em]"
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center sm:px-8">
+                {monogram && (
+                  <p
+                    className="mb-4 text-sm tracking-[0.3em]"
+                    style={{
+                      fontFamily: "var(--wt-heading-font)",
+                      color: heroTextColor,
+                      textShadow: heroTextShadow,
+                    }}
+                    aria-hidden
+                  >
+                    {monogram}
+                  </p>
+                )}
+                <h1
+                  className="text-[clamp(1.875rem,8vw,2.25rem)] leading-[1.05] tracking-tight break-words sm:text-6xl"
                   style={{
                     fontFamily: "var(--wt-heading-font)",
                     color: heroTextColor,
                     textShadow: heroTextShadow,
+                    ...headingTreatment,
                   }}
-                  aria-hidden
                 >
-                  {monogram}
-                </p>
-              )}
-              <h1
-                className="text-[clamp(1.875rem,8vw,2.25rem)] leading-[1.05] tracking-tight break-words sm:text-6xl"
-                style={{
-                  fontFamily: "var(--wt-heading-font)",
-                  color: heroTextColor,
-                  textShadow: heroTextShadow,
-                  ...headingTreatment,
-                }}
-              >
-                {view.couple_display_name}
-              </h1>
+                  {view.couple_display_name}
+                </h1>
 
-              {heroDateBig ? (
-                isPreview && e.onEditDate ? (
+                {heroDateBig ? (
+                  isPreview && e.onEditDate ? (
+                    <button
+                      type="button"
+                      onClick={e.onEditDate}
+                      title={editHint}
+                      className={`pointer-events-auto mx-auto mt-7 block rounded-md px-2 py-1 transition hover:opacity-80 ${heroDateSizeClass}`}
+                      style={{
+                        fontFamily: "var(--wt-heading-font)",
+                        color: heroTextColor,
+                        textShadow: heroTextShadow,
+                      }}
+                    >
+                      {heroDateBig}
+                    </button>
+                  ) : (
+                    <p
+                      className={`mx-auto mt-7 ${heroDateSizeClass}`}
+                      style={{
+                        fontFamily: "var(--wt-heading-font)",
+                        color: heroTextColor,
+                        textShadow: heroTextShadow,
+                      }}
+                      aria-label={dateLine}
+                    >
+                      <span aria-hidden>{heroDateBig}</span>
+                    </p>
+                  )
+                ) : isPreview ? (
                   <button
                     type="button"
                     onClick={e.onEditDate}
+                    disabled={!e.onEditDate}
                     title={editHint}
-                    className={`pointer-events-auto mx-auto mt-7 block rounded-md px-2 py-1 transition hover:opacity-80 ${heroDateSizeClass}`}
-                    style={{
-                      fontFamily: "var(--wt-heading-font)",
-                      color: heroTextColor,
-                      textShadow: heroTextShadow,
-                    }}
+                    className="pointer-events-auto mx-auto mt-7 inline-flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm transition hover:opacity-80 disabled:cursor-default"
+                    style={{ borderColor: heroTextColor, color: heroTextColor, opacity: 0.85 }}
                   >
-                    {heroDateBig}
+                    <Calendar size={14} aria-hidden />
+                    {t("wedding_site.ghost.date_cta")}
+                    <Plus size={12} aria-hidden />
                   </button>
-                ) : (
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            // No cover photo — names + date on the palette background.
+            <>
+              <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
+                {monogram && (
                   <p
-                    className={`mx-auto mt-7 ${heroDateSizeClass}`}
+                    className="mb-4 text-sm tracking-[0.3em]"
                     style={{
                       fontFamily: "var(--wt-heading-font)",
-                      color: heroTextColor,
-                      textShadow: heroTextShadow,
+                      color: "var(--wt-accent-text)",
                     }}
-                    aria-label={dateLine}
+                    aria-hidden
                   >
-                    <span aria-hidden>{heroDateBig}</span>
+                    {monogram}
                   </p>
-                )
-              ) : isPreview ? (
-                <button
-                  type="button"
-                  onClick={e.onEditDate}
-                  disabled={!e.onEditDate}
-                  title={editHint}
-                  className="pointer-events-auto mx-auto mt-7 inline-flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm transition hover:opacity-80 disabled:cursor-default"
-                  style={{ borderColor: heroTextColor, color: heroTextColor, opacity: 0.85 }}
-                >
-                  <Calendar size={14} aria-hidden />
-                  {t("wedding_site.ghost.date_cta")}
-                  <Plus size={12} aria-hidden />
-                </button>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          // No cover photo — names + date on the palette background.
-          <>
-            <div className="mx-auto max-w-4xl px-6 pt-12 text-center sm:px-8 sm:pt-16">
-              {monogram && (
-                <p
-                  className="mb-4 text-sm tracking-[0.3em]"
+                )}
+                <h1
+                  className="text-[clamp(1.875rem,8vw,2.25rem)] leading-[1.05] tracking-tight break-words sm:text-6xl"
+                  // `color: inherit` so the name takes the theme `--wt-text` (set
+                  // on the page root) instead of the global base h1 colour — without
+                  // it a dark-background style (Black Tie) renders dark-on-dark.
                   style={{
                     fontFamily: "var(--wt-heading-font)",
-                    color: "var(--wt-accent-text)",
+                    color: "inherit",
+                    ...headingTreatment,
                   }}
-                  aria-hidden
                 >
-                  {monogram}
-                </p>
-              )}
-              <h1
-                className="text-[clamp(1.875rem,8vw,2.25rem)] leading-[1.05] tracking-tight break-words sm:text-6xl"
-                // `color: inherit` so the name takes the theme `--wt-text` (set
-                // on the page root) instead of the global base h1 colour — without
-                // it a dark-background style (Black Tie) renders dark-on-dark.
-                style={{
-                  fontFamily: "var(--wt-heading-font)",
-                  color: "inherit",
-                  ...headingTreatment,
-                }}
-              >
-                {view.couple_display_name}
-              </h1>
+                  {view.couple_display_name}
+                </h1>
 
-              {heroDateBig ? (
-                isPreview && e.onEditDate ? (
+                {heroDateBig ? (
+                  isPreview && e.onEditDate ? (
+                    <button
+                      type="button"
+                      onClick={e.onEditDate}
+                      title={editHint}
+                      className={`relative z-10 mx-auto mt-7 block rounded-md px-2 py-1 transition hover:opacity-80 ${heroDateSizeClass}`}
+                      style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
+                    >
+                      {heroDateBig}
+                    </button>
+                  ) : (
+                    <p
+                      className={`relative z-10 mx-auto mt-7 ${heroDateSizeClass}`}
+                      style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
+                      aria-label={dateLine}
+                    >
+                      <span aria-hidden>{heroDateBig}</span>
+                    </p>
+                  )
+                ) : isPreview ? (
                   <button
                     type="button"
                     onClick={e.onEditDate}
+                    disabled={!e.onEditDate}
                     title={editHint}
-                    className={`relative z-10 mx-auto mt-7 block rounded-md px-2 py-1 transition hover:opacity-80 ${heroDateSizeClass}`}
-                    style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
+                    className="mx-auto mt-7 inline-flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm transition hover:opacity-80 disabled:cursor-default"
+                    style={{ borderColor: "var(--wt-accent)", opacity: 0.7 }}
                   >
-                    {heroDateBig}
-                  </button>
-                ) : (
-                  <p
-                    className={`relative z-10 mx-auto mt-7 ${heroDateSizeClass}`}
-                    style={{ fontFamily: "var(--wt-heading-font)", color: "var(--wt-text)" }}
-                    aria-label={dateLine}
-                  >
-                    <span aria-hidden>{heroDateBig}</span>
-                  </p>
-                )
-              ) : isPreview ? (
-                <button
-                  type="button"
-                  onClick={e.onEditDate}
-                  disabled={!e.onEditDate}
-                  title={editHint}
-                  className="mx-auto mt-7 inline-flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm transition hover:opacity-80 disabled:cursor-default"
-                  style={{ borderColor: "var(--wt-accent)", opacity: 0.7 }}
-                >
-                  <Calendar size={14} aria-hidden />
-                  {t("wedding_site.ghost.date_cta")}
-                  <Plus size={12} aria-hidden />
-                </button>
-              ) : null}
-            </div>
-
-            {isPreview ? (
-              <div className="mx-auto mt-8 max-w-4xl px-6 sm:px-8">
-                <div
-                  className={`flex aspect-[16/6] min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center${
-                    e.onEditCover ? " cursor-pointer transition hover:opacity-80" : ""
-                  }`}
-                  style={{ borderColor: "var(--wt-accent)" }}
-                  {...editAffordance(e.onEditCover, editHint)}
-                >
-                  <Camera size={28} aria-hidden style={{ opacity: 0.5 }} />
-                  <p
-                    className="text-lg tracking-tight"
-                    style={{ fontFamily: "var(--wt-heading-font)", opacity: 0.7 }}
-                  >
-                    {t("wedding_site.ghost.cover_title")}
-                  </p>
-                  <p className="inline-flex items-center gap-1 text-xs" style={{ opacity: 0.6 }}>
+                    <Calendar size={14} aria-hidden />
+                    {t("wedding_site.ghost.date_cta")}
                     <Plus size={12} aria-hidden />
-                    {t("wedding_site.ghost.cover_cta")}
-                  </p>
-                </div>
+                  </button>
+                ) : null}
               </div>
-            ) : null}
-          </>
-        )}
-      </section>
+
+              {isPreview ? (
+                <div className="mx-auto mt-8 max-w-4xl px-6 sm:px-8">
+                  <div
+                    className={`flex aspect-[16/6] min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center${
+                      e.onEditCover ? " cursor-pointer transition hover:opacity-80" : ""
+                    }`}
+                    style={{ borderColor: "var(--wt-accent)" }}
+                    {...editAffordance(e.onEditCover, editHint)}
+                  >
+                    <Camera size={28} aria-hidden style={{ opacity: 0.5 }} />
+                    <p
+                      className="text-lg tracking-tight"
+                      style={{ fontFamily: "var(--wt-heading-font)", opacity: 0.7 }}
+                    >
+                      {t("wedding_site.ghost.cover_title")}
+                    </p>
+                    <p className="inline-flex items-center gap-1 text-xs" style={{ opacity: 0.6 }}>
+                      <Plus size={12} aria-hidden />
+                      {t("wedding_site.ghost.cover_cta")}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </>
+          )}
+        </section>
+      )}
 
       {/* Pack ornament under the hero date — the first beat of the pack's
           visual language before the welcome note. */}

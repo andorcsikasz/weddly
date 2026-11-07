@@ -9,16 +9,21 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import {
+  applyStylePreset,
   DATE_FORMATS,
+  DEFAULT_DESIGN,
   FONT_FAMILIES,
   FONT_PRESETS,
   formatWeddingDate,
   getFontFamilyStack,
   getStylePreset,
+  photosForStyle,
   resolveDesign,
   STYLE_PRESETS,
+  type StylePresetSlug,
   toPublicDesign,
   toRomanNumeral,
+  VALID_CURATED_PHOTO_SLUGS,
 } from "@shared/design";
 import { db } from "../../src/db";
 import { registerAndVerify, req, wipeAll } from "../helpers";
@@ -43,6 +48,7 @@ interface CoupleDesign {
     ornaments: boolean;
     venueMap: boolean;
     venueLayout: string;
+    heroLayout: string;
   };
 }
 
@@ -91,13 +97,17 @@ describe("design: font preset → family mapping", () => {
 });
 
 describe("design: style packs + roman date (M0)", () => {
-  test("the four active packs each carry an ornament, layout, and seeded date", () => {
+  test("the active packs each carry an ornament, layout, and seeded date", () => {
     const slugs = STYLE_PRESETS.map((s) => s.slug);
     expect(slugs).toEqual([
       "garden_romance",
       "modern_monochrome",
       "blush_romantic",
       "midnight_luxe",
+      "tuscan_villa",
+      "riviera",
+      "atelier",
+      "bordeaux",
     ]);
     for (const p of STYLE_PRESETS) {
       expect(["botanical", "none", "oval", "deco"]).toContain(p.ornament);
@@ -171,6 +181,7 @@ describe("design: default resolution", () => {
         ornaments: true,
         venueMap: false,
         venueLayout: "stacked",
+        heroLayout: "overlay",
       },
     });
   });
@@ -569,6 +580,7 @@ describe("design: website-only `web` sub-object", () => {
       ornaments: true,
       venueMap: false,
       venueLayout: "stacked",
+      heroLayout: "overlay",
     });
   });
 
@@ -620,6 +632,67 @@ describe("design: website-only `web` sub-object", () => {
       { token },
     );
     expect(bad.status).toBe(400);
+  });
+
+  test("web.heroLayout round-trips, reaches the public payload, and rejects junk", async () => {
+    wipeAll();
+    const token = await registerVerified("design-hero-layout@weddly.test");
+    const { couple } = await onboard(token);
+    // Overlay is the default: every pre-template page keeps its opening screen.
+    expect(couple.design.web.heroLayout).toBe("overlay");
+
+    const r = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { heroLayout: "arch" } } },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.design.web.heroLayout).toBe("arch");
+
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(couple.id);
+    const slug = (
+      db.prepare("SELECT slug FROM couples WHERE id = ?").get(couple.id) as { slug: string }
+    ).slug;
+    const pub = await req<{ wedding: { design: { website_hero_layout: string } } }>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(pub.data.wedding.design.website_hero_layout).toBe("arch");
+
+    const bad = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { heroLayout: "carousel" } } },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  test("a template pack seeds its own hero layout, and a classic pack resets it", () => {
+    // The templates differ in COMPOSITION, so the layout has to come with the
+    // pack; a classic pack puts the overlay back, or switching from Riviera
+    // to Garden would leave Garden's colours inside Riviera's arch.
+    const expected: Record<string, string> = {
+      tuscan_villa: "split",
+      riviera: "arch",
+      atelier: "editorial",
+      bordeaux: "poster",
+    };
+    for (const [slug, layout] of Object.entries(expected)) {
+      const d = applyStylePreset(DEFAULT_DESIGN, slug as StylePresetSlug);
+      expect(d.web.heroLayout).toBe(layout);
+      expect(toPublicDesign(d).website_hero_layout).toBe(layout);
+      // Every suggestion is an offered photo, so a pack never proposes a
+      // retired or unknown picture.
+      for (const p of getStylePreset(slug as StylePresetSlug).suggestedPhotos ?? []) {
+        expect(VALID_CURATED_PHOTO_SLUGS.has(p)).toBe(true);
+      }
+    }
+    const back = applyStylePreset(applyStylePreset(DEFAULT_DESIGN, "riviera"), "garden_romance");
+    expect(back.web.heroLayout).toBe("overlay");
+    // The suggested photos lead the gallery, in the pack's own order.
+    expect(photosForStyle("bordeaux").photos[0]?.slug).toBe("taper_candles");
   });
 
   test("button style + hidden sections round-trip; invalid values 400", async () => {

@@ -31,6 +31,7 @@ export type TuneRowId =
   | "monogram"
   | "dividers"
   | "cards"
+  | "layout"
   | "sections"
   | "border";
 

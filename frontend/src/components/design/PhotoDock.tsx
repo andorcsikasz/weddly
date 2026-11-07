@@ -19,7 +19,8 @@ import {
   curatedPhotoUrl,
   IMAGE_TREATMENTS,
   type ImageTreatmentSlug,
-  OFFERED_SITE_PHOTOS,
+  photosForStyle,
+  type StylePresetSlug,
 } from "@shared/design";
 import { ImagePlus, Images, Loader2, Move, X } from "lucide-react";
 import { useState } from "react";
@@ -41,6 +42,8 @@ export function PhotoDock({
   onTreatment,
   onUpload,
   onChoosePreset,
+  onChooseCoverPreset,
+  style,
   onRemove,
   onCoverUpload,
   onCoverRemove,
@@ -63,6 +66,10 @@ export function PhotoDock({
   onTreatment: (slug: ImageTreatmentSlug) => void;
   onUpload: (slot: 1 | 2, file: File) => void;
   onChoosePreset: (slot: 1 | 2, slug: string) => void;
+  /** Put a curated photo in the hero cover instead of an upload. */
+  onChooseCoverPreset: (slug: string) => void;
+  /** The active style pack, whose suggested photos lead the gallery. */
+  style: StylePresetSlug;
   onRemove: (slot: 1 | 2) => void;
   onCoverUpload: (file: File) => void;
   onCoverRemove: () => void;
@@ -83,7 +90,8 @@ export function PhotoDock({
   readOnly: boolean;
 }) {
   const { t } = useT();
-  const [galleryFor, setGalleryFor] = useState<1 | 2 | null>(null);
+  const [galleryFor, setGalleryFor] = useState<1 | 2 | "cover" | null>(null);
+  const gallery = photosForStyle(style);
   // Adjust dialog: shared by the cover and both slots (only the cover shows
   // the zoom row). A local draft so dragging/zooming/resizing previews live
   // and only the Save button persists (Cancel discards).
@@ -206,6 +214,18 @@ export function PhotoDock({
                 <Move size={12} aria-hidden />
               </button>
             )}
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => setGalleryFor("cover")}
+                disabled={coverBusy}
+                aria-label={t("design.web.cover_gallery_cta")}
+                title={t("design.web.cover_gallery_cta")}
+                className="absolute -top-1.5 right-6 inline-flex h-6 w-6 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft transition hover:text-ink-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:focus-visible:ring-paper-100"
+              >
+                <Images size={12} aria-hidden />
+              </button>
+            )}
             <button
               type="button"
               onClick={onCoverRemove}
@@ -221,30 +241,48 @@ export function PhotoDock({
             </button>
           </div>
         ) : (
-          <label
-            className={`flex aspect-[21/9] w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-paper-400 text-ink-500 transition hover:text-ink-800 focus-within:ring-2 focus-within:ring-inset focus-within:ring-ink-300 dark:border-umber-600 dark:text-umber-200 dark:hover:text-paper-50 dark:focus-within:ring-paper-100 ${
-              coverBusy || readOnly ? "cursor-default opacity-60" : "cursor-pointer"
+          // Same two-door shape as the empty photo slots: a suggested photo is
+          // the quick path to a finished page, uploading your own the quieter
+          // one underneath.
+          <div
+            className={`flex aspect-[21/9] w-full flex-col overflow-hidden rounded-xl border border-dashed border-paper-400 dark:border-umber-600 ${
+              coverBusy || readOnly ? "opacity-60" : ""
             }`}
           >
-            {coverBusy ? (
-              <Loader2 size={18} className="animate-spin" aria-hidden />
-            ) : (
-              <ImagePlus size={18} aria-hidden />
-            )}
-            <span className="text-[11px] font-medium">{t("design.web.cover_upload_cta")}</span>
-            <input
-              type="file"
-              accept={COVER_IMAGE_ACCEPT}
-              aria-label={t("design.web.cover_upload_cta")}
-              className="sr-only"
+            <button
+              type="button"
+              onClick={() => setGalleryFor("cover")}
               disabled={coverBusy || readOnly}
-              onChange={(ev) => {
-                const f = ev.target.files?.[0];
-                if (f) onCoverUpload(f);
-                ev.target.value = "";
-              }}
-            />
-          </label>
+              className="flex flex-1 flex-col items-center justify-center gap-1 text-ink-500 transition hover:text-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-300 disabled:cursor-default dark:text-umber-200 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+            >
+              {coverBusy ? (
+                <Loader2 size={18} className="animate-spin" aria-hidden />
+              ) : (
+                <Images size={18} aria-hidden />
+              )}
+              <span className="text-[11px] font-medium">{t("design.web.cover_gallery_cta")}</span>
+            </button>
+            <label
+              className={`flex items-center justify-center gap-1.5 border-t border-dashed border-paper-400 py-1.5 text-[11px] text-ink-400 transition focus-within:ring-2 focus-within:ring-inset focus-within:ring-ink-300 hover:text-ink-600 dark:border-umber-600 dark:text-umber-300 dark:focus-within:ring-paper-100 dark:hover:text-paper-100 ${
+                coverBusy || readOnly ? "cursor-default" : "cursor-pointer"
+              }`}
+            >
+              <ImagePlus size={13} aria-hidden />
+              <span>{t("design.web.cover_upload_cta")}</span>
+              <input
+                type="file"
+                accept={COVER_IMAGE_ACCEPT}
+                aria-label={t("design.web.cover_upload_cta")}
+                className="sr-only"
+                disabled={coverBusy || readOnly}
+                onChange={(ev) => {
+                  const f = ev.target.files?.[0];
+                  if (f) onCoverUpload(f);
+                  ev.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         )}
         {/* Spell out what the uploader accepts, so a couple isn't guessing (a
             camera photo is often over the cap). */}
@@ -397,7 +435,7 @@ export function PhotoDock({
         title={t("design.web.photo_gallery_title")}
       >
         <div className="grid grid-cols-2 gap-3 pb-2 sm:grid-cols-3">
-          {OFFERED_SITE_PHOTOS.map((photo) => {
+          {gallery.photos.map((photo) => {
             const src = curatedPhotoUrl(photo.slug);
             if (!src) return null;
             return (
@@ -405,12 +443,13 @@ export function PhotoDock({
                 key={photo.slug}
                 type="button"
                 onClick={() => {
-                  if (galleryFor) onChoosePreset(galleryFor, photo.slug);
+                  if (galleryFor === "cover") onChooseCoverPreset(photo.slug);
+                  else if (galleryFor) onChoosePreset(galleryFor, photo.slug);
                   setGalleryFor(null);
                 }}
                 title={t(photo.nameKey)}
                 aria-label={t(photo.nameKey)}
-                className="group overflow-hidden rounded-xl border border-paper-300 transition hover:border-ink-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500 dark:border-umber-700 dark:hover:border-paper-200 dark:focus-visible:ring-paper-100"
+                className="group relative overflow-hidden rounded-xl border border-paper-300 transition hover:border-ink-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-500 dark:border-umber-700 dark:hover:border-paper-200 dark:focus-visible:ring-paper-100"
               >
                 <img
                   src={src}
@@ -418,6 +457,11 @@ export function PhotoDock({
                   loading="lazy"
                   className="aspect-[16/10] w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                 />
+                {gallery.suggested.has(photo.slug) && (
+                  <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-900 shadow-soft">
+                    {t("design.web.photo_suggested")}
+                  </span>
+                )}
               </button>
             );
           })}

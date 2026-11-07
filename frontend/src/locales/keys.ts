@@ -500,6 +500,7 @@ export interface LocaleMessages {
    *  travel sections once the schema picks them up. */
   wedding_site: {
     page_title: string;
+    hero: { eyebrow: string };
     loading: string;
     not_found_title: string;
     not_found_body: string;
@@ -4334,6 +4335,7 @@ export interface LocaleMessages {
       cards: string;
       sections: string;
       border: string;
+      layout: string;
     };
     /** Before/after comparison of a style swap. */
     swap: { before: string; after: string; revert: string; done: string };
@@ -4414,6 +4416,10 @@ export interface LocaleMessages {
       modern_monochrome: string;
       blush_romantic: string;
       midnight_luxe: string;
+      tuscan_villa: string;
+      riviera: string;
+      atelier: string;
+      bordeaux: string;
       /** Legacy slugs (kept for back-compat translations). */
       classic_elegant: string;
       botanical_green: string;
@@ -4439,6 +4445,10 @@ export interface LocaleMessages {
       mono_ink: string;
       blush_rose: string;
       noir: string;
+      villa: string;
+      riviera: string;
+      atelier: string;
+      bordeaux: string;
       botanical_green: string;
       espresso: string;
       blush: string;
@@ -4458,6 +4468,10 @@ export interface LocaleMessages {
       mono_sans: string;
       blush_bodoni: string;
       noir_smallcaps: string;
+      villa_garamond: string;
+      riviera_didone: string;
+      atelier_serif: string;
+      bordeaux_romance: string;
       classic_serif: string;
       modern_clean: string;
       soft_romantic: string;
@@ -4613,6 +4627,16 @@ export interface LocaleMessages {
         stacked: string;
         side: string;
       };
+      hero_layout_label: string;
+      hero_layout: {
+        overlay: string;
+        split: string;
+        arch: string;
+        editorial: string;
+        poster: string;
+      };
+      photo_suggested: string;
+      cover_gallery_cta: string;
     };
     /** Instant print-card preview (right column on the Print tab). */
     menu_editor: {
