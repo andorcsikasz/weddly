@@ -1207,7 +1207,7 @@ export default function VendorBrowsePage() {
               vendor-signup page use, so autocomplete behaviour (name / town
               / category, one Enter to the best match) is identical
               everywhere a visitor can search the directory. */}
-          <VendorSearchBar className="max-w-xl lg:flex-1" />
+          <VendorSearchBar className="max-w-xl lg:flex-1" country={country} />
           {/* Below `sm`, all three controls stay on ONE row rather than
               wrapping: `flex-nowrap` plus letting the two pickers shrink
               (`min-w-0 flex-1`, truncating their own label — see

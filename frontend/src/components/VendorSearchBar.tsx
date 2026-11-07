@@ -11,9 +11,9 @@
 // and Enter on an empty query goes straight there.
 
 import {
+  categorySearchScore,
   foldForSearch,
   type PublicVendorSuggestion,
-  searchScore,
   VENDOR_SEARCH_LIMIT,
   VENDOR_SEARCH_MIN_CHARS,
 } from "@shared/suppliers";
@@ -64,8 +64,12 @@ export function VendorSearchBar({
   className = "",
   autoDemo = false,
   black = false,
+  country = null,
 }: {
   className?: string;
+  /** The country the surrounding page is filtered to, if any. Ranks that
+   *  country's businesses and towns first; a foreign name still matches. */
+  country?: string | null;
   /** Dark theme only: true black instead of the warm-brown umber surfaces, for
    *  a page that runs on a black ground (PublicShell `black`). */
   black?: boolean;
@@ -100,7 +104,7 @@ export function VendorSearchBar({
     let cancelled = false;
     const timer = setTimeout(() => {
       supplierApi
-        .publicSearch(trimmed)
+        .publicSearch(trimmed, country)
         .then((res) => {
           if (cancelled) return;
           const folded = foldForSearch(trimmed);
@@ -110,7 +114,7 @@ export function VendorSearchBar({
           const catHits: PublicVendorSuggestion[] = [];
           for (const c of res.categories) {
             const label = t(`suppliers.cat.${c.category}`);
-            const base = searchScore(label, folded);
+            const base = categorySearchScore(label, folded);
             if (base === 0) continue;
             catHits.push({
               kind: "category",
@@ -136,7 +140,7 @@ export function VendorSearchBar({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [trimmed, enoughToSearch, t]);
+  }, [trimmed, enoughToSearch, country, t]);
 
   // Close on an outside click. Pointerdown rather than click so the panel is
   // gone before a tap lands on whatever is underneath it.

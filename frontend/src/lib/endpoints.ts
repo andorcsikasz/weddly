@@ -2152,11 +2152,15 @@ export const supplierApi = {
     return apiFetch<PublicDirectoryPage>("GET", `/api/public/vendors${suffix}`);
   },
   /** Public typeahead for the landing-page directory search: vendor + city
-   *  hits, plus the category census the client matches in its own language. */
-  publicSearch: (q: string) =>
+   *  hits, plus the category census the client matches in its own language.
+   *  `country` is the browse page's active filter: it ranks that country's
+   *  hits first and never hides the rest. */
+  publicSearch: (q: string, country?: string | null) =>
     apiFetch<PublicVendorSearchResult>(
       "GET",
-      `/api/public/vendor-search?q=${encodeURIComponent(q)}`,
+      `/api/public/vendor-search?q=${encodeURIComponent(q)}${
+        country ? `&country=${encodeURIComponent(country)}` : ""
+      }`,
     ),
   /** Resolve a category × city location-page URL's slugs (as parsed from
    *  `/eskuvoi-szolgaltatok/:cat/:city` or `/wedding-vendors/:cat/:city`)

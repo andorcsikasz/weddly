@@ -105,6 +105,62 @@ describe("P2.A boot backfill", () => {
       expect(after[i]?.updated_at).toBe(before[i]?.updated_at);
     }
   });
+
+  test("a curated row whose id left DIRECTORY is retired, unless a vendor owns it", async () => {
+    // The 2026-08-27 batch rebuild renamed dozens of curated ids. The old rows
+    // stayed 'active', so the browse teaser and the typeahead (both read
+    // `listings`) kept serving cards whose detail page 404s.
+    const insert = db.prepare(
+      `INSERT INTO listings (id, source, vendor_account_id, category, name, city, status,
+                             hero_image_url, content_hash, created_at, updated_at)
+       VALUES (?, 'curated', ?, 'photography', ?, 'Budapest', 'active',
+               'https://img.example/x.jpg', 'stale', 1, 1)`,
+    );
+    insert.run("p2a-ghost-curated", null, "Ghost Studio");
+    // Ownership is the one thing that keeps a row: a claim must never vanish.
+    const userId = Number(
+      db
+        .prepare(
+          `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+           VALUES ('p2a-ghost-owner@weddly.test', 'x', 'Owner', 'active', 'vendor', 1, 1, 1)`,
+        )
+        .run().lastInsertRowid,
+    );
+    const accountId = Number(
+      db
+        .prepare(
+          `INSERT INTO vendor_accounts (owner_user_id, display_name, contact_email, country, created_at, updated_at)
+           VALUES (?, 'Owned', 'p2a-ghost-owner@weddly.test', 'HU', 1, 1)`,
+        )
+        .run(userId).lastInsertRowid,
+    );
+    insert.run("p2a-ghost-owned", accountId, "Owned Studio");
+
+    try {
+      backfillListings();
+      expect(readListing("p2a-ghost-curated")?.status).toBe("hidden");
+      expect(readListing("p2a-ghost-owned")?.status).toBe("active");
+      // Every id still in DIRECTORY stays live.
+      const first = DIRECTORY[0];
+      expect(first && readListing(first.id)?.status).toBe("active");
+
+      const showcase = await req<{ categories: { vendors: { id: string }[] }[] }>(
+        "GET",
+        "/api/public/vendor-showcase",
+      );
+      const ids = showcase.data.categories.flatMap((c) => c.vendors.map((v) => v.id));
+      expect(ids).not.toContain("p2a-ghost-curated");
+      const search = await req<{ suggestions: { id?: string }[] }>(
+        "GET",
+        "/api/public/vendor-search?q=Ghost%20Studio",
+      );
+      expect(search.data.suggestions.map((s) => s.id)).not.toContain("p2a-ghost-curated");
+    } finally {
+      db.prepare("DELETE FROM listings WHERE id IN ('p2a-ghost-curated', 'p2a-ghost-owned')").run();
+      db.prepare("DELETE FROM vendor_accounts WHERE id = ?").run(accountId);
+      db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+    }
+  });
 });
 
 describe("P2.A community supplier dual-write", () => {

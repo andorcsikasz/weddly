@@ -129,6 +129,46 @@ describe("public vendor search", () => {
     expect(r.data.categories.length).toBeGreaterThan(0);
   });
 
+  test("the active country ranks first, and a foreign exact name still wins", async () => {
+    // The browse page passes its country filter. Without it, a visitor on the
+    // Hungary view typing "fotostudio" got three German studios.
+    insertListing({
+      id: "de1",
+      category: "photography",
+      name: "Fotostudio Bonn",
+      city: "Bonn, DE",
+    });
+    insertListing({
+      id: "de2",
+      category: "photography",
+      name: "Fotostudio Köln",
+      city: "Köln, DE",
+    });
+    insertListing({
+      id: "hu1",
+      category: "photography",
+      name: "Szeged Fotostudio",
+      city: "Szeged",
+    });
+
+    const plain = await search("fotostudio");
+    expect(plain.data.suggestions[0]?.id).not.toBe("hu1");
+
+    const scoped = await req<PublicVendorSearchResult>(
+      "GET",
+      "/api/public/vendor-search?q=fotostudio&country=hu",
+    );
+    expect(scoped.data.suggestions[0]?.id).toBe("hu1");
+    // Nothing is filtered out, only reordered.
+    expect(scoped.data.suggestions.length).toBe(3);
+
+    const exact = await req<PublicVendorSearchResult>(
+      "GET",
+      "/api/public/vendor-search?q=Fotostudio%20Bonn&country=HU",
+    );
+    expect(exact.data.suggestions[0]?.id).toBe("de1");
+  });
+
   test("never returns more than three suggestions", async () => {
     for (let i = 0; i < 8; i++) insertListing({ category: "florist", name: `Rose Studio ${i}` });
 

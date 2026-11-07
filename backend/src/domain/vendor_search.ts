@@ -13,6 +13,7 @@ import {
   foldForSearch,
   type PublicVendorSearchResult,
   type PublicVendorSuggestion,
+  SEARCH_ACTIVE_COUNTRY_BONUS,
   searchScore,
   type SupplierCategory,
   VENDOR_SEARCH_LIMIT,
@@ -27,8 +28,14 @@ function volumeBonus(count: number): number {
   return Math.min(6, Math.log(count + 1) * 2);
 }
 
-export function searchPublicVendors(rawQuery: string): PublicVendorSearchResult {
+/** `country` is the browse page's active country filter, when there is one.
+ *  It only reorders: a business typed by name is still found abroad. */
+export function searchPublicVendors(
+  rawQuery: string,
+  country: string | null = null,
+): PublicVendorSearchResult {
   const q = foldForSearch(rawQuery);
+  const home = (c: string) => (country && c === country ? SEARCH_ACTIVE_COUNTRY_BONUS : 0);
   const rows = listSearchCandidates();
 
   // The census is query-independent: every category with something browsable
@@ -53,7 +60,8 @@ export function searchPublicVendors(rawQuery: string): PublicVendorSearchResult 
     // Registered vendors first among equals (they can actually answer), then
     // the ones the outside world rates well, then the ones we can show a photo
     // of. All three are tiny next to a match-quality tier.
-    const bonus = (r.verified ? 4 : 0) + (r.google_rating ?? 0) * 0.6 + (r.has_photo ? 1 : 0);
+    const bonus =
+      (r.verified ? 4 : 0) + (r.google_rating ?? 0) * 0.6 + (r.has_photo ? 1 : 0) + home(r.country);
     suggestions.push({
       kind: "vendor",
       score: base + bonus,
@@ -86,15 +94,15 @@ export function searchPublicVendors(rawQuery: string): PublicVendorSearchResult 
     if (entry) entry.count += 1;
     else cities.set(key, { label, count: 1, country: r.country });
   }
-  for (const { label, count, country } of cities.values()) {
+  for (const { label, count, country: cityCountry } of cities.values()) {
     const base = searchScore(label, q);
     if (base === 0) continue;
     suggestions.push({
       kind: "city",
-      score: base + volumeBonus(count),
+      score: base + volumeBonus(count) + home(cityCountry),
       label,
       count,
-      country,
+      country: cityCountry,
     });
   }
 

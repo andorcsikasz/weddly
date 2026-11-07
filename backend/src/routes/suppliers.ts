@@ -1329,7 +1329,10 @@ function handlePublicSearch(ctx: Ctx): Response {
   const q = ctx.url.searchParams.get("q") ?? "";
   // A pasted paragraph can't match anything useful and would fold char by char
   // over every listing; cut it at a length no business name reaches.
-  return json(searchPublicVendors(q.slice(0, 80)));
+  const countryParam = ctx.url.searchParams.get("country");
+  const country =
+    countryParam && /^[A-Za-z]{2}$/.test(countryParam) ? countryParam.toUpperCase() : null;
+  return json(searchPublicVendors(q.slice(0, 80), country));
 }
 
 export function registerSupplierRoutes(router: Router) {

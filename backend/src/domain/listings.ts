@@ -620,6 +620,23 @@ export function backfillListings(): { curated: number; community: number } {
       curated++;
     }
 
+    // A curated row whose id left DIRECTORY (a batch rebuild renamed it, or the
+    // entry was dropped) is never upserted again, so it used to stay 'active'
+    // forever. The showcase and the typeahead read `listings`, while the
+    // directory and the detail page read DIRECTORY, so those rows surfaced as
+    // photo cards and search hits that 404 on click (the 2026-08-27 rebuild
+    // left dozens behind). A vendor-owned row is never touched: a claim keeps
+    // its card. Clearing the hash lets a returning entry pass the upsert's
+    // content-hash guard and come back as 'active'.
+    db.prepare(
+      `UPDATE listings
+          SET status = 'hidden', content_hash = NULL, updated_at = ?
+        WHERE source = 'curated'
+          AND vendor_account_id IS NULL
+          AND status = 'active'
+          AND id NOT IN (SELECT value FROM json_each(?))`,
+    ).run(ts, JSON.stringify(DIRECTORY.map((e) => e.id)));
+
     const rows = db.prepare("SELECT * FROM community_suppliers").all() as CommunitySupplierRow[];
     for (const r of rows) {
       syncListingFromCommunityRow(r);

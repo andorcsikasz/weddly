@@ -804,6 +804,24 @@ export function searchScore(label: string, foldedQuery: string): number {
   return 0;
 }
 
+/** `searchScore` for a CATEGORY label, which also accepts the query running
+ *  past the label: a visitor types what they want ("fotós", "videós",
+ *  "Fotografin"), and the category is named after the service ("Fotó",
+ *  "Videó", "Fotografie"). Only a label word of 4+ letters can match this way,
+ *  so a short label like "DJ" never swallows unrelated words. Ranked below
+ *  every forward match, since it is the looser reading. */
+export function categorySearchScore(label: string, foldedQuery: string): number {
+  const forward = searchScore(label, foldedQuery);
+  if (forward > 0) return forward;
+  const words = foldForSearch(label).split(/[\s&,/-]+/);
+  return words.some((w) => w.length >= 4 && foldedQuery.startsWith(w)) ? 30 : 0;
+}
+
+/** Ranking nudge for a typeahead hit inside the country the visitor already
+ *  has selected. Big enough to lift an in-country prefix match over a foreign
+ *  one, small enough that a foreign EXACT name still wins. */
+export const SEARCH_ACTIVE_COUNTRY_BONUS = 25;
+
 /** A city string may carry the curated ", XX" country suffix ("Wien, AT").
  *  That suffix is a storage detail — never show it, never search it. */
 export function cityDisplayName(city: string): string {
