@@ -585,6 +585,7 @@ function isNoIndexPath(pathname: string): boolean {
     pathname === "/onboarding" ||
     pathname === "/rsvp" ||
     pathname === "/suppliers/signup" ||
+    pathname === "/suppliers/join" ||
     pathname === "/feedback" ||
     pathname === "/app" ||
     pathname.startsWith("/app/") ||
@@ -622,6 +623,7 @@ const KNOWN_FRONTEND_EXACT = new Set([
   "/suppliers",
   "/suppliers/browse",
   "/suppliers/signup",
+  "/suppliers/join",
 ]);
 
 function isKnownFrontendPath(pathname: string): boolean {

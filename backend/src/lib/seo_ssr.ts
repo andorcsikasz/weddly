@@ -1159,7 +1159,7 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
   if (!m) return null;
   const idRaw = decodeURIComponent(m[1] ?? "").trim();
   // `/vendors/signup` is the vendor-registration route, not a vendor id.
-  if (!idRaw || idRaw === "signup" || idRaw.length > 80) return null;
+  if (!idRaw || idRaw === "signup" || idRaw === "join" || idRaw.length > 80) return null;
   const base = resolveSupplierBase(idRaw);
   if (!base) return null;
   // Share-card image priority, so the FB/Messenger preview shows the VENDOR's

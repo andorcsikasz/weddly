@@ -365,6 +365,7 @@ describe("per-supplier SSR og:card meta (/suppliers/:id)", () => {
     // The static routes must never resolve as a vendor id.
     expect(lookupVendorPageMeta("/suppliers")).toBeNull();
     expect(lookupVendorPageMeta("/suppliers/signup")).toBeNull();
+    expect(lookupVendorPageMeta("/suppliers/join")).toBeNull();
     expect(lookupVendorPageMeta("/suppliers/this-id-does-not-exist")).toBeNull();
   });
 
