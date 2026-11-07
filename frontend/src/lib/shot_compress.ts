@@ -8,6 +8,8 @@
 // the first rung of the quality ladder almost always lands. The lower rungs
 // are for the shot that really is busy: confetti, foliage, a sequinned dress.
 
+import { developOnCanvas } from "./analog";
+
 export const SHOT_MAX_LONG_EDGE = 1600;
 export const SHOT_MAX_BYTES = 1_000_000;
 /** Highest first: the first encode under budget wins, so a typical shot costs
@@ -98,6 +100,8 @@ export async function renderShot(
     ctx.scale(-1, 1);
   }
   ctx.drawImage(source, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
+  // Every shot leaves the phone already developed: one film look, no picker.
+  developOnCanvas(ctx, width, height);
   return encodeUnderBudget(canvasJpegEncoder(canvas));
 }
 

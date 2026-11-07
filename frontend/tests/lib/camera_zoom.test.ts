@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   activePreset,
+  crossedDetent,
   digitalCrop,
   findUltraWideDeviceId,
   formatZoom,
@@ -29,6 +30,20 @@ describe("findUltraWideDeviceId", () => {
   test("never picks a front lens, and finds nothing on a one-lens phone", () => {
     expect(findUltraWideDeviceId([cam("Front Ultra Wide Camera")])).toBeNull();
     expect(findUltraWideDeviceId([cam("camera2 0, facing back"), cam("Front Camera")])).toBeNull();
+  });
+
+  test("finds it when the phone names its lenses in another language", () => {
+    expect(
+      findUltraWideDeviceId([cam("Előlapi kamera"), cam("Hátsó ultraszéles kamera", "hu")]),
+    ).toBe("hu");
+    expect(findUltraWideDeviceId([cam("Ultraweitwinkel-Rückkamera", "de")])).toBe("de");
+    expect(
+      findUltraWideDeviceId([
+        cam("Cámara frontal"),
+        cam("Cámara ultra gran angular trasera", "es"),
+      ]),
+    ).toBe("es");
+    expect(findUltraWideDeviceId([cam("Prednja ultraširokokutna kamera")])).toBeNull();
   });
 
   test("ignores devices with no label yet (before permission) or no id", () => {
@@ -97,5 +112,23 @@ describe("digitalCrop", () => {
     expect(digitalCrop(1920, 1440, 1)).toEqual({ sx: 0, sy: 0, sw: 1920, sh: 1440 });
     // Never a crop LARGER than the frame.
     expect(digitalCrop(1920, 1440, 0.5)).toEqual({ sx: 0, sy: 0, sw: 1920, sh: 1440 });
+  });
+});
+
+describe("crossedDetent", () => {
+  const range = { min: 1, max: 5 };
+  const presets = [1, 2];
+  test("ticks when a pinch passes or lands on a preset", () => {
+    expect(crossedDetent(1.8, 2.1, presets, range)).toBe(true);
+    expect(crossedDetent(2.3, 2, presets, range)).toBe(true);
+  });
+  test("ticks at either end of the range", () => {
+    expect(crossedDetent(4.9, 5, presets, range)).toBe(true);
+    expect(crossedDetent(1.1, 1, presets, range)).toBe(true);
+  });
+  test("stays quiet between detents and when leaving one", () => {
+    expect(crossedDetent(1.2, 1.5, presets, range)).toBe(false);
+    expect(crossedDetent(2, 2.2, presets, range)).toBe(false);
+    expect(crossedDetent(1.5, 1.5, presets, range)).toBe(false);
   });
 });

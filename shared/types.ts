@@ -705,12 +705,24 @@ export interface MediaLinks {
 }
 
 /** Guest photo collection album owned by a couple. */
-export type FilmAesthetic = "natural" | "vintage" | "bw" | "cinematic" | "warm";
+// "analog" is the only look the camera shoots today, and it is BAKED into the
+// JPEG on the guest's phone (frontend/src/lib/analog.ts), so its CSS filter is
+// none. The other four were couple-picked CSS tints; they stay so shots taken
+// under them still render the way the guest saw them.
+export type FilmAesthetic = "analog" | "natural" | "vintage" | "bw" | "cinematic" | "warm";
 
-export const FILM_AESTHETICS: FilmAesthetic[] = ["natural", "vintage", "bw", "cinematic", "warm"];
+export const FILM_AESTHETICS: FilmAesthetic[] = [
+  "analog",
+  "natural",
+  "vintage",
+  "bw",
+  "cinematic",
+  "warm",
+];
 
 /** CSS filter values applied client-side for each aesthetic. */
 export const FILM_FILTERS: Record<FilmAesthetic, string> = {
+  analog: "none",
   natural: "none",
   vintage: "sepia(0.4) contrast(1.1) brightness(0.9) saturate(0.8)",
   bw: "grayscale(1) contrast(1.2)",

@@ -50,6 +50,7 @@ import { photoAlbumApi } from "../lib/endpoints";
 import { deleteShot, listShots, putShot } from "../lib/film_outbox";
 import {
   activePreset,
+  crossedDetent,
   digitalCrop,
   findUltraWideDeviceId,
   formatZoom,
@@ -60,6 +61,8 @@ import {
   type ZoomRange,
   zoomPresets,
 } from "../lib/camera_zoom";
+import { ANALOG_PREVIEW_FILTER } from "../lib/analog";
+import { haptic } from "../lib/haptics";
 import { compressPickedImage, renderShot } from "../lib/shot_compress";
 import { intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -160,7 +163,7 @@ function demoAlbum(displayName: string): PhotoAlbumPublic {
     isUploadEnabled: true,
     eventEndsAt: null,
     revealAt: null,
-    filmAesthetic: "vintage",
+    filmAesthetic: "analog",
     coverImageUrl: null,
     promptsEnabled: true,
   };
@@ -202,8 +205,6 @@ function formatFilmCountdown(ms: number, locale: Locale): string {
   return unit(Math.max(0, m), "minute");
 }
 
-type TFn = (path: string, vars?: Record<string, string | number>) => string;
-
 // The app locale, not the device's. A Hungarian guest reading a Hungarian page
 // on an en-US phone was getting "13 September 2026" mid-sentence.
 function formatRevealDate(value: string | number, locale: Locale): string {
@@ -217,16 +218,13 @@ function formatRevealDate(value: string | number, locale: Locale): string {
   });
 }
 
-// Date-based subtitle shown to guests instead of the couple's internal album
-// title (which can leak working names like "Test").
-function guestSubtitle(album: PhotoAlbumPublic, t: TFn, locale: Locale): string {
-  if (album.weddingDate) {
-    return t("photos.guest_subtitle").replace(
-      "{{date}}",
-      formatRevealDate(album.weddingDate, locale),
-    );
-  }
-  return t("photos.guest_subtitle_plain");
+// The kicker over every guest screen: the couple's names and the day. Never
+// the couple's internal album title (it can leak working names like "Test"),
+// and no "Wedding film" label: the guest is holding the camera, they know.
+function guestKicker(album: PhotoAlbumPublic, locale: Locale): string {
+  return album.weddingDate
+    ? `${album.displayName} · ${formatRevealDate(album.weddingDate, locale)}`
+    : album.displayName;
 }
 
 // ─── sub-components ──────────────────────────────────────────────────────────
@@ -236,16 +234,21 @@ function guestSubtitle(album: PhotoAlbumPublic, t: TFn, locale: Locale): string 
 function FilmSheet({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col justify-center bg-ink-950 px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-16 text-paper-50">
-      <div className="mx-auto w-full max-w-sm">{children}</div>
+      <div className="mx-auto w-full max-w-sm text-center">{children}</div>
     </div>
   );
 }
 
-function SheetKicker({ album }: { album: PhotoAlbumPublic }) {
-  const { t, locale } = useT();
+function SheetKicker({
+  album,
+  className = "mb-8",
+}: { album: PhotoAlbumPublic; className?: string }) {
+  const { locale } = useT();
   return (
-    <p className="mb-8 font-grotesk text-[11px] font-semibold uppercase tracking-[0.22em] text-paper-50/40">
-      {album.displayName} · {guestSubtitle(album, t, locale)}
+    <p
+      className={`${className} font-grotesk text-[10px] font-semibold uppercase tracking-[0.32em] text-paper-50/50`}
+    >
+      {guestKicker(album, locale)}
     </p>
   );
 }
@@ -282,6 +285,86 @@ function PreviewBanner({ label }: { label?: string }) {
     </div>
   );
 }
+
+// ─── onboarding: the camera first, a popup over it ────────────────────────────
+// The guest lands on the viewfinder itself, already live, with the welcome as
+// a frosted card floating over it. The camera opened here is a preview only:
+// nothing can be captured until the name step is done and the real viewfinder
+// takes over (permission is already granted by then, so it opens instantly).
+// No camera (blocked, desktop, in-app browser) falls back to the cover photo.
+
+function CameraBackdrop({ coverUrl, enabled }: { coverUrl: string | null; enabled: boolean }) {
+  // The couple's ?preview=1 never opens a camera (a look must not prompt).
+  const { videoRef, status } = useCamera("environment", enabled);
+  const live = status === "live";
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-black" aria-hidden="true">
+      {coverUrl && (
+        <img
+          src={coverUrl}
+          alt=""
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+            live ? "opacity-0" : "opacity-100"
+          }`}
+        />
+      )}
+      <video
+        ref={videoRef}
+        playsInline
+        muted
+        autoPlay
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+          live ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      {/* Viewfinder corners: says "camera" before a word is read. */}
+      <div className="pointer-events-none absolute inset-x-6 top-[max(1.5rem,env(safe-area-inset-top))] bottom-[45%]">
+        {[
+          "left-0 top-0 border-l border-t rounded-tl-xl",
+          "right-0 top-0 border-r border-t rounded-tr-xl",
+          "left-0 bottom-0 border-l border-b rounded-bl-xl",
+          "right-0 bottom-0 border-r border-b rounded-br-xl",
+        ].map((pos) => (
+          <span key={pos} className={`absolute h-6 w-6 border-paper-50/60 ${pos}`} />
+        ))}
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/10 to-black/75" />
+    </div>
+  );
+}
+
+function CameraPopup({
+  preview,
+  children,
+}: {
+  preview: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      {preview && <PreviewBanner />}
+      <div className="relative min-h-dvh overflow-hidden bg-black text-paper-50">{children}</div>
+    </>
+  );
+}
+
+function PopupCard({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="relative flex min-h-dvh flex-col items-center justify-end px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-16">
+      <div
+        role="dialog"
+        aria-label={label}
+        className="w-full max-w-sm animate-fade-in-up rounded-[28px] border border-paper-50/10 bg-ink-950/55 px-6 pb-6 pt-8 text-center shadow-[0_24px_80px_-12px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const POPUP_TITLE = "font-serif text-[34px] italic leading-[1.05] tracking-[-0.01em] text-paper-50";
+const POPUP_INPUT =
+  "w-full rounded-2xl border border-paper-50/10 bg-paper-50/[0.07] px-5 py-3.5 text-center font-grotesk text-[16px] font-medium text-paper-50 placeholder-paper-50/35 outline-none transition-colors focus:border-paper-50/30 focus:bg-paper-50/[0.12]";
 
 // ─── live camera hook ─────────────────────────────────────────────────────────
 // Runs on every device. `blocked` covers both a hard refusal and a browser that
@@ -487,7 +570,7 @@ function useOutboxDrain(token: string, album: PhotoAlbumPublic | null) {
           await photoAlbumApi.upload(
             token,
             new File([shot.blob], "shot.jpg", { type: shot.blob.type }),
-            { deviceId: shot.deviceId, filterApplied: album.filmAesthetic, clientShotId: shot.id },
+            { deviceId: shot.deviceId, filterApplied: "analog", clientShotId: shot.id },
           );
           void deleteShot(shot.id);
         } catch (err: unknown) {
@@ -726,7 +809,8 @@ function Viewfinder({
   // Two fingers on the viewfinder zoom it. Without a logical multi-camera a
   // pinch stays on the main lens (from 1x up): switching lenses reopens the
   // camera, which mid-gesture would flicker, so 0.5 is a tap, not a pinch.
-  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+  const pinchRef = useRef<{ distance: number; zoom: number; last: number } | null>(null);
+  const [pinching, setPinching] = useState(false);
   const pinchRange =
     backZoom && backZoom.min < 1
       ? zoomRange
@@ -738,15 +822,33 @@ function Viewfinder({
   }
   function handleTouchStart(e: React.TouchEvent) {
     if (e.touches.length !== 2 || status !== "live") return;
-    pinchRef.current = { distance: fingerSpread(e.touches), zoom: Math.max(zoom, pinchRange.min) };
+    const start = Math.max(zoom, pinchRange.min);
+    pinchRef.current = { distance: fingerSpread(e.touches), zoom: start, last: start };
+    setPinching(true);
   }
   function handleTouchMove(e: React.TouchEvent) {
     const pinch = pinchRef.current;
     if (!pinch || e.touches.length !== 2) return;
-    setZoom(pinchZoom(pinch.zoom, pinch.distance, fingerSpread(e.touches), pinchRange));
+    const next = pinchZoom(pinch.zoom, pinch.distance, fingerSpread(e.touches), pinchRange);
+    // A tick at 1x, 2x and at either end, like the phone's own camera.
+    if (crossedDetent(pinch.last, next, presets, pinchRange)) haptic("select");
+    pinch.last = next;
+    setZoom(next);
   }
   function handleTouchEnd(e: React.TouchEvent) {
-    if (e.touches.length < 2) pinchRef.current = null;
+    if (e.touches.length < 2) {
+      pinchRef.current = null;
+      setPinching(false);
+    }
+  }
+  function tapZoom(p: number) {
+    if (p !== zoom) haptic("select");
+    setZoom(p);
+  }
+  /** The roll is full: a small celebration under the guest's thumb. */
+  function reachLimit() {
+    haptic("success");
+    onLimitReached();
   }
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [flash, setFlash] = useState(false);
@@ -789,7 +891,9 @@ function Viewfinder({
 
   const live = status === "live";
   const blocked = status === "blocked";
-  const cssFilter = filterStyle(album.filmAesthetic);
+  // Shots leave the phone already developed (lib/analog), so a thumbnail of
+  // one needs no filter; only the live viewfinder needs the CSS stand-in.
+  const cssFilter = "none";
   const max = album.shotsPerGuest ?? 0;
   const pendingCount = queueRef.current.filter(
     (i) => i.status === "queued" || i.status === "uploading" || i.status === "retrying",
@@ -803,12 +907,13 @@ function Viewfinder({
   function handleUploadSuccess(newShotCount: number) {
     if (demo && album.shotsPerGuest !== null && newShotCount >= album.shotsPerGuest) {
       limitReachedRef.current = true;
+      haptic("success");
       onDemoDevelop?.(demoFiles());
       return;
     }
     if (album.shotsPerGuest !== null && newShotCount >= album.shotsPerGuest) {
       limitReachedRef.current = true;
-      onLimitReached();
+      reachLimit();
       return;
     }
     onShotTaken(newShotCount);
@@ -839,7 +944,7 @@ function Viewfinder({
       const result = await photoAlbumApi.upload(token, item.file, {
         deviceId: item.deviceId,
         guestName: guestName ?? undefined,
-        filterApplied: album.filmAesthetic,
+        filterApplied: "analog",
         preview,
         clientShotId: item.id,
       });
@@ -874,7 +979,7 @@ function Viewfinder({
         }
         limitReachedRef.current = true;
         bump();
-        onLimitReached();
+        reachLimit();
         return;
       }
       if (code === "heic_not_supported") {
@@ -995,6 +1100,7 @@ function Viewfinder({
     // multi-megabyte iPhone originals, while the backend independently sniffs
     // the bytes so renamed/spoofed files receive the same specific guidance.
     if (isHeifFile(file)) {
+      haptic("error");
       setError(t("photos.error_heic"));
       return;
     }
@@ -1003,8 +1109,6 @@ function Viewfinder({
     // authoritatively flips the screen via handleUploadSuccess.
     if (max > 0 && shotCount + pendingCount >= max) return;
     setError(null);
-    // A short tick where supported (Android); iOS Safari ignores it.
-    navigator.vibrate?.(8);
     setFlash(true);
     setTimeout(() => setFlash(false), 120);
     const id = crypto.randomUUID();
@@ -1088,6 +1192,8 @@ function Viewfinder({
   async function captureOnce() {
     if (preview || limitReachedRef.current || !live) return;
     if (max > 0 && shotCount + pendingCount >= max) return;
+    // Before the await: on iPhone the haptic only plays inside the tap.
+    haptic("shutter");
     const file = await capture(facing === "user", digitalZoom);
     if (file) enqueueCapture(file);
   }
@@ -1119,6 +1225,8 @@ function Viewfinder({
     burstEngagedRef.current = false;
     pressTimerRef.current = setTimeout(() => {
       burstEngagedRef.current = true;
+      // A firmer buzz says "burst" before the frames start.
+      haptic("tap");
       void captureOnce();
       burstIntervalRef.current = setInterval(() => void captureOnce(), BURST_INTERVAL_MS);
     }, BURST_HOLD_MS);
@@ -1150,8 +1258,13 @@ function Viewfinder({
 
   function handleQueueThumbTap(item: QueueItem) {
     if (item.status !== "failed") return;
-    if (item.retryable) retryQueueItem(item.id);
-    else if (item.errorMessage) setError(item.errorMessage);
+    if (item.retryable) {
+      haptic("tap");
+      retryQueueItem(item.id);
+    } else if (item.errorMessage) {
+      haptic("error");
+      setError(item.errorMessage);
+    }
   }
 
   const remaining = album.eventEndsAt ? Math.max(0, album.eventEndsAt - Date.now()) : null;
@@ -1231,11 +1344,23 @@ function Viewfinder({
               live ? "opacity-100" : "opacity-0"
             }`}
             style={{
-              filter: cssFilter,
+              filter: ANALOG_PREVIEW_FILTER,
               // The same centred crop renderShot applies to the saved shot.
               transform: `${facing === "user" ? "scaleX(-1) " : ""}scale(${digitalZoom})`,
+              // A tapped preset glides there; a pinch follows the fingers 1:1.
+              transition:
+                pinching || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+                  ? "opacity 300ms"
+                  : "opacity 300ms, transform 260ms cubic-bezier(0.23, 1, 0.32, 1)",
             }}
           />
+
+          {live && (
+            <>
+              <div className="viewfinder-vignette" aria-hidden="true" />
+              <div className="viewfinder-grain" aria-hidden="true" />
+            </>
+          )}
 
           {/* Starting up — quiet, no copy. */}
           {status === "starting" && (
@@ -1334,7 +1459,7 @@ function Viewfinder({
             ones that still need attention (retrying, or failed). */}
           {/* Zoom: 0.5 only where the phone has the lens for it. The selected
             pill reads the live value (1.6×), like the phone's own camera. */}
-          {live && !preview && (
+          {live && (
             <div
               className={`absolute inset-x-0 flex justify-center ${
                 queueRef.current.some((i) => i.status === "retrying" || i.status === "failed")
@@ -1349,7 +1474,7 @@ function Viewfinder({
                     <button
                       key={p}
                       type="button"
-                      onClick={() => setZoom(p)}
+                      onClick={() => tapZoom(p)}
                       aria-label={t("photos.zoom_to").replace("{{n}}", formatZoom(p))}
                       aria-pressed={selected}
                       className={`flex items-center justify-center rounded-full font-grotesk font-bold tabular-nums transition-[width,height,background-color] duration-150 ${
@@ -1441,6 +1566,7 @@ function Viewfinder({
           <button
             type="button"
             onClick={() => {
+              haptic("tap");
               setZoom(1);
               setFacing((f) => (f === "environment" ? "user" : "environment"));
             }}
@@ -1752,7 +1878,8 @@ function DemoDeveloped({
       for (const u of created) URL.revokeObjectURL(u);
     };
   }, [files]);
-  const cssFilter = filterStyle(album.filmAesthetic);
+  // The demo's shots were developed on capture, like every shot.
+  const cssFilter = "none";
   return (
     <div className="min-h-dvh bg-ink-950 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-14 text-paper-50">
       <div className="mx-auto w-full max-w-md">
@@ -1990,51 +2117,19 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
 
   if (state.kind === "landing") {
     return (
-      <>
-        {preview && <PreviewBanner />}
-        {/* With a cover the copy sits low, under the picture. Without one the
-            top half was an empty black slab, so the copy centres instead. */}
-        <div
-          className={`relative flex min-h-dvh flex-col overflow-hidden bg-ink-950 ${
-            state.album.coverImageUrl ? "justify-end" : "justify-center"
-          } px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-16 text-paper-50`}
-        >
-          {state.album.coverImageUrl && (
-            <img
-              src={state.album.coverImageUrl}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          )}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/75 to-ink-950/25"
-          />
-          <div className="relative mx-auto w-full max-w-sm">
-            <SheetKicker album={state.album} />
-            <SheetTitle>{t("photos.landing_heading")}</SheetTitle>
-            <SheetBody>{t("photos.landing_body")}</SheetBody>
-            <button type="button" onClick={handleOpenCamera} className={`${PRIMARY_BTN} mt-10`}>
-              {t("photos.landing_cta")}
-            </button>
-            <div className="mt-5 flex flex-wrap justify-center gap-2 text-center">
-              {[
-                t("photos.landing_reassure_no_app"),
-                t("photos.landing_reassure_no_account"),
-                t("photos.landing_reassure_private"),
-              ].map((label) => (
-                <span
-                  key={label}
-                  className="rounded-full border border-paper-50/15 bg-paper-50/5 px-3 py-1.5 text-[12px] font-medium text-paper-50/60"
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </>
+      <CameraPopup preview={preview}>
+        <CameraBackdrop coverUrl={state.album.coverImageUrl} enabled={!preview} />
+        <PopupCard label={t("photos.landing_heading")}>
+          <SheetKicker album={state.album} className="mb-4" />
+          <h1 className={POPUP_TITLE}>{t("photos.landing_heading")}</h1>
+          <button type="button" onClick={handleOpenCamera} className={`${PRIMARY_BTN} mt-8`}>
+            {t("photos.landing_cta")}
+          </button>
+          <p className="mt-4 text-[12px] text-paper-50/45">
+            {t("photos.landing_reassure_no_app")} · {t("photos.landing_reassure_no_account")}
+          </p>
+        </PopupCard>
+      </CameraPopup>
     );
   }
 
@@ -2054,13 +2149,12 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
     const emailLooksValid = EMAIL_RE.test(emailInput.trim());
     const canSubmit = nameInput.trim().length > 0 && emailLooksValid;
     return (
-      <>
-        {preview && <PreviewBanner />}
-        <FilmSheet>
-          <SheetKicker album={state.album} />
-          <SheetTitle>{t("photos.name_heading")}</SheetTitle>
+      <CameraPopup preview={preview}>
+        <CameraBackdrop coverUrl={state.album.coverImageUrl} enabled={!preview} />
+        <PopupCard label={t("photos.name_heading")}>
+          <h1 className={POPUP_TITLE}>{t("photos.name_heading")}</h1>
           <form
-            className="mt-8"
+            className="mt-6"
             onSubmit={(e) => {
               e.preventDefault();
               const trimmed = nameInput.trim();
@@ -2079,7 +2173,7 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
               enterKeyHint="next"
               autoFocus
               disabled={nameSubmitting}
-              className="w-full rounded-2xl bg-paper-50/10 px-5 py-4 font-grotesk text-[17px] font-medium text-paper-50 placeholder-paper-50/30 outline-none transition-colors focus:bg-paper-50/15"
+              className={POPUP_INPUT}
             />
             <input
               type="email"
@@ -2092,10 +2186,11 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
               onChange={(e) => setEmailInput(e.target.value)}
               placeholder={t("photos.email_placeholder")}
               aria-label={t("photos.email_placeholder")}
+              aria-describedby="film-email-hint"
               disabled={nameSubmitting}
-              className="mt-3 w-full rounded-2xl bg-paper-50/10 px-5 py-4 font-grotesk text-[17px] font-medium text-paper-50 placeholder-paper-50/30 outline-none transition-colors focus:bg-paper-50/15"
+              className={`${POPUP_INPUT} mt-2.5`}
             />
-            <p className="mt-2 text-[13px] leading-relaxed text-paper-50/40">
+            <p id="film-email-hint" className="sr-only">
               {t("photos.email_hint")}
             </p>
             {nameFormError && (
@@ -2103,13 +2198,24 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
                 {nameFormError}
               </p>
             )}
-            <label className="mt-5 flex cursor-pointer items-start gap-3 text-[13px] leading-relaxed text-paper-50/50">
+            <button
+              type="submit"
+              disabled={!canSubmit || nameSubmitting}
+              className={`${PRIMARY_BTN} mt-5`}
+            >
+              {nameSubmitting
+                ? t("common.saving")
+                : preview
+                  ? t("photos.preview_continue")
+                  : t("photos.name_continue")}
+            </button>
+            <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 text-[12px] text-paper-50/45">
               <input
                 type="checkbox"
                 checked={marketingOptIn}
                 onChange={(e) => setMarketingOptIn(e.target.checked)}
                 disabled={nameSubmitting}
-                className="mt-0.5 h-5 w-5 shrink-0 rounded border-paper-50/30 bg-transparent accent-paper-50"
+                className="h-4 w-4 shrink-0 rounded border-paper-50/30 bg-transparent accent-paper-50"
               />
               <span>
                 {t("photos.marketing_opt_in_label")}{" "}
@@ -2123,20 +2229,9 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
                 </a>
               </span>
             </label>
-            <button
-              type="submit"
-              disabled={!canSubmit || nameSubmitting}
-              className={`${PRIMARY_BTN} mt-5`}
-            >
-              {nameSubmitting
-                ? t("common.saving")
-                : preview
-                  ? t("photos.preview_continue")
-                  : t("photos.name_continue")}
-            </button>
           </form>
-        </FilmSheet>
-      </>
+        </PopupCard>
+      </CameraPopup>
     );
   }
 
@@ -2208,7 +2303,7 @@ export default function GuestPhotoPage({ demo = false }: { demo?: boolean }) {
     return (
       <FilmSheet>
         <SheetKicker album={state.album} />
-        <span className="mb-8 flex h-12 w-12 items-center justify-center rounded-full bg-sage-500">
+        <span className="mx-auto mb-8 flex h-12 w-12 items-center justify-center rounded-full bg-sage-500">
           <Check size={26} className="text-paper-50" aria-hidden="true" />
         </span>
         <SheetTitle>{t("photos.limit_heading")}</SheetTitle>

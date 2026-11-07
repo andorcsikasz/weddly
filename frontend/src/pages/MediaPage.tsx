@@ -8,7 +8,6 @@ import type {
   PhotoAlbum,
 } from "@shared/types";
 import {
-  FILM_AESTHETICS,
   FILM_FILTERS,
   FILM_TIER_CAPS,
   FILM_TIER_PRICE_EUR_CENTS,
@@ -26,7 +25,6 @@ import {
   Copy,
   Download,
   ExternalLink,
-  Film,
   GalleryHorizontalEnd,
   Link2,
   Lock,
@@ -112,6 +110,18 @@ function toDatetimeLocal(ms: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** Film times are on the quarter hour (00, 15, 30, 45). `step` limits the
+ *  desktop picker; an iPhone's wheel ignores it, so the value is also snapped
+ *  to the nearest quarter here. */
+const QUARTER_HOUR_STEP = 15 * 60;
+export function snapToQuarterHour(value: string): string {
+  if (!value) return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  const quarter = 15 * 60_000;
+  return toDatetimeLocal(Math.round(d.getTime() / quarter) * quarter);
+}
+
 function formatPreciseCountdown(ms: number): string {
   if (ms <= 0) return "0m";
   const d = Math.floor(ms / 86_400_000);
@@ -121,14 +131,6 @@ function formatPreciseCountdown(ms: number): string {
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
 }
-
-const AESTHETIC_LABELS: Record<FilmAesthetic, string> = {
-  natural: "Natural",
-  vintage: "Vintage",
-  bw: "B&W",
-  cinematic: "Cinematic",
-  warm: "Warm",
-};
 
 // --- ambient film grain -----------------------------------------------------
 
@@ -745,24 +747,22 @@ function FilmModal({
   const isEdit = album !== null;
 
   const [title, setTitle] = useState(album?.title ?? "");
-  const [aesthetic, setAesthetic] = useState<FilmAesthetic>(album?.filmAesthetic ?? "natural");
   const [shots, setShots] = useState<string>(
     album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "24",
   );
   const [eventEndsAt, setEventEndsAt] = useState<string>(
-    album?.eventEndsAt ? toDatetimeLocal(album.eventEndsAt) : "",
+    album?.eventEndsAt ? snapToQuarterHour(toDatetimeLocal(album.eventEndsAt)) : "",
   );
   const [revealAt, setRevealAt] = useState<string>(
-    album?.revealAt ? toDatetimeLocal(album.revealAt) : "",
+    album?.revealAt ? snapToQuarterHour(toDatetimeLocal(album.revealAt)) : "",
   );
   const [promptsEnabled, setPromptsEnabled] = useState<boolean>(album?.promptsEnabled ?? true);
 
   useEffect(() => {
     if (!open) return;
     setTitle(album?.title ?? "");
-    setAesthetic(album?.filmAesthetic ?? "natural");
     setShots(album?.shotsPerGuest != null ? String(album.shotsPerGuest) : "24");
-    setRevealAt(album?.revealAt ? toDatetimeLocal(album.revealAt) : "");
+    setRevealAt(album?.revealAt ? snapToQuarterHour(toDatetimeLocal(album.revealAt)) : "");
     setPromptsEnabled(album?.promptsEnabled ?? true);
     if (!isEdit) {
       setTitle(defaultFilmTitle(couple));
@@ -781,7 +781,9 @@ function FilmModal({
       setEventEndsAt(endsMs ? toDatetimeLocal(endsMs) : "");
       setRevealAt(revealMs ? toDatetimeLocal(revealMs) : "");
     } else {
-      setEventEndsAt(album?.eventEndsAt ? toDatetimeLocal(album.eventEndsAt) : "");
+      setEventEndsAt(
+        album?.eventEndsAt ? snapToQuarterHour(toDatetimeLocal(album.eventEndsAt)) : "",
+      );
     }
     if (!isEdit) {
       photoAlbumApi
@@ -803,7 +805,6 @@ function FilmModal({
       if (isEdit) {
         const { album: updated } = await photoAlbumApi.update({
           title: title.trim() || null,
-          filmAesthetic: aesthetic,
           shotsPerGuest: spg,
           promptsEnabled,
           ...(endsMs !== null ? { eventEndsAt: endsMs } : {}),
@@ -813,7 +814,8 @@ function FilmModal({
       } else {
         const { album: created } = await photoAlbumApi.create({
           title: title.trim() || undefined,
-          filmAesthetic: aesthetic,
+          // One look for every film, baked in on the guest's phone.
+          filmAesthetic: "analog",
           shotsPerGuest: spg,
           ...(endsMs !== null ? { eventEndsAt: endsMs } : {}),
           ...(revealMs !== null ? { revealAt: revealMs } : {}),
@@ -903,42 +905,6 @@ function FilmModal({
           )}
         </div>
 
-        {/* The visible names make each look recognisable without hover. */}
-        <div className="flex flex-wrap justify-center gap-2.5">
-          {FILM_AESTHETICS.map((a) => (
-            <button
-              key={a}
-              type="button"
-              onClick={() => setAesthetic(a)}
-              title={AESTHETIC_LABELS[a]}
-              aria-label={AESTHETIC_LABELS[a]}
-              aria-pressed={aesthetic === a}
-              className="group flex flex-col items-center gap-1.5"
-            >
-              <img
-                src={DEMO_STRIP[0]}
-                alt=""
-                aria-hidden="true"
-                className={`h-14 w-14 rounded-2xl object-cover transition-all ${
-                  aesthetic === a
-                    ? "ring-2 ring-umber-900 ring-offset-2 dark:ring-paper-100 dark:ring-offset-umber-800"
-                    : "opacity-60 group-hover:opacity-100"
-                }`}
-                style={{ filter: FILM_FILTERS[a] }}
-              />
-              <span
-                className={`max-w-16 truncate text-[11px] ${
-                  aesthetic === a
-                    ? "font-semibold text-umber-900 dark:text-paper-100"
-                    : "font-medium text-umber-600 dark:text-paper-300"
-                }`}
-              >
-                {AESTHETIC_LABELS[a]}
-              </span>
-            </button>
-          ))}
-        </div>
-
         {/* `.input` carries the dark-theme colours AND `color-scheme: dark`, without
             which the native datetime picker glyph renders black on the dark sheet. */}
         <fieldset className="space-y-2">
@@ -999,7 +965,8 @@ function FilmModal({
             <input
               type="datetime-local"
               value={eventEndsAt}
-              onChange={(e) => setEventEndsAt(e.target.value)}
+              step={QUARTER_HOUR_STEP}
+              onChange={(e) => setEventEndsAt(snapToQuarterHour(e.target.value))}
               className="input mx-auto mt-2 block w-full max-w-64 rounded-xl border-transparent px-3 text-center text-sm font-medium"
             />
           </label>
@@ -1008,7 +975,8 @@ function FilmModal({
             <input
               type="datetime-local"
               value={revealAt}
-              onChange={(e) => setRevealAt(e.target.value)}
+              step={QUARTER_HOUR_STEP}
+              onChange={(e) => setRevealAt(snapToQuarterHour(e.target.value))}
               className="input mx-auto mt-2 block w-full max-w-64 rounded-xl border-transparent px-3 text-center text-sm font-medium"
             />
           </label>
@@ -1491,11 +1459,6 @@ export default function MediaPage() {
             album.shotsPerGuest != null
               ? `${album.shotsPerGuest} / ${t("media.film_per_person")}`
               : t("media.film_unlimited"),
-        },
-        {
-          icon: <Film size={17} aria-hidden="true" />,
-          label: t("media.film_settings_aesthetic"),
-          value: AESTHETIC_LABELS[album.filmAesthetic] ?? album.filmAesthetic,
         },
       ]
     : [];

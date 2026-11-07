@@ -12,7 +12,6 @@
 // the couple their own feature pitched back at them. That state is a quiet
 // masthead instead: mark, status, name, one button.
 import type { PhotoAlbum } from "@shared/types";
-import { FILM_FILTERS } from "@shared/types";
 import {
   ArrowRight,
   Camera,
@@ -26,6 +25,7 @@ import {
 import type { CSSProperties, ReactNode } from "react";
 import { useT } from "../lib/i18n";
 import { Wordmark } from "./Wordmark";
+import { ANALOG_PREVIEW_FILTER } from "../lib/analog";
 
 export const DEMO_STRIP = ["/demo/film-01.jpg", "/demo/film-02.jpg", "/demo/film-03.jpg"] as const;
 
@@ -239,7 +239,6 @@ export function CameraHero({
   // `album` to bare `null` for the rest of the function and turn every
   // `album?.x` past that point into a `never` access.
   const previewCount = album?.photoCount ?? 24;
-  const previewAesthetic = album?.filmAesthetic ?? "vintage";
 
   // ── Dashboard masthead — a live film, so this is a returning couple ──────
   if (album) {
@@ -408,21 +407,21 @@ export function CameraHero({
             src={DEMO_STRIP[2]}
             filmName={filmName}
             shotsLabel={t("media.film_shots_short").replace("{{n}}", "12")}
-            filter={FILM_FILTERS.warm}
+            filter={ANALOG_PREVIEW_FILTER}
             className="left-[2%] top-[15%] z-10 w-[39%] -rotate-[7deg] opacity-90"
           />
           <CameraPreview
             src={coverPhoto}
             filmName={filmName}
             shotsLabel={t("media.film_shots_short").replace("{{n}}", String(previewCount))}
-            filter={FILM_FILTERS[previewAesthetic]}
+            filter={ANALOG_PREVIEW_FILTER}
             className="left-1/2 top-[2%] z-20 w-[43%] -translate-x-1/2"
           />
           <CameraPreview
             src={DEMO_STRIP[1]}
             filmName={filmName}
             shotsLabel={t("media.film_shots_short").replace("{{n}}", "18")}
-            filter={FILM_FILTERS.natural}
+            filter={ANALOG_PREVIEW_FILTER}
             className="right-[1%] top-[12%] z-10 w-[39%] rotate-[7deg] opacity-90"
           />
 

@@ -16,7 +16,6 @@ import { ArrowRight, Camera, Hourglass, ScanLine, Wifi } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FILM_FILTERS } from "@shared/types";
 import {
   FILM_PRICE_TIERS,
   type FilmPriceTier,
@@ -31,32 +30,41 @@ import { PublicShell } from "../components/PublicShell";
 import { WeddlyDove } from "../components/WeddlyDove";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+import { ANALOG_PREVIEW_FILTER } from "../lib/analog";
 
 /** What a guest's roll looks like: wedding shots through the in-app camera's
  *  own analog looks, each with the orange date print a disposable burns in. */
 const ROLL: { src: string; filter: string; stamp: string; position?: string }[] = [
-  { src: "/demo/film-01.jpg", filter: FILM_FILTERS.warm, stamp: "'26 09 12" },
-  { src: "/design-photos/12-ceremony-aisle.jpg", filter: FILM_FILTERS.vintage, stamp: "'26 09 12" },
-  { src: "/design-photos/04-greenery-arch.jpg", filter: FILM_FILTERS.bw, stamp: "'26 09 12" },
+  { src: "/demo/film-01.jpg", filter: ANALOG_PREVIEW_FILTER, stamp: "'26 09 12" },
+  {
+    src: "/design-photos/12-ceremony-aisle.jpg",
+    filter: ANALOG_PREVIEW_FILTER,
+    stamp: "'26 09 12",
+  },
+  { src: "/design-photos/04-greenery-arch.jpg", filter: ANALOG_PREVIEW_FILTER, stamp: "'26 09 12" },
   {
     src: "/demo/wedding-party-hero.jpg",
-    filter: FILM_FILTERS.warm,
+    filter: ANALOG_PREVIEW_FILTER,
     stamp: "'26 09 12",
     position: "60% 50%",
   },
-  { src: "/demo/film-02.jpg", filter: FILM_FILTERS.vintage, stamp: "'26 09 12" },
-  { src: "/design-photos/01-reception-pergola.jpg", filter: FILM_FILTERS.bw, stamp: "'26 09 12" },
-  { src: "/design-photos/05-draped-arch.jpg", filter: FILM_FILTERS.warm, stamp: "'26 09 12" },
+  { src: "/demo/film-02.jpg", filter: ANALOG_PREVIEW_FILTER, stamp: "'26 09 12" },
+  {
+    src: "/design-photos/01-reception-pergola.jpg",
+    filter: ANALOG_PREVIEW_FILTER,
+    stamp: "'26 09 12",
+  },
+  { src: "/design-photos/05-draped-arch.jpg", filter: ANALOG_PREVIEW_FILTER, stamp: "'26 09 12" },
   {
     src: "/design-photos/02-reception-candlelit.jpg",
-    filter: FILM_FILTERS.cinematic,
+    filter: ANALOG_PREVIEW_FILTER,
     stamp: "'26 09 13",
   },
-  { src: "/demo/film-03.jpg", filter: FILM_FILTERS.bw, stamp: "'26 09 13" },
-  { src: "/design-photos/11-wedding-cake.jpg", filter: FILM_FILTERS.vintage, stamp: "'26 09 13" },
+  { src: "/demo/film-03.jpg", filter: ANALOG_PREVIEW_FILTER, stamp: "'26 09 13" },
+  { src: "/design-photos/11-wedding-cake.jpg", filter: ANALOG_PREVIEW_FILTER, stamp: "'26 09 13" },
   {
     src: "/design-photos/06-pampas-candles.jpg",
-    filter: FILM_FILTERS.cinematic,
+    filter: ANALOG_PREVIEW_FILTER,
     stamp: "'26 09 13",
   },
 ];

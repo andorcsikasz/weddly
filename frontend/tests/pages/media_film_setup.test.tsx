@@ -134,7 +134,7 @@ describe("<MediaPage> Wedding Film setup", () => {
     await waitFor(() => expect(requests).toHaveLength(1));
     expect(requests[0]).toMatchObject({
       title: "Sari & Andor POV",
-      film_aesthetic: "natural",
+      film_aesthetic: "analog",
       shots_per_guest: 24,
       event_ends_at: new Date("2099-01-02T10:00").getTime(),
       reveal_at: new Date("2099-01-02T12:00").getTime(),

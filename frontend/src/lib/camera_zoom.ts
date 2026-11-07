@@ -34,6 +34,13 @@ export interface ZoomPlan {
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
+// iOS names its lenses in the PHONE's language, so a Hungarian iPhone lists
+// "Hátsó ultraszéles kamera", not "Back Ultra Wide Camera", and an English-only
+// match left 0.5 missing for every guest whose phone isn't in English. Every
+// language we ship says "ultra" somewhere in the name.
+const FRONT_LENS = /front|user|selfie|facetime|elüls|előlap|frontal|prednj|vorder/;
+const ULTRA_LENS = /ultra|0[.,]5x?\b/;
+
 /** The ultra-wide back camera, if the phone lists one. Labels are only
  *  populated after camera permission, which is why this runs after the first
  *  stream is live. A front lens never qualifies: 0.5 is a back-camera idea. */
@@ -41,8 +48,8 @@ export function findUltraWideDeviceId(devices: readonly MediaDeviceInfo[]): stri
   for (const d of devices) {
     if (d.kind !== "videoinput" || !d.deviceId) continue;
     const label = d.label.toLowerCase();
-    if (/front|user|selfie|facetime/.test(label)) continue;
-    if (/ultra[\s-]?wide|ultrawide|0[.,]5x?\b/.test(label)) return d.deviceId;
+    if (FRONT_LENS.test(label)) continue;
+    if (ULTRA_LENS.test(label)) return d.deviceId;
   }
   return null;
 }
@@ -91,6 +98,26 @@ export function activePreset(z: number, presets: readonly number[]): number {
   let active = presets[0] ?? 1;
   for (const p of presets) if (z + 1e-6 >= p) active = p;
   return active;
+}
+
+/** Whether a pinch from `from` to `to` crossed a detent: one of the presets,
+ *  or either end of the range. The phone's own camera ticks at each one, and
+ *  so do we. Landing exactly on a detent counts; leaving it does not, so
+ *  resting on 1x doesn't tick on every frame. */
+export function crossedDetent(
+  from: number,
+  to: number,
+  detents: readonly number[],
+  range: ZoomRange,
+): boolean {
+  if (from === to) return false;
+  const lo = Math.min(from, to);
+  const hi = Math.max(from, to);
+  for (const d of [...detents, range.min, range.max]) {
+    if (d === from) continue;
+    if (d >= lo - 1e-6 && d <= hi + 1e-6) return true;
+  }
+  return false;
 }
 
 /** "0.5", "1", "1.6", "2": one decimal at most, no trailing zero. */
