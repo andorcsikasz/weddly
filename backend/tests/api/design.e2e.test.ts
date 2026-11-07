@@ -20,6 +20,7 @@ import {
   photosForStyle,
   resolveDesign,
   STYLE_PRESETS,
+  type HeroLayoutSlug,
   type StylePresetSlug,
   toPublicDesign,
   toRomanNumeral,
@@ -673,7 +674,7 @@ describe("design: website-only `web` sub-object", () => {
     // The templates differ in COMPOSITION, so the layout has to come with the
     // pack; a classic pack puts the overlay back, or switching from Riviera
     // to Garden would leave Garden's colours inside Riviera's arch.
-    const expected: Record<string, string> = {
+    const expected: Record<string, HeroLayoutSlug> = {
       tuscan_villa: "split",
       riviera: "arch",
       atelier: "editorial",
