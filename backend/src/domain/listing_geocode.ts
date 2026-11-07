@@ -92,25 +92,16 @@ export async function geocodeListings(limit: number): Promise<GeocodeResult> {
   let missed = 0;
   for (const [i, c] of candidates.entries()) {
     if (i > 0) await Bun.sleep(THROTTLE_MS);
-    const town = bareCity(c.city);
-    const hits = await suggestAddresses([c.address, town].filter(Boolean).join(", "), "en");
-    if (hits === null) {
+    const hit = await lookupVerified(c);
+    if (hit === "upstream_error") {
       // Upstream failure, not a bad address: leave geo_synced_at NULL so the
       // next run retries this row.
       log.warn("listing_geocode: upstream failure", { id: c.id });
       missed++;
       continue;
     }
-    const anchor = CITY_COORDS[c.city] ?? CITY_COORDS[town] ?? null;
-    const hit = hits.find((h) => {
-      if (h.lat == null || h.lng == null) return false;
-      if (anchor) return haversineKm(anchor.lat, anchor.lng, h.lat, h.lng) <= MAX_KM_FROM_TOWN;
-      // A postcode-level hit carries no `city`, so the label is the fallback
-      // check: it always spells the settlement out.
-      return normalize(h.city ?? h.label).includes(normalize(town));
-    });
     const ts = now();
-    if (!hit || hit.lat == null || hit.lng == null) {
+    if (!hit) {
       stamp.run(ts, c.id);
       missed++;
       continue;
@@ -119,4 +110,47 @@ export async function geocodeListings(limit: number): Promise<GeocodeResult> {
     placed++;
   }
   return { attempted: candidates.length, placed, missed };
+}
+
+/** Geocode one address and keep only a hit inside the town it claims. */
+async function lookupVerified(
+  c: GeocodeCandidate,
+): Promise<{ lat: number; lng: number } | null | "upstream_error"> {
+  const town = bareCity(c.city);
+  const hits = await suggestAddresses([c.address, town].filter(Boolean).join(", "), "en");
+  if (hits === null) return "upstream_error";
+  const anchor = CITY_COORDS[c.city] ?? CITY_COORDS[town] ?? null;
+  const hit = hits.find((h) => {
+    if (h.lat == null || h.lng == null) return false;
+    if (anchor) return haversineKm(anchor.lat, anchor.lng, h.lat, h.lng) <= MAX_KM_FROM_TOWN;
+    // A postcode-level hit carries no `city`, so the label is the fallback
+    // check: it always spells the settlement out.
+    return normalize(h.city ?? h.label).includes(normalize(town));
+  });
+  return hit && hit.lat != null && hit.lng != null ? { lat: hit.lat, lng: hit.lng } : null;
+}
+
+/** Re-place ONE listing after its owner changed the address or town. The pin
+ *  used to stay wherever the import had put it, so a vendor who typed their
+ *  real address still showed up somewhere else on the map (reported
+ *  2026-11-03). A verified hit wins; otherwise the town centre, the same
+ *  fallback curated entries use; otherwise no pin, since a pin at the OLD
+ *  place is the one answer known to be wrong. An upstream failure leaves the
+ *  row for the batch script to retry (geo_synced_at NULL). */
+export async function regeocodeListing(id: string): Promise<void> {
+  const c = db
+    .prepare("SELECT id, name, city, address FROM listings WHERE id = ?")
+    .get(id) as GeocodeCandidate | null;
+  if (!c) return;
+  const ts = now();
+  const write = db.prepare(
+    "UPDATE listings SET lat = ?, lng = ?, geo_synced_at = ?, updated_at = ? WHERE id = ?",
+  );
+  const hit = c.address?.trim() ? await lookupVerified(c) : null;
+  if (hit && hit !== "upstream_error") {
+    write.run(hit.lat, hit.lng, ts, ts, id);
+    return;
+  }
+  const centre = CITY_COORDS[c.city] ?? CITY_COORDS[bareCity(c.city)] ?? null;
+  write.run(centre?.lat ?? null, centre?.lng ?? null, hit === "upstream_error" ? null : ts, ts, id);
 }

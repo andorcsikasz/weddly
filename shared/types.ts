@@ -1638,6 +1638,10 @@ export interface HouseholdMember {
 /** Public-facing — what the /rsvp check-in page sees. No couple PII / admin notes. */
 export interface PublicCheckinView {
   couple_slug: string;
+  /** The language the couple's guests meet first (the owner's own UI
+   *  language). Applied only for a visitor who never picked one, and never
+   *  saved, so the switcher still wins. Optional so fixtures can omit it. */
+  guest_locale?: UiLocale;
   couple_display_name: string;
   wedding_date: string | null;
   household_code: string;

@@ -8,7 +8,7 @@ import type { DirectorySupplierBase } from "@shared/suppliers";
 import { canonicalListingId } from "@shared/vendor_slug";
 import { listActiveCommunitySuppliers, toDirectorySupplierBase } from "./community_suppliers";
 import { isCuratedPubliclyVisible } from "./curated_overrides";
-import { getClaimedDirectoryBaseById } from "./listings";
+import { getClaimedDirectoryBaseById, withVendorEdits } from "./listings";
 import { DIRECTORY } from "./suppliers_data";
 
 export function resolveSupplierBase(supplierId: string): DirectorySupplierBase | null {
@@ -17,7 +17,7 @@ export function resolveSupplierBase(supplierId: string): DirectorySupplierBase |
   // `-v2` etc.
   const curated = DIRECTORY.find((s) => s.id === supplierId);
   // A hidden/deleted curated entry 404s on the public detail + redirect paths.
-  if (curated) return isCuratedPubliclyVisible(supplierId) ? curated : null;
+  if (curated) return isCuratedPubliclyVisible(supplierId) ? preferVendorEdits(curated) : null;
 
   // Accept a pretty share id (`magyar-foto-v12`): the trailing `v{N}` / `c{N}`
   // is the real id. Bare ids (`v12`, `c5`) pass straight through.
@@ -25,9 +25,16 @@ export function resolveSupplierBase(supplierId: string): DirectorySupplierBase |
 
   if (id.startsWith("c")) {
     const community = listActiveCommunitySuppliers().find((c) => `c${c.id}` === id);
-    if (community) return toDirectorySupplierBase(community);
+    if (community) return preferVendorEdits(toDirectorySupplierBase(community));
     // Fall through: a claimed community entry can also carry a c-id.
   }
   // Standalone registered-vendor ('claimed') listing (self-serve id `v{N}`).
   return getClaimedDirectoryBaseById(id);
+}
+
+/** A claimed entry keeps its curated / community id, but its content is the
+ *  vendor's own listing row (see `withVendorEdits`). */
+function preferVendorEdits(base: DirectorySupplierBase): DirectorySupplierBase {
+  const own = getClaimedDirectoryBaseById(base.id);
+  return own ? withVendorEdits(base, own) : base;
 }

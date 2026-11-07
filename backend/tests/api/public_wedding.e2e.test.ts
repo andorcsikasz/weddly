@@ -1137,3 +1137,45 @@ describe("public wedding: the menu", () => {
 // the new helpers are referenced.
 const _typeWitness: PublicWeddingWebsiteView | null = null;
 void _typeWitness;
+
+describe("guest pages open in the couple's language", () => {
+  // Guests open these links having never picked a language, so the page used
+  // to fall to English for a Hungarian couple (feedback 2026-11-05).
+  test("wedding site and RSVP check-in carry the owner's UI language", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("guest-locale-hu@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE users SET locale = 'hu' WHERE email = ?").run("guest-locale-hu@weddly.test");
+    const slug = await getSlug(coupleId);
+    const hh = await createHouseholdWithGuest(token, "Kovácsék");
+
+    const site = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(site.status).toBe(200);
+    expect(site.data.wedding.guest_locale).toBe("hu");
+
+    const rsvp = await req<{ rsvp: { guest_locale?: string } }>(
+      "GET",
+      `/api/rsvp/lookup?couple=${encodeURIComponent(slug)}&code=${encodeURIComponent(hh.household_code)}`,
+    );
+    expect(rsvp.status).toBe(200);
+    expect(rsvp.data.rsvp.guest_locale).toBe("hu");
+  });
+
+  test("an owner with no usable locale falls back on the workspace currency", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("guest-locale-huf@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1, currency = 'HUF' WHERE id = ?").run(coupleId);
+    db.prepare("UPDATE users SET locale = NULL WHERE email = ?").run(
+      "guest-locale-huf@weddly.test",
+    );
+    const slug = await getSlug(coupleId);
+    const site = await req<PublicWeddingResponse>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(site.data.wedding.guest_locale).toBe("hu");
+  });
+});

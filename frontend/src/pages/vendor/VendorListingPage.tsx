@@ -33,6 +33,7 @@ import {
   Lock,
   MoveVertical,
   Plus,
+  RefreshCw,
   Share2,
   X,
 } from "lucide-react";
@@ -494,6 +495,20 @@ export default function VendorListingPage() {
     }
   };
 
+  const onGalleryReplace = async (photoId: number, file: File) => {
+    if (galleryBusy) return;
+    setGalleryBusy(true);
+    try {
+      const next = await vendorListingApi.replacePhoto(photoId, file);
+      setView(next);
+      toast.success(t("vendor_home.gallery_replace_success"));
+    } catch {
+      toast.error(t("vendor_home.gallery_upload_failed"));
+    } finally {
+      setGalleryBusy(false);
+    }
+  };
+
   const onHeroDelete = async () => {
     if (heroBusy) return;
     setHeroBusy(true);
@@ -849,7 +864,7 @@ export default function VendorListingPage() {
           space under the header never renders as a blank flash. */}
       {!view && !loadError && (
         <div
-          className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start"
+          className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start"
           aria-busy="true"
         >
           <div className="space-y-3">
@@ -873,7 +888,7 @@ export default function VendorListingPage() {
           talk on a page about the listing, and the two could only drift. */}
 
       {form && view && (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
           {/* Live couple's-eye preview: stacked above the form on small
               screens, sticky right column from lg up. The "live" marker is a
               broadcast-style badge in the top-right corner of the card (red
@@ -1392,6 +1407,7 @@ export default function VendorListingPage() {
                       photo={p}
                       busy={galleryBusy}
                       onDelete={() => void onGalleryDelete(p.id)}
+                      onReplace={(file) => void onGalleryReplace(p.id, file)}
                       onCommit={(y) => {
                         void vendorListingApi
                           .updatePhotoPosition(p.id, y)
@@ -1930,15 +1946,18 @@ function GalleryTile({
   photo,
   busy,
   onDelete,
+  onReplace,
   onCommit,
 }: {
   photo: ListingPhoto;
   busy: boolean;
   onDelete: () => void;
+  onReplace: (file: File) => void;
   onCommit: (positionY: number) => void;
 }) {
   const { t } = useT();
   const ref = useRef<HTMLDivElement>(null);
+  const replaceInput = useRef<HTMLInputElement>(null);
   const drag = useRef<{ sy: number; py: number } | null>(null);
   const [pos, setPos] = useState(photo.position_y);
   const [dragging, setDragging] = useState(false);
@@ -2022,6 +2041,31 @@ function GalleryTile({
             always visible there because touch has no hover. */}
         <span className="block rounded-full bg-ink-900/60 p-1 group-hover/del:bg-ink-900/85">
           <X size={14} aria-hidden="true" />
+        </span>
+      </button>
+      {/* Replace in place: the photo keeps its slot (and, on a venue, every
+          space that shows it). Mirrors the delete control on the other corner. */}
+      <input
+        ref={replaceInput}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) onReplace(file);
+        }}
+      />
+      <button
+        type="button"
+        aria-label={t("vendor_home.gallery_replace")}
+        title={t("vendor_home.gallery_replace")}
+        onClick={() => replaceInput.current?.click()}
+        disabled={busy}
+        className="group/rep absolute left-0 top-0 flex h-11 w-11 items-start justify-start rounded-full p-1 text-white opacity-100 transition-opacity focus-visible:opacity-100 sm:left-1 sm:top-1 sm:h-auto sm:w-auto sm:p-0 sm:opacity-0 sm:group-hover:opacity-100"
+      >
+        <span className="block rounded-full bg-ink-900/60 p-1 group-hover/rep:bg-ink-900/85">
+          <RefreshCw size={14} aria-hidden="true" />
         </span>
       </button>
     </div>

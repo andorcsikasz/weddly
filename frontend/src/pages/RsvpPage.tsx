@@ -11,7 +11,7 @@ import { RsvpShell, RsvpTopBar } from "../components/RsvpShell";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { useT, useGuestLocaleDefault } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function RsvpPage() {
@@ -19,6 +19,8 @@ export default function RsvpPage() {
   const { t } = useT();
   useDocumentMeta("seo.rsvp_legacy_title", "seo.rsvp_legacy_description");
   const [view, setView] = useState<PublicCheckinView | null>(null);
+  // Guests meet the page in the couple's language unless they picked one.
+  useGuestLocaleDefault(view?.guest_locale);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

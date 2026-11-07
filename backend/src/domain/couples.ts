@@ -37,6 +37,7 @@ import type {
   WeddingStyleTag,
 } from "@shared/types";
 import { isCurrency } from "@shared/currency";
+import { isUiLocale, type UiLocale } from "@shared/locales";
 import { MAX_PHOTOGRAPHER_LINKS } from "@shared/types";
 import { billingEnforcedAt, billingEnforcementOn, db, now } from "../db";
 import { computeNameReview } from "./name_review";
@@ -91,6 +92,28 @@ export function coupleHasActivePlanner(coupleId: number): boolean {
       .prepare("SELECT 1 FROM planner_clients WHERE couple_id = ? AND status = 'active' LIMIT 1")
       .get(coupleId) != null
   );
+}
+
+/** The language a couple's GUESTS should meet first on the pages the couple
+ *  sends them to (wedding site, RSVP check-in). A guest opening the link has
+ *  never picked a language, so those pages used to fall to the app default,
+ *  English, and a Hungarian couple's guests had to find the switcher
+ *  (reported 2026-11-05). The owner's own UI language is the best signal we
+ *  have; a forint workspace with no usable answer is Hungarian. */
+export function coupleGuestLocale(
+  row: Pick<CoupleRow, "id" | "partner_a_id" | "currency">,
+): UiLocale {
+  const owner = ownerUserIdOf(row);
+  const raw = owner
+    ? (
+        db.prepare("SELECT locale FROM users WHERE id = ?").get(owner) as {
+          locale: string | null;
+        } | null
+      )?.locale
+    : null;
+  const base = raw?.toLowerCase().split(/[-_]/)[0] ?? null;
+  if (isUiLocale(base)) return base;
+  return row.currency === "HUF" ? "hu" : "en";
 }
 
 /** The user who owns/created this workspace: the `owner`-role couple_member

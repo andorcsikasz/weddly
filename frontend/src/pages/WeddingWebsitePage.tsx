@@ -27,7 +27,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { weddingWebsiteApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { useT, useGuestLocaleDefault } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { LocaleSwitcher } from "../components/LocaleSwitcher";
 import { Shell } from "../components/Shell";
@@ -52,6 +52,8 @@ export default function WeddingWebsitePage() {
   const hasCode = code.length > 0;
   const { t, locale } = useT();
   const [view, setView] = useState<PublicWeddingWebsiteView | null>(null);
+  // Guests meet the page in the couple's language unless they picked one.
+  useGuestLocaleDefault(view?.guest_locale);
   const [household, setHousehold] = useState<PublicWeddingHouseholdContext | null>(null);
   const [tier, setTier] = useState<PublicWeddingTier>("public");
   const [error, setError] = useState<"not_found" | "network" | null>(null);

@@ -468,11 +468,12 @@ describe("SupplierDetailPage: the vendor's own couple's-eye preview", () => {
     expect(screen.getByTestId("where").textContent).toBe("/vendor/listing/preview");
   });
 
-  it("shows the website without the tracked redirect, so a look never counts as a click", async () => {
+  it("links the website directly, never through the tracked redirect, so a look never counts as a click", async () => {
     detail = { ...detail, website: "https://fenyesfoto.example" };
     await renderPreview();
     expect(screen.getByText("Website")).toBeTruthy();
     expect(document.querySelector("a[href^='/r/supplier']")).toBeNull();
+    expect(document.querySelector("a[href='https://fenyesfoto.example']")).not.toBeNull();
   });
 
   it("goes back to the editor, not the couple's directory", async () => {

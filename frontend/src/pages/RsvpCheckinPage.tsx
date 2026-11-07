@@ -10,7 +10,7 @@ import { RsvpShell, RsvpTopBar } from "../components/RsvpShell";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { useT, useGuestLocaleDefault } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 const KIOSK_STORAGE_KEY = "weddly.rsvp.kiosk";
@@ -50,6 +50,8 @@ export default function RsvpCheckinPage() {
   const [coupleInput, setCoupleInput] = useState(initialCouple);
   const [codeInput, setCodeInput] = useState(initialCode);
   const [view, setView] = useState<PublicCheckinView | null>(null);
+  // Guests meet the page in the couple's language unless they picked one.
+  useGuestLocaleDefault(view?.guest_locale);
   const [error, setError] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<LookupErrorField>(null);
   const [submitting, setSubmitting] = useState(false);

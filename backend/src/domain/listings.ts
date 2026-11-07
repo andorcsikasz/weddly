@@ -338,6 +338,43 @@ function claimedListingToDirectoryBase(row: ClaimedDirectoryRow): DirectorySuppl
   };
 }
 
+/** A claimed curated / community entry, as couples should see it: the static
+ *  entry's identity, with everything the vendor edits taken from their own
+ *  `listings` row. Before this, every couple-facing read of a claimed curated
+ *  id served the static import, so a vendor's description, address, map pin,
+ *  website and price never reached anyone but the vendor's own preview
+ *  (reported 2026-11-03). Kept on the static side: the id, the country label,
+ *  and the curated-only fields the row does not carry (second phone, email
+ *  flag, imported gallery, import marker). */
+export function withVendorEdits(
+  base: DirectorySupplierBase,
+  own: DirectorySupplierBase,
+): DirectorySupplierBase {
+  return {
+    ...base,
+    name: own.name,
+    company_name: own.company_name,
+    category: own.category,
+    city: own.city,
+    blurb_hu: own.blurb_hu,
+    blurb_en: own.blurb_en,
+    website: own.website,
+    contact_email: own.contact_email,
+    contact_phone: own.contact_phone,
+    address: own.address,
+    capacity_min: own.capacity_min,
+    capacity_max: own.capacity_max,
+    spoken_languages: own.spoken_languages,
+    venue_style: own.venue_style,
+    lat: own.lat,
+    lng: own.lng,
+    price_band: own.price_band,
+    vendor_account_id: own.vendor_account_id,
+    hero_image_url: own.hero_image_url,
+    source: "claimed",
+  };
+}
+
 /** Active standalone registered-vendor listings for the public directory,
  *  optionally category-filtered. The route dedupes these by id against the
  *  curated+community set (a vendor who CLAIMED a curated/community entry keeps
@@ -440,7 +477,14 @@ const upsertListingStmt = db.prepare(`
     status            = excluded.status,
     content_hash      = excluded.content_hash,
     updated_at        = excluded.updated_at
-  WHERE listings.content_hash IS NULL OR listings.content_hash != excluded.content_hash
+  WHERE (listings.content_hash IS NULL OR listings.content_hash != excluded.content_hash)
+    -- A curated entry a vendor has CLAIMED belongs to the vendor: their
+    -- description, address, website and price live in this row and nowhere
+    -- else. Re-syncing it from suppliers_data.ts on a batch rebuild wiped a
+    -- vendor's freshly written bio back to the imported text (reported
+    -- 2026-11-03). The community path passes 0, since admin moderation of a
+    -- claimed community card (hide / unhide) has to keep reaching the row.
+    AND ($keep_claimed = 0 OR listings.vendor_account_id IS NULL)
 `);
 
 const deleteListingStmt = db.prepare("DELETE FROM listings WHERE id = ?");
@@ -546,6 +590,7 @@ export function syncListingFromCommunityRow(row: CommunitySupplierRow): void {
     $submitter_type: row.submitter_type === "self" ? "self" : "user",
     $status: row.status,
     $content_hash: hashCommunityRow(row),
+    $keep_claimed: 0,
     $created_at: ts,
     $updated_at: ts,
   });
@@ -614,6 +659,7 @@ export function backfillListings(): { curated: number; community: number } {
         $submitter_type: null,
         $status: "active",
         $content_hash: hashCuratedEntry(entry),
+        $keep_claimed: 1,
         $created_at: ts,
         $updated_at: ts,
       });
@@ -877,6 +923,7 @@ export function createVendorListing(input: {
     $submitter_type: "self",
     $status: "active",
     $content_hash: null,
+    $keep_claimed: 0,
     $created_at: ts,
     $updated_at: ts,
   });

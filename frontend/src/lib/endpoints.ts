@@ -3037,6 +3037,16 @@ export const vendorListingApi = {
     }),
   deletePhoto: (photoId: number) =>
     apiFetch<VendorListingView>("DELETE", `/api/vendor/listing/me/photos/${photoId}`),
+  /** Swap the picture behind one gallery photo; it keeps its place and id. */
+  replacePhoto: (photoId: number, file: File): Promise<VendorListingView> => {
+    const form = new FormData();
+    form.append("file", file);
+    return uploadMultipartWithProgress<VendorListingView>(
+      "POST",
+      `/api/vendor/listing/me/photos/${photoId}/replace`,
+      form,
+    );
+  },
   /** Video reel — pasted links, not uploads, so these are plain JSON calls.
    *  The server parses + validates the URL (400 `invalid_video_url` on a bad
    *  paste, 409 `videos_full` at the cap) and returns the refreshed view with

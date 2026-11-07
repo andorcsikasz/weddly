@@ -102,7 +102,10 @@ interface I18nState {
    *  from the locale (HU → HUF, everything else → EUR), so flipping the
    *  language re-denominates prices to match. The `opts` arg is accepted
    *  for call-site compatibility but no longer changes behaviour. */
-  setLocale: (l: Locale, opts?: { silent?: boolean }) => void;
+  /** `persist: false` switches the page without remembering the choice: used
+   *  for a default someone else picked (a couple's language on their guest
+   *  page), which must never become the visitor's own preference. */
+  setLocale: (l: Locale, opts?: { silent?: boolean; persist?: boolean }) => void;
   t: (path: string, vars?: Record<string, string | number>) => string;
 }
 
@@ -242,13 +245,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [locale]);
 
   const setLocale = useCallback(
-    (l: Locale) => {
+    (l: Locale, opts?: { silent?: boolean; persist?: boolean }) => {
       // No-op when already on the requested locale.
       if (l === locale) return;
-      try {
-        localStorage.setItem(STORAGE_KEY, l);
-      } catch {
-        // ignore
+      if (opts?.persist !== false) {
+        try {
+          localStorage.setItem(STORAGE_KEY, l);
+        } catch {
+          // ignore
+        }
       }
       if (l !== "en" && !TREES[l]) {
         // Flip the state first so the rest of the UI snaps to its new locale
@@ -299,6 +304,18 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       {children}
     </I18nContext.Provider>
   );
+}
+
+/** Open a guest-facing page (wedding site, RSVP) in the couple's language for
+ *  a visitor who never picked one. Not saved, so it is a default and not a
+ *  choice: the visitor's own switcher pick always wins, and nothing follows
+ *  them to an unrelated page. */
+export function useGuestLocaleDefault(coupleLocale: Locale | null | undefined): void {
+  const { locale, setLocale } = useT();
+  useEffect(() => {
+    if (!coupleLocale || coupleLocale === locale || hasExplicitLocale()) return;
+    setLocale(coupleLocale, { persist: false });
+  }, [coupleLocale, locale, setLocale]);
 }
 
 /** The next locale in the switcher cycle after `current` (wraps around). Used

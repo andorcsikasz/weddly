@@ -44,7 +44,7 @@ import type {
 import { toPublicDesign } from "@shared/design";
 import { parseMenuCard } from "@shared/menu_card";
 import { db, now } from "../db";
-import { type CoupleRow, parseDesignJson } from "../domain/couples";
+import { type CoupleRow, coupleGuestLocale, parseDesignJson } from "../domain/couples";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
 import { listScheduleEvents } from "../domain/schedule";
 import {
@@ -125,6 +125,7 @@ function buildView(
   const exposePin = isConfirmed || design.web.venueMap;
   return {
     couple_slug: couple.slug ?? "",
+    guest_locale: coupleGuestLocale(couple),
     couple_display_name: couple.display_name,
     bride_name: couple.bride_name || null,
     groom_name: couple.groom_name || null,

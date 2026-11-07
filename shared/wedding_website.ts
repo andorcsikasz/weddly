@@ -13,6 +13,7 @@
 // non-null in the payload, you may render it".
 
 import type { PublicDesign } from "./design";
+import type { UiLocale } from "./locales";
 import type { CeremonyKind, HouseholdMember, MenuCard, UnixMs } from "./types";
 import type { WishlistEntry } from "./wishlist";
 
@@ -41,6 +42,10 @@ export type PublicWeddingTier = "public" | "invited" | "confirmed";
 
 export interface PublicWeddingWebsiteView {
   couple_slug: string;
+  /** The language the couple's guests meet first (the owner's own UI
+   *  language). Applied only for a visitor who never picked one, and never
+   *  saved, so the switcher still wins. Optional so fixtures can omit it. */
+  guest_locale?: UiLocale;
   couple_display_name: string;
   bride_name: string | null;
   groom_name: string | null;

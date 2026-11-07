@@ -22,7 +22,7 @@ import { GUEST_HEALTH_NOTICE_VERSION } from "@shared/legal";
 import { isRsvpOfferedAccommodation, listRsvpAccommodationOptions } from "../domain/accommodations";
 import { CONFIG } from "../config";
 import { db } from "../db";
-import { type CoupleRow, getCoupleById } from "../domain/couples";
+import { type CoupleRow, coupleGuestLocale, getCoupleById } from "../domain/couples";
 import { sendKind } from "../domain/emails";
 import { insertCoupleNotification } from "../domain/notifications";
 import {
@@ -150,6 +150,7 @@ function buildView(couple: CoupleRow, household: HouseholdRow): PublicCheckinVie
   const members = listMembers(household.id).map(toHouseholdMember);
   return {
     couple_slug: couple.slug ?? "",
+    guest_locale: coupleGuestLocale(couple),
     couple_display_name: couple.display_name,
     wedding_date: couple.wedding_date,
     household_code: household.code,

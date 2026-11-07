@@ -39,6 +39,7 @@ import { recordSupplierEvents } from "../domain/supplier_views";
 import {
   getClaimedDirectoryBaseById,
   listActiveClaimedListingsForDirectory,
+  withVendorEdits,
   listListingPackages,
   listListingPhotos,
   listListingVideos,
@@ -144,8 +145,22 @@ export function assembleDirectoryBase(opts: {
   // so what this actually adds is the vendor whose entry the country filter just
   // dropped — the case that used to make a verified Austrian venue invisible to
   // every couple whose wedding wasn't in Austria.
+  //
+  // A claimed curated / community entry is served from the vendor's own row
+  // (`withVendorEdits`), so the card shows the description, price and place
+  // they wrote rather than the import. A vendor who moved the listing to
+  // another category leaves the old category's slice here and joins the new
+  // one through the loop below.
+  const ownById = new Map(listActiveClaimedListingsForDirectory(null).map((c) => [c.id, c]));
+  allBase = allBase.flatMap((b) => {
+    const own = ownById.get(b.id);
+    if (!own) return [b];
+    if (opts.category && own.category !== opts.category) return [];
+    return [withVendorEdits(b, own)];
+  });
   const seenIds = new Set(allBase.map((b) => b.id));
-  for (const c of listActiveClaimedListingsForDirectory(opts.category)) {
+  for (const c of ownById.values()) {
+    if (opts.category && c.category !== opts.category) continue;
     if (!seenIds.has(c.id)) allBase.push(c);
   }
 

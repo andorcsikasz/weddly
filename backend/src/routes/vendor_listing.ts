@@ -37,6 +37,7 @@ import type { PackagePriceMode } from "@shared/listing_pricing";
 import { PACKAGE_AMOUNT_MAX, isPackagePriceMode, listingCurrency } from "@shared/listing_pricing";
 import { MAX_LISTING_VIDEOS, parseVideoUrl } from "@shared/listing_videos";
 import { db, now } from "../db";
+import { regeocodeListing } from "../domain/listing_geocode";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { requireHttpUrl } from "../lib/url";
 import { sniffUploadedImage } from "../lib/image_sniff";
@@ -362,7 +363,15 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
     }
     patch.price_band_changed_at = now();
   }
-  const updated = patchListing(currentListing.id, patch);
+  let updated = patchListing(currentListing.id, patch);
+  // A new address (or town) moves the map pin with it.
+  const placeChanged =
+    (patch.address !== undefined && patch.address !== currentListing.address) ||
+    (patch.city !== undefined && patch.city !== currentListing.city);
+  if (updated && placeChanged) {
+    await regeocodeListing(currentListing.id);
+    updated = getListingById(currentListing.id) ?? updated;
+  }
   if (!updated) {
     // patchListing only returns null when the row vanished between resolve
     // and update — racy in theory, never observed in practice. Surface as
@@ -584,6 +593,45 @@ async function handlePatchPhoto(ctx: Ctx): Promise<Response> {
     throw new HttpError(404, "Photo not found", { code: "photo_not_found" });
   }
   setListingPhotoPositionY(listing.id, photoId, positionY);
+  return json(listingViewWithMedia(listing, account));
+}
+
+/** Swap the picture behind one gallery photo, keeping its place. Delete +
+ *  re-upload lost the slot in the order and, on a venue, every space that
+ *  borrowed the photo (spaces point at `photo_id`), so the photo keeps its id
+ *  and only its file changes. The focal point resets: it was chosen for the
+ *  old picture. Asked for by a vendor 2026-11 ("only the cover can be
+ *  changed"). */
+async function handleReplacePhoto(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const photoId = Number(ctx.params.photo_id);
+  if (!Number.isInteger(photoId) || photoId <= 0) {
+    throw new HttpError(400, "photo_id must be a positive integer");
+  }
+  const photo = getListingPhoto(listing.id, photoId);
+  if (!photo) throw new HttpError(404, "Photo not found", { code: "photo_not_found" });
+  const { raw, ext } = await readUploadedImage(ctx);
+
+  const ts = now();
+  const name = `${ts}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const key = `listings/${listing.id}/gallery/${name}`;
+  await storage.write(key, raw);
+  const url = `/uploads/${key}`;
+  db.prepare(
+    "UPDATE listing_photos SET url = ?, position_y = 50 WHERE id = ? AND listing_id = ?",
+  ).run(url, photoId, listing.id);
+  const oldKey = keyFromUploadUrl(photo.url);
+  if (oldKey && oldKey !== key) await storage.delete(oldKey);
+
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_photo_replace",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id, photo_id: photoId, url: photo.url },
+    after: { url, bytes: raw.size, mime: raw.type },
+  });
   return json(listingViewWithMedia(listing, account));
 }
 
@@ -1334,6 +1382,7 @@ export function registerVendorListingRoutes(router: Router) {
   router.post("/api/vendor/listing/me/photos", handleUploadPhoto);
   router.patch("/api/vendor/listing/me/photos/:photo_id", handlePatchPhoto);
   router.delete("/api/vendor/listing/me/photos/:photo_id", handleDeletePhoto);
+  router.post("/api/vendor/listing/me/photos/:photo_id/replace", handleReplacePhoto);
   router.post("/api/vendor/listing/me/videos", handleAddVideo);
   // Literal "reorder" registered BEFORE the `:video_id` PATCH so the router
   // doesn't swallow it as video_id="reorder" (mirrors households.reorder).

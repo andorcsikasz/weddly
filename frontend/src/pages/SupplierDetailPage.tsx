@@ -1821,12 +1821,14 @@ function BookingCard({
         )}
         {detail.website &&
           // The tracked redirect counts a website click; the vendor looking at
-          // their own page must not inflate their own number.
+          // their own page must not inflate their own number, so the preview
+          // links straight to the site. It used to be plain text there, which
+          // read to vendors as "my website link is missing" (2026-11-03).
           (readOnly ? (
-            <div className={rowLink}>
+            <a href={detail.website} target="_blank" rel="noreferrer noopener" className={rowLink}>
               <Globe size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
               {t("suppliers.detail.contact.website")}
-            </div>
+            </a>
           ) : (
             <a
               href={`/r/supplier/${encodeURIComponent(detail.id)}`}
