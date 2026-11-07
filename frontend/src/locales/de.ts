@@ -9527,12 +9527,12 @@ const de: LocaleMessages = {
     expired_title: "Sitzung beendet",
     expired_body:
       "Melden Sie sich erneut an und machen Sie dort weiter, wo Sie aufgehört haben. Alles, was Sie eingegeben haben, ist noch da.",
-    admin_reauth_title: "Identität bestätigen",
-    admin_reauth_body:
-      "Für den Adminbereich ist eine aktuelle Zwei-Faktor-Prüfung erforderlich. Ihre Arbeit bleibt erhalten.",
+    admin_reauth_title: "Admin-Code",
+    admin_reauth_body: "Aus deiner Authenticator-App.",
     admin_reauth_cta: "Bestätigen",
     admin_mfa_label: "Authenticator-Code",
-    admin_mfa_invalid: "Der Code ist ungültig, abgelaufen oder wurde bereits verwendet.",
+    admin_mfa_invalid: "Falscher Code.",
+    admin_mfa_unavailable: "Admin-Anmeldung ist nicht eingerichtet.",
     sign_in: "Anmelden",
     sign_out: "Abmelden",
     or_divider: "oder",

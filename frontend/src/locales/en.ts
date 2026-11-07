@@ -9382,12 +9382,12 @@ const en: LocaleMessages = {
     expired_title: "Session ended",
     expired_body:
       "Sign in again to pick up where you left off. Anything you've typed is still here.",
-    admin_reauth_title: "Confirm it's you",
-    admin_reauth_body:
-      "Admin access requires a recent second-factor check. Your work is still here.",
+    admin_reauth_title: "Admin code",
+    admin_reauth_body: "From your authenticator app.",
     admin_reauth_cta: "Verify",
     admin_mfa_label: "Authenticator code",
-    admin_mfa_invalid: "That code is invalid, expired, or was already used. Try the current code.",
+    admin_mfa_invalid: "Wrong code.",
+    admin_mfa_unavailable: "Admin sign-in isn't set up.",
     sign_in: "Sign in",
     sign_out: "Sign out",
     or_divider: "or",

@@ -395,6 +395,9 @@ export default {
         // Its halo: one azure ring expanding out of the badge and fading. Pairs
         // with the pop so the mark reads as switched ON, not just resized.
         "badge-halo": "badgeHalo 720ms ease-out",
+        // Admin code boxes: a short sideways shake on a wrong code.
+        "code-shake": "codeShake 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97)",
+        "code-caret": "codeCaret 1s steps(1) infinite",
         // Honeymoon hero: the pill turning into the headline-sized field.
         // Deliberately slow (not the 200-300ms UI cadence) because it is a
         // scene change on a full-bleed photo, not a control toggling: the
@@ -449,6 +452,12 @@ export default {
           "0%": { transform: "scaleX(0)" },
           "100%": { transform: "scaleX(1)" },
         },
+        codeShake: {
+          "0%, 100%": { transform: "translateX(0)" },
+          "20%, 60%": { transform: "translateX(-6px)" },
+          "40%, 80%": { transform: "translateX(6px)" },
+        },
+        codeCaret: { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0" } },
         badgeHalo: {
           "0%": { opacity: "0.85", transform: "scale(0.5)" },
           "100%": { opacity: "0", transform: "scale(2.4)" },

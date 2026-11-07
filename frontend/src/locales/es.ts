@@ -9470,12 +9470,12 @@ const es: LocaleMessages = {
     expired_title: "Sesión finalizada",
     expired_body:
       "Vuelve a iniciar sesión para continuar donde lo dejaste. Todo lo que hayas escrito sigue aquí.",
-    admin_reauth_title: "Confirma que eres tú",
-    admin_reauth_body:
-      "El acceso de administración requiere una comprobación reciente del segundo factor. Tu trabajo seguirá aquí.",
+    admin_reauth_title: "Código de admin",
+    admin_reauth_body: "De tu app de autenticación.",
     admin_reauth_cta: "Verificar",
     admin_mfa_label: "Código del autenticador",
-    admin_mfa_invalid: "El código no es válido, ha caducado o ya se ha utilizado.",
+    admin_mfa_invalid: "Código incorrecto.",
+    admin_mfa_unavailable: "El acceso de admin no está configurado.",
     sign_in: "Iniciar sesión",
     sign_out: "Cerrar sesión",
     or_divider: "o",

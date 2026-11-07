@@ -10816,6 +10816,7 @@ export interface LocaleMessages {
     admin_reauth_cta: string;
     admin_mfa_label: string;
     admin_mfa_invalid: string;
+    admin_mfa_unavailable: string;
     sign_in: string;
     sign_out: string;
     or_divider: string;

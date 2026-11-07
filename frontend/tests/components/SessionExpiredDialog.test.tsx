@@ -107,7 +107,7 @@ describe("<SessionExpiredDialog> — capability branching", () => {
   it("uses a dedicated TOTP form for admin step-up, never the ordinary password form", () => {
     installFetch(() => jsonResponse(200, { ok: true }));
     renderDialog({ reason: "admin" });
-    expect(screen.getByRole("heading", { name: "Confirm it's you" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Admin code" })).toBeInTheDocument();
     expect(screen.getByLabelText(/authenticator code/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/^password/i)).not.toBeInTheDocument();
   });
@@ -123,11 +123,27 @@ describe("<SessionExpiredDialog> — capability branching", () => {
     });
     let completed = 0;
     renderDialog({ reason: "admin", onLoggedIn: () => completed++ });
+    // The sixth digit submits on its own; no button press needed.
     fireEvent.change(screen.getByLabelText(/authenticator code/i), { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: /^verify$/i }));
     await waitFor(() => expect(completed).toBe(1));
-    expect(calls).toContain("/api/auth/admin-step-up");
+    expect(calls.filter((c) => c === "/api/auth/admin-step-up")).toHaveLength(1);
     expect(calls).not.toContain("/api/auth/login");
+  });
+
+  it("a wrong code clears the boxes and says so in two words", async () => {
+    let posts = 0;
+    installFetch((url) => {
+      if (url === "/api/auth/admin-step-up") {
+        posts++;
+        return jsonResponse(403, { error: "bad", code: "admin_mfa_invalid" });
+      }
+      return jsonResponse(401, { error: "not authenticated" });
+    });
+    renderDialog({ reason: "admin" });
+    fireEvent.change(screen.getByLabelText(/authenticator code/i), { target: { value: "409294" } });
+    expect(await screen.findByText("Wrong code.")).toHaveAttribute("role", "alert");
+    expect(screen.getByLabelText(/authenticator code/i)).toHaveValue("");
+    expect(posts).toBe(1);
   });
 
   it("password-only user: shows password field + Sign in button, no 'or' divider", () => {

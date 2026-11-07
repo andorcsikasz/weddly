@@ -9374,12 +9374,12 @@ const hr: LocaleMessages = {
     expired_title: "Sesija je završila",
     expired_body:
       "Prijavite se ponovno i nastavite gdje ste stali. Sve što ste upisali i dalje je tu.",
-    admin_reauth_title: "Potvrdite svoj identitet",
-    admin_reauth_body:
-      "Za administratorski pristup potrebna je nedavna provjera drugog faktora. Vaš će rad ostati sačuvan.",
+    admin_reauth_title: "Admin kod",
+    admin_reauth_body: "Iz aplikacije za autentifikaciju.",
     admin_reauth_cta: "Potvrdi",
     admin_mfa_label: "Kod autentifikatora",
-    admin_mfa_invalid: "Kod nije valjan, istekao je ili je već upotrijebljen.",
+    admin_mfa_invalid: "Pogrešan kod.",
+    admin_mfa_unavailable: "Admin prijava nije postavljena.",
     sign_in: "Prijava",
     sign_out: "Odjava",
     or_divider: "ili",

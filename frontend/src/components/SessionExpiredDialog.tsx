@@ -20,7 +20,7 @@
 // different account.
 
 import type { AuthSession } from "@shared/types";
-import { type FormEvent, useEffect, useId, useState } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { Button, Dialog, PasswordField } from "./ui";
 import { AppleSignInButton } from "./AppleSignInButton";
 import { GoogleSignInButton } from "./GoogleSignInButton";
@@ -72,6 +72,11 @@ export function SessionExpiredDialog({
   const [mfaCode, setMfaCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Bumped on every wrong code so the boxes replay their shake.
+  const [shakeKey, setShakeKey] = useState(0);
+  // The code last sent, so auto-submit and the Verify button can't post the
+  // same code twice (a TOTP code is single-use server-side).
+  const lastSentCode = useRef<string | null>(null);
 
   // Reset internal state whenever the dialog re-opens so a previous error
   // banner doesn't linger across sessions.
@@ -80,6 +85,7 @@ export function SessionExpiredDialog({
       setPassword("");
       setMfaCode("");
       setError(null);
+      lastSentCode.current = null;
     }
   }, [open]);
 
@@ -129,22 +135,42 @@ export function SessionExpiredDialog({
     }
   }
 
-  async function onAdminStepUp(e: FormEvent) {
-    e.preventDefault();
+  async function submitAdminCode(code: string) {
+    if (!/^\d{6}$/.test(code) || lastSentCode.current === code) return;
+    lastSentCode.current = code;
     setSubmitting(true);
     setError(null);
     try {
-      await authApi.adminStepUp(mfaCode);
+      await authApi.adminStepUp(code);
       onLoggedIn();
     } catch (err) {
+      const status = err instanceof ApiError ? err.status : 0;
       setError(
-        err instanceof ApiError && err.status === 429
+        status === 429
           ? t("auth.rate_limited")
-          : t("session.admin_mfa_invalid"),
+          : status === 503
+            ? t("session.admin_mfa_unavailable")
+            : t("session.admin_mfa_invalid"),
       );
+      // Clear the boxes so the next code can be typed straight in.
+      setMfaCode("");
+      lastSentCode.current = null;
+      setShakeKey((k) => k + 1);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function onAdminStepUp(e: FormEvent) {
+    e.preventDefault();
+    void submitAdminCode(mfaCode);
+  }
+
+  function onMfaChange(value: string) {
+    const code = value.replace(/\D/g, "").slice(0, 6);
+    setMfaCode(code);
+    if (code.length > 0) setError(null);
+    if (code.length === 6) void submitAdminCode(code);
   }
 
   function onSignOut() {
@@ -205,25 +231,20 @@ export function SessionExpiredDialog({
 
       {reason === "admin" && (
         <form id="admin-step-up-form" className="mt-4" onSubmit={onAdminStepUp}>
-          <input
-            id="admin-mfa-code"
-            className="input text-center font-mono text-2xl tracking-[0.5em]"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9]{6}"
-            maxLength={6}
-            placeholder="000000"
+          <CodeBoxes
+            key={shakeKey}
             value={mfaCode}
-            onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-            aria-label={t("session.admin_mfa_label")}
-            aria-invalid={Boolean(error) || undefined}
-            aria-describedby={error ? errorId : undefined}
-            autoFocus
+            onChange={onMfaChange}
+            invalid={Boolean(error)}
+            shake={shakeKey > 0}
+            disabled={submitting}
+            label={t("session.admin_mfa_label")}
+            describedBy={error ? errorId : undefined}
           />
           {error && (
             <p
               id={errorId}
-              className="mt-2 text-sm text-blush-700 dark:text-blush-300"
+              className="mt-3 text-center text-sm text-blush-700 dark:text-blush-300"
               role="alert"
             >
               {error}
@@ -300,5 +321,74 @@ export function SessionExpiredDialog({
         </p>
       )}
     </Dialog>
+  );
+}
+
+/** Six edgeless digit boxes drawn over ONE real input, so paste, iOS/Android
+ *  one-time-code autofill and the password manager all keep working exactly as
+ *  they do on a plain field. The boxes are only a picture of its value. */
+function CodeBoxes({
+  value,
+  onChange,
+  invalid,
+  shake,
+  disabled,
+  label,
+  describedBy,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  invalid: boolean;
+  shake: boolean;
+  disabled: boolean;
+  label: string;
+  describedBy?: string;
+}) {
+  const [focused, setFocused] = useState(true);
+  return (
+    <div
+      className={`relative mx-auto flex w-fit gap-2 ${shake ? "animate-code-shake motion-reduce:animate-none" : ""}`}
+    >
+      {Array.from({ length: 6 }, (_, i) => {
+        const digit = value[i];
+        const active = focused && !disabled && i === Math.min(value.length, 5) && !digit;
+        const tone = invalid
+          ? "bg-blush-50 text-blush-700 dark:bg-blush-950/40 dark:text-blush-300"
+          : digit
+            ? "bg-paper-200 text-ink-900 dark:bg-umber-600 dark:text-paper-50"
+            : active
+              ? "bg-paper-200 dark:bg-umber-600"
+              : "bg-paper-100 dark:bg-umber-700";
+        return (
+          <div
+            key={i}
+            aria-hidden="true"
+            className={`flex h-14 w-11 items-center justify-center rounded-xl font-mono text-2xl tabular-nums transition-all duration-150 ${tone} ${active ? "scale-105" : ""} ${digit ? "scale-100" : ""} ${disabled ? "opacity-60" : ""}`}
+          >
+            {digit ??
+              (active ? (
+                <span className="h-6 w-px animate-code-caret bg-ink-700 motion-reduce:animate-none dark:bg-paper-100" />
+              ) : null)}
+          </div>
+        );
+      })}
+      <input
+        id="admin-mfa-code"
+        className="absolute inset-0 h-full w-full cursor-text opacity-0"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        pattern="[0-9]{6}"
+        maxLength={6}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        aria-label={label}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        autoFocus
+      />
+    </div>
   );
 }

@@ -9463,12 +9463,12 @@ const hu: LocaleMessages = {
     expired_title: "A munkamenet lejárt",
     expired_body:
       "Jelentkezz be újra, és ott folytatjátok, ahol abbahagytátok. Ami beírtál, megmarad.",
-    admin_reauth_title: "Erősítsd meg, hogy te vagy",
-    admin_reauth_body:
-      "Az adminfelülethez friss második faktoros ellenőrzés szükséges. A munkád megmarad.",
+    admin_reauth_title: "Admin kód",
+    admin_reauth_body: "A hitelesítő appodból.",
     admin_reauth_cta: "Ellenőrzés",
     admin_mfa_label: "Hitelesítő kód",
-    admin_mfa_invalid: "A kód hibás, lejárt vagy már felhasználtad. Próbáld az aktuális kódot.",
+    admin_mfa_invalid: "Hibás kód.",
+    admin_mfa_unavailable: "Az admin belépés nincs beállítva.",
     sign_in: "Bejelentkezés",
     sign_out: "Kijelentkezés",
     or_divider: "vagy",
