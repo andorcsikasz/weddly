@@ -450,7 +450,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                 ${
                   block.suppressOutreachChrome
                     ? ""
-                    : renderPlainUrlNote(ctaUrl, category, locale, plainCtaUrl)
+                    : renderPlainUrlNote(ctaUrl, locale, plainCtaUrl)
                 }
                 ${renderSecondaryLinks(block.secondaryLinks)}
                 ${postCtaParagraphs}
@@ -700,29 +700,17 @@ function renderOutreachOrientation(category: EmailCategory, locale: UiLocale): s
   return `<p style="margin:0 0 18px 0;color:${COLOR.muted};font-size:14px;line-height:1.5;font-style:italic;">${escapeHtml(copy)}</p>`;
 }
 
-// For unsolicited mail (outreach category), the CTA button hides its
-// destination, a textbook phishing shape. Render the URL in plain text
-// underneath so a skeptical recipient can verify the domain before clicking.
-// Transactional + lifecycle mails (recipient has a Weddly account) skip this
-//, the extra line is noise when there's no trust gap to bridge — UNLESS the
-// builder forces it (`force`) for an account-action link (activation), where a
-// copy-paste fallback matters if the button gets mangled. When forced, the URL
-// is also clickable (the recipient asked for this account); the outreach
-// variant stays a plain <span> so a skeptic reads the domain before clicking.
-function renderPlainUrlNote(
-  ctaUrl: string,
-  category: EmailCategory,
-  locale: UiLocale,
-  force = false,
-): string {
-  if (category !== "outreach" && !force) return "";
+// A copy-paste line under the button, printed ONLY when the builder asks for
+// it (`plainCtaUrl`): the vendor profile-share mail, whose link IS the content
+// they are meant to grab. It used to print automatically on every outreach
+// mail and on the activation mails, and was cut there as noise (owner
+// direction 2026-11-07).
+function renderPlainUrlNote(ctaUrl: string, locale: UiLocale, force: boolean): string {
+  if (!force) return "";
   const label = COPY_LINK_LABEL[locale] ?? "Or copy this link into your browser:";
-  const urlHtml = force
-    ? `<a href="${escapeAttr(ctaUrl)}" style="color:${COLOR.accent};text-decoration:underline;">${escapeHtml(ctaUrl)}</a>`
-    : `<span style="color:${COLOR.enInk};">${escapeHtml(ctaUrl)}</span>`;
   return `<p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;word-break:break-all;">
             ${escapeHtml(label)}<br />
-            ${urlHtml}
+            <a href="${escapeAttr(ctaUrl)}" style="color:${COLOR.accent};text-decoration:underline;">${escapeHtml(ctaUrl)}</a>
           </p>`;
 }
 

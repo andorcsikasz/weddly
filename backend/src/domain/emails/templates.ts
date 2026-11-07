@@ -1613,19 +1613,13 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     ctaUrl: p.verifyUrl,
     hu: {
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
-      paragraphs: [
-        "Itt egy új link az e-mail cím megerősítéséhez.",
-        "Ha nem te kérted, hagyd figyelmen kívül ezt a levelet, a régi linket továbbra is használhatod, amíg le nem jár.",
-      ],
+      paragraphs: ["Itt egy új link az e-mail cím megerősítéséhez."],
       cta: "E-mail cím megerősítése",
       ctaSubtext: "A link 7 napig érvényes.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
-      paragraphs: [
-        "Here's a fresh email-verification link.",
-        "If you didn't ask for this, you can safely ignore it.",
-      ],
+      paragraphs: ["Here's a fresh email-verification link."],
       cta: "Confirm your email",
       ctaSubtext: "Valid for seven days.",
     },
@@ -1641,7 +1635,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         "Új jelszót kértél a Weddly fiókodhoz. A link biztonsági okokból **1 órán át érvényes**.",
-        "Ha nem te kérted, ne kattints rá és ne add meg senkinek, a fiókod a régi jelszóval továbbra is biztonságban van.",
       ],
       cta: "Új jelszó beállítása",
       ctaSubtext: "Egyszer használható, 1 órán át érvényes link.",
@@ -1650,7 +1643,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
         "You asked to reset your Weddly password. For your security this link is **valid for 1 hour**.",
-        "If you didn't request this, you can ignore the email. Your password hasn't changed.",
       ],
       cta: "Set a new password",
       ctaSubtext: "Single-use link, valid for 1 hour.",
@@ -1661,7 +1653,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Pozdrav ${ctx.recipientName || ""}!`.trim(),
         paragraphs: [
           "Zatražili ste novu lozinku za svoj Weddly račun. Iz sigurnosnih razloga poveznica **vrijedi 1 sat**.",
-          "Ako to niste bili vi, slobodno zanemarite ovu poruku, vaš je račun i dalje siguran.",
         ],
         cta: "Postavite novu lozinku",
         ctaSubtext: "Poveznica za jednokratnu upotrebu, vrijedi 1 sat.",
@@ -1672,7 +1663,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Hallo ${ctx.recipientName || ""}!`.trim(),
         paragraphs: [
           "Sie haben ein neues Passwort für Ihr Weddly-Konto angefordert. Aus Sicherheitsgründen ist dieser Link **1 Stunde gültig**.",
-          "Falls Sie das nicht waren, können Sie diese E-Mail ignorieren. Ihr Passwort wurde nicht geändert.",
         ],
         cta: "Neues Passwort festlegen",
         ctaSubtext: "Einmal-Link, 1 Stunde gültig.",
@@ -1683,7 +1673,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Hola ${ctx.recipientName || ""}:`.trim(),
         paragraphs: [
           "Has solicitado restablecer la contraseña de Weddly. Por seguridad, este enlace es **válido durante 1 hora**.",
-          "Si no has sido tú, puedes ignorar este correo. Tu contraseña no ha cambiado.",
         ],
         cta: "Crear una contraseña nueva",
         ctaSubtext: "Enlace de un solo uso, válido durante 1 hora.",
@@ -1705,7 +1694,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "**Ha NEM te voltál**, azonnal állíts vissza új jelszót a lenti linkkel, ezzel azonnal kizárod azt, aki most lépett be.",
       ],
       cta: "Új jelszó kérése",
-      footnote: "Ha te voltál, ezt a levelet figyelmen kívül hagyhatod.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
@@ -1715,7 +1703,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "**If this wasn't you**, use the link below to reset your password immediately. This will sign out whoever accessed your account.",
       ],
       cta: "Reset password now",
-      footnote: "If this was you, you can safely ignore this email.",
     },
     extra: {
       hr: {
@@ -1727,7 +1714,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "**Ako to niste bili vi**, odmah zatražite novu lozinku poveznicom ispod. Time ćete odjaviti osobu koja je pristupila računu.",
         ],
         cta: "Zatražite novu lozinku",
-        footnote: "Ako ste to bili vi, slobodno zanemarite ovu poruku.",
       },
       es: {
         preheader: "Tu contraseña se ha cambiado correctamente.",
@@ -1738,7 +1724,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "**Si no has sido tú**, usa el enlace de abajo para restablecer la contraseña de inmediato. Así se cerrará cualquier sesión que no reconozcas.",
         ],
         cta: "Restablecer la contraseña",
-        footnote: "Si has sido tú, puedes ignorar este correo.",
       },
       de: {
         preheader: "Wir bestätigen, dass Ihr Passwort erfolgreich geändert wurde.",
@@ -1749,7 +1734,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "**Falls Sie das nicht waren**, fordern Sie über den Link unten sofort ein neues Passwort an. Damit werden alle unbekannten Sitzungen abgemeldet.",
         ],
         cta: "Jetzt neues Passwort anfordern",
-        footnote: "Falls Sie das waren, können Sie diese E-Mail ignorieren.",
       },
     },
   }),
@@ -1770,7 +1754,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "**Ha NEM te voltál**, ez azt jelenti, hogy valaki más belépett a fiókodba a jelszavaddal. Kérj azonnal új jelszót a lenti linkkel, ezzel azonnal kilépteted őt mindenhonnan.",
       ],
       cta: "Új jelszó kérése",
-      footnote: "Ha te voltál, nyugodtan figyelmen kívül hagyhatod ezt a levelet.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
@@ -1780,7 +1763,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "**If it wasn't you**, someone else may have accessed your account. Use the link below to reset your password and sign out every active session.",
       ],
       cta: "Reset password now",
-      footnote: "If this was you, you can safely ignore this email.",
     },
   }),
 
@@ -1800,7 +1782,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Biztonsági okból minden eddigi bejelentkezésedet ki fogjuk léptetni, amikor megerősíted, bárhol használnál Weddly-t, újra be kell jelentkezned.",
       ],
       cta: "Új e-mail cím megerősítése",
-      footnote: "Ha nem te kérted, hagyd figyelmen kívül, a régi cím marad érvényben.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
@@ -1810,8 +1791,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "For your security, we'll sign you out everywhere when you confirm. You'll need to log back in on each device.",
       ],
       cta: "Confirm new email",
-      footnote:
-        "If you didn't request this, ignore the email. Your current address will remain unchanged.",
     },
   }),
 
@@ -1831,7 +1810,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Ha NEM te kezdeményezted, ez azt jelenti, hogy valaki be tud lépni a fiókodba. Kérj azonnal új jelszót a lenti linkkel, ezzel azonnal kizárod.",
       ],
       cta: "Új jelszó kérése",
-      footnote: "Ha te voltál, ezt nyugodtan figyelmen kívül hagyhatod.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
@@ -1841,7 +1819,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If this wasn't you, it means someone has access to your account. Reset your password now using the link below to immediately lock them out.",
       ],
       cta: "Reset password now",
-      footnote: "If this was you, you can safely ignore this message.",
     },
   }),
 
@@ -1873,7 +1850,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ],
         cta: "Csatlakozom a tervezéshez",
         ctaSubtext: "A link 7 napig érvényes.",
-        footnote: "Ha véletlenül kaptad, hagyd figyelmen kívül, semmi sem fog történni.",
       },
       en: {
         greeting: "Hello,",
@@ -1884,8 +1860,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ],
         cta: "Join the workspace",
         ctaSubtext: "Link valid for 7 days.",
-        footnote:
-          "If this invitation was not meant for you, you can ignore it. No account will be created.",
       },
     };
   },
@@ -2113,7 +2087,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         cta: v.en.cta,
         ctaSubtext: `Invite link for your partner: ${p.inviteUrl}`,
         secondaryLinks: [{ label: "Send it by email", url: p.shareMailtoUrl }],
-        footnote: "If your partner has joined in the meantime, please ignore this note.",
       },
     };
   },
@@ -2618,8 +2591,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "A válaszaidat később is bármikor módosíthatod, ha bármi változna.",
         ],
         cta: "Visszajelzés küldése",
-        footnote:
-          "Ha ez a meghívó véletlenül jutott el hozzád, nyugodtan hagyd figyelmen kívül. Semmilyen teendőd nincs vele.",
       },
       en: {
         greeting: `Hi${greetingEnName},`,
@@ -2628,7 +2599,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "One click on the button below opens a single page where you can confirm attendance, pick a meal, flag accommodation needs, and request a song. You can update your answer any time.",
         ],
         cta: "RSVP now",
-        footnote: "If this invitation was not meant for you, you can ignore it.",
       },
     };
   },
@@ -4046,7 +4016,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Fiók élesítése",
       ctaSubtext: "A link 30 napig érvényes és egyszer használható.",
-      footnote: "A profil az aktiválás után válik láthatóvá.",
     },
     en: {
       greeting: `Hi ${p.plannerName},`,
@@ -4057,8 +4026,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Activate account",
       ctaSubtext: "The link is valid for 30 days and can be used once.",
-      footnote:
-        "If you didn't ask for this account, there's nothing to do: without activation the profile never goes live.",
     },
   }),
 
@@ -4084,7 +4051,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Fiók megnyitása",
       ctaSubtext: "A link 30 napig érvényes és egyszer használható.",
-      footnote: "A fiók a megnyitás után válik aktívvá.",
     },
     en: {
       greeting: `Hi ${p.plannerName},`,
@@ -4096,8 +4062,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Open your account",
       ctaSubtext: "The link is valid for 30 days and can be used once.",
-      footnote:
-        "If you didn't apply, there's nothing to do: without opening it the account never goes live.",
     },
   }),
 
@@ -4116,7 +4080,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ? "Elkészült a Weddly szervezői fiókotok"
         : "You were recommended: your Weddly account is ready",
     ctaUrl: p.activateUrl,
-    plainCtaUrl: true,
     noUtm: true,
     // The stock outreach footer says "you have no account with us", which this
     // mail's own first sentence contradicts. Say the true version instead.
@@ -4677,7 +4640,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         `Valaki a Weddlyn szeretné átvenni ${huArticle(p.listingName)} ${p.listingName} adatlapját.`,
         "Ha te vagy, kattints az alábbi linkre. Beállíthatsz egy jelszót, és ezután te szerkesztheted az adatlapot a katalógusban.",
-        "Ha nem te kezdeményezted, hagyd figyelmen kívül ezt az e-mailt, kattintás nélkül semmi sem történik.",
       ],
       cta: "Adatlap átvétele",
       ctaSubtext: "A link 7 napig érvényes.",
@@ -4688,7 +4650,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         `Someone wants to claim the ${p.listingName} listing on Weddly.`,
         "If you started this request, use the link below to set a password and take control of the listing.",
-        "If you did not request this, ignore the email. Nothing will change unless the link is opened.",
       ],
       cta: "Claim your listing",
       ctaSubtext: "Link expires in 7 days.",
