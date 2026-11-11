@@ -1,19 +1,16 @@
-// /camera — public, unauthenticated landing page for Wedding Camera.
+// /camera: public, unauthenticated landing page for Weddly Camera.
 //
-// Two audiences share this one page, honestly: a Weddly couple, for whom the
-// feature already ships free (the hero below is the exact CameraHero card
-// rendered inside the authenticated dashboard — same component, so the
-// promise and the product never drift apart), and a stand-alone buyer whose
-// wedding isn't on Weddly at all, for whom only the waitlist further down is
-// real today (the checkout for that half doesn't exist yet).
+// Built like a product page, not a brochure: one full-bleed hero, then a few
+// short chapters, each a two-tone headline, one sentence and one picture of
+// the product. Motion is tied to the scroll (camera_scroll.css): the hero
+// dims, phones tilt upright as they enter, photos settle in. Copy is kept to
+// what a visitor needs to decide; the detail lives in the product itself.
 //
 // Forced dark, one font: this page always renders on the dark palette
 // regardless of the site-wide theme toggle (the same local `dark`-class
-// technique PublicFooter uses to stay a black slab in both themes), and
-// every heading and body line on it is font-grotesk, so the hero's h1 opts
-// out of the workspace's usual Cormorant serif via `headingFont`.
-import { ArrowRight, Camera, Hourglass, ScanLine, Wifi } from "lucide-react";
-import type { CSSProperties } from "react";
+// technique PublicFooter uses), and every line on it is font-grotesk.
+import { ArrowRight, Camera } from "lucide-react";
+import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -23,14 +20,14 @@ import {
   formatEurCents,
 } from "@shared/film_pricing";
 import { useAuth } from "../lib/auth";
-import { CameraHero, CameraPreview, DEMO_STRIP } from "../components/CameraHero";
-import { CameraReviews } from "../components/CameraReviews";
+import { CameraPreview } from "../components/CameraHero";
 import { CameraShare } from "../components/CameraShare";
 import { PublicShell } from "../components/PublicShell";
 import { WeddlyDove } from "../components/WeddlyDove";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { ANALOG_PREVIEW_FILTER } from "../lib/analog";
+import "./camera_scroll.css";
 
 /** What a guest's roll looks like: wedding shots through the in-app camera's
  *  own analog looks, each with the orange date print a disposable burns in. */
@@ -68,6 +65,100 @@ const ROLL: { src: string; filter: string; stamp: string; position?: string }[] 
     stamp: "'26 09 13",
   },
 ];
+
+/** The three phones that rise out of the hero. */
+const HERO_PHONES: { src: string; position?: string }[] = [
+  { src: "/demo/film-01.jpg" },
+  { src: "/demo/wedding-party-hero.jpg", position: "60% 50%" },
+  { src: "/demo/film-03.jpg" },
+];
+
+/** The gallery mosaic in the "One reveal" chapter. */
+const REVEAL_SHOTS = [
+  "/design-photos/02-reception-candlelit.jpg",
+  "/design-photos/11-wedding-cake.jpg",
+  "/design-photos/04-greenery-arch.jpg",
+] as const;
+
+/** Whether the browser scrubs `.cam-reveal` with the scroll on its own. */
+function scrollTimelineSupported(): boolean {
+  return (
+    typeof CSS !== "undefined" &&
+    typeof CSS.supports === "function" &&
+    CSS.supports("animation-timeline: view()")
+  );
+}
+
+/** Fades its children up as they scroll into view. Where the browser has
+ *  scroll-driven animations the CSS does it and this only sets the class;
+ *  elsewhere an IntersectionObserver plays it once. Anything already on
+ *  screen at mount is left visible, so nothing blinks on first paint. */
+function Reveal({
+  children,
+  className = "",
+  phone = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  /** The tilt-up entrance used for phone mockups. */
+  phone?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined" || scrollTimelineSupported()) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    if (el.getBoundingClientRect().top < window.innerHeight) return;
+    setHidden(true);
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setHidden(false);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "0px 0px -12% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className={`cam-reveal ${phone ? "cam-phone" : ""} ${hidden ? "cam-reveal-hidden" : ""} ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Two-tone chapter headline: the statement, then its answer in grey. */
+function ChapterTitle({ a, b, center = false }: { a: string; b: string; center?: boolean }) {
+  return (
+    <h2
+      className={`text-5xl font-bold leading-[0.95] tracking-[-0.045em] sm:text-6xl lg:text-7xl ${center ? "text-center" : ""}`}
+    >
+      <span className="block text-paper-50">{a}</span>
+      <span className="block text-paper-500">{b}</span>
+    </h2>
+  );
+}
+
+/** One gallery photo, settling from a slight zoom as it scrolls in. */
+function Shot({ src, className }: { src: string; className: string }) {
+  return (
+    <div className={`overflow-hidden rounded-3xl bg-umber-900 ${className}`}>
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        className="cam-zoom h-full w-full object-cover"
+        style={{ filter: ANALOG_PREVIEW_FILTER }}
+      />
+    </div>
+  );
+}
 
 /** How far (px) the roll drifts sideways over the whole time it is on screen. */
 const ROLL_DRIFT_PX = 520;
@@ -246,61 +337,148 @@ export default function CameraPage() {
     };
   }, []);
 
-  const features = [
-    { Icon: ScanLine, title: t("camera.feature_1_title"), body: t("camera.feature_1_body") },
-    { Icon: Camera, title: t("camera.feature_2_title"), body: t("camera.feature_2_body") },
-    { Icon: Wifi, title: t("camera.feature_3_title"), body: t("camera.feature_3_body") },
-    { Icon: Hourglass, title: t("camera.feature_4_title"), body: t("camera.feature_4_body") },
+  const proof = [
+    t("camera.feature_1_title"),
+    t("camera.feature_2_title"),
+    t("camera.feature_3_title"),
+    t("camera.feature_4_title"),
   ];
 
   return (
     <PublicShell flushFooter>
-      <div className="dark overflow-x-clip bg-umber-950 font-grotesk text-paper-100">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20" lang={locale}>
-          <CameraHero
-            album={null}
-            coupleName={null}
-            coverPhoto={DEMO_STRIP[0]}
-            onCreate={() => navigate("/signup")}
-            onShare={() => {}}
-            headingFont="grotesk"
-            accent="gold"
-            minimal
-            title={t("camera.hero_title")}
-            subtitle={t("camera.hero_sub")}
-            tryQr={{ src: "/camera-try-qr.svg", label: t("camera.try_title") }}
-            secondaryAction={
-              // On a phone the visitor IS on the device, so a link beats a QR.
+      <div className="dark overflow-x-clip bg-umber-950 font-grotesk text-paper-100" lang={locale}>
+        {/* Hero: one full-bleed photo, one line, one button. The photo dims
+            and the copy lifts away as the page scrolls (camera_scroll.css). */}
+        <section className="relative isolate flex min-h-[88svh] items-center justify-center overflow-hidden px-4 pb-48 pt-24 text-center sm:pb-56">
+          <img
+            src="/design-photos/12-ceremony-aisle.jpg"
+            alt=""
+            className="cam-zoom absolute inset-0 -z-20 h-full w-full object-cover"
+            style={{ filter: ANALOG_PREVIEW_FILTER }}
+          />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/70 via-black/55 to-umber-950" />
+          <div className="cam-dim absolute inset-0 -z-10 bg-umber-950" />
+          <div className="cam-hero-copy mx-auto max-w-4xl">
+            <h1 className="text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-paper-50 sm:text-7xl lg:text-8xl">
+              {t("camera.hero_title")}
+            </h1>
+            <p className="mx-auto mt-6 max-w-md text-base text-paper-200 sm:text-lg">
+              {t("camera.hero_sub")}
+            </p>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to={coupleStart}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-paper-50 px-7 py-3.5 text-sm font-semibold text-umber-950 transition-[transform,background-color] duration-150 ease-out hover:bg-paper-100 active:scale-[0.97]"
+              >
+                {t("camera.create_event_cta")}
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
               <Link
                 to="/camera/try"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-paper-50/20 px-7 py-3.5 text-sm font-semibold text-paper-50 transition-[transform,background-color] duration-150 ease-out hover:bg-paper-50/5 active:scale-[0.97] lg:hidden"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-paper-50/25 px-7 py-3.5 text-sm font-semibold text-paper-50 backdrop-blur-sm transition-[transform,background-color] duration-150 ease-out hover:bg-paper-50/10 active:scale-[0.97]"
               >
                 <Camera size={16} aria-hidden="true" />
                 {t("camera.try_cta")}
               </Link>
-            }
-          />
-
-          {/* Feature highlights — icon, title, one short line. No cards, no
-              counters: four plain columns read calmer than four boxes. */}
-          <section className="mt-32 sm:mt-48">
-            <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-              {features.map(({ Icon, title, body }) => (
-                <div key={title}>
-                  <Icon size={20} strokeWidth={1.5} className="text-paper-300" aria-hidden="true" />
-                  <h3 className="mt-4 text-base font-semibold text-paper-50">{title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-paper-400">{body}</p>
-                </div>
-              ))}
             </div>
+          </div>
+        </section>
+
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          {/* Three phones rise out of the hero and tilt upright as they scroll in. */}
+          <Reveal
+            phone
+            className="relative z-10 -mt-40 flex items-end justify-center gap-3 sm:-mt-48 sm:gap-6"
+          >
+            {HERO_PHONES.map((shot, i) => (
+              <CameraPreview
+                key={shot.src}
+                inline
+                src={shot.src}
+                filter={ANALOG_PREVIEW_FILTER}
+                objectPosition={shot.position}
+                stamp="'26 09 12"
+                filmName={t("camera.roll_film_name")}
+                shotsLabel={t("media.film_shots_short").replace("{{n}}", String(24 + i * 6))}
+                className={
+                  i === 1
+                    ? "w-40 sm:w-60"
+                    : `hidden w-32 sm:block sm:w-48 ${i === 0 ? "-rotate-3" : "rotate-3"}`
+                }
+              />
+            ))}
+          </Reveal>
+
+          <Reveal className="mt-14 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-paper-400">
+            {proof.map((label, i) => (
+              <span key={label} className="flex items-center gap-5">
+                {i > 0 && <span aria-hidden="true" className="h-4 w-px bg-paper-50/15" />}
+                {label}
+              </span>
+            ))}
+          </Reveal>
+
+          {/* Scan. Shoot. */}
+          <section className="mt-28 grid items-center gap-16 sm:mt-40 md:grid-cols-2">
+            <Reveal>
+              <ChapterTitle a={t("camera.chapter_shoot_a")} b={t("camera.chapter_shoot_b")} />
+              <p className="mt-6 max-w-sm text-lg leading-relaxed text-paper-400">
+                {t("camera.chapter_shoot_body")}
+              </p>
+            </Reveal>
+            <Reveal phone className="relative mx-auto flex w-full max-w-sm justify-center">
+              <CameraPreview
+                inline
+                live
+                src="/demo/film-02.jpg"
+                filter={ANALOG_PREVIEW_FILTER}
+                stamp="'26 09 12"
+                filmName={t("camera.roll_film_name")}
+                shotsLabel={t("media.film_shots_short").replace("{{n}}", "27")}
+                className="roll-item w-56 sm:w-64"
+              />
+              {/* The QR is real: it opens the try-out camera on the phone. */}
+              <div className="cam-drift absolute -left-2 bottom-10 hidden w-32 -rotate-6 rounded-2xl bg-paper-50 p-3 text-center shadow-[0_24px_50px_rgba(0,0,0,0.55)] lg:block">
+                <img src="/camera-try-qr.svg" alt="" className="block w-full" />
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-umber-950">
+                  {t("camera.try_title")}
+                </p>
+              </div>
+            </Reveal>
           </section>
+
+          <div className="mt-28 sm:mt-40">
+            <CameraShare coupleName={t("camera.roll_film_name")} />
+          </div>
+
+          {/* One reveal. */}
+          <section className="mt-28 grid items-center gap-16 sm:mt-40 md:grid-cols-2">
+            <Reveal className="md:order-2">
+              <ChapterTitle a={t("camera.chapter_reveal_a")} b={t("camera.chapter_reveal_b")} />
+              <p className="mt-6 max-w-sm text-lg leading-relaxed text-paper-400">
+                {t("camera.chapter_reveal_body")}
+              </p>
+            </Reveal>
+            <Reveal className="grid grid-cols-2 gap-3 sm:gap-4 md:order-1">
+              <Shot src={REVEAL_SHOTS[0]} className="h-full" />
+              <div className="cam-drift space-y-3 sm:space-y-4">
+                <Shot src={REVEAL_SHOTS[1]} className="aspect-square" />
+                <Shot src={REVEAL_SHOTS[2]} className="aspect-square" />
+              </div>
+            </Reveal>
+          </section>
+
+          {/* Every guest. One film. */}
+          <Reveal className="mt-28 text-center sm:mt-40">
+            <ChapterTitle a={t("camera.roll_title_a")} b={t("camera.roll_title_b")} center />
+          </Reveal>
 
           {/* A guest's roll: a full-bleed strip of viewfinders, wider than
               the screen and centred on it, drifting sideways as the page
               scrolls. */}
           <section
             ref={rollRef}
-            className={`relative left-1/2 mt-32 flex w-screen -translate-x-1/2 justify-center overflow-hidden py-6 sm:mt-48 ${
+            className={`relative left-1/2 mt-12 flex w-screen -translate-x-1/2 justify-center overflow-hidden py-6 ${
               rollIn ? "is-in" : ""
             }`}
           >
@@ -332,27 +510,16 @@ export default function CameraPage() {
             </div>
           </section>
 
-          <div className="mt-32 sm:mt-48">
-            <CameraShare coupleName={t("camera.roll_film_name")} />
-          </div>
-
-          <div className="mt-32 sm:mt-48">
-            <CameraReviews />
-          </div>
-
           {/* Stand-alone product */}
-          <section
-            id="standalone"
-            className="mt-32 scroll-mt-20 border-t border-paper-50/10 pt-20 sm:mt-48 sm:pt-24"
-          >
+          <section id="standalone" className="mt-28 scroll-mt-20 pb-28 sm:mt-40 sm:pb-36">
             <div className="flex flex-col items-center text-center">
-              <h2 className="max-w-lg text-xl font-semibold tracking-tight text-paper-50 sm:text-2xl">
+              <h2 className="text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-paper-50 sm:text-6xl lg:text-7xl">
                 {t("camera.standalone_title")}
               </h2>
 
               {/* Uber-style: a segmented headcount picker, then the price as
                   an option row, label left and number right. */}
-              <div className="mt-8 w-full max-w-lg text-left">
+              <div className="mt-12 w-full max-w-lg text-left">
                 {/* The fill always runs from the start of the track to the
                     chosen stop and grows or shrinks as the headcount changes,
                     so "how many guests" reads as an amount, not a tab. */}

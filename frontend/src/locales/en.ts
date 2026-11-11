@@ -9298,6 +9298,15 @@ const en: LocaleMessages = {
     pricing_note: "Booking opens soon.",
     create_event_cta: "Create an event",
     roll_film_name: "Anna & Ben",
+    chapter_shoot_a: "Scan.",
+    chapter_shoot_b: "Shoot.",
+    chapter_shoot_body: "No app, no account. The camera opens in the browser.",
+    chapter_reveal_a: "One reveal.",
+    chapter_reveal_b: "After the big day.",
+    chapter_reveal_body:
+      "Every guest's photos land in one gallery that opens for everyone at once.",
+    roll_title_a: "Every guest.",
+    roll_title_b: "One film.",
     start_title: "Create your event",
     start_body:
       "Add your names and the date, pick how many guests, and your QR code is live the moment you pay.",

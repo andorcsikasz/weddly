@@ -24,7 +24,7 @@ export function CameraShare({ coupleName }: { coupleName: string }) {
   return (
     <section className="grid items-center gap-12 md:grid-cols-2">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight text-paper-50 sm:text-3xl">
+        <h2 className="text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-paper-50 sm:text-6xl lg:text-7xl">
           {t("camera.share_title")}
         </h2>
         <div role="tablist" aria-orientation="vertical" className="mt-8 space-y-2">

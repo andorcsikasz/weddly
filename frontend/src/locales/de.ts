@@ -9442,6 +9442,15 @@ const de: LocaleMessages = {
     pricing_note: "Buchungen öffnen bald.",
     create_event_cta: "Event erstellen",
     roll_film_name: "Anna & Ben",
+    chapter_shoot_a: "Scannen.",
+    chapter_shoot_b: "Knipsen.",
+    chapter_shoot_body: "Keine App, kein Konto. Die Kamera öffnet sich im Browser.",
+    chapter_reveal_a: "Eine Enthüllung.",
+    chapter_reveal_b: "Nach dem großen Tag.",
+    chapter_reveal_body:
+      "Die Fotos aller Gäste landen in einer Galerie, die sich für alle gleichzeitig öffnet.",
+    roll_title_a: "Jeder Gast.",
+    roll_title_b: "Ein Film.",
     start_title: "Erstellt euer Event",
     start_body:
       "Gebt eure Namen und das Datum ein, wählt die Gästezahl, und der QR-Code ist nach der Zahlung sofort aktiv.",

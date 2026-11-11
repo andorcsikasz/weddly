@@ -10724,6 +10724,14 @@ export interface LocaleMessages {
     pricing_note: string;
     create_event_cta: string;
     roll_film_name: string;
+    chapter_shoot_a: string;
+    chapter_shoot_b: string;
+    chapter_shoot_body: string;
+    chapter_reveal_a: string;
+    chapter_reveal_b: string;
+    chapter_reveal_body: string;
+    roll_title_a: string;
+    roll_title_b: string;
     start_title: string;
     start_body: string;
     start_bride: string;

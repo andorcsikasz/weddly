@@ -9380,6 +9380,15 @@ const hu: LocaleMessages = {
     pricing_note: "A foglalás hamarosan nyílik.",
     create_event_cta: "Esemény létrehozása",
     roll_film_name: "Anna & Bálint",
+    chapter_shoot_a: "Szkennelj.",
+    chapter_shoot_b: "Fotózz.",
+    chapter_shoot_body: "Se app, se regisztráció. A kamera a böngészőben nyílik meg.",
+    chapter_reveal_a: "Egy közös meglepetés.",
+    chapter_reveal_b: "A nagy nap után.",
+    chapter_reveal_body:
+      "Minden vendég fotója egy galériába kerül, ami mindenkinek egyszerre nyílik meg.",
+    roll_title_a: "Minden vendég.",
+    roll_title_b: "Egy film.",
     start_title: "Hozzátok létre az eseményt",
     start_body:
       "Adjátok meg a neveteket és a dátumot, válasszátok ki a vendégszámot, és a fizetés után a QR-kód azonnal él.",

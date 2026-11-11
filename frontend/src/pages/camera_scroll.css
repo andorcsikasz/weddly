@@ -1,0 +1,102 @@
+/* /camera scroll motion.
+
+   Where the browser has scroll-driven animations (animation-timeline), every
+   effect is tied to the element's position in the viewport, so it scrubs
+   with the scroll and reverses on the way back up. Elsewhere `.cam-reveal`
+   falls back to a one-shot fade-up toggled by an IntersectionObserver
+   (`useReveal` in CameraPage.tsx), and the purely decorative effects
+   (zoom, drift, dim) simply do not run. Reduced motion turns all of it off. */
+
+.cam-reveal {
+  transition:
+    opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cam-reveal-hidden {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
+@keyframes cam-in {
+  0% {
+    opacity: 0;
+    transform: translateY(56px) scale(0.97);
+  }
+}
+@keyframes cam-phone {
+  0% {
+    opacity: 0;
+    transform: perspective(1400px) rotateX(24deg) translateY(90px) scale(0.9);
+  }
+}
+@keyframes cam-zoom {
+  0% {
+    transform: scale(1.18);
+  }
+}
+@keyframes cam-drift {
+  0% {
+    transform: translateY(48px);
+  }
+  100% {
+    transform: translateY(-48px);
+  }
+}
+@keyframes cam-dim {
+  to {
+    opacity: 0.7;
+  }
+}
+@keyframes cam-hero-out {
+  to {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .cam-reveal {
+      transition: none;
+      animation: cam-in linear both;
+      animation-timeline: view();
+      animation-range: entry cover 30%;
+    }
+    .cam-reveal.cam-phone {
+      animation-name: cam-phone;
+      animation-range: entry cover 45%;
+    }
+    .cam-zoom {
+      animation: cam-zoom linear both;
+      animation-timeline: view();
+      animation-range: cover cover 75%;
+    }
+    .cam-drift {
+      animation: cam-drift linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+  }
+  @supports (animation-timeline: scroll()) {
+    .cam-dim {
+      opacity: 0;
+      animation: cam-dim linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 90vh;
+    }
+    .cam-hero-copy {
+      animation: cam-hero-out linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 70vh;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cam-reveal,
+  .cam-reveal-hidden {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

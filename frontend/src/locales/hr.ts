@@ -9290,6 +9290,15 @@ const hr: LocaleMessages = {
     pricing_note: "Rezervacije se otvaraju uskoro.",
     create_event_cta: "Kreirajte događaj",
     roll_film_name: "Ana & Bruno",
+    chapter_shoot_a: "Skeniraj.",
+    chapter_shoot_b: "Snimaj.",
+    chapter_shoot_body: "Bez aplikacije i računa. Kamera se otvara u pregledniku.",
+    chapter_reveal_a: "Jedno otkrivanje.",
+    chapter_reveal_b: "Nakon velikog dana.",
+    chapter_reveal_body:
+      "Fotografije svih gostiju stižu u jednu galeriju koja se svima otvara odjednom.",
+    roll_title_a: "Svaki gost.",
+    roll_title_b: "Jedan film.",
     start_title: "Kreirajte događaj",
     start_body:
       "Upišite imena i datum, odaberite broj gostiju, a QR kod postaje aktivan čim platite.",
