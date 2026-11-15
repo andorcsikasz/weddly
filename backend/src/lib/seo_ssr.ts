@@ -1155,7 +1155,11 @@ const VENDOR_PATH_RE = /^\/suppliers\/([^/?#]+)/;
 
 export function lookupVendorPageMeta(pathname: string | null | undefined): VendorPageMeta | null {
   if (!pathname) return null;
-  const m = VENDOR_PATH_RE.exec(pathname);
+  // A couple looking at a venue inside the app sits on `/app/suppliers/<id>`,
+  // and that is the address they copy. Read it as the public page so the
+  // share card carries the venue's own photo. Canonical still points at the
+  // public URL (see buildHeadBlock) and `/app/*` stays noindex.
+  const m = VENDOR_PATH_RE.exec(pathname.replace(/^\/app(?=\/suppliers\/)/, ""));
   if (!m) return null;
   const idRaw = decodeURIComponent(m[1] ?? "").trim();
   // `/vendors/signup` is the vendor-registration route, not a vendor id.
@@ -1291,10 +1295,31 @@ function heroPreloadTags(path: string): string[] {
   ];
 }
 
+/** `/app/vendors` is the signed-in vendor directory. It is shared as a link
+ *  (`?guests=` and all), so it needs a share card; the page itself stays
+ *  noindex. */
+function isAppVendorDirectoryPath(path: string): boolean {
+  return path === "/app/vendors" || path === "/app/vendors/";
+}
+
+const APP_VENDORS_SHARE = {
+  hu: {
+    title: "Szolgáltatók · Wēddly",
+    description: "Fotósok, zenészek, catering és helyszínek, egy helyen, a ti esküvőtökhöz.",
+  },
+  en: {
+    title: "Wedding vendors · Wēddly",
+    description: "Photographers, musicians, caterers and venues in one place, for your wedding.",
+  },
+} as const;
+
 function isIndexableHtmlPath(
   path: string,
   opts: { weddingMeta?: WeddingSiteMeta | null; vendorMeta?: VendorPageMeta | null },
 ): boolean {
+  // The app shell is private. A share card may borrow a venue's photo, but
+  // that does not make the signed-in copy of the page indexable.
+  if (path === "/app" || path.startsWith("/app/")) return false;
   if (path === "/" || marketingPageForPath(path)) return true;
   if (isToolPath(path) || path === "/blog" || lookupBlogPostSeo(path)) return true;
   if (
@@ -1499,6 +1524,12 @@ function buildHeadBlock(opts: {
     ogImage = blogCover;
     ogImageAlt = locale === "hu" ? blogArticle.huTitle : blogArticle.enTitle;
     brandOgImageDims = null;
+  } else if (isAppVendorDirectoryPath(path)) {
+    // The in-app vendor list has no single subject to photograph, so it gets
+    // the vendor-directory card rather than the dove logo mark.
+    ogImage = `https://${canonicalHost}/og-vendors.png`;
+    ogImageAlt = locale === "hu" ? APP_VENDORS_SHARE.hu.title : APP_VENDORS_SHARE.en.title;
+    brandOgImageDims = { width: 1200, height: 630 };
   } else if (opts.isRsvp) {
     ogImage = `https://${canonicalHost}/og-rsvp.png`;
     ogImageAlt = defaultMeta.ogImageAlt;
@@ -1544,6 +1575,10 @@ function buildHeadBlock(opts: {
       (locale === "hu"
         ? `${vm.name} a Weddly esküvői szolgáltató katalógusában.`
         : `${vm.name} on Weddly's wedding vendor directory.`);
+    twDescription = description;
+  } else if (isAppVendorDirectoryPath(path)) {
+    title = APP_VENDORS_SHARE[locale].title;
+    description = APP_VENDORS_SHARE[locale].description;
     twDescription = description;
   } else if (locationCombo) {
     const copy = locationPageCopy(locationCombo, locale);
