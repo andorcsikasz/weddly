@@ -672,7 +672,7 @@ export default function GuestPageEditorPage() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverDragOver, setCoverDragOver] = useState(false);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
-  // Bold/italic toolbar targets for the "Good to know" fields — one ref per
+  // Bold/ toolbar targets for the "Good to know" fields — one ref per
   // labelled row, keyed the same as usefulFields, plus the free-form textarea.
   const usefulFieldRefs = useRef<Partial<Record<UsefulInfoKey, HTMLInputElement | null>>>({});
   const usefulOtherRef = useRef<HTMLTextAreaElement>(null);

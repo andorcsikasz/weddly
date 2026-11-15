@@ -252,7 +252,7 @@ const es: LocaleMessages = {
     banner_body:
       "Tu acceso ha terminado, así que tu espacio de trabajo es de solo lectura por ahora. Tus datos están a salvo, y una suscripción recupera la edición al instante.",
     banner_cta: "Suscribirse",
-    founding_banner_title: "Sois nuestros invitados 🎉",
+    founding_banner_title: "Sois nuestros invitados ",
     founding_banner_body:
       "Sois nuestros invitados hasta el día de vuestra boda, con todo incluido. Disfrutad de toda la plataforma.",
     solo_banner_title: "Invita a tu pareja",
@@ -2392,7 +2392,7 @@ const es: LocaleMessages = {
     provendors_share_copied: "Enlace copiado. Pásalo.",
     provendors_share_title: "Weddly, donde las parejas buscan a sus proveedores",
     provendors_share_text:
-      "Las parejas planean toda su boda en Weddly y buscan aquí a sus proveedores. La ronda fundacional está abierta y el primer año eres su invitado. Pensé en ti 💍",
+      "Las parejas planean toda su boda en Weddly y buscan aquí a sus proveedores. La ronda fundacional está abierta y el primer año eres su invitado. Pensé en ti ",
     product_eyebrow: "Qué incluye",
     product_title: "Las piezas que de verdad vas a usar",
     block_budget_eyebrow: "Presupuesto en vivo",
@@ -2504,6 +2504,16 @@ const es: LocaleMessages = {
     mockup_table_uni: "Universidad",
     mockup_table_head: "Mesa presidencial",
     mockup_drag_subtitle: "Veg · Acompañante 1",
+    seating_demo_unseated: "Sin asiento",
+    seating_demo_hint: "Toca una mesa para ver quién se sienta",
+    seating_demo_swap_hint: "Toca un invitado abajo para sentarlo o cambiarlo",
+    seating_demo_conflict: "Mejor separados",
+    seating_demo_empty: "Asiento libre",
+    seating_demo_print: "A4 · PDF listo",
+    seating_demo_close: "Cerrar",
+    seating_demo_unseat: "Levantar a {name}",
+    seating_demo_replace: "Cambiar",
+    seating_demo_full: "Mesa llena: elige a quién cambiar",
     mockup_vendor_name: "Tu negocio",
     mockup_vendor_category: "Categoría · Ciudad",
     mockup_vendor_rating: "4,9",
@@ -3025,7 +3035,7 @@ const es: LocaleMessages = {
       "Las añadiremos a la lista. Cada una marcará automáticamente cuál de vosotros la anotó.",
     template_ideas_done_one: "{count} idea añadida",
     template_ideas_done_other: "{count} ideas añadidas",
-    // Dice (🎲) randomiser on the Idea tab.
+    // Dice () randomiser on the Idea tab.
     dice_button: "Tirar 3 ideas",
     dice_button_hint: "Ideas creativas al azar; elige las que te resuenen.",
     dice_dialog_title: "Tirada de ideas creativas",
@@ -3212,7 +3222,7 @@ const es: LocaleMessages = {
     poc_empty: "Aún no has elegido proveedores; selecciónalos en la página Proveedores.",
     chart_title: "Cronograma de tareas",
     no_dates_title: "Tareas sin fecha",
-    no_dates_empty: "¡Buen trabajo! Todas las tareas tienen fecha. 🎉",
+    no_dates_empty: "¡Buen trabajo! Todas las tareas tienen fecha. ",
     no_dates_empty_all: "Aún no hay tareas. Añádelas en la página Planificación.",
     set_dates: "Poner fechas",
     no_dates_show_all: "Mostrar todas ({count})",
@@ -3598,12 +3608,12 @@ const es: LocaleMessages = {
     share_copy_link: "Copiar enlace",
     share_copy_msg: "Mensaje copiado",
     share_message_long:
-      "¡Hola! 📸 Haz unas cuantas fotos en la boda de {{names}}, sin necesidad de app, aquí mismo: {{url}} Todas se revelan juntas el gran día. ¡Qué alegría contar contigo! 🎞️",
+      "¡Hola! Haz unas cuantas fotos en la boda de {{names}}, sin necesidad de app, aquí mismo: {{url}} Todas se revelan juntas el gran día. ¡Qué alegría contar contigo! ",
     share_message_sms:
-      "Haz fotos en la boda de {{names}}, sin app: {{url}} 📸 Se revelan el día de la boda.",
-    share_email_subject: "Sé nuestro fotógrafo de boda por un momento 📸",
+      "Haz fotos en la boda de {{names}}, sin app: {{url}} Se revelan el día de la boda.",
+    share_email_subject: "Sé nuestro fotógrafo de boda por un momento ",
     share_email_body:
-      "Querido invitado:\n\nSomos {{names}} y nos encantaría ver nuestro día también a través de tus ojos. Abre este enlace en tu móvil, haz unas fotos y listo, sin app ni registro:\n\n{{url}}\n\nCada foto se revela a la vez el gran día. ¡Gracias por formar parte de él! 🎞️",
+      "Querido invitado:\n\nSomos {{names}} y nos encantaría ver nuestro día también a través de tus ojos. Abre este enlace en tu móvil, haz unas fotos y listo, sin app ni registro:\n\n{{url}}\n\nCada foto se revela a la vez el gran día. ¡Gracias por formar parte de él! ",
     early_close: "Cerrar subidas",
     early_close_hint:
       "Los invitados no podrán subir más fotos de inmediato. Puedes reabrir cuando quieras.",
@@ -4213,7 +4223,7 @@ const es: LocaleMessages = {
     wishlist_pledge_withdraw: "Retirar",
     wishlist_pledge_contributors_others: "Otros invitados también han mostrado interés.",
     wishlist_pledge_contributors_remaining: "Restante:",
-    wishlist_pledge_contributors_funded: "¡Este regalo está totalmente financiado! 🎉",
+    wishlist_pledge_contributors_funded: "¡Este regalo está totalmente financiado! ",
     wishlist_pledge_error_generic: "Algo salió mal. Inténtalo de nuevo.",
     schedule_title: "Desarrollo del día",
     schedule_empty:
@@ -4361,6 +4371,8 @@ const es: LocaleMessages = {
     venue_map_label: "Mostrar el lugar en un mapa",
     venue_map_hint: "Cualquiera con el enlace ve la ubicación exacta.",
     venue_map_needs_location: "Añade primero la dirección del lugar para activar esto.",
+    publish_missing_venue_body:
+      "Aún no hay lugar, así que los invitados verán un marcador para añadirlo donde iría la ubicación.",
     venue_map_confirm_title: "¿Mostrar la ubicación exacta?",
     venue_map_confirm_body:
       "Cualquiera con el enlace de tu página verá la dirección exacta del lugar y un mapa, no solo los invitados confirmados.",
@@ -4900,14 +4912,14 @@ const es: LocaleMessages = {
     auto_reveal: "Revelar solo",
     auto_reveal_hint: "Revela cuando se acabe el tiempo o todos hayan respondido",
     all_in: "¡Todos han respondido!",
-    fastest: "⚡ El más rápido: {name} ({seconds}s)",
+    fastest: "El más rápido: {name} ({seconds}s)",
     correct_count: "{correct} de {answered} acertaron",
     nobody_right: "Nadie acertó. Auch.",
-    times_up: "⏰ ¡Se acabó el tiempo!",
-    no_answer: "😴 Esta vez no respondiste",
+    times_up: "¡Se acabó el tiempo!",
+    no_answer: "Esta vez no respondiste",
     answer_failed: "No se envió. ¿Otra vez?",
-    streak_bonus: "🔥 ¡{count} seguidas! +{bonus} de bonus",
-    streak_chip: "🔥 {count}",
+    streak_bonus: "¡{count} seguidas! +{bonus} de bonus",
+    streak_chip: "{count}",
     rank_up: "¡Subes {n}!",
     rank_down: "Bajas {n}",
     lobby_who: "Quién está aquí",
@@ -5958,6 +5970,11 @@ const es: LocaleMessages = {
     empty_not_needed: "Has marcado {category} como no necesario, así que aquí no hay nada que ver.",
     empty_self_organized: "Lo organizas tú, así que aquí no hay nada que ver.",
     load_more: "Cargar {n} más",
+    result_count: "{n} resultados",
+    remember_filters: "Recordar mis filtros",
+    seats_label: "Capacidad",
+    seats_min_aria: "Capacidad, al menos (personas)",
+    seats_max_aria: "Capacidad, como máximo (personas)",
     bookedCard: {
       title: "Ya reservado",
       subtitle: "Añade el proveedor de {category} que ya has reservado.",
@@ -8350,14 +8367,14 @@ const es: LocaleMessages = {
   share_weddly: {
     menu_label: "Compartir Weddly",
     title: "Comparte Weddly para llegar a más parejas.",
-    body: "Ayúdanos a ayudar también a otras parejas. 🕊️🤍",
+    body: "Ayúdanos a ayudar también a otras parejas. ",
     messages_label: "Mensaje para compartir",
     message_warm:
-      "Estamos organizando nuestra boda con Weddly, y hace que todo resulte mucho más fácil. Si también estás organizando la tuya, échale un vistazo: https://tryweddly.com 🕊️🤍",
+      "Estamos organizando nuestra boda con Weddly, y hace que todo resulte mucho más fácil. Si también estás organizando la tuya, échale un vistazo: https://tryweddly.com ",
     message_clean:
-      "Estamos organizando nuestra boda con Weddly. Todo lo que necesitamos, muy bien organizado en un solo sitio: https://tryweddly.com 🕊️🤍",
+      "Estamos organizando nuestra boda con Weddly. Todo lo que necesitamos, muy bien organizado en un solo sitio: https://tryweddly.com ",
     message_friendly:
-      "¿Conoces a alguien que esté organizando una boda? Nosotros usamos Weddly y de verdad nos encanta lo sencillo que lo hace todo. Échale un vistazo: https://tryweddly.com 🕊️🤍",
+      "¿Conoces a alguien que esté organizando una boda? Nosotros usamos Weddly y de verdad nos encanta lo sencillo que lo hace todo. Échale un vistazo: https://tryweddly.com ",
     share_action: "Compartir",
     copy_action: "Copiar",
     sharing: "Compartiendo",
@@ -8465,7 +8482,7 @@ const es: LocaleMessages = {
     activity_action_table_delete: "eliminó una mesa: {label}",
     activity_action_seat_assign: "sentó a un invitado: {guest} → {table}",
     activity_action_seat_unassign: "quitó de su sitio a un invitado: {guest}",
-    activity_action_seat_swap: "intercambió los sitios de dos invitados: {a} ↔ {b}",
+    activity_action_seat_swap: "intercambió los sitios de dos invitados: {a} {b}",
     activity_action_conflict_create: "añadió un conflicto de asignación de sitios",
     activity_action_conflict_delete: "eliminó un conflicto de asignación de sitios",
     activity_action_print_seating_chart: "descargó el PDF del plano de mesas",
@@ -10694,7 +10711,7 @@ const es: LocaleMessages = {
     filled_toast: "Datos oficiales rellenados",
   },
   geo: {
-    address_attribution: "Sugerencias © colaboradores de OpenStreetMap",
+    address_attribution: "Sugerencias colaboradores de OpenStreetMap",
   },
   planner_profile: {
     heading: "Perfil",

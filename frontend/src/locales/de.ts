@@ -261,7 +261,7 @@ const de: LocaleMessages = {
     banner_body:
       "Ihr Zugriff ist beendet, Ihr Arbeitsbereich ist deshalb vorerst schreibgeschützt. Ihre Daten sind sicher, und ein Abo bringt das Bearbeiten sofort zurück.",
     banner_cta: "Abo abschließen",
-    founding_banner_title: "Sie sind unsere Gäste 🎉",
+    founding_banner_title: "Sie sind unsere Gäste ",
     founding_banner_body:
       "Sie sind bis zu Ihrem Hochzeitstag unsere Gäste, mit allem freigeschaltet. Viel Freude mit der ganzen Plattform.",
     solo_banner_title: "Laden Sie Ihren Partner ein",
@@ -2410,7 +2410,7 @@ const de: LocaleMessages = {
     provendors_share_copied: "Link kopiert. Geben Sie ihn weiter.",
     provendors_share_title: "Weddly, hier suchen Paare ihre Dienstleister",
     provendors_share_text:
-      "Paare planen ihre ganze Hochzeit mit Weddly und suchen hier ihre Dienstleister. Die Gründerrunde ist offen, und im ersten Jahr sind Sie ihr Gast. Dachte, das könnte etwas für Sie sein 💍",
+      "Paare planen ihre ganze Hochzeit mit Weddly und suchen hier ihre Dienstleister. Die Gründerrunde ist offen, und im ersten Jahr sind Sie ihr Gast. Dachte, das könnte etwas für Sie sein ",
     product_eyebrow: "Was drin ist",
     product_title: "Die Teile, die Sie wirklich nutzen werden",
     block_budget_eyebrow: "Live-Budget",
@@ -2521,6 +2521,16 @@ const de: LocaleMessages = {
     mockup_table_uni: "Uni",
     mockup_table_head: "Haupttisch",
     mockup_drag_subtitle: "Veg. · +1",
+    seating_demo_unseated: "Ohne Platz",
+    seating_demo_hint: "Tippe auf einen Tisch, um zu sehen, wer dort sitzt",
+    seating_demo_swap_hint: "Tippe unten auf einen Gast zum Setzen oder Tauschen",
+    seating_demo_conflict: "Nicht zusammen",
+    seating_demo_empty: "Freier Platz",
+    seating_demo_print: "A4 · PDF bereit",
+    seating_demo_close: "Schließen",
+    seating_demo_unseat: "{name} aufstehen lassen",
+    seating_demo_replace: "Tauschen",
+    seating_demo_full: "Tisch voll: wähle, wen du tauschst",
     mockup_vendor_name: "Ihr Betrieb",
     mockup_vendor_category: "Kategorie · Stadt",
     mockup_vendor_rating: "4,9",
@@ -3220,7 +3230,7 @@ const de: LocaleMessages = {
       "Noch keine Dienstleister ausgewählt, treffen Sie Ihre Wahl auf der Seite Dienstleister.",
     chart_title: "Aufgaben-Zeitplan",
     no_dates_title: "Aufgaben ohne Datum",
-    no_dates_empty: "Gut gemacht! Jede Aufgabe hat ein Datum. 🎉",
+    no_dates_empty: "Gut gemacht! Jede Aufgabe hat ein Datum. ",
     no_dates_empty_all: "Noch keine Aufgaben. Legen Sie sie auf der Seite Planung an.",
     set_dates: "Daten festlegen",
     no_dates_show_all: "Alle anzeigen ({count})",
@@ -3606,12 +3616,12 @@ const de: LocaleMessages = {
     share_copy_link: "Link kopieren",
     share_copy_msg: "Nachricht kopiert",
     share_message_long:
-      "Hallo! 📸 Macht ein paar Fotos auf der Hochzeit von {{names}}, ganz ohne App, hier entlang: {{url}} Alle werden am großen Tag gemeinsam enthüllt. Schön, dass ihr dabei seid! 🎞️",
+      "Hallo! Macht ein paar Fotos auf der Hochzeit von {{names}}, ganz ohne App, hier entlang: {{url}} Alle werden am großen Tag gemeinsam enthüllt. Schön, dass ihr dabei seid! ",
     share_message_sms:
-      "Fotos auf der Hochzeit von {{names}}, ohne App: {{url}} 📸 Enthüllt wird am Tag selbst.",
-    share_email_subject: "Seien Sie kurz unser Hochzeitsfotograf 📸",
+      "Fotos auf der Hochzeit von {{names}}, ohne App: {{url}} Enthüllt wird am Tag selbst.",
+    share_email_subject: "Seien Sie kurz unser Hochzeitsfotograf ",
     share_email_body:
-      "Liebe Gäste,\n\nwir sind {{names}} und würden unseren Tag gern auch mit euren Augen sehen. Öffnet diesen Link auf eurem Handy, macht ein paar Fotos, das war's, ohne App und ohne Registrierung:\n\n{{url}}\n\nAlle Fotos werden am großen Tag auf einmal enthüllt. Danke, dass ihr dabei seid! 🎞️",
+      "Liebe Gäste,\n\nwir sind {{names}} und würden unseren Tag gern auch mit euren Augen sehen. Öffnet diesen Link auf eurem Handy, macht ein paar Fotos, das war's, ohne App und ohne Registrierung:\n\n{{url}}\n\nAlle Fotos werden am großen Tag auf einmal enthüllt. Danke, dass ihr dabei seid! ",
     early_close: "Uploads schließen",
     early_close_hint:
       "Gäste können sofort keine Fotos mehr hochladen. Sie können jederzeit wieder öffnen.",
@@ -4253,7 +4263,7 @@ const de: LocaleMessages = {
     wishlist_pledge_withdraw: "Zurückziehen",
     wishlist_pledge_contributors_others: "Auch andere Gäste haben Interesse gezeigt.",
     wishlist_pledge_contributors_remaining: "Offen:",
-    wishlist_pledge_contributors_funded: "Dieses Geschenk ist vollständig finanziert! 🎉",
+    wishlist_pledge_contributors_funded: "Dieses Geschenk ist vollständig finanziert! ",
     wishlist_pledge_error_generic: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     schedule_title: "Tagesablauf",
     schedule_empty:
@@ -4401,6 +4411,8 @@ const de: LocaleMessages = {
     venue_map_hint: "Wer den Link hat, sieht den genauen Ort.",
     venue_map_needs_location:
       "Hinterlegen Sie zuerst die Adresse der Location, um das einzuschalten.",
+    publish_missing_venue_body:
+      "Der Veranstaltungsort ist noch nicht eingetragen. Gäste sehen deshalb an der Stelle einen Platzhalter, den Ort hinzuzufügen.",
     venue_map_confirm_title: "Genauen Ort anzeigen?",
     venue_map_confirm_body:
       "Jeder mit dem Link zu Ihrer Seite sieht die genaue Adresse der Location und eine Karte, nicht nur zugesagte Gäste.",
@@ -4944,14 +4956,14 @@ const de: LocaleMessages = {
     auto_reveal: "Automatisch auflösen",
     auto_reveal_hint: "Auflösen, wenn die Zeit um ist oder alle geantwortet haben",
     all_in: "Alle haben geantwortet!",
-    fastest: "⚡ Am schnellsten: {name} ({seconds}s)",
+    fastest: "Am schnellsten: {name} ({seconds}s)",
     correct_count: "{correct} von {answered} richtig",
     nobody_right: "Keiner wusste es. Autsch.",
-    times_up: "⏰ Zeit ist um!",
-    no_answer: "😴 Diesmal keine Antwort",
+    times_up: "Zeit ist um!",
+    no_answer: "Diesmal keine Antwort",
     answer_failed: "Das hat nicht geklappt. Nochmal?",
-    streak_bonus: "🔥 {count} in Folge! +{bonus} Bonus",
-    streak_chip: "🔥 {count}",
+    streak_bonus: "{count} in Folge! +{bonus} Bonus",
+    streak_chip: "{count}",
     rank_up: "{n} Plätze rauf!",
     rank_down: "{n} Plätze runter",
     lobby_who: "Wer ist da",
@@ -5958,6 +5970,11 @@ const de: LocaleMessages = {
       onb_back: "Zurück",
       onb_done: "Berechnen",
     },
+    result_count: "{n} Ergebnisse",
+    remember_filters: "Filter merken",
+    seats_label: "Kapazität",
+    seats_min_aria: "Kapazität, mindestens (Personen)",
+    seats_max_aria: "Kapazität, höchstens (Personen)",
     diy_pill: "Eigenes",
     diy_button: "Machen wir selbst",
     diy_button_short: "Selbst machen",
@@ -8407,14 +8424,14 @@ const de: LocaleMessages = {
   share_weddly: {
     menu_label: "Weddly teilen",
     title: "Teilen Sie Weddly, damit wir mehr Paare erreichen.",
-    body: "Helfen Sie uns, auch anderen Paaren zu helfen. 🕊️🤍",
+    body: "Helfen Sie uns, auch anderen Paaren zu helfen. ",
     messages_label: "Nachricht zum Teilen",
     message_warm:
-      "Wir planen unsere Hochzeit mit Weddly, und alles fühlt sich viel leichter an. Wenn ihr auch gerade plant, schaut mal: https://tryweddly.com 🕊️🤍",
+      "Wir planen unsere Hochzeit mit Weddly, und alles fühlt sich viel leichter an. Wenn ihr auch gerade plant, schaut mal: https://tryweddly.com ",
     message_clean:
-      "Wir planen unsere Hochzeit mit Weddly. Alles, was wir brauchen, schön geordnet an einem Ort: https://tryweddly.com 🕊️🤍",
+      "Wir planen unsere Hochzeit mit Weddly. Alles, was wir brauchen, schön geordnet an einem Ort: https://tryweddly.com ",
     message_friendly:
-      "Kennt ihr jemanden, der gerade eine Hochzeit plant? Wir nutzen Weddly und finden großartig, wie einfach damit alles wird. Schaut mal: https://tryweddly.com 🕊️🤍",
+      "Kennt ihr jemanden, der gerade eine Hochzeit plant? Wir nutzen Weddly und finden großartig, wie einfach damit alles wird. Schaut mal: https://tryweddly.com ",
     share_action: "Teilen",
     copy_action: "Kopieren",
     sharing: "Wird geteilt",
@@ -8521,7 +8538,7 @@ const de: LocaleMessages = {
     activity_action_table_delete: "einen Tisch entfernt: {label}",
     activity_action_seat_assign: "einen Gast platziert: {guest} → {table}",
     activity_action_seat_unassign: "einen Gast vom Platz genommen: {guest}",
-    activity_action_seat_swap: "die Plätze zweier Gäste getauscht: {a} ↔ {b}",
+    activity_action_seat_swap: "die Plätze zweier Gäste getauscht: {a} {b}",
     activity_action_conflict_create: "hat einen Sitzordnungskonflikt eingetragen",
     activity_action_conflict_delete: "hat einen Sitzordnungskonflikt entfernt",
     activity_action_print_seating_chart: "das PDF des Sitzplans heruntergeladen",
@@ -10747,7 +10764,7 @@ const de: LocaleMessages = {
     filled_toast: "Offizielle Daten übernommen",
   },
   geo: {
-    address_attribution: "Vorschläge © OpenStreetMap-Mitwirkende",
+    address_attribution: "Vorschläge OpenStreetMap-Mitwirkende",
   },
   planner_profile: {
     heading: "Profil",

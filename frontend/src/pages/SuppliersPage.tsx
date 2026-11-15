@@ -106,6 +106,7 @@ import {
   subscribeCostPlanningCount,
 } from "../lib/cost_planning";
 import {
+  authApi,
   budgetApi,
   bookingMessagesApi,
   coupleApi,
@@ -146,6 +147,12 @@ import {
   subscribeSaved,
 } from "../lib/supplier_saved";
 import { useAuth } from "../lib/auth";
+import {
+  isBareVisit,
+  pickVendorFilters,
+  readLocalVendorFilters,
+  writeLocalVendorFilters,
+} from "../lib/vendor_filter_memory";
 import { fireConfetti } from "../lib/confetti";
 import { communityReportId } from "../lib/supplier_report";
 import { useT } from "../lib/i18n";
@@ -252,7 +259,7 @@ const OUT_OF_COUNTRY_MAX = 6;
 
 /** True when a selection change to `cat` just completed its whole chain group
  *  (every category in the group now picked) that wasn't complete before — the
- *  "a tab is ready" moment that fires the confetti. */
+ *"a tab is ready" moment that fires the confetti. */
 function groupJustCompleted(
   cat: SupplierCategory,
   prev: SelectionMap,
@@ -298,6 +305,9 @@ function celebrateSelection(cat: SupplierCategory, prev: SelectionMap, next: Sel
 /** Every filter row's label. One constant so the four rows can't drift apart:
  *  they only line up if they are typographically identical, not merely
  *  similar. */
+/** Largest events batch POST /api/suppliers/events accepts (see
+ *  routes/suppliers.ts handleRecordEvents). Keep in step with that cap. */
+const IMPRESSION_BATCH_MAX = 200;
 const FILTER_ROW_LABEL =
   "text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300";
 
@@ -306,6 +316,19 @@ export default function SuppliersPage() {
   const navigate = useNavigate();
   useDocumentMeta("seo.suppliers_title", "seo.suppliers_description");
   const [params, setParams] = useSearchParams();
+  // Category chain lives in the URL too (`?group=` / `?cat=`). It used to be
+  // component state, so going to a vendor and pressing back dropped it and the
+  // full list came back (reproduced 2026-11-15). Unknown values read as "all".
+  const activeGroup: SupplierGroup | null = (() => {
+    const g = params.get("group");
+    return SUPPLIER_GROUPS.some((x) => x.id === g) ? (g as SupplierGroup) : null;
+  })();
+  const activeCat: SupplierCategory | null = (() => {
+    const c = params.get("cat");
+    if (!c || !activeGroup) return null;
+    const grp = SUPPLIER_GROUPS.find((x) => x.id === activeGroup);
+    return grp?.categories.includes(c as SupplierCategory) ? (c as SupplierCategory) : null;
+  })();
   const [items, setItems] = useState<DirectorySupplier[]>([]);
   const [coupleSuppliers, setCoupleSuppliers] = useState<CoupleSupplier[]>([]);
   const [coupleId, setCoupleId] = useState<number | null>(null);
@@ -350,8 +373,6 @@ export default function SuppliersPage() {
   // values are supplier IDs (curated slug, "c{N}" community id, or DIY hex).
   // One pick per category — choosing a new card replaces the prior pick.
   const [selection, setSelectionState] = useState<SelectionMap>({});
-  const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
-  const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
   // Registered planner ACCOUNTS (a consent/invite flow, distinct from the
   // outbound-contact directory). They surface as a slim strip atop the real
   // `wedding_planner` category (the curated planner listings live in the grid).
@@ -450,9 +471,9 @@ export default function SuppliersPage() {
     return "top";
   })();
   // viewMode controls how the result set is presented:
-  //   "grid" → 2-column cards (default)
-  //   "line" → single-column compact rows
-  //   "map"  → lazy-loaded Leaflet map
+  //"grid" → 2-column cards (default)
+  //"line" → single-column compact rows
+  //"map"  → lazy-loaded Leaflet map
   // Legacy `?view=list` URLs are coerced to "grid" so old bookmarks still work.
   const viewMode: "grid" | "line" | "map" = (() => {
     const v = params.get("view");
@@ -503,6 +524,18 @@ export default function SuppliersPage() {
     if (!raw) return null;
     const n = Number(raw);
     return Number.isInteger(n) && n > 0 ? n : null;
+  })();
+  // Capacity range ("Férőhely"), independent of the couple's guest count. A
+  // venue lists a range (20-110); a couple wants "between 80 and 120 people",
+  // which the single guest-count number cannot say. Overlap, not containment,
+  // so a 20-110 venue answers both "at least 80" and "up to 120".
+  const seatsMinFilter = (() => {
+    const n = Number(params.get("seats_min"));
+    return params.get("seats_min") && Number.isInteger(n) && n > 0 ? n : null;
+  })();
+  const seatsMaxFilter = (() => {
+    const n = Number(params.get("seats_max"));
+    return params.get("seats_max") && Number.isInteger(n) && n > 0 ? n : null;
   })();
 
   // The date the couple is shopping FOR. Defaults to the wedding day, because
@@ -632,6 +665,55 @@ export default function SuppliersPage() {
       window.clearTimeout(tid);
     };
   }, [cityInput, query, coupleCountry, gazetteerReady, locale]);
+  // "Remember my filters". The account copy is the truth; localStorage mirrors
+  // it for the window before /me has loaded. ON by default (a couple who never
+  // touched the switch gets the feature), and switching it off clears what was
+  // kept rather than only hiding it. Restore runs once, on a bare visit only,
+  // so a shared or back-navigated URL is never rewritten under the couple.
+  const [rememberFilters, setRememberFilters] = useState<boolean>(
+    () => user?.vendor_filters?.remember ?? readLocalVendorFilters()?.remember ?? true,
+  );
+  const rememberedFilters =
+    user?.vendor_filters?.filters ?? readLocalVendorFilters()?.filters ?? null;
+  const restoreTriedRef = useRef(false);
+  useEffect(() => {
+    if (restoreTriedRef.current) return;
+    restoreTriedRef.current = true;
+    if (!rememberFilters || !rememberedFilters) return;
+    if (Object.keys(rememberedFilters).length === 0 || !isBareVisit(params)) return;
+    const p = new URLSearchParams(params);
+    for (const [k, v] of Object.entries(rememberedFilters)) p.set(k, v);
+    setParams(p, { replace: true });
+    // Mount-only by design: a later URL change is the couple's own doing.
+  }, []);
+  const filterKey = JSON.stringify(pickVendorFilters(params));
+  const savedFilterKeyRef = useRef(filterKey);
+  useEffect(() => {
+    // Only a CHANGE writes. The mount-time key is the baseline, so a visit that
+    // restored nothing cannot overwrite a stored set with an empty one.
+    if (filterKey === savedFilterKeyRef.current) return;
+    savedFilterKeyRef.current = filterKey;
+    if (!rememberFilters) return;
+    const picked = JSON.parse(filterKey) as Record<string, string>;
+    writeLocalVendorFilters({ remember: true, filters: picked });
+    const timer = window.setTimeout(() => {
+      void authApi.setVendorFilters({ remember: true, filters: picked }).catch(() => undefined);
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [filterKey, rememberFilters]);
+  function toggleRememberFilters() {
+    const next = !rememberFilters;
+    setRememberFilters(next);
+    if (next) {
+      const picked = pickVendorFilters(params);
+      writeLocalVendorFilters({ remember: true, filters: picked });
+      void authApi.setVendorFilters({ remember: true, filters: picked }).catch(() => undefined);
+    } else {
+      writeLocalVendorFilters({ remember: false, filters: null });
+      void authApi.setVendorFilters({ remember: false }).catch(() => undefined);
+    }
+  }
+
   // Drop every "narrowing" filter (search text, city, category chain, price,
   // guests) plus the sibling shortlist toggle. The saved / picked chips are
   // meant to surface the user's full marked set in one tap, so any leftover
@@ -641,8 +723,20 @@ export default function SuppliersPage() {
     p.delete("city");
     p.delete("price");
     p.delete("guests");
-    setActiveGroup(null);
-    setActiveCat(null);
+    p.delete("seats_min");
+    p.delete("seats_max");
+    p.delete("group");
+    p.delete("cat");
+  }
+
+  /** Write one capacity bound. An empty or invalid value clears it, so the
+   *  inputs can be emptied to lift the bound without a separate reset. */
+  function setSeatsBound(which: "seats_min" | "seats_max", raw: string) {
+    const p = new URLSearchParams(params);
+    const n = Number(raw);
+    if (raw.trim() === "" || !Number.isInteger(n) || n <= 0) p.delete(which);
+    else p.set(which, String(n));
+    setParams(p, { replace: true });
   }
   function toggleSavedFilter() {
     const p = new URLSearchParams(params);
@@ -859,9 +953,13 @@ export default function SuppliersPage() {
         // predicate as the grid, which is what keeps the two from drifting
         // apart the way they did before.
         const shown = dir.suppliers.filter((s) => !isOutOfCountryScope(s, initialScope));
-        if (shown.length > 0) {
+        // The server caps one batch at 200 and answers the whole batch with a
+        // 400 beyond that, so a directory of 1100+ cards used to lose every
+        // impression. Send in chunks of the same size the server accepts.
+        const impressions = shown.map((s) => ({ supplier_id: s.id, type: "impression" as const }));
+        for (let i = 0; i < impressions.length; i += IMPRESSION_BATCH_MAX) {
           supplierApi
-            .recordEvents(shown.map((s) => ({ supplier_id: s.id, type: "impression" })))
+            .recordEvents(impressions.slice(i, i + IMPRESSION_BATCH_MAX))
             .catch(() => undefined);
         }
       })
@@ -1037,10 +1135,9 @@ export default function SuppliersPage() {
       // Fire the confetti, then immediately close the "Szervezés & koordináció"
       // tab so the step turns sage in the chain right away.
       celebrateSelection("wedding_planner", selection, next);
-      setActiveGroup(null);
-      setActiveCat(null);
+      setCategoryParams(null, null);
     }
-  }, [coupleId, selfOrganized, selection, toast, t]);
+  }, [coupleId, selfOrganized, selection, toast, t, params, setParams]);
 
   // "Nincs rá szükségem" — the couple marks the active sub-category as one they
   // don't need (no lighting, no transport, ...). Recorded as the NOT_NEEDED_PICK
@@ -1323,6 +1420,17 @@ export default function SuppliersPage() {
         return guestsFilter >= min && guestsFilter <= max;
       });
     }
+    if (seatsMinFilter !== null || seatsMaxFilter !== null) {
+      dir = dir.filter((s) => {
+        const max = s.capacity_max ?? 0;
+        if (max === 0) return true;
+        const min = s.capacity_min ?? max;
+        // The venue's own range must overlap the couple's range.
+        if (seatsMinFilter !== null && max < seatsMinFilter) return false;
+        if (seatsMaxFilter !== null && min > seatsMaxFilter) return false;
+        return true;
+      });
+    }
     // Date: subtractive only. `unavailableIds` holds the listings with a real
     // reason on file for being taken that day; everyone else is unknown, not
     // free, and stays in the list. An empty set (nothing loaded yet, or a
@@ -1390,6 +1498,8 @@ export default function SuppliersPage() {
     selection,
     priceBand,
     guestsFilter,
+    seatsMinFilter,
+    seatsMaxFilter,
     unavailableIds,
     query,
     gazetteerReady,
@@ -1739,9 +1849,19 @@ export default function SuppliersPage() {
     ? (SUPPLIER_GROUPS.find((g) => g.id === activeGroup)?.categories ?? [])
     : [];
 
+  /** Write the category chain into the URL (replace, like every other filter,
+   *  so back-navigation returns to the same list). */
+  function setCategoryParams(group: SupplierGroup | null, cat: SupplierCategory | null) {
+    const p = new URLSearchParams(params);
+    if (group) p.set("group", group);
+    else p.delete("group");
+    if (cat) p.set("cat", cat);
+    else p.delete("cat");
+    setParams(p, { replace: true });
+  }
+
   function pickGroup(id: SupplierGroup | null) {
-    setActiveGroup(id);
-    setActiveCat(null);
+    setCategoryParams(id, null);
   }
 
   // Jump straight to a single category from a card's avatar icon: open the
@@ -1749,8 +1869,7 @@ export default function SuppliersPage() {
   // supplier in that trade.
   function filterByCategory(cat: SupplierCategory) {
     const group = SUPPLIER_GROUPS.find((g) => g.categories.includes(cat));
-    setActiveGroup(group ? group.id : null);
-    setActiveCat(cat);
+    setCategoryParams(group ? group.id : null, cat);
   }
 
   // Route a picked search suggestion to the right action: a supplier jumps to
@@ -1793,7 +1912,7 @@ export default function SuppliersPage() {
               of height instead of two. Both fields keep their own behaviour
               (the free-text box still suggests towns; the city field still
               commits to the exact/nearby `city` param and shows its own
-              "+N km" badge) — the border/shadow/focus ring just moved from
+"+N km" badge) — the border/shadow/focus ring just moved from
               each input onto the shared pill.
 
               Messages, the view switch and "Recommend a supplier" now ride
@@ -2114,6 +2233,68 @@ export default function SuppliersPage() {
               </div>
             </div>
 
+            {/* Top-level venue shortcut. "Helyszín & szállás" mixes wedding venues
+          with accommodation and tents, and the venue pill used to sit one level
+          down inside the group. One tap pins the wedding-venue category alone;
+          accommodation stays one tap away in the same group. */}
+            {!isMap && (
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                {(() => {
+                  const onVenue = activeGroup === "venue_stay" && activeCat === "venue";
+                  const VenueIcon = CATEGORY_ICON.venue;
+                  return (
+                    <button
+                      type="button"
+                      aria-pressed={onVenue}
+                      onClick={() =>
+                        onVenue
+                          ? setCategoryParams(null, null)
+                          : setCategoryParams("venue_stay", "venue")
+                      }
+                      className={
+                        onVenue
+                          ? "inline-flex items-center gap-1.5 rounded-full border border-transparent stationery-coffee px-3.5 py-1.5 text-xs font-medium text-paper-50"
+                          : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 py-1.5 text-xs text-ink-700 transition hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
+                      }
+                    >
+                      <VenueIcon size={13} aria-hidden />
+                      <span className="lowercase">{t("suppliers.cat.venue")}</span>
+                      <span className="text-[10px] font-medium tabular-nums opacity-80">
+                        {subCategoryCounts.get("venue") ?? 0}
+                      </span>
+                    </button>
+                  );
+                })()}
+                {(activeGroup === "venue_stay" || activeCat === "venue") && (
+                  <fieldset className="flex items-center gap-1.5 text-xs text-ink-700 dark:text-paper-100">
+                    <legend className="sr-only">{t("suppliers.seats_label")}</legend>
+                    <span className="font-medium">{t("suppliers.seats_label")}</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      value={seatsMinFilter ?? ""}
+                      onChange={(e) => setSeatsBound("seats_min", e.target.value)}
+                      aria-label={t("suppliers.seats_min_aria")}
+                      placeholder="min"
+                      className="h-8 w-20 rounded-full border border-paper-300 bg-paper-50 px-3 text-xs tabular-nums dark:border-umber-700 dark:bg-umber-800"
+                    />
+                    <span aria-hidden>–</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      value={seatsMaxFilter ?? ""}
+                      onChange={(e) => setSeatsBound("seats_max", e.target.value)}
+                      aria-label={t("suppliers.seats_max_aria")}
+                      placeholder="max"
+                      className="h-8 w-20 rounded-full border border-paper-300 bg-paper-50 px-3 text-xs tabular-nums dark:border-umber-700 dark:bg-umber-800"
+                    />
+                  </fieldset>
+                )}
+              </div>
+            )}
+
             {/* Step chain. Sequence numbers dropped — the icons carry the meaning,
           and the left-to-right order carries the sequence. The little "→"
           between the steps went with the 2026-07-27 pass: nine arrows are
@@ -2224,7 +2405,7 @@ export default function SuppliersPage() {
               >
                 <button
                   type="button"
-                  onClick={() => setActiveCat(null)}
+                  onClick={() => setCategoryParams(activeGroup, null)}
                   className={
                     activeCat === null
                       ? "inline-flex items-center gap-1.5 rounded-full border border-transparent stationery-coffee px-3.5 py-1.5 text-xs font-medium text-paper-50"
@@ -2250,7 +2431,7 @@ export default function SuppliersPage() {
                     <button
                       key={c}
                       type="button"
-                      onClick={() => setActiveCat(c)}
+                      onClick={() => setCategoryParams(activeGroup, c)}
                       className={
                         selected
                           ? "inline-flex items-center gap-1.5 rounded-full border border-transparent stationery-coffee px-3.5 py-1.5 text-xs font-medium text-paper-50"
@@ -2273,7 +2454,7 @@ export default function SuppliersPage() {
                 })}
                 {/* Right-floating action group: the cake & drinks calculator (only
               for the food/drink categories it estimates) sits just left of
-              "Csinálom magam". On sm+ the pair sits flush-right of the pill
+"Csinálom magam". On sm+ the pair sits flush-right of the pill
               row via `ml-auto`; on mobile the row is a horizontal scroller so
               they ride as the last shrink-0 chips. */}
                 <div className={isMap ? "hidden" : "flex shrink-0 items-center gap-2 sm:ml-auto"}>
@@ -2319,7 +2500,7 @@ export default function SuppliersPage() {
                   )}
                   {/* No "csinálom magam" DIY entry for planners — self-organizing
                     means NOT hiring a planner, so the honest control is the
-                    "Magam szervezem" done-toggle rendered in the results area
+"Magam szervezem" done-toggle rendered in the results area
                     below, not a DIY vendor row. */}
                   {activeGroup !== "planning_rentals" && (
                     <button
@@ -2500,7 +2681,7 @@ export default function SuppliersPage() {
               via the consent flow (invite → accept → linked), distinct from the
               curated planner listings that render in the grid below. Search
               filters both (filteredPlanners honours the query). The
-              "Magam szervezem" self-organize tile leads the grid. */}
+"Magam szervezem" self-organize tile leads the grid. */}
           {activeGroup === "planning_rentals" && viewMode !== "map" && (
             <section aria-label={t("planner_directory.title")} className="mb-5">
               {shownPlanners.length > 0 && (
@@ -2512,7 +2693,7 @@ export default function SuppliersPage() {
                 {/* "Magam szervezem" — the self-organize done-toggle, now the
                     leading card in the planner grid (was a checkbox row above).
                     Toggling on records the sentinel pick, greens the
-                    "Szervezés & koordináció" step, clears the planner cards
+"Szervezés & koordináció" step, clears the planner cards
                     beside it, and fires confetti. This tile is the one thing
                     that never clears: it is the way back. */}
                 <button
@@ -2622,6 +2803,26 @@ export default function SuppliersPage() {
                   />
                 </div>
               )}
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <p
+                  aria-live="polite"
+                  className="text-xs font-medium text-ink-600 dark:text-umber-200"
+                >
+                  {t("suppliers.result_count", { n: filteredInScope.length })}
+                </p>
+                <button
+                  type="button"
+                  aria-pressed={rememberFilters}
+                  onClick={toggleRememberFilters}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full px-2 text-xs text-ink-600 underline-offset-2 hover:underline dark:text-umber-200"
+                >
+                  <span
+                    aria-hidden
+                    className={`inline-block h-2 w-2 rounded-full ${rememberFilters ? "bg-sage-500" : "bg-paper-400 dark:bg-umber-500"}`}
+                  />
+                  {t("suppliers.remember_filters")}
+                </button>
+              </div>
               <div
                 data-tour-target="vendors-list"
                 className={
@@ -3368,7 +3569,7 @@ export default function SuppliersPage() {
               ever REMOVES suppliers with a real reason on file for being taken
               (a whole-day block, or a weekday they don't work) — an unclaimed
               entry has no calendar here, and "we don't know" must not read as
-              "booked". */}
+"booked". */}
           <div className="flex min-h-[3.25rem] items-center justify-between gap-3">
             <span className={FILTER_ROW_LABEL}>{t("suppliers.date_filter_label")}</span>
             <span className="inline-flex items-center gap-1.5">

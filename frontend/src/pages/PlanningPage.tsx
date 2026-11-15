@@ -1628,7 +1628,7 @@ function TimelineGeneratorDialog({
                             <span className="min-w-0">
                               <span className="block truncate">{title}</span>
                               {have ? (
-                                <span className="block text-[11px] italic text-ink-400 dark:text-umber-400">
+                                <span className="block text-[11px]  text-ink-400 dark:text-umber-400">
                                   {t("planning.timeline_gen_already")}
                                 </span>
                               ) : (
@@ -2507,7 +2507,7 @@ function PlanningRow({
                     </button>
                   ))}
                 {item.kind === "idea" && item.suggested_by_name && (
-                  <span className="italic text-ink-500 dark:text-umber-300">
+                  <span className=" text-ink-500 dark:text-umber-300">
                     {t("planning.idea_suggested_by", { name: item.suggested_by_name })}
                   </span>
                 )}
@@ -3503,9 +3503,7 @@ function VendorKanbanCard({
         {t(`suppliers.cat.${vendor.category}`)}
       </p>
       {vendor.next_step && (
-        <p className="mt-0.5 text-[11px] italic text-ink-500 dark:text-umber-300">
-          {vendor.next_step}
-        </p>
+        <p className="mt-0.5 text-[11px]  text-ink-500 dark:text-umber-300">{vendor.next_step}</p>
       )}
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         {vendor.price_huf != null && (

@@ -3118,6 +3118,16 @@ export interface LocaleMessages {
     mockup_table_uni: string;
     mockup_table_head: string;
     mockup_drag_subtitle: string;
+    seating_demo_unseated: string;
+    seating_demo_hint: string;
+    seating_demo_swap_hint: string;
+    seating_demo_conflict: string;
+    seating_demo_empty: string;
+    seating_demo_print: string;
+    seating_demo_close: string;
+    seating_demo_unseat: string;
+    seating_demo_replace: string;
+    seating_demo_full: string;
     /** Vendor card preview, ride-hailing layout: name + rating on one row,
      *  category / city / price band on the next, no button. Every value is a
      *  placeholder showing the SHAPE of the field, which is why the rating is
@@ -5023,6 +5033,8 @@ export interface LocaleMessages {
     venue_map_hint: string;
     venue_map_needs_location: string;
     venue_map_confirm_title: string;
+    /** Appended to the publish confirm when no venue is set yet. */
+    publish_missing_venue_body: string;
     venue_map_confirm_body: string;
     venue_map_confirm_cta: string;
     venue_pin_title: string;
@@ -7018,6 +7030,14 @@ export interface LocaleMessages {
     /** Guest-count input — filters venues whose capacity range covers the value.
      *  Suppliers without a declared capacity pass through. */
     guests_filter_label: string;
+    /** "N találat" count above the grid. */
+    result_count: string;
+    /** Toggle: keep the couple's filter set across visits. */
+    remember_filters: string;
+    /** Capacity range on the venue row ("Férőhely", people). */
+    seats_label: string;
+    seats_min_aria: string;
+    seats_max_aria: string;
     /** The day the couple is shopping for. Seeded with the wedding date. */
     date_filter_label: string;
     /** Tooltip + aria on the marker shown when the date is NOT the wedding

@@ -642,6 +642,10 @@ export const authApi = {
    *  so firing it twice (two tabs, a replayed navigation) is harmless. */
   markNavVisited: (path: string) =>
     apiFetch<{ user: User }>("POST", "/api/auth/nav-visited", { path }),
+  /** Replace the couple's "Remember my filters" set on /app/vendors. A whole
+   *  write, not a patch: the page sends its full set after every change. */
+  setVendorFilters: (body: { remember: boolean; filters?: Record<string, string> }) =>
+    apiFetch<{ user: User }>("PUT", "/api/auth/vendor-filters", body),
   forgot: (email: string) => apiFetch<{ ok: true }>("POST", "/api/auth/forgot", { email }),
   reset: (token: string, password: string) =>
     apiFetch<{ ok: true }>("POST", "/api/auth/reset", { token, password }),
@@ -2501,7 +2505,7 @@ export const adminUserApi = {
    *  send per workspace — the server stamps `couples.invite_partner_reminded_at`
    *  and returns 409 with `code: "already_reminded"` on a second attempt.
    *  Returns the timestamp so the UI can flip the icon to its sage Mail+Check
-   *  "sent" state without a re-fetch. */
+   *"sent" state without a re-fetch. */
   remindInvitePartner: (coupleId: number) =>
     apiFetch<{ ok: true; reminded_at: number }>(
       "POST",
@@ -2560,7 +2564,7 @@ export const adminVendorMgmtApi = {
     ),
   /** Admin-initiated vendor registration: mints a pending onboarding and emails
    *  the activation link (the vendor sets their own password). Lands in the
-   *  "Aktiválásra vár" list until they activate. */
+   *"Aktiválásra vár" list until they activate. */
   register: (body: { email: string; business_name: string; category: string }) =>
     apiFetch<{ ok: true; onboarding_id: number }>("POST", "/api/admin/vendors/register", body),
   /** The in-person signup QR: shown to a vendor, it opens the short
