@@ -52,7 +52,7 @@ import { rateLimit } from "../lib/rate_limit";
 import { recordConsent } from "../domain/consents";
 
 // More forgiving than auth, but still slows enumeration of slug+code combos.
-const RSVP_BUCKET = { capacity: 30, refillRate: 1 / 5 };
+export const RSVP_BUCKET = { capacity: 30, refillRate: 1 / 5 };
 
 // In-process idempotency cache for /api/rsvp/checkin. Keyed by
 // `${household_id}:${idempotency_key}` and held in memory for 5 minutes —

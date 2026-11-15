@@ -400,13 +400,16 @@ describe("per-supplier SSR og:card meta (/suppliers/:id)", () => {
       isRsvp: false,
       acceptLanguage: "en-US,en;q=0.9",
     });
-    // The vendor's own photo becomes the share-card image (made absolute), NOT
-    // the brand og.png.
-    expect(html).toContain(`<meta property="og:image" content="https://${HU_HOST}${photoUrl}" />`);
+    // The venue's share image is its generated card (name, town and the
+    // vendor's photo drawn together), never the brand og.png. The photo itself
+    // is what the card draws from, covered in share_cards.e2e.test.ts.
+    expect(html).toContain(
+      `<meta property="og:image" content="https://${HU_HOST}/api/share-cards/vendor/${meta?.publicId}?v=`,
+    );
     expect(html).not.toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
   });
 
-  test("og:image falls back to the brand og.png when the vendor has no photos at all", async () => {
+  test("og:image is still the venue's card when the vendor has no photos at all", async () => {
     const id = await seedClaimedVendorNoHero("nopics@weddly.test", "No Pics Studio");
 
     const meta = lookupVendorPageMeta(`/suppliers/${id}`);
@@ -418,7 +421,11 @@ describe("per-supplier SSR og:card meta (/suppliers/:id)", () => {
       isRsvp: false,
       acceptLanguage: "en-US,en;q=0.9",
     });
-    expect(html).toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
+    // A text-only card on the brand field, so the preview still names the venue.
+    expect(html).toContain(
+      `<meta property="og:image" content="https://${HU_HOST}/api/share-cards/vendor/${meta?.publicId}?v=`,
+    );
+    expect(html).not.toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
   });
 
   test("indexing requires at least three meaningful sentences and three distinct photos", async () => {

@@ -39,7 +39,7 @@ function render(pathname: string): string {
 const venue = DIRECTORY.find((entry) => entry.hero_image_url);
 
 describe("share card: a venue opened inside the app", () => {
-  test("/app/suppliers/<id> carries the venue's own photo, not the brand mark", () => {
+  test("/app/suppliers/<id> carries the venue's own card, not the brand mark", () => {
     if (!venue) throw new Error("no curated entry with a hero photo to test against");
     const meta = lookupVendorPageMeta(`/suppliers/${venue.id}`);
     expect(meta?.heroImageUrl).toBeTruthy();
@@ -48,7 +48,7 @@ describe("share card: a venue opened inside the app", () => {
     const image = metaContent(html, "og:image");
     expect(image).toBeTruthy();
     expect(image).not.toBe(`https://${HU_HOST}/og.png`);
-    expect(image?.endsWith(meta?.heroImageUrl ?? "")).toBe(true);
+    expect(image?.startsWith(`https://${HU_HOST}/api/share-cards/vendor/`)).toBe(true);
     expect(metaContent(html, "twitter:image")).toBe(image);
   });
 

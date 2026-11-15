@@ -50,6 +50,9 @@ export interface Storage {
   /** Build an HTTP Response that serves `key`, or null when it doesn't exist.
    *  Used by the single `/uploads/*` handler in server.ts. */
   serve(key: string): Promise<Response | null>;
+  /** The object's bytes, or null when it doesn't exist. For server-side
+   *  rendering (share cards) that needs the picture itself, not a Response. */
+  read(key: string): Promise<Uint8Array | null>;
   /** Delete a single object. No-op when absent. */
   delete(key: string): Promise<void>;
   /** Delete every object under `prefix` (used by couple purge). */
@@ -127,6 +130,14 @@ class DiskStorage implements Storage {
     return new Response(f, { headers: { "Cache-Control": SERVE_CACHE_CONTROL } });
   }
 
+  async read(key: string): Promise<Uint8Array | null> {
+    const p = this.abs(key);
+    if (!p || !existsSync(p)) return null;
+    const f = Bun.file(p);
+    if (!(await f.exists())) return null;
+    return new Uint8Array(await f.arrayBuffer());
+  }
+
   async delete(key: string): Promise<void> {
     const p = this.abs(key);
     if (!p) return;
@@ -174,6 +185,12 @@ class R2Storage implements Storage {
         "Content-Type": f.type || contentTypeForKey(key),
       },
     });
+  }
+
+  async read(key: string): Promise<Uint8Array | null> {
+    const f = this.client.file(key);
+    if (!(await f.exists())) return null;
+    return new Uint8Array(await f.arrayBuffer());
   }
 
   async delete(key: string): Promise<void> {

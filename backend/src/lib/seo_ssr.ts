@@ -42,6 +42,9 @@ import {
 import { UI_LOCALES, type UiLocale } from "../../../shared/locales";
 import { supplierCategoryLabel } from "../../../shared/suppliers";
 import { vendorPublicId } from "../../../shared/vendor_slug";
+import { getCoupleById } from "../domain/couples";
+import { getGuestByInviteCode } from "../domain/guests";
+import { shareVersion } from "./share_version";
 import {
   type CategoryCityCombo,
   locationPagePath,
@@ -1149,6 +1152,8 @@ export interface VendorPageMeta {
    *  so a link shared with the bare id or a stale name consolidates onto it. */
   publicId: string;
   indexable: boolean;
+  /** `?v=` for the share card: changes when the name, town, category or hero does. */
+  version: string;
 }
 
 const VENDOR_PATH_RE = /^\/suppliers\/([^/?#]+)/;
@@ -1213,6 +1218,7 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
     blurbEn: redacted ? "" : base.blurb_en,
     heroImageUrl,
     publicId: vendorPublicId(base.id, base.name),
+    version: shareVersion([base.name, base.city, base.category, heroImageUrl]),
     indexable: isSubstantialVendorProfile({
       description: publicDescription,
       category: base.category,
@@ -1224,6 +1230,51 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
       ),
       unclaimedImport,
     }),
+  };
+}
+
+/** Per-invite meta for `/rsvp/<code>`. The couple's names, date and venue are
+ *  what the RSVP page shows to anyone holding this code, so the head and the
+ *  card carry the same facts, and nothing that page would not show. Guest
+ *  names stay off both: a preview can be forwarded. */
+export interface RsvpPageMeta {
+  code: string;
+  coupleName: string;
+  date: string | null;
+  venue: string | null;
+  version: string;
+}
+
+const RSVP_PATH_RE = /^\/rsvp\/([^/?#]+)$/;
+
+export function lookupRsvpPageMeta(pathname: string | null | undefined): RsvpPageMeta | null {
+  if (!pathname) return null;
+  const m = RSVP_PATH_RE.exec(pathname);
+  if (!m) return null;
+  let code: string;
+  try {
+    code = decodeURIComponent(m[1] ?? "")
+      .trim()
+      .toUpperCase();
+  } catch {
+    return null;
+  }
+  if (!code || code.length > 32) return null;
+  const guest = getGuestByInviteCode(code);
+  if (!guest) return null;
+  const couple = getCoupleById(guest.couple_id);
+  if (!couple || !couple.display_name) return null;
+  return {
+    code,
+    coupleName: couple.display_name,
+    date: couple.wedding_date,
+    venue: couple.venue_name,
+    version: shareVersion([
+      couple.display_name,
+      couple.wedding_date,
+      couple.venue_name,
+      couple.cover_image_url,
+    ]),
   };
 }
 
@@ -1293,6 +1344,19 @@ function heroPreloadTags(path: string): string[] {
     `<link rel="preload" as="image" href="/cover-hero.jpg?v=20260825" fetchpriority="high" media="(min-width: 640px)" />`,
     `<link rel="preload" as="image" href="/hero-mobile-cover.jpg?v=20260825" fetchpriority="high" media="(max-width: 639px)" />`,
   ];
+}
+
+/** A wedding date as the share card reads it, in the locale of the head. */
+function inviteDateText(iso: string | null, locale: SeoLocale): string | null {
+  if (!iso) return null;
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(locale === "hu" ? "hu-HU" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 /** `/app/vendors` is the signed-in vendor directory. It is shared as a link
@@ -1409,6 +1473,8 @@ function buildHeadBlock(opts: {
   /** Per-vendor overrides for the `/vendors/:id` public page — same role as
    *  `weddingMeta`, applied to the vendor share card. */
   vendorMeta?: VendorPageMeta | null;
+  /** Per-invite overrides for `/rsvp/<code>`. */
+  rsvpMeta?: RsvpPageMeta | null;
 }): string {
   const toolLangMatch = matchToolLangPath(opts.pathname || "/");
   if (toolLangMatch) {
@@ -1509,17 +1575,21 @@ function buildHeadBlock(opts: {
   // 1200×630 landscape card, so the two brand images carry their own dims
   // rather than sharing one hardcoded pair.
   let brandOgImageDims: { width: number; height: number } | null;
+  // Share cards are JPEGs rendered by /api/share-cards/*; the brand PNGs and
+  // custom covers keep their own types.
+  let ogImageType = "image/png";
   if (opts.weddingMeta?.cover_image_url) {
     ogImage = opts.weddingMeta.cover_image_url;
     ogImageAlt = opts.weddingMeta.display_name;
     brandOgImageDims = null;
-  } else if (opts.vendorMeta?.heroImageUrl) {
-    // Vendor hero is stored relative (`/uploads/…`) — make it absolute against
-    // the canonical host so scrapers can fetch it. Unknown size/format, so no
-    // dimension hints (same as blog/wedding covers).
-    ogImage = absoluteImageUrl(`https://${canonicalHost}`, opts.vendorMeta.heroImageUrl) as string;
-    ogImageAlt = opts.vendorMeta.name;
-    brandOgImageDims = null;
+  } else if (opts.vendorMeta) {
+    // A venue gets its own card: name, town and category over its photo,
+    // drawn server-side, so the preview says what the link is about.
+    const vm = opts.vendorMeta;
+    ogImage = `https://${canonicalHost}/api/share-cards/vendor/${encodeURIComponent(vm.publicId)}?v=${vm.version}`;
+    ogImageAlt = vm.name;
+    ogImageType = "image/jpeg";
+    brandOgImageDims = { width: 1200, height: 630 };
   } else if (blogArticle && blogCover) {
     ogImage = blogCover;
     ogImageAlt = locale === "hu" ? blogArticle.huTitle : blogArticle.enTitle;
@@ -1529,6 +1599,12 @@ function buildHeadBlock(opts: {
     // the vendor-directory card rather than the dove logo mark.
     ogImage = `https://${canonicalHost}/og-vendors.png`;
     ogImageAlt = locale === "hu" ? APP_VENDORS_SHARE.hu.title : APP_VENDORS_SHARE.en.title;
+    brandOgImageDims = { width: 1200, height: 630 };
+  } else if (opts.rsvpMeta) {
+    const rm = opts.rsvpMeta;
+    ogImage = `https://${canonicalHost}/api/share-cards/rsvp/${encodeURIComponent(rm.code)}?v=${rm.version}`;
+    ogImageAlt = locale === "hu" ? `Meghívó: ${rm.coupleName}` : `You're invited: ${rm.coupleName}`;
+    ogImageType = "image/jpeg";
     brandOgImageDims = { width: 1200, height: 630 };
   } else if (opts.isRsvp) {
     ogImage = `https://${canonicalHost}/og-rsvp.png`;
@@ -1576,6 +1652,15 @@ function buildHeadBlock(opts: {
         ? `${vm.name} a Weddly esküvői szolgáltató katalógusában.`
         : `${vm.name} on Weddly's wedding vendor directory.`);
     twDescription = description;
+  } else if (opts.rsvpMeta) {
+    const rm = opts.rsvpMeta;
+    title = locale === "hu" ? `Meghívó: ${rm.coupleName}` : `You're invited: ${rm.coupleName}`;
+    const when = inviteDateText(rm.date, locale);
+    const facts = [when, rm.venue].filter(Boolean).join(" · ");
+    const cta = locale === "hu" ? "Válaszolj a Weddlyn." : "RSVP on Weddly.";
+    const raw = facts ? `${facts}. ${cta}` : cta;
+    description = raw.length > 155 ? `${raw.slice(0, 152).trimEnd()}…` : raw;
+    twDescription = description;
   } else if (isAppVendorDirectoryPath(path)) {
     title = APP_VENDORS_SHARE[locale].title;
     description = APP_VENDORS_SHARE[locale].description;
@@ -1609,7 +1694,7 @@ function buildHeadBlock(opts: {
     `<meta property="og:image" content="${escapeAttr(ogImage)}" />`,
     ...(brandOgImageDims
       ? [
-          `<meta property="og:image:type" content="image/png" />`,
+          `<meta property="og:image:type" content="${ogImageType}" />`,
           `<meta property="og:image:width" content="${brandOgImageDims.width}" />`,
           `<meta property="og:image:height" content="${brandOgImageDims.height}" />`,
         ]
@@ -1967,7 +2052,8 @@ export function renderIndexHtml(
   // a pure string-builder so we keep the DB read here.
   const weddingMeta = lookupWeddingSiteMeta(opts.pathname);
   const vendorMeta = weddingMeta ? null : lookupVendorPageMeta(opts.pathname);
-  const head = buildHeadBlock({ ...opts, weddingMeta, vendorMeta });
+  const rsvpMeta = weddingMeta || vendorMeta ? null : lookupRsvpPageMeta(opts.pathname);
+  const head = buildHeadBlock({ ...opts, weddingMeta, vendorMeta, rsvpMeta });
 
   // Splice the <head> block.
   let out: string;
