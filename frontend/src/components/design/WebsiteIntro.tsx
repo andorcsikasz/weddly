@@ -47,7 +47,7 @@ export function WebsiteIntro({ onDone }: { onDone: () => void }) {
       />
       <h2
         id="website-intro-title"
-        className="mt-5 text-balance font-serif text-4xl italic text-ink-900 sm:text-5xl dark:text-paper-50"
+        className="mt-5 text-balance font-serif text-4xl text-ink-900 sm:text-5xl dark:text-paper-50"
       >
         {t("design.intro.title")}
       </h2>

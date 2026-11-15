@@ -421,7 +421,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         )
         .join("");
       const footnote = block.footnote
-        ? `<p style="margin:18px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
+        ? `<p style="margin:18px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">${escapeHtml(block.footnote)}</p>`
         : "";
       const postCtaParagraphs = renderPostCtaParagraphs(block.postCtaParagraphs, false);
       const signoff = renderSignoff(block.signoff, false);
@@ -476,7 +476,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       )
       .join("");
     const footnote = block.footnote
-      ? `<p style="margin:10px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
+      ? `<p style="margin:10px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;">${escapeHtml(block.footnote)}</p>`
       : "";
     const postCtaParagraphs = renderPostCtaParagraphs(block.postCtaParagraphs, true);
     const signoff = renderSignoff(block.signoff, true);
@@ -697,7 +697,7 @@ function renderOutreachOrientation(category: EmailCategory, locale: UiLocale): s
   const copy =
     ORIENTATION[locale] ??
     "Weddly is a wedding-planning app for couples, with guest lists, seating, budgets and RSVPs in one place.";
-  return `<p style="margin:0 0 18px 0;color:${COLOR.muted};font-size:14px;line-height:1.5;font-style:italic;">${escapeHtml(copy)}</p>`;
+  return `<p style="margin:0 0 18px 0;color:${COLOR.muted};font-size:14px;line-height:1.5;">${escapeHtml(copy)}</p>`;
 }
 
 // A copy-paste line under the button, printed ONLY when the builder asks for

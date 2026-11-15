@@ -186,7 +186,7 @@ export function ReviewsSection({
           who hasn't already reviewed this subject. Engaged couples additionally
           earn the "Verified" badge; everyone else posts an unbadged review. */}
       {!isAdmin && !canReview && (
-        <p className="mb-6 text-sm italic text-ink-500 dark:text-umber-300">
+        <p className="mb-6 text-sm text-ink-500 dark:text-umber-300">
           {alreadyReviewed
             ? t("suppliers.detail.reviews.alreadyReviewedNote")
             : t("suppliers.detail.reviews.eligibilityHint")}
@@ -258,7 +258,7 @@ export function ReviewsSection({
       )}
 
       {reviews.length === 0 ? (
-        <p className="text-sm italic text-ink-500 dark:text-umber-300">
+        <p className="text-sm text-ink-500 dark:text-umber-300">
           {t("suppliers.detail.reviews.empty")}
         </p>
       ) : (

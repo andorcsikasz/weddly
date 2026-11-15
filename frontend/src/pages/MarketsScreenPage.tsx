@@ -25,6 +25,7 @@ import {
 } from "../components/markets/party";
 import { ApiError } from "../lib/api";
 import { marketsPlayApi } from "../lib/endpoints";
+import { Coins, Crown, Flower2, Gift, Shirt } from "lucide-react";
 import { useT } from "../lib/i18n";
 import "./games/GamesConsole.css";
 
@@ -54,7 +55,10 @@ function OddsBar({ question, now }: { question: MarketQuestion; now: number }) {
           {100 - yes}% {t("markets_play.bet_no")}
         </div>
       </div>
-      <p className="mt-2 text-lg tabular-nums text-white/60">🪙 {total}</p>
+      <p className="mt-2 text-lg tabular-nums text-white/60">
+        <Coins aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" strokeWidth={1.5} />
+        {total}
+      </p>
     </div>
   );
 }
@@ -121,7 +125,12 @@ export default function MarketsScreenPage() {
           </h1>
           {state.prize && (
             <p className="mt-2 text-2xl text-white/80">
-              🎁 {t("markets_party.prize_won", { prize: state.prize })}
+              <Gift
+                aria-hidden="true"
+                className="mr-1 inline h-5 w-5 align-[-3px]"
+                strokeWidth={1.5}
+              />
+              {t("markets_party.prize_won", { prize: state.prize })}
             </p>
           )}
         </div>
@@ -167,7 +176,15 @@ export default function MarketsScreenPage() {
                 {state.leaderboard.slice(0, 7).map((e) => (
                   <li key={e.player.id} className="flex items-center gap-3 text-2xl text-white">
                     <span className="w-9 text-right text-white/50">
-                      {e.rank === 1 ? "👑" : e.rank}
+                      {e.rank === 1 ? (
+                        <Crown
+                          aria-hidden="true"
+                          className="inline h-5 w-5 text-star"
+                          strokeWidth={1.5}
+                        />
+                      ) : (
+                        e.rank
+                      )}
                     </span>
                     <span aria-hidden>{e.player.avatar}</span>
                     <span className="min-w-0 flex-1">
@@ -192,10 +209,20 @@ export default function MarketsScreenPage() {
                       width: `${teamTotal > 0 ? Math.max(15, (bride.balance / teamTotal) * 100) : 50}%`,
                     }}
                   >
-                    👰 {bride.balance}
+                    <Flower2
+                      aria-hidden="true"
+                      className="mr-1 inline h-4 w-4 align-[-2px]"
+                      strokeWidth={1.5}
+                    />
+                    {bride.balance}
                   </div>
                   <div className="flex flex-1 items-center justify-end bg-steel-300 px-3 text-ink-900">
-                    {groom.balance} 🤵
+                    {groom.balance}
+                    <Shirt
+                      aria-hidden="true"
+                      className="ml-1 inline h-4 w-4 align-[-2px]"
+                      strokeWidth={1.5}
+                    />
                   </div>
                 </div>
                 <div className="mt-2 flex justify-between text-base text-white/60">

@@ -2005,7 +2005,6 @@ export default function GuestPageEditorPage() {
                 value={usefulFields[f.key]}
                 onChange={(next) => setUsefulFields((prev) => ({ ...prev, [f.key]: next }))}
                 boldLabel={t("guest_page_editor.format_bold_label")}
-                italicLabel={t("guest_page_editor.format_italic_label")}
                 className="shrink-0"
               />
               <div className="relative flex-1">
@@ -2049,7 +2048,6 @@ export default function GuestPageEditorPage() {
                 value={usefulOther}
                 onChange={setUsefulOther}
                 boldLabel={t("guest_page_editor.format_bold_label")}
-                italicLabel={t("guest_page_editor.format_italic_label")}
               />
             </div>
             <div className="relative">

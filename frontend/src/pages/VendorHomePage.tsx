@@ -555,7 +555,7 @@ export default function VendorHomePage() {
             </form>
 
             {availability.blocked_dates.length === 0 ? (
-              <p className="text-sm italic text-ink-500 dark:text-umber-300">
+              <p className="text-sm text-ink-500 dark:text-umber-300">
                 {t("vendor_home.availability_empty")}
               </p>
             ) : (

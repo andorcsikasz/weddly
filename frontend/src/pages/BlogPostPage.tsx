@@ -243,7 +243,7 @@ function UlItem({ text }: { text: string }) {
   const url = citeToBibliaUrl(cite);
   const content = (
     <>
-      „{quote}” <span className="font-serif italic text-ink-500 dark:text-umber-300">{cite}</span>
+      „{quote}” <span className="font-serif text-ink-500 dark:text-umber-300">{cite}</span>
     </>
   );
   if (!url) return content;
@@ -258,7 +258,7 @@ function UlItem({ text }: { text: string }) {
       className="group/verse transition-colors hover:text-blush-700 dark:hover:text-blush-300"
     >
       „{quote}”{" "}
-      <span className="font-serif italic text-ink-500 transition-colors group-hover/verse:text-blush-700 dark:text-umber-300 dark:group-hover/verse:text-blush-300">
+      <span className="font-serif text-ink-500 transition-colors group-hover/verse:text-blush-700 dark:text-umber-300 dark:group-hover/verse:text-blush-300">
         {cite}
       </span>
     </a>
@@ -454,13 +454,13 @@ function Block({ block, sectionMap }: { block: BlogBlock; sectionMap: SectionMap
       .filter(Boolean);
     return (
       <figure className="!my-12 border-l-2 border-blush-400 pl-5 dark:border-blush-300 sm:pl-6">
-        <blockquote className="space-y-3 font-serif italic leading-relaxed text-ink-800 dark:text-paper-100">
+        <blockquote className="space-y-3 font-serif leading-relaxed text-ink-800 dark:text-paper-100">
           {paragraphs.map((p, i) => (
             <p key={i}>{p}</p>
           ))}
         </blockquote>
         {block.cite ? (
-          <figcaption className="mt-3 font-serif italic text-ink-500 dark:text-umber-300">
+          <figcaption className="mt-3 font-serif text-ink-500 dark:text-umber-300">
             <BibleCiteLink cite={block.cite} />
           </figcaption>
         ) : null}
@@ -484,9 +484,7 @@ function Block({ block, sectionMap }: { block: BlogBlock; sectionMap: SectionMap
         {block.caption || block.credit ? (
           <figcaption className="mt-3 text-sm text-ink-500 dark:text-umber-300">
             {block.caption ? (
-              <span className="font-serif italic text-ink-600 dark:text-umber-200">
-                {block.caption}
-              </span>
+              <span className="font-serif text-ink-600 dark:text-umber-200">{block.caption}</span>
             ) : null}
             {block.caption && block.credit ? <span className="px-1.5">·</span> : null}
             {block.credit ? (

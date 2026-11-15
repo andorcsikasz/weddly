@@ -75,7 +75,7 @@ const PACK_FONT_FILES: Partial<
   Record<FontPresetSlug, { heading: PdfFontFile; body: PdfFontFile }>
 > = {
   garden_serif: {
-    heading: fullFont("CormorantGaramond-Italic.otf"),
+    heading: fullFont("EBGaramond-Regular.otf"),
     body: subsetFont("Jost-Light.ttf"),
   },
   mono_sans: { heading: subsetFont("DMSans-Bold.ttf"), body: subsetFont("DMSans-Regular.ttf") },
@@ -92,14 +92,14 @@ const PACK_FONT_FILES: Partial<
 // Fixed brand faces for the operational Run-of-show PDF below, which has no
 // couple-chosen style pack to draw from. CormorantSC-SemiBold matches the
 // upright, tracked-caps treatment the real wordmark (frontend/public/logo.svg)
-// uses; CormorantGaramond-Italic matches the in-app H1/H2 heading face the
+// uses; Cormorant (upright) matches the in-app H1/H2 heading face the
 // couple already sees on every page of their workspace.
 const BRAND_WORDMARK_FONT = fullFont("CormorantSC-SemiBold.otf");
-const BRAND_TITLE_FONT = fullFont("CormorantGaramond-Italic.otf");
+const BRAND_TITLE_FONT = fullFont("EBGaramond-Regular.otf");
 
 const FAMILY_FONT_FILES: Partial<Record<FontFamilySlug, PdfFontFile>> = {
-  cormorant: fullFont("CormorantGaramond-Italic.otf"),
-  cormorant_italic: fullFont("CormorantGaramond-Italic.otf"),
+  cormorant: fullFont("EBGaramond-Regular.otf"),
+  cormorant_italic: fullFont("EBGaramond-Regular.otf"),
   dm_sans: subsetFont("DMSans-Regular.ttf"),
   jost: subsetFont("Jost-Light.ttf"),
   bodoni_moda: subsetFont("BodoniModa-Regular.ttf"),

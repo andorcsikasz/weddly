@@ -601,7 +601,7 @@ export default function SchedulePage() {
                             </span>
                           )}
                         {event.notes && (
-                          <span className="truncate italic text-ink-400 dark:text-umber-400">
+                          <span className="truncate text-ink-400 dark:text-umber-400">
                             {event.notes.length > 80 ? `${event.notes.slice(0, 80)}…` : event.notes}
                           </span>
                         )}
@@ -819,7 +819,7 @@ function ScheduleTimelineView({
                 )}
               </div>
               {event.notes && (
-                <p className="mt-2 border-t border-paper-200 pt-2 text-xs italic leading-relaxed text-ink-500 dark:border-umber-700 dark:text-umber-300">
+                <p className="mt-2 border-t border-paper-200 pt-2 text-xs leading-relaxed text-ink-500 dark:border-umber-700 dark:text-umber-300">
                   {event.notes}
                 </p>
               )}

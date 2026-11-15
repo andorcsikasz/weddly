@@ -128,7 +128,7 @@ export function HeroProof({
               <>
                 {brideName}
                 <br />
-                <span style={{ color: d.accent_text, fontStyle: "italic" }}>&amp; </span>
+                <span style={{ color: d.accent_text }}>&amp; </span>
                 {groomName}
               </>
             ) : (

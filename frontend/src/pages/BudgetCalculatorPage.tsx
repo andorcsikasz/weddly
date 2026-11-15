@@ -34,7 +34,7 @@ export default function BudgetCalculatorPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-600 dark:text-blush-300">
             {t("tools.budget_calculator.page_eyebrow")}
           </p>
-          <h1 className="mt-4 font-grotesk text-4xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+          <h1 className="mt-4 font-grotesk text-4xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
             {t("tools.budget_calculator.page_h1")}
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-ink-700 dark:text-paper-200">
@@ -57,13 +57,13 @@ export default function BudgetCalculatorPage() {
           intent with concrete numbers Google can excerpt as a snippet. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.budget_calculator.averages_h2")}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
             {t("tools.budget_calculator.averages_body")}
           </p>
-          <p className="mt-4 text-xs italic text-ink-500 dark:text-umber-300">
+          <p className="mt-4 text-xs text-ink-500 dark:text-umber-300">
             {t("tools.budget_calculator.averages_source_note")}
           </p>
         </div>
@@ -73,7 +73,7 @@ export default function BudgetCalculatorPage() {
           widget renders; the prose version is what Google reads. */}
       <section className="relative">
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.budget_calculator.ratios_h2")}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -86,7 +86,7 @@ export default function BudgetCalculatorPage() {
           often get featured-snippet treatment) and to break up the page. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.budget_calculator.tips_h2")}
           </h2>
           <ul className="mt-6 space-y-4 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -102,7 +102,7 @@ export default function BudgetCalculatorPage() {
           fires on every change), so onboarding picks them up after signup. */}
       <section className="relative">
         <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.budget_calculator.cta_h2")}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -119,7 +119,7 @@ export default function BudgetCalculatorPage() {
           to screen readers without JS. */}
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.budget_calculator.faq_h2")}
           </h2>
           <div className="mt-8 space-y-3">

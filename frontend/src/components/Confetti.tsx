@@ -51,7 +51,7 @@ export function Confetti() {
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       {pieces.map((p, i) => (
         <span key={i} className="confetti-piece absolute top-0" style={p.style}>
-          <i
+          <span
             className={`${p.round ? "rounded-full" : "rounded-[1px]"} ${p.color}`}
             style={{ opacity: p.opacity }}
           />

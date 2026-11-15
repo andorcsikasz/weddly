@@ -89,7 +89,7 @@ export function LookBar({
       {/* Name + palette + type specimen. Truncation order matters: the palette
           bar survives every width because it is the fastest read of the three. */}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <p className="truncate font-serif text-xl italic tracking-tight text-paper-50 sm:text-2xl">
+        <p className="truncate font-serif text-xl tracking-tight text-paper-50 sm:text-2xl">
           {lookName}
         </p>
         <PaletteBar colors={colors} overridden={overridden} className="max-w-56" />

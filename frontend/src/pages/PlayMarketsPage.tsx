@@ -35,7 +35,22 @@ import {
   type MarketTeam,
   trendSinceOpen,
 } from "@shared/markets";
-import { Coins, Lock, TrendingDown, TrendingUp, Volume2, VolumeX } from "lucide-react";
+import {
+  Coins,
+  Crown,
+  Dice5,
+  DoorOpen,
+  Flower2,
+  Frown,
+  Gift,
+  LifeBuoy,
+  Lock,
+  Shirt,
+  TrendingDown,
+  TrendingUp,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { MarketMiniChart } from "../components/MarketMiniChart";
@@ -336,7 +351,12 @@ function QuestionRow({
               }
             }}
           >
-            🪂 {t("markets_party.bailout", { refund: String(bailoutRefund(myPosition.stake)) })}
+            <LifeBuoy
+              aria-hidden="true"
+              className="mr-1 inline h-4 w-4 align-[-3px]"
+              strokeWidth={1.5}
+            />
+            {t("markets_party.bailout", { refund: String(bailoutRefund(myPosition.stake)) })}
           </button>
         </div>
       )}
@@ -370,7 +390,10 @@ function JoinScreen({
         </h1>
       )}
       {prize && (
-        <p className="mt-2 text-sm text-white/75">🎁 {t("markets_party.prize_won", { prize })}</p>
+        <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-white/75">
+          <Gift aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.5} />
+          {t("markets_party.prize_won", { prize })}
+        </p>
       )}
 
       <label htmlFor="market-name" className="gc-label mt-6 text-left">
@@ -414,7 +437,13 @@ function JoinScreen({
               team === tm ? "bg-white text-ink-900" : "bg-white/10 text-white"
             }`}
           >
-            {tm === "bride" ? "👰 " : tm === "groom" ? "🤵 " : "🎲 "}
+            {tm === "bride" ? (
+              <Flower2 aria-hidden="true" className="mr-1 inline h-3.5 w-3.5" strokeWidth={1.5} />
+            ) : tm === "groom" ? (
+              <Shirt aria-hidden="true" className="mr-1 inline h-3.5 w-3.5" strokeWidth={1.5} />
+            ) : (
+              <Dice5 aria-hidden="true" className="mr-1 inline h-3.5 w-3.5" strokeWidth={1.5} />
+            )}
             {t(tm ? `markets_party.team_${tm}` : "markets_party.team_none")}
           </button>
         ))}
@@ -500,7 +529,7 @@ export default function PlayMarketsPage() {
   useEffect(() => {
     if (freshQuestions.length === 0) return;
     playSound("new");
-    toast.success(`⚡ ${t("markets_party.new_question")}`);
+    toast.success(t("markets_party.new_question"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [freshQuestions]);
 
@@ -563,9 +592,7 @@ export default function PlayMarketsPage() {
   if (notFound) {
     return (
       <div className="gc-page min-h-screen px-4 py-16 text-center" style={{ margin: 0 }}>
-        <p className="text-6xl" aria-hidden>
-          🚪
-        </p>
+        <DoorOpen className="mx-auto h-14 w-14 text-white/70" strokeWidth={1} aria-hidden="true" />
         <h1 className="mt-3 font-grotesk text-2xl text-white">
           {t("markets_play.not_found_title")}
         </h1>
@@ -625,25 +652,40 @@ export default function PlayMarketsPage() {
               )}
             </div>
             <span className="shrink-0 rounded-full bg-star px-3 py-1 text-sm font-black tabular-nums text-ink-900">
-              🪙 {state.myBalance}
+              <Coins
+                aria-hidden="true"
+                className="mr-1 inline h-3.5 w-3.5 align-[-2px]"
+                strokeWidth={1.5}
+              />
+              {state.myBalance}
             </span>
           </div>
 
           {state.prize && (
             <p className="mb-3 rounded-xl bg-white/5 px-3 py-2 text-sm text-white/80">
-              🎁 {t("markets_party.prize_won", { prize: state.prize })}
+              <Gift
+                aria-hidden="true"
+                className="mr-1 inline h-3.5 w-3.5 align-[-2px]"
+                strokeWidth={1.5}
+              />
+              {t("markets_party.prize_won", { prize: state.prize })}
             </p>
           )}
 
           {state.me?.pityAvailable && (
             <div className="mk-pop-in mb-3 rounded-xl border border-star/40 bg-star/10 p-3 text-center">
-              <p className="text-sm font-semibold text-white">😵 {t("markets_party.pity_title")}</p>
+              <Frown
+                aria-hidden="true"
+                className="mx-auto mb-1 h-5 w-5 text-white/70"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm font-semibold text-white">{t("markets_party.pity_title")}</p>
               <button
                 type="button"
                 className="gc-btn gc-btn-sm mt-2 bg-star font-black text-ink-900"
                 onClick={handlePity}
               >
-                🙏 {t("markets_party.pity_button", { amount: String(MARKET_PITY_LOAN) })}
+                {t("markets_party.pity_button", { amount: String(MARKET_PITY_LOAN) })}
               </button>
             </div>
           )}
@@ -679,7 +721,15 @@ export default function PlayMarketsPage() {
                   className={`gc-leaderboard-row ${entry.player.id === state.me?.id ? "ring-1 ring-star/60" : ""}`}
                 >
                   <span className="w-6 shrink-0 text-right text-sm text-white/45">
-                    {entry.rank === 1 ? "👑" : `#${entry.rank}`}
+                    {entry.rank === 1 ? (
+                      <Crown
+                        aria-hidden="true"
+                        className="ml-auto inline h-3.5 w-3.5 text-star"
+                        strokeWidth={1.5}
+                      />
+                    ) : (
+                      `#${entry.rank}`
+                    )}
                   </span>
                   <span aria-hidden="true">{entry.player.avatar}</span>
                   <span className="min-w-0 flex-1 text-sm text-white">

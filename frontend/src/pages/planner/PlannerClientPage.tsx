@@ -456,7 +456,7 @@ export default function PlannerClientPage() {
               </a>
             </>
           ) : (
-            <p className="text-xs text-umber-400 italic">{t("planner_client.no_phone")}</p>
+            <p className="text-xs text-umber-400">{t("planner_client.no_phone")}</p>
           )}
           {crm.primary_email && (
             <a
@@ -527,7 +527,7 @@ export default function PlannerClientPage() {
             </div>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-umber-400 italic">{t("planner_client.tasks_empty")}</p>
+          <p className="mt-3 text-sm text-umber-400">{t("planner_client.tasks_empty")}</p>
         )}
       </div>
 

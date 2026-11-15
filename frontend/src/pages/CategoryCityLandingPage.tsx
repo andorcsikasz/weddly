@@ -91,7 +91,7 @@ export default function CategoryCityLandingPage() {
     return (
       <PublicShell>
         <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6">
-          <h1 className="font-grotesk text-3xl italic text-ink-900 dark:text-paper-50">
+          <h1 className="font-grotesk text-3xl text-ink-900 dark:text-paper-50">
             {t("vendorLocation.notFoundTitle")}
           </h1>
           <p className="mt-3 text-ink-600 dark:text-umber-200">
@@ -114,7 +114,7 @@ export default function CategoryCityLandingPage() {
         <div className="mx-auto max-w-3xl px-4 pt-12 pb-10 sm:px-6 sm:pt-16 sm:pb-12">
           {resolved ? (
             <>
-              <h1 className="font-grotesk text-4xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl">
+              <h1 className="font-grotesk text-4xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl">
                 {title}
               </h1>
               <p className="mt-6 text-lg leading-relaxed text-ink-700 dark:text-paper-200">

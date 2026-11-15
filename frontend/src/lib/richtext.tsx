@@ -1,19 +1,19 @@
-// A minimal markdown-lite: `**bold**` and `*italic*`, nothing else. The
+// A minimal markdown-lite: `**bold**` and `**`, nothing else. The
 // couple's free-text guest-page fields (welcome note, "Good to know") are
 // plain strings with no rich-text editor behind them — this lets a Bold/Italic
 // toolbar button wrap the current selection in plain-text markers, and lets
-// the render side turn those markers into <strong>/<em>. No markdown library:
+// the render side turn those markers into <strong>/<span>. No markdown library:
 // two marks are the whole feature.
 
-import { Bold, Italic } from "lucide-react";
+import { Bold } from "lucide-react";
 import { type ReactNode, type RefObject, useLayoutEffect, useRef } from "react";
 
 const BOLD = "**";
 const ITALIC = "*";
 
-/** Turns `**bold**` / `*italic*` runs into <strong>/<em>; everything else
+/** Turns `**bold**` / `**` runs into <strong>/<span>; everything else
  *  (including newlines — callers keep `whitespace-pre-line`) passes through
- *  untouched. Bold is matched first so `**x**` isn't read as two italic runs
+ *  untouched. Bold is matched first so `**x**` isn't read as two  runs
  *  around an empty string. */
 export function renderFormatted(text: string): ReactNode {
   const parts: ReactNode[] = [];
@@ -26,7 +26,7 @@ export function renderFormatted(text: string): ReactNode {
     if (m[1] !== undefined) {
       parts.push(<strong key={key++}>{m[1]}</strong>);
     } else {
-      parts.push(<em key={key++}>{m[2]}</em>);
+      parts.push(<span key={key++}>{m[2]}</span>);
     }
     last = re.lastIndex;
   }
@@ -42,7 +42,7 @@ export function renderFormatted(text: string): ReactNode {
  *  nothing, leaving the caret between the two markers to type into).
  *
  *  The neighbour-strip case excludes matches that are really the OTHER
- *  marker's edge (an italic toggle must not eat one star off a `**bold**`
+ *  marker's edge (an  toggle must not eat one star off a `**bold**`
  *  span it's sitting inside — that should nest, `**wo*rld*(...)`-style, not
  *  corrupt the bold). */
 function wrapSelection(
@@ -86,7 +86,7 @@ function wrapSelection(
   };
 }
 
-/** Bold/Italic buttons for a plain `<input>`/`<textarea>`. Wraps the current
+/** Bold button for a plain `<input>`/`<textarea>`. Wraps the current
  *  selection in `**`/`*` markers and restores focus + selection after the
  *  controlled value updates (a `useLayoutEffect` keyed on `value`, so it fires
  *  once React has committed the new value into the field — works whether the
@@ -98,14 +98,12 @@ export function FormatToolbar({
   value,
   onChange,
   boldLabel,
-  italicLabel,
   className = "",
 }: {
   fieldRef: RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
   value: string;
   onChange: (next: string) => void;
   boldLabel: string;
-  italicLabel: string;
   className?: string;
 }) {
   const pending = useRef<{ start: number; end: number } | null>(null);
@@ -144,16 +142,6 @@ export function FormatToolbar({
         className={btnCls}
       >
         <Bold size={14} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => apply(ITALIC)}
-        aria-label={italicLabel}
-        title={italicLabel}
-        className={btnCls}
-      >
-        <Italic size={14} aria-hidden="true" />
       </button>
     </div>
   );

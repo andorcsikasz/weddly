@@ -220,7 +220,7 @@ export function PlannerDashRightRail({
 
         {/* TODAY'S TASKS: each row completes in place or jumps to the list */}
         {visibleToday.length === 0 ? (
-          <p className="mt-3 text-xs italic text-umber-400">{t("planner_home.rail_today_empty")}</p>
+          <p className="mt-3 text-xs text-umber-400">{t("planner_home.rail_today_empty")}</p>
         ) : (
           <ul className="mt-3 space-y-1">
             {visibleToday.map((tk) => (

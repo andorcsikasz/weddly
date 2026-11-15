@@ -140,7 +140,7 @@ export type CardLayoutSlug = "centered" | "asymmetric" | "framed" | "corners";
 /** Optional typographic treatment a pack applies to its HEADINGS on top of the
  *  font stack (italic for Garden, uppercase for the Monochrome grotesk, small
  *  caps for Midnight). Absent = render the heading as-is. */
-export type HeadingStyleSlug = "italic" | "uppercase" | "small_caps";
+export type HeadingStyleSlug = "uppercase" | "small_caps"; // no italic: house rule
 
 /** Minimal per-template print options. Each printable template honours the
  *  subset that makes sense for it (a table number has no QR block). */
@@ -657,7 +657,6 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     defaultFonts: "garden_serif",
     ornament: "botanical",
     cardLayout: "centered",
-    headingStyle: "italic",
     defaultDateFormat: "long",
     defaultBorderStyle: "none",
     suggestedPhotos: ["ceremony_florals", "tablescape", "peonies_soft", "vineyard_dusk"],
@@ -737,7 +736,6 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     defaultFonts: "villa_garamond",
     ornament: "botanical",
     cardLayout: "centered",
-    headingStyle: "italic",
     defaultDateFormat: "long",
     defaultBorderStyle: "none",
     suggestedPhotos: ["tuscan_hills", "vineyard_dusk", "tablescape", "ceremony_florals"],
@@ -796,7 +794,6 @@ export const STYLE_PRESETS: readonly StylePreset[] = [
     defaultFonts: "bordeaux_romance",
     ornament: "deco",
     cardLayout: "corners",
-    headingStyle: "italic",
     defaultDateFormat: "long",
     defaultBorderStyle: "none",
     suggestedPhotos: ["taper_candles", "peonies_plaster", "ranunculus", "glassware"],

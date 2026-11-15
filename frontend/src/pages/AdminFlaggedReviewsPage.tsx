@@ -101,7 +101,7 @@ export default function AdminFlaggedReviewsPage() {
         </div>
       )}
       {state.status === "ok" && state.data.length === 0 && (
-        <p className="rounded-xl border border-ink-200/60 bg-white p-6 text-sm italic text-ink-500 dark:border-umber-700/60 dark:bg-umber-900 dark:text-umber-300">
+        <p className="rounded-xl border border-ink-200/60 bg-white p-6 text-sm text-ink-500 dark:border-umber-700/60 dark:bg-umber-900 dark:text-umber-300">
           {t("admin.reviews.empty")}
         </p>
       )}

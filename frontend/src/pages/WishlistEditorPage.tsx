@@ -558,7 +558,7 @@ function WishlistRow({
  *  as a gift so the page reads as one storefront, but square rather than 4:3
  *  and carrying no money.
  *
- *  The title used to be set in the display serif, italic, to mark these as the
+ *  The title used to be set in the display serif, , to mark these as the
  *  sentimental half of the list. It went with the Uber pass: two type voices in
  *  one scroll is the thing that makes a page look assembled rather than
  *  designed, and the square crop plus the lone icon already say "not a SKU"

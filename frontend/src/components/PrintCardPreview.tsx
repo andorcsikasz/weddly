@@ -151,7 +151,7 @@ export function PrintCardPreview({
           {document.cardType === "table_number" && (
             <>
               {/* The number is the hero — much larger than the label, styled per
-                pack (small-caps/italic/uppercase are harmless on digits). */}
+                pack (small-caps//uppercase are harmless on digits). */}
               <span
                 className={`${thumbnail ? "text-xl" : "text-7xl"} max-w-full break-words leading-none tabular-nums`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}

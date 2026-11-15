@@ -1420,10 +1420,7 @@ export function HouseholdRsvpForm({
               </button>
             )}
             <p className="text-xs text-ink-400 dark:text-umber-400">
-              <a
-                href="/?ref=rsvp"
-                className="font-grotesk italic underline-offset-4 hover:underline"
-              >
+              <a href="/?ref=rsvp" className="font-grotesk underline-offset-4 hover:underline">
                 {t("rsvp.thanks_plan_your_own")}
               </a>
             </p>

@@ -196,7 +196,9 @@ describe("Design -> Printed cards exports", () => {
       expect(info).toContain(`Page size:       ${expectedPage[cardType]} pts`);
       const fonts = command("pdffonts", [path]);
       expect(fonts).toContain("yes");
-      expect(fonts).toContain("CormorantGaramond-Italic");
+      // House rule: no italic face anywhere, including printables.
+      expect(fonts).toContain("EBGaramond-Regular");
+      expect(fonts).not.toContain("Italic");
       const text = command("pdftotext", [path, "-"]);
       textByCard.set(cardType, text);
       expect(text).not.toContain("Anna & Bence");

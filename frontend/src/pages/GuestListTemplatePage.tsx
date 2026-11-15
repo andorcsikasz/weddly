@@ -169,7 +169,7 @@ export default function GuestListTemplatePage() {
               <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-600 dark:text-blush-300">
                 {t("tools.guest_list_template.page_eyebrow")}
               </p>
-              <h1 className="mt-4 font-grotesk text-4xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+              <h1 className="mt-4 font-grotesk text-4xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
                 {t("tools.guest_list_template.page_h1")}
               </h1>
               <p className="mt-6 text-lg leading-relaxed text-ink-700 dark:text-paper-200">
@@ -195,10 +195,10 @@ export default function GuestListTemplatePage() {
 
       <section className="relative stationery-light">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.guest_list_template.preview_h2")}
           </h2>
-          <p className="mt-2 text-sm italic text-ink-500 dark:text-umber-300">
+          <p className="mt-2 text-sm text-ink-500 dark:text-umber-300">
             {t("tools.guest_list_template.preview_caption")}
           </p>
           {/* Mobile: render the same two sample rows as stacked label/value
@@ -322,10 +322,10 @@ export default function GuestListTemplatePage() {
           of just read. */}
       <section className="relative">
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.guest_list_template.try_h2")}
           </h2>
-          <p className="mt-2 text-sm italic text-ink-500 dark:text-umber-300">
+          <p className="mt-2 text-sm text-ink-500 dark:text-umber-300">
             {t("tools.guest_list_template.try_caption")}
           </p>
 
@@ -393,7 +393,7 @@ export default function GuestListTemplatePage() {
           </form>
 
           {tryGuests.length === 0 ? (
-            <p className="mt-6 text-sm italic text-ink-500 dark:text-umber-300">
+            <p className="mt-6 text-sm text-ink-500 dark:text-umber-300">
               {t("tools.guest_list_template.try_empty")}
             </p>
           ) : (
@@ -510,7 +510,7 @@ export default function GuestListTemplatePage() {
                   {t("tools.guest_list_template.try_download_btn")}
                 </button>
               </div>
-              <p className="mt-2 text-xs italic text-ink-500 dark:text-umber-300">
+              <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
                 {t("tools.guest_list_template.try_download_hint")}
               </p>
             </>
@@ -520,7 +520,7 @@ export default function GuestListTemplatePage() {
 
       <section className="relative">
         <div className="mx-auto max-w-2xl px-4 py-14 text-center sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.guest_list_template.download_h2")}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -529,7 +529,7 @@ export default function GuestListTemplatePage() {
           <a href={CSV_HREF} download className="btn-primary btn-lg mt-8 inline-flex shadow-sm">
             {t("tools.guest_list_template.download_csv_btn")}
           </a>
-          <p className="mt-3 text-xs italic text-ink-500 dark:text-umber-300">
+          <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
             {t("tools.guest_list_template.download_csv_hint")}
           </p>
         </div>
@@ -537,7 +537,7 @@ export default function GuestListTemplatePage() {
 
       <section className="relative stationery-light">
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.guest_list_template.organization_h2")}
           </h2>
           <ul className="mt-8 space-y-4 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -550,7 +550,7 @@ export default function GuestListTemplatePage() {
 
       <section className="relative">
         <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.guest_list_template.cta_h2")}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -564,7 +564,7 @@ export default function GuestListTemplatePage() {
 
       <section className="relative stationery-light">
         <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.guest_list_template.faq_h2")}
           </h2>
           <div className="mt-8 space-y-3">

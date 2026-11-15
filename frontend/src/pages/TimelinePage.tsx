@@ -1050,7 +1050,7 @@ function UndatedCard({
   const visibleTasks = expanded ? tasks : tasks.slice(0, PREVIEW_LIMIT);
 
   // When there are zero tasks of any kind the page reads as a fresh-install
-  // empty state; otherwise the "every task is dated" line stays italic + quiet
+  // empty state; otherwise the "every task is dated" line stays  + quiet
   // so it doesn't shout at couples who finished the job.
   const showFreshEmpty = !hasAnyTasks;
 
@@ -1093,7 +1093,7 @@ function UndatedCard({
             </p>
           </div>
         ) : (
-          <p className="px-5 py-6 text-sm italic text-ink-500 dark:text-umber-300">
+          <p className="px-5 py-6 text-sm text-ink-500 dark:text-umber-300">
             {t("timeline.no_dates_empty")}
           </p>
         )

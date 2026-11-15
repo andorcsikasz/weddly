@@ -130,7 +130,7 @@ export function SampleTable({
                   />
                 )}
               </span>
-              <span className="truncate px-0.5 font-serif text-lg italic text-ink-900 sm:text-xl dark:text-paper-50">
+              <span className="truncate px-0.5 font-serif text-lg text-ink-900 sm:text-xl dark:text-paper-50">
                 {name}
               </span>
             </button>

@@ -159,7 +159,7 @@ export default function PlannerDetailPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         {back}
-        <p className="py-16 text-center text-sm italic text-ink-500 dark:text-umber-300">
+        <p className="py-16 text-center text-sm text-ink-500 dark:text-umber-300">
           {t("planner_directory.not_found")}
         </p>
       </div>
@@ -293,7 +293,7 @@ export default function PlannerDetailPage() {
                   </span>
                 </span>
               ) : (
-                <span className="text-sm italic text-ink-500 dark:text-umber-300">
+                <span className="text-sm text-ink-500 dark:text-umber-300">
                   {t("suppliers.detail.info.ratingEmpty")}
                 </span>
               )}

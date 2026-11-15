@@ -126,7 +126,7 @@ export default function CalendarBoard({ today, tasks, onOpenTask }: CalendarBoar
       </div>
 
       {!hasAnyTask && (
-        <p className="border-t border-paper-200 px-5 py-3 text-xs italic text-ink-500 dark:border-umber-700 dark:text-umber-300">
+        <p className="border-t border-paper-200 px-5 py-3 text-xs text-ink-500 dark:border-umber-700 dark:text-umber-300">
           {t("timeline.calendar_no_tasks")}
         </p>
       )}

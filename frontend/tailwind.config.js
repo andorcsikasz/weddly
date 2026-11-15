@@ -30,142 +30,115 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Three-color palette per BLUEPRINT.
-        // Ink — deep navy, the dark accent / body text.
+        // Ink — the single text ramp: near-black on white, grey steps for secondary text.
         ink: {
-          50: "#f4f5f8",
-          100: "#e0e3ec",
-          200: "#bfc6d6",
-          300: "#94a0b9",
-          400: "#677797",
-          500: "#46577a",
-          600: "#314262",
-          700: "#243150",
-          800: "#1a2440",
-          900: "#101830",
-          950: "#080d1c",
+          50: "#fafafa",
+          100: "#f5f5f5",
+          200: "#e5e5e5",
+          300: "#d4d4d4",
+          400: "#a3a3a3",
+          500: "#737373",
+          600: "#525252",
+          700: "#404040",
+          800: "#262626",
+          900: "#171717",
+          950: "#0a0a0a",
         },
-        // Paper — oat cream, the warm background.
+        // Paper — white surfaces and page grounds.
         paper: {
-          50: "#fbfaf5",
-          100: "#f6f2e7",
-          200: "#efe9d9", // hero swatch
-          300: "#e3d9bf",
-          400: "#d3c69f",
-          500: "#bfae7b",
-          600: "#a18d5d",
-          700: "#7e6d49",
-          800: "#5a4e36",
-          900: "#3a3324",
+          50: "#ffffff",
+          100: "#fafafa",
+          200: "#f5f5f5",
+          300: "#e5e5e5",
+          400: "#d4d4d4",
+          500: "#a3a3a3",
+          600: "#737373",
+          700: "#525252",
+          800: "#262626",
+          900: "#0a0a0a",
         },
-        // Celebrate — deep crimson reserved for the post-wedding celebration
-        // card (white text on top). A truer, more festive red than blush, which
-        // reads terracotta-orange.
-        celebrate: "#B40421",
-        // Blush — single warm accent for CTAs / chips.
+        // Celebrate — black for the post-wedding card (white type on top).
+        celebrate: "#0a0a0a",
+        // Blush — the primary action colour. Black, so the CTA is the one dark mark on a page.
         blush: {
-          50: "#fdf5f3",
-          100: "#fbe9e3",
-          200: "#f5cdc1",
-          300: "#eda997",
-          400: "#e2826a",
-          500: "#d35d42",
-          600: "#bf4a30",
-          700: "#9d3b27",
-          800: "#7d3122",
-          900: "#612821",
-          // Several dark-mode surfaces already reference blush-950; without
-          // this stop Tailwind silently dropped those classes and the panels
-          // rendered transparent.
-          950: "#401b16",
+          50: "#fafafa",
+          100: "#f2f2f2",
+          200: "#e5e5e5",
+          300: "#cccccc",
+          400: "#8c8c8c",
+          500: "#171717",
+          600: "#000000",
+          700: "#000000",
+          800: "#000000",
+          900: "#000000",
+          950: "#000000",
         },
-        // Sage — vivid forest green. Marks couple-private "DIY" supplier
-        // entries AND the page's success / notify CTAs (e.g. the date-changed
-        // banner). Earlier this palette was kept olive-muted, but the muted
-        // tones read as gray-brown next to blush + paper; couples explicitly
-        // asked for a markánsabb green, so the palette below is built on a
-        // saturated mid (~#2f9c52) that still feels natural-leaf rather than
-        // neon. The pale tints (50–200) stay quiet enough to use as
-        // background fills without screaming.
+        // Sage — success and done states. Neutral: state is carried by icons, not hue.
         sage: {
-          50: "#effbf2",
-          100: "#d6f3dd",
-          200: "#b1e6c0",
-          300: "#82d39c",
-          400: "#50b873",
-          500: "#2f9c52",
-          600: "#237f3f",
-          700: "#1c6633",
-          800: "#19512b",
-          900: "#154124",
+          50: "#fafafa",
+          100: "#f5f5f5",
+          200: "#e5e5e5",
+          300: "#d4d4d4",
+          400: "#a3a3a3",
+          500: "#737373",
+          600: "#525252",
+          700: "#404040",
+          800: "#262626",
+          900: "#171717",
+          950: "#0a0a0a",
         },
-        // Umber — warm dark palette. The paper-inverted complement to `paper`.
-        // Used exclusively for /app/* dark mode (scoped via `html.dark`).
-        // 900 = page bg, 800 = surface (card), 700 = border, 600 = elevated
-        // border / hover. 200–300 are bright cream variants for muted text on
-        // dark surfaces. Designed so blush-400 + sage-400 sit cleanly on top.
+        // Umber — the dark-mode ramp: black surfaces, white type.
         umber: {
-          50: "#fbf7f0",
-          100: "#f4ead5",
-          200: "#e6d3ad",
-          300: "#d2b078",
-          400: "#b48a55",
-          500: "#8a6841",
-          600: "#4a3a2e",
-          700: "#3a2e22",
-          800: "#251c14",
-          850: "#201812",
-          900: "#1a1410",
-          950: "#0f0a07",
+          50: "#fafafa",
+          100: "#f5f5f5",
+          200: "#e5e5e5",
+          300: "#d4d4d4",
+          400: "#a3a3a3",
+          500: "#737373",
+          600: "#404040",
+          700: "#262626",
+          800: "#171717",
+          850: "#141414",
+          900: "#0a0a0a",
+          950: "#000000",
         },
-        // Eucalyptus — silvery muted teal-green. Planner workspace accent:
-        // healthy status, positive KPIs, "all good" states. Sits next to
-        // blush (warm) and umber (dark) without competing. Distinct from
-        // sage (which is a vivid forest green used for DIY supplier tags).
+        // Eucalyptus — neutral (monochrome direction).
         eucalyptus: {
-          50: "#f0f8f5",
-          100: "#d3ede6",
-          200: "#a7dacf",
-          300: "#73c3b2",
-          400: "#44a796",
-          500: "#2e8c7c",
-          600: "#237165",
-          700: "#1c5b52",
-          800: "#184944",
-          900: "#143c38",
+          50: "#fafafa",
+          100: "#f5f5f5",
+          200: "#e5e5e5",
+          300: "#d4d4d4",
+          400: "#a3a3a3",
+          500: "#737373",
+          600: "#525252",
+          700: "#404040",
+          800: "#262626",
+          900: "#171717",
+          950: "#0a0a0a",
         },
-        // Steel - the cool slate-blue accent for the VENDOR portal, per user
-        // direction 2026-06-29. Anchored on the two requested colours:
-        // steel-100 = #C0D6DF (light powder-blue fills, hover, badges) and
-        // steel-600 = #4F6D7A (dark accent for text, icon outlines, active nav,
-        // links). The rest of the ramp is interpolated for borders + dark mode.
+        // Steel — the chrome and quiet-text ramp: neutral grey.
         steel: {
-          50: "#eef3f5",
-          100: "#C0D6DF",
-          200: "#a6c3cf",
-          300: "#8aafbe",
-          400: "#6e94a4",
-          // The portal's stated accent, exactly as specified (2026-07-27). It was
-          // #5c8090 by interpolation, a one-step difference nobody can see; pinned
-          // to the requested value so the config matches the brief literally.
-          500: "#5B7A90",
-          600: "#4F6D7A",
-          700: "#415a65",
-          800: "#344850",
-          900: "#28373d",
+          50: "#fafafa",
+          100: "#f5f5f5",
+          200: "#e5e5e5",
+          300: "#d4d4d4",
+          400: "#a3a3a3",
+          500: "#737373",
+          600: "#525252",
+          700: "#404040",
+          800: "#262626",
+          900: "#171717",
+          950: "#0a0a0a",
         },
         // Verified — the Twitter/Instagram-style azure blue for the directory
         // "verified vendor" check (registered vendors with their own Weddly
         // account), per user direction 2026-07-09. Single value; reads on both
         // light paper and dark umber backgrounds.
         verified: "#1fa6e1",
-        // Share-blue — the bright royal blue for the "Share Weddly" referral
-        // modal (the sent-message bubble + its tail, the active pagination dot,
-        // the primary share button), per user direction 2026-07-21. One hue in
-        // both themes; white text sits on it. `hover` is the darker press state.
+        // Share — black; the share button and the sent bubble, white type on top.
         share: {
-          DEFAULT: "#3578F7",
-          hover: "#2A63D6",
+          DEFAULT: "#0a0a0a",
+          hover: "#404040",
         },
         // Star — the gold used for rating stars (review picker + rating rows),
         // per user direction 2026-07-09. A truer gold than the oat paper-500 the
@@ -179,31 +152,19 @@ export default {
           up: "#067D00",
           down: "#D50000",
         },
-        // Moss — the warm olive-green accent for the PLANNER portal, per user
-        // direction 2026-06-29. Anchored on the three requested colours:
-        // moss-100 = #DBF4AD (light fills, active-nav background, badges),
-        // moss-600 = #7D8334 (mid accent for icons, links, KPI accents) and
-        // moss-900 = #535723 (deep olive for active-nav text + dark-mode fills).
-        // The rest of the ramp is interpolated for borders + dark mode.
+        // Moss — neutral (monochrome direction).
         moss: {
-          // Forest-green — the PLANNER accent identity, per user direction
-          // 2026-07-03. Anchored on the five requested greens: moss-900 =
-          // #1B3720 (Evergreen), moss-800 = #214528 (Dark Spruce), moss-700 =
-          // #2E6038 (Hunter Green), moss-600 = #3C7C49 (Fern, the primary
-          // accent) and moss-400 = #8EAC72 (Muted Olive). 500 + the light
-          // tints (50-300) are interpolated so fills, active-nav pills and
-          // dark-mode text stay legible on both paper and umber surfaces.
-          50: "#f0f4e8",
-          100: "#e1e8d2",
-          200: "#c6d1b2",
-          300: "#aaba93",
-          400: "#8EAC72",
-          500: "#65945d",
-          600: "#3C7C49",
-          700: "#2E6038",
-          800: "#214528",
-          900: "#1B3720",
-          950: "#122415",
+          50: "#fafafa",
+          100: "#f5f5f5",
+          200: "#e5e5e5",
+          300: "#d4d4d4",
+          400: "#a3a3a3",
+          500: "#737373",
+          600: "#525252",
+          700: "#404040",
+          800: "#262626",
+          900: "#171717",
+          950: "#0a0a0a",
         },
         // WNRS-red — the saturated true red used on the couple-cards tool
         // surface (white-on-red cover card, red-on-white question card).
@@ -288,16 +249,17 @@ export default {
         // without a single third-party request. If a user happens to have
         // Inter or Cormorant installed locally, they win — otherwise we
         // ride on the OS UI sans and Georgia for the display serif.
-        serif: ['"Cormorant Garamond"', "Georgia", '"Times New Roman"', "Times", "serif"],
+        // Outfit is the product face (the same one GoodDay uses). Self-hosted
+        // from /fonts (see @font-face in index.css), so no visitor IP reaches a
+        // font CDN. `serif` is kept as a name so existing `font-serif` headings
+        // pick up the same face instead of a second family.
+        serif: ['"Outfit"', "system-ui", "-apple-system", "sans-serif"],
         sans: [
-          '"Inter Variable"',
-          "Inter",
+          '"Outfit"',
+          "system-ui",
           "-apple-system",
           "BlinkMacSystemFont",
           '"Segoe UI"',
-          '"Helvetica Neue"',
-          "Arial",
-          "system-ui",
           "sans-serif",
         ],
         // Condensed display stack for the couple-cards tool. Prefers any
@@ -318,34 +280,17 @@ export default {
         // Neo-grotesque "speciality coffee" voice for the founding band.
         // Self-hosted General Sans (see @font-face in index.css) leads; the
         // system grotesques are fallbacks for the swap window only.
-        grotesk: [
-          '"General Sans"',
-          '"Helvetica Neue"',
-          "Helvetica",
-          "Inter",
-          "Arial",
-          "system-ui",
-          "sans-serif",
-        ],
+        // Headings. Outfit, same as body: one face across the product.
+        grotesk: ['"Outfit"', "system-ui", "-apple-system", "sans-serif"],
         // Geometric sans for the games console — Space Grotesk leads,
         // system grotesques are fallbacks for the swap window only.
-        space: [
-          '"Space Grotesk"',
-          '"Helvetica Neue"',
-          "Helvetica",
-          "Inter",
-          "Arial",
-          "system-ui",
-          "sans-serif",
-        ],
+        space: ['"Outfit"', "system-ui", "-apple-system", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",
-        // Resting card elevation — a soft drop shadow that lifts a card off the
-        // cream page without a hard 1px border. One notch above `soft` so a row
-        // of cards reads as floating panels, not framed boxes.
-        elevated: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 6px 16px -4px rgba(16, 24, 48, 0.10)",
-        pop: "0 10px 25px -8px rgba(16, 24, 48, 0.16), 0 2px 6px -2px rgba(16, 24, 48, 0.10)",
+        soft: "0 1px 2px 0 rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.06)",
+        // Resting card elevation: a faint lift, no hard border needed.
+        elevated: "0 1px 2px 0 rgba(0, 0, 0, 0.04), 0 4px 12px -4px rgba(0, 0, 0, 0.08)",
+        pop: "0 10px 25px -8px rgba(0, 0, 0, 0.16), 0 2px 6px -2px rgba(0, 0, 0, 0.10)",
         // Warm counterpart to `elevated`. Every other shadow here is cold navy
         // rgba(16,24,48,..), which reads blue when it falls on the warm
         // .stationery surfaces under a design proof card. umber-800 based.
@@ -361,7 +306,7 @@ export default {
         tap: "2.75rem",
       },
       ringOffsetColor: {
-        DEFAULT: "#f6f2e7", // paper.100 — focus rings sit cleanly on the warm bg
+        DEFAULT: "#ffffff", // paper.50 — focus rings sit on the white page
       },
       animation: {
         "fade-in": "fadeIn 200ms ease-out",

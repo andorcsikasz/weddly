@@ -652,7 +652,7 @@ export default function PublicVendorPage() {
                 </span>
               </span>
             ) : (
-              <span className="text-sm italic text-ink-500 dark:text-umber-300">
+              <span className="text-sm text-ink-500 dark:text-umber-300">
                 {t("suppliers.detail.info.ratingEmpty")}
               </span>
             )}
@@ -751,7 +751,7 @@ export default function PublicVendorPage() {
               size="lg"
             >
               {reviews.length === 0 ? (
-                <p className="text-sm italic text-ink-500 dark:text-umber-300">
+                <p className="text-sm text-ink-500 dark:text-umber-300">
                   {t("suppliers.detail.reviews.empty")}
                 </p>
               ) : (
@@ -902,7 +902,7 @@ function PublicBlurb({
   const blurb = pickListingBlurb(detail, locale);
   if (!blurb) {
     return (
-      <p className="text-sm italic text-ink-500 dark:text-umber-300">
+      <p className="text-sm text-ink-500 dark:text-umber-300">
         {t("suppliers.detail.about.empty")}
       </p>
     );

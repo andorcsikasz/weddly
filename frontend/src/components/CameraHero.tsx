@@ -190,7 +190,7 @@ export function CameraHero({
   onCreate: () => void;
   onShare: () => void;
   /** Dashboard keeps the workspace's display voice (default: the Cormorant
-   *  italic heading); /app/media passes "space" so its headline matches the
+   *   heading); /app/media passes "space" so its headline matches the
    *  Space Grotesk display font of the /app/games console; the public
    *  /camera landing page passes "grotesk" so the hero title matches the
    *  single display font the rest of that page uses. */

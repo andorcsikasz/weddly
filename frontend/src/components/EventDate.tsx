@@ -5,7 +5,7 @@
 // face and the same weight as the balance beside it, which is precisely why the
 // portal read as an admin template with wedding data in it.
 //
-// So it gets the workspace's own display face: Cormorant, italic. That idiom is
+// So it gets the workspace's own display face: Cormorant, . That idiom is
 // a standing user preference for workspace headings, and this is the same
 // gesture applied to the one value that deserves it in the vendor portal.
 // Deliberately NOT a colour: blush marks what the vendor can act on, and a date
@@ -56,7 +56,7 @@ export function EventDate({
   return (
     <time
       dateTime={date}
-      className={`font-serif italic text-ink-900 dark:text-paper-50 ${SIZE[size]} ${className}`}
+      className={`font-serif  text-ink-900 dark:text-paper-50 ${SIZE[size]} ${className}`}
     >
       {formatDate(date, locale)}
     </time>

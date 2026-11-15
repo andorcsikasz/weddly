@@ -24,7 +24,7 @@ export default function AboutPage() {
         {/* Mission statement — leads the page */}
         <blockquote
           lang={locale}
-          className="mt-8 font-cormorant text-2xl italic leading-snug text-ink-900 dark:text-paper-50 sm:text-3xl sm:leading-snug"
+          className="mt-8 font-cormorant text-2xl leading-snug text-ink-900 dark:text-paper-50 sm:text-3xl sm:leading-snug"
         >
           {t("about.paragraph_why")}
         </blockquote>

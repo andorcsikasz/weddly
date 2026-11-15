@@ -696,7 +696,7 @@ export default function GamesPage() {
           <div className="games-orb games-orb-two" />
           <div className="games-confetti" aria-hidden="true">
             {Array.from({ length: HERO_CONFETTI_COUNT }, (_, i) => (
-              <i key={i} style={{ "--d": (i % 4) + 1 } as CSSProperties} />
+              <span key={i} style={{ "--d": (i % 4) + 1 } as CSSProperties} />
             ))}
           </div>
           <div className="relative z-10 mx-auto max-w-[1240px] text-center">
@@ -958,7 +958,7 @@ export default function GamesPage() {
                         </strong>
                         <span>chance</span>
                         {delta !== 0 && (
-                          <em className={delta > 0 ? "games-delta-up" : "games-delta-down"}>
+                          <span className={delta > 0 ? "games-delta-up" : "games-delta-down"}>
                             {delta > 0 ? (
                               <TrendingUp size={12} aria-hidden />
                             ) : (
@@ -966,7 +966,7 @@ export default function GamesPage() {
                             )}
                             {delta > 0 ? "+" : ""}
                             {delta}
-                          </em>
+                          </span>
                         )}
                       </div>
                       <LiveChart values={market.history} pulseKey={market.lastBet?.id ?? 0} />

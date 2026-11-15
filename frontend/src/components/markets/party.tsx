@@ -18,7 +18,18 @@ import {
   type MarketTitle,
   type MyMarketPosition,
 } from "@shared/markets";
-import { Crown, Zap } from "lucide-react";
+import {
+  Crown,
+  Dice5,
+  Drum,
+  Eye,
+  Gift,
+  LifeBuoy,
+  LucideIcon,
+  Mountain,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { fireConfetti } from "../../lib/confetti";
 import { useT } from "../../lib/i18n";
@@ -211,7 +222,7 @@ export function RevealOverlay({
       {phase === "drum" ? (
         <p className={`font-black text-white ${big ? "text-7xl" : "text-4xl"}`}>
           <span className="mk-drum" aria-hidden>
-            🥁
+            <Drum aria-hidden="true" className="inline h-[0.8em] w-[0.8em]" strokeWidth={1.5} />
           </span>{" "}
           {t("markets_party.drumroll")}
         </p>
@@ -341,13 +352,20 @@ export function BetTicker({
 
 // ─── awards ─────────────────────────────────────────────────────────────────────
 
-const TITLE_EMOJI: Record<MarketTitle, string> = {
-  prophet: "🔮",
-  degenerate: "🎰",
-  oracle: "🦉",
-  bailout_king: "🪂",
-  rock_bottom: "🪨",
+const TITLE_ICON: Record<MarketTitle, LucideIcon> = {
+  prophet: Sparkles,
+  degenerate: Dice5,
+  oracle: Eye,
+  bailout_king: LifeBuoy,
+  rock_bottom: Mountain,
 };
+
+function TitleGlyph({ title }: { title: MarketTitle }) {
+  const Icon = TITLE_ICON[title];
+  return (
+    <Icon aria-hidden="true" className="mr-1 inline h-3.5 w-3.5 align-[-2px]" strokeWidth={1.5} />
+  );
+}
 
 export function TitleChips({
   titles,
@@ -365,7 +383,8 @@ export function TitleChips({
             big ? "px-2.5 py-0.5 text-base" : "px-1.5 py-0.5 text-[10px]"
           }`}
         >
-          {TITLE_EMOJI[title]} {t(`markets_party.title_${title}`)}
+          <TitleGlyph title={title} />
+          {t(`markets_party.title_${title}`)}
         </span>
       ))}
     </span>
@@ -427,7 +446,8 @@ export function Podium({
       </p>
       {prize && (
         <p className={`mt-2 text-white/80 ${big ? "text-2xl" : "text-sm"}`}>
-          🎁 {t("markets_party.prize_won", { prize })}
+          <Gift aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" strokeWidth={1.5} />
+          {t("markets_party.prize_won", { prize })}
         </p>
       )}
       <div className="mt-8 flex items-end justify-center gap-3">

@@ -1295,7 +1295,7 @@ function TasksBoard({
                     />
                   ))}
                   {laneTasks.length === 0 && (
-                    <p className="px-1 py-6 text-center text-xs italic text-umber-400 dark:text-umber-500">
+                    <p className="px-1 py-6 text-center text-xs text-umber-400 dark:text-umber-500">
                       {t("vendor_calendar.board_empty")}
                     </p>
                   )}

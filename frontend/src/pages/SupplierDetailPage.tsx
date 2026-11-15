@@ -694,7 +694,7 @@ export default function SupplierDetailPage({ previewId }: { previewId?: string }
               </span>
             </button>
           ) : (
-            <span className="text-sm italic text-ink-500 dark:text-umber-300">
+            <span className="text-sm text-ink-500 dark:text-umber-300">
               {t("suppliers.detail.info.ratingEmpty")}
             </span>
           )}
@@ -1186,7 +1186,7 @@ function BlurbBody({
   const blurb = pickListingBlurb(detail, locale);
   if (!blurb) {
     return (
-      <p className="text-sm italic text-ink-500 dark:text-umber-300">
+      <p className="text-sm text-ink-500 dark:text-umber-300">
         {t("suppliers.detail.about.empty")}
       </p>
     );
@@ -1297,7 +1297,7 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
       )}
 
       {comments.length === 0 ? (
-        <p className="text-sm italic text-ink-500 dark:text-umber-300">
+        <p className="text-sm text-ink-500 dark:text-umber-300">
           {t("suppliers.detail.comments.empty")}
         </p>
       ) : (
@@ -1364,7 +1364,7 @@ function BookingsSection({
         {t("suppliers.detail.calendar.title")}
       </h2>
       {bookings.length === 0 ? (
-        <p className="text-sm italic text-ink-500 dark:text-umber-300">
+        <p className="text-sm text-ink-500 dark:text-umber-300">
           {t("suppliers.detail.calendar.noBookings")}
         </p>
       ) : (
@@ -1815,7 +1815,7 @@ function BookingCard({
         </button>
 
         {!hasContact && (
-          <p className="px-2 py-1.5 text-sm italic text-ink-500 dark:text-umber-300">
+          <p className="px-2 py-1.5 text-sm text-ink-500 dark:text-umber-300">
             {t("suppliers.detail.contact.empty")}
           </p>
         )}

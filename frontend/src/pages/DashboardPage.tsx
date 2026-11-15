@@ -2584,7 +2584,7 @@ function CatererSummaryCard({ dietary }: { dietary: DietarySummary }) {
           {t("dashboard.day_of_dietary_empty")}
         </p>
       )}
-      <p className="mt-3 text-xs italic text-ink-500 dark:text-umber-300">
+      <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
         {t("dashboard.caterer_total", { n: dietary.counted_guests })}
       </p>
     </section>

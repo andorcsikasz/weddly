@@ -230,7 +230,7 @@ function PackageCard({
             )}
           </div>
         ) : isEmpty ? (
-          <p className="text-sm italic text-ink-500 dark:text-umber-300">
+          <p className="text-sm text-ink-500 dark:text-umber-300">
             {t("suppliers.detail.packages.detailsOnRequest")}
           </p>
         ) : null}
@@ -415,7 +415,7 @@ function PackageRow({
               )}
             </div>
           ) : isEmpty ? (
-            <p className="mt-2 text-sm italic text-ink-500 dark:text-umber-300">
+            <p className="mt-2 text-sm text-ink-500 dark:text-umber-300">
               {t("suppliers.detail.packages.detailsOnRequest")}
             </p>
           ) : null}

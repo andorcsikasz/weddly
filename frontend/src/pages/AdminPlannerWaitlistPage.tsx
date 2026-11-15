@@ -343,7 +343,7 @@ function EntryCard({ entry, onUpdate }: EntryCardProps) {
             </p>
           )}
           {entry.notes && (
-            <p className="mt-1 text-xs italic text-umber-500 dark:text-umber-400">
+            <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
               Megjegyzés: {entry.notes}
             </p>
           )}

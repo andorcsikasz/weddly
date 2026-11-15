@@ -204,7 +204,7 @@ export default function DayView({
           </span>
         </div>
         {allDayTasks.length === 0 ? (
-          <p className="text-[11px] italic text-ink-400 dark:text-umber-300">{emptyHint}</p>
+          <p className="text-[11px] text-ink-400 dark:text-umber-300">{emptyHint}</p>
         ) : (
           <ul className="space-y-1">
             {allDayTasks.map((item) => {

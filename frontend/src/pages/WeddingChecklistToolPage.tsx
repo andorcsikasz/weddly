@@ -38,7 +38,7 @@ export default function WeddingChecklistToolPage() {
 
       <section className="relative">
         <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.wedding_checklist.cta_h2")}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-ink-700 dark:text-paper-200">
@@ -52,7 +52,7 @@ export default function WeddingChecklistToolPage() {
 
       <section className="relative bg-paper-50 dark:bg-umber-900">
         <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
-          <h2 className="font-grotesk text-3xl italic leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
+          <h2 className="font-grotesk text-3xl leading-[1.05] tracking-[-0.02em] text-ink-900 dark:text-paper-50 sm:text-4xl">
             {t("tools.wedding_checklist.faq_h2")}
           </h2>
           <div className="mt-8 space-y-3">

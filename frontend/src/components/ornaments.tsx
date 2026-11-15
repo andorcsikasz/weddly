@@ -28,8 +28,6 @@ export function headingTreatmentCss(
   slug: HeadingStyleSlug | null | undefined,
 ): React.CSSProperties {
   switch (slug) {
-    case "italic":
-      return { fontStyle: "italic" };
     case "uppercase":
       return { textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 };
     case "small_caps":

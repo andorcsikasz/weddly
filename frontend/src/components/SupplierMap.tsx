@@ -33,7 +33,16 @@ import { pickListingBlurb } from "@shared/listing_language";
 import type { DirectorySupplier } from "@shared/suppliers";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { ArrowRight, Bookmark, BookmarkCheck, Heart, LocateFixed, Minus, Plus } from "lucide-react";
+import {
+  ArrowRight,
+  Bookmark,
+  BookmarkCheck,
+  ExternalLink,
+  Heart,
+  LocateFixed,
+  Minus,
+  Plus,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -659,7 +668,12 @@ function SupplierPopupCard({
             rel="noreferrer noopener"
             className="mt-2 inline-block text-xs font-medium text-ink-500 hover:text-ink-900"
           >
-            {t("suppliers.visit_website")} ↗
+            {t("suppliers.visit_website")}
+            <ExternalLink
+              aria-hidden="true"
+              className="ml-1 inline h-3 w-3 align-[-1px]"
+              strokeWidth={1.5}
+            />
           </a>
         )}
       </div>

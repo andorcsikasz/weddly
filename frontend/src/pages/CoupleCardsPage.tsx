@@ -616,7 +616,7 @@ function DeckShowcase({
             laptop. */}
         {/* Hero typography is unified with the card face: font-display
             display-sans, bold uppercase for the title, regular weight for
-            the body. The Cormorant italic that lived here briefly is
+            the body. The Cormorant  that lived here briefly is
             dropped — the tool page now reads as one consistent type
             system end-to-end (eyebrow / h1 / intro / card / FAQ all in
             the WNRS sans). */}

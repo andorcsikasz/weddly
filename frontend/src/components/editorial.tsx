@@ -48,7 +48,7 @@ type WatermarkNumeralProps = {
   className?: string;
 };
 
-/** A huge italic serif numeral floated behind content as a watermark.
+/** A huge  serif numeral floated behind content as a watermark.
  *  Parent must be `relative`; the numeral is absolutely positioned,
  *  non-interactive, and aria-hidden so it doesn't pollute SR output. */
 export function WatermarkNumeral({
@@ -59,7 +59,7 @@ export function WatermarkNumeral({
   return (
     <span
       aria-hidden="true"
-      className={`pointer-events-none absolute select-none font-serif italic leading-none text-paper-200 dark:text-umber-800 text-[9rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] ${watermarkPositionClasses[position]} ${className}`}
+      className={`pointer-events-none absolute select-none font-serif  leading-none text-paper-200 dark:text-umber-800 text-[9rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] ${watermarkPositionClasses[position]} ${className}`}
     >
       {value}
     </span>
@@ -74,14 +74,14 @@ type PullQuoteProps = {
   className?: string;
 };
 
-/** Full-bleed editorial pull-quote: hairline rule, italic display
+/** Full-bleed editorial pull-quote: hairline rule,  display
  *  serif at hero scale, then a quiet uppercase attribution. Use to
  *  interrupt a wall of text with a single emotional line. */
 export function PullQuote({ quote, attribution, className = "" }: PullQuoteProps) {
   return (
     <blockquote className={`mx-auto flex flex-col items-center text-center ${className}`}>
       <span className="block h-px w-32 bg-paper-400 dark:bg-umber-600" aria-hidden="true" />
-      <p className="mt-6 max-w-4xl font-serif text-2xl italic leading-[1.15] text-ink-900 dark:text-paper-50 sm:mt-8 sm:text-4xl md:text-5xl lg:text-6xl">
+      <p className="mt-6 max-w-4xl font-serif text-2xl leading-[1.15] text-ink-900 dark:text-paper-50 sm:mt-8 sm:text-4xl md:text-5xl lg:text-6xl">
         {quote}
       </p>
       {attribution ? (
@@ -112,7 +112,7 @@ type TwoLineHeadlineProps = {
   className?: string;
 };
 
-/** A single h2 split into two display lines: the second one italic for
+/** A single h2 split into two display lines: the second one  for
  *  the accent every editorial spread leans on. */
 export function TwoLineHeadline({
   line1,
@@ -125,7 +125,7 @@ export function TwoLineHeadline({
       className={`font-serif leading-[1.05] tracking-tight text-ink-900 dark:text-paper-50 ${headlineSizeClasses[size]} ${className}`}
     >
       <span className="block">{line1}</span>
-      <span className="block italic">{line2}</span>
+      <span className="block">{line2}</span>
     </h2>
   );
 }
@@ -139,7 +139,7 @@ type DropCapProps = {
   className?: string;
 };
 
-/** Paragraph with a large italic serif drop-cap on the first letter.
+/** Paragraph with a large  serif drop-cap on the first letter.
  *
  *  Implementation note: we split the string in JS rather than relying
  *  on `::first-letter`. The pseudo-element approach is finicky across
@@ -181,7 +181,7 @@ type MarqueeProps = {
 export function Marquee({ items, className = "" }: MarqueeProps) {
   return (
     <div
-      className={`overflow-hidden whitespace-nowrap text-center font-serif text-sm italic text-paper-500 dark:text-umber-300 sm:text-base ${className}`}
+      className={`overflow-hidden whitespace-nowrap text-center font-serif text-sm  text-paper-500 dark:text-umber-300 sm:text-base ${className}`}
     >
       {items.join(" · ")}
     </div>
@@ -193,7 +193,7 @@ export function Marquee({ items, className = "" }: MarqueeProps) {
 type SectionLabelOrientation = "horizontal" | "vertical";
 
 type SectionLabelProps = {
-  /** Section number, e.g. "02" or "02.1". Rendered italic serif. */
+  /** Section number, e.g. "02" or "02.1". Rendered  serif. */
   num: string;
   /** Uppercase eyebrow label that sits next to (or under) the numeral. */
   label: string;
@@ -201,7 +201,7 @@ type SectionLabelProps = {
   className?: string;
 };
 
-/** Editorial section-number block — italic serif numeral, hairline
+/** Editorial section-number block —  serif numeral, hairline
  *  rule, uppercase letter-spaced eyebrow. Horizontal by default; the
  *  vertical orientation is useful as a column-edge label on wide
  *  layouts. Heavier and more deliberate than the existing inline
@@ -213,7 +213,7 @@ export function SectionLabel({
   className = "",
 }: SectionLabelProps) {
   // `num === "-"` is the convention for "no real number, decorative only".
-  // In that case the italic em-dash glyph adds visual noise next to the
+  // In that case the  em-dash glyph adds visual noise next to the
   // hairline rule — drop it and let the rule alone lead into the label.
   const showNumeral = num !== "-";
   if (orientation === "vertical") {
@@ -237,9 +237,7 @@ export function SectionLabel({
 // ─────────────────────────── internal helpers ───────────────────────────
 
 function NumeralGlyph({ value }: { value: string }): ReactNode {
-  return (
-    <span className="font-serif text-base italic text-blush-700 dark:text-blush-300">{value}</span>
-  );
+  return <span className="font-serif text-base text-blush-700 dark:text-blush-300">{value}</span>;
 }
 
 function EyebrowGlyph({ label, vertical = false }: { label: string; vertical?: boolean }) {

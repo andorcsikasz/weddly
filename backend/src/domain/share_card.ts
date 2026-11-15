@@ -38,8 +38,8 @@ function loadFont(file: string): Font {
 
 /** Upright display serif for names and titles. */
 const SERIF = "EBGaramond-Regular.ttf";
-/** Italic for the supporting line. */
-const ITALIC = "CormorantGaramond-Italic.ttf";
+/** Upright serif for the supporting line (no italic, house rule). */
+const SUPPORT = "EBGaramond-Regular.ttf";
 /** Sans for the small letter-spaced labels. */
 const SANS = "DMSans-Bold.ttf";
 
@@ -226,7 +226,7 @@ function longDate(iso: string): string | null {
 
 export async function renderRsvpCard(src: RsvpCardSource): Promise<Buffer> {
   const serif = loadFont(SERIF);
-  const italic = loadFont(ITALIC);
+  const support = loadFont(SUPPORT);
   const textW = CARD_W - PAD * 2;
 
   const size = fitSize(serif, src.coupleName, textW, 104, 56);
@@ -235,7 +235,7 @@ export async function renderRsvpCard(src: RsvpCardSource): Promise<Buffer> {
 
   const dateText = src.date ? longDate(src.date) : null;
   const sub = [dateText, src.venue].filter(Boolean).join("  ·  ");
-  const subLine = sub ? fitText(italic, sub, 36, textW) : null;
+  const subLine = sub ? fitText(support, sub, 36, textW) : null;
 
   // Bottom-up layout: sub line, then the names above it.
   let y = CARD_H - PAD + 6;
@@ -243,7 +243,7 @@ export async function renderRsvpCard(src: RsvpCardSource): Promise<Buffer> {
   parts.push(outline(loadFont(SANS), "RSVP", PAD, y, 20, "#ffffff", 0.82, 5));
   y -= 84;
   if (subLine) {
-    parts.push(outline(italic, subLine, PAD, y, 36, "#ffffff", 0.95));
+    parts.push(outline(support, subLine, PAD, y, 36, "#ffffff", 0.95));
     y -= 60;
   }
   // The title block sits above the sub line, bottom line first.
@@ -297,7 +297,7 @@ export async function vendorCardSource(id: string): Promise<VendorCardSource | n
 
 export async function renderVendorCard(src: VendorCardSource): Promise<Buffer> {
   const serif = loadFont(SERIF);
-  const italic = loadFont(ITALIC);
+  const support = loadFont(SUPPORT);
   const sans = loadFont(SANS);
   const textW = CARD_W - PAD * 2;
 
@@ -314,7 +314,9 @@ export async function renderVendorCard(src: VendorCardSource): Promise<Buffer> {
   parts.push(outline(sans, "WĒDDLY  ·  TRYWEDDLY.COM", PAD, y, 18, "#ffffff", 0.78, 4));
   y -= 84;
   if (src.city) {
-    parts.push(outline(italic, fitText(italic, src.city, 36, textW), PAD, y, 36, "#ffffff", 0.95));
+    parts.push(
+      outline(support, fitText(support, src.city, 36, textW), PAD, y, 36, "#ffffff", 0.95),
+    );
     y -= 60;
   }
   let ny = y - (names.length - 1) * lead;

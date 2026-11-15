@@ -183,7 +183,7 @@ function NameFixCard({
         aria-labelledby="name-review-title"
         className="card w-full max-w-lg sm:p-8"
       >
-        <h1 id="name-review-title" className="font-serif text-2xl italic text-ink-900">
+        <h1 id="name-review-title" className="font-serif text-2xl text-ink-900">
           {t("real_names.locked_title")}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-ink-600">{t("real_names.locked_body")}</p>

@@ -22,3 +22,10 @@ deliberately do NOT add a Google Fonts <link> or hot-link the gstatic CDN:
 self-hosting keeps every visitor request first-party so no IP addresses leak
 to a third party (same privacy stance as General Sans, see
 GENERAL-SANS-LICENSE.txt).
+
+
+---
+
+Outfit (outfit-latin.woff2, outfit-latin-ext.woff2): SIL Open Font License 1.1.
+Copyright 2021 The Outfit Project Authors (https://github.com/Outfitio/Outfit-Fonts).
+Self-hosted for the product UI. Full licence: https://openfontlicense.org

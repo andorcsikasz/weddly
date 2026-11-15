@@ -87,9 +87,7 @@ function QrCards({ coupleName }: { coupleName: string }) {
         <div className="absolute right-4 top-14 w-16 rounded bg-paper-50 p-1">
           <img src="/camera-try-qr.svg" alt="" className="block w-full" />
         </div>
-        <p className="absolute bottom-5 left-4 font-serif text-sm italic text-paper-100">
-          '26 09 12
-        </p>
+        <p className="absolute bottom-5 left-4 font-serif text-sm text-paper-100">'26 09 12</p>
       </div>
       <div className="absolute left-1/2 top-0 z-10 flex h-[20rem] w-[13rem] -translate-x-1/2 flex-col rounded-xl border border-paper-50/10 bg-ink-900 p-5 shadow-[0_28px_70px_rgba(0,0,0,0.6)]">
         <div className="ml-auto w-20 rounded bg-paper-50 p-1.5">

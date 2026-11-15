@@ -24,7 +24,16 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import * as jestDomMatchers from "@testing-library/jest-dom/matchers";
 import { afterEach, expect } from "bun:test";
 
-GlobalRegistrator.register({ url: "http://localhost:5173" });
+// External scripts (the Google sign-in client) are blocked in tests. happy-dom
+// would otherwise reject their load as an unhandled error, which fails the whole
+// file even when every assertion passed. Treat a blocked load as a load.
+GlobalRegistrator.register({
+  url: "http://localhost:5173",
+  settings: {
+    disableJavaScriptFileLoading: true,
+    handleDisabledFileLoadingAsSuccess: true,
+  },
+});
 
 expect.extend(jestDomMatchers as Parameters<typeof expect.extend>[0]);
 

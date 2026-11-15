@@ -1072,7 +1072,7 @@ function CategorySearchPicker({
           className="mt-2 max-h-56 divide-y divide-paper-100 overflow-y-auto rounded-xl border border-paper-200 bg-white dark:divide-umber-700/60 dark:border-umber-700 dark:bg-umber-800"
         >
           {results.length === 0 ? (
-            <li className="px-3 py-2.5 text-sm italic text-ink-400 dark:text-umber-300">
+            <li className="px-3 py-2.5 text-sm text-ink-400 dark:text-umber-300">
               {t("suppliers.submit.category_no_match")}
             </li>
           ) : (
@@ -1241,7 +1241,7 @@ function LivePreviewCard({
         </p>
       )}
       <p
-        className={`mt-3 line-clamp-3 text-xs ${blurb ? "text-ink-700 dark:text-paper-100" : "italic text-ink-400 dark:text-umber-300"}`}
+        className={`mt-3 line-clamp-3 text-xs ${blurb ? "text-ink-700 dark:text-paper-100" : " text-ink-400 dark:text-umber-300"}`}
       >
         {blurbDisplay}
       </p>

@@ -226,14 +226,13 @@ export function BlogCoverArt({ slug, bgUrl, className, lazy = false }: BlogCover
           paper). Keeps overlay legible without flattening the image. */}
       {resolvedBg ? <rect width="800" height="500" fill={`url(#tint-${gradId})`} /> : null}
 
-      {/* Wēddly wordmark — small italic serif anchored to the bottom-
+      {/* Wēddly wordmark — small  serif anchored to the bottom-
           left as a quiet publication mark, like a magazine masthead.
           White on photos, paper-300 on the paper fallback. */}
       <text
         x="40"
         y="465"
         fontFamily="Cormorant, 'Cormorant Garamond', Georgia, serif"
-        fontStyle="italic"
         fontWeight="500"
         fontSize="48"
         letterSpacing="2"

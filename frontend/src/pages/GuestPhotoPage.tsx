@@ -362,7 +362,7 @@ function PopupCard({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
-const POPUP_TITLE = "font-serif text-[34px] italic leading-[1.05] tracking-[-0.01em] text-paper-50";
+const POPUP_TITLE = "font-serif text-[34px]  leading-[1.05] tracking-[-0.01em] text-paper-50";
 const POPUP_INPUT =
   "w-full rounded-2xl border border-paper-50/10 bg-paper-50/[0.07] px-5 py-3.5 text-center font-grotesk text-[16px] font-medium text-paper-50 placeholder-paper-50/35 outline-none transition-colors focus:border-paper-50/30 focus:bg-paper-50/[0.12]";
 
@@ -727,7 +727,7 @@ function ExposureCounter({ value, max }: { value: number; max: number }) {
           {numbers.map((n, i) => (
             <span
               key={n}
-              className={`text-center font-serif italic tabular-nums transition-[opacity,color] duration-300 ${
+              className={`text-center font-serif  tabular-nums transition-[opacity,color] duration-300 ${
                 i === index ? "text-[26px] text-paper-50" : "text-[20px] text-paper-50/35"
               }`}
               style={{ width: COUNTER_CELL_PX }}

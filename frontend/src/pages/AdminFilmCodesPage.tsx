@@ -297,7 +297,7 @@ export default function AdminFilmCodesPage() {
                   .join(" · ")}
               </p>
               {row.note && (
-                <p className="mt-1 text-sm italic text-ink-500 dark:text-umber-300">{row.note}</p>
+                <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{row.note}</p>
               )}
               {row.redeemed_by.length > 0 && (
                 <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-700/60">

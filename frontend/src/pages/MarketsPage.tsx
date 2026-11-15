@@ -836,7 +836,12 @@ export default function MarketsPage() {
                     disabled={!prompt.trim() || submitting || board.status !== "live"}
                     onClick={() => addFlash(sec)}
                   >
-                    ⚡ {t("markets_party.flash_seconds", { seconds: String(sec) })}
+                    <Zap
+                      aria-hidden="true"
+                      className="mr-1 inline h-3.5 w-3.5 align-[-2px]"
+                      strokeWidth={1.5}
+                    />
+                    {t("markets_party.flash_seconds", { seconds: String(sec) })}
                   </button>
                 ))}
               </div>

@@ -342,7 +342,7 @@ export default function PlannerSettingsOfferings() {
             {t("planner_offerings.add_package")}
           </button>
         ) : (
-          <p className="mt-4 text-sm italic text-umber-400 dark:text-umber-400">
+          <p className="mt-4 text-sm text-umber-400 dark:text-umber-400">
             {t("planner_offerings.packages_full")}
           </p>
         )}

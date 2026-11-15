@@ -77,7 +77,7 @@ export function ReviewSummaryCard({
         </div>
       ) : (
         !onRate && (
-          <p className="text-sm italic text-ink-500 dark:text-umber-300">
+          <p className="text-sm text-ink-500 dark:text-umber-300">
             {t("suppliers.detail.info.ratingEmpty")}
           </p>
         )

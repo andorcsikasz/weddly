@@ -35,7 +35,7 @@ import type {
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
 import type { SupplierCategory } from "@shared/suppliers";
-import { Check, Plus } from "lucide-react";
+import { AlertTriangle, Check, Plus } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pill, type PillTone } from "../components/admin";
@@ -863,7 +863,11 @@ function MoneySection({
         <>
           {noBudgetCount > 0 && moneyCouples > 0 && (
             <div className="mb-3 flex items-start gap-2 rounded-lg bg-chart-ochre/10 px-3 py-2 text-xs leading-snug text-neutral-700 ring-1 ring-chart-ochre/30 dark:text-paper-100">
-              <span aria-hidden="true">⚠️</span>
+              <AlertTriangle
+                aria-hidden="true"
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-chart-ochre"
+                strokeWidth={1.5}
+              />
               <span>
                 {t("admin.analytics_money_no_budget_warning", {
                   pct: pct(noBudgetCount, moneyCouples),
@@ -3558,7 +3562,11 @@ function RetentionCard({
     >
       {retention.cohort_size > 0 && retention.cohort_size < 50 && (
         <div className="mb-2 flex items-start gap-2 rounded-lg bg-chart-ochre/10 px-3 py-1.5 text-[11px] leading-snug text-neutral-700 ring-1 ring-chart-ochre/30 dark:text-paper-100">
-          <span aria-hidden="true">⚠️</span>
+          <AlertTriangle
+            aria-hidden="true"
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-chart-ochre"
+            strokeWidth={1.5}
+          />
           <span>{t("admin.analytics_engagement_retention_small_sample")}</span>
         </div>
       )}

@@ -379,7 +379,7 @@ export function InteractiveBudgetDemo({
                 {t("landing.demo_breakdown_eyebrow")}
               </p>
               <span className="flex items-center gap-2">
-                <span className="text-right font-grotesk text-xs italic leading-tight text-umber-600 sm:text-sm dark:text-umber-300">
+                <span className="text-right font-grotesk text-xs leading-tight text-umber-600 sm:text-sm dark:text-umber-300">
                   {t("landing.demo_breakdown_sub")}
                 </span>
                 <ChevronDown

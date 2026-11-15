@@ -71,7 +71,7 @@ function ThreadSidebar({
               <p className="truncate text-sm font-medium text-umber-900 dark:text-paper-100">
                 {c.display_name}
               </p>
-              <p className="mt-0.5 text-xs italic text-umber-400 dark:text-umber-500">
+              <p className="mt-0.5 text-xs text-umber-400 dark:text-umber-500">
                 {t("planner_messages.no_messages")}
               </p>
             </button>

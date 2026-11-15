@@ -248,7 +248,7 @@ export default function PlannerSettingsAccount() {
               aria-label={`${t("planner_profile.bio_label")}: ${t("common.edit")}`}
               className="group relative w-full rounded-2xl border border-paper-300 bg-white p-6 text-left shadow-soft transition-colors hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:shadow-none dark:hover:border-umber-500"
             >
-              <p className="font-serif text-lg italic leading-relaxed text-ink-800 dark:text-paper-100">
+              <p className="font-serif text-lg leading-relaxed text-ink-800 dark:text-paper-100">
                 {saved.planner_bio}
               </p>
               <SquarePen
@@ -261,7 +261,7 @@ export default function PlannerSettingsAccount() {
             <button
               type="button"
               onClick={() => startEdit("planner_bio")}
-              className="w-full rounded-2xl border border-dashed border-paper-400 p-6 text-left text-sm italic text-umber-400 transition-colors hover:border-umber-400 hover:text-umber-500 dark:border-umber-600 dark:text-umber-400 dark:hover:border-umber-400"
+              className="w-full rounded-2xl border border-dashed border-paper-400 p-6 text-left text-sm text-umber-400 transition-colors hover:border-umber-400 hover:text-umber-500 dark:border-umber-600 dark:text-umber-400 dark:hover:border-umber-400"
             >
               {t("planner_profile.bio_placeholder")}
             </button>

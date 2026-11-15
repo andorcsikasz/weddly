@@ -261,7 +261,7 @@ function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boole
  *  `color: inherit` is set inline so it beats the global base `h2 { color:
  *  ink.900 }` unconditionally — without it the heading on a dark band (e.g.
  *  the "A nap menete" schedule) rendered dark-on-dark and vanished. The
- *  `treatment` is the active pack's heading style (italic / uppercase /
+ *  `treatment` is the active pack's heading style ( / uppercase /
  *  small-caps); it spreads last so the pack personality wins, and is `{}` for
  *  packs with no treatment. */
 function Heading({
@@ -330,7 +330,7 @@ function Ghost({
  *  Empty value shows a muted placeholder so an unfilled field is still clickable.
  *
  *  `formatting` (multiline only) adds a Bold/Italic toolbar above the field —
- *  see lib/richtext for the `**bold**`/`*italic*` marker scheme, shared with
+ *  see lib/richtext for the `**bold**`/`**` marker scheme, shared with
  *  the non-inline render path below and the "Good to know" editor fields. */
 function InlineText({
   value,
@@ -425,7 +425,6 @@ function InlineText({
           value={draft}
           onChange={setDraft}
           boldLabel={t("guest_page_editor.format_bold_label")}
-          italicLabel={t("guest_page_editor.format_italic_label")}
           className="mb-1 justify-center"
         />
         {field}
@@ -671,7 +670,7 @@ export function WeddingSiteView({
   );
 
   // The active style pack's typographic personality, driven by one helper so
-  // Garden reads italic, Monochrome uppercase, Midnight small-caps with no
+  // Garden reads , Monochrome uppercase, Midnight small-caps with no
   // per-pack branching here. `{}` (no treatment) when `heading_style` is null.
   const headingTreatment = headingTreatmentCss(view.design.heading_style);
 
@@ -1003,7 +1002,7 @@ export function WeddingSiteView({
               <>
                 <span className="block">{nameA}</span>
                 <span className="block pl-[8%] sm:pl-[14%]">
-                  <span className="italic" style={{ color: "var(--wt-accent-text)" }}>
+                  <span className="" style={{ color: "var(--wt-accent-text)" }}>
                     &amp;{" "}
                   </span>
                   {nameB}
