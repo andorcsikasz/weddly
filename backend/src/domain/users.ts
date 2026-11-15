@@ -1,6 +1,7 @@
 // User row → DTO mapper, plus tiny lookup helpers.
 
 import { isUiLocale, type UiLocale } from "@shared/locales";
+import { parseVendorFilterPrefs, type VendorFilterPrefs } from "@shared/vendor_filters";
 import type { User, UserRole, UserStatus } from "@shared/types";
 import { extractToken, sessionAuthentication, type SessionAuthentication } from "../auth/session";
 import { CONFIG, REQUIRE_PROD_HARDENING } from "../config";
@@ -69,6 +70,8 @@ export interface UserRow {
    *  ("/app/guests", …). Null on pre-feature rows = nothing explored yet.
    *  Written by POST /api/auth/nav-visited, union-only. */
   visited_nav?: string | null;
+  /** JSON `{remember, filters}` of the /app/vendors filter set, or null. */
+  vendor_filters?: string | null;
   /** 1 = camera-only account (see User.camera_only). Additive, defaults 0. */
   camera_only?: number;
 }
@@ -99,6 +102,7 @@ export function toUser(row: UserRow): User {
     user_type: row.user_type === "planner" ? "planner" : "couple",
     share_prompt_seen_at: row.share_prompt_seen_at ?? null,
     visited_nav: parseVisitedNav(row.visited_nav),
+    vendor_filters: parseVendorFilterPrefs(row.vendor_filters),
     camera_only: row.camera_only === 1,
     created_at: row.created_at,
   };
@@ -138,6 +142,23 @@ export function recordVisitedNav(userId: number, path: string): boolean {
   const next = [...current, path].slice(-VISITED_NAV_MAX);
   db.prepare("UPDATE users SET visited_nav = ?, updated_at = ? WHERE id = ?").run(
     JSON.stringify(next),
+    now(),
+    userId,
+  );
+  return true;
+}
+
+/** Replace the remembered /app/vendors filter set. Not union-only: the page owns
+ *  the whole set and writes it after every change, so the last write is the
+ *  truth. Opting out clears the stored filters rather than just hiding them. */
+export function setVendorFilterPrefs(userId: number, prefs: VendorFilterPrefs): boolean {
+  const row = getUserById(userId);
+  if (!row) return false;
+  const stored = prefs.remember
+    ? JSON.stringify({ remember: true, filters: prefs.filters ?? {} })
+    : JSON.stringify({ remember: false, filters: null });
+  db.prepare("UPDATE users SET vendor_filters = ?, updated_at = ? WHERE id = ?").run(
+    stored,
     now(),
     userId,
   );

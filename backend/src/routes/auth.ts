@@ -4,6 +4,7 @@ import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import { isUiLocale, UI_LOCALES } from "@shared/locales";
 import { checkRealName } from "@shared/real_names";
 import type { AuthSession } from "@shared/types";
+import { sanitizeVendorFilters } from "@shared/vendor_filters";
 import { burnPasswordVerify, hashPassword, verifyPassword } from "../auth/password";
 import { extractToken, issueSession, revokeSession } from "../auth/session";
 import { CONFIG } from "../config";
@@ -26,6 +27,7 @@ import {
   getUserByEmail,
   getUserById,
   recordVisitedNav,
+  setVendorFilterPrefs,
   toUser,
   type UserRow,
 } from "../domain/users";
@@ -374,6 +376,24 @@ async function handleNavVisited(ctx: Ctx): Promise<Response> {
   return json({ user: toUser(fresh) });
 }
 
+/** PUT /api/auth/vendor-filters — the couple's "Remember my filters" set. The
+ *  body is a whole replacement, not a patch: `remember` must be a real boolean
+ *  (a missing one is refused rather than read as "forget everything"), and the
+ *  filter keys are sanitised against the shared allowlist. */
+async function handleSetVendorFilters(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const body = await readJson<{ remember?: unknown; filters?: unknown }>(ctx.req);
+  if (typeof body.remember !== "boolean") throw new HttpError(400, "remember must be a boolean");
+  const ok = setVendorFilterPrefs(userId, {
+    remember: body.remember,
+    filters: body.remember ? sanitizeVendorFilters(body.filters) : null,
+  });
+  if (!ok) throw new HttpError(404, "User not found");
+  const fresh = getUserById(userId);
+  if (!fresh) throw new HttpError(404, "User not found");
+  return json({ user: toUser(fresh) });
+}
+
 export function registerAuthRoutes(router: Router) {
   router.post("/api/auth/register", handleRegister);
   router.post("/api/auth/login", handleLogin);
@@ -383,4 +403,5 @@ export function registerAuthRoutes(router: Router) {
   router.post("/api/auth/locale", handleSetLocale, true);
   router.post("/api/auth/share-prompt-seen", handleSharePromptSeen, true);
   router.post("/api/auth/nav-visited", handleNavVisited, true);
+  router.put("/api/auth/vendor-filters", handleSetVendorFilters, true);
 }

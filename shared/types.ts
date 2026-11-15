@@ -10,6 +10,7 @@ import type { PlannerBilling } from "./planner_billing";
 import type { PlannerTierKey } from "./planner_points";
 import type { NameReview } from "./real_names";
 import type { ReviewSummary } from "./suppliers";
+import type { VendorFilterPrefs } from "./vendor_filters";
 
 export type UnixMs = number;
 /** Integer Forint. Treat as a whole-number currency unit. */
@@ -67,6 +68,9 @@ export interface User {
    *  the workspace they have never tried. Union-only, server-side so it
    *  survives a new device (POST /api/auth/nav-visited). */
   visited_nav: string[];
+  /** The couple's remembered /app/vendors filter set, or null if never chosen.
+   *  Restored on a fresh visit to the directory when `remember` is on. */
+  vendor_filters: VendorFilterPrefs | null;
   created_at: UnixMs;
 }
 

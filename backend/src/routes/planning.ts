@@ -34,6 +34,7 @@ import {
   promptGuestStats,
   toPlanningItem,
 } from "../domain/planning";
+import { completeChecklistFromAppData } from "../domain/wedding_checklist";
 import { getUserById } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
@@ -214,6 +215,9 @@ function handleList(ctx: Ctx): Response {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
+  // Read-time sweep: a budget or guest list the app already holds ticks its
+  // checklist row here, so the list never reads "overdue" beside proof of work.
+  completeChecklistFromAppData(couple.id);
   return json({ items: listPlanningItemsByCouple(couple.id) });
 }
 

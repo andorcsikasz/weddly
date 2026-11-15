@@ -1440,3 +1440,19 @@ for (const locale of Object.keys(ITEM_TITLES) as UiLocale[]) {
     );
   }
 }
+
+/** The title a checklist row should read in the viewer's language.
+ *
+ *  A row keeps the title it was written with (`planning_items.title`), and
+ *  that title is whatever locale the couple was in when they approved it, which
+ *  for an English-default account is English. Re-reading the catalog by
+ *  template id localises every such row at display time, old rows included,
+ *  with no migration. A hand-written task (no template id) keeps its own text. */
+export function displayChecklistTitle(
+  item: { title: string; checklist_template_id?: string | null },
+  locale: UiLocale,
+): string {
+  if (!item.checklist_template_id) return item.title;
+  const fromCatalog = checklistItemById(item.checklist_template_id, locale)?.title;
+  return fromCatalog ?? item.title;
+}

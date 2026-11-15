@@ -2135,6 +2135,12 @@ addColumnIfMissing("users", "share_prompt_seen_at", "share_prompt_seen_at INTEGE
 // couples get one pass of dots and clear them by using the app.
 addColumnIfMissing("users", "visited_nav", "visited_nav TEXT");
 
+// The couple's last-used /app/vendors filter set (JSON, see shared/vendor_filters.ts).
+// NULL = never chose; `{"remember":false}` = opted out. Account-level so a new
+// device opens the directory the way it was left; the page mirrors it to
+// localStorage as the fallback when the write cannot land.
+addColumnIfMissing("users", "vendor_filters", "vendor_filters TEXT");
+
 // Public reference codes for the two principal parties — organisers (couples)
 // get "O" + 5 digits, vendors get "V" + 5 digits. New rows are assigned a code
 // at creation time (routes/couples.ts onboarding, domain/vendor_accounts.create);

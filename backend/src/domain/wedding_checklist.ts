@@ -247,3 +247,29 @@ export function setPlanningPace(
     .map(toPlanningItem);
   return { pace, items };
 }
+
+/** Ticks the checklist rows the app can already prove are done: a budget with a
+ *  figure in it, and a guest list with at least one name on it. The couple had
+ *  done both, yet "Set your wedding budget" read overdue beside a 6 000 000 Ft
+ *  budget, and "Draft your guest list" was due in five days beside 91 guests.
+ *
+ *  One-way like `autoCompleteChooseDateItem`: a row only ever moves 0 → 1, so a
+ *  task the couple un-ticked on purpose and a budget they later cleared keep
+ *  their own state. Idempotent, so it is safe to run on every planning read. */
+export function completeChecklistFromAppData(coupleId: number): void {
+  const couple = db
+    .prepare("SELECT budget_ceiling_huf FROM couples WHERE id = ?")
+    .get(coupleId) as { budget_ceiling_huf: number | null } | null;
+  const guests = db
+    .prepare("SELECT COUNT(*) AS n FROM guests WHERE couple_id = ?")
+    .get(coupleId) as { n: number } | null;
+  const proven: string[] = [];
+  if ((couple?.budget_ceiling_huf ?? 0) > 0) proven.push("set-budget");
+  if ((guests?.n ?? 0) > 0) proven.push("draft-guest-list");
+  if (proven.length === 0) return;
+  const stmt = db.prepare(
+    "UPDATE planning_items SET done = 1, updated_at = ? WHERE couple_id = ? AND checklist_template_id = ? AND done = 0",
+  );
+  const ts = now();
+  for (const templateId of proven) stmt.run(ts, coupleId, templateId);
+}
