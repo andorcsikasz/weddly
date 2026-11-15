@@ -124,6 +124,7 @@ import { registerVendorClientsRoutes } from "./routes/vendor_clients";
 import { registerAiAssistRoutes } from "./routes/ai_assist";
 import { registerBookingMessageRoutes } from "./routes/booking_messages";
 import { registerBookingQuoteRoutes } from "./routes/booking_quotes";
+import { registerVendorOfferRoutes } from "./routes/vendor_offers";
 import { registerDateHoldRoutes } from "./routes/date_holds";
 import { backfillLegacyBookingNotes } from "./domain/booking_messages";
 import { backfillNameReview, nameReviewBlock } from "./domain/name_review";
@@ -154,6 +155,8 @@ import { registerCameraEventRoutes } from "./routes/camera_events";
 import { registerFilmCodeRoutes } from "./routes/film_codes";
 import { registerRsvpRoutes } from "./routes/rsvp";
 import { registerShareCardRoutes } from "./routes/share_cards";
+import { RSVP_BUCKET } from "./routes/rsvp";
+import { rateLimit } from "./lib/rate_limit";
 import { registerScheduleRoutes } from "./routes/schedule";
 import { registerSeatingRoutes } from "./routes/seating";
 import { registerSeoRoutes } from "./routes/seo";
@@ -386,6 +389,7 @@ registerVendorClientsRoutes(router);
 registerAiAssistRoutes(router);
 registerBookingMessageRoutes(router);
 registerBookingQuoteRoutes(router);
+registerVendorOfferRoutes(router);
 registerDateHoldRoutes(router);
 registerVendorStatsRoutes(router);
 registerVendorRevenueRoutes(router);
@@ -537,6 +541,19 @@ async function loadIndexHtmlSource(locale: "hu" | "en"): Promise<string> {
   const text = await Bun.file(path).text();
   indexHtmlSources[locale] = text;
   return text;
+}
+
+/** The invite head names the couple for a valid code, so the SSR lookup draws
+ *  on the same per-IP budget as the RSVP lookup it mirrors. Over budget the
+ *  page still renders, with the generic head. Only `/rsvp/<code>` spends it. */
+function rsvpHeadBudgetLeft(pathname: string, clientIp: string | null): boolean {
+  if (!/^\/rsvp\/[^/]+$/.test(pathname)) return true;
+  try {
+    rateLimit(clientIp, "rsvp:get", RSVP_BUCKET);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isRsvpRoute(pathname: string): boolean {
@@ -845,6 +862,7 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
       pathname,
       isRsvp: isRsvpRoute(pathname),
       acceptLanguage: null,
+      rsvpLookupAllowed: rsvpHeadBudgetLeft(pathname, clientIpFrom(req)),
     });
     return new Response(html, {
       headers: {

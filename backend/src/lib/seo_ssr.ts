@@ -2039,6 +2039,9 @@ export function renderIndexHtml(
      *  callers in server.ts forward the real header so the SSR'd HTML
      *  advertises the right lang/og:locale per request. */
     acceptLanguage?: string | null;
+    /** False when the caller is over its per-IP budget for invite lookups: the
+     *  head then stays generic rather than naming a couple for a code. */
+    rsvpLookupAllowed?: boolean;
   },
 ): string {
   const toolLangMatch = matchToolLangPath(opts.pathname || "/");
@@ -2052,7 +2055,10 @@ export function renderIndexHtml(
   // a pure string-builder so we keep the DB read here.
   const weddingMeta = lookupWeddingSiteMeta(opts.pathname);
   const vendorMeta = weddingMeta ? null : lookupVendorPageMeta(opts.pathname);
-  const rsvpMeta = weddingMeta || vendorMeta ? null : lookupRsvpPageMeta(opts.pathname);
+  const rsvpMeta =
+    weddingMeta || vendorMeta || opts.rsvpLookupAllowed === false
+      ? null
+      : lookupRsvpPageMeta(opts.pathname);
   const head = buildHeadBlock({ ...opts, weddingMeta, vendorMeta, rsvpMeta });
 
   // Splice the <head> block.

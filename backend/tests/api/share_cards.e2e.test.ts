@@ -99,6 +99,28 @@ describe("share card: RSVP invite", () => {
     expect(metaContent(html, "robots")).toBe("noindex,follow");
   });
 
+  test("over the invite budget the head is generic, even for a valid code", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("share-card-budget@weddly.test");
+    const g = await req<{ guest: { invite_code: string } }>(
+      "POST",
+      "/api/guests",
+      { full_name: "Budget Guest" },
+      { token },
+    );
+    const code = g.data.guest.invite_code;
+    const html = renderIndexHtml(TEMPLATE, {
+      host: HU_HOST,
+      pathname: `/rsvp/${code}`,
+      isRsvp: true,
+      acceptLanguage: "en-US,en;q=0.9",
+      rsvpLookupAllowed: false,
+    });
+    // The lookup is what names a couple for a code, so refusing it refuses the names.
+    expect(html).not.toContain("Mia");
+    expect(metaContent(html, "og:image")).toBe(`https://${HU_HOST}/og-rsvp.png`);
+  });
+
   test("an unknown code's head falls back to the brand RSVP card, not a guessed couple", async () => {
     const html = renderPath("/rsvp/ZZZZZZ");
     expect(metaContent(html, "og:image")).toBe(`https://${HU_HOST}/og-rsvp.png`);
