@@ -637,19 +637,22 @@ export function computeLeaderboard(
     delta: revealDeltas && currentSlideId !== null ? slideDelta(currentSlideId, row.id) : null,
   }));
   const byScore = (a: (typeof withScores)[number], b: (typeof withScores)[number]) =>
-    b.player.score - a.player.score || a.row.joined_at - b.row.joined_at;
+    b.player.score - a.player.score || a.row.joined_at - b.row.joined_at || a.row.id - b.row.id;
   withScores.sort(byScore);
 
   // Where everyone stood before this slide's points landed, for the "up 2
   // places" line. Same tiebreak as the live table, or a tie would read as
-  // movement that never happened.
+  // movement that never happened. Players who join in the same millisecond
+  // fall back to id: without it the order came from the already-sorted list
+  // and a climb past a same-ms joiner read as no movement.
   const before = new Map<number, number>();
   if (revealDeltas && currentSlideId !== null) {
     [...withScores]
       .sort(
         (a, b) =>
           b.player.score - (b.delta ?? 0) - (a.player.score - (a.delta ?? 0)) ||
-          a.row.joined_at - b.row.joined_at,
+          a.row.joined_at - b.row.joined_at ||
+          a.row.id - b.row.id,
       )
       .forEach((e, i) => before.set(e.player.id, i + 1));
   }

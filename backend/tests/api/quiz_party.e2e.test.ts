@@ -19,6 +19,7 @@ import {
   QUIZ_TEMPLATES,
   templatePartnerNames,
 } from "@shared/quiz_templates";
+import { db } from "../../src/db";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
 const HEADER = "X-Quiz-Player-Token";
@@ -224,6 +225,33 @@ describe("quiz party: the reveal", () => {
     expect(mine.data.revealStats?.fastest?.name).toBe("Csilla");
     const missed = await guestState(code, anna.token);
     expect(missed.data.myAnswer).toBeNull();
+  });
+
+  test("players who joined in the same millisecond still report a climb", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("quizparty-samems@weddly.test");
+    const { id, code, slides } = await liveQuiz(token, [mcq("Q1", 2), mcq("Q2", 3)]);
+    const anna = await join(code, "Anna");
+    const bence = await join(code, "Bence");
+    const csilla = await join(code, "Csilla");
+    // A fast runner joins everyone inside one millisecond; pin that here.
+    db.prepare("UPDATE quiz_players SET joined_at = 1000 WHERE quiz_id = ?").run(id);
+
+    await host(token, id, "begin-slide", { slideId: "next" });
+    await answer(code, anna.token, slides[0]!.id, 2);
+    await answer(code, bence.token, slides[0]!.id, 0);
+    await host(token, id, "reveal");
+    await host(token, id, "begin-slide", { slideId: "next" });
+    await answer(code, csilla.token, slides[1]!.id, 3);
+    await answer(code, bence.token, slides[1]!.id, 0);
+    await host(token, id, "reveal");
+
+    const view = await req<QuizHostState>("GET", `/api/quizzes/${id}/host-state`, undefined, {
+      token,
+    });
+    const byName = new Map(view.data.leaderboard.map((e) => [e.player.name, e]));
+    expect(byName.get("Csilla")!.rankChange).toBeGreaterThan(0);
+    expect(byName.get("Bence")!.rankChange).toBeLessThan(0);
   });
 });
 
