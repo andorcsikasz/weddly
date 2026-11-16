@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { create as createFont, type Font } from "@pdf-lib/fontkit";
-import sharp from "sharp";
+import sharp, { type OverlayOptions } from "sharp";
 import { getCoupleById } from "./couples";
 import { getGuestByInviteCode } from "./guests";
 import { storage, keyFromUploadUrl } from "../lib/storage";
@@ -163,7 +163,7 @@ async function photoLayer(photo: Uint8Array | null): Promise<Buffer | null> {
 async function compose(overlay: string, photo: Uint8Array | null, shade: number): Promise<Buffer> {
   const photoPng = await photoLayer(photo);
   const base = photoPng ? sharp(photoPng) : sharp(Buffer.from(brandFieldSvg()));
-  const layers: sharp.OverlayOptions[] = [];
+  const layers: OverlayOptions[] = [];
   if (photoPng) layers.push({ input: Buffer.from(shadeSvg(shade)), top: 0, left: 0 });
   layers.push({ input: Buffer.from(overlay), top: 0, left: 0 });
   return base
