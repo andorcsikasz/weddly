@@ -38,9 +38,7 @@ import { LazyMount } from "../components/LazyMount";
 const BudgetMockup = lazyWithReload(() =>
   import("../components/mockups").then((m) => ({ default: m.BudgetMockup })),
 );
-const SeatingMockup = lazyWithReload(() =>
-  import("../components/mockups").then((m) => ({ default: m.SeatingMockup })),
-);
+const SeatingDemo = lazyWithReload(() => import("../components/SeatingDemo"));
 const SubmitSupplierModal = lazyWithReload(() =>
   import("../components/SubmitSupplierModal").then((m) => ({ default: m.SubmitSupplierModal })),
 );
@@ -260,7 +258,7 @@ export default function LandingPage() {
           <div className="mx-auto flex min-h-[calc(75svh+5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-end sm:px-6 sm:pb-24 lg:pb-28">
             <div className="grid items-start gap-8 lg:items-center lg:gap-14">
               <div>
-                <h1 className="hidden font-grotesk text-4xl font-bold leading-[1.1] tracking-tight text-paper-50 sm:block sm:text-5xl lg:text-6xl">
+                <h1 className="hero-in hidden font-grotesk text-4xl font-bold leading-[1.1] tracking-tight text-paper-50 sm:block sm:text-5xl lg:text-6xl">
                   {t("landing.hero_title")}
                 </h1>
                 {/* Signup + demo sit side by side: sign up, or look around
@@ -270,7 +268,10 @@ export default function LandingPage() {
                     row also sits 5rem lower there (paired with the wrapper's
                     min-height above) so it clears the clasped hands rather
                     than sitting on top of them. */}
-                <div className="mt-24 flex max-w-[17rem] flex-col items-start gap-3 sm:mt-6 sm:max-w-md sm:flex-row sm:flex-wrap sm:items-center">
+                <div
+                  style={{ "--hero-d": 1 } as React.CSSProperties}
+                  className="hero-in mt-24 flex max-w-[17rem] flex-col items-start gap-3 sm:mt-6 sm:max-w-md sm:flex-row sm:flex-wrap sm:items-center"
+                >
                   <Link to="/signup" className="btn-outline btn-lifted btn-landing btn-lg w-auto">
                     {t("landing.cta_signup")}
                   </Link>
@@ -280,7 +281,10 @@ export default function LandingPage() {
                  *  label on hover/focus. Same three audiences (+ icons) as the
                  *  footer who-are-you band; the guest chip opens the invite-code
                  *  prompt rather than navigating. */}
-                <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5">
+                <div
+                  style={{ "--hero-d": 2 } as React.CSSProperties}
+                  className="hero-in mt-4 flex flex-wrap items-center gap-2 sm:mt-5"
+                >
                   <Link
                     to="/vendors"
                     aria-label={t("landing.footer_band_cta_vendor")}
@@ -326,6 +330,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+        <div aria-hidden="true" className="hero-scroll-cue" />
       </section>
 
       {/* ════════════════════════ 02 · Suppliers — THREE DOORS ════════════════════
@@ -337,19 +342,19 @@ export default function LandingPage() {
           instead of a button cluster: the three intents belong to three
           different people, so none of them is "primary", and a row gives a
           44px+ tap target with the sub-line doing the disambiguating.
-          "Recommend" opens the community submission wizard in place —
+"Recommend" opens the community submission wizard in place —
           it's the same visitor-verified flow as /vendors, and bouncing a
           motivated recommender to another page to find the button lost them. */}
       <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
-            <h2 className="whitespace-nowrap font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+            <h2 className="reveal-wipe whitespace-nowrap font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
               {t("landing.suppliers_section_title")}
             </h2>
             {/* Search first, doors under it: a visitor who knows what they're
                 after types it; the two rows are for the ones who don't. */}
             <VendorSearchBar className="mt-8" autoDemo />
-            <div className="mt-6 divide-y divide-paper-300 border-y border-paper-300 dark:divide-umber-700 dark:border-umber-700">
+            <div className="reveal-list mt-6 divide-y divide-paper-300 border-y border-paper-300 dark:divide-umber-700 dark:border-umber-700">
               <SupplierAction
                 icon={<Sparkles size={18} strokeWidth={1.6} />}
                 label={t("landing.suppliers_action_suggest_label")}
@@ -367,7 +372,7 @@ export default function LandingPage() {
           {/* Decorative: the heading and the search box carry the meaning, so
               this stays out of the accessibility tree. width/height are the
               real pixels so the row reserves its space before the file lands. */}
-          <picture className="reveal block" style={{ "--reveal-i": 1 } as React.CSSProperties}>
+          <picture className="reveal-curtain block overflow-hidden rounded-3xl">
             <source
               type="image/avif"
               srcSet="/suppliers-illustration-400.avif?v=20260825 400w, /suppliers-illustration-665.avif?v=20260825 665w, /suppliers-illustration-900.avif?v=20260825 900w"
@@ -439,7 +444,7 @@ export default function LandingPage() {
           Two real numbers — onboarded couples + RSVPs collected — fed by
           GET /api/public/stats (60s server-side cache). Hides itself when
           both are 0 so a freshly-seeded environment doesn't broadcast
-          "0 pár". This replaces the earlier fake "Open beta" stats band. */}
+"0 pár". This replaces the earlier fake "Open beta" stats band. */}
       <LiveStatsBand />
 
       {/* ════════════════════════ 03 · Budget — POLAROID ════════════════════════
@@ -455,20 +460,18 @@ export default function LandingPage() {
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_budget_title")}
               </h2>
-              <ul className="mt-7 space-y-1">
+              <ul className="reveal-list mt-7 space-y-1">
                 <IconRow icon={<Wallet size={16} />}>{t("landing.block_budget_bullet_1")}</IconRow>
                 <IconRow icon={<Users size={16} />}>{t("landing.block_budget_bullet_2")}</IconRow>
                 <IconRow icon={<History size={16} />}>{t("landing.block_budget_bullet_3")}</IconRow>
               </ul>
             </div>
-            <div className="relative">
-              <div className="reveal-settle relative rotate-[-2deg] bg-white dark:bg-umber-800 p-5 ring-1 ring-paper-300 dark:ring-umber-700 shadow-pop sm:p-6">
+            <div className="parallax relative">
+              {/* Just the rounded budget card, no polaroid frame around it. */}
+              <div className="reveal-settle relative rotate-[-2deg]">
                 <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
-                  <BudgetMockup className="h-auto w-full" />
+                  <BudgetMockup className="h-auto w-full drop-shadow-[0_30px_50px_rgba(16,24,48,0.15)]" />
                 </LazyMount>
-                <p className="mt-4 text-center font-serif text-sm italic text-umber-700 dark:text-umber-300">
-                  {t("landing.block_budget_eyebrow")}
-                </p>
               </div>
             </div>
           </div>
@@ -487,7 +490,7 @@ export default function LandingPage() {
               <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_guests_title")}
               </h2>
-              <ul className="mt-7 space-y-1">
+              <ul className="reveal-list mt-7 space-y-1">
                 <IconRow icon={<UserCheck size={16} />}>{t("landing.block_guests_item_1")}</IconRow>
                 <IconRow icon={<Globe size={16} />}>{t("landing.block_guests_item_2")}</IconRow>
                 <IconRow icon={<Gamepad2 size={16} />}>{t("landing.block_guests_item_3")}</IconRow>
@@ -499,7 +502,7 @@ export default function LandingPage() {
                   surfaces, so they get their own buttons right beside it
                   rather than sitting mute inside the bullet list above.
                   Outline, not primary: the page's one loud ask stays
-                  "register". */}
+"register". */}
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link to="/rsvp" className="btn-outline btn-lifted btn-landing inline-flex">
                   {t("landing.block_guests_cta")}
@@ -524,7 +527,7 @@ export default function LandingPage() {
                 height={773}
                 loading="lazy"
                 decoding="async"
-                className="h-auto w-full rounded-3xl ring-1 ring-paper-300 dark:ring-umber-700"
+                className="parallax h-auto w-full rounded-3xl ring-1 ring-paper-300 dark:ring-umber-700"
               />
             </div>
           </div>
@@ -543,7 +546,7 @@ export default function LandingPage() {
               <h2 className="whitespace-pre-line font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {t("landing.block_seating_title")}
               </h2>
-              <ul className="mt-7 space-y-1">
+              <ul className="reveal-list mt-7 space-y-1">
                 <IconRow icon={<LayoutGrid size={16} />}>
                   {t("landing.block_seating_bullet_1")}
                 </IconRow>
@@ -555,9 +558,12 @@ export default function LandingPage() {
                 </IconRow>
               </ul>
             </div>
-            <div className="reveal-slide lg:-mr-32 xl:-mr-48">
+            {/* Kept fully on screen (no right-edge bleed): it is a live,
+                tappable demo now, and a table cut off by the viewport edge
+                is a button nobody can press. */}
+            <div className="reveal-slide">
               <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
-                <SeatingMockup className="h-auto w-full drop-shadow-[0_30px_50px_rgba(16,24,48,0.15)]" />
+                <SeatingDemo className="w-full drop-shadow-[0_30px_50px_rgba(16,24,48,0.15)]" />
               </LazyMount>
             </div>
           </div>
@@ -580,14 +586,14 @@ export default function LandingPage() {
                 aria-hidden="true"
                 fill="currentColor"
                 strokeWidth={0}
-                className="text-umber-900 dark:text-paper-50"
+                className="reveal-spin text-umber-900 dark:text-paper-50"
               />
             </div>
             <p className="mt-3 text-sm font-medium text-umber-600 dark:text-umber-300">
               {t("landing.testimonials_rating_caption")}
             </p>
           </div>
-          <ul className="mt-10 grid gap-5 sm:grid-cols-3 sm:gap-6">
+          <ul className="mt-10 grid gap-5 [perspective:1200px] sm:grid-cols-3 sm:gap-6">
             <TestimonialCard
               revealIndex={0}
               quote={t("landing.t1_quote")}
@@ -618,7 +624,7 @@ export default function LandingPage() {
           <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl">
             {t("landing.audience_title")}
           </h2>
-          <div className="mt-8 divide-y divide-paper-300 dark:divide-umber-700 border-y border-paper-300 dark:border-umber-700">
+          <div className="reveal-list mt-8 divide-y divide-paper-300 dark:divide-umber-700 border-y border-paper-300 dark:border-umber-700">
             <AudienceRow
               icon={<Heart size={20} strokeWidth={1.5} />}
               row={t("landing.card_couples_title")}
@@ -656,7 +662,7 @@ export default function LandingPage() {
           and planners peeking out behind. Opens on the value proposition
           rather than on a number, because the number is not the argument. */}
       <section id="pricing" className="relative stationery scroll-mt-20">
-        <div className="reveal mx-auto max-w-5xl px-4 py-20 sm:px-6">
+        <div className="reveal-zoom mx-auto max-w-5xl px-4 py-20 sm:px-6">
           <PricingDeck />
         </div>
       </section>
@@ -686,7 +692,7 @@ export default function LandingPage() {
           <h2 className="text-center font-grotesk text-2xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-3xl">
             {t("landing.extras_title")}
           </h2>
-          <div className="mt-6 divide-y divide-paper-300 border-y border-paper-300 dark:divide-umber-700 dark:border-umber-700">
+          <div className="reveal-list mt-6 divide-y divide-paper-300 border-y border-paper-300 dark:divide-umber-700 dark:border-umber-700">
             <SupplierAction
               icon={<Camera size={18} strokeWidth={1.6} />}
               label={t("landing.footer_couples_camera")}
@@ -706,7 +712,7 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════ Closing ════════════════════════
-          Stationery texture, faded WĒDDLY watermark, huge italic
+          Stationery texture, faded WĒDDLY watermark, huge 
           headline, signature, eucalyptus stem ornament. */}
       <section className="stationery relative flex min-h-[40vh] items-center justify-center px-4 py-24 text-center sm:min-h-[50vh] sm:px-6 sm:py-24">
         {/* Only the dark headline lives in flow, so the section's items-center
@@ -721,14 +727,14 @@ export default function LandingPage() {
             size="md"
             className="absolute inset-x-0 bottom-full mb-8 text-paper-400 dark:text-umber-600"
           />
-          <h2 className="whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-umber-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
+          <h2 className="reveal-closing whitespace-pre-line font-grotesk text-5xl font-semibold leading-[0.96] tracking-tight text-umber-900 dark:text-paper-50 sm:text-6xl lg:text-7xl">
             {t("landing.closing_title")}
           </h2>
           {/* Closing CTA shown on desktop only. On mobile/tablet the persistent
               MobileStickySignup bar already keeps "Start planning" a thumb-tap
               away, so a second button here just duplicates it. */}
           <div className="absolute inset-x-0 top-full mt-10 hidden justify-center lg:flex">
-            <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg">
+            <Link to="/signup" className="btn-sheen btn-primary btn-lifted btn-landing btn-lg">
               {t("landing.cta_signup")}
             </Link>
           </div>
@@ -2374,7 +2380,7 @@ function TestimonialCard({
   return (
     <li
       style={{ "--reveal-i": revealIndex } as React.CSSProperties}
-      className="reveal flex flex-col rounded-2xl border border-paper-300 bg-white p-5 dark:border-umber-700 dark:bg-umber-800 sm:p-6"
+      className="reveal-flip flex flex-col rounded-2xl border border-paper-300 bg-white p-5 dark:border-umber-700 dark:bg-umber-800 sm:p-6"
     >
       <div className="flex items-start justify-between gap-3">
         <footer>

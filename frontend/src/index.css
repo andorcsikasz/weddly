@@ -1,3 +1,22 @@
+/* Outfit (SIL OFL 1.1, variable 400-700) — the product face, the same one
+   GoodDay uses. Self-hosted from /fonts; no third-party request. */
+@font-face {
+  font-family: "Outfit";
+  src: url("/fonts/outfit-latin-ext.woff2?v=20261115") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("/fonts/outfit-latin.woff2?v=20261115") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /* General Sans (Fontshare, OFL-style ITF Free Font License) — self-hosted
    woff2, served from our own origin. The ONLY webfont in the project: it is
    the "speciality coffee" voice for the founding band only. No CDN, no
@@ -295,36 +314,6 @@
 /* Cormorant Garamond */
 @font-face {
   font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-400-italic-ext.woff2?v=20260825") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-  font-style: italic;
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-@font-face {
-  font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-400-italic.woff2?v=20260825") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-  font-style: italic;
-}
-@font-face {
-  font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-500-italic-ext.woff2?v=20260825") format("woff2");
-  font-weight: 500;
-  font-display: swap;
-  font-style: italic;
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-@font-face {
-  font-family: "Cormorant Garamond";
-  src: url("/fonts/cormorant-garamond-500-italic.woff2?v=20260825") format("woff2");
-  font-weight: 500;
-  font-display: swap;
-  font-style: italic;
-}
-@font-face {
-  font-family: "Cormorant Garamond";
   src: url("/fonts/cormorant-garamond-600-ext.woff2?v=20260825") format("woff2");
   font-weight: 600;
   font-display: swap;
@@ -421,7 +410,7 @@
   }
   .seo-prerender h1 {
     font-size: clamp(1.75rem, 5vw, 2.75rem);
-    font-style: italic;
+    font-style: normal;
     line-height: 1.1;
     margin: 0 0 0.75rem;
   }
@@ -2901,6 +2890,416 @@ html.dark .trace-frame {
   }
 }
 
+/* ── Landing motion, round two ─────────────────────────────────────────────
+   Same two gates as above: reduced motion gets the static page, and every
+   scroll-linked rule sits behind @supports so a browser without scroll
+   timelines shows content fully visible instead of parked at opacity 0.
+   The hero intro and the mockup loops are TIME-based, so they only need the
+   motion gate. Only opacity, clip-path, filter and the individual
+   translate / scale / rotate properties move. */
+.hero-scroll-cue {
+  display: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Hero intro: the photo eases out of a slow zoom while the headline, CTAs
+     and chips rise out of a soft blur one after another. */
+  .hero-photo-img {
+    animation: hero-kenburns 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .hero-in {
+    animation: hero-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: calc(0.25s + var(--hero-d, 0) * 0.14s);
+  }
+
+  /* Scroll cue: a dot that keeps travelling down a hairline. Desktop only,
+     where the hero is a full screen and the fold is not obvious. */
+  @media (min-width: 1024px) {
+    .hero-scroll-cue {
+      display: block;
+      position: absolute;
+      left: 50%;
+      bottom: 1.75rem;
+      z-index: 2;
+      width: 1px;
+      height: 3rem;
+      translate: -50% 0;
+      overflow: hidden;
+      background: rgba(251, 250, 245, 0.25);
+      animation: hero-in 0.9s 1.2s both;
+    }
+    .hero-scroll-cue::after {
+      content: "";
+      position: absolute;
+      left: -1.5px;
+      top: 0;
+      width: 4px;
+      height: 0.9rem;
+      border-radius: 2px;
+      background: #fbfaf5;
+      animation: hero-cue 2.2s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+    }
+  }
+
+  /* Closing CTA: a soft light sweep every few seconds. */
+  .btn-sheen {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .btn-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.35) 50%,
+      transparent 70%
+    );
+    translate: -120% 0;
+    animation: btn-sheen 5s ease-in-out 1.5s infinite;
+  }
+
+  /* Product mockups play their feature on a loop (components/mockups.tsx). */
+  .mk-anim {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  /* Interactive seating demo (components/SeatingDemo.tsx). */
+  .seating-pop {
+    animation: seating-pop 0.35s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  }
+  .seating-pulse {
+    animation: seating-pulse 0.7s ease-out both;
+  }
+  .seating-panel {
+    transform-origin: top center;
+    animation: seating-panel 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .seating-click {
+    animation: seating-click 0.45s ease-out both;
+  }
+  .mk-knob {
+    animation: mk-knob 6s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+  }
+  .mk-bar {
+    transform-origin: left center;
+    animation: mk-bar 6s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+    animation-delay: calc(var(--mk-i, 0) * 0.06s);
+  }
+
+  @supports (animation-timeline: view()) {
+    /* Hero parallax: the photo drifts down slower than the page, and the
+       copy fades and lifts away as the hero leaves. */
+    .hero-media {
+      animation: hero-parallax linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+    .hero-content-wrap,
+    .hero-scroll-cue {
+      animation: hero-leave linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 60%;
+    }
+    .hero-scroll-cue {
+      animation-range: exit 0% exit 15%;
+    }
+
+    /* Headings wipe up out of a mask. */
+    .reveal-wipe {
+      animation: landing-wipe linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 90%;
+    }
+
+    /* Rows of a list arrive one after another from the left. */
+    .reveal-list > * {
+      animation: landing-row linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--row-i, 0) * 12%) entry calc(60% + var(--row-i, 0) * 12%);
+    }
+    .reveal-list > :nth-child(2) {
+      --row-i: 1;
+    }
+    .reveal-list > :nth-child(3) {
+      --row-i: 2;
+    }
+    .reveal-list > :nth-child(4) {
+      --row-i: 3;
+    }
+    .reveal-list > :nth-child(5) {
+      --row-i: 4;
+    }
+
+    /* An illustration opens like a curtain while the picture inside settles
+       from a slight zoom. */
+    .reveal-curtain {
+      animation: landing-curtain linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 45%;
+    }
+    .reveal-curtain img {
+      animation: landing-unzoom linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 55%;
+    }
+
+    /* Gentle depth: the element drifts against the scroll while on screen. */
+    .parallax {
+      animation: landing-parallax linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+
+    /* Testimonials tip forward like cards stood up on a table. */
+    .reveal-flip {
+      transform-origin: 50% 100%;
+      animation: landing-flip linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--reveal-i, 0) * 10%) entry calc(80% + var(--reveal-i, 0) * 10%);
+    }
+
+    /* The rating star spins in. */
+    .reveal-spin {
+      animation: landing-spin linear both;
+      animation-timeline: view();
+      animation-range: entry 20% cover 40%;
+    }
+
+    /* Pricing deck swells into place. */
+    .reveal-zoom {
+      animation: landing-zoom linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 35%;
+    }
+
+    /* Closing line focuses in as it reaches the middle of the screen. */
+    .reveal-closing {
+      animation: landing-closing linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 50%;
+    }
+  }
+}
+
+@keyframes hero-kenburns {
+  from {
+    scale: 1.12;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    translate: 0 22px;
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+@keyframes hero-cue {
+  from {
+    translate: 0 -1rem;
+  }
+  to {
+    translate: 0 3.2rem;
+  }
+}
+@keyframes hero-parallax {
+  to {
+    translate: 0 30%;
+  }
+}
+@keyframes hero-leave {
+  to {
+    opacity: 0;
+    translate: 0 -80px;
+  }
+}
+@keyframes btn-sheen {
+  0%,
+  70% {
+    translate: -120% 0;
+  }
+  100% {
+    translate: 120% 0;
+  }
+}
+@keyframes landing-wipe {
+  from {
+    clip-path: inset(0 0 100% 0);
+    translate: 0 0.35em;
+  }
+  to {
+    clip-path: inset(0 0 -0.2em 0);
+    translate: 0 0;
+  }
+}
+@keyframes landing-row {
+  from {
+    opacity: 0;
+    translate: -32px 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes landing-curtain {
+  from {
+    clip-path: inset(18% 8% 18% 8% round 24px);
+    opacity: 0.3;
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 24px);
+    opacity: 1;
+  }
+}
+@keyframes landing-unzoom {
+  from {
+    scale: 1.18;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes landing-parallax {
+  from {
+    translate: 0 36px;
+  }
+  to {
+    translate: 0 -36px;
+  }
+}
+@keyframes landing-flip {
+  from {
+    opacity: 0;
+    rotate: x 55deg;
+    translate: 0 30px;
+  }
+  to {
+    opacity: 1;
+    rotate: x 0deg;
+    translate: 0 0;
+  }
+}
+@keyframes landing-spin {
+  from {
+    opacity: 0;
+    scale: 0.3;
+    rotate: -200deg;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+@keyframes landing-zoom {
+  from {
+    opacity: 0;
+    scale: 0.92;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes landing-closing {
+  from {
+    opacity: 0;
+    scale: 0.82;
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes seating-pop {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes seating-pulse {
+  from {
+    opacity: 0.8;
+    scale: 0.7;
+  }
+  to {
+    opacity: 0;
+    scale: 1.5;
+  }
+}
+@keyframes seating-panel {
+  from {
+    opacity: 0;
+    scale: 0.92;
+    translate: 0 -6px;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+@keyframes seating-click {
+  from {
+    opacity: 1;
+    scale: 0.3;
+  }
+  to {
+    opacity: 0;
+    scale: 1.8;
+  }
+}
+
+/* Budget mockup: the headcount slider glides down and back up, and every
+   category bar follows it. The rest frame (100%) is the static drawing. */
+@keyframes mk-knob {
+  0%,
+  12% {
+    translate: 0 0;
+  }
+  45%,
+  60% {
+    translate: -135px 0;
+  }
+  92%,
+  100% {
+    translate: 0 0;
+  }
+}
+@keyframes mk-bar {
+  0%,
+  12% {
+    scale: 1 1;
+  }
+  45%,
+  60% {
+    scale: 0.55 1;
+  }
+  92%,
+  100% {
+    scale: 1 1;
+  }
+}
+
 /* Page-to-page transition (lib/page_transition.ts). The page being left fades
    and drifts up a few pixels while the next one rises into place, so a jump
    from the landing to /camera reads as one surface turning a page rather than
@@ -2929,4 +3328,12 @@ html.page-vt::view-transition-new(root) {
     opacity: 0;
     transform: translateY(24px);
   }
+}
+
+/* House rule: no italic anywhere. Overrides UA defaults for em/i/cite/dfn and
+   any inline font-style, so a stray tag cannot bring slanted type back. */
+*,
+*::before,
+*::after {
+  font-style: normal !important;
 }

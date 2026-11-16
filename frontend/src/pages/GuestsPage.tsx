@@ -79,6 +79,8 @@ import {
   Printer,
   RotateCcw,
   Send,
+  CircleHelp,
+  Hourglass,
   Shell,
   Sprout,
   Table as TableIcon,
@@ -3861,7 +3863,7 @@ function HouseholdCard({
             <MessageSquareQuote size={12} aria-hidden />
             {t("guests.household_guest_message")}
           </p>
-          <p className="whitespace-pre-wrap text-sm italic text-ink-700 dark:text-paper-100">
+          <p className="whitespace-pre-wrap text-sm text-ink-700 dark:text-paper-100">
             {household.guest_message}
           </p>
         </div>
@@ -4236,13 +4238,23 @@ function CheckinPanel({
   );
 }
 
+// One icon per RSVP state, shared by the badge and the inline glyph. Drawn, not
+// typed: a text tick or hourglass takes the OS emoji face on some platforms.
+function rsvpIcon(status: RsvpStatus) {
+  const cls = "h-3.5 w-3.5";
+  if (status === "yes") return <Check aria-hidden className={cls} strokeWidth={2} />;
+  if (status === "no") return <X aria-hidden className={cls} strokeWidth={2} />;
+  if (status === "maybe") return <CircleHelp aria-hidden className={cls} strokeWidth={1.5} />;
+  return <Hourglass aria-hidden className={cls} strokeWidth={1.5} />;
+}
+
 function RsvpBadge({ status }: { status: RsvpStatus }) {
   const { t } = useT();
   // Glyph + colour together — colour-only badges fail accessibility checks
   // and read as identical to anyone with red/green deficiency. The dashed
   // border distinguishes "pending" (no answer yet) from "maybe" (declared
   // tentative).
-  const glyph = status === "yes" ? "✓" : status === "no" ? "✗" : status === "maybe" ? "?" : "⌛";
+  const glyph = rsvpIcon(status);
   // "Yes" pops in emerald — couples scan a household and want the attending
   // guests to be the loudest signal. Other states keep their existing tones.
   const cls =
@@ -5330,7 +5342,7 @@ function GuestDrawer({
 
           {/* ── Guest-fills divider ─────────────────────────────────────
               Visual break so the couple sees at a glance which fields are
-              "what we know about this guest" (above: name, contact,
+"what we know about this guest" (above: name, contact,
               household) vs "the guest's own answers" (below: RSVP, meal,
               dietary, etc.) — the couple can pre-fill these too, but the
               public RSVP form is the canonical author. */}
@@ -5777,7 +5789,7 @@ function AccommodationToggle({
 
 function RsvpGlyph({ status }: { status: RsvpStatus }) {
   // Same glyph language as RsvpBadge, sized to sit next to the label text.
-  const ch = status === "yes" ? "✓" : status === "no" ? "✗" : status === "maybe" ? "?" : "⌛";
+  const ch = rsvpIcon(status);
   return (
     <span aria-hidden className="text-sm font-semibold leading-none">
       {ch}
