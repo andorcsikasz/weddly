@@ -24,7 +24,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowUpRight, MessageCircle, Phone, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Clock,
+  GitCompareArrows,
+  MessageCircle,
+  Phone,
+  Send,
+} from "lucide-react";
 import type { BookingMessage, CoupleVendorThreadPreview } from "@shared/booking_messages";
 import type { BookingTimelineEvent } from "@shared/booking_timeline";
 import type { BookingQuote } from "@shared/booking_quotes";
@@ -84,28 +92,53 @@ function ThreadList() {
     );
   }
 
+  const unread = threads.filter((x) => x.unread_count > 0).length;
+  const waiting = threads.filter(
+    (x) => x.unread_count === 0 && x.last_sender_kind === "couple",
+  ).length;
+  const ordered = [...threads].sort(
+    (a, b) => Number(b.unread_count > 0) - Number(a.unread_count > 0) || b.last_at - a.last_at,
+  );
+
   return (
-    <ul className="space-y-2">
-      {threads.map((thread) => {
-        const Glyph = categoryIcon(thread.vendor_category ?? "");
-        return (
-          <li
-            key={thread.booking_id}
-            className="relative rounded-2xl border border-paper-300 bg-white transition hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:hover:bg-umber-700"
-          >
-            {/* Two destinations in one row, which is why the row is no longer a
+    <>
+      {(unread > 0 || waiting > 0) && (
+        <p className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-600 dark:text-paper-300">
+          {unread > 0 && (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-blush-500" aria-hidden="true" />
+              {t("messages.summary_unread", { n: unread })}
+            </span>
+          )}
+          {waiting > 0 && (
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
+              {t("messages.summary_waiting", { n: waiting })}
+            </span>
+          )}
+        </p>
+      )}
+      <ul className="space-y-2">
+        {ordered.map((thread) => {
+          const Glyph = categoryIcon(thread.vendor_category ?? "");
+          return (
+            <li
+              key={thread.booking_id}
+              className="relative rounded-2xl border border-paper-300 bg-white transition hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:hover:bg-umber-700"
+            >
+              {/* Two destinations in one row, which is why the row is no longer a
                 single <Link>: the card opens the conversation (an overlay link
                 covering it, so the whole thing stays one tap on a phone) and the
                 vendor's NAME goes to their card instead. Nested anchors are
                 invalid HTML, so the content is pointer-transparent and the one
                 thing that isn't the thread opts back in. */}
-            <Link
-              to={`/app/vendors/messages/${thread.booking_id}`}
-              aria-label={t("messages.open_thread_aria", { name: thread.vendor_name })}
-              className="absolute inset-0 rounded-2xl"
-            />
-            <div className="pointer-events-none flex items-center gap-3 p-4">
-              {/* The glyph carries the category visually; the label beside the
+              <Link
+                to={`/app/vendors/messages/${thread.booking_id}`}
+                aria-label={t("messages.open_thread_aria", { name: thread.vendor_name })}
+                className="absolute inset-0 rounded-2xl"
+              />
+              <div className="pointer-events-none flex items-center gap-3 p-4">
+                {/* The glyph carries the category visually; the label beside the
                   name is for anyone who doesn't read glyphs.
 
                   Outlined in ink on the bare surface rather than sitting on a
@@ -113,52 +146,59 @@ function ThreadList() {
                   disabled button (the same call the vendor portal made), and
                   the outline matches the vendor rows on the dashboard's
                   Kulcsinfó card, which is where these vendors also appear. */}
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
-                <Glyph className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2">
-                  {thread.vendor_category ? (
-                    <Link
-                      to={`/app/suppliers/${thread.supplier_id}`}
-                      title={t("suppliers.open_card")}
-                      className="pointer-events-auto relative inline-flex min-w-0 items-center gap-1 font-medium text-ink-900 hover:underline dark:text-paper-50"
-                    >
-                      <span className="min-w-0 truncate">{thread.vendor_name}</span>
-                      <ArrowUpRight
-                        className="h-3.5 w-3.5 shrink-0 text-ink-400 dark:text-paper-400"
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  ) : (
-                    <span className="truncate font-medium text-ink-900 dark:text-paper-50">
-                      {thread.vendor_name}
-                    </span>
-                  )}
-                  {thread.vendor_category ? (
-                    <span className="shrink-0 rounded-full bg-paper-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-500 dark:bg-umber-700 dark:text-paper-300">
-                      {t(`suppliers.cat.${thread.vendor_category}`)}
-                    </span>
-                  ) : null}
-                  {thread.unread_count > 0 ? (
-                    <span className="shrink-0 rounded-full bg-blush-500 px-2 py-0.5 text-xs font-semibold text-white">
-                      {thread.unread_count}
-                    </span>
-                  ) : null}
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
+                  <Glyph className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
                 </span>
-                <span className="mt-0.5 block truncate text-sm text-ink-600 dark:text-paper-300">
-                  {thread.last_sender_kind === "couple" ? `${t("messages.you")}: ` : ""}
-                  {thread.last_body}
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    {thread.vendor_category ? (
+                      <Link
+                        to={`/app/suppliers/${thread.supplier_id}`}
+                        title={t("suppliers.open_card")}
+                        className="pointer-events-auto relative inline-flex min-w-0 items-center gap-1 font-medium text-ink-900 hover:underline dark:text-paper-50"
+                      >
+                        <span className="min-w-0 truncate">{thread.vendor_name}</span>
+                        <ArrowUpRight
+                          className="h-3.5 w-3.5 shrink-0 text-ink-400 dark:text-paper-400"
+                          aria-hidden="true"
+                        />
+                      </Link>
+                    ) : (
+                      <span className="truncate font-medium text-ink-900 dark:text-paper-50">
+                        {thread.vendor_name}
+                      </span>
+                    )}
+                    {thread.vendor_category ? (
+                      <span className="shrink-0 rounded-full bg-paper-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-500 dark:bg-umber-700 dark:text-paper-300">
+                        {t(`suppliers.cat.${thread.vendor_category}`)}
+                      </span>
+                    ) : null}
+                    {thread.unread_count === 0 && thread.last_sender_kind === "couple" ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-ink-500 dark:text-paper-400">
+                        <Clock className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
+                        {t("messages.waiting_reply")}
+                      </span>
+                    ) : null}
+                    {thread.unread_count > 0 ? (
+                      <span className="shrink-0 rounded-full bg-blush-500 px-2 py-0.5 text-xs font-semibold text-white">
+                        {thread.unread_count}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="mt-0.5 block truncate text-sm text-ink-600 dark:text-paper-300">
+                    {thread.last_sender_kind === "couple" ? `${t("messages.you")}: ` : ""}
+                    {thread.last_body}
+                  </span>
                 </span>
-              </span>
-              <span className="shrink-0 text-xs text-ink-500 dark:text-paper-400">
-                {formatDateMs(thread.last_at, locale)}
-              </span>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+                <span className="shrink-0 text-xs text-ink-500 dark:text-paper-400">
+                  {formatDateMs(thread.last_at, locale)}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }
 
@@ -433,7 +473,7 @@ export default function MessagesPage() {
                   onClick={() => {
                     // Replace, don't push: flipping a tab is not a step the back
                     // button should have to walk through.
-                    setParams(key === "outreach" ? { tab: "outreach" } : {}, { replace: true });
+                    setParams(key === "threads" ? {} : { tab: key }, { replace: true });
                   }}
                   className={`flex items-center gap-2 rounded-xl px-4 py-1.5 text-sm leading-none transition-colors ${
                     active

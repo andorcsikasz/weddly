@@ -127,6 +127,7 @@ const SchedulePage = lazyWithReload(() => import("./pages/SchedulePage"));
 const SeatingPage = lazyWithReload(() => import("./pages/SeatingPage"));
 const SuppliersPage = lazyWithReload(() => import("./pages/SuppliersPage"));
 const MessagesPage = lazyWithReload(() => import("./pages/MessagesPage"));
+const OfferComparePage = lazyWithReload(() => import("./pages/OfferComparePage"));
 const SupplierDetailPage = lazyWithReload(() => import("./pages/SupplierDetailPage"));
 const PlannerDetailPage = lazyWithReload(() => import("./pages/PlannerDetailPage"));
 const PublicVendorPage = lazyWithReload(() => import("./pages/PublicVendorPage"));
@@ -1247,6 +1248,14 @@ export default function App() {
           directory. Two paths, one page: the tabbed list, or one thread. Being
           nested means `matchNavDestination` still credits the Szolgáltatók rail
           row, so messages needs no sidebar entry of its own. */}
+          <Route
+            path="vendors/compare"
+            element={
+              <Page>
+                <OfferComparePage />
+              </Page>
+            }
+          />
           <Route
             path="vendors/messages"
             element={

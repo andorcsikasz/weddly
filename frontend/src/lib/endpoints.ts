@@ -305,6 +305,7 @@ import type {
   VendorMessageTemplate,
 } from "@shared/booking_messages";
 import type { BookingQuote, QuoteLineInput } from "@shared/booking_quotes";
+import type { OfferStatus, VendorOffer, VendorOfferPayload } from "@shared/vendor_offers";
 import type { DateHold } from "@shared/date_holds";
 import type { VendorPointsStatus } from "@shared/vendor_points";
 import type { PlannerPointsStatus } from "@shared/planner_points";
@@ -3475,6 +3476,18 @@ export const bookingQuoteApi = {
     apiFetch<{ quote: BookingQuote }>("POST", `/api/quotes/${quoteId}/accept`),
   coupleDecline: (quoteId: number, reason: string | null) =>
     apiFetch<{ quote: BookingQuote }>("POST", `/api/quotes/${quoteId}/decline`, { reason }),
+};
+
+export const vendorOfferApi = {
+  list: () => apiFetch<{ offers: VendorOffer[] }>("GET", "/api/vendor-offers"),
+  import: (offer: VendorOfferPayload, supplierId: string | null) =>
+    apiFetch<{ offer: VendorOffer }>("POST", "/api/vendor-offers", {
+      offer,
+      supplier_id: supplierId,
+    }),
+  setStatus: (id: number, status: OfferStatus) =>
+    apiFetch<{ offer: VendorOffer }>("PATCH", `/api/vendor-offers/${id}`, { status }),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/vendor-offers/${id}`),
 };
 
 export const vendorBillingApi = {

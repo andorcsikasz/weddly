@@ -86,6 +86,7 @@ import {
   UtensilsCrossed,
   Wallet,
   Wine,
+  GitCompareArrows,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -2035,6 +2036,15 @@ export default function SuppliersPage() {
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
+              </Link>
+
+              <Link
+                to="/app/vendors/compare"
+                aria-label={t("offers.tab")}
+                title={t("offers.tab")}
+                className={`${isMap ? "hidden" : "inline-flex"} h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50`}
+              >
+                <GitCompareArrows size={16} aria-hidden />
               </Link>
 
               {/* Icon-only view switch: three glyphs, one filled. The words

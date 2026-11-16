@@ -502,6 +502,29 @@ CREATE TABLE IF NOT EXISTS couple_supplier_costs (
 CREATE INDEX IF NOT EXISTS idx_couple_supplier_costs_couple
   ON couple_supplier_costs(couple_id);
 
+-- A vendor's priced offer as the couple imported it (PDF/email -> LLM -> JSON
+-- -> paste). One row per import, so a re-quote is a NEW row and the price
+-- history stays; the latest per vendor feeds the comparison. `quoted_at` is
+-- the date the vendor's document says the prices were true; `created_at` is
+-- when the couple imported it. `total` is derived at write time from the
+-- payload (shared/vendor_offers.ts) and stored only so lists can sort.
+CREATE TABLE IF NOT EXISTS vendor_offers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  supplier_id TEXT,
+  vendor_name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  quoted_at TEXT NOT NULL,
+  valid_until TEXT,
+  total INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  payload TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vendor_offers_couple ON vendor_offers(couple_id, category);
+
 -- Saved download archive. Every JSON / PDF / CSV export the user generates is
 -- snapshotted here so they can re-download past versions from the Profile
 -- page. Capped at the most recent 10 per couple (older rows auto-purged on
