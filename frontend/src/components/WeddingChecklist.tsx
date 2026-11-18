@@ -465,7 +465,7 @@ export function WeddingChecklist({
             aria-label={t("planning.checklist.percent_complete", { percent })}
           >
             <div
-              className="h-full bg-white transition-[width] duration-300 motion-reduce:transition-none"
+              className="h-full bg-green-500 transition-[width] duration-300 motion-reduce:transition-none"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -784,12 +784,12 @@ export function WeddingChecklist({
                                       </span>
                                     )}
                                     {status === "overdue" && (
-                                      <span className="inline-flex shrink-0 items-center rounded-full bg-blush-500 px-2 py-0.5 text-[11px] font-medium text-paper-50">
+                                      <span className="inline-flex shrink-0 items-center rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-medium text-white">
                                         {t("planning.status_overdue")}
                                       </span>
                                     )}
                                     {status === "due_soon" && (
-                                      <span className="inline-flex shrink-0 items-center rounded-full bg-blush-50 px-2 py-0.5 text-[11px] font-medium text-blush-700 ring-1 ring-blush-200 dark:bg-blush-400/15 dark:text-blush-300 dark:ring-blush-400/30">
+                                      <span className="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-amber-300 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30">
                                         {t("planning.status_due_soon")}
                                       </span>
                                     )}
