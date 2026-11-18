@@ -346,6 +346,41 @@ function keepPlusOnesWithHost(list: Guest[]): Guest[] {
   }
   return out;
 }
+/** Default (unsorted) table order: a child or baby rides directly after the
+ *  last adult of their own household instead of wherever they were created.
+ *  Kids are usually added after their parents, so the natural order parked
+ *  them at the bottom of the list. A kid whose household has no adult on
+ *  screen keeps its natural place, so a filter never makes one vanish. */
+function keepKidsWithFamily(list: Guest[]): Guest[] {
+  const isKid = (g: Guest) => g.kind === "child" || g.kind === "baby";
+  const adultsInHousehold = new Set<number>();
+  for (const g of list) {
+    if (!isKid(g) && g.household_id != null) adultsInHousehold.add(g.household_id);
+  }
+  const kidsByHousehold = new Map<number, Guest[]>();
+  for (const g of list) {
+    if (isKid(g) && g.household_id != null && adultsInHousehold.has(g.household_id)) {
+      const arr = kidsByHousehold.get(g.household_id) ?? [];
+      arr.push(g);
+      kidsByHousehold.set(g.household_id, arr);
+    }
+  }
+  // The last adult of each household is where its kids are inserted.
+  const lastAdultIndex = new Map<number, number>();
+  list.forEach((g, i) => {
+    if (!isKid(g) && g.household_id != null) lastAdultIndex.set(g.household_id, i);
+  });
+  const out: Guest[] = [];
+  list.forEach((g, i) => {
+    if (isKid(g) && g.household_id != null && adultsInHousehold.has(g.household_id)) return;
+    out.push(g);
+    if (g.household_id != null && lastAdultIndex.get(g.household_id) === i) {
+      for (const kid of kidsByHousehold.get(g.household_id) ?? []) out.push(kid);
+    }
+  });
+  return out;
+}
+
 function sortHouseholds(list: Household[], sort: SortKey): Household[] {
   if (sort === "name") return [...list].sort((a, b) => a.label.localeCompare(b.label));
   if (sort === "added") return [...list].sort((a, b) => b.id - a.id);
@@ -1139,7 +1174,7 @@ export default function GuestsPage() {
       }
       return true;
     });
-    return sortGuests(out, sortKey);
+    return sortKey === "default" ? keepKidsWithFamily(out) : sortGuests(out, sortKey);
   }, [
     debouncedQuery,
     freshResults,
@@ -7170,9 +7205,9 @@ function ActiveChip({
   const { t } = useT();
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${tone ?? "border-paper-200 bg-paper-100 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-sm ${tone ?? "border-paper-200 bg-paper-100 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"}`}
     >
-      {icon && <span className="opacity-80">{icon}</span>}
+      {icon && <span className="inline-flex shrink-0 items-center gap-0.5 opacity-80">{icon}</span>}
       <span className="font-medium">{label}</span>
       <button
         type="button"
