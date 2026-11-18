@@ -1450,6 +1450,52 @@ interface TableShapeProps {
   ) => string;
 }
 
+/** Instant name label for a seated chair, drawn in table space and counter-
+ *  rotated so it reads upright. Width is estimated from the glyph count: an
+ *  SVG <text> cannot be measured before it is laid out, and an estimate that
+ *  is a little wide only costs some padding. */
+function SeatNameTag({
+  x,
+  y,
+  rotation,
+  name,
+  fontMm,
+}: {
+  x: number;
+  y: number;
+  rotation: number;
+  name: string;
+  fontMm: number;
+}) {
+  const padX = fontMm * 0.6;
+  const height = fontMm * 1.7;
+  const width = name.length * fontMm * 0.6 + padX * 2;
+  return (
+    <g transform={`rotate(${-rotation} ${x} ${y})`} style={{ pointerEvents: "none" }}>
+      <rect
+        x={x - width / 2}
+        y={y - height / 2}
+        width={width}
+        height={height}
+        rx={height / 2}
+        className="fill-ink-900 dark:fill-paper-50"
+      />
+      <text
+        x={x}
+        y={y}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={fontMm}
+        fontWeight={600}
+        className="font-grotesk fill-paper-50 dark:fill-ink-900"
+        style={{ userSelect: "none" }}
+      >
+        {name}
+      </text>
+    </g>
+  );
+}
+
 function TableShape({
   table,
   cx,
@@ -1486,6 +1532,9 @@ function TableShape({
 }: TableShapeProps) {
   const [dragOverSeat, setDragOverSeat] = useState<number | null>(null);
   const [dragOverTable, setDragOverTable] = useState(false);
+  // Chair whose guest name is shown the moment the pointer enters it. The
+  // native <title> tooltip waits ~1s, which reads as "nothing happens".
+  const [hoverSeat, setHoverSeat] = useState<number | null>(null);
   // Clear the table-body hover highlight when an HTML5 drag ends (drop or cancel).
   useEffect(() => {
     if (!dragOverTable) return;
@@ -1766,10 +1815,10 @@ function TableShape({
                 : isSelectedSeat
                   ? "fill-blush-600"
                   : isOccupied
-                    ? "fill-ink-700"
+                    ? "fill-green-600"
                     : "fill-blush-200"
             : isOccupied
-              ? "fill-ink-800"
+              ? "fill-green-600"
               : "fill-blush-300";
 
         const crossLen = chairHeightMm * 0.45;
@@ -1855,6 +1904,8 @@ function TableShape({
                   }
                 : undefined
             }
+            onPointerEnter={seatGuest ? () => setHoverSeat(i) : undefined}
+            onPointerLeave={() => setHoverSeat((h) => (h === i ? null : h))}
             style={
               seatMode && !isDisabled
                 ? // Empty chairs are ALWAYS pointer targets in seat mode —
@@ -1917,6 +1968,15 @@ function TableShape({
             )}
             {/* Full guest name on hover / for AT regardless of zoom tier. */}
             {seatGuest && <title>{seatGuest.name}</title>}
+            {seatGuest && hoverSeat === i && (
+              <SeatNameTag
+                x={px + cosA * (chairHeightMm * 1.1)}
+                y={py + sinA * (chairHeightMm * 1.1)}
+                rotation={rotation}
+                name={seatGuest.name}
+                fontMm={chairWidthMm * 0.34}
+              />
+            )}
             {/* In edit mode: seat number. In seat mode: guest first name or
                 initials depending on what is legible at this zoom, or a bold
                 seat number on empty chairs. Sub-legible text renders as

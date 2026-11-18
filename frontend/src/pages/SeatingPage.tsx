@@ -2441,9 +2441,7 @@ function SeatPanelProgress({
           .replace("{total}", String(progress.total))}
       >
         <div
-          className={`h-full rounded-full transition-[width] duration-500 ease-out ${
-            progress.complete ? "bg-sage-500 dark:bg-sage-400" : "bg-ink-900 dark:bg-paper-50"
-          }`}
+          className="h-full rounded-full bg-green-500 transition-[width] duration-500 ease-out dark:bg-green-400"
           style={{ width: `${Math.max(progress.pct, progress.seated > 0 ? 4 : 0)}%` }}
         />
       </div>
