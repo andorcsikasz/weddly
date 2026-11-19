@@ -14,7 +14,7 @@
  * The frame stays light in dark mode, like a screenshot of the app would.
  */
 import { X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useT } from "../lib/i18n";
 
 /** Frame units → container width. 480 units = 100cqw. */
@@ -52,6 +52,8 @@ const initialSeats = (): Seats => ({
 const INITIAL_TRAY = ["Dóra N.", "Bence K.", "Lili S."];
 
 const FLIGHT_MS = 420;
+/** Bearings (degrees) of the droplets thrown out on each click. */
+const SHOWER = [0, 45, 90, 135, 180, 225, 270, 315] as const;
 const TRAY_Y = 318;
 const chipPos = (i: number): Pt => ({ x: 24 + 36 + i * 78, y: TRAY_Y });
 const tableOf = (id: TableId) => TABLES.find((t) => t.id === id)!;
@@ -767,18 +769,46 @@ export function SeatingDemo({ className }: { className?: string }) {
                 "left 340ms cubic-bezier(.45,0,.25,1), top 340ms cubic-bezier(.45,0,.25,1)",
             }}
           >
+            {/* The ring and the droplets are centred on the origin, which is
+                exactly the arrow's tip (the path below starts at 0,0). Anchoring
+                on the tip means the click reads as coming from the pointer. */}
             <span
               key={cursor.click}
               className={cursor.click ? "seating-click absolute rounded-full bg-umber-900/25" : ""}
               style={{ left: u(-9), top: u(-9), width: u(18), height: u(18) }}
             />
+            {cursor.click > 0 && (
+              <span
+                key={cursor.click}
+                aria-hidden="true"
+                className="absolute"
+                style={{ left: 0, top: 0, width: 0, height: 0 }}
+              >
+                {SHOWER.map((a, i) => (
+                  <span
+                    key={a}
+                    className="seating-shower absolute rounded-full bg-umber-800"
+                    style={
+                      {
+                        left: u(-1.4),
+                        top: u(-1.4),
+                        width: u(2.8),
+                        height: u(2.8),
+                        "--a": `${a}deg`,
+                        "--dist": u(i % 2 === 0 ? 16 : 25),
+                      } as CSSProperties
+                    }
+                  />
+                ))}
+              </span>
+            )}
             <svg
               viewBox="0 0 14 20"
               style={{ width: u(11), height: u(16) }}
-              className="relative text-ink-900"
+              className="relative overflow-visible text-ink-900"
             >
               <path
-                d="M 1 1 L 1 16 L 5 12 L 8 19 L 11 18 L 8 11 L 13 11 Z"
+                d="M 0 0 L 0 15 L 4 11 L 7 18 L 10 17 L 7 10 L 12 10 Z"
                 fill="currentColor"
                 stroke="white"
                 strokeWidth="1.2"
