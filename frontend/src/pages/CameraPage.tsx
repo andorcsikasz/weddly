@@ -351,12 +351,12 @@ export default function CameraPage() {
             and the copy lifts away as the page scrolls (camera_scroll.css). */}
         <section className="relative isolate flex min-h-[88svh] items-center justify-center overflow-hidden px-4 pb-48 pt-24 text-center sm:pb-56">
           <img
-            src="/design-photos/12-ceremony-aisle.jpg"
+            src="/design-photos/20-vineyard-dusk.jpg"
             alt=""
             className="cam-zoom absolute inset-0 -z-20 h-full w-full object-cover"
-            style={{ filter: ANALOG_PREVIEW_FILTER }}
+            style={{ filter: ANALOG_PREVIEW_FILTER, objectPosition: "50% 40%" }}
           />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/70 via-black/55 to-umber-950" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/60 via-black/40 to-umber-950" />
           <div className="cam-dim absolute inset-0 -z-10 bg-umber-950" />
           <div className="cam-hero-copy mx-auto max-w-4xl">
             <h1 className="text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-paper-50 sm:text-7xl lg:text-8xl">
