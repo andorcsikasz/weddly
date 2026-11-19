@@ -233,7 +233,7 @@ export function ProfileMenu({
               title={`${user.full_name || user.email} · ${t(
                 locallyActive ? "profile.partner_status_active" : "profile.partner_status_joined",
               )}`}
-              className={`relative flex h-10 w-10 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold uppercase text-paper-100 transition-colors group-hover:bg-ink-900 dark:bg-umber-600 dark:text-paper-50 dark:group-hover:bg-umber-500 ${
+              className={`relative flex h-10 w-10 items-center justify-center rounded-full bg-chart-olive text-xs font-semibold uppercase text-paper-50 transition-opacity group-hover:opacity-90 dark:bg-chart-olive dark:text-paper-50 ${
                 showPartner ? "-ml-3 ring-2 ring-paper-50 dark:ring-umber-800" : ""
               }`}
             >
@@ -455,8 +455,8 @@ function PresenceDot({ online }: { online: boolean }) {
   return (
     <span className="absolute bottom-0 right-0 z-10" aria-hidden="true">
       <span className="relative flex h-3 w-3">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage-400 opacity-60" />
-        <span className="relative inline-flex h-3 w-3 rounded-full border-2 border-paper-50 bg-sage-500 dark:border-umber-800" />
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-60" />
+        <span className="relative inline-flex h-3 w-3 rounded-full border-2 border-paper-50 bg-green-500 dark:border-umber-800" />
       </span>
     </span>
   );

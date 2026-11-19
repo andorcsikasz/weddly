@@ -184,22 +184,21 @@ const CATEGORY_ORDER: BudgetCategory[] = [
   "other",
 ];
 
-/** Cool categorical palette for the distribution slices. A warm terracotta
- *  slice reads straight as the blush CTA accent sat on the same page, and that
- *  is exactly the tint a money chart must not borrow — these are the cool
- *  half of the design tokens (steel / sage / eucalyptus / ink / moss), tuned
- *  to stay distinguishable on the light paper card and the dark umber surface.
+/** Categorical palette for the distribution slices, drawn from the `chart`
+ *  tokens (tailwind.config.js) so the donut reads as colour, not as a grey
+ *  scale. Those tokens are tuned to stay distinguishable on the light paper
+ *  card and the dark umber surface.
  *  Each entry pairs the SVG `stroke-*` with the matching legend `bg-*` swatch.
  *  Ordered so no two hues sit adjacent on the ring; the 7th colour catches the
  *  grouped "Other" bucket. */
 const SLICE_PALETTE: Array<{ stroke: string; dot: string }> = [
-  { stroke: "stroke-steel-500", dot: "bg-steel-500" },
-  { stroke: "stroke-sage-400", dot: "bg-sage-400" },
-  { stroke: "stroke-eucalyptus-500", dot: "bg-eucalyptus-500" },
-  { stroke: "stroke-steel-300", dot: "bg-steel-300" },
-  { stroke: "stroke-ink-400", dot: "bg-ink-400" },
-  { stroke: "stroke-moss-500", dot: "bg-moss-500" },
-  { stroke: "stroke-steel-200", dot: "bg-steel-200" },
+  { stroke: "stroke-chart-sage", dot: "bg-chart-sage" },
+  { stroke: "stroke-chart-ochre", dot: "bg-chart-ochre" },
+  { stroke: "stroke-chart-terracotta", dot: "bg-chart-terracotta" },
+  { stroke: "stroke-chart-olive", dot: "bg-chart-olive" },
+  { stroke: "stroke-chart-rose", dot: "bg-chart-rose" },
+  { stroke: "stroke-chart-taupe", dot: "bg-chart-taupe" },
+  { stroke: "stroke-chart-sand", dot: "bg-chart-sand" },
 ];
 
 const MAX_SLICES = 6; // top N categories; the rest collapse into "Other".

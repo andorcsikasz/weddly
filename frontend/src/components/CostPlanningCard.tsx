@@ -673,7 +673,9 @@ export function CostPlanningCard({
         )}
         {cap !== null &&
           (tier === "safe" ? (
-            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-ink-600 dark:text-umber-200">
+            <span
+              className={`stat-num inline-flex items-baseline gap-1 text-sm font-medium ${underAmount > 0 ? "text-sage-700 dark:text-sage-300" : "text-ink-600 dark:text-umber-200"}`}
+            >
               {underAmount > 0 && <ArrowDown size={12} className="self-center" aria-hidden />}
               {underAmount === 0
                 ? t("budget.on_budget")
@@ -697,7 +699,7 @@ export function CostPlanningCard({
             // medium (5–20 %) + serious (>20 %): same blush pill; the serious
             // tier adds an action link below the card total. Keeping the pill
             // shape stable across tiers preserves the visual anchor.
-            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-blush-700 dark:text-blush-300">
+            <span className="stat-num inline-flex items-baseline gap-1 text-sm font-medium text-red-600 dark:text-red-400">
               <ArrowUp size={12} className="self-center" aria-hidden />
               {t("cost_planning.overcap_medium_label", {
                 amount: formatMoney(overage, currency, locale),
@@ -1003,7 +1005,7 @@ export function CostPlanningCard({
           </span>
           <span
             data-testid="cost-planning-total"
-            className={`stat-num font-grotesk text-xl font-semibold tracking-tight ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-900 dark:text-paper-50"}`}
+            className={`stat-num font-grotesk text-xl font-semibold tracking-tight ${overCap ? "text-red-600 dark:text-red-400" : "text-ink-900 dark:text-paper-50"}`}
           >
             {formatMoney(totalPlanned, currency, locale)}
           </span>
@@ -1038,7 +1040,7 @@ export function CostPlanningCard({
               />
             ) : (
               <span
-                className={`stat-num ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
+                className={`stat-num ${overCap ? "text-red-600 dark:text-red-400" : "text-ink-400 dark:text-umber-300"}`}
               >
                 {cap !== null ? formatMoney(cap, currency, locale) : "-"}
               </span>
