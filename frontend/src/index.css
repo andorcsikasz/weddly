@@ -1737,6 +1737,47 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     }
   }
 
+  /* /camera/try only: a film light leak. A warm bloom that creeps in from a
+     corner, like the sun getting into the back of a camera. It is a demo
+     flourish and never baked into a saved shot (lib/analog.ts owns the real
+     look), so it lives in CSS on the try page alone. */
+  .demo-light-leak {
+    position: absolute;
+    inset: -20%;
+    pointer-events: none;
+    background: radial-gradient(
+      closest-side at 90% 10%,
+      rgba(255, 150, 70, 0.6),
+      rgba(255, 96, 40, 0.22) 45%,
+      transparent 72%
+    );
+    mix-blend-mode: screen;
+    opacity: 0.85;
+    animation: demo-leak-drift 9s ease-in-out infinite alternate;
+  }
+  .demo-light-leak--corner-left {
+    background: radial-gradient(
+      closest-side at 8% 90%,
+      rgba(255, 170, 90, 0.55),
+      rgba(255, 96, 40, 0.2) 45%,
+      transparent 72%
+    );
+    animation-duration: 11s;
+  }
+  @keyframes demo-leak-drift {
+    from {
+      transform: translate(-3%, 2%) scale(1);
+    }
+    to {
+      transform: translate(3%, -2%) scale(1.06);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .demo-light-leak {
+      animation: none;
+    }
+  }
+
   /* /camera "guest's roll": five viewfinders that feel like a room full of
      guests shooting. Each phone rises in once when the row scrolls into
      view (`.is-in` on the section), then bobs slowly on its own phase while

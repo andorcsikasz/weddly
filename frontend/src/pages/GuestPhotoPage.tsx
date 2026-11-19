@@ -1359,6 +1359,7 @@ function Viewfinder({
             <>
               <div className="viewfinder-vignette" aria-hidden="true" />
               <div className="viewfinder-grain" aria-hidden="true" />
+              {demo && <div className="demo-light-leak" aria-hidden="true" />}
             </>
           )}
 
@@ -1890,13 +1891,27 @@ function DemoDeveloped({
         <SheetBody>{t("photos.demo_developed_sub")}</SheetBody>
         <div className="mt-8 grid grid-cols-3 gap-1.5">
           {urls.map((url, i) => (
-            <img
+            // Printed like contact-sheet frames: a cream rebate, a small
+            // tilt that alternates, and a light leak on every other print.
+            <div
               key={url}
-              src={url}
-              alt=""
-              className="develop-in aspect-[3/4] w-full rounded-lg object-cover"
-              style={{ filter: cssFilter, animationDelay: `${i * 90}ms` }}
-            />
+              className={`relative overflow-hidden bg-paper-50 p-1.5 pb-5 shadow-md ${
+                i % 3 === 0 ? "-rotate-1" : i % 3 === 1 ? "rotate-1" : "rotate-0"
+              }`}
+            >
+              <img
+                src={url}
+                alt=""
+                className="develop-in aspect-[3/4] w-full object-cover"
+                style={{ filter: cssFilter, animationDelay: `${i * 90}ms` }}
+              />
+              {i % 2 === 0 && (
+                <div
+                  className={`demo-light-leak ${i % 4 === 0 ? "" : "demo-light-leak--corner-left"}`}
+                  aria-hidden="true"
+                />
+              )}
+            </div>
           ))}
         </div>
         <div className="mt-10 flex flex-col gap-3">
