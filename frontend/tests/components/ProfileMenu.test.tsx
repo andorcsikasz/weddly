@@ -97,15 +97,15 @@ describe("<ProfileMenu>", () => {
     });
 
     await waitFor(() => {
-      expect(view.container.querySelectorAll(".bg-sage-500")).toHaveLength(2);
+      expect(view.container.querySelectorAll(".bg-green-500")).toHaveLength(2);
     });
     // The green dot itself no longer carries `right-0` (that class lives on
     // its outer ping wrapper), so assert the position via each dot's
     // closest positioner.
-    for (const dot of view.container.querySelectorAll(".bg-sage-500")) {
+    for (const dot of view.container.querySelectorAll(".bg-green-500")) {
       expect(dot.closest(".right-0")).not.toBeNull();
     }
-    expect(view.container.querySelector(".bg-sage-500.left-0")).not.toBeInTheDocument();
+    expect(view.container.querySelector(".bg-green-500.left-0")).not.toBeInTheDocument();
 
     view.unmount();
   });
@@ -118,7 +118,7 @@ describe("<ProfileMenu>", () => {
     });
 
     await waitFor(() => {
-      expect(view.container.querySelectorAll(".bg-sage-500")).toHaveLength(1);
+      expect(view.container.querySelectorAll(".bg-green-500")).toHaveLength(1);
     });
     // Offline renders nothing, not a muted dot — a grey mark on the avatar
     // read as a state nobody defined (user direction: only green means it).
