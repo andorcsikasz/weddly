@@ -337,7 +337,7 @@ export function ShareWeddlyDialog({
                 key={m.variant}
                 aria-roledescription="slide"
                 aria-hidden={!selected}
-                className={`flex min-h-[7.5rem] shrink-0 basis-[86%] snap-center items-end justify-end pr-1.5 transition-all duration-300 ${
+                className={`flex min-h-[7.5rem] shrink-0 basis-[86%] snap-start items-end justify-end pr-1.5 transition-all duration-300 ${
                   selected ? "opacity-100" : "scale-[0.96] opacity-60"
                 }`}
               >

@@ -327,6 +327,7 @@ export default function AdminVendorCampaignPage() {
                 id="c-cap"
                 className="input"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 value={dailyCap}
                 onChange={(e) => setDailyCap(e.target.value)}

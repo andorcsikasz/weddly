@@ -3770,6 +3770,7 @@ function VendorModal({
             <div className="flex items-center gap-1">
               <input
                 type="number"
+                inputMode="numeric"
                 value={probability}
                 onChange={(e) => setProbability(e.target.value)}
                 min={0}

@@ -924,6 +924,7 @@ function FilmModal({
                 </button>
                 <input
                   type="number"
+                  inputMode="numeric"
                   min={1}
                   max={500}
                   value={shots}

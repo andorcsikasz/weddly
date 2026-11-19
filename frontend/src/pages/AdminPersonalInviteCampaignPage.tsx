@@ -304,6 +304,7 @@ export default function AdminPersonalInviteCampaignPage() {
                 id="pi-cap"
                 className="input tabular-nums"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={PERSONAL_INVITE_MAX_DAILY_CAP}
                 value={dailyCap}

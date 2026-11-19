@@ -269,6 +269,7 @@ export default function AdminOnboardingCampaignPage() {
                 id="ob-cap"
                 className="input tabular-nums"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={ONBOARDING_CAMPAIGN_MAX_DAILY_CAP}
                 value={dailyCap}

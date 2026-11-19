@@ -1,7 +1,7 @@
 // A money entry field that shows the figure the way a person writes it:
 // "200 000 000", not "200000000".
 //
-// `<input type="number">` cannot do this: the browser renders the raw value
+// `<input type="number" inputMode="numeric">` cannot do this: the browser renders the raw value
 // and treats a separator as invalid input. That number input is also what
 // these fields carried `step={1000}` for, a spinner increment the browser
 // enforces as VALIDATION, which refused every euro amount a couple typed and

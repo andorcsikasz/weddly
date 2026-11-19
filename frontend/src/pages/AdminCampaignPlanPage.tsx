@@ -98,6 +98,7 @@ function NumberField({
         id={id}
         className="input"
         type="number"
+        inputMode="numeric"
         min={min}
         max={max}
         disabled={disabled}

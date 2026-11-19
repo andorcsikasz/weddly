@@ -477,6 +477,7 @@ export function BookingThreadPanel({
               maxLength={MESSAGE_BODY_MAX_LEN}
               onChange={(e) => setDraft(e.target.value)}
               placeholder={t("thread.placeholder")}
+              enterKeyHint="send"
               className="input min-h-[3rem] flex-1 resize-y leading-relaxed"
             />
             <Button

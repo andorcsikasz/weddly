@@ -313,6 +313,7 @@ export default function AdminVendorReviewCampaignPage() {
                 id="rc-cap"
                 className="input"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 value={dailyCap}
                 onChange={(e) => setDailyCap(e.target.value)}

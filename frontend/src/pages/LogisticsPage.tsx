@@ -2211,6 +2211,7 @@ function CapacityStepper({
       </button>
       <input
         type="number"
+        inputMode="numeric"
         min={1}
         max={100}
         value={value}
@@ -2219,7 +2220,6 @@ function CapacityStepper({
           if (Number.isFinite(n)) onChange(clamp(Math.trunc(n)));
         }}
         className="w-full border-0 bg-transparent text-center text-sm font-medium text-ink-900 focus:outline-none focus:ring-0 dark:text-paper-50"
-        inputMode="numeric"
       />
       <button
         type="button"
@@ -2473,6 +2473,7 @@ function TransferDialog({
           <Field label={t("logistics.transfer_capacity")} icon={Users}>
             <input
               type="number"
+              inputMode="numeric"
               min={1}
               max={200}
               className="input"

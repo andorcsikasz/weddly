@@ -393,6 +393,7 @@ function BlogEditor({
         <Field label={t("admin_blog.field_read_minutes")}>
           <input
             type="number"
+            inputMode="numeric"
             min={1}
             max={60}
             value={draft.read_minutes}

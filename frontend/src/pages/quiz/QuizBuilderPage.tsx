@@ -455,6 +455,7 @@ function SlideEditor({
             <input
               id="slide-time-limit"
               type="number"
+              inputMode="numeric"
               className="gc-input"
               disabled={locked}
               min={5}
@@ -471,6 +472,7 @@ function SlideEditor({
             <input
               id="slide-points"
               type="number"
+              inputMode="numeric"
               className="gc-input"
               disabled={locked}
               min={100}
@@ -580,6 +582,7 @@ function NumberEditor({
         <label className="gc-label">{t("quiz.builder.min_label")}</label>
         <input
           type="number"
+          inputMode="numeric"
           className="gc-input"
           disabled={locked}
           value={config.min}
@@ -590,6 +593,7 @@ function NumberEditor({
         <label className="gc-label">{t("quiz.builder.max_label")}</label>
         <input
           type="number"
+          inputMode="numeric"
           className="gc-input"
           disabled={locked}
           value={config.max}
@@ -600,6 +604,7 @@ function NumberEditor({
         <label className="gc-label">{t("quiz.builder.step_label")}</label>
         <input
           type="number"
+          inputMode="numeric"
           className="gc-input"
           disabled={locked}
           value={config.step}
@@ -620,6 +625,7 @@ function NumberEditor({
         <label className="gc-label">{t("quiz.builder.correct_value_label")}</label>
         <input
           type="number"
+          inputMode="numeric"
           className="gc-input"
           disabled={locked}
           value={config.correctValue ?? ""}

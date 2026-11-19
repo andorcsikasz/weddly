@@ -3282,6 +3282,7 @@ function SuffixedInput({
     <div className="relative">
       <input
         type="number"
+        inputMode="numeric"
         min={min}
         max={max}
         step={step}

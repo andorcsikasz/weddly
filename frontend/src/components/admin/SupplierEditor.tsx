@@ -278,6 +278,7 @@ export function SupplierEditForm({
           <input
             className="input"
             type="number"
+            inputMode="numeric"
             min={0}
             value={draft.capacity_min}
             onChange={(e) => set("capacity_min", e.target.value)}
@@ -287,6 +288,7 @@ export function SupplierEditForm({
           <input
             className="input"
             type="number"
+            inputMode="numeric"
             min={0}
             value={draft.capacity_max}
             onChange={(e) => set("capacity_max", e.target.value)}

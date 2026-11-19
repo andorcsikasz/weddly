@@ -1,6 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  // Every `hover:` utility is wrapped in `@media (hover: hover)`, so a tap on
+  // a touch screen does not leave the hover style stuck on the element.
+  future: { hoverOnlyWhenSupported: true },
   // The budget-donut slice colours (SpendingCharts SLICE_PALETTE) are composed
   // as `stroke-chart-*` / `bg-chart-*` from a palette array. They ARE literal
   // strings, so the content scan normally finds them — but safelisting them

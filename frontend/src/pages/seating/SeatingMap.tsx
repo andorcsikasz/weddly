@@ -1276,6 +1276,7 @@ function RoomDimsInput({
     <span className="flex items-center gap-1 text-xs text-ink-400 dark:text-umber-300">
       <input
         type="number"
+        inputMode="decimal"
         min={MIN_ROOM_MM / 1000}
         max={MAX_ROOM_MM / 1000}
         step={0.5}
@@ -1293,6 +1294,7 @@ function RoomDimsInput({
       </span>
       <input
         type="number"
+        inputMode="decimal"
         min={MIN_ROOM_MM / 1000}
         max={MAX_ROOM_MM / 1000}
         step={0.5}

@@ -703,6 +703,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   <input
                     id="pw-km"
                     type="number"
+                    inputMode="numeric"
                     min={0}
                     max={5000}
                     className={inputCls}
@@ -734,6 +735,7 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   <input
                     id="pw-wdone"
                     type="number"
+                    inputMode="numeric"
                     min={0}
                     className={inputCls}
                     value={form.weddings_done}

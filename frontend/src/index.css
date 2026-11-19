@@ -396,6 +396,46 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* Mobile input rules (standing checklist, memory feedback_mobile_web_rules):
+   * - every control is at least 16px, so iOS does not zoom the page on focus.
+   *   `!important` is deliberate: utilities like `text-sm` sit in @layer
+   *   utilities and would otherwise win over this floor.
+   * - buttons and links get their own pressed state, since the tap flash is
+   *   off above; `filter` rather than opacity so it cannot un-hide the
+   *   opacity-0 hover-reveal controls in the row actions.
+   * - touch-action: manipulation stops a quick double tap zooming the page. */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+
+  button,
+  a,
+  [role="button"],
+  label {
+    touch-action: manipulation;
+  }
+
+  button:not(:disabled):active,
+  a:active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    filter: brightness(0.92);
+  }
+
+  /* A popup or sheet must not hand its overscroll to the page behind it.
+   * Covers the dialog itself and any scroller inside it, so the rule holds
+   * for the 50-odd dialogs that carry their own markup, not just the shared
+   * Dialog primitive. */
+  [role="dialog"],
+  [role="alertdialog"],
+  [role="dialog"] [class*="overflow-y-auto"],
+  [role="dialog"] [class*="overflow-auto"],
+  [role="alertdialog"] [class*="overflow-y-auto"],
+  [role="alertdialog"] [class*="overflow-auto"] {
+    overscroll-behavior: contain;
+  }
+
   /* SSR prerender body (frontend/scripts/prerender.ts) — useful, readable
    * public content before the React bundle parses and for no-JS visitors.
    * Tailwind utility classes on the React tree replace these rules after
