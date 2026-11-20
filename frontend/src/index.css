@@ -2221,6 +2221,30 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     }
   }
 
+  /* Month bars: the title is cut to the bar's own days, so on hover the bar
+     grows into the free days after it (--bar-grow, set only where the lane is
+     empty). A bar with no free day after it gets an instant tip instead, since
+     a native title waits ~1s and a planner is scanning, not waiting. Hover is
+     gated like every other hover style so touch devices don't stick on it. */
+  .timeline-bar {
+    width: var(--bar-w);
+    max-width: var(--bar-cap);
+  }
+  .timeline-bar-tip {
+    display: none;
+  }
+  @media (hover: hover) {
+    .timeline-bar:hover {
+      width: max-content;
+      min-width: var(--bar-w);
+      max-width: var(--bar-grow);
+      z-index: 20;
+    }
+    .timeline-bar:hover + .timeline-bar-tip {
+      display: block;
+    }
+  }
+
   /* Loading placeholder — a soft base with a brighter highlight that sweeps
      across the block (see `animate-shimmer` keyframes in tailwind.config.js).
      The gradient is layered on top of a flat base so the surface still has a

@@ -5,6 +5,7 @@
 // in each row, so the layout stays a clean grid instead of an absolute
 // overlay across the whole month.
 
+import { type CSSProperties, Fragment } from "react";
 import type { PlanningItem } from "@shared/types";
 import { useT } from "../../lib/i18n";
 
@@ -89,6 +90,9 @@ interface PlacedBar {
   span: number;
   /** Lane index (0-based). */
   lane: number;
+  /** Empty columns right after the bar in the same lane, before the next
+   *  bar or the week's end. A hovered bar grows into these. */
+  freeAfter: number;
 }
 
 interface WeekLayout {
@@ -170,7 +174,7 @@ function packIntoLanes(weekStart: Date, items: PlanningItem[]): WeekLayout {
     lanes[lane] = c.startCol + c.span - 1;
 
     if (lane < MAX_LANES) {
-      bars.push({ item: c.item, startCol: c.startCol, span: c.span, lane });
+      bars.push({ item: c.item, startCol: c.startCol, span: c.span, lane, freeAfter: 0 });
     } else {
       // Spill over into every column this bar would have touched.
       for (let col = c.startCol; col < c.startCol + c.span; col++) {
@@ -178,6 +182,18 @@ function packIntoLanes(weekStart: Date, items: PlanningItem[]): WeekLayout {
         if (list) list.push(c.item);
       }
     }
+  }
+  // Free room after each bar: up to the next bar in the same lane, or the
+  // week's edge. Overflowed bars live in the "+N more" row, so they never block.
+  for (const bar of bars) {
+    const end = bar.startCol + bar.span; // first column after the bar
+    let nextStart = 7;
+    for (const other of bars) {
+      if (other.lane === bar.lane && other.startCol >= end && other.startCol < nextStart) {
+        nextStart = other.startCol;
+      }
+    }
+    bar.freeAfter = nextStart - end;
   }
   return { weekStart, bars, overflow };
 }
@@ -334,24 +350,40 @@ export default function MonthView({
                 const leftCalc = `calc(var(--timeline-week-gutter) + (100% - var(--timeline-week-gutter)) * ${bar.startCol} / 7)`;
                 const widthCalc = `calc((100% - var(--timeline-week-gutter)) * ${bar.span} / 7)`;
                 const topPx = HEADER_OFFSET_PX + bar.lane * LANE_HEIGHT_PX;
+                const growCalc =
+                  bar.freeAfter > 0
+                    ? `calc((100% - var(--timeline-week-gutter)) * ${bar.span + bar.freeAfter} / 7 - 4px)`
+                    : `calc(${widthCalc} - 4px)`;
+                const barStyle = {
+                  left: leftCalc,
+                  top: topPx,
+                  marginLeft: 2,
+                  marginRight: 2,
+                  "--bar-w": widthCalc,
+                  "--bar-cap": `calc(${widthCalc} - 4px)`,
+                  "--bar-grow": growCalc,
+                } as CSSProperties;
                 return (
-                  <button
-                    type="button"
-                    key={`bar-${item.id}-${bar.startCol}`}
-                    onClick={() => onOpenTask(item)}
-                    title={item.title}
-                    className={`absolute h-5 min-w-0 truncate rounded-sm px-1 text-left text-[10px] transition-colors hover:brightness-95 hover:ring-1 sm:px-1.5 sm:text-[11px] ${barClasses}`}
-                    style={{
-                      left: leftCalc,
-                      width: widthCalc,
-                      top: topPx,
-                      marginLeft: 2,
-                      marginRight: 2,
-                      maxWidth: `calc(${widthCalc} - 4px)`,
-                    }}
-                  >
-                    {item.title}
-                  </button>
+                  <Fragment key={`bar-${item.id}-${bar.startCol}`}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenTask(item)}
+                      aria-label={item.title}
+                      className={`timeline-bar absolute h-5 min-w-0 truncate rounded-sm px-1 text-left text-[10px] transition-colors hover:brightness-95 hover:ring-1 sm:px-1.5 sm:text-[11px] ${barClasses}`}
+                      style={barStyle}
+                    >
+                      {item.title}
+                    </button>
+                    {bar.freeAfter === 0 && (
+                      <span
+                        aria-hidden="true"
+                        className="timeline-bar-tip pointer-events-none absolute z-30 h-5 whitespace-nowrap rounded-sm bg-ink-900 px-1.5 text-left text-[11px] leading-5 text-paper-50 shadow-pop dark:bg-paper-100 dark:text-ink-900"
+                        style={{ left: leftCalc, top: topPx, marginLeft: 2, width: "max-content" }}
+                      >
+                        {item.title}
+                      </span>
+                    )}
+                  </Fragment>
                 );
               })}
 
