@@ -137,6 +137,7 @@ export function purgeOneCouple(
     db.prepare("DELETE FROM couple_suppliers WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM couple_supplier_costs WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM couple_picks WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM couple_pick_extras WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM saved_suppliers WHERE couple_id = ?").run(coupleId);
     // GDPR erasure gap (audit 2026-06): these couple-scoped PII tables were
     // never swept. Because purge UPDATEs couples.status='deleting' instead of

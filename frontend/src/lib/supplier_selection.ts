@@ -21,6 +21,9 @@ const LS_PREFIX = "weddly.suppliers.selected.";
 
 export type SelectionMap = Partial<Record<SupplierCategory, string>>;
 
+/** Extra suppliers per category, beside the primary pick in SelectionMap. */
+export type ExtrasMap = Partial<Record<SupplierCategory, string[]>>;
+
 function lsKey(coupleId: number): string {
   return `${LS_PREFIX}${coupleId}`;
 }
@@ -36,6 +39,7 @@ function isCategory(s: string): s is SupplierCategory {
 // kept in sync by every mutation. Reads return an empty map until hydration
 // resolves — consumers already handle "no picks yet" rendering.
 const cache = new Map<number, SelectionMap>();
+const extrasCache = new Map<number, ExtrasMap>();
 const listeners = new Map<number, Set<(next: SelectionMap) => void>>();
 // Couple ids whose hydration is already underway (or done) so we don't
 // double-fetch on every reader.
@@ -108,6 +112,12 @@ async function fetchAndPopulate(coupleId: number): Promise<void> {
       if (isCategory(p.category)) next[p.category] = p.supplier_id;
     }
     cache.set(coupleId, next);
+    const nextExtras: ExtrasMap = {};
+    for (const e of r.extras ?? []) {
+      if (!isCategory(e.category)) continue;
+      (nextExtras[e.category] ??= []).push(e.supplier_id);
+    }
+    extrasCache.set(coupleId, nextExtras);
     emit(coupleId);
   } catch {
     // Most common failure is 401 (anonymous). Leave the cache as-is —
@@ -175,6 +185,70 @@ export function setSelection(
         await picksApi.set(category, supplierId);
       }
       publish("picks:changed");
+      // The server may have moved an extra up into the primary's place, or
+      // dropped one that is now the primary, so take its word for the extras.
+      void fetchAndPopulate(coupleId);
+    } catch {
+      void fetchAndPopulate(coupleId);
+    }
+  })();
+  return next;
+}
+
+/** The extra suppliers for the couple, beside each category's primary pick. */
+export function readExtras(coupleId: number): ExtrasMap {
+  hydrate(coupleId);
+  return extrasCache.get(coupleId) ?? {};
+}
+
+/** Add `supplierId` as another pick in `category`. The caller only offers this
+ *  where a primary already exists, so the server's 409 is a safety net. Rolls
+ *  back by re-reading the server on failure. */
+export function addExtraSelection(
+  coupleId: number,
+  category: SupplierCategory,
+  supplierId: string,
+): ExtrasMap {
+  ensureCrossTabListener();
+  const cur = extrasCache.get(coupleId) ?? {};
+  const list = cur[category] ?? [];
+  const next: ExtrasMap = {
+    ...cur,
+    [category]: list.includes(supplierId) ? list : [...list, supplierId],
+  };
+  extrasCache.set(coupleId, next);
+  emit(coupleId);
+  void (async () => {
+    try {
+      await picksApi.addExtra(category, supplierId);
+      publish("picks:changed");
+      void fetchAndPopulate(coupleId);
+    } catch {
+      void fetchAndPopulate(coupleId);
+    }
+  })();
+  return next;
+}
+
+/** Withdraw an extra. The primary pick is untouched. */
+export function removeExtraSelection(
+  coupleId: number,
+  category: SupplierCategory,
+  supplierId: string,
+): ExtrasMap {
+  ensureCrossTabListener();
+  const cur = extrasCache.get(coupleId) ?? {};
+  const next: ExtrasMap = {
+    ...cur,
+    [category]: (cur[category] ?? []).filter((id) => id !== supplierId),
+  };
+  extrasCache.set(coupleId, next);
+  emit(coupleId);
+  void (async () => {
+    try {
+      await picksApi.removeExtra(category, supplierId);
+      publish("picks:changed");
+      void fetchAndPopulate(coupleId);
     } catch {
       void fetchAndPopulate(coupleId);
     }

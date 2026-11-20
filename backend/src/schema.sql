@@ -788,6 +788,22 @@ CREATE TABLE IF NOT EXISTS couple_picks (
 );
 CREATE INDEX IF NOT EXISTS idx_couple_picks_couple ON couple_picks(couple_id);
 
+-- Extra suppliers in a category the couple already has a primary pick for: a
+-- second photographer, a back-up DJ. The primary stays in `couple_picks` and
+-- keeps every existing consumer (venue sync, progress, contacts). Extras only
+-- add to it, and count as commitments for the budget just like the primary.
+-- Venue is single-pick, so no extra ever lands there.
+CREATE TABLE IF NOT EXISTS couple_pick_extras (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  supplier_id TEXT NOT NULL,
+  picked_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  picked_at INTEGER NOT NULL,
+  UNIQUE(couple_id, category, supplier_id)
+);
+CREATE INDEX IF NOT EXISTS idx_couple_pick_extras_couple ON couple_pick_extras(couple_id);
+
 -- Couple shortlist ("saved" star on /app/suppliers). Many rows per couple —
 -- one per saved supplier, no per-category cap (a couple shortlists 3
 -- photographers to compare them). Couple-scoped so partner A and partner B

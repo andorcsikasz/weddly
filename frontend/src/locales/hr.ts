@@ -6016,6 +6016,12 @@ const hr: LocaleMessages = {
     save_aria: "Spremi",
     unsave_aria: "Ukloni iz spremljenih",
     save_no_couple: "Dovršite svoj profil da biste spremali dobavljače.",
+    pick_choice: {
+      title: "Zamijeniti ili zadržati oba?",
+      body: "Za {category} već je odabran {current}. Zamijeniti ga s {next} ili zadržati oba?",
+      replace: "Zamijeni",
+      add: "Zadrži oba",
+    },
     saved_filter: "Spremljeno ({n})",
     pick_aria: "Odaberite ovoga",
     unpick_aria: "Poništite odabir",

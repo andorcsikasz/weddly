@@ -6139,6 +6139,12 @@ const de: LocaleMessages = {
     save_aria: "Speichern",
     unsave_aria: "Aus den gespeicherten entfernen",
     save_no_couple: "Vervollständigen Sie Ihr Profil, um Dienstleister zu speichern.",
+    pick_choice: {
+      title: "Ersetzen oder ergänzen?",
+      body: "Für {category} ist bereits {current} gewählt. Soll {next} ersetzen oder zusätzlich dazukommen?",
+      replace: "Ersetzen",
+      add: "Beide behalten",
+    },
     saved_filter: "Gespeichert ({n})",
     pick_aria: "Diesen auswählen",
     unpick_aria: "Auswahl aufheben",

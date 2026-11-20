@@ -7080,6 +7080,12 @@ export interface LocaleMessages {
     save_aria: string;
     unsave_aria: string;
     save_no_couple: string;
+    pick_choice: {
+      title: string;
+      body: string;
+      replace: string;
+      add: string;
+    };
     saved_filter: string;
     /** Per-category "this is our pick" selection — one card per sub-category. */
     pick_aria: string;

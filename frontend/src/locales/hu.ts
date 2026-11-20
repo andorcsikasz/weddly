@@ -6027,6 +6027,12 @@ const hu: LocaleMessages = {
     save_aria: "Mentés",
     unsave_aria: "Mentés visszavonása",
     save_no_couple: "Töltsd ki a profilodat a mentéshez.",
+    pick_choice: {
+      title: "Lecseréled, vagy mellé veszed?",
+      body: "A(z) {category} kategóriában már ez van: {current}. Lecseréled {next}-ra, vagy mindkettő marad?",
+      replace: "Lecserélem",
+      add: "Mindkettő marad",
+    },
     saved_filter: "Mentett ({n})",
     pick_aria: "Elmentem",
     unpick_aria: "Választás visszavonása",

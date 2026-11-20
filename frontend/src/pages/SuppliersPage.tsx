@@ -136,7 +136,11 @@ import {
 } from "../lib/hu_metro_areas";
 import { Combobox, type ComboOption } from "../components/Combobox";
 import {
+  addExtraSelection,
+  type ExtrasMap,
+  readExtras,
   readSelection,
+  removeExtraSelection,
   type SelectionMap,
   setSelection,
   subscribeSelection,
@@ -374,6 +378,15 @@ export default function SuppliersPage() {
   // values are supplier IDs (curated slug, "c{N}" community id, or DIY hex).
   // One pick per category — choosing a new card replaces the prior pick.
   const [selection, setSelectionState] = useState<SelectionMap>({});
+  // Further suppliers in a category beside its primary pick ("a second
+  // photographer"). Same server-side sync as the primary.
+  const [extras, setExtrasState] = useState<ExtrasMap>({});
+  // A card tapped in a category that already has a primary: the couple is asked
+  // whether it replaces that primary or joins it as another supplier.
+  const [pickChoice, setPickChoice] = useState<{
+    supplier: DirectorySupplier | CoupleSupplier;
+    origin?: { x: number; y: number };
+  } | null>(null);
   // Registered planner ACCOUNTS (a consent/invite flow, distinct from the
   // outbound-contact directory). They surface as a slim strip atop the real
   // `wedding_planner` category (the curated planner listings live in the grid).
@@ -930,6 +943,7 @@ export default function SuppliersPage() {
         if (couple.couple) hydrateCostPlanningCount(couple.couple);
         if (id !== null) {
           setSelectionState(readSelection(id));
+          setExtrasState(readExtras(id));
           setSavedState(readSavedStore(id));
         }
         // One-shot IMPRESSION ping per mount: tell the analytics ingest which
@@ -1011,7 +1025,10 @@ export default function SuppliersPage() {
   // reflect it here without a refresh.
   useEffect(() => {
     if (coupleId === null) return;
-    return subscribeSelection(coupleId, (next) => setSelectionState(next));
+    return subscribeSelection(coupleId, (next) => {
+      setSelectionState(next);
+      setExtrasState(readExtras(coupleId));
+    });
   }, [coupleId]);
 
   // Cross-tab shortlist sync — partner B saves a photographer elsewhere, the
@@ -1029,6 +1046,20 @@ export default function SuppliersPage() {
       }
       const cat = supplier.category;
       const isPicked = selection[cat] === supplier.id;
+      // A further supplier: tapping it withdraws just that one. The primary
+      // pick in the category is untouched.
+      if ((extras[cat] ?? []).includes(supplier.id)) {
+        setExtrasState(removeExtraSelection(coupleId, cat, supplier.id));
+        return;
+      }
+      // A different supplier in a category that already has a real primary:
+      // ask whether it replaces it or joins it. Venue is one place, so it has
+      // no "add" and keeps replacing straight away.
+      const current = selection[cat];
+      if (!isPicked && current && cat !== "venue" && !isSentinelPick(current)) {
+        setPickChoice({ supplier, origin });
+        return;
+      }
       // Un-picking the venue wipes the couple-row copy that Kulcsinfó, the
       // public guest page and the run sheet all read (see backend
       // domain/venue_sync.ts) — a bigger, more consequential action than
@@ -1059,7 +1090,7 @@ export default function SuppliersPage() {
         celebrateSelection(cat, selection, next);
       }
     },
-    [coupleId, selection, confirm, toast, t],
+    [coupleId, selection, extras, confirm, toast, t],
   );
 
   // Adopt a directory listing instead of minting a private "Saját" copy of it.
@@ -2906,7 +2937,9 @@ export default function SuppliersPage() {
                   const isSaved = s.source !== "self" && saved.has(s.id);
                   // A bound private row holds its pick under the LISTING's id, so
                   // ask about that when there is one.
-                  const isPicked = selection[s.category] === pickIdentityOf(s);
+                  const isPicked =
+                    selection[s.category] === pickIdentityOf(s) ||
+                    (extras[s.category] ?? []).includes(pickIdentityOf(s));
                   const isCompared = compareIds.includes(s.id);
                   const compareCapReached = compareIds.length >= COMPARE_MAX;
                   if (s.source === "self") {
@@ -3508,6 +3541,63 @@ export default function SuppliersPage() {
           looking at, not which trade), they're set once and rarely touched,
           and out on the page they cost a whole band of chrome. The chip that
           opens this carries the count, so a live filter is never hidden. */}
+      <Dialog
+        open={pickChoice !== null}
+        onClose={() => setPickChoice(null)}
+        role="dialog"
+        size="sm"
+        closeOnBackdrop
+        title={t("suppliers.pick_choice.title")}
+      >
+        {pickChoice && coupleId !== null && (
+          <div className="space-y-4">
+            <p className="text-sm text-ink-700 dark:text-paper-200">
+              {t("suppliers.pick_choice.body", {
+                current:
+                  items.find((i) => i.id === selection[pickChoice.supplier.category])?.name ??
+                  selection[pickChoice.supplier.category] ??
+                  "",
+                next: pickChoice.supplier.name,
+                category: t(`suppliers.cat.${pickChoice.supplier.category}`),
+              })}
+            </p>
+            <div className="grid gap-2">
+              <Button
+                onClick={() => {
+                  const { supplier, origin } = pickChoice;
+                  setPickChoice(null);
+                  const cat = supplier.category;
+                  const next = setSelection(coupleId, cat, supplier.id);
+                  setSelectionState(next);
+                  fireConfetti(origin);
+                  celebrateSelection(cat, selection, next);
+                }}
+              >
+                {t("suppliers.pick_choice.replace")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const { supplier, origin } = pickChoice;
+                  setPickChoice(null);
+                  setExtrasState(addExtraSelection(coupleId, supplier.category, supplier.id));
+                  fireConfetti(origin);
+                }}
+              >
+                {t("suppliers.pick_choice.add")}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setPickChoice(null)}
+                className="py-2 text-sm text-ink-600 underline-offset-2 transition hover:text-ink-900 hover:underline dark:text-umber-200 dark:hover:text-paper-50"
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </div>
+        )}
+      </Dialog>
+
       <Dialog
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}

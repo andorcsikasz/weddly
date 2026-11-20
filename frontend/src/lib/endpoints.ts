@@ -2431,13 +2431,23 @@ export const supplierCostApi = {
  *  partners so partner B on another device sees the same picks — see
  *  backend/src/routes/couple_picks.ts. */
 export const picksApi = {
-  list: () => apiFetch<{ picks: CouplePick[] }>("GET", "/api/picks"),
+  list: () => apiFetch<{ picks: CouplePick[]; extras: CouplePick[] }>("GET", "/api/picks"),
   set: (category: string, supplier_id: string) =>
     apiFetch<{ pick: CouplePick }>("PUT", `/api/picks/${encodeURIComponent(category)}`, {
       supplier_id,
     }),
   clear: (category: string) =>
     apiFetch<{ ok: true }>("DELETE", `/api/picks/${encodeURIComponent(category)}`),
+  /** Another supplier in a category that already has a primary pick. */
+  addExtra: (category: string, supplier_id: string) =>
+    apiFetch<{ extra: CouplePick }>("POST", `/api/picks/${encodeURIComponent(category)}/extras`, {
+      supplier_id,
+    }),
+  removeExtra: (category: string, supplier_id: string) =>
+    apiFetch<{ ok: true }>(
+      "DELETE",
+      `/api/picks/${encodeURIComponent(category)}/extras/${encodeURIComponent(supplier_id)}`,
+    ),
 };
 
 export const savedApi = {

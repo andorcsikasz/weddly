@@ -47,14 +47,21 @@ import { db, now } from "../db";
  *  (UNIQUE is on the category, not the supplier) and yields ONE line, under the
  *  most recent decision. */
 function pickedCategory(coupleId: number, supplierId: string): string | null {
+  // An extra pick is a commitment too: a second photographer spends money the
+  // moment the couple adds them, so it earns the same single line.
   const row = db
     .prepare(
-      `SELECT category FROM couple_picks
-        WHERE couple_id = ? AND supplier_id = ?
+      `SELECT category FROM (
+         SELECT category, picked_at FROM couple_picks
+          WHERE couple_id = ? AND supplier_id = ?
+         UNION ALL
+         SELECT category, picked_at FROM couple_pick_extras
+          WHERE couple_id = ? AND supplier_id = ?
+       )
         ORDER BY picked_at DESC, category ASC
         LIMIT 1`,
     )
-    .get(coupleId, supplierId) as { category: string } | undefined;
+    .get(coupleId, supplierId, coupleId, supplierId) as { category: string } | undefined;
   return row?.category ?? null;
 }
 

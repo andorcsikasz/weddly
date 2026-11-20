@@ -9,6 +9,7 @@
 // admin can hide a community submission, etc., and we want to preserve the
 // couple's historical choice rather than reject a pick the user already made.
 
+import { isSentinelPick } from "@shared/picks";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { getCoupleForUser } from "../domain/couples";
 import * as picksDomain from "../domain/couple_picks";
@@ -45,7 +46,70 @@ function handleList(ctx: Ctx): Response {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
-  return json({ picks: picksDomain.listPicksForCouple(couple.id) });
+  return json({
+    picks: picksDomain.listPicksForCouple(couple.id),
+    extras: picksDomain.listExtrasForCouple(couple.id),
+  });
+}
+
+/** Add a supplier beside the category's primary pick. Refused where there is no
+ *  primary to add beside (the first pick is a plain upsert), for venue (one
+ *  place to hold the wedding), for a sentinel, and for the primary itself. */
+async function handleAddExtra(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const category = parseCategoryParam(ctx.params.category);
+  if (category === "venue") {
+    throw new HttpError(400, "A venue is a single pick", { code: "venue_single_pick" });
+  }
+  const body = await readJson<{ supplier_id?: unknown }>(ctx.req);
+  const supplierId = parseSupplierId(body.supplier_id);
+  if (isSentinelPick(supplierId)) {
+    throw new HttpError(400, "Not a supplier", { code: "bad_supplier" });
+  }
+  const primary = picksDomain.getPick(couple.id, category);
+  if (!primary) {
+    throw new HttpError(409, "Pick a supplier first", { code: "no_primary_pick" });
+  }
+  if (primary.supplier_id === supplierId) {
+    throw new HttpError(409, "Already the main pick", { code: "already_primary" });
+  }
+
+  const extra = picksDomain.addExtra(couple.id, category, supplierId, userId);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "pick.extra_add",
+    target_kind: "couple_pick",
+    target_id: null,
+    before: null,
+    after: { category, supplier_id: supplierId },
+  });
+  return json({ extra });
+}
+
+function handleRemoveExtra(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const category = parseCategoryParam(ctx.params.category);
+  const supplierId = parseSupplierId(ctx.params.supplierId);
+  const removed = picksDomain.removeExtra(couple.id, category, supplierId);
+  if (removed) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "pick.extra_remove",
+      target_kind: "couple_pick",
+      target_id: null,
+      before: { category, supplier_id: supplierId },
+      after: null,
+    });
+  }
+  return json({ ok: true });
 }
 
 async function handleUpsert(ctx: Ctx): Promise<Response> {
@@ -112,4 +176,6 @@ export function registerCouplePickRoutes(router: Router) {
   router.get("/api/picks", handleList, true);
   router.put("/api/picks/:category", handleUpsert, true);
   router.delete("/api/picks/:category", handleRemove, true);
+  router.post("/api/picks/:category/extras", handleAddExtra, true);
+  router.delete("/api/picks/:category/extras/:supplierId", handleRemoveExtra, true);
 }

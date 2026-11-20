@@ -5976,6 +5976,12 @@ const en: LocaleMessages = {
     save_aria: "Like",
     unsave_aria: "Unlike",
     save_no_couple: "Complete your profile to save vendors.",
+    pick_choice: {
+      title: "Replace or add?",
+      body: "{category} already has {current}. Swap them for {next}, or keep both?",
+      replace: "Replace",
+      add: "Keep both",
+    },
     saved_filter: "Saved ({n})",
     pick_aria: "Save",
     unpick_aria: "Unsave",

@@ -6087,6 +6087,12 @@ const es: LocaleMessages = {
     save_aria: "Guardar",
     unsave_aria: "Quitar de guardados",
     save_no_couple: "Completa tu perfil para guardar proveedores.",
+    pick_choice: {
+      title: "¿Reemplazar o añadir?",
+      body: "{category} ya tiene a {current}. ¿Lo cambias por {next} o se quedan los dos?",
+      replace: "Reemplazar",
+      add: "Quedarse con los dos",
+    },
     saved_filter: "Guardados ({n})",
     pick_aria: "Elegir este",
     unpick_aria: "Quitar nuestra elección",
