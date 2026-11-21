@@ -3160,7 +3160,7 @@ const hr: LocaleMessages = {
       suggest_deadlines_done: "{count} rokova dodano",
       pace_question: "Koliko unaprijed planirate?",
       pace_intro: "Svaki rok prilagodit ćemo vašem tempu. Možete ga promijeniti bilo kada.",
-      pace_early_bird: "Na vrijeme",
+      pace_early_bird: "Early Bird",
       pace_early_bird_body: "Ostalo je 12–18 mjeseci. Ima vremena za svaku odluku.",
       pace_relaxed: "Opušteno, ali u redu",
       pace_relaxed_body: "Do 10 mjeseci. Ujednačen tempo, bez žurbe.",

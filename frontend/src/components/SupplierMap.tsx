@@ -623,10 +623,10 @@ function SupplierPopupCard({
               aria-pressed={isPicked}
               aria-label={t(isPicked ? "suppliers.unpick_aria" : "suppliers.pick_aria")}
               title={t(isPicked ? "suppliers.unpick_aria" : "suppliers.pick_aria")}
-              className="grid h-7 w-7 place-items-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700"
+              className={`grid h-7 w-7 place-items-center rounded-full transition ${isPicked ? "bg-green-600 hover:bg-green-700" : "text-ink-400 hover:bg-paper-200 hover:text-green-700"}`}
             >
               {isPicked ? (
-                <BookmarkCheck size={15} aria-hidden className="fill-sage-200 text-sage-700" />
+                <BookmarkCheck size={15} aria-hidden className="text-white" />
               ) : (
                 <Bookmark size={15} aria-hidden />
               )}

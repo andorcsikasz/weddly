@@ -3183,7 +3183,7 @@ const hu: LocaleMessages = {
       suggest_deadlines_done: "{count} határidő hozzáadva",
       pace_question: "Mennyi idővel előre terveztek?",
       pace_intro: "Minden határidőt a tempótokhoz igazítunk. Bármikor módosíthatjátok.",
-      pace_early_bird: "Korai madár",
+      pace_early_bird: "Early Bird",
       pace_early_bird_body: "12–18 hónap van hátra. Minden döntésre jut idő.",
       pace_relaxed: "Lazán, de rendben",
       pace_relaxed_body: "Legfeljebb 10 hónap. Egyenletes tempó, kapkodás nélkül.",

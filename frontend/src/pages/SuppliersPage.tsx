@@ -3341,12 +3341,12 @@ export default function SuppliersPage() {
                             title={t("suppliers.pick_aria")}
                             className={
                               isPicked
-                                ? "inline-flex h-11 w-11 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 sm:h-7 sm:w-7 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                                : "inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                                ? "inline-flex h-11 w-11 items-center justify-center rounded-full bg-green-600 text-white transition hover:bg-green-700 sm:h-7 sm:w-7 dark:bg-green-500 dark:text-ink-900 dark:hover:bg-green-400"
+                                : "inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-green-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-green-400"
                             }
                           >
                             {isPicked ? (
-                              <BookmarkCheck size={15} className="fill-sage-200" aria-hidden />
+                              <BookmarkCheck size={15} aria-hidden />
                             ) : (
                               <Bookmark size={15} aria-hidden />
                             )}
@@ -3457,12 +3457,12 @@ export default function SuppliersPage() {
                             title={t("suppliers.pick_aria")}
                             className={
                               isPicked
-                                ? "inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-6 sm:w-6 text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
-                                : "inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-6 sm:w-6 text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                                ? "inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-6 sm:w-6 bg-green-600 text-white transition hover:bg-green-700 dark:bg-green-500 dark:text-ink-900 dark:hover:bg-green-400"
+                                : "inline-flex h-11 w-11 items-center justify-center rounded-full sm:h-6 sm:w-6 text-ink-500 transition hover:bg-paper-200 hover:text-green-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-green-400"
                             }
                           >
                             {isPicked ? (
-                              <BookmarkCheck size={13} className="fill-sage-200" aria-hidden />
+                              <BookmarkCheck size={13} aria-hidden />
                             ) : (
                               <Bookmark size={13} aria-hidden />
                             )}
@@ -4231,7 +4231,7 @@ function SaveToggle({
       title={label}
       className={
         isSaved
-          ? "inline-flex h-11 w-11 items-center justify-center rounded-full text-blush-700 transition hover:bg-blush-50 sm:h-7 sm:w-7 dark:text-blush-300 dark:hover:bg-blush-400/15"
+          ? "inline-flex h-11 w-11 items-center justify-center rounded-full bg-blush-100 text-blush-700 ring-1 ring-blush-300 transition hover:bg-blush-200 sm:h-7 sm:w-7 dark:bg-blush-400/20 dark:text-blush-300 dark:ring-blush-400/40 dark:hover:bg-blush-400/30"
           : "inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
       }
     >

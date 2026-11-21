@@ -3225,7 +3225,7 @@ const de: LocaleMessages = {
       suggest_deadlines_done: "{count} Fristen hinzugefügt",
       pace_question: "Wie weit im Voraus plant ihr?",
       pace_intro: "Wir richten jede Frist nach eurem Tempo. Ihr könnt es jederzeit ändern.",
-      pace_early_bird: "Frühaufsteher",
+      pace_early_bird: "Early Bird",
       pace_early_bird_body: "Noch 12–18 Monate. Zeit für jede Entscheidung.",
       pace_relaxed: "Entspannt, aber gut",
       pace_relaxed_body: "Bis zu 10 Monate. Ein ruhiges Tempo, ohne Hektik.",

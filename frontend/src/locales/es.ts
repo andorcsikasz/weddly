@@ -3219,7 +3219,7 @@ const es: LocaleMessages = {
       suggest_deadlines_done: "{count} plazos añadidos",
       pace_question: "¿Con cuánta antelación estáis planificando?",
       pace_intro: "Ajustamos cada plazo a vuestro ritmo. Podéis cambiarlo cuando queráis.",
-      pace_early_bird: "Con tiempo",
+      pace_early_bird: "Early Bird",
       pace_early_bird_body: "Quedan 12–18 meses. Hay margen para cada decisión.",
       pace_relaxed: "Tranquilos pero bien",
       pace_relaxed_body: "Hasta 10 meses. Un ritmo constante, sin prisas.",

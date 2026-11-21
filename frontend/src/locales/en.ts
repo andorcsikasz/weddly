@@ -3159,7 +3159,7 @@ const en: LocaleMessages = {
       suggest_deadlines_done: "{count} deadlines added",
       pace_question: "How far ahead are you planning?",
       pace_intro: "We'll time every deadline to your pace. You can change it any time.",
-      pace_early_bird: "Early bird",
+      pace_early_bird: "Early Bird",
       pace_early_bird_body: "12–18 months to go. Room for every decision.",
       pace_relaxed: "Chill but OK",
       pace_relaxed_body: "Up to 10 months. A steady pace, nothing rushed.",
