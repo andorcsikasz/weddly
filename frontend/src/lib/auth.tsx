@@ -36,7 +36,7 @@ const AuthContext = createContext<AuthState | null>(null);
  *  probe sent with the old token is refused and used to log the user out. Two
  *  callers (the effect runs twice under StrictMode) now share one request. */
 let meInFlight: ReturnType<typeof authApi.me> | null = null;
-function probeMe(): ReturnType<typeof authApi.me> {
+export function probeMe(): ReturnType<typeof authApi.me> {
   if (!meInFlight) {
     meInFlight = authApi.me().finally(() => {
       meInFlight = null;
