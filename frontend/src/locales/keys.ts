@@ -7080,6 +7080,8 @@ export interface LocaleMessages {
     save_aria: string;
     unsave_aria: string;
     save_no_couple: string;
+    diy_photo_add_aria: string;
+    diy_photo_remove_aria: string;
     pick_choice: {
       title: string;
       body: string;

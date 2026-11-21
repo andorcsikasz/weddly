@@ -2372,6 +2372,39 @@ export const supplierBookingApi = {
 
 export const coupleSupplierApi = {
   list: () => apiFetch<{ suppliers: CoupleSupplier[] }>("GET", "/api/couple-suppliers"),
+  /** The couple's own picture for a DIY card (multipart, same limits as the
+   *  cover). Returns the refreshed card. */
+  uploadPhoto: async (id: string, file: File): Promise<{ supplier: CoupleSupplier }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = getToken();
+    const res = await fetch(`/api/couple-suppliers/${encodeURIComponent(id)}/photo`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Upload failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as { supplier: CoupleSupplier };
+  },
+  removePhoto: (id: string) =>
+    apiFetch<{ supplier: CoupleSupplier }>(
+      "DELETE",
+      `/api/couple-suppliers/${encodeURIComponent(id)}/photo`,
+    ),
   /** 201 with `listing_id` set when the entry named a business Weddly didn't
    *  carry and we published it to the directory; 409 `already_listed` (detail
    *  carries `existing`) when it named one we do. */

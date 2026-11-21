@@ -682,6 +682,11 @@ addColumnIfMissing("couple_suppliers", "contact_phone", "contact_phone TEXT");
 // ordinary private entry (mum's cooking) that has no listing and wants none.
 addColumnIfMissing("couple_suppliers", "listing_id", "listing_id TEXT");
 
+// A picture the couple adds to their own card. Stored like the cover photo: a
+// `/uploads/couples/<id>/supplier-<id>.<ext>?v=` URL, deleted with the couple's
+// upload prefix on purge. NULL keeps the category placeholder.
+addColumnIfMissing("couple_suppliers", "photo_url", "photo_url TEXT");
+
 // The other answer to "is this the business we already list?". `listing_id` records
 // a yes; this records a no, given by a couple who was shown the listing and said
 // theirs is a different business (folding drops the town, so two real venues can

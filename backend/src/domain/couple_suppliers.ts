@@ -40,6 +40,7 @@ interface Row {
   contact_email: string | null;
   contact_phone: string | null;
   listing_id: string | null;
+  photo_url: string | null;
   not_listed_confirmed: number;
   created_at: number;
   updated_at: number;
@@ -75,6 +76,7 @@ function toDto(r: Row): CoupleSupplier {
     contact_email: r.contact_email,
     contact_phone: r.contact_phone,
     listing_id: r.listing_id,
+    photo_url: r.photo_url,
     directory_match: directoryMatchFor(r),
     created_at: r.created_at,
     updated_at: r.updated_at,
@@ -97,6 +99,19 @@ export function listByCoupleId(coupleId: number): CoupleSupplier[] {
     .prepare("SELECT * FROM couple_suppliers WHERE couple_id = ? ORDER BY created_at DESC")
     .all(coupleId) as Row[];
   return rows.map(toDto);
+}
+
+/** Point a DIY card at its uploaded picture, or clear it (null). Returns the
+ *  refreshed row, or null when the card is not this couple's. */
+export function setPhotoUrl(
+  id: string,
+  coupleId: number,
+  url: string | null,
+): CoupleSupplier | null {
+  db.prepare(
+    "UPDATE couple_suppliers SET photo_url = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+  ).run(url, now(), id, coupleId);
+  return getById(id, coupleId);
 }
 
 export function getById(id: string, coupleId: number): CoupleSupplier | null {

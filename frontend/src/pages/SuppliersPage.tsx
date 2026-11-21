@@ -62,6 +62,7 @@ import {
   Hand,
   Heart,
   Lightbulb,
+  ImagePlus,
   Loader2,
   Mail,
   MapPin,
@@ -87,6 +88,7 @@ import {
   Wallet,
   Wine,
   GitCompareArrows,
+  X,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -118,6 +120,7 @@ import {
   supplierCostApi,
 } from "../lib/endpoints";
 import { ApiError } from "../lib/api";
+import { COVER_IMAGE_ACCEPT, COVER_IMAGE_MAX_MB, coverImageRejectReason } from "@shared/design";
 import type { BudgetLine, Currency, PlannerDirectoryEntry } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
@@ -397,6 +400,8 @@ export default function SuppliersPage() {
   const [calcOpen, setCalcOpen] = useState(false);
   const [diyOpen, setDiyOpen] = useState(false);
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
+  // The DIY card whose picture is uploading or being removed.
+  const [diyPhotoBusy, setDiyPhotoBusy] = useState<string | null>(null);
   // "Már foglaltam" is a peer of "csinálom magam" / "nem kell" in the category
   // row's action group, so its disclosure lives here rather than inside the
   // card — the chip is the affordance, the card is just the body it reveals.
@@ -1091,6 +1096,46 @@ export default function SuppliersPage() {
       }
     },
     [coupleId, selection, extras, confirm, toast, t],
+  );
+
+  // The couple's own picture for a DIY card. The limits are checked here first, with
+  // the same numbers the server enforces, so a too-large camera photo is explained.
+  const uploadDiyPhoto = useCallback(
+    async (supplierId: string, file: File) => {
+      const reason = coverImageRejectReason(file);
+      if (reason) {
+        toast.error(
+          reason === "too_large"
+            ? t("design.web.cover_too_large", { mb: COVER_IMAGE_MAX_MB })
+            : t("design.web.cover_wrong_type"),
+        );
+        return;
+      }
+      setDiyPhotoBusy(supplierId);
+      try {
+        const r = await coupleSupplierApi.uploadPhoto(supplierId, file);
+        setCoupleSuppliers((prev) => prev.map((x) => (x.id === supplierId ? r.supplier : x)));
+      } catch {
+        toast.error(t("design.web.photo_upload_error"));
+      } finally {
+        setDiyPhotoBusy(null);
+      }
+    },
+    [t, toast],
+  );
+  const removeDiyPhoto = useCallback(
+    async (supplierId: string) => {
+      setDiyPhotoBusy(supplierId);
+      try {
+        const r = await coupleSupplierApi.removePhoto(supplierId);
+        setCoupleSuppliers((prev) => prev.map((x) => (x.id === supplierId ? r.supplier : x)));
+      } catch {
+        toast.error(t("design.save_error"));
+      } finally {
+        setDiyPhotoBusy(null);
+      }
+    },
+    [t, toast],
   );
 
   // Adopt a directory listing instead of minting a private "Saját" copy of it.
@@ -2962,9 +3007,9 @@ export default function SuppliersPage() {
                         >
                           {/* DIY supplier card — couple-saved row from
                         `couple_suppliers`, no `listings` join. The hero-image
-                        upload is vendor-only (P2.D), so the monogram fallback
-                        stays for this view. */}
-                          <Avatar name={s.name} />
+                        a picture the couple added shows
+                        in the avatar too. */}
+                          <Avatar name={s.name} heroUrl={s.photo_url} />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <h3 className="truncate text-sm font-semibold">{s.name}</h3>
@@ -3030,19 +3075,60 @@ export default function SuppliersPage() {
                         } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                       >
                         <div className="relative h-40 w-full shrink-0 bg-paper-200 dark:bg-umber-700">
-                          {/* The couple can't upload a photo for their own row
-                          (hero images are a vendor's to set), so this is always
-                          the category badge — the same placeholder a listing
-                          without a photo shows, not a lesser one. */}
-                          <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-                            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-paper-50 text-ink-400 shadow-sm dark:bg-umber-800 dark:text-umber-300">
-                              <Icon size={24} aria-hidden />
-                            </span>
-                            <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
-                              {t(`suppliers.cat.${s.category}`)}
-                            </span>
-                          </div>
+                          {s.photo_url ? (
+                            <img
+                              src={s.photo_url}
+                              alt={s.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+                              <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-paper-50 text-ink-400 shadow-sm dark:bg-umber-800 dark:text-umber-300">
+                                <Icon size={24} aria-hidden />
+                              </span>
+                              <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
+                                {t(`suppliers.cat.${s.category}`)}
+                              </span>
+                            </div>
+                          )}
                           <div className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/95 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/90">
+                            <label
+                              className={`inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 sm:h-6 sm:w-6 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300 ${
+                                diyPhotoBusy !== null ? "pointer-events-none opacity-60" : ""
+                              }`}
+                              aria-label={t("suppliers.diy_photo_add_aria")}
+                              title={t("suppliers.diy_photo_add_aria")}
+                            >
+                              {diyPhotoBusy === s.id ? (
+                                <Loader2 size={13} className="animate-spin" aria-hidden />
+                              ) : (
+                                <ImagePlus size={13} aria-hidden />
+                              )}
+                              <input
+                                type="file"
+                                accept={COVER_IMAGE_ACCEPT}
+                                className="sr-only"
+                                disabled={diyPhotoBusy !== null}
+                                onChange={(ev) => {
+                                  const f = ev.target.files?.[0];
+                                  if (f) void uploadDiyPhoto(s.id, f);
+                                  ev.target.value = "";
+                                }}
+                              />
+                            </label>
+                            {s.photo_url && (
+                              <button
+                                type="button"
+                                onClick={() => void removeDiyPhoto(s.id)}
+                                disabled={diyPhotoBusy !== null}
+                                aria-label={t("suppliers.diy_photo_remove_aria")}
+                                title={t("suppliers.diy_photo_remove_aria")}
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 disabled:opacity-50 sm:h-6 sm:w-6 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                              >
+                                <X size={13} aria-hidden />
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={openEdit}

@@ -699,6 +699,8 @@ function publicUploadKey(key: string): boolean {
   if (/^planners\/\d+\/(?:avatar\.(?:jpe?g|png|webp)|portfolio\/|packages\/)/i.test(key)) {
     return true;
   }
+  // A picture the couple added to their own DIY card (the key carries the
+  // card's random id, the same capability as the wishlist thumbnails).
   // These couple-owned assets are intentionally public-by-URL for a published
   // wedding page, gift list or random-capability guest album. Private document,
   // message and moodboard namespaces never match.
@@ -709,7 +711,7 @@ function publicUploadKey(key: string): boolean {
   // unconditionally turned every pre-fix Wedding Film photo into a dead image
   // — the fix's own commit message promised "existing rows keep resolving".
   if (
-    /^couples\/\d+\/(?:cover\.(?:jpe?g|png|webp)|site-photo-[12]\.(?:jpe?g|png|webp)|honeymoon-cover\.(?:jpe?g|png|webp)|wishlist\/[a-f0-9]{16}\.(?:jpe?g|png|webp)|photos\/\d+\/\d+(?:-[a-f0-9]{32})?\.(?:jpe?g|png|webp))$/i.test(
+    /^couples\/\d+\/(?:cover\.(?:jpe?g|png|webp)|site-photo-[12]\.(?:jpe?g|png|webp)|honeymoon-cover\.(?:jpe?g|png|webp)|wishlist\/[a-f0-9]{16}\.(?:jpe?g|png|webp)|supplier-[A-Za-z0-9_-]{8,64}\.(?:jpe?g|png|webp)|photos\/\d+\/\d+(?:-[a-f0-9]{32})?\.(?:jpe?g|png|webp))$/i.test(
       key,
     )
   ) {

@@ -2,6 +2,7 @@
 // for the model. Couple-scoped; every endpoint resolves the couple via the
 // authenticated user. No admin visibility.
 
+import { COVER_IMAGE_MAX_BYTES } from "@shared/design";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import * as picksDomain from "../domain/couple_picks";
 import { getCoupleForUser } from "../domain/couples";
@@ -9,8 +10,11 @@ import * as domain from "../domain/couple_suppliers";
 import { findDirectoryTwinByName } from "../domain/listings";
 import * as installments from "../domain/supplier_installments";
 import { syncCoupleVenueFromPick } from "../domain/venue_sync";
+import { now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { sniffUploadedImage } from "../lib/image_sniff";
+import { keyFromUploadUrl, storage } from "../lib/storage";
 
 // Derived from the single taxonomy source so it can never drift from the enum.
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set(
@@ -530,7 +534,70 @@ function handleDeleteInstallment(ctx: Ctx): Response {
   return json({ supplier });
 }
 
+// ─── The couple's own picture for a DIY card ───────────────────────────────
+//
+// Same contract as the cover photo: multipart `file`, JPEG/PNG/WebP, the
+// shared size cap, and the real magic bytes decide the extension rather than
+// the client's Content-Type. The file lives under the couple's own upload
+// prefix, so the purge sweep takes it with everything else.
+
+const SUPPORTED_PHOTO_MIMES: Record<string, "jpg" | "png" | "webp"> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+async function handleUploadPhoto(ctx: Ctx): Promise<Response> {
+  const { coupleId, supplierId } = requireOwnedSupplier(ctx);
+
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
+  });
+  const raw = form.get("file");
+  if (!(raw instanceof File)) {
+    throw new HttpError(400, "`file` field required", { code: "missing_file" });
+  }
+  if (raw.size <= 0) throw new HttpError(400, "Empty file", { code: "empty_file" });
+  if (raw.size > COVER_IMAGE_MAX_BYTES) {
+    throw new HttpError(413, "File too large", { code: "file_too_large" });
+  }
+  if (SUPPORTED_PHOTO_MIMES[raw.type] === undefined) {
+    throw new HttpError(415, "Unsupported image type", { code: "unsupported_type" });
+  }
+  const sniffed = await sniffUploadedImage(raw);
+  const ext = sniffed ? SUPPORTED_PHOTO_MIMES[sniffed] : undefined;
+  if (!ext)
+    throw new HttpError(415, "File contents are not a valid image", { code: "unsupported_type" });
+
+  // The id is only ever a generated slug, but it becomes part of a storage key,
+  // so keep the key to safe characters whatever the row holds.
+  const safeId = supplierId.replace(/[^A-Za-z0-9_-]/g, "");
+  const key = `couples/${coupleId}/supplier-${safeId}.${ext}`;
+
+  const previous = domain.getById(supplierId, coupleId)?.photo_url ?? null;
+  const prevKey = previous ? keyFromUploadUrl(previous) : null;
+  if (prevKey && prevKey !== key) await storage.delete(prevKey);
+
+  await storage.write(key, raw);
+  const url = `/uploads/${key}?v=${now()}`;
+  const updated = domain.setPhotoUrl(supplierId, coupleId, url);
+  if (!updated) throw new HttpError(404, "Supplier not found");
+  return json({ supplier: updated });
+}
+
+async function handleDeletePhoto(ctx: Ctx): Promise<Response> {
+  const { coupleId, supplierId } = requireOwnedSupplier(ctx);
+  const previous = domain.getById(supplierId, coupleId)?.photo_url ?? null;
+  const prevKey = previous ? keyFromUploadUrl(previous) : null;
+  if (prevKey) await storage.delete(prevKey);
+  const updated = domain.setPhotoUrl(supplierId, coupleId, null);
+  if (!updated) throw new HttpError(404, "Supplier not found");
+  return json({ supplier: updated });
+}
+
 export function registerCoupleSupplierRoutes(router: Router) {
+  router.post("/api/couple-suppliers/:id/photo", handleUploadPhoto, true);
+  router.delete("/api/couple-suppliers/:id/photo", handleDeletePhoto, true);
   router.get("/api/couple-suppliers", handleList, true);
   router.post("/api/couple-suppliers", handleCreate, true);
   router.patch("/api/couple-suppliers/:id", handleUpdate, true);

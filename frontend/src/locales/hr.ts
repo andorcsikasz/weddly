@@ -6016,6 +6016,8 @@ const hr: LocaleMessages = {
     save_aria: "Spremi",
     unsave_aria: "Ukloni iz spremljenih",
     save_no_couple: "Dovršite svoj profil da biste spremali dobavljače.",
+    diy_photo_add_aria: "Dodaj fotografiju",
+    diy_photo_remove_aria: "Ukloni fotografiju",
     pick_choice: {
       title: "Zamijeniti ili zadržati oba?",
       body: "Za {category} već je odabran {current}. Zamijeniti ga s {next} ili zadržati oba?",

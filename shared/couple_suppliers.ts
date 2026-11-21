@@ -70,6 +70,9 @@ export interface CoupleSupplier {
    *  Every surface renders such a row FROM the listing, which is what keeps one
    *  business to one card. Null for an ordinary private entry. */
   listing_id: string | null;
+  /** A picture the couple added to their own card, as an uploads URL. Null
+   *  keeps the category placeholder. */
+  photo_url: string | null;
   /** A listing whose name folds to this row's, when the row isn't bound to one
    *  yet. The repair affordance: "this is already on Weddly, switch to it".
    *  Always null once `listing_id` is set — the question is answered. */

@@ -5976,6 +5976,8 @@ const en: LocaleMessages = {
     save_aria: "Like",
     unsave_aria: "Unlike",
     save_no_couple: "Complete your profile to save vendors.",
+    diy_photo_add_aria: "Add a picture",
+    diy_photo_remove_aria: "Remove picture",
     pick_choice: {
       title: "Replace or add?",
       body: "{category} already has {current}. Swap them for {next}, or keep both?",

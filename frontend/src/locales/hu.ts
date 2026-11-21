@@ -6027,6 +6027,8 @@ const hu: LocaleMessages = {
     save_aria: "Mentés",
     unsave_aria: "Mentés visszavonása",
     save_no_couple: "Töltsd ki a profilodat a mentéshez.",
+    diy_photo_add_aria: "Kép feltöltése",
+    diy_photo_remove_aria: "Kép eltávolítása",
     pick_choice: {
       title: "Lecseréled, vagy mellé veszed?",
       body: "A(z) {category} kategóriában már ez van: {current}. Lecseréled {next}-ra, vagy mindkettő marad?",

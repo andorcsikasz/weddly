@@ -6139,6 +6139,8 @@ const de: LocaleMessages = {
     save_aria: "Speichern",
     unsave_aria: "Aus den gespeicherten entfernen",
     save_no_couple: "Vervollständigen Sie Ihr Profil, um Dienstleister zu speichern.",
+    diy_photo_add_aria: "Foto hinzufügen",
+    diy_photo_remove_aria: "Foto entfernen",
     pick_choice: {
       title: "Ersetzen oder ergänzen?",
       body: "Für {category} ist bereits {current} gewählt. Soll {next} ersetzen oder zusätzlich dazukommen?",

@@ -58,6 +58,7 @@ function supplier(id: string, name: string, installments: SupplierInstallment[])
     contact_email: null,
     contact_phone: null,
     listing_id: null,
+    photo_url: null,
     directory_match: null,
     created_at: 0,
     updated_at: 0,
