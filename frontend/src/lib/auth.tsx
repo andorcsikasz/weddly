@@ -31,6 +31,20 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/** The session probe, shared by every caller that asks while one is already in
+ *  flight. A legacy browser's first /me rotates its bearer token, so a second
+ *  probe sent with the old token is refused and used to log the user out. Two
+ *  callers (the effect runs twice under StrictMode) now share one request. */
+let meInFlight: ReturnType<typeof authApi.me> | null = null;
+function probeMe(): ReturnType<typeof authApi.me> {
+  if (!meInFlight) {
+    meInFlight = authApi.me().finally(() => {
+      meInFlight = null;
+    });
+  }
+  return meInFlight;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   // A first-time public visitor has neither a legacy bearer nor the
@@ -105,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      const me = await authApi.me();
+      const me = await probeMe();
       // Migrates any pre-cookie browser after the server has returned its
       // HttpOnly cookie, and records a non-secret probe hint for future loads.
       persistToken("cookie-session");
