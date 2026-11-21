@@ -9,8 +9,10 @@
 
 import {
   type CoupleDesign,
+  coupleNameLine,
   formatWeddingDate,
   type HeroLayoutSlug,
+  orderNames,
   toPublicDesign,
 } from "@shared/design";
 import type { CSSProperties } from "react";
@@ -38,7 +40,8 @@ export function HeroProof({
 }) {
   const d = toPublicDesign(design);
   const layout: HeroLayoutSlug = d.website_hero_layout;
-  const name = brideName && groomName ? `${brideName} & ${groomName}` : fallbackName;
+  const name = coupleNameLine(brideName, groomName, d.website_name_order, fallbackName);
+  const [first, second] = orderNames(brideName, groomName, d.website_name_order);
   const date = formatWeddingDate(weddingDate ?? "2027-06-20", d.date_format, locale);
   const nameCss: CSSProperties = {
     fontFamily: d.heading_font,
@@ -126,10 +129,10 @@ export function HeroProof({
           >
             {brideName && groomName ? (
               <>
-                {brideName}
+                {first}
                 <br />
                 <span style={{ color: d.accent_text }}>&amp; </span>
-                {groomName}
+                {second}
               </>
             ) : (
               name

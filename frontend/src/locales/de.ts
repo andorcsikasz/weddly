@@ -4155,6 +4155,9 @@ const de: LocaleMessages = {
         side: "Nebeneinander",
       },
       hero_layout_label: "Layout",
+      name_order_label: "Wessen Name steht vorne?",
+      name_order_bride: "Braut",
+      name_order_groom: "Bräutigam",
       hero_layout: {
         overlay: "Vollbild",
         split: "Geteilt",

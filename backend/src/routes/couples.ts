@@ -50,6 +50,7 @@ import {
   type FontFamilySlug,
   type FontPresetSlug,
   type HeroLayoutSlug,
+  type NameOrderSlug,
   HEX_COLOR_RE,
   type ImageTreatmentSlug,
   type MonogramSeparatorSlug,
@@ -64,6 +65,7 @@ import {
   VALID_FONT_FAMILIES,
   VALID_FONTS,
   VALID_HERO_LAYOUTS,
+  VALID_NAME_ORDERS,
   VALID_IMAGE_TREATMENTS,
   VALID_PALETTES,
   VALID_SEPARATORS,
@@ -2719,6 +2721,15 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         }
         next.web.heroLayout = v as HeroLayoutSlug;
       }
+      // Whose name leads. Presentational only: the stored couple name is left
+      // as it is, and the guest page builds the line from bride and groom.
+      if ("nameOrder" in w) {
+        const v = w.nameOrder;
+        if (typeof v !== "string" || !VALID_NAME_ORDERS.has(v as NameOrderSlug)) {
+          throw new HttpError(400, "design.web.nameOrder is invalid");
+        }
+        next.web.nameOrder = v as NameOrderSlug;
+      }
     }
     const changed =
       next.style !== prev.style ||
@@ -2742,6 +2753,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.web.venueMap !== prev.web.venueMap ||
       next.web.venueLayout !== prev.web.venueLayout ||
       next.web.heroLayout !== prev.web.heroLayout ||
+      next.web.nameOrder !== prev.web.nameOrder ||
       JSON.stringify(next.web.hiddenSections) !== JSON.stringify(prev.web.hiddenSections);
     if (changed) {
       updates.push({ col: "design_json", val: JSON.stringify(next) });

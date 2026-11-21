@@ -4119,6 +4119,9 @@ const es: LocaleMessages = {
         side: "Uno al lado del otro",
       },
       hero_layout_label: "Diseño",
+      name_order_label: "¿Quién va primero?",
+      name_order_bride: "Novia",
+      name_order_groom: "Novio",
       hero_layout: {
         overlay: "Foto completa",
         split: "Dividido",

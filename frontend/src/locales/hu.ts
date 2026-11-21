@@ -4076,6 +4076,9 @@ const hu: LocaleMessages = {
         side: "Egymás mellett",
       },
       hero_layout_label: "Elrendezés",
+      name_order_label: "Ki neve kerüljön előre?",
+      name_order_bride: "Menyasszony",
+      name_order_groom: "Vőlegény",
       hero_layout: {
         overlay: "Teljes fotó",
         split: "Osztott",

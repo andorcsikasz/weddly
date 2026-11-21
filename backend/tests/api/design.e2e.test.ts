@@ -50,6 +50,7 @@ interface CoupleDesign {
     venueMap: boolean;
     venueLayout: string;
     heroLayout: string;
+    nameOrder: string;
   };
 }
 
@@ -183,6 +184,7 @@ describe("design: default resolution", () => {
         venueMap: false,
         venueLayout: "stacked",
         heroLayout: "overlay",
+        nameOrder: "bride_first",
       },
     });
   });
@@ -582,6 +584,7 @@ describe("design: website-only `web` sub-object", () => {
       venueMap: false,
       venueLayout: "stacked",
       heroLayout: "overlay",
+      nameOrder: "bride_first",
     });
   });
 
@@ -665,6 +668,41 @@ describe("design: website-only `web` sub-object", () => {
       "PATCH",
       "/api/couples/current",
       { design: { web: { heroLayout: "carousel" } } },
+      { token },
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  test("web.nameOrder round-trips, reaches the public payload, and rejects junk", async () => {
+    wipeAll();
+    const token = await registerVerified("design-name-order@weddly.test");
+    const { couple } = await onboard(token);
+    // Bride first is the default: an existing page keeps its order.
+    expect(couple.design.web.nameOrder).toBe("bride_first");
+
+    const r = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { nameOrder: "groom_first" } } },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.couple.design.web.nameOrder).toBe("groom_first");
+
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(couple.id);
+    const slug = (
+      db.prepare("SELECT slug FROM couples WHERE id = ?").get(couple.id) as { slug: string }
+    ).slug;
+    const pub = await req<{ wedding: { design: { website_name_order: string } } }>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(pub.data.wedding.design.website_name_order).toBe("groom_first");
+
+    const bad = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { nameOrder: "alphabetical" } } },
       { token },
     );
     expect(bad.status).toBe(400);

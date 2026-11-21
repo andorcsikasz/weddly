@@ -4049,6 +4049,9 @@ const en: LocaleMessages = {
         side: "Side by side",
       },
       hero_layout_label: "Layout",
+      name_order_label: "Whose name comes first?",
+      name_order_bride: "Bride",
+      name_order_groom: "Groom",
       hero_layout: {
         overlay: "Full photo",
         split: "Split",

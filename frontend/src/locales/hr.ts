@@ -4083,6 +4083,9 @@ const hr: LocaleMessages = {
         side: "Jedno uz drugo",
       },
       hero_layout_label: "Raspored",
+      name_order_label: "Čije ime ide prvo?",
+      name_order_bride: "Nevjesta",
+      name_order_groom: "Mladoženja",
       hero_layout: {
         overlay: "Puna fotografija",
         split: "Podijeljeno",

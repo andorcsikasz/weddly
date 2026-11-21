@@ -33,7 +33,13 @@ import {
 import type { CSSProperties, KeyboardEvent, ReactNode, Ref } from "react";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { buildMonogram, formatWeddingDate, type WebsiteSectionSlug } from "@shared/design";
+import {
+  buildMonogram,
+  coupleNameLine,
+  formatWeddingDate,
+  orderNames,
+  type WebsiteSectionSlug,
+} from "@shared/design";
 import { pickKeyMoments } from "@shared/schedule";
 import { formatDate, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -536,6 +542,16 @@ export function WeddingSiteView({
   showFooter,
 }: WeddingSiteViewProps) {
   const { t } = useT();
+  // The couple's name in the order they chose ("Anna & Péter" or "Péter & Anna").
+  // The stored couple name is the fallback for a workspace missing either name.
+  const nameOrder = view.design.website_name_order ?? "bride_first";
+  const coupleName = coupleNameLine(
+    view.bride_name,
+    view.groom_name,
+    nameOrder,
+    view.couple_display_name,
+  );
+  const [nameFirst, nameSecond] = orderNames(view.bride_name, view.groom_name, nameOrder);
   const e = edit ?? {};
   const editHint = t("wedding_site.edit_hint");
   const footer = showFooter ?? !isPreview;
@@ -619,7 +635,7 @@ export function WeddingSiteView({
   // letter-spaced eyebrow above the hero names when enabled. "" when both
   // names are missing, which skips the block entirely.
   const monogram = view.design.monogram_enabled
-    ? buildMonogram(view.bride_name, view.groom_name, view.design.monogram_separator, locale)
+    ? buildMonogram(nameFirst, nameSecond, view.design.monogram_separator, locale)
     : "";
 
   // When the hero has a cover photo the names + date sit DIRECTLY on it, so the
@@ -844,7 +860,7 @@ export function WeddingSiteView({
           opacity: 0.85,
         }}
       >
-        {buildMonogram(view.bride_name, view.groom_name, "amp", locale) || "&"}
+        {buildMonogram(nameFirst, nameSecond, "amp", locale) || "&"}
       </span>
       {isPreview && (
         <span className="inline-flex items-center gap-1.5 text-xs" style={{ opacity: 0.7 }}>
@@ -911,8 +927,8 @@ export function WeddingSiteView({
     color: "inherit",
     ...headingTreatment,
   };
-  const nameA = view.bride_name?.trim() || "";
-  const nameB = view.groom_name?.trim() || "";
+  const nameA = nameFirst?.trim() || "";
+  const nameB = nameSecond?.trim() || "";
 
   const composedHero =
     heroLayout === "split" ? (
@@ -929,7 +945,7 @@ export function WeddingSiteView({
             className="mt-6 text-[clamp(2.5rem,10vw,3.25rem)] leading-[1.02] tracking-tight break-words sm:text-6xl lg:text-7xl"
             style={heroNameStyle}
           >
-            {view.couple_display_name}
+            {coupleName}
           </h1>
           <span
             aria-hidden
@@ -966,7 +982,7 @@ export function WeddingSiteView({
           className="mx-auto mt-5 max-w-4xl text-[clamp(1.75rem,7.5vw,2.5rem)] leading-[1.1] break-words sm:text-5xl"
           style={heroNameStyle}
         >
-          {view.couple_display_name}
+          {coupleName}
         </h1>
         <div className="relative mx-auto mt-10 aspect-[3/4] w-[min(78vw,26rem)] sm:mt-14">
           <span
@@ -1009,7 +1025,7 @@ export function WeddingSiteView({
                 </span>
               </>
             ) : (
-              view.couple_display_name
+              coupleName
             )}
           </h1>
           <div className="mt-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 sm:mt-12">
@@ -1046,7 +1062,7 @@ export function WeddingSiteView({
           className="mx-auto mt-10 max-w-4xl text-[clamp(2.25rem,9vw,3rem)] leading-[1.05] break-words sm:text-6xl"
           style={heroNameStyle}
         >
-          {view.couple_display_name}
+          {coupleName}
         </h1>
         <span
           aria-hidden
@@ -1138,7 +1154,7 @@ export function WeddingSiteView({
                     ...headingTreatment,
                   }}
                 >
-                  {view.couple_display_name}
+                  {coupleName}
                 </h1>
 
                 {heroDateBig ? (
@@ -1212,7 +1228,7 @@ export function WeddingSiteView({
                     ...headingTreatment,
                   }}
                 >
-                  {view.couple_display_name}
+                  {coupleName}
                 </h1>
 
                 {heroDateBig ? (

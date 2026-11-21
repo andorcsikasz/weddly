@@ -4745,6 +4745,9 @@ export interface LocaleMessages {
         side: string;
       };
       hero_layout_label: string;
+      name_order_label: string;
+      name_order_bride: string;
+      name_order_groom: string;
       hero_layout: {
         overlay: string;
         split: string;

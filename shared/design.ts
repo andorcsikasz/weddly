@@ -944,6 +944,33 @@ export type VenueLayoutSlug = "stacked" | "side";
  *  accent wash and the monogram, so a fresh workspace still looks composed. */
 export type HeroLayoutSlug = "overlay" | "split" | "arch" | "editorial" | "poster";
 
+/** Whose name is written first on the guest page and the website previews:
+ *  "Anna & Péter" or "Péter & Anna". The stored couple name is one string, so
+ *  the order is applied from the bride and groom fields, not by editing it. */
+export type NameOrderSlug = "bride_first" | "groom_first";
+export const NAME_ORDERS: readonly NameOrderSlug[] = ["bride_first", "groom_first"];
+export const VALID_NAME_ORDERS: ReadonlySet<NameOrderSlug> = new Set(NAME_ORDERS);
+
+/** The two names in the chosen order. */
+export function orderNames<T>(bride: T, groom: T, order: NameOrderSlug): [T, T] {
+  return order === "groom_first" ? [groom, bride] : [bride, groom];
+}
+
+/** "First & Second" in the chosen order when both partners are named, otherwise
+ *  the fallback (the stored couple name), so a half-filled workspace still reads. */
+export function coupleNameLine(
+  bride: string | null | undefined,
+  groom: string | null | undefined,
+  order: NameOrderSlug,
+  fallback: string,
+): string {
+  const b = bride?.trim() || "";
+  const g = groom?.trim() || "";
+  if (!b || !g) return fallback;
+  const [first, second] = orderNames(b, g, order);
+  return `${first} & ${second}`;
+}
+
 export const HERO_LAYOUTS: readonly { slug: HeroLayoutSlug; nameKey: string }[] = [
   { slug: "overlay", nameKey: "design.web.hero_layout.overlay" },
   { slug: "split", nameKey: "design.web.hero_layout.split" },
@@ -1281,6 +1308,8 @@ export const VALID_VENUE_LAYOUTS: ReadonlySet<VenueLayoutSlug> = new Set(
 /** Website-only options (guest page chrome). Always fully populated on the
  *  resolved design; absent in legacy blobs (filled from DEFAULT_DESIGN.web). */
 export interface DesignWebsiteOptions {
+  /** Whose name is written first on the guest page and website previews. */
+  nameOrder: NameOrderSlug;
   cardRadius: CardRadiusSlug;
   shadow: ShadowSlug;
   buttonStyle: ButtonStyleSlug;
@@ -1340,6 +1369,7 @@ export const DEFAULT_DESIGN: CoupleDesign = {
     venueMap: false,
     venueLayout: "stacked",
     heroLayout: "overlay",
+    nameOrder: "bride_first",
   },
 };
 
@@ -1447,6 +1477,10 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
         i.web?.heroLayout && VALID_HERO_LAYOUTS.has(i.web.heroLayout)
           ? i.web.heroLayout
           : DEFAULT_DESIGN.web.heroLayout,
+      nameOrder:
+        i.web?.nameOrder && VALID_NAME_ORDERS.has(i.web.nameOrder)
+          ? i.web.nameOrder
+          : DEFAULT_DESIGN.web.nameOrder,
     },
   };
 }
@@ -1494,6 +1528,8 @@ export interface PublicDesign {
   website_venue_layout: VenueLayoutSlug;
   /** Opening-screen composition + photo-band framing. */
   website_hero_layout: HeroLayoutSlug;
+  /** Whose name leads on the guest page and website previews. */
+  website_name_order: NameOrderSlug;
 }
 
 /** Build the public, presentation-only payload from a resolved design. */
@@ -1536,6 +1572,7 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
     website_ornaments: design.web.ornaments,
     website_venue_layout: design.web.venueLayout,
     website_hero_layout: design.web.heroLayout,
+    website_name_order: design.web.nameOrder,
   };
 }
 

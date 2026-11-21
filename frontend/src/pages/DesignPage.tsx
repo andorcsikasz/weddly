@@ -29,7 +29,9 @@ import {
   getFontPreset,
   getPalette,
   getStylePreset,
+  orderNames,
   HERO_LAYOUTS,
+  NAME_ORDERS,
   IMAGE_TREATMENTS,
   type ImageTreatmentSlug,
   MONOGRAM_SEPARATORS,
@@ -1960,6 +1962,48 @@ export default function DesignPage() {
                                   </button>
                                 );
                               })}
+                            </div>
+                            {/* Whose name leads. The options show the couple's real
+                                names in each order, so there is nothing to translate
+                                beyond the label and the fallback for a missing name. */}
+                            <div className="mt-4 space-y-1.5">
+                              <p className="text-xs font-medium text-ink-600 dark:text-umber-200">
+                                {t("design.web.name_order_label")}
+                              </p>
+                              <div
+                                className="grid grid-cols-2 gap-2"
+                                role="group"
+                                aria-label={t("design.web.name_order_label")}
+                              >
+                                {NAME_ORDERS.map((no) => {
+                                  const active = design.web.nameOrder === no;
+                                  const [f, sec] = orderNames(
+                                    couple?.bride_name?.trim() || t("design.web.name_order_bride"),
+                                    couple?.groom_name?.trim() || t("design.web.name_order_groom"),
+                                    no,
+                                  );
+                                  return (
+                                    <button
+                                      key={no}
+                                      type="button"
+                                      onClick={() =>
+                                        setDesign((d) => ({
+                                          ...d,
+                                          web: { ...d.web, nameOrder: no },
+                                        }))
+                                      }
+                                      aria-pressed={active}
+                                      className={`truncate rounded-lg border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                                        active
+                                          ? "border-ink-900 bg-white ring-1 ring-ink-900 text-ink-900 dark:border-paper-100 dark:bg-umber-800 dark:text-paper-50 dark:ring-paper-100"
+                                          : "border-paper-300 text-ink-600 hover:border-paper-400 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-600"
+                                      }`}
+                                    >
+                                      {f} &amp; {sec}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
                           </TuneRow>
                         )}

@@ -22,6 +22,7 @@ import type { ReactNode } from "react";
 import { type Locale, useT } from "../../lib/i18n";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { Sheet, Switch } from "../ui";
+import { HeroProof } from "./HeroProof";
 import { ProofCard } from "./ProofCard";
 
 export type TuneRowId =
@@ -88,15 +89,29 @@ export function TuneRow({
                 {t(`design.swap.${which}`)}
               </span>
               <span className="block w-24 overflow-hidden rounded-lg ring-1 ring-black/10 dark:ring-white/15">
-                <ProofCard
-                  design={d}
-                  size="pair"
-                  brideName={couple.bride_name}
-                  groomName={couple.groom_name}
-                  weddingDate={couple.wedding_date}
-                  locale={locale}
-                  fallbackName={fallbackName}
-                />
+                {id === "layout" ? (
+                  // The layout and the name order only exist on the website, so
+                  // the pair shows the opening screen, not a printed card.
+                  <HeroProof
+                    design={d}
+                    photoUrl={null}
+                    brideName={couple.bride_name}
+                    groomName={couple.groom_name}
+                    weddingDate={couple.wedding_date}
+                    locale={locale}
+                    fallbackName={fallbackName}
+                  />
+                ) : (
+                  <ProofCard
+                    design={d}
+                    size="pair"
+                    brideName={couple.bride_name}
+                    groomName={couple.groom_name}
+                    weddingDate={couple.wedding_date}
+                    locale={locale}
+                    fallbackName={fallbackName}
+                  />
+                )}
               </span>
             </div>
           ))}
