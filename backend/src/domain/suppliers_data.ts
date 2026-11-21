@@ -34,6 +34,7 @@ import {
   HUNGARY_GYOR_VENUES_2026_09,
 } from "./suppliers_data_hu_gyor_venues_2026_09";
 import { HUNGARY_OPEN_WEB_2026_08 } from "./suppliers_data_hu_open_web";
+import { HUNGARY_VENUE_PHOTO_ENRICHMENTS_2026_11 } from "./suppliers_data_hu_photos_2026_11";
 import { HUNGARY_SCALE_2026_08 } from "./suppliers_data_hu_scale_2026_08";
 import { IT_OPEN_WEB_2026_08 } from "./suppliers_data_it_2026_08";
 import { POLAND_2026_08 } from "./suppliers_data_pl";
@@ -24180,12 +24181,16 @@ export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
   const legacyEnriched = EUROPE_LEGACY_ENRICHMENTS_2026_08[s.id]
     ? { ...s, ...EUROPE_LEGACY_ENRICHMENTS_2026_08[s.id] }
     : s;
-  const enriched = HUNGARY_GYOR_VENUE_ENRICHMENTS_2026_09[legacyEnriched.id]
+  const enrichedBase = HUNGARY_GYOR_VENUE_ENRICHMENTS_2026_09[legacyEnriched.id]
     ? {
         ...legacyEnriched,
         ...HUNGARY_GYOR_VENUE_ENRICHMENTS_2026_09[legacyEnriched.id],
       }
     : legacyEnriched;
+  // Verified venue photo sets (2-4 per venue), merged over the curated seed.
+  const enriched = HUNGARY_VENUE_PHOTO_ENRICHMENTS_2026_11[enrichedBase.id]
+    ? { ...enrichedBase, gallery_urls: HUNGARY_VENUE_PHOTO_ENRICHMENTS_2026_11[enrichedBase.id] }
+    : enrichedBase;
   // Prefer an entry's researched coordinate, then the legacy id/address maps,
   // and only then fall back to the town centroid so every entry with a known
   // city still lands on the map view.

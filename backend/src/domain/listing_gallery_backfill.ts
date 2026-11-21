@@ -59,7 +59,12 @@ export function seededGalleryIds(): string[] {
   return [...SEED_GALLERY_BY_ID.keys()];
 }
 
-const markCheckedStmt = db.prepare("UPDATE listings SET gallery_checked_at = ? WHERE id = ?");
+// Seed revision stamped on every attempt. Keep in step with the db.ts reset
+// that reads `gallery_seed_rev` (2 = the 2026-11 Hungarian photo overlay).
+const GALLERY_SEED_REV = 2;
+const markCheckedStmt = db.prepare(
+  "UPDATE listings SET gallery_checked_at = ?, gallery_seed_rev = ? WHERE id = ?",
+);
 // Promote seed[0] to the hero for a venue that never resolved one. Also stamps
 // hero_checked_at so the hero sweep treats the row as settled. Deliberately does
 // NOT bump updated_at — a backfill isn't a content edit.
@@ -148,7 +153,7 @@ export async function fetchAndStoreListingGallery(
     }
   }
 
-  markCheckedStmt.run(now(), id);
+  markCheckedStmt.run(now(), GALLERY_SEED_REV, id);
   return stored;
 }
 

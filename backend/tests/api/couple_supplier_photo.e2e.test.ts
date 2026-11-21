@@ -106,7 +106,7 @@ describe("DIY supplier card photo", () => {
     const pdf = await uploadPhoto(token, id, new Blob(["%PDF-1.4"], { type: "application/pdf" }));
     expect(pdf.status).toBe(415);
 
-    const card = await req<{ supplier: { photo_url: string | null } }>(
+    const card = await req<{ suppliers: { name: string; photo_url: string | null }[] }>(
       "GET",
       "/api/couple-suppliers",
       undefined,

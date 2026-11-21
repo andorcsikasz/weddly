@@ -1276,6 +1276,31 @@ addColumnIfMissing("listings", "hero_checked_at", "hero_checked_at INTEGER");
 // images 404 is tried exactly once. Vendor-owned listings are skipped — a paying
 // vendor manages their own gallery via vendor_listing.ts.
 addColumnIfMissing("listings", "gallery_checked_at", "gallery_checked_at INTEGER");
+// `gallery_seed_rev` is the revision of the curated gallery seed a stamp was
+// taken under. 2 = the 2026-11 Hungarian venue photo overlay
+// (suppliers_data_hu_photos_2026_11.ts). Every stamp written from now on carries
+// it, so the reset below touches each row exactly once: a venue stamped before
+// the overlay existed (NULL) gets one more attempt against its new seed, and
+// rows stamped under rev 2 are never reset again, so later boots don't re-fetch.
+addColumnIfMissing("listings", "gallery_seed_rev", "gallery_seed_rev INTEGER");
+/** Clears the gallery stamp on curated rows attempted before the seed revision
+ *  existed, so the sweep retries them once. Exported for the E2E test. */
+export const REOPEN_LEGACY_GALLERY_STAMPS_SQL = `UPDATE listings SET gallery_checked_at = NULL
+  WHERE gallery_checked_at IS NOT NULL
+    AND gallery_seed_rev IS NULL
+    AND vendor_account_id IS NULL
+    AND status = 'active'
+    AND NOT EXISTS (SELECT 1 FROM listing_photos p WHERE p.listing_id = listings.id)`;
+{
+  // A venue stamped as "tried, nothing found" before the overlay existed has
+  // no photos and an empty seed, so it could never be retried. Clearing its
+  // stamp puts it back in listListingsNeedingGalleryBackfill. Vendor-owned rows
+  // and rows that already hold photos are left alone.
+  const r = db.prepare(REOPEN_LEGACY_GALLERY_STAMPS_SQL).run();
+  if (r.changes > 0) {
+    console.log(`[db.backfill] re-opened the gallery sweep on ${r.changes} curated listing(s)`);
+  }
+}
 
 // `venue_style` characterises a venue (castle, boat, restaurant…) beyond its
 // always-"venue" category. Sourced from the curated directory's "jelleg" tag.

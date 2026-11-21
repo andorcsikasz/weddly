@@ -11,7 +11,7 @@ import "../setup";
 
 import { describe, expect, test, beforeEach } from "bun:test";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
-import { db, now } from "../../src/db";
+import { db, now, REOPEN_LEGACY_GALLERY_STAMPS_SQL } from "../../src/db";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { addListingPhoto } from "../../src/domain/listings";
 import {
@@ -167,5 +167,54 @@ describe("supplier detail gallery is CSP-safe", () => {
     expect(urls).toContain("/uploads/listings/x/gallery/seed-1.jpg");
     expect(urls).toContain("/uploads/listings/x/gallery/seed-2.jpg");
     expect(urls.some((u) => u.startsWith("http"))).toBe(false);
+  });
+});
+
+// The 2026-11 Hungarian photo overlay changed what a curated venue's gallery
+// seed contains. A stamp taken before that (gallery_seed_rev NULL) is reopened
+// once so the venue gets a second attempt against the new seed; a stamp taken
+// under rev 2 must stay put, or every boot would re-fetch every venue's site.
+describe("gallery seed revision", () => {
+  function stamp(id: string, checkedAt: number | null, rev: number | null): void {
+    db.prepare("UPDATE listings SET gallery_checked_at = ?, gallery_seed_rev = ? WHERE id = ?").run(
+      checkedAt,
+      rev,
+      id,
+    );
+  }
+
+  test("a pre-revision stamp with no photos is reopened; a rev-2 stamp is not", () => {
+    const { id } = curatedWithGallery();
+    db.prepare("DELETE FROM listing_photos WHERE listing_id = ?").run(id);
+
+    stamp(id, now(), null);
+    db.prepare(REOPEN_LEGACY_GALLERY_STAMPS_SQL).run();
+    expect(galleryRow(id).gallery_checked_at).toBeNull();
+
+    stamp(id, now(), 2);
+    db.prepare(REOPEN_LEGACY_GALLERY_STAMPS_SQL).run();
+    expect(galleryRow(id).gallery_checked_at).not.toBeNull();
+  });
+
+  test("a pre-revision row that already holds photos is left alone", () => {
+    const { id } = curatedWithGallery();
+    db.prepare("DELETE FROM listing_photos WHERE listing_id = ?").run(id);
+    addListingPhoto(id, "/uploads/listings/x/gallery/keep.jpg");
+    stamp(id, now(), null);
+    db.prepare(REOPEN_LEGACY_GALLERY_STAMPS_SQL).run();
+    expect(galleryRow(id).gallery_checked_at).not.toBeNull();
+  });
+
+  test("an attempt stamps the seed revision it ran under", async () => {
+    const { id, urls } = curatedWithGallery();
+    db.prepare("DELETE FROM listing_photos WHERE listing_id = ?").run(id);
+    stamp(id, null, null);
+    // Blocked localhost URL: the soft-fail branch, no real network.
+    await fetchAndStoreListingGallery(id, ["http://127.0.0.1:9/none.jpg", ...urls.slice(1)], true);
+    const row = db
+      .prepare("SELECT gallery_checked_at, gallery_seed_rev FROM listings WHERE id = ?")
+      .get(id) as { gallery_checked_at: number | null; gallery_seed_rev: number | null };
+    expect(row.gallery_checked_at).not.toBeNull();
+    expect(row.gallery_seed_rev).toBe(2);
   });
 });
