@@ -1924,7 +1924,10 @@ export default function DesignPage() {
                             locale={locale}
                             fallbackName={sampleCoupleName}
                           >
-                            <TuneRail>
+                            {/* A grid, not a rail: five options in a horizontal scroller
+                                cut the last one mid-card at the sheet edge on a phone.
+                                Three across there, five in a row from sm up. */}
+                            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                               {HERO_LAYOUTS.map((hl) => {
                                 const active = design.web.heroLayout === hl.slug;
                                 return (
@@ -1940,7 +1943,7 @@ export default function DesignPage() {
                                     aria-pressed={active}
                                     aria-label={t(hl.nameKey)}
                                     title={t(hl.nameKey)}
-                                    className={`flex shrink-0 snap-start flex-col items-center gap-1 rounded-lg border p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                                    className={`flex min-w-0 flex-col items-center gap-1.5 rounded-lg border p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
                                       active
                                         ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
                                         : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
@@ -1949,15 +1952,15 @@ export default function DesignPage() {
                                     <HeroLayoutGlyph
                                       layout={hl.slug}
                                       colors={resolvedColors}
-                                      className="h-14 w-20 rounded"
+                                      className="block h-auto w-full rounded"
                                     />
-                                    <span className="text-[11px] text-ink-600 dark:text-umber-200">
+                                    <span className="w-full truncate text-center text-[11px] text-ink-600 dark:text-umber-200">
                                       {t(hl.nameKey)}
                                     </span>
                                   </button>
                                 );
                               })}
-                            </TuneRail>
+                            </div>
                           </TuneRow>
                         )}
 
