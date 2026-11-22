@@ -101,6 +101,7 @@ import { PlannerCard } from "../components/PlannerDirectoryRail";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SupplierCountryFilter } from "../components/SupplierCountryFilter";
 import { VerifiedBadge } from "../components/VerifiedBadge";
+import { AddLineDialog } from "../components/AddLineDialog";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button, Dialog, Skeleton, SmartImage, useConfirm, useToast } from "../components/ui";
 import {
@@ -400,6 +401,12 @@ export default function SuppliersPage() {
   const [calcOpen, setCalcOpen] = useState(false);
   const [diyOpen, setDiyOpen] = useState(false);
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
+  const [addLineOpen, setAddLineOpen] = useState(false);
+  const [newLineCategory, setNewLineCategory] = useState<SupplierCategory | null>(null);
+  const lineChosenIds = useMemo(
+    () => new Set(Object.values(selection).filter((v): v is string => Boolean(v))),
+    [selection],
+  );
   // The DIY card whose picture is uploading or being removed.
   const [diyPhotoBusy, setDiyPhotoBusy] = useState<string | null>(null);
   // "Már foglaltam" is a peer of "csinálom magam" / "nem kell" in the category
@@ -2154,9 +2161,9 @@ export default function SuppliersPage() {
                 chip row. */}
               <button
                 type="button"
-                onClick={() => setSubmitOpen(true)}
-                aria-label={t("suppliers.drop_your_own")}
-                title={t("suppliers.drop_your_own")}
+                onClick={() => setAddLineOpen(true)}
+                aria-label={t("suppliers.add_line.open")}
+                title={t("suppliers.add_line.open")}
                 className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50 ${isMap ? "" : "sm:inline-flex"}`}
               >
                 <Plus size={16} aria-hidden />
@@ -2205,9 +2212,9 @@ export default function SuppliersPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setSubmitOpen(true)}
-                aria-label={t("suppliers.drop_your_own")}
-                title={t("suppliers.drop_your_own")}
+                onClick={() => setAddLineOpen(true)}
+                aria-label={t("suppliers.add_line.open")}
+                title={t("suppliers.add_line.open")}
                 className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 text-ink-800 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200 sm:hidden${floatBg}`}
               >
                 <Plus size={15} aria-hidden />
@@ -3810,6 +3817,26 @@ export default function SuppliersPage() {
         </div>
       </Dialog>
 
+      <AddLineDialog
+        open={addLineOpen}
+        onClose={() => setAddLineOpen(false)}
+        directory={items}
+        chosenIds={lineChosenIds}
+        onUseExisting={(s) => {
+          adoptDirectorySupplier(s);
+          setAddLineOpen(false);
+        }}
+        onCreateNew={(category) => {
+          setAddLineOpen(false);
+          setDiyEditing(null);
+          setNewLineCategory(category);
+          setDiyOpen(true);
+        }}
+        onRecommend={() => {
+          setAddLineOpen(false);
+          setSubmitOpen(true);
+        }}
+      />
       <SubmitSupplierModal
         open={submitOpen}
         onClose={() => setSubmitOpen(false)}
@@ -3838,7 +3865,7 @@ export default function SuppliersPage() {
         open={diyOpen}
         editing={diyEditing}
         currency={currency}
-        defaultCategory={activeCat ?? null}
+        defaultCategory={newLineCategory ?? activeCat ?? null}
         // The unfiltered directory, deliberately not `filtered` — a venue the
         // couple already booked is a twin whether or not it survives the city
         // chip and price band they happen to have set.
@@ -3847,6 +3874,7 @@ export default function SuppliersPage() {
         onClose={() => {
           setDiyOpen(false);
           setDiyEditing(null);
+          setNewLineCategory(null);
         }}
         onSaved={(s) => {
           setCoupleSuppliers((prev) => {

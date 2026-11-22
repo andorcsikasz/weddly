@@ -6871,6 +6871,20 @@ export interface LocaleMessages {
     table_name_placeholder: string;
   };
   suppliers: {
+    add_line: {
+      open: string;
+      title: string;
+      step_category: string;
+      back: string;
+      search_placeholder: string;
+      none_in_category: string;
+      no_match: string;
+      on_line: string;
+      use: string;
+      not_here: string;
+      create_new: string;
+      recommend: string;
+    };
     title: string;
     sub: string;
     contact_email: string;
