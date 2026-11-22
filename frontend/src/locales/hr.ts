@@ -5865,6 +5865,12 @@ const hr: LocaleMessages = {
     table_name_placeholder: "Imenujte stol",
   },
   suppliers: {
+    result_of: "{n} od {total} dobavljača",
+    clear_all: "Poništi sve",
+    chip_guests: "{n} gostiju",
+    chip_seats: "Kapacitet {range}",
+    chip_picked: "Samo odabrani",
+    chip_remove: "Ukloni {label}",
     add_line: {
       open: "Dodaj u plan",
       title: "Dodaj u plan",

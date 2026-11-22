@@ -5982,6 +5982,12 @@ const de: LocaleMessages = {
     table_name_placeholder: "Diesen Tisch benennen",
   },
   suppliers: {
+    result_of: "{n} von {total} Dienstleistern",
+    clear_all: "Alle löschen",
+    chip_guests: "{n} Gäste",
+    chip_seats: "Plätze {range}",
+    chip_picked: "Nur ausgewählte",
+    chip_remove: "{label} entfernen",
     add_line: {
       open: "Zum Plan hinzufügen",
       title: "Zum Plan hinzufügen",

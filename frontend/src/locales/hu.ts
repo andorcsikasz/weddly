@@ -5876,6 +5876,12 @@ const hu: LocaleMessages = {
     table_name_placeholder: "Nevezd el az asztalt",
   },
   suppliers: {
+    result_of: "{n} / {total} szolgáltató",
+    clear_all: "Összes törlése",
+    chip_guests: "{n} vendég",
+    chip_seats: "Férőhely {range}",
+    chip_picked: "Csak a kiválasztott",
+    chip_remove: "{label} eltávolítása",
     add_line: {
       open: "Tétel hozzáadása",
       title: "Hozzáadás a terveidhez",

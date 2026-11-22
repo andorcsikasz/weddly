@@ -835,6 +835,87 @@ export default function SuppliersPage() {
     setParams(p, { replace: true });
   }
 
+  // Every narrowing the couple has applied, as a removable chip. The URL is the
+  // only state, so each chip just drops its own params.
+  const seatsRange =
+    seatsMinFilter !== null && seatsMaxFilter !== null
+      ? `${seatsMinFilter}–${seatsMaxFilter}`
+      : seatsMinFilter !== null
+        ? `≥${seatsMinFilter}`
+        : seatsMaxFilter !== null
+          ? `≤${seatsMaxFilter}`
+          : null;
+  const activeChips: { key: string; label: string; remove: string[] }[] = [];
+  if (queryNorm) activeChips.push({ key: "q", label: `“${query.trim()}”`, remove: ["q"] });
+  if (cityFilter) activeChips.push({ key: "city", label: cityFilter, remove: ["city"] });
+  if (activeCat)
+    activeChips.push({
+      key: "cat",
+      label: t(`suppliers.cat.${activeCat}`),
+      remove: ["group", "cat"],
+    });
+  else if (activeGroup)
+    activeChips.push({
+      key: "group",
+      label: t(`suppliers.group.${activeGroup}`),
+      remove: ["group", "cat"],
+    });
+  if (guestsFilter !== null)
+    activeChips.push({
+      key: "guests",
+      label: t("suppliers.chip_guests", { n: guestsFilter }),
+      remove: ["guests"],
+    });
+  if (priceBand !== null)
+    activeChips.push({
+      key: "price",
+      label: "$".repeat(priceBand),
+      remove: ["price", "price_max"],
+    });
+  if (seatsRange !== null)
+    activeChips.push({
+      key: "seats",
+      label: t("suppliers.chip_seats", { range: seatsRange }),
+      remove: ["seats_min", "seats_max"],
+    });
+  if (showSavedOnly)
+    activeChips.push({
+      key: "saved",
+      label: t("suppliers.saved_filter", { n: saved.size }),
+      remove: ["saved"],
+    });
+  if (showPickedOnly)
+    activeChips.push({ key: "picked", label: t("suppliers.chip_picked"), remove: ["picked"] });
+  if (showVerifiedOnly)
+    activeChips.push({
+      key: "verified",
+      label: t("suppliers.verified_filter"),
+      remove: ["verified"],
+    });
+  function removeFilterParams(keys: string[]) {
+    const p = new URLSearchParams(params);
+    for (const k of keys) p.delete(k);
+    setParams(p, { replace: true });
+  }
+  function clearAllFilters() {
+    removeFilterParams([
+      "q",
+      "city",
+      "country",
+      "date",
+      "price",
+      "price_max",
+      "guests",
+      "seats_min",
+      "seats_max",
+      "group",
+      "cat",
+      "saved",
+      "picked",
+      "verified",
+    ]);
+  }
+
   // What the "Szűrők" chip counts: the scoping filters that live inside its
   // dialog. Guest count is deliberately not counted — the couple didn't set it
   // here, it's mirrored from the budget page. Country only counts when it is
@@ -845,6 +926,7 @@ export default function SuppliersPage() {
     // Same rule as country: the resting state (the wedding day) isn't a filter
     // the couple set, so it doesn't earn a number on the chip.
     (dateFilter !== null && !dateIsWedding ? 1 : 0);
+  const hasActiveFilters = activeChips.length > 0 || scopeFilterCount > 0;
   function clearScopeFilters() {
     const p = new URLSearchParams(params);
     p.delete("country");
@@ -2896,12 +2978,40 @@ export default function SuppliersPage() {
                   />
                 </div>
               )}
+              {hasActiveFilters && (
+                <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                  {activeChips.map((c) => (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => removeFilterParams(c.remove)}
+                      aria-label={t("suppliers.chip_remove", { label: c.label })}
+                      className="inline-flex h-7 items-center gap-1 rounded-full border border-ink-300 bg-white px-2.5 text-xs text-ink-900 transition hover:border-ink-900 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-50 dark:hover:border-paper-200"
+                    >
+                      {c.label}
+                      <X size={12} strokeWidth={1.5} aria-hidden />
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="h-7 px-2 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
+                  >
+                    {t("suppliers.clear_all")}
+                  </button>
+                </div>
+              )}
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <p
                   aria-live="polite"
                   className="text-xs font-medium text-ink-600 dark:text-umber-200"
                 >
-                  {t("suppliers.result_count", { n: filteredInScope.length })}
+                  {hasActiveFilters
+                    ? t("suppliers.result_of", {
+                        n: filteredInScope.length,
+                        total: scopedItems.length,
+                      })
+                    : t("suppliers.result_count", { n: filteredInScope.length })}
                 </p>
                 <button
                   type="button"

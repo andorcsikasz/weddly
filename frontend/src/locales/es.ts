@@ -5931,6 +5931,12 @@ const es: LocaleMessages = {
     table_name_placeholder: "Nombra esta mesa",
   },
   suppliers: {
+    result_of: "{n} de {total} proveedores",
+    clear_all: "Borrar todo",
+    chip_guests: "{n} invitados",
+    chip_seats: "Aforo {range}",
+    chip_picked: "Solo los elegidos",
+    chip_remove: "Quitar {label}",
     add_line: {
       open: "Añadir a tu plan",
       title: "Añadir a tu plan",

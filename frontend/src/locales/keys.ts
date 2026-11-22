@@ -6871,6 +6871,12 @@ export interface LocaleMessages {
     table_name_placeholder: string;
   };
   suppliers: {
+    result_of: string;
+    clear_all: string;
+    chip_guests: string;
+    chip_seats: string;
+    chip_picked: string;
+    chip_remove: string;
     add_line: {
       open: string;
       title: string;

@@ -5827,6 +5827,12 @@ const en: LocaleMessages = {
     table_name_placeholder: "Name this table",
   },
   suppliers: {
+    result_of: "{n} of {total} vendors",
+    clear_all: "Clear all",
+    chip_guests: "{n} guests",
+    chip_seats: "Seats {range}",
+    chip_picked: "Picked only",
+    chip_remove: "Remove {label}",
     add_line: {
       open: "Add to your plan",
       title: "Add to your plan",
