@@ -124,28 +124,37 @@ export interface RenderedEmail {
   fallbackSubject: string;
 }
 
-// Soft-Modern palette, matches the landing page tokens. Hex literals here
-// (not Tailwind tokens) because email clients can't reach Tailwind. Keep this
-// list in sync with `frontend/tailwind.config.js` whenever the brand shifts.
-// Light "specialty-coffee" palette, minimalist-precision structure (Stripe /
-// Linear / Vercel discipline) in the warm umber/oat brand tones. A white card
-// floats on a warm oat-paper canvas, lifted by a 1px warm border (no shadow —
-// shadows render as grey boxes in Outlook). One chroma only: walnut, on links.
-// The dark espresso button is the single high-contrast element. The logo PNG is
-// a dark square with a white dove, so on the white card it reads as a dark
-// rounded tile for free, no compositing needed.
+// Palette and type follow the app's current UI tokens (frontend/tailwind.config.js
+// and index.css): the neutral ink/paper ramps, Outfit as the one product face,
+// white `rounded-2xl` cards on a `paper-200` ground, and the near-black
+// `btn-primary` as the single high-contrast action. Hex literals here because
+// email clients can't reach Tailwind; keep them in sync when the app tokens move.
+// Nothing is tinted: the only chroma in the product is state, and mail carries
+// none of it. The logo PNG is a dark tile, so it reads on the white card as-is.
 const COLOR = {
-  bg: "#f4efe7", // warm oat-paper canvas, the envelope the card sits on
-  card: "#ffffff", // true white card, lifts cleanly off the oat field
-  ink: "#1c1714", // warm near-black, headline + wordmark (never pure #000)
-  muted: "#7a7065", // warm taupe, footer, asides, the "why am I getting this" line
-  divider: "#ece7e0", // warm hairline rule
-  accent: "#7c5a3e", // walnut, links + secondary CTAs (the only chroma in the email)
-  accentInk: "#ffffff", // text that sits ON the dark button
-  enInk: "#3d352e", // body ink, a shade softer than the near-black headline
-  cta: "#1c1714", // dark espresso button fill (the requested dark button)
-  cardBorder: "#eae4dc", // 1px warm card border, replaces the drop shadow
+  bg: "#f5f5f5", // paper-200, the ground the card sits on
+  card: "#ffffff", // white card, lifted off the ground by its border
+  ink: "#171717", // ink-900, headline + wordmark
+  enInk: "#404040", // ink-700, body copy
+  muted: "#737373", // ink-500, footer and asides (AA on white)
+  accent: "#171717", // links are ink + underline, no second colour
+  accentInk: "#fafafa", // paper-100, text on the button
+  cta: "#0a0a0a", // umber-900, the btn-primary fill
 } as const;
+
+// Hairlines are alpha, per the design rules. The hex value comes first so a
+// client that drops the newer syntax (Outlook) still draws a visible rule; the
+// second declaration overrides it wherever it parses. No box-shadows anywhere:
+// they render as grey boxes in Outlook.
+const HAIRLINE = {
+  box: "border:1px solid #ebebeb;border:1px solid rgb(0 0 0 / 0.08);",
+  top: "border-top:1px solid #ebebeb;border-top:1px solid rgb(0 0 0 / 0.08);",
+} as const;
+
+// One font stack for the whole email. Outfit is self-hosted (see the @font-face
+// block in renderHtml); clients that strip <style> fall through to the system
+// grotesques, which share Outfit's proportions closely enough to keep the rhythm.
+const FONT = "'Outfit','Helvetica Neue',Helvetica,Arial,sans-serif";
 
 // Social channels surfaced in the footer. Icons are 48×48 monochrome PNGs
 // (muted #6e6863) served from the frontend's static `/email/` dir so they load
@@ -304,7 +313,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         renderCard(block, locale, i === 0, ctaUrl, category, plainCtaUrl ?? false),
       )
       .join(
-        `<tr><td style="padding:18px 40px 0 40px;"><div style="border-top:1px solid ${COLOR.divider};font-size:0;line-height:0;height:1px;">&nbsp;</div></td></tr>`,
+        `<tr><td style="padding:20px 40px 0 40px;"><div style="${HAIRLINE.top}font-size:0;line-height:0;height:1px;">&nbsp;</div></td></tr>`,
       );
 
     const footer = renderFooter(blocks, category, whyLine);
@@ -317,79 +326,79 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <!-- Hand-tuned light template. We pin "light" so Apple Mail + Outlook.com
-         skip their dark-mode auto-invert (which muddies the warm oat canvas and
-         drops contrast on the dark button). Every colour below is explicit, so
-         clients that ignore these tags still render exactly as intended. -->
+    <!-- Light template, pinned so Apple Mail and Outlook.com skip their dark-mode
+         inversion, which would muddy the neutral ground and drop contrast on the
+         button. Every colour below is explicit, so clients that ignore these tags
+         still render as intended. -->
     <meta name="color-scheme" content="light" />
     <meta name="supported-color-schemes" content="light" />
     <title>Weddly</title>
     <style>
-      /* General Sans, self-hosted at the Weddly CDN. Supported by Apple Mail,
-         Outlook.com, Samsung Mail, and Thunderbird; Gmail web strips <style>
-         entirely so the system-font stack in the inline font-family is the
-         Gmail fallback. woff2 only: every client that honours @font-face also
-         supports woff2. */
+      /* Outfit, the product face, self-hosted at the Weddly origin (variable
+         weight 400-700). Apple Mail, Outlook.com, Samsung Mail and Thunderbird
+         load it; Gmail web strips <style>, so the inline FONT stack is what it
+         shows. Same two subsets the app ships, so Ē and Ő/Ű resolve. */
       @font-face {
-        font-family: 'General Sans';
+        font-family: 'Outfit';
         font-style: normal;
-        font-weight: 400;
-        src: url('${CONFIG.frontendBaseUrl}/fonts/general-sans-400.woff2') format('woff2');
+        font-weight: 400 700;
+        src: url('${CONFIG.frontendBaseUrl}/fonts/outfit-latin.woff2') format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
       }
       @font-face {
-        font-family: 'General Sans';
+        font-family: 'Outfit';
         font-style: normal;
-        font-weight: 500;
-        src: url('${CONFIG.frontendBaseUrl}/fonts/general-sans-500.woff2') format('woff2');
+        font-weight: 400 700;
+        src: url('${CONFIG.frontendBaseUrl}/fonts/outfit-latin-ext.woff2') format('woff2');
+        unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
       }
-      @font-face {
-        font-family: 'General Sans';
-        font-style: normal;
-        font-weight: 600;
-        src: url('${CONFIG.frontendBaseUrl}/fonts/general-sans-600.woff2') format('woff2');
-      }
-      /* Mobile overrides, Apple Mail + Gmail iOS app respect <style>; Gmail
-         web strips it, but the inline styles still apply as the fallback.
-         Tighter inner padding gains ~24px of horizontal room on a 360–375px
-         viewport; the larger CTA + 1.2 line-height gives a comfortable
-         ≥50px tap target (the inline value is borderline 44px). */
+      /* Mobile overrides. Apple Mail and the Gmail iOS app respect <style>; Gmail
+         web strips it and the inline values apply. Inner padding tightens to
+         gain width on a 360-375px screen, and the CTA keeps a tap target of
+         about 50px. */
       @media (max-width: 480px) {
-        .wd-card { padding: 26px 24px 4px 24px !important; }
-        .wd-h1 { font-size: 23px !important; line-height: 1.25 !important; }
+        .wd-card { padding: 30px 24px 4px 24px !important; }
+        .wd-h1 { font-size: 24px !important; line-height: 1.22 !important; }
         .wd-cta { padding: 15px 28px !important; font-size: 16px !important; line-height: 1.2 !important; }
         .wd-secondary { padding: 18px 24px 0 24px !important; }
-        .wd-footer { padding: 22px 24px 26px 24px !important; }
-        .wd-header { padding: 28px 24px 18px 24px !important; }
+        .wd-header { padding: 0 4px 18px 4px !important; }
+        .wd-footer { padding: 24px 4px 0 4px !important; }
       }
     </style>
   </head>
-  <body style="margin:0;padding:0;background-color:${COLOR.bg};font-family:'General Sans',-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;color:${COLOR.ink};">
+  <body style="margin:0;padding:0;background-color:${COLOR.bg};font-family:${FONT};color:${COLOR.ink};-webkit-text-size-adjust:100%;">
     <!-- Preheader: shown in inbox preview, hidden in body -->
     <div style="display:none;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden;mso-hide:all;">
       ${escapeHtml(preheader)}
     </div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${COLOR.bg};">
       <tr>
-        <td align="center" style="padding:32px 16px;">
-          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:${COLOR.card};border:1px solid ${COLOR.cardBorder};border-radius:14px;">
-            <!-- Brand header, top-left lockup. /email/logo.png is a dedicated
-                 icon-only asset (dark square, white dove, no baked-in text) —
-                 NOT the site-wide /logo.png, which now carries the full
-                 wordmark lockup and would be illegible shrunk to 38px next to
-                 the HTML wordmark span below. So on the white card it reads
-                 as a dark rounded tile for free. A hairline rule separates
-                 the masthead from the letter. Wordmark in General Sans (the
-                 landing font). -->
+        <td align="center" style="padding:40px 16px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+            <!-- Masthead sits on the ground, above the letter: the card is the
+                 letter, the brand is the frame. /email/logo.png is the dedicated
+                 icon-only asset (dark tile, white dove), NOT the site-wide
+                 /logo.png, which carries the full wordmark lockup. Its URL must
+                 stay exactly this shape: lib/mailer.ts swaps it for the inline
+                 CID attachment by matching the string. -->
             <tr>
-              <td class="wd-header" align="left" style="padding:36px 40px 22px 40px;border-bottom:1px solid ${COLOR.divider};">
-                <img src="${escapeAttr(`${CONFIG.frontendBaseUrl}/email/logo.png`)}" width="38" height="38" alt="Weddly" style="display:inline-block;vertical-align:middle;border:0;outline:none;width:38px;height:38px;border-radius:10px;" />
-                <span style="display:inline-block;vertical-align:middle;margin-left:11px;font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:19px;font-weight:600;letter-spacing:0.24em;color:${COLOR.ink};">WĒDDLY</span>
+              <td class="wd-header" align="left" style="padding:0 8px 22px 8px;">
+                <img src="${escapeAttr(`${CONFIG.frontendBaseUrl}/email/logo.png`)}" width="32" height="32" alt="Weddly" style="display:inline-block;vertical-align:middle;border:0;outline:none;width:32px;height:32px;border-radius:8px;" />
+                <span style="display:inline-block;vertical-align:middle;margin-left:10px;font-family:${FONT};font-size:15px;font-weight:600;letter-spacing:0.32em;color:${COLOR.ink};">WĒDDLY</span>
               </td>
             </tr>
-            ${cards}
-            <!-- Footer -->
             <tr>
-              <td class="wd-footer" style="padding:24px 40px 30px 40px;border-top:1px solid ${COLOR.divider};">
+              <td>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${COLOR.card};${HAIRLINE.box}border-radius:16px;">
+                  ${cards}
+                  <tr><td style="padding:0 0 32px 0;font-size:0;line-height:0;height:0;">&nbsp;</td></tr>
+                </table>
+              </td>
+            </tr>
+            <!-- Footer on the ground, below the letter, so the card ends on the
+                 action and the reader's eye stops there. -->
+            <tr>
+              <td class="wd-footer" align="left" style="padding:28px 8px 0 8px;">
                 ${footer}
               </td>
             </tr>
@@ -426,21 +435,21 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       const postCtaParagraphs = renderPostCtaParagraphs(block.postCtaParagraphs, false);
       const signoff = renderSignoff(block.signoff, false);
       // Left-aligned letter inside the white card: the greeting is a confident
-      // General Sans headline, then body, then one dark espresso CTA, the
+      // Outfit headline, then body, then one near-black CTA, the
       // minimalist-precision "one statement, one action" rhythm. The dark
       // button is the single high-contrast element on the warm-white field.
       return `<tr>
-              <td class="wd-card" align="left" style="padding:30px 40px 6px 40px;">
-                <h1 class="wd-h1" style="margin:0 0 18px 0;color:${COLOR.ink};font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:27px;font-weight:600;line-height:1.24;letter-spacing:-0.015em;word-break:break-word;hyphens:auto;">
+              <td class="wd-card" align="left" style="padding:36px 40px 4px 40px;">
+                <h1 class="wd-h1" style="margin:0 0 18px 0;color:${COLOR.ink};font-family:${FONT};font-size:26px;font-weight:600;line-height:1.2;letter-spacing:-0.02em;word-break:break-word;hyphens:auto;">
                   ${escapeHtml(block.greeting)}
                 </h1>
                 ${block.suppressOutreachChrome ? "" : renderOutreachOrientation(category, locale)}
                 ${paras}
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0 0;">
                   <tr>
-                    <td style="border-radius:10px;background-color:${COLOR.cta};">
+                    <td style="border-radius:12px;background-color:${COLOR.cta};">
                       <a href="${escapeAttr(ctaUrl)}" class="wd-cta"
-                         style="display:inline-block;padding:15px 30px;font-size:16px;font-weight:600;color:${COLOR.accentInk};text-decoration:none;border-radius:10px;letter-spacing:0.01em;line-height:1.2;">
+                         style="display:inline-block;padding:15px 30px;font-size:16px;font-weight:600;color:${COLOR.accentInk};text-decoration:none;border-radius:12px;letter-spacing:0.01em;line-height:1.2;">
                         ${escapeHtml(block.cta)}
                       </a>
                     </td>
@@ -543,7 +552,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         </tr>
       </table>
       <p style="margin:16px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;letter-spacing:0.04em;">
-        <span style="font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:600;letter-spacing:0.22em;color:${COLOR.enInk};">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">tryweddly.com</a>
+        <span style="font-family:${FONT};font-weight:600;letter-spacing:0.22em;color:${COLOR.enInk};">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">tryweddly.com</a>
       </p>
     `;
   }
@@ -560,7 +569,7 @@ function escapeHtml(s: string): string {
 
 /** Render a paragraph string with **bold** markers → <strong> in HTML.
  *  Segments outside markers are plain-escaped; segments inside get wrapped
- *  in a weight-600 <strong> so General Sans semibold renders correctly. */
+ *  in a weight-600 <strong> so Outfit semibold renders correctly. */
 function renderBold(s: string): string {
   return s
     .split(/\*\*(.+?)\*\*/)
