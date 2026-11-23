@@ -1383,7 +1383,9 @@ function TimelineEditDialog({
             </select>
           </label>
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+          <label
+            className={`flex cursor-pointer items-center gap-2 text-sm ${done ? "text-vote-up" : "text-ink-700 dark:text-paper-100"}`}
+          >
             <input
               type="checkbox"
               checked={done}
@@ -1391,7 +1393,7 @@ function TimelineEditDialog({
                 setDone(e.target.checked);
                 if (e.target.checked) setNotRelevant(false);
               }}
-              className="h-4 w-4 cursor-pointer rounded border-paper-300 text-ink-900 dark:border-umber-600"
+              className="h-4 w-4 cursor-pointer rounded border-paper-300 accent-vote-up dark:border-umber-600"
             />
             <span>{t("planning.mark_done")}</span>
           </label>
