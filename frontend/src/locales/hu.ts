@@ -3816,6 +3816,26 @@ const hu: LocaleMessages = {
       step_details: "Add meg a napotokat",
       step_share: "Oszd meg a linket",
       start: "Kezdjük",
+      next: "Tovább",
+      back: "Vissza",
+      template_title: "Válassz sablont",
+      template_sub:
+        "Mindegyik más elrendezést és hangulatot ad az oldalatoknak. Később is cserélhetitek.",
+      template_selected: "Kiválasztva",
+      template_pick: "Ezt választom",
+      details_title: "Mire van még szükség az oldalhoz",
+      details_sub:
+        "Ezeket a szerkesztőben bármikor pótolhatjátok. A vendégek a közzététel után látják az oldalt.",
+      details_done: "Minden a helyén van. Készen álltok a közzétételre.",
+      check_cover: "Borítókép",
+      check_photos: "Két fotó rólatok",
+      check_day: "A neveitek és az esküvő dátuma",
+      check_schedule: "A nap programja",
+      done_sr: "Kész",
+      todo_sr: "Teendő",
+      publish_title: "Közzététel és megosztás",
+      publish_sub:
+        "Az oldal addig privát, amíg közzé nem teszitek. Utána küldjétek el a linket a vendégeknek, a változtatások pedig élőben frissülnek.",
     },
     hint: "Válassz egy stílust, színpalettát és betűtípust. Ez jelenik meg a vendégoldalon és a nyomtatható kártyákon.",
     // A mintaasztal: négy kész stílus, a pár saját nevével.

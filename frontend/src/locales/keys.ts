@@ -4431,6 +4431,23 @@ export interface LocaleMessages {
       step_details: string;
       step_share: string;
       start: string;
+      next: string;
+      back: string;
+      template_title: string;
+      template_sub: string;
+      template_selected: string;
+      template_pick: string;
+      details_title: string;
+      details_sub: string;
+      details_done: string;
+      check_cover: string;
+      check_photos: string;
+      check_day: string;
+      check_schedule: string;
+      done_sr: string;
+      todo_sr: string;
+      publish_title: string;
+      publish_sub: string;
     };
     /** InfoHint next to the title. */
     hint: string;

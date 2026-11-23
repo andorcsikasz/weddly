@@ -3463,3 +3463,19 @@ html.page-vt::view-transition-new(root) {
 *::after {
   font-style: normal !important;
 }
+
+/* Website onboarding: each step slides in from the direction of travel
+   (never a crossfade, never from scale 0). */
+@keyframes onboard-in-fwd {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes onboard-in-back {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-website-intro] * {
+    animation: none !important;
+  }
+}

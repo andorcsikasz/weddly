@@ -1462,7 +1462,20 @@ export default function DesignPage() {
       {loading ? (
         <p className="text-sm text-ink-500 dark:text-umber-300">{t("common.loading")}</p>
       ) : tab === "website" && !introSeen && couple && !couple.is_public ? (
-        <WebsiteIntro onDone={finishIntro} />
+        <WebsiteIntro
+          onDone={finishIntro}
+          currentStyle={design.style}
+          onChooseStyle={(slug) => void chooseStyle(slug)}
+          checklist={[
+            { key: "cover", done: Boolean(couple?.cover_image_url) },
+            { key: "photos", done: Boolean(couple?.site_image_1_url || couple?.site_image_2_url) },
+            {
+              key: "day",
+              done: Boolean(couple?.bride_name && couple?.groom_name && couple?.wedding_date),
+            },
+            { key: "schedule", done: previewSchedule.length > 0 },
+          ]}
+        />
       ) : (
         <div className="space-y-6">
           {/* Surface switcher: Guest site vs Cards. Full-page width, above the

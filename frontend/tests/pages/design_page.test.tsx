@@ -107,11 +107,37 @@ describe("<DesignPage> smoke (/app/design/website)", () => {
       expect(container.querySelector("[data-website-intro]")).not.toBeNull();
     });
     expect(screen.queryByText("Finomhangolás")).toBeNull();
-    fireEvent.keyDown(window, { key: "Enter" });
+    fireEvent.keyDown(window, { key: "Escape" });
     await waitFor(() => {
       expect(screen.getByText("Finomhangolás")).toBeInTheDocument();
     });
     expect(localStorage.getItem(WEBSITE_INTRO_KEY)).toBe("1");
+  });
+
+  it("walks the website onboarding: template, details, publish, then the editor", async () => {
+    localStorage.removeItem(WEBSITE_INTRO_KEY);
+    const { container } = mountPage();
+    await waitFor(() => {
+      expect(container.querySelector("[data-website-intro]")).not.toBeNull();
+    });
+    const intro = container.querySelector("[data-website-intro]") as HTMLElement;
+    expect(intro.getAttribute("data-step")).toBe("0");
+    expect(screen.getByText("Válassz sablont")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tovább" }));
+    expect(intro.getAttribute("data-step")).toBe("1");
+    expect(screen.getByText("Mire van még szükség az oldalhoz")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Vissza" }));
+    expect(intro.getAttribute("data-step")).toBe("0");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tovább" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tovább" }));
+    expect(intro.getAttribute("data-step")).toBe("2");
+    fireEvent.click(screen.getByRole("button", { name: "Kezdjük" }));
+    await waitFor(() => {
+      expect(screen.getByText("Finomhangolás")).toBeInTheDocument();
+    });
   });
 
   it("opens on the committed look and the seven fine-tune rows", async () => {

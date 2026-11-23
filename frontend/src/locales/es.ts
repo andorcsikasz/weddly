@@ -3858,6 +3858,26 @@ const es: LocaleMessages = {
       step_details: "Añade vuestro día",
       step_share: "Comparte el enlace",
       start: "Empezar",
+      next: "Continuar",
+      back: "Atrás",
+      template_title: "Elige una plantilla",
+      template_sub:
+        "Cada una cambia la disposición y el estilo de vuestra web. Podéis cambiarla más adelante.",
+      template_selected: "Seleccionada",
+      template_pick: "Usar esta",
+      details_title: "Lo que aún necesita vuestra web",
+      details_sub:
+        "Añadid esto en el editor cuando queráis. Vuestros invitados verán la web al publicarla.",
+      details_done: "Todo está listo. Ya podéis publicar.",
+      check_cover: "Una foto de portada",
+      check_photos: "Dos fotos vuestras",
+      check_day: "Vuestros nombres y la fecha de la boda",
+      check_schedule: "El programa del día",
+      done_sr: "Hecho",
+      todo_sr: "Pendiente",
+      publish_title: "Publicar y compartir",
+      publish_sub:
+        "La web queda privada hasta que la publiquéis. Después enviad el enlace a vuestros invitados; se actualiza al cambiar cosas.",
     },
     hint: "Elige un estilo, una paleta y una tipografía. Definen tu página de la boda y tus tarjetas imprimibles.",
     // The Sample Table: four finished looks on the couple's own names.
