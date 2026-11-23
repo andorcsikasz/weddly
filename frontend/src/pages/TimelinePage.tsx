@@ -173,6 +173,9 @@ export default function TimelinePage() {
   const [diy, setDiy] = useState<CoupleSupplier[]>([]);
   const [picks, setPicks] = useState<CouplePick[]>([]);
   const [weddingDate, setWeddingDate] = useState<Date | null>(null);
+  // The two partners, offered first in the task "Felelős" datalist (the common
+  // owners), same as the Planning page. Filled once the couple loads.
+  const [partnerNames, setPartnerNames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<PlanningItem | null>(null);
   const [wandOpen, setWandOpen] = useState(false);
@@ -200,6 +203,12 @@ export default function TimelinePage() {
         setDiy(mine.suppliers);
         setPicks(pp.picks);
         setWeddingDate(parseISODate(couple.couple?.wedding_date ?? null));
+        const c = couple.couple;
+        if (c) {
+          const bride = c.bride_name?.trim() || t("planning.assignee_bride");
+          const groom = c.groom_name?.trim() || t("planning.assignee_groom");
+          setPartnerNames([...new Set([bride, groom].filter(Boolean))]);
+        }
       })
       .catch((e) => {
         toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -271,11 +280,19 @@ export default function TimelinePage() {
     [tasks],
   );
 
+  // Partners lead (one-click picks), then every other assignee already used.
   const assigneeSuggestions = useMemo(() => {
-    const seen = new Set<string>();
-    for (const i of tasks) if (i.assignee && !seen.has(i.assignee)) seen.add(i.assignee);
-    return [...seen].sort((a, b) => a.localeCompare(b, locale === "hu" ? "hu" : "en"));
-  }, [tasks, locale]);
+    const seen = new Set<string>(partnerNames);
+    const rest: string[] = [];
+    for (const i of tasks) {
+      if (i.assignee && !seen.has(i.assignee)) {
+        seen.add(i.assignee);
+        rest.push(i.assignee);
+      }
+    }
+    rest.sort((a, b) => a.localeCompare(b, locale === "hu" ? "hu" : "en"));
+    return [...partnerNames, ...rest];
+  }, [tasks, partnerNames, locale]);
 
   async function onSave(
     id: number,
