@@ -1283,15 +1283,16 @@ function TimelineEditDialog({
     >
       <form
         onSubmit={onSubmit}
+        aria-label={item.title}
         className="flex w-full max-w-lg max-h-[90vh] flex-col overflow-hidden rounded-t-2xl bg-paper-50 shadow-pop sm:rounded-2xl dark:bg-umber-800"
       >
-        <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4 dark:border-umber-700">
-          <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50 font-grotesk">
-            {t("timeline.edit_title")}
-          </h2>
+        <div className="flex items-start justify-between gap-3 px-6 pt-5">
+          <p className="min-w-0 text-2xl font-semibold leading-tight text-ink-900 dark:text-paper-50 font-grotesk">
+            {item.title}
+          </p>
           <button
             type="button"
-            className="btn-ghost btn-sm"
+            className="btn-ghost btn-sm shrink-0"
             onClick={onClose}
             disabled={submitting}
             aria-label={t("common.cancel")}
@@ -1300,10 +1301,6 @@ function TimelineEditDialog({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-          <div>
-            <p className="text-sm font-semibold text-ink-900 dark:text-paper-50">{item.title}</p>
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
