@@ -2,6 +2,11 @@ import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+// Backend the dev server proxies /api and /uploads to. Defaults to the port the
+// backend listens on; set API_PORT to point at a backend running elsewhere (for
+// example when another project already holds 8787).
+const API_TARGET = `http://localhost:${process.env.API_PORT ?? "8787"}`;
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -14,7 +19,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:8787",
+        target: API_TARGET,
         changeOrigin: true,
       },
       // Uploaded files (cover photos, moodboard images, listing heroes) are
@@ -22,7 +27,7 @@ export default defineConfig({
       // 404s them — they only worked in prod where one origin serves both — so
       // a couple's cover photo showed a broken-image icon in the editor preview.
       "/uploads": {
-        target: "http://localhost:8787",
+        target: API_TARGET,
         changeOrigin: true,
       },
     },
