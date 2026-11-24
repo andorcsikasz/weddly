@@ -158,26 +158,38 @@ export function GoogleCalendarConnect({
   const pillBase =
     "inline-flex min-h-tap items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 disabled:opacity-60 sm:min-h-0 dark:focus-visible:ring-paper-100";
 
-  if (!status.connected) {
+  // Google has ended our access and only the person can restore it (revoked, or
+  // the grant expired). Nothing retries out of this, so it is not shown as
+  // "connected", which was a green tick over a sync that had been dead for weeks.
+  // The button becomes the one action that fixes it, in amber: nothing is broken
+  // or lost, the link just has to be made again.
+  const needsReconnect = status.connected && status.needsReconnect;
+
+  if (!status.connected || needsReconnect) {
     return (
       <button
         type="button"
         onClick={onConnect}
         disabled={busy}
-        className={`${pillBase} bg-paper-100 text-ink-700 hover:bg-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700`}
+        aria-label={needsReconnect ? t(k("gcal_reconnect_cta")) : undefined}
+        title={needsReconnect ? t(k("gcal_reauth_hint")) : undefined}
+        className={`${pillBase} ${
+          needsReconnect
+            ? "bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:hover:bg-amber-900/60"
+            : "bg-paper-100 text-ink-700 hover:bg-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+        }`}
       >
-        <CalendarPlus size={15} aria-hidden="true" />
-        {busy ? t(k("gcal_connecting")) : t(k("gcal_connect"))}
+        {needsReconnect ? (
+          <TriangleAlert size={15} aria-hidden="true" />
+        ) : (
+          <CalendarPlus size={15} aria-hidden="true" />
+        )}
+        {busy
+          ? t(k("gcal_connecting"))
+          : t(k(needsReconnect ? "gcal_reconnect_cta" : "gcal_connect"))}
       </button>
     );
   }
-
-  // Google has ended our access and only the person can restore it (revoked, or
-  // the grant expired). Nothing retries out of this, so the pill stops claiming
-  // "connected", which was a green tick over a sync that had been dead for
-  // weeks, and turns into the one action that fixes it. Amber, not red: nothing
-  // is broken or lost, the link just has to be made again.
-  const needsReconnect = status.needsReconnect;
 
   return (
     <div className="relative">
@@ -187,19 +199,10 @@ export function GoogleCalendarConnect({
         aria-haspopup="menu"
         aria-expanded={menuOpen}
         aria-label={t(k("gcal_menu_aria"))}
-        title={needsReconnect ? t(k("gcal_reauth_hint")) : undefined}
-        className={`${pillBase} ${
-          needsReconnect
-            ? "bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:hover:bg-amber-900/60"
-            : "bg-sage-100 text-sage-800 hover:bg-sage-200 dark:bg-sage-900/40 dark:text-sage-200 dark:hover:bg-sage-900/60"
-        }`}
+        className={`${pillBase} bg-sage-100 text-sage-800 hover:bg-sage-200 dark:bg-sage-900/40 dark:text-sage-200 dark:hover:bg-sage-900/60`}
       >
-        {needsReconnect ? (
-          <TriangleAlert size={15} aria-hidden="true" />
-        ) : (
-          <CalendarCheck2 size={15} aria-hidden="true" />
-        )}
-        <span>{t(k(needsReconnect ? "gcal_reauth_label" : "gcal_connected_label"))}</span>
+        <CalendarCheck2 size={15} aria-hidden="true" />
+        <span>{t(k("gcal_connected_label"))}</span>
         <ChevronDown size={14} aria-hidden="true" />
       </button>
       {menuOpen && (
@@ -220,39 +223,16 @@ export function GoogleCalendarConnect({
                 {status.email}
               </p>
             )}
-            {needsReconnect ? (
-              <>
-                {/* Says what happened before offering the fix, because "reconnect"
-                    with no reason reads as the app being flaky. */}
-                <p className="px-3 pb-1.5 text-xs text-ink-600 dark:text-umber-200">
-                  {t(k("gcal_reauth_hint"))}
-                </p>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={onConnect}
-                  disabled={busy}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-ink-900 transition-colors hover:bg-paper-100 disabled:opacity-60 dark:text-paper-50 dark:hover:bg-umber-800"
-                >
-                  <CalendarPlus size={14} aria-hidden="true" />
-                  {busy ? t(k("gcal_connecting")) : t(k("gcal_reconnect"))}
-                </button>
-              </>
-            ) : (
-              // Deliberately absent while the grant is dead: a "Sync now" that
-              // cannot succeed is a button that teaches the vendor to distrust
-              // the screen.
-              <button
-                type="button"
-                role="menuitem"
-                onClick={onSync}
-                disabled={busy}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-paper-100 disabled:opacity-60 dark:text-paper-100 dark:hover:bg-umber-800"
-              >
-                <RefreshCw size={14} aria-hidden="true" />
-                {busy ? t(k("gcal_syncing")) : t(k("gcal_sync_now"))}
-              </button>
-            )}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onSync}
+              disabled={busy}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-paper-100 disabled:opacity-60 dark:text-paper-100 dark:hover:bg-umber-800"
+            >
+              <RefreshCw size={14} aria-hidden="true" />
+              {busy ? t(k("gcal_syncing")) : t(k("gcal_sync_now"))}
+            </button>
             <button
               type="button"
               role="menuitem"

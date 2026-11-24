@@ -20,7 +20,14 @@ import {
 } from "../domain/google_calendar";
 import { buildAuthUrl, exchangeCode, GCAL_REAUTH_REQUIRED } from "../lib/google_calendar";
 import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
-import { signOAuthState, verifyOAuthState } from "../lib/oauth_state";
+import {
+  newPkcePair,
+  oauthBindingClearCookie,
+  oauthBindingSetCookie,
+  readOAuthBinding,
+  signOAuthState,
+  verifyOAuthState,
+} from "../lib/oauth_state";
 import { handleVendorCalendarCallback } from "./vendor_google_calendar";
 
 function statusFor(coupleId: number): GoogleCalendarStatus {
@@ -56,19 +63,29 @@ function handleStatus(ctx: Ctx): Response {
 }
 
 /** Start the OAuth flow: return the Google consent URL the frontend redirects
- *  to. Bound to this user via a signed `state`. */
+ *  to. Bound to this user via a signed `state`, and to this browser via the
+ *  binding cookie (state + PKCE verifier). */
 function handleConnect(ctx: Ctx): Response {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   if (!GOOGLE_CALENDAR_ENABLED) throw new HttpError(503, "Google Calendar is not configured");
-  return json({ url: buildAuthUrl(signOAuthState("couple", userId)) });
+  const state = signOAuthState("couple", userId);
+  const pkce = newPkcePair();
+  return json(
+    { url: buildAuthUrl(state, pkce.challenge) },
+    { headers: { "Set-Cookie": oauthBindingSetCookie(state, pkce.verifier) } },
+  );
 }
 
+/** Every callback outcome clears the binding cookie: it is single-use. */
 function redirect(pathAndQuery: string): Response {
   return new Response(null, {
     status: 302,
-    headers: { Location: `${CONFIG.frontendBaseUrl}${pathAndQuery}` },
+    headers: {
+      Location: `${CONFIG.frontendBaseUrl}${pathAndQuery}`,
+      "Set-Cookie": oauthBindingClearCookie(),
+    },
   });
 }
 
@@ -85,21 +102,24 @@ async function handleCallback(ctx: Ctx): Promise<Response> {
   // The landing page depends on which flow this was, and we only know that once
   // the state verifies. An unverifiable state falls back to the couple timeline.
   const decoded = state ? verifyOAuthState(state) : null;
+  // The PKCE verifier is only trusted when the browser's binding cookie was set
+  // for this very state; otherwise the exchange below would have nothing to prove.
+  const verifier = state && decoded ? readOAuthBinding(ctx.req, state) : null;
   if (decoded?.kind === "vendor") {
-    return handleVendorCalendarCallback(ctx, decoded.userId, redirect);
+    return handleVendorCalendarCallback(ctx, decoded.userId, verifier, redirect);
   }
 
   if (params.get("error")) return redirect("/app/timeline?gcal=denied");
   const code = params.get("code");
   if (!code || !state) return redirect("/app/timeline?gcal=error");
 
-  if (decoded === null) return redirect("/app/timeline?gcal=error");
+  if (decoded === null || verifier === null) return redirect("/app/timeline?gcal=error");
   const userId = decoded.userId;
   const couple = getCoupleForUser(userId);
   if (!couple) return redirect("/app/timeline?gcal=error");
 
   try {
-    const tokens = await exchangeCode(code);
+    const tokens = await exchangeCode(code, verifier);
     saveConnection({
       coupleId: couple.id,
       connectedUserId: userId,

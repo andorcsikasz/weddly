@@ -140,6 +140,29 @@ if (REQUIRE_PROD_HARDENING) {
     );
     process.exit(1);
   }
+  if ((process.env.GOOGLE_REDIRECT_URI ?? "").trim()) {
+    // Must be exactly the callback Google redirects to, and must be HTTPS. A
+    // mismatch with the URI registered in Google Cloud Console fails at consent,
+    // so refuse to boot rather than ship a flow that cannot complete.
+    let redirect: URL | null = null;
+    try {
+      redirect = new URL((process.env.GOOGLE_REDIRECT_URI ?? "").trim());
+    } catch {
+      redirect = null;
+    }
+    if (
+      !redirect ||
+      redirect.protocol !== "https:" ||
+      redirect.pathname !== "/api/google-calendar/callback" ||
+      redirect.search !== "" ||
+      redirect.hash !== ""
+    ) {
+      console.error(
+        "[config] FATAL: GOOGLE_REDIRECT_URI must be https://<host>/api/google-calendar/callback (no query or fragment).",
+      );
+      process.exit(1);
+    }
+  }
   if (
     (process.env.GOOGLE_CLIENT_SECRET ?? "").trim() &&
     !(process.env.DATA_ENCRYPTION_KEYS ?? "").trim()
@@ -277,6 +300,12 @@ export const CONFIG = {
    *  from the moment of step-up, not from last use. */
   adminReauthTtlMs: 1000 * 60 * 60 * 24 * 30,
   frontendBaseUrl: process.env.FRONTEND_BASE_URL ?? "http://localhost:5173",
+  /** The OAuth callback Google redirects to after consent. Defaults to the
+   *  callback under FRONTEND_BASE_URL, which in production is the URI registered
+   *  in Google Cloud Console. Set GOOGLE_REDIRECT_URI only to override that. */
+  googleRedirectUri:
+    (process.env.GOOGLE_REDIRECT_URI ?? "").trim() ||
+    `${process.env.FRONTEND_BASE_URL ?? "http://localhost:5173"}/api/google-calendar/callback`,
   /** When `1`, the server also serves the built SPA from `frontend/dist`. */
   serveFrontend: process.env.SERVE_FRONTEND === "1",
   /** Resend API key. When unset, `sendEmail()` logs the link to stdout instead. */

@@ -43,6 +43,7 @@ import {
   type DesiredCalendarEvent,
   encryptToken,
   GCAL_REAUTH_REQUIRED,
+  GoogleReauthRequiredError,
   type GoogleCalendarListEntry,
   type GoogleEventBody,
   listCalendars,
@@ -422,9 +423,22 @@ async function ensureFreshAccessToken(conn: VendorGoogleCalendarConnectionRow): 
   const refresh = decryptToken(conn.refresh_token_enc);
   if (!refresh) {
     if (current) return current;
-    throw new Error("vendor google calendar connection has no usable token");
+    // Nothing left to refresh with: the vendor has to consent again.
+    throw new GoogleReauthRequiredError("no refresh token stored");
   }
-  const t = await refreshAccessToken(refresh);
+  let t: Awaited<ReturnType<typeof refreshAccessToken>>;
+  try {
+    t = await refreshAccessToken(refresh);
+  } catch (e) {
+    if (e instanceof GoogleReauthRequiredError) {
+      // Dead grant: drop the tokens, keep the calendar choice and the busy
+      // rows, so a reconnect resumes where the vendor left off.
+      db.prepare(
+        "UPDATE vendor_google_calendar_connections SET access_token_enc = NULL, refresh_token_enc = NULL, token_expiry = NULL, updated_at = ? WHERE vendor_account_id = ?",
+      ).run(nowMs, conn.vendor_account_id);
+    }
+    throw e;
+  }
   db.prepare(
     "UPDATE vendor_google_calendar_connections SET access_token_enc = ?, token_expiry = ?, updated_at = ? WHERE vendor_account_id = ?",
   ).run(encryptToken(t.accessToken), nowMs + t.expiresInSec * 1000, nowMs, conn.vendor_account_id);

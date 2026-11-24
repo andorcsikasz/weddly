@@ -1463,6 +1463,7 @@ const hr: LocaleMessages = {
     gcal_reauth_hint:
       "Google je prekinuo Weddlyjev pristup vašem kalendaru pa se ništa ne sinkronizira. Povežite ga ponovno i sve kreće dalje. Vaše rezervacije i blokirani datumi ostaju točno takvi kakvi jesu.",
     gcal_reconnect: "Povežite ponovno",
+    gcal_reconnect_cta: "Ponovno povežite Google kalendar",
     gcal_unverified_title: "Google još pregledava ovu integraciju",
     gcal_unverified_body:
       "Google provjerava Weddlyjevu integraciju s kalendarom i dok to ne završi prikazuje zaslon na kojem piše da aplikacija nije potvrđena. Možete ga mirno preskočiti. Weddly za vaše rezervacije i blokirane dane stvara vlastiti kalendar, čita samo kada ste zauzeti i nikad zbog čega, a prestaje istog trena kad prekinete vezu.",
@@ -3313,6 +3314,7 @@ const hr: LocaleMessages = {
     gcal_reauth_hint:
       "Google je prekinuo Weddlyjev pristup vašem kalendaru pa se ništa ne sinkronizira. Povežite se ponovno i sve se nastavlja. Vaš plan ostaje točno takav kakav jest.",
     gcal_reconnect: "Povežite ponovno",
+    gcal_reconnect_cta: "Ponovno povežite Google kalendar",
     gcal_unverified_title: "Google još provjerava ovu integraciju",
     gcal_unverified_body:
       "Google trenutačno provjerava Weddlyjevu integraciju s kalendarom i dok to traje prikazuje zaslon koji kaže da aplikacija nije potvrđena. Slobodno ga preskočite. Weddly stvara jedan vlastiti kalendar za vaš plan vjenčanja, ne dira vaše ostale kalendare i prestaje u trenutku kad ga odspojite.",

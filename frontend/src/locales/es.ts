@@ -1473,6 +1473,7 @@ const es: LocaleMessages = {
     gcal_reauth_hint:
       "Google ha terminado el acceso de Weddly a tu calendario, así que no se está sincronizando nada. Vuelve a conectar para reanudarlo: tus reservas y tus días bloqueados se quedan como están.",
     gcal_reconnect: "Volver a conectar",
+    gcal_reconnect_cta: "Volver a conectar Google Calendar",
     gcal_unverified_title: "Google todavía está revisando esta integración",
     gcal_unverified_body:
       "Google está revisando la integración de calendario de Weddly y, hasta que termine, muestra una pantalla que dice que la aplicación no está verificada. Puedes continuar con tranquilidad. Weddly crea un calendario propio para tus reservas y tus días bloqueados, solo lee cuándo estás ocupado y nunca por qué, y todo se detiene en cuanto desconectas.",
@@ -3373,6 +3374,7 @@ const es: LocaleMessages = {
     gcal_reauth_hint:
       "Google ha terminado el acceso de Weddly a tu calendario, así que no se está sincronizando nada. Vuelve a conectar para reanudarlo: tus planes se quedan como están.",
     gcal_reconnect: "Volver a conectar",
+    gcal_reconnect_cta: "Volver a conectar Google Calendar",
     gcal_unverified_title: "Google todavía está revisando esta integración",
     gcal_unverified_body:
       "Google está revisando la integración de calendario de Weddly y, hasta que termine, muestra una pantalla que dice que la aplicación no está verificada. Puedes continuar con tranquilidad. Weddly crea un calendario propio para tu plan de boda, nunca toca tus otros calendarios, y todo se detiene en cuanto desconectas.",

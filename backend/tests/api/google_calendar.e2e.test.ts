@@ -7,6 +7,7 @@ import {
   encryptToken,
   FAKE_REVOKED_REFRESH_MARKER,
 } from "../../src/lib/google_calendar";
+import { pkceChallengeFor } from "../../src/lib/oauth_state";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
 // Runs with GOOGLE_CALENDAR_FAKE=1 + GOOGLE_CLIENT_SECRET pinned (tests/setup.ts):
@@ -38,18 +39,35 @@ function stateFromConnectUrl(url: string): string {
 }
 
 /** Hit the public OAuth callback WITHOUT following the redirect (it points at
- *  the frontend origin, which isn't served in tests). */
-function callback(query: string): Promise<Response> {
-  return fetch(`${BASE}/api/google-calendar/callback?${query}`, { redirect: "manual" });
+ *  the frontend origin, which isn't served in tests). `cookie` is the browser's
+ *  binding cookie, sent the way Google's redirect would carry it. */
+function callback(query: string, cookie?: string): Promise<Response> {
+  return fetch(`${BASE}/api/google-calendar/callback?${query}`, {
+    redirect: "manual",
+    headers: cookie ? { Cookie: cookie } : {},
+  });
+}
+
+/** Start the flow the way the browser does: the consent URL plus the binding
+ *  cookie that /connect set, which the browser would send back on the redirect. */
+async function startFlow(token: string): Promise<{ url: string; cookie: string }> {
+  const res = await fetch(`${BASE}/api/google-calendar/connect`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  expect(res.status).toBe(200);
+  const { url } = (await res.json()) as { url: string };
+  const cookie = (res.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
+  expect(cookie.startsWith("weddly_gcal_oauth=")).toBe(true);
+  return { url, cookie };
 }
 
 /** Drive a bootstrapped couple through the full connect flow; returns fresh
  *  status. */
 async function connect(token: string): Promise<GoogleCalendarStatus> {
-  const c = await req<{ url: string }>("GET", "/api/google-calendar/connect", undefined, { token });
-  expect(c.status).toBe(200);
+  const { url, cookie } = await startFlow(token);
   const res = await callback(
-    `code=fake-code&state=${encodeURIComponent(stateFromConnectUrl(c.data.url))}`,
+    `code=fake-code&state=${encodeURIComponent(stateFromConnectUrl(url))}`,
+    cookie,
   );
   expect(res.status).toBe(302);
   expect(res.headers.get("location") ?? "").toContain("gcal=connected");
@@ -229,6 +247,30 @@ describe("google-calendar: connect + sync", () => {
     expect(res.status).toBe(302);
     expect(res.headers.get("location") ?? "").toContain("gcal=error");
   });
+
+  test("a valid state without the binding cookie is refused (not this browser's flow)", async () => {
+    const { token } = await bootstrapCouple("gcal-nocookie@test.test");
+    const { url } = await startFlow(token);
+    const res = await callback(
+      `code=fake-code&state=${encodeURIComponent(stateFromConnectUrl(url))}`,
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location") ?? "").toContain("gcal=error");
+    // The cookie is single-use, so even a refused callback clears it.
+    expect(res.headers.get("set-cookie") ?? "").toContain("Max-Age=0");
+  });
+
+  test("the consent URL carries a PKCE S256 challenge that the cookie's verifier proves", async () => {
+    const { token } = await bootstrapCouple("gcal-pkce@test.test");
+    const { url, cookie } = await startFlow(token);
+    const params = new URL(url).searchParams;
+    expect(params.get("code_challenge_method")).toBe("S256");
+    const verifier = decodeURIComponent(cookie.slice("weddly_gcal_oauth=".length)).split("~")[1];
+    expect(verifier).toBeTruthy();
+    expect(pkceChallengeFor(verifier as string)).toBe(params.get("code_challenge") as string);
+    expect(params.get("access_type")).toBe("offline");
+    expect(params.get("prompt")).toBe("consent");
+  });
 });
 
 // ─── A grant that Google has ended ───────────────────────────────────────────
@@ -265,6 +307,19 @@ describe("google-calendar: revoked grant asks for a reconnect", () => {
     // The connection is intact: the calendar, the email and the event map all
     // survive, because reconnecting must not cost the couple their sync state.
     expect(synced.data.connected).toBe(true);
+    // The dead tokens are deleted, not left for the next worker tick to retry.
+    const row = db
+      .prepare(
+        "SELECT access_token_enc, refresh_token_enc, calendar_id FROM google_calendar_connections WHERE couple_id = ?",
+      )
+      .get(coupleId) as {
+      access_token_enc: string | null;
+      refresh_token_enc: string | null;
+      calendar_id: string | null;
+    };
+    expect(row.access_token_enc).toBeNull();
+    expect(row.refresh_token_enc).toBeNull();
+    expect(row.calendar_id).toBeTruthy();
     expect(synced.data.calendarId).toBeTruthy();
     // The one task plus the wedding day itself.
     expect(eventMap(coupleId).length).toBe(2);

@@ -1498,6 +1498,7 @@ const de: LocaleMessages = {
     gcal_reauth_hint:
       "Google hat Weddlys Zugriff auf Ihren Kalender beendet, deshalb wird nichts synchronisiert. Verbinden Sie neu, dann läuft es wieder. Ihre Buchungen und gesperrten Termine bleiben genau so, wie sie sind.",
     gcal_reconnect: "Neu verbinden",
+    gcal_reconnect_cta: "Google Kalender neu verbinden",
     gcal_unverified_title: "Google prüft diese Integration noch",
     gcal_unverified_body:
       "Google prüft Weddlys Kalender-Integration, und bis das abgeschlossen ist, zeigt es einen Hinweis, die App sei nicht verifiziert. Sie können daran bedenkenlos vorbeigehen. Weddly legt für Ihre Buchungen und gesperrten Tage einen eigenen Kalender an, liest nur, wann Sie belegt sind, nie wofür, und hört in dem Moment auf, in dem Sie die Verbindung trennen.",
@@ -3383,6 +3384,7 @@ const de: LocaleMessages = {
     gcal_reauth_hint:
       "Google hat Weddlys Zugriff auf Ihren Kalender beendet, deshalb wird gerade nichts synchronisiert. Verbinden Sie erneut, dann läuft es weiter. Ihr Plan bleibt genau so, wie er ist.",
     gcal_reconnect: "Erneut verbinden",
+    gcal_reconnect_cta: "Google Kalender neu verbinden",
     gcal_unverified_title: "Google prüft diese Integration noch",
     gcal_unverified_body:
       "Google prüft gerade Weddlys Kalender-Integration, und solange das läuft, erscheint ein Hinweis, dass die App nicht verifiziert ist. Sie können ihn bedenkenlos übergehen. Weddly legt einen einzigen eigenen Kalender für Ihren Hochzeitsplan an, rührt Ihre anderen Kalender nicht an und hört in dem Moment auf, in dem Sie die Verbindung trennen.",

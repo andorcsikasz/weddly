@@ -32,7 +32,7 @@ import {
 import { countVendorExternalBusy } from "../domain/vendor_external_busy";
 import { buildAuthUrl, exchangeCode, GCAL_REAUTH_REQUIRED } from "../lib/google_calendar";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
-import { signOAuthState } from "../lib/oauth_state";
+import { newPkcePair, oauthBindingSetCookie, signOAuthState } from "../lib/oauth_state";
 
 /** Where the vendor lands after the consent round-trip. */
 const VENDOR_CALENDAR_PATH = "/vendor/calendar";
@@ -69,21 +69,29 @@ function handleConnect(ctx: Ctx): Response {
   if (!isVendorFeatureEnabled(vendorPlanForAccount(account.id), "calendar_availability")) {
     throw new HttpError(403, "Pro plan required", { code: "vendor_pro_required" });
   }
-  return json({ url: buildAuthUrl(signOAuthState("vendor", account.owner_user_id)) });
+  const state = signOAuthState("vendor", account.owner_user_id);
+  const pkce = newPkcePair();
+  return json(
+    { url: buildAuthUrl(state, pkce.challenge) },
+    { headers: { "Set-Cookie": oauthBindingSetCookie(state, pkce.verifier) } },
+  );
 }
 
 /** The vendor branch of the shared OAuth callback, invoked by
  *  routes/google_calendar.ts once the signed state proves this was a vendor
- *  flow. `redirect` is passed in so both branches share one 302 helper. */
+ *  flow. `verifier` is the PKCE verifier from the browser's binding cookie (null
+ *  when absent or for another state). `redirect` is passed in so both branches
+ *  share one 302 helper. */
 export async function handleVendorCalendarCallback(
   ctx: Ctx,
   userId: number,
+  verifier: string | null,
   redirect: (pathAndQuery: string) => Response,
 ): Promise<Response> {
   const params = ctx.url.searchParams;
   if (params.get("error")) return redirect(`${VENDOR_CALENDAR_PATH}?gcal=denied`);
   const code = params.get("code");
-  if (!code) return redirect(`${VENDOR_CALENDAR_PATH}?gcal=error`);
+  if (!code || verifier === null) return redirect(`${VENDOR_CALENDAR_PATH}?gcal=error`);
 
   const account = getVendorAccountByOwnerUserId(userId);
   if (!account) return redirect(`${VENDOR_CALENDAR_PATH}?gcal=error`);
@@ -94,7 +102,7 @@ export async function handleVendorCalendarCallback(
   }
 
   try {
-    const tokens = await exchangeCode(code);
+    const tokens = await exchangeCode(code, verifier);
     saveVendorConnection({
       vendorAccountId: account.id,
       connectedUserId: userId,

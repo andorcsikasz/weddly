@@ -19,6 +19,7 @@ import {
   deleteCalendar,
   encryptToken,
   GCAL_REAUTH_REQUIRED,
+  GoogleReauthRequiredError,
   type GoogleEventBody,
   reconcileCalendarEvents,
   refreshAccessToken,
@@ -278,9 +279,23 @@ async function ensureFreshAccessToken(conn: GoogleCalendarConnectionRow): Promis
   const refresh = decryptToken(conn.refresh_token_enc);
   if (!refresh) {
     if (current) return current;
-    throw new Error("google calendar connection has no usable token");
+    // Nothing left to refresh with: the person has to consent again.
+    throw new GoogleReauthRequiredError("no refresh token stored");
   }
-  const t = await refreshAccessToken(refresh);
+  let t: Awaited<ReturnType<typeof refreshAccessToken>>;
+  try {
+    t = await refreshAccessToken(refresh);
+  } catch (e) {
+    if (e instanceof GoogleReauthRequiredError) {
+      // Google has refused the grant, so the stored tokens are dead weight and
+      // must not be retried. The calendar id and event map stay: a reconnect
+      // resumes the same calendar instead of creating a duplicate.
+      db.prepare(
+        "UPDATE google_calendar_connections SET access_token_enc = NULL, refresh_token_enc = NULL, token_expiry = NULL, updated_at = ? WHERE couple_id = ?",
+      ).run(nowMs, conn.couple_id);
+    }
+    throw e;
+  }
   db.prepare(
     "UPDATE google_calendar_connections SET access_token_enc = ?, token_expiry = ?, updated_at = ? WHERE couple_id = ?",
   ).run(encryptToken(t.accessToken), nowMs + t.expiresInSec * 1000, nowMs, conn.couple_id);

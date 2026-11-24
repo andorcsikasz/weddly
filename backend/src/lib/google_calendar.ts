@@ -26,7 +26,7 @@ const REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 /** Where Google sends the browser back after consent. Must be registered as an
  *  authorised redirect URI on the OAuth client in Google Cloud Console. */
 export function googleCalendarRedirectUri(): string {
-  return `${CONFIG.frontendBaseUrl}/api/google-calendar/callback`;
+  return CONFIG.googleRedirectUri;
 }
 
 /** A Google Calendar event body — all-day (`date`) or timed (`dateTime` +
@@ -126,8 +126,9 @@ export function decryptToken(enc: string | null): string | null {
 
 /** Build the Google consent URL. `access_type=offline` + `prompt=consent`
  *  force a refresh_token even on re-consent, so long-lived background sync keeps
- *  working. `state` is our signed CSRF/binding token. */
-export function buildAuthUrl(state: string): string {
+ *  working. `state` is our signed CSRF/binding token; `codeChallenge` is the
+ *  PKCE S256 challenge whose verifier sits in the browser's binding cookie. */
+export function buildAuthUrl(state: string, codeChallenge: string): string {
   const params = new URLSearchParams({
     client_id: CONFIG.googleClientId,
     redirect_uri: googleCalendarRedirectUri(),
@@ -137,6 +138,8 @@ export function buildAuthUrl(state: string): string {
     prompt: "consent",
     include_granted_scopes: "true",
     state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
   });
   return `${AUTH_URL}?${params.toString()}`;
 }
@@ -166,8 +169,10 @@ async function postForm(url: string, form: Record<string, string>): Promise<Resp
   });
 }
 
-/** Exchange an authorization code for tokens (initial consent). */
-export async function exchangeCode(code: string): Promise<OAuthTokens> {
+/** Exchange an authorization code for tokens (initial consent). `codeVerifier`
+ *  is the PKCE verifier from the binding cookie; Google rejects the exchange if
+ *  it does not hash to the challenge sent with the consent URL. */
+export async function exchangeCode(code: string, codeVerifier: string): Promise<OAuthTokens> {
   if (CONFIG.googleCalendarFake) return fakeExchange(code);
   const res = await postForm(TOKEN_URL, {
     code,
@@ -175,6 +180,7 @@ export async function exchangeCode(code: string): Promise<OAuthTokens> {
     client_secret: CONFIG.googleClientSecret,
     redirect_uri: googleCalendarRedirectUri(),
     grant_type: "authorization_code",
+    code_verifier: codeVerifier,
   });
   if (!res.ok) throw new Error(`google token exchange ${res.status}: ${await res.text()}`);
   const data = (await res.json()) as {

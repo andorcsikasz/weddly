@@ -150,17 +150,27 @@ function stateFromConnectUrl(url: string): string {
 
 /** Hit the shared public OAuth callback WITHOUT following the redirect (it
  *  points at the frontend origin, which isn't served in tests). */
-function callback(query: string): Promise<Response> {
-  return fetch(`${BASE}/api/google-calendar/callback?${query}`, { redirect: "manual" });
+function callback(query: string, cookie?: string): Promise<Response> {
+  return fetch(`${BASE}/api/google-calendar/callback?${query}`, {
+    redirect: "manual",
+    headers: cookie ? { Cookie: cookie } : {},
+  });
+}
+
+/** Start a flow the way the browser does: the consent URL plus the binding
+ *  cookie /connect set, which the browser sends back on Google's redirect. */
+async function startFlow(path: string, token: string): Promise<{ url: string; cookie: string }> {
+  const res = await fetch(`${BASE}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  expect(res.status).toBe(200);
+  const { url } = (await res.json()) as { url: string };
+  return { url, cookie: (res.headers.get("set-cookie") ?? "").split(";")[0] ?? "" };
 }
 
 async function connect(token: string): Promise<GoogleCalendarStatus> {
-  const c = await req<{ url: string }>("GET", "/api/vendor/google-calendar/connect", undefined, {
-    token,
-  });
-  expect(c.status).toBe(200);
+  const { url, cookie } = await startFlow("/api/vendor/google-calendar/connect", token);
   const res = await callback(
-    `code=fake-code&state=${encodeURIComponent(stateFromConnectUrl(c.data.url))}`,
+    `code=fake-code&state=${encodeURIComponent(stateFromConnectUrl(url))}`,
+    cookie,
   );
   expect(res.status).toBe(302);
   const loc = res.headers.get("location") ?? "";
@@ -467,12 +477,10 @@ describe("vendor google calendar — entitlement + callback security", () => {
     const { vendorToken, accountId } = await bootstrapVendor("gcal-replay");
     const { token: coupleToken, coupleId } = await bootstrapCouple("replay@weddly.test");
 
-    const c = await req<{ url: string }>("GET", "/api/google-calendar/connect", undefined, {
-      token: coupleToken,
-    });
-    expect(c.status).toBe(200);
+    const { url, cookie } = await startFlow("/api/google-calendar/connect", coupleToken);
     const res = await callback(
-      `code=fake-code&state=${encodeURIComponent(stateFromConnectUrl(c.data.url))}`,
+      `code=fake-code&state=${encodeURIComponent(stateFromConnectUrl(url))}`,
+      cookie,
     );
     expect(res.status).toBe(302);
     // It bound the COUPLE, and landed on the couple surface.

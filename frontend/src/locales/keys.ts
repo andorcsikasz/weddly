@@ -300,6 +300,7 @@ export interface LocaleMessages {
     gcal_reauth_label: string;
     gcal_reauth_hint: string;
     gcal_reconnect: string;
+    gcal_reconnect_cta: string;
     /** Shown BEFORE the hand-off to Google while the OAuth app is still in
      *  verification review, because the interstitial Google shows in that
      *  window reads as a security warning to anyone meeting it cold. */
@@ -1907,6 +1908,7 @@ export interface LocaleMessages {
     gcal_reauth_label: string;
     gcal_reauth_hint: string;
     gcal_reconnect: string;
+    gcal_reconnect_cta: string;
     /** Shown BEFORE the hand-off to Google while the OAuth app is still in
      *  verification review, because the interstitial Google shows in that
      *  window reads as a security warning to anyone meeting it cold. */
