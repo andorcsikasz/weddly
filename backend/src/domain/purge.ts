@@ -150,6 +150,7 @@ export function purgeOneCouple(
     db.prepare("DELETE FROM received_gifts WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM accommodations WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM transfers WHERE couple_id = ?").run(coupleId);
+    db.prepare("DELETE FROM wedding_party_members WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM notification_seen WHERE couple_id = ?").run(coupleId);
     db.prepare("DELETE FROM couple_notifications WHERE couple_id = ?").run(coupleId);
     // Membership graph (who belonged to this workspace, with what role). FKs

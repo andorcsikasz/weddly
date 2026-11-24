@@ -570,6 +570,7 @@ export const EDIT_PREFIXES: readonly string[] = [
   "/api/couples/supplier-costs",
   "/api/accommodations",
   "/api/transfers",
+  "/api/wedding-party",
   "/api/bookings",
   "/api/moodboard",
   "/api/couples/current",

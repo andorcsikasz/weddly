@@ -58,6 +58,8 @@ import type {
   SeatingTable,
   TableShape,
   Transfer,
+  UpsertWeddingPartyInput,
+  WeddingPartyMember,
   UpdateCoupleIncomeInput,
   UpsertAccommodationInput,
   UpsertAccommodationRoomInput,
@@ -1965,6 +1967,17 @@ export const transferApi = {
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/transfers/${id}`),
   assign: (body: { guest_id: number; transfer_id: number | null }) =>
     apiFetch<{ ok: true }>("POST", "/api/transfers/assign", body),
+};
+
+/** Wedding party: the helpers and special roles (best man, bridesmaids, the
+ *  konferanszié, the photographer) and where each one stands on being asked. */
+export const weddingPartyApi = {
+  list: () => apiFetch<{ members: WeddingPartyMember[] }>("GET", "/api/wedding-party"),
+  create: (body: UpsertWeddingPartyInput) =>
+    apiFetch<{ member: WeddingPartyMember }>("POST", "/api/wedding-party", body),
+  update: (id: number, body: Partial<UpsertWeddingPartyInput>) =>
+    apiFetch<{ member: WeddingPartyMember }>("PATCH", `/api/wedding-party/${id}`, body),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/wedding-party/${id}`),
 };
 
 export const pauseApi = {

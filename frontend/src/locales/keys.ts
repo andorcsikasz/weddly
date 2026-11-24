@@ -3548,6 +3548,7 @@ export interface LocaleMessages {
     seating: string;
     /** Accommodation + transfer assignment — sidebar only, sits after seating. */
     logistics: string;
+    party: string;
     /** Day-of run-of-show timeline page — sidebar only. */
     schedule: string;
     suppliers: string;
@@ -6561,6 +6562,63 @@ export interface LocaleMessages {
     per_guest_actual: string;
   };
   /** /app/logistics — drag-and-drop accommodation + transfer assignment. */
+  party: {
+    title: string;
+    sub: string;
+    add: string;
+    add_title: string;
+    edit_title: string;
+    empty_title: string;
+    empty_hint: string;
+    summary_label: string;
+    name_placeholder: string;
+    role_label_placeholder: string;
+    notes_placeholder: string;
+    field_name: string;
+    field_role: string;
+    field_role_label: string;
+    field_ceremony: string;
+    ceremony_help: string;
+    field_status: string;
+    field_phone: string;
+    field_email: string;
+    field_notes: string;
+    status_aria: string;
+    edit_aria: string;
+    delete_aria: string;
+    delete_title: string;
+    delete_body: string;
+    name_required: string;
+    role_label_required: string;
+    load_failed: string;
+    save_failed: string;
+    delete_failed: string;
+    ceremony_none: string;
+    ceremony_names: { civil: string; church: string; both: string };
+    status_names: {
+      not_asked: string;
+      asked: string;
+      said_yes: string;
+      maybe: string;
+      declined: string;
+    };
+    role_names: {
+      best_man: string;
+      maid_of_honor: string;
+      bridesmaid: string;
+      groomsman: string;
+      usher: string;
+      ring_bearer: string;
+      flower_girl: string;
+      reader: string;
+      mc: string;
+      officiant: string;
+      photographer: string;
+      videographer: string;
+      musician: string;
+      other: string;
+    };
+  };
   logistics: {
     title: string;
     sub: string;

@@ -953,6 +953,32 @@ CREATE TABLE IF NOT EXISTS transfers (
 );
 CREATE INDEX IF NOT EXISTS idx_transfers_couple ON transfers(couple_id);
 
+-- Wedding party: the people with a job on the day (best man, bridesmaids, the
+-- konferanszié, the photographer). Deliberately NOT `guests`: a bridesmaid is
+-- someone the couple ASKS, and the state of that ask (asked / said yes) is the
+-- thing being tracked, not an RSVP. Couple-scoped CRUD, mirrors transfers.
+--   role        : preset key from WEDDING_PARTY_ROLES, or 'other'
+--   role_label  : free text, required when role = 'other'
+--   ceremony    : 'civil' | 'church' | 'both' | NULL (not stated)
+--   status      : 'not_asked' | 'asked' | 'said_yes' | 'maybe' | 'declined'
+--   status_at   : when `status` last changed (NULL until first set)
+CREATE TABLE IF NOT EXISTS wedding_party_members (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  role_label TEXT,
+  ceremony TEXT,
+  status TEXT NOT NULL DEFAULT 'not_asked',
+  status_at INTEGER,
+  phone TEXT,
+  email TEXT,
+  notes TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_wedding_party_couple ON wedding_party_members(couple_id);
+
 -- Directory visit analytics. One row per recorded event (page-view of a
 -- supplier card, click on its website link, click on its phone number).
 -- `supplier_id` is the public string id — curated slugs like "etyeki-kuria"

@@ -1946,6 +1946,69 @@ export interface UpsertTransferInput {
   notes?: string | null;
 }
 
+// ─── Wedding party (helpers + special roles) ────────────────────────────────
+
+/** Preset roles. `other` takes a free-text `role_label`. Order = picker order. */
+export const WEDDING_PARTY_ROLES = [
+  "best_man",
+  "maid_of_honor",
+  "bridesmaid",
+  "groomsman",
+  "usher",
+  "ring_bearer",
+  "flower_girl",
+  "reader",
+  "mc",
+  "officiant",
+  "photographer",
+  "videographer",
+  "musician",
+  "other",
+] as const;
+export type WeddingPartyRole = (typeof WEDDING_PARTY_ROLES)[number];
+
+/** Which ceremony the person takes part in. `civil` = state/registry office. */
+export const WEDDING_PARTY_CEREMONIES = ["civil", "church", "both"] as const;
+export type WeddingPartyCeremony = (typeof WEDDING_PARTY_CEREMONIES)[number];
+
+/** The ask lifecycle, in the order the couple walks it. */
+export const WEDDING_PARTY_STATUSES = [
+  "not_asked",
+  "asked",
+  "said_yes",
+  "maybe",
+  "declined",
+] as const;
+export type WeddingPartyStatus = (typeof WEDDING_PARTY_STATUSES)[number];
+
+export interface WeddingPartyMember {
+  id: number;
+  couple_id: number;
+  name: string;
+  role: WeddingPartyRole;
+  role_label: string | null;
+  ceremony: WeddingPartyCeremony | null;
+  status: WeddingPartyStatus;
+  /** When `status` last changed; null if it never has since creation. */
+  status_at: UnixMs | null;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  created_at: UnixMs;
+  updated_at: UnixMs;
+}
+
+export interface UpsertWeddingPartyInput {
+  name: string;
+  role: WeddingPartyRole;
+  role_label?: string | null;
+  ceremony?: WeddingPartyCeremony | null;
+  status?: WeddingPartyStatus;
+  phone?: string | null;
+  email?: string | null;
+  notes?: string | null;
+}
+
 // ─── Audit ──────────────────────────────────────────────────────────────────
 
 export interface AuditEntry {

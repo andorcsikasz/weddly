@@ -111,6 +111,7 @@ const HoneymoonPage = lazyWithReload(() => import("./pages/HoneymoonPage"));
 const RateVendorsPage = lazyWithReload(() => import("./pages/RateVendorsPage"));
 const InvitePage = lazyWithReload(() => import("./pages/InvitePage"));
 const LogisticsPage = lazyWithReload(() => import("./pages/LogisticsPage"));
+const WeddingPartyPage = lazyWithReload(() => import("./pages/WeddingPartyPage"));
 const MediaPage = lazyWithReload(() => import("./pages/MediaPage"));
 const MoodboardPage = lazyWithReload(() => import("./pages/MoodboardPage"));
 const NewsletterConfirmPage = lazyWithReload(() => import("./pages/NewsletterConfirmPage"));
@@ -1210,6 +1211,14 @@ export default function App() {
             element={
               <Page>
                 <LogisticsPage />
+              </Page>
+            }
+          />
+          <Route
+            path="party"
+            element={
+              <Page>
+                <WeddingPartyPage />
               </Page>
             }
           />

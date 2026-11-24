@@ -27,6 +27,7 @@ import {
   Wallet,
   Layers,
   MessageCircle,
+  Crown,
   Moon,
   MoreHorizontal,
   Palette,
@@ -111,6 +112,16 @@ const ITEMS: NavItem[] = [
   // ── Planning ──────────────────────────────────────────────────────
   // Workflow order inside the group: people first (guests), then money
   // (budget), then bookings (suppliers), then free-form tasks & gantt.
+  // Wedding party: the helpers and special roles (best man, bridesmaids, the
+  // konferanszié, the photographer) and where each one stands on being asked.
+  // Kept beside Guests: these are people the couple invites to a job, not
+  // people they invite to a seat.
+  {
+    to: "/app/party",
+    labelKey: "nav.party",
+    icon: <Crown size={18} />,
+    group: "planning",
+  },
   {
     to: "/app/guests",
     labelKey: "nav.guests",
