@@ -7180,6 +7180,21 @@ export interface LocaleMessages {
     save_aria: string;
     unsave_aria: string;
     save_no_couple: string;
+    bulk: {
+      open: string;
+      title: string;
+      on_weddly: string;
+      own_label: string;
+      own_placeholder: string;
+      category_label: string;
+      pick_category: string;
+      submit: string;
+      submitting: string;
+      too_many: string;
+      done: string;
+      error: string;
+      blocked: string;
+    },
     diy_photo_add_aria: string;
     diy_photo_remove_aria: string;
     pick_choice: {
@@ -7272,6 +7287,37 @@ export interface LocaleMessages {
     view_grid: string;
     view_line: string;
     view_map: string;
+    view_table: string,
+    table: {
+      show_breakdown: string;
+      hide_breakdown: string;
+      breakdown_title: string;
+      provided_yes: string;
+      provided_no: string;
+      provided_ask: string;
+      included: string;
+      per_person: string;
+      note_optional: string;
+      note_refundable: string;
+      title: string;
+      vendor: string;
+      price: string;
+      planned: string;
+      seats: string;
+      role_extra: string;
+      price_from: string;
+      over_capacity: string;
+      reason_no_rules: string;
+      reason_no_date: string;
+      reason_no_match: string;
+      reason_unavailable: string;
+      unknown: string;
+      yes: string;
+      no: string;
+      error: string;
+      loading: string;
+      empty: string;
+    },
     /** Footer note on the map view when some entries aren't geocoded. */
     map_missing_count: string;
     /** Title + popup heading of a map marker several suppliers share (they sit

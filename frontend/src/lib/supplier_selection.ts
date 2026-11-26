@@ -151,6 +151,12 @@ function hydrate(coupleId: number): void {
   void migrateLegacyLocal(coupleId).then(() => fetchAndPopulate(coupleId));
 }
 
+/** Re-read the couple's picks from the server. Used after a bulk change, which
+ *  can promote or add several picks at once. Subscribers are told via emit. */
+export function refreshSelection(coupleId: number): Promise<void> {
+  return fetchAndPopulate(coupleId);
+}
+
 /** Read the current cached selection for the couple. Triggers a one-shot
  *  hydration on the first call — initial reads may return `{}` until the
  *  network round-trip lands and `subscribeSelection` callbacks fire. */

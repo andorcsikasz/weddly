@@ -73,6 +73,7 @@ import {
   Pizza,
   Plus,
   Scale,
+  Table2,
   Scissors,
   Search,
   SlidersHorizontal,
@@ -125,6 +126,8 @@ import { COVER_IMAGE_ACCEPT, COVER_IMAGE_MAX_MB, coverImageRejectReason } from "
 import type { BudgetLine, Currency, PlannerDirectoryEntry } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
+import { type BulkVendor, SupplierBulkAddDialog } from "../components/SupplierBulkAddDialog";
+import { SupplierPicksTable } from "../components/SupplierPicksTable";
 import { formatMoney } from "../lib/format";
 import { safeExternalHref } from "../lib/url";
 import {
@@ -144,6 +147,7 @@ import {
   type ExtrasMap,
   readExtras,
   readSelection,
+  refreshSelection,
   removeExtraSelection,
   type SelectionMap,
   setSelection,
@@ -189,6 +193,7 @@ const CALC_CATEGORIES = new Set<SupplierCategory>(["cake_dessert", "bar_drinks",
 const VIEW_MODES = [
   { mode: "grid", icon: LayoutGrid, label: "view_grid" },
   { mode: "line", icon: List, label: "view_line" },
+  { mode: "table", icon: Table2, label: "view_table" },
   { mode: "map", icon: MapIcon, label: "view_map" },
 ] as const;
 
@@ -501,10 +506,11 @@ export default function SuppliersPage() {
   //"line" → single-column compact rows
   //"map"  → lazy-loaded Leaflet map
   // Legacy `?view=list` URLs are coerced to "grid" so old bookmarks still work.
-  const viewMode: "grid" | "line" | "map" = (() => {
+  const viewMode: "grid" | "line" | "table" | "map" = (() => {
     const v = params.get("view");
     if (v === "map") return "map";
     if (v === "line") return "line";
+    if (v === "table") return "table";
     return "grid";
   })();
   const isMap = viewMode === "map";
@@ -543,6 +549,17 @@ export default function SuppliersPage() {
     return out;
   }, [params]);
   const [compareOpen, setCompareOpen] = useState(false);
+  // "Add to my list": the selected vendors plus the couple's own names, added
+  // in one go. The selected vendors are the ones the compare bar holds.
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const bulkVendors = useMemo<BulkVendor[]>(
+    () =>
+      compareIds.flatMap((id) => {
+        const found = items.find((i) => i.id === id);
+        return found ? [{ id: found.id, name: found.name, category: found.category }] : [];
+      }),
+    [compareIds, items],
+  );
   // Guest count: positive integer. Suppliers without a declared capacity
   // pass through (otherwise this filter would hide every photographer).
   const guestsFilter = (() => {
@@ -821,7 +838,7 @@ export default function SuppliersPage() {
     else p.set("sort", next);
     setParams(p, { replace: true });
   }
-  function setViewMode(next: "grid" | "line" | "map") {
+  function setViewMode(next: "grid" | "line" | "table" | "map") {
     const p = new URLSearchParams(params);
     if (next === "grid") p.delete("view");
     else p.set("view", next);
@@ -2916,7 +2933,9 @@ export default function SuppliersPage() {
             </section>
           )}
 
-          {viewMode === "map" ? (
+          {viewMode === "table" ? (
+            <SupplierPicksTable refreshKey={JSON.stringify([selection, extras])} />
+          ) : viewMode === "map" ? (
             // Same tour target as the grid/list container so the feature tour's
             // "vendors-list" steps still have something to spotlight in map view —
             // otherwise steps 2-3 find no element and the card drifts to center
@@ -4028,6 +4047,13 @@ export default function SuppliersPage() {
             </span>
             <button
               type="button"
+              onClick={() => setBulkOpen(true)}
+              className="inline-flex h-8 items-center gap-1 rounded-full border border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-800 transition hover:border-ink-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500"
+            >
+              {t("suppliers.bulk.open")}
+            </button>
+            <button
+              type="button"
               onClick={() => setCompareOpen(true)}
               disabled={compareIds.length < 2}
               title={compareIds.length < 2 ? t("suppliers.compare.floating_min_hint") : undefined}
@@ -4047,6 +4073,21 @@ export default function SuppliersPage() {
           </div>
         </div>
       )}
+      <SupplierBulkAddDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        vendors={bulkVendors}
+        onDone={() => {
+          if (coupleId !== null) {
+            void refreshSelection(coupleId);
+            void coupleSupplierApi
+              .list()
+              .then((r) => setCoupleSuppliers(r.suppliers))
+              .catch(() => undefined);
+          }
+          clearCompare();
+        }}
+      />
       <SupplierCompareDialog
         open={compareOpen}
         onClose={() => setCompareOpen(false)}

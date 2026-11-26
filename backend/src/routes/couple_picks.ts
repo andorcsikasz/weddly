@@ -11,9 +11,12 @@
 
 import { isSentinelPick } from "@shared/picks";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
+import * as suppliersDomain from "../domain/couple_suppliers";
 import { getCoupleForUser } from "../domain/couples";
 import * as picksDomain from "../domain/couple_picks";
 import { syncCoupleVenueFromPick } from "../domain/venue_sync";
+import { resolveSupplierBase } from "../domain/resolve_supplier";
+import { picksTableForCouple } from "../domain/picks_table";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
@@ -172,7 +175,94 @@ function handleRemove(ctx: Ctx): Response {
   return json({ ok: true });
 }
 
+/** Most suppliers one bulk request may carry. A cap, not a target: a couple
+ *  adding a shortlist of a dozen vendors is the case this serves. */
+const MAX_BULK_PICKS = 60;
+
+/** The category a supplier id belongs to: a directory listing's, or a
+ *  "do it myself" card's. Null when neither knows the id. */
+function categoryOfSupplier(coupleId: number, supplierId: string): string | null {
+  if (isSentinelPick(supplierId)) return null;
+  const listed = resolveSupplierBase(supplierId);
+  if (listed) return listed.category;
+  return suppliersDomain.getById(supplierId, coupleId)?.category ?? null;
+}
+
+/** Add many suppliers to the couple's list in one go. Each id becomes the
+ *  category's primary when the category has none, or an extra beside it.
+ *  Venue keeps one place, so a second venue is reported, not added. A result
+ *  per id says what happened, so the client can explain a partial success. */
+async function handleBulkPicks(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const body = await readJson<{ supplier_ids?: unknown }>(ctx.req);
+  if (!Array.isArray(body.supplier_ids)) {
+    throw new HttpError(400, "supplier_ids must be an array");
+  }
+  if (body.supplier_ids.length > MAX_BULK_PICKS) {
+    throw new HttpError(400, `At most ${MAX_BULK_PICKS} suppliers at once`, {
+      code: "too_many",
+    });
+  }
+  const ids = [...new Set(body.supplier_ids.map((raw) => parseSupplierId(raw)))];
+
+  const results: Array<{
+    supplier_id: string;
+    category: string | null;
+    status: "primary" | "extra" | "already" | "venue_single" | "unknown";
+  }> = [];
+  for (const supplierId of ids) {
+    const category = categoryOfSupplier(couple.id, supplierId);
+    if (!category) {
+      results.push({ supplier_id: supplierId, category: null, status: "unknown" });
+      continue;
+    }
+    const primary = picksDomain.getPick(couple.id, category);
+    if (primary?.supplier_id === supplierId) {
+      results.push({ supplier_id: supplierId, category, status: "already" });
+      continue;
+    }
+    if (!primary) {
+      picksDomain.upsertPick(couple.id, category, supplierId, userId);
+      if (category === "venue") syncCoupleVenueFromPick(couple.id);
+      results.push({ supplier_id: supplierId, category, status: "primary" });
+    } else if (category === "venue") {
+      results.push({ supplier_id: supplierId, category, status: "venue_single" });
+      continue;
+    } else if (picksDomain.getExtra(couple.id, category, supplierId)) {
+      results.push({ supplier_id: supplierId, category, status: "already" });
+      continue;
+    } else {
+      picksDomain.addExtra(couple.id, category, supplierId, userId);
+      results.push({ supplier_id: supplierId, category, status: "extra" });
+    }
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "pick.bulk_add",
+      target_kind: "couple_pick",
+      target_id: null,
+      before: null,
+      after: { category, supplier_id: supplierId },
+    });
+  }
+  return json({ results });
+}
+
+/** The picks as a comparison table: price for the couple's date and headcount,
+ *  planned note, and what each venue provides. Couple-scoped, read-only. */
+function handleTable(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  return json(picksTableForCouple(couple));
+}
+
 export function registerCouplePickRoutes(router: Router) {
+  router.get("/api/picks/table", handleTable, true);
+  router.post("/api/picks/bulk", handleBulkPicks, true);
   router.get("/api/picks", handleList, true);
   router.put("/api/picks/:category", handleUpsert, true);
   router.delete("/api/picks/:category", handleRemove, true);

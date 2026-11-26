@@ -595,7 +595,95 @@ async function handleDeletePhoto(ctx: Ctx): Promise<Response> {
   return json({ supplier: updated });
 }
 
+/** Most names one bulk request may carry, and the longest name we accept. */
+const MAX_BULK_NAMES = 40;
+const MAX_BULK_NAME_LENGTH = 120;
+
+/** The couple's own list, entered as names in one go. A name that is already on
+ *  Weddly links to that listing (no second card); any other name becomes a
+ *  "do it myself" card, published as a pending listing exactly as a single
+ *  create would. Repeats in the same request are answered once. The reply gives
+ *  each name's outcome, and the id to pick, so the client can finish the job. */
+async function handleBulkOwn(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const body = await readJson<{ category?: unknown; names?: unknown }>(ctx.req);
+  const category = body.category;
+  if (typeof category !== "string" || !VALID_CATEGORIES.has(category as SupplierCategory)) {
+    throw new HttpError(400, "A valid category is required", { code: "bad_category" });
+  }
+  if (!Array.isArray(body.names)) throw new HttpError(400, "names must be an array");
+  const cleaned: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of body.names) {
+    if (typeof raw !== "string") continue;
+    const name = raw.trim();
+    if (!name) continue;
+    if (name.length > MAX_BULK_NAME_LENGTH) {
+      throw new HttpError(400, "A name is too long", { code: "name_too_long" });
+    }
+    const key = name.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cleaned.push(name);
+  }
+  if (cleaned.length > MAX_BULK_NAMES) {
+    throw new HttpError(400, `At most ${MAX_BULK_NAMES} names at once`, { code: "too_many" });
+  }
+
+  const results: Array<{
+    name: string;
+    status: "linked" | "created";
+    supplier_id: string;
+    label: string;
+  }> = [];
+  for (const name of cleaned) {
+    const cat = category as SupplierCategory;
+    const twin = findDirectoryTwinByName(name, cat);
+    if (twin) {
+      results.push({ name, status: "linked", supplier_id: twin.id, label: twin.name });
+      continue;
+    }
+    const created = domain.insert(couple.id, {
+      name,
+      category: cat,
+      notes: null,
+      price_huf: null,
+      paid: false,
+      city: null,
+      address: null,
+      lat: null,
+      lng: null,
+      contact_email: null,
+      contact_phone: null,
+      not_listed_confirmed: false,
+    });
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "couple_supplier.create",
+      target_kind: "couple_supplier",
+      target_id: null,
+      note: created.id,
+      after: { name: created.name, category: created.category, bulk: true },
+    });
+    const row = domain.getRowById(created.id, couple.id);
+    const listingId = row ? domain.publishAsCommunityListing(couple.id, userId, row) : null;
+    // Picks follow the listing once there is one, as they do for a single card.
+    results.push({
+      name,
+      status: "created",
+      supplier_id: listingId ?? created.id,
+      label: created.name,
+    });
+  }
+  return json({ results });
+}
+
 export function registerCoupleSupplierRoutes(router: Router) {
+  router.post("/api/couple-suppliers/bulk", handleBulkOwn, true);
   router.post("/api/couple-suppliers/:id/photo", handleUploadPhoto, true);
   router.delete("/api/couple-suppliers/:id/photo", handleDeletePhoto, true);
   router.get("/api/couple-suppliers", handleList, true);

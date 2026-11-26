@@ -58,3 +58,77 @@ export function isSentinelPick(supplierId: string): boolean {
 export function countRealPicks(selection: Readonly<Record<string, string | undefined>>): number {
   return Object.values(selection).filter((v) => Boolean(v) && !isSentinelPick(v as string)).length;
 }
+
+// ── The picks table ────────────────────────────────────────────────────────
+// One row per picked supplier (primary and extras), with what a couple compares
+// a venue on: the price for their own date and headcount, their planned note,
+// and what the venue says it provides. Built server-side in one pass so the
+// table and the couple page cannot disagree about a price.
+
+/** A venue's answers, straight from its profile. `has_profile` is false for a
+ *  venue that has said nothing yet, so the table can show "unknown" rather than
+ *  a "no". */
+export interface PickTableVenue {
+  has_profile: boolean;
+  facilities: string[];
+  catering: string[];
+  drinks: string[];
+  max_seated: number | null;
+  accommodation_capacity: number | null;
+}
+
+/** A venue's price for the couple's date and headcount. `priced` carries the
+ *  estimate; the other kinds say why there is no number, in words the table can
+ *  show without guessing. */
+export type PickTablePrice =
+  | {
+      kind: "priced";
+      total: number;
+      is_from: boolean;
+      over_capacity: boolean;
+    }
+  | { kind: "no_rules" | "no_date" | "no_match" | "unavailable" };
+
+/** One line of "what the price covers". For a venue it is a price item (catering,
+ *  accommodation...). For any other listed supplier it is a package. */
+export interface PickTableLine {
+  /** Venue price item key, or null for a package (then `label` is its name). */
+  item: string | null;
+  label: string;
+  /** Whether the price covers it: yes, no, or to be asked. */
+  provided: "yes" | "no" | "ask";
+  /** Whole currency units. For a range, the low end. Null when there is no number. */
+  amount: number | null;
+  /** The high end of a package's price range, or null. */
+  amount_max: number | null;
+  /** "total" or "per_person" for a package; null for a venue item. */
+  per: "total" | "per_person" | null;
+  /** Why the line reads the way it does, when the venue said so. */
+  note_key: "optional" | "refundable" | null;
+  /** A package's own description (its photo count, hours and so on), as typed. */
+  description: string | null;
+}
+
+export interface PickTableRow {
+  supplier_id: string;
+  role: "primary" | "extra";
+  category: string;
+  name: string;
+  city: string | null;
+  /** Null for a supplier that is not a venue. */
+  price: PickTablePrice | null;
+  /** The couple's own planned note for this supplier, whole currency units. */
+  planned: number | null;
+  /** What the price covers: a venue's items, or a supplier's packages. Null when
+   *  there is nothing to break down. */
+  breakdown: PickTableLine[] | null;
+  /** Null for a supplier that is not a venue. */
+  venue: PickTableVenue | null;
+}
+
+export interface PickTable {
+  currency: string;
+  wedding_date: string | null;
+  guest_count: number | null;
+  rows: PickTableRow[];
+}

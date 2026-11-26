@@ -427,7 +427,7 @@ const DATE_KINDS: ReadonlySet<WeddingDateKind> = new Set([
 const SEASONS: ReadonlySet<WeddingSeason> = new Set(["spring", "summer", "fall", "winter"]);
 const COUNT_KINDS: ReadonlySet<GuestCountKind> = new Set(["exact", "range", "tbd"]);
 const BUDGET_KINDS: ReadonlySet<BudgetKind> = new Set(["exact", "range", "tbd"]);
-function rowToCurrency(raw: string | null | undefined): Currency {
+export function rowToCurrency(raw: string | null | undefined): Currency {
   return isCurrency(raw) ? raw : "HUF";
 }
 

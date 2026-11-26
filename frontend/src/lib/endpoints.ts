@@ -180,7 +180,7 @@ import type {
   DecidePlannerWaitlistInput,
   PlannerWaitlistAdminView,
 } from "@shared/planner_waitlist";
-import type { CouplePick } from "@shared/picks";
+import type { CouplePick, PickTable } from "@shared/picks";
 import type { SavedSupplier } from "@shared/saved";
 import type {
   AdminAcquisitionAnalytics,
@@ -2385,6 +2385,17 @@ export const supplierBookingApi = {
 
 export const coupleSupplierApi = {
   list: () => apiFetch<{ suppliers: CoupleSupplier[] }>("GET", "/api/couple-suppliers"),
+  /** The couple's own list, entered as names: links a name Weddly already lists,
+   *  otherwise makes a card for it. */
+  bulkOwn: (category: string, names: string[]) =>
+    apiFetch<{
+      results: {
+        name: string;
+        status: "linked" | "created";
+        supplier_id: string;
+        label: string;
+      }[];
+    }>("POST", "/api/couple-suppliers/bulk", { category, names }),
   /** The couple's own picture for a DIY card (multipart, same limits as the
    *  cover). Returns the refreshed card. */
   uploadPhoto: async (id: string, file: File): Promise<{ supplier: CoupleSupplier }> => {
@@ -2484,6 +2495,14 @@ export const picksApi = {
     }),
   clear: (category: string) =>
     apiFetch<{ ok: true }>("DELETE", `/api/picks/${encodeURIComponent(category)}`),
+  /** The picks as a comparison table: price for the couple's date and headcount,
+   *  planned note, and what each venue provides. */
+  table: () => apiFetch<PickTable>("GET", "/api/picks/table"),
+  /** Many suppliers at once: each becomes the category's primary or an extra. */
+  bulk: (supplier_ids: string[]) =>
+    apiFetch<{
+      results: { supplier_id: string; category: string | null; status: string }[];
+    }>("POST", "/api/picks/bulk", { supplier_ids }),
   /** Another supplier in a category that already has a primary pick. */
   addExtra: (category: string, supplier_id: string) =>
     apiFetch<{ extra: CouplePick }>("POST", `/api/picks/${encodeURIComponent(category)}/extras`, {
