@@ -21,7 +21,9 @@ type Props = {
   chosenIds: ReadonlySet<string>;
   onUseExisting: (supplier: DirectorySupplier) => void;
   onCreateNew: (category: SupplierCategory) => void;
-  onRecommend: () => void;
+  /** Hands over what the couple already typed so the recommend form starts
+   *  with the same category and name instead of an empty card. */
+  onRecommend: (seed: { category: SupplierCategory; name: string }) => void;
 };
 
 export function AddLineDialog({
@@ -187,7 +189,7 @@ export function AddLineDialog({
               </button>
               <button
                 type="button"
-                onClick={onRecommend}
+                onClick={() => onRecommend({ category, name: query.trim() })}
                 className="inline-flex h-10 items-center rounded-full px-4 text-sm text-ink-600 underline-offset-4 hover:text-ink-900 hover:underline dark:text-paper-300 dark:hover:text-paper-50"
               >
                 {t("suppliers.add_line.recommend")}

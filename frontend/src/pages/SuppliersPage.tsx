@@ -401,6 +401,12 @@ export default function SuppliersPage() {
   // `wedding_planner` category (the curated planner listings live in the grid).
   const [planners, setPlanners] = useState<PlannerDirectoryEntry[]>([]);
   const [submitOpen, setSubmitOpen] = useState(false);
+  // What the couple typed in "Add to your plan" before choosing "Recommend a
+  // supplier": carried into the form so the category and name aren't retyped.
+  const [submitSeed, setSubmitSeed] = useState<{
+    category: SupplierCategory;
+    name: string;
+  } | null>(null);
   // Country + price + guest count, behind one chip. See the dialog below.
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
@@ -3961,14 +3967,17 @@ export default function SuppliersPage() {
           setNewLineCategory(category);
           setDiyOpen(true);
         }}
-        onRecommend={() => {
+        onRecommend={(seed) => {
           setAddLineOpen(false);
+          setSubmitSeed(seed);
           setSubmitOpen(true);
         }}
       />
       <SubmitSupplierModal
         open={submitOpen}
         onClose={() => setSubmitOpen(false)}
+        initialCategory={submitSeed?.category ?? null}
+        initialName={submitSeed?.name ?? ""}
         onSubmitted={() => {
           // New submissions land as 'pending' and aren't returned by the
           // public list until the contact_email is verified. Skip the

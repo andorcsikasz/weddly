@@ -89,4 +89,15 @@ describe("AddLineDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add a private Photography line" }));
     expect(onCreateNew).toHaveBeenCalledWith("photography");
   });
+
+  it("hands the typed name and the chosen category to the recommend form", () => {
+    const { onRecommend } = renderDialog();
+    fireEvent.click(screen.getByRole("button", { name: "Photography" }));
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "  Anna's Photo " } });
+    fireEvent.click(screen.getByRole("button", { name: "Recommend it to Weddly" }));
+    expect(onRecommend).toHaveBeenCalledWith({
+      category: "photography",
+      name: "Anna's Photo",
+    });
+  });
 });
