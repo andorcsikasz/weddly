@@ -261,6 +261,24 @@ describe("verified visitor suggests a supplier", () => {
     expect(res.status).toBe(201);
     expect(supplierByName("VVSup Priced")?.price_band).toBe(4);
   });
+
+  test("a bare domain (www.x.hu, no scheme) is stored as https, not refused", async () => {
+    const { deviceToken } = await verifiedVisitor("vsub3@example.com");
+    const res = await req(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "venue",
+        name: "VVSup Kastely",
+        address: "Telki",
+        contact_email: "info@vvsup.example.com",
+        website: "  www.vvsupkastely.hu  ",
+      },
+      { headers: { "X-Visitor-Token": deviceToken } },
+    );
+    expect(res.status).toBe(201);
+    expect(supplierByName("VVSup Kastely")?.website).toBe("https://www.vvsupkastely.hu");
+  });
 });
 
 describe("admin sees who suggested a visitor listing", () => {

@@ -7,10 +7,11 @@
 // booking-order vocabulary stays consistent with the directory chain on
 // /app/suppliers without dumping all 29 categories on screen at once.
 
-import type {
-  SubmitCommunitySupplierInput,
-  PriceBand,
-  SupplierNameMatch,
+import {
+  normalizeWebsiteInput,
+  type SubmitCommunitySupplierInput,
+  type PriceBand,
+  type SupplierNameMatch,
 } from "@shared/community_suppliers";
 import type { DirectorySupplier, SupplierCategory, SupplierGroup } from "@shared/suppliers";
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
@@ -332,7 +333,7 @@ export function SubmitSupplierModal({
     const address = form.address.trim();
     if (address && address.length > 600) next.address = tooLong;
 
-    const website = form.website.trim();
+    const website = normalizeWebsiteInput(form.website);
     if (website && !isValidUrl(website)) next.website = t("suppliers.submit.err_invalid_url");
 
     const email = form.contact_email.trim();
@@ -368,7 +369,7 @@ export function SubmitSupplierModal({
       name: form.name.trim(),
       city: form.city.trim(),
       address: form.address.trim() ? form.address.trim() : null,
-      website: form.website.trim(),
+      website: normalizeWebsiteInput(form.website),
       contact_email: trimmedEmail ? trimmedEmail : null,
       contact_phone: form.contact_phone.trim() ? form.contact_phone.trim() : null,
       blurb: form.blurb.trim(),

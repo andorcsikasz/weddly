@@ -196,3 +196,14 @@ export interface AdminCommunitySupplierReport {
   note: string | null;
   created_at: number;
 }
+
+/** Couples type a business website the way they write it on a card: `www.` and
+ *  no scheme. Add `https://` when there is none, so the client check and the
+ *  server check both see the URL the couple meant. Input with a scheme (or
+ *  nothing at all) is returned trimmed and otherwise untouched. */
+export function normalizeWebsiteInput(raw: string): string {
+  const v = raw.trim();
+  if (!v) return "";
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) return v;
+  return `https://${v}`;
+}

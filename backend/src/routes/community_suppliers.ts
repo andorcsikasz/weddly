@@ -5,10 +5,11 @@
 // an uncertain row; it is never required before publishing. Admins can also
 // hide or hard-delete via /api/admin/suppliers/*.
 
-import type {
-  CommunitySupplierReportReason,
-  PriceBand,
-  SubmitCommunitySupplierInput,
+import {
+  type CommunitySupplierReportReason,
+  normalizeWebsiteInput,
+  type PriceBand,
+  type SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { CONFIG } from "../config";
@@ -107,7 +108,7 @@ function parseSubmitBody(body: SubmitBody, requireEmail: boolean): SubmitCommuni
 
   // Website is optional now. When present, still validate hard so we don't
   // store malformed or javascript: URLs.
-  const website = trimStr(body.website);
+  const website = normalizeWebsiteInput(trimStr(body.website));
   if (website) {
     if (website.length > 300) throw new HttpError(400, "website too long (max 300)");
     if (!website.startsWith("http://") && !website.startsWith("https://")) {
