@@ -4137,7 +4137,6 @@ describe("community suppliers", () => {
       { label: "empty name", body: validPayload({ name: "" }) },
       { label: "name too long", body: validPayload({ name: "x".repeat(121) }) },
       { label: "blurb too long", body: validPayload({ blurb: "y".repeat(501) }) },
-      { label: "website without http(s)", body: validPayload({ website: "crystal-hall.test" }) },
       {
         label: "website with javascript: protocol",
         body: validPayload({ website: "javascript:alert(1)" }),
@@ -4157,6 +4156,19 @@ describe("community suppliers", () => {
       const r = await req("POST", "/api/suppliers/community", c.body, { token });
       expect({ label: c.label, status: r.status }).toEqual({ label: c.label, status: 400 });
     }
+  });
+
+  test("a bare website domain is accepted and stored with https://", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("bare-domain@weddly.test");
+    const r = await req<{ supplier: { website: string } }>(
+      "POST",
+      "/api/suppliers/community",
+      validPayload({ website: "crystal-hall.test" }),
+      { token },
+    );
+    expect(r.status).toBe(201);
+    expect(r.data.supplier.website).toBe("https://crystal-hall.test");
   });
 
   test("auth required: anon submit returns 401", async () => {
