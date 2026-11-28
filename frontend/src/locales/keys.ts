@@ -6604,6 +6604,9 @@ export interface LocaleMessages {
     role_label_placeholder: string;
     notes_placeholder: string;
     field_name: string;
+    /** Under the name field while the member is linked to a guest. */
+    linked_hint: string;
+    unlink: string;
     field_role: string;
     field_role_label: string;
     field_ceremony: string;

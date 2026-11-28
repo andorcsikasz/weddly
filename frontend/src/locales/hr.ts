@@ -5654,6 +5654,8 @@ const hr: LocaleMessages = {
     role_label_placeholder: "npr. čitač u crkvi",
     notes_placeholder: "Odjeća, duljina govora, put…",
     field_name: "Ime",
+    linked_hint: "S vašeg popisa gostiju. Za promjenu uredite gosta.",
+    unlink: "Odvoji",
     field_role: "Uloga",
     field_role_label: "Naziv uloge",
     field_ceremony: "Ceremonija",

@@ -5620,6 +5620,8 @@ const en: LocaleMessages = {
     role_label_placeholder: "e.g. reader at the church",
     notes_placeholder: "Outfit, speech length, travel…",
     field_name: "Name",
+    linked_hint: "From your guest list. Edit the guest to change it here.",
+    unlink: "Unlink",
     field_role: "Role",
     field_role_label: "Role name",
     field_ceremony: "Ceremony",

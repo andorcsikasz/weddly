@@ -273,6 +273,16 @@ addColumnIfMissing("guests", "invitation_opened_at", "invitation_opened_at INTEG
 addColumnIfMissing("guests", "invited_online_at", "invited_online_at INTEGER");
 addColumnIfMissing("guests", "invited_physical_at", "invited_physical_at INTEGER");
 
+// A wedding-party member picked from the guest list. While linked, name,
+// email and phone follow the guest (read-time overlay in domain/wedding_party),
+// and the stored columns are only the snapshot kept for after the guest is
+// deleted (ON DELETE SET NULL unlinks it and the snapshot stays).
+addColumnIfMissing(
+  "wedding_party_members",
+  "guest_id",
+  "guest_id INTEGER REFERENCES guests(id) ON DELETE SET NULL",
+);
+
 // Repair rows written before both views shared one rule (reconcileInviteState
 // in domain/guests.ts): invited on the guest list with no channel, a channel
 // with no invited stamp, or delivered and in-person out of step. Each UPDATE

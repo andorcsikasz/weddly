@@ -10,6 +10,7 @@ import { bootstrapCouple, req } from "../helpers";
 interface Member {
   id: number;
   couple_id: number;
+  guest_id: number | null;
   name: string;
   role: string;
   role_label: string | null;
@@ -227,6 +228,134 @@ describe("wedding party: list, delete and isolation", () => {
   test("the endpoints require a signed-in couple", async () => {
     const r = await req("GET", "/api/wedding-party");
     expect(r.status).toBe(401);
+  });
+});
+
+async function makeGuest(
+  token: string,
+  body: { full_name: string; email?: string; phone?: string },
+): Promise<number> {
+  const r = await req<{ guest: { id: number } }>("POST", "/api/guests", body, { token });
+  expect(r.status).toBe(201);
+  return r.data.guest.id;
+}
+
+describe("wedding party: linked to a guest (one-way sync)", () => {
+  test("picking a guest copies name, email and phone, and ignores the body's copies", async () => {
+    const { token } = await bootstrapCouple("wp-link-create@weddly.test");
+    const guestId = await makeGuest(token, {
+      full_name: "Bianka Zawiasa",
+      email: "bianka@example.com",
+      phone: "+36301234567",
+    });
+    const r = await create(token, {
+      guest_id: guestId,
+      name: "something typed",
+      role: "bridesmaid",
+      email: "other@example.com",
+    });
+    expect(r.status).toBe(201);
+    expect(r.data.member.guest_id).toBe(guestId);
+    expect(r.data.member.name).toBe("Bianka Zawiasa");
+    expect(r.data.member.email).toBe("bianka@example.com");
+    expect(r.data.member.phone).toBe("+36301234567");
+  });
+
+  test("a guest correction shows on the member with no write to the party row", async () => {
+    const { token } = await bootstrapCouple("wp-link-live@weddly.test");
+    const guestId = await makeGuest(token, { full_name: "Anna Kiss", email: "old@example.com" });
+    const made = await create(token, { guest_id: guestId, role: "usher" });
+    const id = made.data.member.id;
+
+    const fix = await req(
+      "PATCH",
+      `/api/guests/${guestId}`,
+      {
+        full_name: "Anna Kiss-Nagy",
+        email: "new@example.com",
+      },
+      { token },
+    );
+    expect(fix.status).toBe(200);
+
+    const list = await req<{ members: Member[] }>("GET", "/api/wedding-party", undefined, {
+      token,
+    });
+    const member = list.data.members.find((m) => m.id === id);
+    expect(member?.name).toBe("Anna Kiss-Nagy");
+    expect(member?.email).toBe("new@example.com");
+  });
+
+  test("while linked, a PATCH cannot fork name or email away from the guest", async () => {
+    const { token } = await bootstrapCouple("wp-link-patch@weddly.test");
+    const guestId = await makeGuest(token, { full_name: "Lili Tóth", email: "lili@example.com" });
+    const made = await create(token, { guest_id: guestId, role: "reader" });
+    const id = made.data.member.id;
+
+    const r = await req<{ member: Member }>(
+      "PATCH",
+      `/api/wedding-party/${id}`,
+      { name: "Wrong", email: "wrong@example.com", status: "said_yes" },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.member.name).toBe("Lili Tóth");
+    expect(r.data.member.email).toBe("lili@example.com");
+    expect(r.data.member.status).toBe("said_yes");
+  });
+
+  test("null unlinks: the member keeps the last copied values and becomes editable again", async () => {
+    const { token } = await bootstrapCouple("wp-link-unlink@weddly.test");
+    const guestId = await makeGuest(token, { full_name: "Dani Varga", email: "dani@example.com" });
+    const made = await create(token, { guest_id: guestId, role: "groomsman" });
+    const id = made.data.member.id;
+
+    const unlinked = await req<{ member: Member }>(
+      "PATCH",
+      `/api/wedding-party/${id}`,
+      { guest_id: null },
+      { token },
+    );
+    expect(unlinked.status).toBe(200);
+    expect(unlinked.data.member.guest_id).toBeNull();
+    expect(unlinked.data.member.name).toBe("Dani Varga");
+
+    const edited = await req<{ member: Member }>(
+      "PATCH",
+      `/api/wedding-party/${id}`,
+      { name: "Dani V." },
+      { token },
+    );
+    expect(edited.data.member.name).toBe("Dani V.");
+  });
+
+  test("deleting the guest unlinks the member and keeps its last values", async () => {
+    const { token } = await bootstrapCouple("wp-link-delete@weddly.test");
+    const guestId = await makeGuest(token, { full_name: "Gergő Szabó", phone: "+36209999999" });
+    const made = await create(token, { guest_id: guestId, role: "musician" });
+    const id = made.data.member.id;
+
+    const del = await req("DELETE", `/api/guests/${guestId}`, undefined, { token });
+    expect(del.status).toBe(200);
+
+    const list = await req<{ members: Member[] }>("GET", "/api/wedding-party", undefined, {
+      token,
+    });
+    const member = list.data.members.find((m) => m.id === id);
+    expect(member?.guest_id).toBeNull();
+    expect(member?.name).toBe("Gergő Szabó");
+    expect(member?.phone).toBe("+36209999999");
+  });
+
+  test("another couple's guest id is refused, never copied", async () => {
+    const mine = await bootstrapCouple("wp-link-mine@weddly.test");
+    const theirs = await bootstrapCouple("wp-link-theirs@weddly.test");
+    const foreignGuest = await makeGuest(theirs.token, {
+      full_name: "Titkos Vendég",
+      email: "secret@example.com",
+    });
+    const r = await create(mine.token, { guest_id: foreignGuest, role: "reader" });
+    expect(r.status).toBe(400);
   });
 });
 

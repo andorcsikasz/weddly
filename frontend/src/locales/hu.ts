@@ -5663,6 +5663,8 @@ const hu: LocaleMessages = {
     role_label_placeholder: "pl. olvasó a templomban",
     notes_placeholder: "Öltözék, beszéd hossza, utazás…",
     field_name: "Név",
+    linked_hint: "A vendéglistáról. A módosítás a vendégnél történik, innen automatikusan frissül.",
+    unlink: "Leválasztás",
     field_role: "Szerep",
     field_role_label: "Szerep megnevezése",
     field_ceremony: "Szertartás",

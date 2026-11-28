@@ -11,6 +11,7 @@ import {
   listWeddingParty,
   parseWeddingPartyCreate,
   parseWeddingPartyPatch,
+  resolveGuestLinkForWrite,
   toWeddingPartyMember,
   updateWeddingPartyMember,
 } from "../domain/wedding_party";
@@ -37,7 +38,8 @@ function handleList(ctx: Ctx): Response {
 async function handleCreate(ctx: Ctx): Promise<Response> {
   const { userId, coupleId } = requireCouple(ctx);
   const body = await readJson<Partial<UpsertWeddingPartyInput>>(ctx.req);
-  const parsed = parseWeddingPartyCreate(body);
+  const link = resolveGuestLinkForWrite(coupleId, body.guest_id, null);
+  const parsed = parseWeddingPartyCreate(body, link);
   const row = insertWeddingPartyMember(coupleId, parsed);
 
   addAuditLog({
@@ -46,7 +48,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     action: "wedding_party.create",
     target_kind: "wedding_party_member",
     target_id: row.id,
-    after: { role: parsed.role, status: parsed.status },
+    after: { role: parsed.role, status: parsed.status, guest_id: parsed.guest_id },
   });
 
   return json({ member: toWeddingPartyMember(row) }, { status: 201 });
@@ -60,7 +62,8 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   if (!existing) throw new HttpError(404, "Wedding party member not found");
 
   const body = await readJson<Partial<UpsertWeddingPartyInput>>(ctx.req);
-  const parsed = parseWeddingPartyPatch(body, existing);
+  const link = resolveGuestLinkForWrite(coupleId, body.guest_id, existing.guest_id);
+  const parsed = parseWeddingPartyPatch(body, existing, link);
   const row = updateWeddingPartyMember(id, coupleId, existing, parsed);
 
   addAuditLog({
@@ -69,8 +72,8 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     action: "wedding_party.update",
     target_kind: "wedding_party_member",
     target_id: id,
-    before: { role: existing.role, status: existing.status },
-    after: { role: parsed.role, status: parsed.status },
+    before: { role: existing.role, status: existing.status, guest_id: existing.guest_id },
+    after: { role: parsed.role, status: parsed.status, guest_id: parsed.guest_id },
   });
 
   return json({ member: toWeddingPartyMember(row) });

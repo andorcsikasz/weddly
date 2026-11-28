@@ -8,6 +8,7 @@ import {
   WEDDING_PARTY_CEREMONIES,
   WEDDING_PARTY_ROLES,
   WEDDING_PARTY_STATUSES,
+  type Guest,
   type UpsertWeddingPartyInput,
   type WeddingPartyCeremony,
   type WeddingPartyMember,
@@ -16,10 +17,19 @@ import {
 } from "@shared/types";
 import { Mail, Pencil, Phone, Plus, Trash2, Users } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { type ComboOption, Combobox } from "../components/Combobox";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { weddingPartyApi } from "../lib/endpoints";
+import { guestApi, weddingPartyApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+/** Diacritic- and case-insensitive form of a name, for matching typed words. */
+function fold(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
 
 const STATUS_TONE: Record<WeddingPartyStatus, string> = {
   not_asked: "bg-paper-200 text-ink-600 dark:bg-umber-800 dark:text-umber-200",
@@ -302,6 +312,10 @@ function PartyDialog({
   const { t } = useT();
   const toast = useToast();
   const [name, setName] = useState(initial?.name ?? "");
+  // The guest this member is linked to. While set, name/email/phone are the
+  // guest's values and read-only here; the server enforces the same rule.
+  const [guestId, setGuestId] = useState<number | null>(initial?.guest_id ?? null);
+  const linked = guestId !== null;
   const [role, setRole] = useState<WeddingPartyRole>(initial?.role ?? "best_man");
   const [roleLabel, setRoleLabel] = useState(initial?.role_label ?? "");
   const [ceremony, setCeremony] = useState<CeremonyChoice>(initial?.ceremony ?? "");
@@ -310,6 +324,55 @@ function PartyDialog({
   const [email, setEmail] = useState(initial?.email ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [submitting, setSubmitting] = useState(false);
+
+  // The couple's guest list, for suggesting a name that is already a guest.
+  // Loaded once; a failure just means no suggestions, never a blocked form.
+  const [guests, setGuests] = useState<Guest[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    guestApi
+      .list()
+      .then((r) => {
+        if (!cancelled) setGuests(r.guests);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Every word typed must appear in the guest's name, in any order and
+  // diacritic-insensitively, so "Zawiasa Bianka" finds "Bianka Zawiasa".
+  const nameSuggestions = useMemo(() => {
+    const tokens = fold(name).split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return [];
+    const out: Array<{ guest: Guest; option: ComboOption }> = [];
+    for (const g of guests) {
+      const hay = fold(g.full_name);
+      if (!tokens.every((tok) => hay.includes(tok))) continue;
+      out.push({
+        guest: g,
+        option: {
+          id: String(g.id),
+          label: g.full_name,
+          hint: g.email ?? g.phone ?? undefined,
+        },
+      });
+      if (out.length >= 8) break;
+    }
+    return out;
+  }, [guests, name]);
+
+  // Picking a guest fills the contact details from their guest record. A
+  // field the guest has no value for keeps whatever the couple typed.
+  function pickGuest(option: ComboOption) {
+    const hit = nameSuggestions.find((s) => s.option.id === option.id);
+    if (!hit) return;
+    setGuestId(hit.guest.id);
+    setName(hit.guest.full_name);
+    if (hit.guest.email) setEmail(hit.guest.email);
+    if (hit.guest.phone) setPhone(hit.guest.phone);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -329,6 +392,7 @@ function PartyDialog({
       role_label: role === "other" ? label : null,
       ceremony: ceremony === "" ? null : ceremony,
       status,
+      guest_id: guestId,
       phone: phone.trim() || null,
       email: email.trim() || null,
       notes: notes.trim() || null,
@@ -364,15 +428,29 @@ function PartyDialog({
     >
       <form onSubmit={onSubmit} className="space-y-3">
         <Field label={t("party.field_name")}>
-          <input
-            type="text"
-            className="input text-base sm:text-sm"
+          <Combobox
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={setName}
+            onSelect={pickGuest}
+            options={nameSuggestions.map((s) => s.option)}
+            ariaLabel={t("party.field_name")}
             placeholder={t("party.name_placeholder")}
-            autoComplete="off"
+            inputClassName="input text-base sm:text-sm"
             autoFocus
+            disabled={linked}
           />
+          {linked && (
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-500 dark:text-umber-300">
+              <span>{t("party.linked_hint")}</span>
+              <button
+                type="button"
+                onClick={() => setGuestId(null)}
+                className="btn-ghost btn-sm text-blush-700 underline-offset-[0.2em] hover:underline dark:text-blush-300"
+              >
+                {t("party.unlink")}
+              </button>
+            </p>
+          )}
         </Field>
 
         <Field label={t("party.field_role")}>
@@ -455,6 +533,7 @@ function PartyDialog({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               autoComplete="tel"
+              disabled={linked}
             />
           </Field>
           <Field label={t("party.field_email")}>
@@ -464,6 +543,7 @@ function PartyDialog({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              disabled={linked}
             />
           </Field>
         </div>

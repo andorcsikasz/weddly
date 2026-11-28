@@ -5768,6 +5768,8 @@ const de: LocaleMessages = {
     role_label_placeholder: "z. B. Lektor in der Kirche",
     notes_placeholder: "Kleidung, Redelänge, Anreise…",
     field_name: "Name",
+    linked_hint: "Von Ihrer Gästeliste. Ändern Sie den Gast, dann aktualisiert sich dies hier.",
+    unlink: "Verknüpfung lösen",
     field_role: "Rolle",
     field_role_label: "Bezeichnung der Rolle",
     field_ceremony: "Zeremonie",

@@ -5719,6 +5719,8 @@ const es: LocaleMessages = {
     role_label_placeholder: "p. ej. lector en la iglesia",
     notes_placeholder: "Vestuario, duración del discurso, viaje…",
     field_name: "Nombre",
+    linked_hint: "De tu lista de invitados. Para cambiarlo, edita al invitado.",
+    unlink: "Desvincular",
     field_role: "Papel",
     field_role_label: "Nombre del papel",
     field_ceremony: "Ceremonia",

@@ -1990,6 +1990,9 @@ export type WeddingPartyStatus = (typeof WEDDING_PARTY_STATUSES)[number];
 export interface WeddingPartyMember {
   id: number;
   couple_id: number;
+  /** The guest this member was picked from. While set, `name`, `email` and
+   *  `phone` are the guest's current values, not the member's own. */
+  guest_id: number | null;
   name: string;
   role: WeddingPartyRole;
   role_label: string | null;
@@ -2005,6 +2008,9 @@ export interface WeddingPartyMember {
 }
 
 export interface UpsertWeddingPartyInput {
+  /** Link to a guest. `null` unlinks; while linked the server takes name,
+   *  email and phone from the guest and ignores the body's copies. */
+  guest_id?: number | null;
   name: string;
   role: WeddingPartyRole;
   role_label?: string | null;

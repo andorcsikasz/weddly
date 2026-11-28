@@ -65,6 +65,8 @@ export function Combobox({
   inputClassName,
   onClear,
   suffix,
+  autoFocus,
+  disabled,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -82,6 +84,10 @@ export function Combobox({
   onClear?: () => void;
   /** Muted overlay pinned to the right of the field (e.g. "+25 km"). */
   suffix?: ReactNode;
+  /** Focus the field on mount (a dialog's first field). */
+  autoFocus?: boolean;
+  /** Read-only and never opens the suggestion list. */
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -157,6 +163,8 @@ export function Combobox({
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         className={inputClassName}
+        autoFocus={autoFocus}
+        disabled={disabled}
       />
       {(suffix || hasClear) && (
         <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
