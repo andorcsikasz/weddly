@@ -6383,6 +6383,11 @@ const de: LocaleMessages = {
       next_steps_review_title: "Danke, wir haben es!",
       next_steps_review_body:
         "Unser Team prüft den Eintrag, er erscheint in Kürze im Katalog der Paare.",
+      plan_ask_title: "Zu Ihrem Plan hinzufügen?",
+      plan_ask_body:
+        "{name} wird eine Zeile in Ihrem Plan, damit Sie es mit den anderen vergleichen können.",
+      plan_ask_yes: "Ja, hinzufügen",
+      plan_ask_no: "Nicht jetzt",
       category_label: "Kategorie",
       category_placeholder: "Kategorie wählen",
       category_change: "Ändern",

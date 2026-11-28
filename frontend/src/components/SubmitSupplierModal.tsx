@@ -74,6 +74,10 @@ type Props = {
    *  X-Visitor-Token instead of a bearer. Used by the /vendors recommend
    *  section so anyone can register a vendor. Default false = couple mode. */
   visitor?: boolean;
+  /** Couple mode only. When set, a successful recommendation ends by asking
+   *  whether to add it to the couple's plan (default yes). Resolves once the
+   *  plan line is saved; the modal closes on resolve. */
+  onAddToPlan?: (payload: SubmitCommunitySupplierInput) => Promise<void>;
 };
 
 type FieldKey =
@@ -182,6 +186,7 @@ export function SubmitSupplierModal({
   initialCategory,
   initialName,
   visitor = false,
+  onAddToPlan,
 }: Props) {
   const { t, locale } = useT();
   const toast = useToast();
@@ -196,6 +201,10 @@ export function SubmitSupplierModal({
   // Live "already on Weddly?" check keyed to the name field, rendered on step 0.
   const [nameMatches, setNameMatches] = useState<SupplierNameMatch[]>([]);
   const [checkingName, setCheckingName] = useState(false);
+  // Set after a successful couple recommendation: the submission the plan
+  // question is about. Null means the normal wizard is showing.
+  const [planAsk, setPlanAsk] = useState<SubmitCommunitySupplierInput | null>(null);
+  const [addingToPlan, setAddingToPlan] = useState(false);
 
   // Hero Maps-link input. Lives in its own state because the value is
   // ephemeral — once the resolver fires, the parsed fields land in `form` and
@@ -236,6 +245,8 @@ export function SubmitSupplierModal({
       setStep(0);
       setNameMatches([]);
       setCheckingName(false);
+      setPlanAsk(null);
+      setAddingToPlan(false);
     }
   }, [open, initialCategory, initialName, visitor]);
 
@@ -389,7 +400,13 @@ export function SubmitSupplierModal({
           : `${t("suppliers.submit.next_steps_review_title")} ${t("suppliers.submit.next_steps_review_body")}`,
       );
       onSubmitted(res.supplier);
-      onClose();
+      if (onAddToPlan && !visitor) {
+        // The couple already typed this business in; ask whether it should be
+        // their line too, instead of closing on them.
+        setPlanAsk(payload);
+      } else {
+        onClose();
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         const detail = err.detail && typeof err.detail === "object" ? err.detail : {};
@@ -462,6 +479,19 @@ export function SubmitSupplierModal({
 
   const blurbLen = form.blurb.length;
 
+  async function addToPlan() {
+    if (!planAsk || !onAddToPlan || addingToPlan) return;
+    setAddingToPlan(true);
+    try {
+      await onAddToPlan(planAsk);
+      onClose();
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setAddingToPlan(false);
+    }
+  }
+
   const onVisitorVerify = async (credential: string) => {
     setVerifyError(null);
     try {
@@ -510,6 +540,41 @@ export function SubmitSupplierModal({
             </p>
           )}
         </div>
+      </Dialog>
+    );
+  }
+
+  if (planAsk) {
+    return (
+      <Dialog
+        open={open}
+        role="dialog"
+        size="sm"
+        title={t("suppliers.submit.plan_ask_title")}
+        onClose={() => {
+          if (!addingToPlan) onClose();
+        }}
+        footer={
+          <div className="flex items-center justify-between gap-2">
+            <Button variant="outline" type="button" onClick={onClose} disabled={addingToPlan}>
+              {t("suppliers.submit.plan_ask_no")}
+            </Button>
+            <Button
+              variant="primary"
+              type="button"
+              autoFocus
+              onClick={addToPlan}
+              loading={addingToPlan}
+              className={BLACK_BTN}
+            >
+              {t("suppliers.submit.plan_ask_yes")}
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-ink-600 dark:text-paper-300">
+          {t("suppliers.submit.plan_ask_body", { name: planAsk.name })}
+        </p>
       </Dialog>
     );
   }

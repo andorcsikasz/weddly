@@ -6222,6 +6222,10 @@ const en: LocaleMessages = {
       next_steps_review_title: "Thanks, got it!",
       next_steps_review_body:
         "Our team will review the entry and it'll appear in the couples' directory shortly.",
+      plan_ask_title: "Add it to your plan?",
+      plan_ask_body: "{name} becomes a line on your plan, so you can compare it with the rest.",
+      plan_ask_yes: "Yes, add it",
+      plan_ask_no: "Not now",
       category_label: "Category",
       category_placeholder: "Pick a category",
       category_change: "Change",

@@ -7344,6 +7344,10 @@ export interface LocaleMessages {
       next_steps_body: string;
       next_steps_review_title: string;
       next_steps_review_body: string;
+      plan_ask_title: string;
+      plan_ask_body: string;
+      plan_ask_yes: string;
+      plan_ask_no: string;
       category_label: string;
       category_placeholder: string;
       /** Searchable category picker: "change" affordance on the chosen pill,

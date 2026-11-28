@@ -6275,6 +6275,11 @@ const hu: LocaleMessages = {
       next_steps_review_title: "Köszönjük, megkaptuk!",
       next_steps_review_body:
         "Csapatunk átnézi a bejegyzést, és hamarosan megjelenik a párok listáján.",
+      plan_ask_title: "Hozzáadod a terveidhez?",
+      plan_ask_body:
+        "A(z) {name} a terveid egyik sora lesz, így a többi szolgáltatóval együtt hasonlíthatod össze.",
+      plan_ask_yes: "Igen, hozzáadom",
+      plan_ask_no: "Most nem",
       category_label: "Kategória",
       category_placeholder: "Válassz kategóriát",
       category_change: "Módosítás",

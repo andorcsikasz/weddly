@@ -6330,6 +6330,10 @@ const es: LocaleMessages = {
       next_steps_review_title: "¡Gracias, recibido!",
       next_steps_review_body:
         "Nuestro equipo revisará la entrada y aparecerá en el directorio de las parejas en breve.",
+      plan_ask_title: "¿Añadirlo a tu plan?",
+      plan_ask_body: "{name} será una línea de tu plan, para que puedas compararlo con el resto.",
+      plan_ask_yes: "Sí, añadirlo",
+      plan_ask_no: "Ahora no",
       category_label: "Categoría",
       category_placeholder: "Elige una categoría",
       category_change: "Cambiar",

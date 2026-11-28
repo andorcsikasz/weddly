@@ -3978,6 +3978,33 @@ export default function SuppliersPage() {
         onClose={() => setSubmitOpen(false)}
         initialCategory={submitSeed?.category ?? null}
         initialName={submitSeed?.name ?? ""}
+        onAddToPlan={async (payload) => {
+          if (coupleId === null) {
+            toast.info(t("suppliers.save_no_couple"));
+            return;
+          }
+          // The same create the DIY form uses. The recommendation just queued
+          // this business as 'pending', and the server joins that queued row
+          // rather than making a second card, so the plan line and the
+          // suggestion are one listing.
+          const res = await coupleSupplierApi.create({
+            name: payload.name,
+            category: payload.category,
+            city: payload.city || null,
+            address: payload.address ?? null,
+            contact_email: payload.contact_email ?? null,
+            contact_phone: payload.contact_phone ?? null,
+          });
+          setCoupleSuppliers((prev) => [
+            res.supplier,
+            ...prev.filter((p) => p.id !== res.supplier.id),
+          ]);
+          setHighlightId(res.supplier.id);
+          setSelectionState(
+            setSelection(coupleId, res.supplier.category, res.listing_id ?? res.supplier.id),
+          );
+          toast.success(t("suppliers.twin.adopted_toast", { name: payload.name }));
+        }}
         onSubmitted={() => {
           // New submissions land as 'pending' and aren't returned by the
           // public list until the contact_email is verified. Skip the

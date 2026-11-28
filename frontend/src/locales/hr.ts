@@ -6261,6 +6261,10 @@ const hr: LocaleMessages = {
       next_steps_review_title: "Hvala, zaprimili smo!",
       next_steps_review_body:
         "Naš će tim pregledati unos i uskoro će se pojaviti u katalogu za parove.",
+      plan_ask_title: "Dodati u vaš plan?",
+      plan_ask_body: "{name} postaje stavka vašeg plana, da je možete usporediti s ostalima.",
+      plan_ask_yes: "Da, dodaj",
+      plan_ask_no: "Ne sada",
       category_label: "Kategorija",
       category_placeholder: "Odaberite kategoriju",
       category_change: "Promijenite",
