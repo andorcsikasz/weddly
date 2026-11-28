@@ -6386,6 +6386,9 @@ export interface LocaleMessages {
     lines_empty: string;
     /** Label for the totals row at the bottom of the budget lines table. */
     lines_totals_label: string;
+    /** Summary bar above the table once rows are selected. */
+    selection_count: string;
+    selection_clear: string;
     /** Hint shown in the aggregated honeymoon row's note cell. */
     honeymoon_breakdown_hint: string;
     /** Aria-label for the chevron link that opens /app/honeymoon. */
@@ -6630,6 +6633,7 @@ export interface LocaleMessages {
     };
     role_names: {
       best_man: string;
+      bride_witness: string;
       maid_of_honor: string;
       bridesmaid: string;
       groomsman: string;
@@ -7220,7 +7224,7 @@ export interface LocaleMessages {
       done: string;
       error: string;
       blocked: string;
-    },
+    };
     diy_photo_add_aria: string;
     diy_photo_remove_aria: string;
     pick_choice: {
@@ -7313,7 +7317,7 @@ export interface LocaleMessages {
     view_grid: string;
     view_line: string;
     view_map: string;
-    view_table: string,
+    view_table: string;
     table: {
       show_breakdown: string;
       hide_breakdown: string;
@@ -7343,7 +7347,7 @@ export interface LocaleMessages {
       error: string;
       loading: string;
       empty: string;
-    },
+    };
     /** Footer note on the map view when some entries aren't geocoded. */
     map_missing_count: string;
     /** Title + popup heading of a map marker several suppliers share (they sit

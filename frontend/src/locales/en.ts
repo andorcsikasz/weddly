@@ -5480,6 +5480,8 @@ const en: LocaleMessages = {
     lines_all_zero: "Nothing has an amount yet. Use the sliders above to plan each category.",
     lines_empty: "No budget lines yet. Add one to start planning.",
     lines_totals_label: "Total",
+    selection_count: "{count} selected",
+    selection_clear: "Clear selection",
     honeymoon_breakdown_hint: "Breakdown on the Honeymoon page",
     honeymoon_open_aria: "Open the Honeymoon page",
     snapshots_sub: "Capture a scenario you can compare to later.",
@@ -5651,6 +5653,7 @@ const en: LocaleMessages = {
     },
     role_names: {
       best_man: "Best man",
+      bride_witness: "Witness",
       maid_of_honor: "Maid of honour",
       bridesmaid: "Bridesmaid",
       groomsman: "Groomsman",

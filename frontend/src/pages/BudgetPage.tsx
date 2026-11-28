@@ -1117,6 +1117,67 @@ export default function BudgetPage() {
   // "recovered vs spent" report.
   const totalSpentHuf = useMemo(() => lines.reduce((a, l) => a + l.actual_huf, 0), [lines]);
 
+  // Row selection for the table. Keys are `cat:<category>` for a category row
+  // and `line:<id>` for a custom row. Sub-items are deliberately not
+  // selectable: their parent category's total already includes them, so
+  // letting both be picked would count the same euro twice.
+  const [selectedRows, setSelectedRows] = useState<ReadonlySet<string>>(() => new Set());
+
+  function toggleRowSelected(key: string) {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  // A click on a control inside the row (input, button, the payment dialog
+  // rendered through a portal) must keep doing its own job, not toggle.
+  // React bubbles portal events up the component tree, so the DOM check
+  // `contains` is what separates "the row was clicked" from "something that
+  // lives in a dialog was clicked".
+  function handleRowClick(e: ReactMouseEvent<HTMLTableRowElement>, key: string) {
+    const target = e.target as HTMLElement;
+    if (!e.currentTarget.contains(target)) return;
+    if (target.closest("button,a,input,select,textarea,label,[role='dialog']")) return;
+    toggleRowSelected(key);
+  }
+
+  // Sum of the selected rows, built from the SAME per-row numbers the table
+  // draws (scaled planned, raw actual/paid), so the bar and the rows agree.
+  const selectionTotals = useMemo(() => {
+    let count = 0;
+    let planned = 0;
+    let actual = 0;
+    let paid = 0;
+    let delta = 0;
+    const linesById = new Map(lines.map((l) => [l.id, l] as const));
+    for (const key of selectedRows) {
+      if (key.startsWith("cat:")) {
+        const cat = key.slice(4) as BudgetCategory;
+        const b = categoryBuckets.get(cat);
+        if (!b) continue;
+        const disp = scaledCategoryPlanned(cat, b.planned);
+        count += 1;
+        planned += disp;
+        actual += b.actual;
+        paid += b.paid;
+        if (b.actual > 0) delta += b.actual - disp;
+      } else if (key.startsWith("line:")) {
+        const line = linesById.get(Number(key.slice(5)));
+        if (!line) continue;
+        const disp = scaledCustomPlanned(line);
+        count += 1;
+        planned += disp;
+        actual += line.actual_huf;
+        paid += line.paid_huf;
+        if (line.actual_huf > 0) delta += line.actual_huf - disp;
+      }
+    }
+    return { count, planned, actual, paid, delta };
+  }, [selectedRows, lines, categoryBuckets, scaledCategoryPlanned, scaledCustomPlanned]);
+
   // Whether a single amount has been entered anywhere yet. Onboarding seeds no
   // budget lines on purpose, so a fresh couple lands on fifteen category rows
   // reading zero — which looks like a broken page rather than an empty one.
@@ -1316,6 +1377,51 @@ export default function BudgetPage() {
           <AddCustomRowMobile onAdd={addCustomRow} />
         </div>
 
+        {selectionTotals.count > 0 && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-2 hidden flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-blush-200 bg-blush-50/60 px-4 py-2.5 text-sm md:flex dark:border-blush-500/30 dark:bg-umber-800"
+          >
+            <span className="font-medium text-ink-900 dark:text-paper-50">
+              {t("budget.selection_count", { count: selectionTotals.count })}
+            </span>
+            <span className="tabular-nums text-ink-700 dark:text-paper-200">
+              <span className="text-ink-500 dark:text-umber-300">{t("budget.planned")} </span>
+              {formatMoney(selectionTotals.planned, currency, locale)}
+            </span>
+            <span className="tabular-nums text-ink-700 dark:text-paper-200">
+              <span className="text-ink-500 dark:text-umber-300">{t("budget.actual")} </span>
+              {formatMoney(selectionTotals.actual, currency, locale)}
+            </span>
+            <span className="tabular-nums text-ink-700 dark:text-paper-200">
+              <span className="text-ink-500 dark:text-umber-300">{t("budget.paid")} </span>
+              {formatMoney(selectionTotals.paid, currency, locale)}
+            </span>
+            {selectionTotals.delta !== 0 && (
+              <span className="tabular-nums text-ink-700 dark:text-paper-200">
+                <span className="text-ink-500 dark:text-umber-300">{t("budget.delta")} </span>
+                <span
+                  className={
+                    selectionTotals.delta > 0
+                      ? "font-medium text-red-600 dark:text-red-400"
+                      : "font-medium text-emerald-600 dark:text-emerald-400"
+                  }
+                >
+                  {formatMoney(selectionTotals.delta, currency, locale)}
+                </span>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setSelectedRows(new Set())}
+              className="btn-ghost btn-sm ml-auto text-ink-600 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
+            >
+              {t("budget.selection_clear")}
+            </button>
+          </div>
+        )}
+
         {/* overflow-clip, not overflow-hidden: it still rounds the corners
          *  but is not a scroll container, which would pin the sticky header
          *  to the card instead of the page. */}
@@ -1385,7 +1491,9 @@ export default function BudgetPage() {
                     <tr
                       id={`cat-${cat}`}
                       data-category={cat}
-                      className="scroll-mt-24 border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60"
+                      aria-selected={selectedRows.has(`cat:${cat}`)}
+                      onClick={(e) => handleRowClick(e, `cat:${cat}`)}
+                      className={`scroll-mt-24 cursor-pointer border-t border-paper-200 transition dark:border-umber-700 ${rowSurface(selectedRows.has(`cat:${cat}`))}`}
                     >
                       <td className="px-4 py-2 align-middle">
                         <div className="flex items-start gap-1.5">
@@ -1550,7 +1658,9 @@ export default function BudgetPage() {
                       key={line.id}
                       data-budget-line-id={line.id}
                       data-category="other-custom"
-                      className="border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60"
+                      aria-selected={selectedRows.has(`line:${line.id}`)}
+                      onClick={(e) => handleRowClick(e, `line:${line.id}`)}
+                      className={`cursor-pointer border-t border-paper-200 transition dark:border-umber-700 ${rowSurface(selectedRows.has(`line:${line.id}`))}`}
                     >
                       <td className="px-4 py-2 align-middle">
                         <CustomRowLabel
@@ -1709,6 +1819,14 @@ export default function BudgetPage() {
       <IncomeSection currency={currency} totalSpentHuf={totalSpentHuf} />
     </>
   );
+}
+
+/** Background for a selectable table row. The hover wash only applies to an
+ *  unselected row, so the selection tint is never flattened by hovering it. */
+function rowSurface(selected: boolean): string {
+  return selected
+    ? "bg-blush-50/60 dark:bg-umber-700/50"
+    : "hover:bg-paper-50 dark:hover:bg-umber-700/60";
 }
 
 /* ─── Per-category sub-item drawer ──────────────────────────────────── */
