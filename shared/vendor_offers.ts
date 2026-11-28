@@ -76,6 +76,9 @@ export interface VendorOffer {
   status: OfferStatus;
   payload: VendorOfferPayload;
   created_at: number;
+  /** How many budget lines this offer currently owns (the "Add to budget"
+   *  action). 0 or absent means none. */
+  budget_lines?: number;
 }
 
 export type ParseResult = { ok: true; offer: VendorOfferPayload } | { ok: false; errors: string[] };

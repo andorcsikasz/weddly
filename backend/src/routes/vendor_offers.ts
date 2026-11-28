@@ -11,9 +11,15 @@ import {
   offerTotalAt,
   validateVendorOffer,
 } from "@shared/vendor_offers";
+import type { ApplyOfferToBudgetInput } from "@shared/offer_budget";
 import type { Currency } from "@shared/types";
 import { db, now } from "../db";
 import { getCoupleForUser } from "../domain/couples";
+import {
+  applyOfferToBudget,
+  budgetLineCounts,
+  releaseOfferBudgetLines,
+} from "../domain/offer_budget";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
@@ -32,7 +38,7 @@ interface Row {
   created_at: number;
 }
 
-function toOffer(r: Row): VendorOffer {
+function toOffer(r: Row, budgetLines = 0): VendorOffer {
   return {
     id: r.id,
     supplier_id: r.supplier_id,
@@ -45,6 +51,7 @@ function toOffer(r: Row): VendorOffer {
     status: r.status as OfferStatus,
     payload: JSON.parse(r.payload) as VendorOfferPayload,
     created_at: r.created_at,
+    budget_lines: budgetLines,
   };
 }
 
@@ -67,7 +74,8 @@ function handleList(ctx: Ctx): Response {
       "SELECT * FROM vendor_offers WHERE couple_id = ? ORDER BY quoted_at DESC, id DESC",
     )
     .all(id);
-  return json({ offers: rows.map(toOffer) });
+  const counts = budgetLineCounts(id);
+  return json({ offers: rows.map((r) => toOffer(r, counts.get(r.id) ?? 0)) });
 }
 
 async function handleImport(ctx: Ctx): Promise<Response> {
@@ -140,10 +148,21 @@ async function handlePatch(ctx: Ctx): Promise<Response> {
   const ts = now();
   // One chosen offer per category: choosing a second releases the first back to
   // "shortlisted", because two "winners" for one job is a decision nobody made.
+  let released = 0;
   if (status === "chosen") {
+    // The offers being demoted stop being the plan, so the budget lines they
+    // wrote go with them. Two vendors' lines side by side would double count.
+    const demoted = db
+      .query<{ id: number }, [number, string, number]>(
+        "SELECT id FROM vendor_offers WHERE couple_id = ? AND category = ? AND status = 'chosen' AND id != ?",
+      )
+      .all(row.couple_id, row.category, row.id);
+    for (const d of demoted) released += releaseOfferBudgetLines(row.couple_id, d.id);
     db.query(
       "UPDATE vendor_offers SET status = 'shortlisted', updated_at = ? WHERE couple_id = ? AND category = ? AND status = 'chosen' AND id != ?",
     ).run(ts, row.couple_id, row.category, row.id);
+  } else if (row.status === "chosen") {
+    released += releaseOfferBudgetLines(row.couple_id, row.id);
   }
   db.query("UPDATE vendor_offers SET status = ?, updated_at = ? WHERE id = ?").run(
     status,
@@ -151,13 +170,45 @@ async function handlePatch(ctx: Ctx): Promise<Response> {
     row.id,
   );
   const fresh = db.query<Row, [number]>("SELECT * FROM vendor_offers WHERE id = ?").get(row.id);
-  return json({ offer: toOffer(fresh as Row) });
+  const counts = budgetLineCounts(row.couple_id);
+  return json({
+    offer: toOffer(fresh as Row, counts.get(row.id) ?? 0),
+    budget_lines_removed: released,
+  });
 }
 
 function handleDelete(ctx: Ctx): Response {
   const row = ownedRow(ctx);
+  releaseOfferBudgetLines(row.couple_id, row.id);
   db.query("DELETE FROM vendor_offers WHERE id = ?").run(row.id);
   return json({ ok: true });
+}
+
+/** POST /api/budget/offer-lines/:id: write the chosen offer into the budget as a
+ *  breakdown. Registered under /api/budget on purpose: that prefix is on the
+ *  billing edit gate, so a lapsed (read-only) workspace cannot write budget lines
+ *  through the offers door. */
+async function handleApplyToBudget(ctx: Ctx): Promise<Response> {
+  const row = ownedRow(ctx);
+  const couple = getCoupleForUser(requireAuth(ctx));
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const body = await readJson<Partial<ApplyOfferToBudgetInput>>(ctx.req);
+  const result = applyOfferToBudget(couple, row, body);
+  addAuditLog({
+    actor_user_id: requireAuth(ctx),
+    couple_id: couple.id,
+    action: "vendor_offer.apply_to_budget",
+    target_kind: "vendor_offer",
+    target_id: row.id,
+    after: { lines: result.line_ids.length, total: result.total },
+  });
+  return json(result, { status: 201 });
+}
+
+function handleRemoveFromBudget(ctx: Ctx): Response {
+  const row = ownedRow(ctx);
+  const removed = releaseOfferBudgetLines(row.couple_id, row.id);
+  return json({ removed });
 }
 
 export function registerVendorOfferRoutes(router: Router) {
@@ -165,4 +216,6 @@ export function registerVendorOfferRoutes(router: Router) {
   router.post("/api/vendor-offers", handleImport, true);
   router.patch("/api/vendor-offers/:id", handlePatch, true);
   router.delete("/api/vendor-offers/:id", handleDelete, true);
+  router.post("/api/budget/offer-lines/:id", handleApplyToBudget, true);
+  router.delete("/api/budget/offer-lines/:id", handleRemoveFromBudget, true);
 }

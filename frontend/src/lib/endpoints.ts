@@ -307,6 +307,7 @@ import type {
   VendorMessageTemplate,
 } from "@shared/booking_messages";
 import type { BookingQuote, QuoteLineInput } from "@shared/booking_quotes";
+import type { ApplyOfferToBudgetInput, ApplyOfferToBudgetResult } from "@shared/offer_budget";
 import type { OfferStatus, VendorOffer, VendorOfferPayload } from "@shared/vendor_offers";
 import type { DateHold } from "@shared/date_holds";
 import type { VendorPointsStatus } from "@shared/vendor_points";
@@ -3561,8 +3562,21 @@ export const vendorOfferApi = {
       supplier_id: supplierId,
     }),
   setStatus: (id: number, status: OfferStatus) =>
-    apiFetch<{ offer: VendorOffer }>("PATCH", `/api/vendor-offers/${id}`, { status }),
+    apiFetch<{ offer: VendorOffer; budget_lines_removed?: number }>(
+      "PATCH",
+      `/api/vendor-offers/${id}`,
+      { status },
+    ),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/vendor-offers/${id}`),
+};
+
+/** The chosen offer, written into the budget as a breakdown. Lives under
+ *  /api/budget so the billing edit gate covers it like every other budget write. */
+export const offerBudgetApi = {
+  apply: (offerId: number, body: ApplyOfferToBudgetInput) =>
+    apiFetch<ApplyOfferToBudgetResult>("POST", `/api/budget/offer-lines/${offerId}`, body),
+  remove: (offerId: number) =>
+    apiFetch<{ removed: number }>("DELETE", `/api/budget/offer-lines/${offerId}`),
 };
 
 export const vendorBillingApi = {

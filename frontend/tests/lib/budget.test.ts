@@ -8,6 +8,7 @@
 import type { BudgetCategory, BudgetLine } from "@shared/types";
 import { describe, expect, it } from "bun:test";
 import {
+  budgetGuestCount,
   budgetSubcategorySuggestions,
   createBudgetWriteQueue,
   isCategoryHolderLine,
@@ -280,5 +281,32 @@ describe("budgetSubcategorySuggestions", () => {
   it("offers nothing for a category with no defined subcategories", () => {
     expect(budgetSubcategorySuggestions("venue", t)).toEqual([]);
     expect(budgetSubcategorySuggestions("other", t)).toEqual([]);
+  });
+});
+
+describe("budgetGuestCount", () => {
+  // The compare page and the budget must open on the same headcount: the budget
+  // slider's position wins once it has been moved, the stated goal otherwise.
+  const base = {
+    guest_count_goal: { kind: "exact", exact: 80, min: null, max: null },
+    target_guest_count: 80,
+    planning_count: null,
+  } as unknown as Parameters<typeof budgetGuestCount>[0];
+
+  it("uses the slider position once the couple has moved it", () => {
+    expect(budgetGuestCount({ ...base, planning_count: 91 })).toBe(91);
+  });
+
+  it("falls back to the stated headcount before the slider is touched", () => {
+    expect(budgetGuestCount(base)).toBe(80);
+  });
+
+  it("answers null when no headcount has been stated", () => {
+    const none = {
+      ...base,
+      guest_count_goal: { kind: "exact", exact: null, min: null, max: null },
+      target_guest_count: null,
+    } as unknown as typeof base;
+    expect(budgetGuestCount(none)).toBeNull();
   });
 });

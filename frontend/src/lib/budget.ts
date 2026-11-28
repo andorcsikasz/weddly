@@ -448,3 +448,14 @@ export function guestCountBounds(couple: Couple, baseline: number): { min: numbe
   const max = Math.max(baseline + 20, Math.round((baseline * 1.5) / 5) * 5);
   return { min, max };
 }
+
+/**
+ * The headcount the budget slider opens on, as one answer for every page that
+ * prices something per guest. The budget uses `planning_count` once the couple
+ * has moved the slider, and the stated headcount before that. Pages that read
+ * only `target_guest_count` (the onboarding goal) drift from the budget as soon
+ * as the slider has been used. Null when the couple has stated no headcount.
+ */
+export function budgetGuestCount(couple: Couple): number | null {
+  return couple.planning_count ?? statedGuestCount(couple);
+}

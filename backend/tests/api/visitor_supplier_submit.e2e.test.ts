@@ -54,6 +54,7 @@ interface SupplierRow {
   submitter_visitor_id: number | null;
   price_band: number;
   status: string;
+  website: string;
 }
 
 function supplierByName(name: string): SupplierRow | null {

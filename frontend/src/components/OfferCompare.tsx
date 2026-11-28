@@ -3,14 +3,26 @@
 // payload by shared/vendor_offers.ts, so the numbers here, the validator and
 // the server agree by construction.
 
-import { Check, ChevronDown, Copy, FileJson, Plus, Trash2, TriangleAlert, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Copy,
+  FileJson,
+  Plus,
+  Trash2,
+  TriangleAlert,
+  Wallet,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CoupleVendorThreadPreview } from "@shared/booking_messages";
+import { offerBudgetBreakdown } from "@shared/offer_budget";
 import type { Currency } from "@shared/types";
 import {
   OFFER_ITEM_KINDS,
   type OfferItemKind,
   type VendorOffer,
+  type VendorOfferPayload,
   buildOfferPrompt,
   offerComposition,
   offerFreshness,
@@ -20,7 +32,9 @@ import {
   parseVendorOffer,
 } from "@shared/vendor_offers";
 import { ApiError } from "../lib/api";
+import { OfferBudgetDialog } from "./OfferBudgetDialog";
 import { bookingMessagesApi, coupleApi, vendorOfferApi } from "../lib/endpoints";
+import { budgetGuestCount } from "../lib/budget";
 import { formatDate, formatMoney, formatMoneyCompact } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Skeleton, useConfirm, useToast } from "./ui";
@@ -108,6 +122,12 @@ function Sparkline({ values, className }: { values: number[]; className?: string
   );
 }
 
+/** An offer carries a total when it has line items to sum or a printed figure.
+ *  With neither, `offerTotalAt` answers 0, which is "nothing stated", not "free". */
+function hasKnownTotal(p: VendorOfferPayload): boolean {
+  return p.line_items.length > 0 || p.stated_total !== null;
+}
+
 export function OfferCompare() {
   const { t, locale } = useT();
   const toast = useToast();
@@ -127,6 +147,8 @@ export function OfferCompare() {
   const [group, setGroup] = useState<string | null>(null);
   const [guests, setGuests] = useState<number | null>(null);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
+  // The chosen offer whose budget breakdown is being previewed.
+  const [budgetFor, setBudgetFor] = useState<Offer | null>(null);
 
   const load = useCallback(() => {
     vendorOfferApi
@@ -147,7 +169,9 @@ export function OfferCompare() {
         if (couple)
           setMeta({
             currency: couple.currency ?? "EUR",
-            guests: couple.target_guest_count ?? null,
+            // The same headcount the budget slider opens on, so a per-guest
+            // figure here and there can't disagree.
+            guests: budgetGuestCount(couple),
             date: couple.wedding_date ?? null,
           });
       })
@@ -497,6 +521,34 @@ export function OfferCompare() {
                             {t("offers.decision_shortlisted")}
                           </p>
                         )}
+                        {status === "chosen" && (
+                          <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                            {(o.budget_lines ?? 0) > 0 ? (
+                              <>
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sage-700 dark:text-sage-300">
+                                  <Check size={12} strokeWidth={1.5} aria-hidden />
+                                  {t("offers.budget.in_budget", { n: o.budget_lines ?? 0 })}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setBudgetFor(o)}
+                                  className="text-xs text-ink-700 underline underline-offset-4 dark:text-paper-200"
+                                >
+                                  {t("offers.budget.update")}
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setBudgetFor(o)}
+                                className="inline-flex items-center gap-1.5 rounded-full bg-ink-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-paper-50 dark:text-ink-900"
+                              >
+                                <Wallet size={13} strokeWidth={1.5} aria-hidden />
+                                {t("offers.budget.add")}
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -506,6 +558,17 @@ export function OfferCompare() {
                       const tot = totals[i] ?? 0;
                       const best = minTotal !== null && tot === minTotal;
                       const mis = offerMismatch(r.latest.payload);
+                      // An offer with no figures (no line items, no printed total)
+                      // is not a zero-pound offer. Say so instead of printing Ft 0.
+                      if (!hasKnownTotal(r.latest.payload)) {
+                        return (
+                          <div key={r.key} className="py-3">
+                            <p className="text-sm text-ink-500 dark:text-paper-400">
+                              {t("offers.unknown")}
+                            </p>
+                          </div>
+                        );
+                      }
                       return (
                         <div key={r.key} className="py-3">
                           <p
@@ -535,10 +598,43 @@ export function OfferCompare() {
                   </MatrixRow>
                   <MatrixRow label={t("offers.row_per_guest")}>
                     {rows.map((r, i) => (
-                      <Cell key={r.key}>
-                        {money(Math.round((totals[i] ?? 0) / Math.max(1, g)))}
+                      <Cell key={r.key} muted={!hasKnownTotal(r.latest.payload)}>
+                        {hasKnownTotal(r.latest.payload)
+                          ? money(Math.round((totals[i] ?? 0) / Math.max(1, g)))
+                          : t("offers.unknown")}
                       </Cell>
                     ))}
+                  </MatrixRow>
+                  <MatrixRow label={t("offers.row_by_category")}>
+                    {rows.map((r) => {
+                      // The same split the budget will hold, so what is compared
+                      // here is what lands in each budget category.
+                      const split = Object.entries(
+                        offerBudgetBreakdown(r.latest.payload, { guests: g }).by_category,
+                      )
+                        .filter(([, v]) => (v ?? 0) > 0)
+                        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+                      if (split.length === 0)
+                        return (
+                          <Cell key={r.key} muted>
+                            {t("offers.unknown")}
+                          </Cell>
+                        );
+                      return (
+                        <ul key={r.key} className="space-y-0.5 py-3 text-xs">
+                          {split.map(([cat, v]) => (
+                            <li key={cat} className="flex items-baseline justify-between gap-2">
+                              <span className="truncate text-ink-600 dark:text-paper-300">
+                                {t(`budget.cat.${cat}`)}
+                              </span>
+                              <span className="shrink-0 tabular-nums text-ink-900 dark:text-paper-50">
+                                {money(v ?? 0)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    })}
                   </MatrixRow>
                   <MatrixRow label={t("offers.row_deposit")}>
                     {rows.map((r) => (
@@ -668,6 +764,14 @@ export function OfferCompare() {
           )}
         </>
       )}
+
+      <OfferBudgetDialog
+        open={budgetFor !== null}
+        offer={budgetFor}
+        guests={g}
+        onClose={() => setBudgetFor(null)}
+        onChanged={load}
+      />
     </div>
   );
 }

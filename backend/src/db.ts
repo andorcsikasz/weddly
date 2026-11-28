@@ -491,6 +491,17 @@ addColumnIfMissing("budget_lines", "couple_supplier_id", "couple_supplier_id TEX
 // See domain/listing_budget_mirror.ts for the whole rule.
 addColumnIfMissing("budget_lines", "listing_id", "listing_id TEXT");
 
+// A budget line written from a CHOSEN vendor offer (domain/offer_budget.ts). One
+// offer fans out to several lines (venue hire, catering, drinks, ...), so the
+// back-reference lives on the line and is what makes the write idempotent:
+// re-applying replaces exactly this offer's lines, and un-choosing the offer
+// removes exactly them. Unlike `couple_supplier_id` / `listing_id` it does NOT
+// lock the line: the couple may still tune a planned amount by hand.
+addColumnIfMissing("budget_lines", "vendor_offer_id", "vendor_offer_id INTEGER");
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_budget_lines_offer ON budget_lines(vendor_offer_id) WHERE vendor_offer_id IS NOT NULL",
+);
+
 // Custom rows can opt into the headcount-driven rescale that built-in
 // per-guest categories already get, and can pick a Lucide icon slug so the
 // row renders distinguishably in the list. Both default to fixed/no-icon so

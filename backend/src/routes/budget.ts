@@ -68,6 +68,7 @@ interface LineRow {
   per_guest: number;
   icon: string | null;
   preset_key: string | null;
+  vendor_offer_id: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -90,6 +91,7 @@ function toLine(r: LineRow): BudgetLine {
     per_guest: r.per_guest === 1,
     icon: r.icon,
     preset_key: r.preset_key,
+    vendor_offer_id: r.vendor_offer_id ?? null,
     created_at: r.created_at,
     updated_at: r.updated_at,
   };

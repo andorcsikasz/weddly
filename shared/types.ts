@@ -1240,6 +1240,11 @@ export interface BudgetLine {
   /** Honeymoon preset chip that created this line (e.g. "stay", "travel").
    *  Null for custom rows. Cleared server-side whenever the label is renamed. */
   preset_key?: string | null;
+  /** When set, this line was written from a CHOSEN vendor offer (the "Add to
+   *  budget" action on the compare page). Not locked: the amount is still
+   *  editable by hand. Un-choosing the offer removes the lines that carry no
+   *  recorded money. */
+  vendor_offer_id?: number | null;
   notes: string | null;
   /** Custom rows opt in. When `true`, the planned amount rescales with the
    *  headcount slider just like built-in per-guest categories. Built-in
@@ -1951,6 +1956,7 @@ export interface UpsertTransferInput {
 /** Preset roles. `other` takes a free-text `role_label`. Order = picker order. */
 export const WEDDING_PARTY_ROLES = [
   "best_man",
+  "bride_witness",
   "maid_of_honor",
   "bridesmaid",
   "groomsman",
